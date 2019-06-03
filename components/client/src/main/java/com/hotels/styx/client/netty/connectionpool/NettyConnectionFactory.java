@@ -23,7 +23,6 @@ import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
 import com.hotels.styx.client.HttpConfig;
 import com.hotels.styx.client.HttpRequestOperationFactory;
-import com.hotels.styx.client.netty.ClientEventLoopFactory;
 import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupFactory;
 import com.hotels.styx.client.ssl.SslContextFactory;
 import io.netty.bootstrap.Bootstrap;
@@ -36,17 +35,14 @@ import io.netty.handler.ssl.SslContext;
 import reactor.core.publisher.Mono;
 
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 import static com.hotels.styx.client.HttpConfig.defaultHttpConfig;
 import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
-import static com.hotels.styx.common.CompletableFutures.fromNettyFuture;
 import static io.netty.channel.ChannelOption.ALLOCATOR;
 import static io.netty.channel.ChannelOption.CONNECT_TIMEOUT_MILLIS;
 import static io.netty.channel.ChannelOption.SO_KEEPALIVE;
 import static io.netty.channel.ChannelOption.TCP_NODELAY;
 import static java.util.Objects.requireNonNull;
-import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
  * A connection factory that creates connections using netty.
@@ -68,13 +64,9 @@ public class NettyConnectionFactory implements Connection.Factory {
     private Class<? extends Channel> clientSocketChannelClass;
 
     private NettyConnectionFactory(Builder builder) {
-        this.clientSocketChannelClass = builder.eventLoopGroupFactory != null
-                ? builder.eventLoopGroupFactory.clientSocketChannelClass()
-                : GLOBAL_CLIENT_EVENT_LOOP_CLASS;
+        this.clientSocketChannelClass = builder.channelClass;
 
-        this.eventLoopGroup = builder.eventLoopGroupFactory != null
-                ? builder.eventLoopGroupFactory.newClientWorkerEventLoopGroup()
-                : GLOBAL_CLIENT_EVENT_LOOP;
+        this.eventLoopGroup = builder.eventLoopGroup;
 
         this.httpConfig = requireNonNull(builder.httpConfig);
         this.sslContext = builder.tlsSettings == null ? null : SslContextFactory.get(builder.tlsSettings);
@@ -101,15 +93,6 @@ public class NettyConnectionFactory implements Connection.Factory {
                 }
             });
         });
-    }
-
-    @Override
-    public CompletableFuture<Void> close() {
-        if (eventLoopGroup == GLOBAL_CLIENT_EVENT_LOOP) {
-            return completedFuture(null);
-        }
-
-        return fromNettyFuture(eventLoopGroup.shutdownGracefully());
     }
 
     private ChannelFuture openConnection(Origin origin, ConnectionSettings connectionSettings) {
@@ -146,10 +129,12 @@ public class NettyConnectionFactory implements Connection.Factory {
         private HttpRequestOperationFactory httpRequestOperationFactory = httpRequestOperationFactoryBuilder().build();
         private HttpConfig httpConfig = defaultHttpConfig();
         private TlsSettings tlsSettings;
-        private ClientEventLoopFactory eventLoopGroupFactory;
+        private EventLoopGroup eventLoopGroup = GLOBAL_CLIENT_EVENT_LOOP;
+        private Class<? extends Channel> channelClass = GLOBAL_CLIENT_EVENT_LOOP_CLASS;
 
-        public Builder eventLoopGroupFactory(ClientEventLoopFactory eventLoopGroupFactory) {
-            this.eventLoopGroupFactory = eventLoopGroupFactory;
+        public Builder nettyEventLoop(EventLoopGroup eventLoopGroup, Class<? extends Channel> channelClass) {
+            this.eventLoopGroup = eventLoopGroup;
+            this.channelClass = channelClass;
             return this;
         }
 

@@ -135,7 +135,6 @@ class OriginResourcesSpec : StringSpec() {
     override fun afterSpec(spec: Spec) {
         styxServer.stop()
         mockServer.stop()
-        client.shutdown()
     }
 
     fun appDeclaration(prefix: String) = """

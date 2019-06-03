@@ -19,13 +19,14 @@ import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
-import com.hotels.styx.client.netty.ClientEventLoopFactory;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.BackendServicesRouter;
 import com.hotels.styx.proxy.InterceptorPipelineBuilder;
 import com.hotels.styx.proxy.RouteHandlerAdapter;
 import com.hotels.styx.proxy.StyxBackendServiceClientFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 
 import static java.util.Objects.requireNonNull;
 
@@ -38,7 +39,8 @@ public class StaticPipelineFactory implements HttpPipelineFactory {
     private final Environment environment;
     private final Registry<BackendService> registry;
     private final Iterable<NamedPlugin> plugins;
-    private final ClientEventLoopFactory eventLoopGroupFactory;
+    private final EventLoopGroup eventLoopGroup;
+    private final Class<? extends SocketChannel> nettySocketChannelClass;
     private final boolean trackRequests;
 
     @VisibleForTesting
@@ -46,22 +48,25 @@ public class StaticPipelineFactory implements HttpPipelineFactory {
                           Environment environment,
                           Registry<BackendService> registry,
                           Iterable<NamedPlugin> plugins,
-                          ClientEventLoopFactory eventLoopGroupFactory,
+                          EventLoopGroup eventLoopGroup,
+                          Class<? extends SocketChannel> nettySocketChannelClass,
                           boolean trackRequests) {
         this.clientFactory = requireNonNull(clientFactory);
         this.environment = requireNonNull(environment);
         this.registry = requireNonNull(registry);
         this.plugins = requireNonNull(plugins);
+        this.eventLoopGroup = requireNonNull(eventLoopGroup);
+        this.nettySocketChannelClass = requireNonNull(nettySocketChannelClass);
         this.trackRequests = trackRequests;
-        this.eventLoopGroupFactory = requireNonNull(eventLoopGroupFactory);
     }
 
     public StaticPipelineFactory(Environment environment,
                                  Registry<BackendService> registry,
                                  Iterable<NamedPlugin> plugins,
-                                 ClientEventLoopFactory eventLoopGroupFactory,
+                                 EventLoopGroup eventLoopGroup,
+                                 Class<? extends SocketChannel> nettySocketChannelClass,
                                  boolean trackRequests) {
-        this(createClientFactory(environment), environment, registry, plugins, eventLoopGroupFactory, trackRequests);
+        this(createClientFactory(environment), environment, registry, plugins, eventLoopGroup, nettySocketChannelClass, trackRequests);
     }
 
     private static BackendServiceClientFactory createClientFactory(Environment environment) {
@@ -70,7 +75,7 @@ public class StaticPipelineFactory implements HttpPipelineFactory {
 
     @Override
     public RoutingObject build() {
-        BackendServicesRouter backendServicesRouter = new BackendServicesRouter(clientFactory, environment, eventLoopGroupFactory);
+        BackendServicesRouter backendServicesRouter = new BackendServicesRouter(clientFactory, environment, eventLoopGroup, nettySocketChannelClass);
         registry.addListener(backendServicesRouter);
         RouteHandlerAdapter router = new RouteHandlerAdapter(backendServicesRouter);
 

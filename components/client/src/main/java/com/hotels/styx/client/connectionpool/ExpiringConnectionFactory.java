@@ -21,7 +21,6 @@ import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
 import reactor.core.publisher.Mono;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
@@ -46,11 +45,6 @@ public class ExpiringConnectionFactory implements Connection.Factory {
         return connectionFactory
                 .createConnection(origin, connectionSettings)
                 .map(this::decorate);
-    }
-
-    @Override
-    public CompletableFuture<Void> close() {
-        return connectionFactory.close();
     }
 
     private Connection decorate(Connection conn) {

@@ -43,9 +43,10 @@ import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitorFactory;
 import com.hotels.styx.client.healthcheck.UrlRequestHealthCheck;
-import com.hotels.styx.client.netty.ClientEventLoopFactory;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.server.HttpRouter;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 import org.slf4j.Logger;
 
 import java.util.Map;
@@ -69,13 +70,18 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
 
     private final BackendServiceClientFactory clientFactory;
     private final Environment environment;
-    private final ClientEventLoopFactory eventLoopGroupFactory;
+    private final EventLoopGroup nettyEventLoopGroup;
+    private final Class<? extends SocketChannel> socketChannelClass;
     private final ConcurrentMap<String, ProxyToClientPipeline> routes;
 
-    public BackendServicesRouter(BackendServiceClientFactory clientFactory, Environment environment, ClientEventLoopFactory eventLoopGroupFactory) {
+    public BackendServicesRouter(BackendServiceClientFactory clientFactory,
+                                 Environment environment,
+                                 EventLoopGroup nettyEventLoopGroup,
+                                 Class<? extends SocketChannel> socketChannelClass) {
         this.clientFactory = requireNonNull(clientFactory);
         this.environment = requireNonNull(environment);
-        this.eventLoopGroupFactory = requireNonNull(eventLoopGroupFactory);
+        this.nettyEventLoopGroup = requireNonNull(nettyEventLoopGroup);
+        this.socketChannelClass = requireNonNull(socketChannelClass);
 
         this.routes = new ConcurrentSkipListMap<>(
                 comparingInt(String::length).reversed()
@@ -118,7 +124,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
             ConnectionPoolSettings poolSettings = backendService.connectionPoolConfig();
 
             Connection.Factory connectionFactory = connectionFactory(
-                    eventLoopGroupFactory,
+                    nettyEventLoopGroup, socketChannelClass,
                     backendService.responseTimeoutMillis(),
                     backendService.tlsSettings().orElse(null),
                     requestLoggingEnabled,
@@ -153,7 +159,6 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
             pipeline = new ProxyToClientPipeline(newClientHandler(backendService, inventory, originStatsFactory), () -> {
                 inventory.close();
                 healthStatusMonitor.stop();
-                healthCheckClient.shutdown();
             });
 
             routes.put(backendService.path(), pipeline);
@@ -175,7 +180,6 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
     private StyxHttpClient healthCheckClient(BackendService backendService) {
         StyxHttpClient.Builder builder = new StyxHttpClient.Builder()
                 .connectTimeout(backendService.connectionPoolConfig().connectTimeoutMillis(), MILLISECONDS)
-                .threadName("Health-Check-Monitor-" + backendService.id())
                 .userAgent("Styx/" + environment.buildInfo().releaseVersion());
 
         backendService.tlsSettings().ifPresent(builder::tlsSettings);
@@ -184,7 +188,8 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
     }
 
     private Connection.Factory connectionFactory(
-            ClientEventLoopFactory eventLoopGroupFactory,
+            EventLoopGroup nettyEventLoopGroup,
+            Class<? extends SocketChannel> socketChannelClass,
             int responseTimeoutMillis,
             TlsSettings tlsSettings,
             boolean requestLoggingEnabled,
@@ -193,7 +198,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
             long connectionExpiration) {
 
         Connection.Factory factory = new NettyConnectionFactory.Builder()
-                .eventLoopGroupFactory(eventLoopGroupFactory)
+                .nettyEventLoop(nettyEventLoopGroup, socketChannelClass)
                 .httpRequestOperationFactory(
                         httpRequestOperationFactoryBuilder()
                                 .flowControlEnabled(true)

@@ -95,8 +95,10 @@ public class ProxyToBackend implements RoutingObject {
 
             OriginStatsFactory originStatsFactory = new CachingOriginStatsFactory(context.environment().metricRegistry());
 
+            PlatformAwareClientEventLoopGroupFactory factory = new PlatformAwareClientEventLoopGroupFactory("Styx", clientWorkerThreadsCount);
+
             Connection.Factory connectionFactory = new NettyConnectionFactory.Builder()
-                    .eventLoopGroupFactory(new PlatformAwareClientEventLoopGroupFactory("Styx", clientWorkerThreadsCount))
+                    .nettyEventLoop(factory.newClientWorkerEventLoopGroup(), factory.clientSocketChannelClass())
                     .httpRequestOperationFactory(
                             httpRequestOperationFactoryBuilder()
                                     .flowControlEnabled(true)

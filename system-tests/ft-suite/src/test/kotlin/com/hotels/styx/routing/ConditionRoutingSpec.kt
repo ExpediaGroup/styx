@@ -28,7 +28,6 @@ import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 import reactor.core.publisher.Mono
 import java.nio.charset.StandardCharsets.UTF_8
-import java.util.concurrent.TimeUnit.MILLISECONDS
 
 class ConditionRoutingSpec : StringSpec() {
 
@@ -105,11 +104,7 @@ class ConditionRoutingSpec : StringSpec() {
                     content: "Hello, from http server!"
       """.trimIndent()
 
-    val client: StyxHttpClient = StyxHttpClient.Builder()
-            .threadName("functional-test-client")
-            .connectTimeout(1000, MILLISECONDS)
-            .maxHeaderSize(2 * 8192)
-            .build()
+    val client: StyxHttpClient = StyxHttpClient.Builder().build()
 
     val styxServer = StyxServer(StyxServerComponents.Builder()
             .styxConfig(StyxConfig.fromYaml(yamlText))

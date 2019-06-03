@@ -26,7 +26,6 @@ import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
-import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupFactory;
 import com.hotels.styx.client.ssl.SslContextFactory;
 import io.netty.handler.ssl.SslContext;
 import reactor.core.publisher.Mono;
@@ -56,15 +55,6 @@ public final class StyxHttpClient implements HttpClient {
     private StyxHttpClient(NettyConnectionFactory connectionFactory, Builder parameters) {
         this.transactionParameters = parameters;
         this.connectionFactory = connectionFactory;
-    }
-
-    /**
-     * Shuts the styx HTTP client thread pool.
-     *
-     * @return A {@link CompletableFuture} that completes when the thread pool is terminated
-     */
-    public CompletableFuture<Void> shutdown() {
-        return connectionFactory.close();
     }
 
     /**
@@ -184,7 +174,6 @@ public final class StyxHttpClient implements HttpClient {
      * Builder for {@link StyxHttpClient}.
      */
     public static class Builder {
-        private String threadName = "simple-netty-http-client";
         private int connectTimeoutMillis = 1000;
         private int maxResponseSize = 1024 * 100;
         private int responseTimeout = 60000;
@@ -197,7 +186,6 @@ public final class StyxHttpClient implements HttpClient {
         }
 
         Builder(Builder another) {
-            this.threadName = another.threadName;
             this.connectTimeoutMillis = another.connectTimeoutMillis;
             this.maxResponseSize = another.maxResponseSize;
             this.responseTimeout = another.responseTimeout;
@@ -205,17 +193,6 @@ public final class StyxHttpClient implements HttpClient {
             this.tlsSettings = another.tlsSettings;
             this.isHttps = another.isHttps;
             this.userAgent = another.userAgent;
-        }
-
-        /**
-         * Sets a thread name used for the thread pool.
-         *
-         * @param threadName thread name
-         * @return this {@link Builder}
-         */
-        public Builder threadName(String threadName) {
-            this.threadName = threadName;
-            return this;
         }
 
         /**
@@ -340,7 +317,6 @@ public final class StyxHttpClient implements HttpClient {
          */
         public StyxHttpClient build() {
             NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder()
-                    .eventLoopGroupFactory(new PlatformAwareClientEventLoopGroupFactory(threadName, 1))
                     .httpConfig(newHttpConfigBuilder().setMaxHeadersSize(maxHeaderSize).build())
                     .tlsSettings(tlsSettings)
                     .httpRequestOperationFactory(request -> new HttpRequestOperation(

@@ -28,9 +28,7 @@ import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
-import com.hotels.styx.client.netty.ClientEventLoopFactory;
 import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupFactory;
-import com.hotels.styx.common.Pair;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingObject;
@@ -47,10 +45,8 @@ import io.netty.channel.socket.SocketChannel;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hotels.styx.Version.readVersionFrom;
-import static com.hotels.styx.common.Pair.pair;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
 import static com.hotels.styx.routing.config.RoutingObjectFactory.BUILTIN_HANDLER_FACTORIES;
 import static com.hotels.styx.startup.ServicesLoader.SERVICES_FROM_CONFIG;
@@ -69,7 +65,8 @@ public class StyxServerComponents {
     private final List<NamedPlugin> plugins;
     private final StyxObjectStore<RoutingObjectRecord> routeObjectStore = new StyxObjectStore<>();
     private final RoutingObjectFactory routingObjectFactory;
-    private final ClientEventLoopFactory eventLoopGroupFactory;
+    private final EventLoopGroup eventLoopGroup;
+    private final Class<? extends SocketChannel> nettySocketChannelClass;
 
     private StyxServerComponents(Builder builder) {
         StyxConfig styxConfig = requireNonNull(builder.styxConfig);
@@ -77,9 +74,12 @@ public class StyxServerComponents {
         this.environment = newEnvironment(styxConfig, builder.metricRegistry);
         builder.loggingSetUp.setUp(environment);
 
-        this.eventLoopGroupFactory = new MemoizedEventLoopFactory(new PlatformAwareClientEventLoopGroupFactory(
+        PlatformAwareClientEventLoopGroupFactory factory = new PlatformAwareClientEventLoopGroupFactory(
                 "Styx",
-                environment.configuration().proxyServerConfig().clientWorkerThreadsCount()));
+                environment.configuration().proxyServerConfig().clientWorkerThreadsCount());
+
+        this.eventLoopGroup = factory.newClientWorkerEventLoopGroup();
+        this.nettySocketChannelClass = factory.clientSocketChannelClass();
 
         // TODO In further refactoring, we will probably want this loading to happen outside of this constructor call,
         //  so that it doesn't delay the admin server from starting up
@@ -147,8 +147,12 @@ public class StyxServerComponents {
         return this.routingObjectFactory;
     }
 
-    public ClientEventLoopFactory eventLoopGroupFactory() {
-        return this.eventLoopGroupFactory;
+    public EventLoopGroup eventLoopGroup() {
+        return this.eventLoopGroup;
+    }
+
+    public Class<? extends SocketChannel> nettySocketChannelClass() {
+        return this.nettySocketChannelClass;
     }
 
     private static Environment newEnvironment(StyxConfig styxConfig, MetricRegistry metricRegistry) {
@@ -266,36 +270,4 @@ public class StyxServerComponents {
             return environment -> setUpLogging(logConfigLocation);
         }
     }
-
-    static class MemoizedEventLoopFactory implements ClientEventLoopFactory {
-        private final AtomicReference<Pair<EventLoopGroup, Class<? extends SocketChannel>>> value = new AtomicReference<>();
-        private final ClientEventLoopFactory delegate;
-
-        private MemoizedEventLoopFactory(ClientEventLoopFactory delegate) {
-            this.delegate = requireNonNull(delegate);
-        }
-
-        @Override
-        public EventLoopGroup newClientWorkerEventLoopGroup() {
-            return getOrCreate().key();
-        }
-
-        @Override
-        public Class<? extends SocketChannel> clientSocketChannelClass() {
-            return getOrCreate().value();
-        }
-
-        private synchronized Pair<EventLoopGroup, Class<? extends SocketChannel>> getOrCreate() {
-            if (value.get() == null) {
-
-                EventLoopGroup eventLoop = delegate.newClientWorkerEventLoopGroup();
-                Class<? extends SocketChannel> socketChannelClass = delegate.clientSocketChannelClass();
-
-                value.set(pair(eventLoop, socketChannelClass));
-            }
-
-            return value.get();
-        }
-    }
-
 }

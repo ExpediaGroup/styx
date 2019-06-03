@@ -33,7 +33,6 @@ import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
-import java.util.concurrent.TimeUnit.MILLISECONDS
 
 class RoutingRestApiSpec : StringSpec() {
 
@@ -165,11 +164,7 @@ class RoutingRestApiSpec : StringSpec() {
         }
     }
 
-    val client: StyxHttpClient = StyxHttpClient.Builder()
-            .threadName("functional-test-client")
-            .connectTimeout(1000, MILLISECONDS)
-            .maxHeaderSize(2 * 8192)
-            .build()
+    val client: StyxHttpClient = StyxHttpClient.Builder().build()
 
     val styxServer = StyxServer(StyxServerComponents.Builder()
             .styxConfig(StyxConfig.fromYaml(yamlText))

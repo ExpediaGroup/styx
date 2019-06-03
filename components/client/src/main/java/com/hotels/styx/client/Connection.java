@@ -42,10 +42,6 @@ public interface Connection extends Closeable {
          * @return the newly created connection
          */
         Mono<Connection> createConnection(Origin origin, ConnectionSettings connectionSettings);
-
-        default CompletableFuture<Void> close() {
-            return CompletableFuture.completedFuture(null);
-        }
     }
 
     /**

@@ -27,6 +27,8 @@ import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.proxyHttpHostHeader
 import com.hotels.styx.support.wait
 import io.kotlintest.Spec
+import io.kotlintest.eventually
+import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 import java.io.ByteArrayInputStream
@@ -52,10 +54,11 @@ class FileBasedOriginsFileChangeMonitorSpec: StringSpec() {
             client.send(reqToApp02).wait().status() shouldBe BAD_GATEWAY
 
             writeConfig(styxOriginsFile, configTemplate.format("appv2", "/app02/", mockServer.port()))
-            Thread.sleep(2000)
 
-            client.send(reqToApp01).wait().status() shouldBe BAD_GATEWAY
-            client.send(reqToApp02).wait().status() shouldBe OK
+            eventually(3.seconds, AssertionError::class.java) {
+                client.send(reqToApp01).wait().status() shouldBe BAD_GATEWAY
+                client.send(reqToApp02).wait().status() shouldBe OK
+            }
         }
     }
 
@@ -116,7 +119,6 @@ class FileBasedOriginsFileChangeMonitorSpec: StringSpec() {
     override fun afterSpec(spec: Spec) {
         styxServer.stop()
         mockServer.stop()
-        client.shutdown()
     }
 }
 

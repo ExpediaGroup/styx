@@ -27,6 +27,8 @@ import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupF
 import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpInterceptorContext;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import reactor.core.publisher.Mono;
@@ -50,7 +52,10 @@ public class StaticPipelineBuilderTest {
     private Environment environment;
     private BackendServiceClientFactory clientFactory;
     private Registry<BackendService> registry;
-    private PlatformAwareClientEventLoopGroupFactory factory = new PlatformAwareClientEventLoopGroupFactory("Styx", 0);
+
+    private final PlatformAwareClientEventLoopGroupFactory factory = new PlatformAwareClientEventLoopGroupFactory("Styx", 0);
+    private final EventLoopGroup eventLoopGroup = factory.newClientWorkerEventLoopGroup();
+    private final Class<? extends SocketChannel> socketChannelClass = factory.clientSocketChannelClass();
 
 
     @BeforeMethod
@@ -63,7 +68,7 @@ public class StaticPipelineBuilderTest {
 
     @Test
     public void buildsInterceptorPipelineForBackendServices() throws Exception {
-        HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, ImmutableList.of(), factory,false).build();
+        HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, ImmutableList.of(), eventLoopGroup, socketChannelClass,false).build();
         LiveHttpResponse response = Mono.from(handler.handle(get("/foo").build(), HttpInterceptorContext.create())).block();
         assertThat(response.status(), is(OK));
     }
@@ -75,7 +80,7 @@ public class StaticPipelineBuilderTest {
                 interceptor("Test-B", appendResponseHeader("X-From-Plugin", "B"))
         );
 
-        HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, plugins, factory,false).build();
+        HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, plugins, eventLoopGroup, socketChannelClass,false).build();
 
         LiveHttpResponse response = Mono.from(handler.handle(get("/foo").build(), HttpInterceptorContext.create())).block();
         assertThat(response.status(), is(OK));
