@@ -21,6 +21,7 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.extension.service.spi.StyxService;
+import com.hotels.styx.client.netty.ClientEventLoopFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.HttpPipelineFactory;
 import com.hotels.styx.routing.RoutingObject;
@@ -51,18 +52,20 @@ public final class StyxPipelineFactory implements PipelineFactory {
     private final Environment environment;
     private final Map<String, StyxService> services;
     private final List<NamedPlugin> plugins;
+    private final ClientEventLoopFactory eventLoopGroupFactory;
 
     public StyxPipelineFactory(
             StyxObjectStore<RoutingObjectRecord> routeDb,
             RoutingObjectFactory routingObjectFactory,
             Environment environment,
             Map<String, StyxService> services,
-            List<NamedPlugin> plugins) {
+            List<NamedPlugin> plugins, ClientEventLoopFactory eventLoopGroupFactory) {
         this.routeDb = requireNonNull(routeDb);
         this.routingObjectFactory = requireNonNull(routingObjectFactory);
         this.environment = requireNonNull(environment);
         this.services = requireNonNull(services);
         this.plugins = requireNonNull(plugins);
+        this.eventLoopGroupFactory = requireNonNull(eventLoopGroupFactory);
     }
 
     @Override
@@ -87,7 +90,7 @@ public final class StyxPipelineFactory implements PipelineFactory {
                 })
                 .orElseGet(() -> {
                     Registry<BackendService> backendServicesRegistry = (Registry<BackendService>) services.get("backendServiceRegistry");
-                    return new StaticPipelineFactory(environment, backendServicesRegistry, plugins, requestTracking);
+                    return new StaticPipelineFactory(environment, backendServicesRegistry, plugins, eventLoopGroupFactory, requestTracking);
                 });
 
         return pipelineBuilder.build();

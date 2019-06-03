@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
+import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupFactory;
 import com.hotels.styx.client.ssl.SslContextFactory;
 import io.netty.handler.ssl.SslContext;
 import reactor.core.publisher.Mono;
@@ -339,7 +340,7 @@ public final class StyxHttpClient implements HttpClient {
          */
         public StyxHttpClient build() {
             NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder()
-                    .name(threadName)
+                    .eventLoopGroupFactory(new PlatformAwareClientEventLoopGroupFactory(threadName, 1))
                     .httpConfig(newHttpConfigBuilder().setMaxHeadersSize(maxHeaderSize).build())
                     .tlsSettings(tlsSettings)
                     .httpRequestOperationFactory(request -> new HttpRequestOperation(

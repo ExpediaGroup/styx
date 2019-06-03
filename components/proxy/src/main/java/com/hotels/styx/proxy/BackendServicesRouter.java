@@ -26,6 +26,7 @@ import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.api.extension.service.HealthCheckConfig;
+import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.client.Connection;
@@ -42,6 +43,7 @@ import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitorFactory;
 import com.hotels.styx.client.healthcheck.UrlRequestHealthCheck;
+import com.hotels.styx.client.netty.ClientEventLoopFactory;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.server.HttpRouter;
 import org.slf4j.Logger;
@@ -67,16 +69,17 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
 
     private final BackendServiceClientFactory clientFactory;
     private final Environment environment;
+    private final ClientEventLoopFactory eventLoopGroupFactory;
     private final ConcurrentMap<String, ProxyToClientPipeline> routes;
-    private final int clientWorkerThreadsCount;
 
-    public BackendServicesRouter(BackendServiceClientFactory clientFactory, Environment environment) {
+    public BackendServicesRouter(BackendServiceClientFactory clientFactory, Environment environment, ClientEventLoopFactory eventLoopGroupFactory) {
         this.clientFactory = requireNonNull(clientFactory);
-        this.environment = environment;
+        this.environment = requireNonNull(environment);
+        this.eventLoopGroupFactory = requireNonNull(eventLoopGroupFactory);
+
         this.routes = new ConcurrentSkipListMap<>(
                 comparingInt(String::length).reversed()
                         .thenComparing(naturalOrder()));
-        this.clientWorkerThreadsCount = environment.styxConfig().proxyServerConfig().clientWorkerThreadsCount();
     }
 
     ConcurrentMap<String, ProxyToClientPipeline> routes() {
@@ -115,7 +118,9 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
             ConnectionPoolSettings poolSettings = backendService.connectionPoolConfig();
 
             Connection.Factory connectionFactory = connectionFactory(
-                    backendService,
+                    eventLoopGroupFactory,
+                    backendService.responseTimeoutMillis(),
+                    backendService.tlsSettings().orElse(null),
                     requestLoggingEnabled,
                     longFormat,
                     originStatsFactory,
@@ -179,25 +184,26 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
     }
 
     private Connection.Factory connectionFactory(
-            BackendService backendService,
+            ClientEventLoopFactory eventLoopGroupFactory,
+            int responseTimeoutMillis,
+            TlsSettings tlsSettings,
             boolean requestLoggingEnabled,
             boolean longFormat,
             OriginStatsFactory originStatsFactory,
             long connectionExpiration) {
 
         Connection.Factory factory = new NettyConnectionFactory.Builder()
-                .name("Styx")
+                .eventLoopGroupFactory(eventLoopGroupFactory)
                 .httpRequestOperationFactory(
                         httpRequestOperationFactoryBuilder()
                                 .flowControlEnabled(true)
                                 .originStatsFactory(originStatsFactory)
-                                .responseTimeoutMillis(backendService.responseTimeoutMillis())
+                                .responseTimeoutMillis(responseTimeoutMillis)
                                 .requestLoggingEnabled(requestLoggingEnabled)
                                 .longFormat(longFormat)
                                 .build()
                 )
-                .clientWorkerThreadsCount(clientWorkerThreadsCount)
-                .tlsSettings(backendService.tlsSettings().orElse(null))
+                .tlsSettings(tlsSettings)
                 .build();
 
         if (connectionExpiration > 0) {

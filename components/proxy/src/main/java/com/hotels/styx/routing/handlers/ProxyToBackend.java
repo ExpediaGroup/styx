@@ -32,6 +32,7 @@ import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.client.connectionpool.ExpiringConnectionFactory;
 import com.hotels.styx.client.connectionpool.SimpleConnectionPoolFactory;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
+import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupFactory;
 import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
@@ -95,7 +96,7 @@ public class ProxyToBackend implements RoutingObject {
             OriginStatsFactory originStatsFactory = new CachingOriginStatsFactory(context.environment().metricRegistry());
 
             Connection.Factory connectionFactory = new NettyConnectionFactory.Builder()
-                    .name("Styx")
+                    .eventLoopGroupFactory(new PlatformAwareClientEventLoopGroupFactory("Styx", clientWorkerThreadsCount))
                     .httpRequestOperationFactory(
                             httpRequestOperationFactoryBuilder()
                                     .flowControlEnabled(true)
@@ -104,7 +105,6 @@ public class ProxyToBackend implements RoutingObject {
                                     .responseTimeoutMillis(backendService.responseTimeoutMillis())
                                     .longFormat(longFormat)
                                     .build())
-                    .clientWorkerThreadsCount(clientWorkerThreadsCount)
                     .tlsSettings(backendService.tlsSettings().orElse(null))
                     .build();
 

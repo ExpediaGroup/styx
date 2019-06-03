@@ -23,6 +23,7 @@ import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
+import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupFactory;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.BackendServicesRouter;
@@ -47,8 +48,11 @@ public class BackendServiceProxy implements RoutingObject {
 
     private final RouteHandlerAdapter handler;
 
-    private BackendServiceProxy(BackendServiceClientFactory serviceClientFactory, Registry<BackendService> registry, Environment environment) {
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
+    private BackendServiceProxy(
+            BackendServiceClientFactory serviceClientFactory,
+            Registry<BackendService> registry, Environment environment,
+            PlatformAwareClientEventLoopGroupFactory eventLoopGroupFactory) {
+        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment, eventLoopGroupFactory);
         registry.addListener(router);
         handler = new RouteHandlerAdapter(router);
     }
@@ -96,7 +100,7 @@ public class BackendServiceProxy implements RoutingObject {
                                 join(".", append(parents, "backendProvider")), provider));
             }
 
-            return new BackendServiceProxy(serviceClientFactory, registry, environment);
+            return new BackendServiceProxy(serviceClientFactory, registry, environment, new PlatformAwareClientEventLoopGroupFactory("BackendServiceProxy", 0));
         }
     }
 

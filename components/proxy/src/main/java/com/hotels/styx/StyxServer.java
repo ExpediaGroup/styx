@@ -150,7 +150,8 @@ public final class StyxServer extends AbstractService {
                         components.routingObjectFactory(),
                         components.environment(),
                         components.services(),
-                        components.plugins()));
+                        components.plugins(),
+                        components.eventLoopGroupFactory()));
 
         this.proxyServer = proxyServerSetUp.createProxyServer(components);
         this.adminServer = createAdminServer(components);

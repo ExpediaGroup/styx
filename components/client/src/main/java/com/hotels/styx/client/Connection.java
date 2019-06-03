@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import rx.Observable;
 
 import java.io.Closeable;
 import java.util.EventListener;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * A connection to an origin.
@@ -41,6 +42,10 @@ public interface Connection extends Closeable {
          * @return the newly created connection
          */
         Mono<Connection> createConnection(Origin origin, ConnectionSettings connectionSettings);
+
+        default CompletableFuture<Void> close() {
+            return CompletableFuture.completedFuture(null);
+        }
     }
 
     /**

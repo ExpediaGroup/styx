@@ -23,9 +23,9 @@ import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
 import com.hotels.styx.client.HttpConfig;
 import com.hotels.styx.client.HttpRequestOperationFactory;
+import com.hotels.styx.client.netty.ClientEventLoopFactory;
 import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupFactory;
 import com.hotels.styx.client.ssl.SslContextFactory;
-import com.hotels.styx.common.CompletableFutures;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
@@ -40,16 +40,24 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.hotels.styx.client.HttpConfig.defaultHttpConfig;
 import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
+import static com.hotels.styx.common.CompletableFutures.fromNettyFuture;
 import static io.netty.channel.ChannelOption.ALLOCATOR;
 import static io.netty.channel.ChannelOption.CONNECT_TIMEOUT_MILLIS;
 import static io.netty.channel.ChannelOption.SO_KEEPALIVE;
 import static io.netty.channel.ChannelOption.TCP_NODELAY;
 import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
  * A connection factory that creates connections using netty.
  */
 public class NettyConnectionFactory implements Connection.Factory {
+    private static final PlatformAwareClientEventLoopGroupFactory FACTORY = new PlatformAwareClientEventLoopGroupFactory(
+            "Styx-Client-Global",
+            0);
+    private static final Class<? extends Channel> GLOBAL_CLIENT_EVENT_LOOP_CLASS = FACTORY.clientSocketChannelClass();
+    private static final EventLoopGroup GLOBAL_CLIENT_EVENT_LOOP = FACTORY.newClientWorkerEventLoopGroup();
+
     private final HttpConfig httpConfig;
     private final SslContext sslContext;
     private final boolean sendSni;
@@ -60,14 +68,16 @@ public class NettyConnectionFactory implements Connection.Factory {
     private Class<? extends Channel> clientSocketChannelClass;
 
     private NettyConnectionFactory(Builder builder) {
-        PlatformAwareClientEventLoopGroupFactory eventLoopGroupFactory = new PlatformAwareClientEventLoopGroupFactory(
-                builder.name,
-                builder.clientWorkerThreadsCount
-        );
-        this.eventLoopGroup = eventLoopGroupFactory.newClientWorkerEventLoopGroup();
+        this.clientSocketChannelClass = builder.eventLoopGroupFactory != null
+                ? builder.eventLoopGroupFactory.clientSocketChannelClass()
+                : GLOBAL_CLIENT_EVENT_LOOP_CLASS;
+
+        this.eventLoopGroup = builder.eventLoopGroupFactory != null
+                ? builder.eventLoopGroupFactory.newClientWorkerEventLoopGroup()
+                : GLOBAL_CLIENT_EVENT_LOOP;
+
         this.httpConfig = requireNonNull(builder.httpConfig);
         this.sslContext = builder.tlsSettings == null ? null : SslContextFactory.get(builder.tlsSettings);
-        this.clientSocketChannelClass = eventLoopGroupFactory.clientSocketChannelClass();
         this.httpRequestOperationFactory = requireNonNull(builder.httpRequestOperationFactory);
         this.sendSni = builder.tlsSettings != null && builder.tlsSettings.sendSni();
         this.sniHost = builder.tlsSettings != null ? builder.tlsSettings.sniHost() : Optional.empty();
@@ -93,6 +103,15 @@ public class NettyConnectionFactory implements Connection.Factory {
         });
     }
 
+    @Override
+    public CompletableFuture<Void> close() {
+        if (eventLoopGroup == GLOBAL_CLIENT_EVENT_LOOP) {
+            return completedFuture(null);
+        }
+
+        return fromNettyFuture(eventLoopGroup.shutdownGracefully());
+    }
+
     private ChannelFuture openConnection(Origin origin, ConnectionSettings connectionSettings) {
         bootstrap(connectionSettings);
         return bootstrap.connect(origin.host(), origin.port());
@@ -114,10 +133,6 @@ public class NettyConnectionFactory implements Connection.Factory {
         }
     }
 
-    public CompletableFuture<Void> close() {
-        return CompletableFutures.fromNettyFuture(eventLoopGroup.shutdownGracefully());
-    }
-
     private class Initializer extends ChannelInitializer<Channel> {
         @Override
         protected void initChannel(Channel ch) {
@@ -129,30 +144,12 @@ public class NettyConnectionFactory implements Connection.Factory {
      */
     public static final class Builder {
         private HttpRequestOperationFactory httpRequestOperationFactory = httpRequestOperationFactoryBuilder().build();
-        private String name = "Styx-Client";
-        private int clientWorkerThreadsCount = 1;
         private HttpConfig httpConfig = defaultHttpConfig();
         private TlsSettings tlsSettings;
+        private ClientEventLoopFactory eventLoopGroupFactory;
 
-        /**
-         * Sets the name.
-         *
-         * @param name name
-         * @return this builder
-         */
-        public Builder name(String name) {
-            this.name = requireNonNull(name);
-            return this;
-        }
-
-        /**
-         * Sets number of client worker threads.
-         *
-         * @param clientWorkerThreadsCount number of client worker threads
-         * @return this builder
-         */
-        public Builder clientWorkerThreadsCount(int clientWorkerThreadsCount) {
-            this.clientWorkerThreadsCount = clientWorkerThreadsCount;
+        public Builder eventLoopGroupFactory(ClientEventLoopFactory eventLoopGroupFactory) {
+            this.eventLoopGroupFactory = eventLoopGroupFactory;
             return this;
         }
 
