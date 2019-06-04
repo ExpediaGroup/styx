@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.testng.annotations.Test;
 import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import reactor.test.publisher.TestPublisher;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -763,4 +764,75 @@ public class SimpleConnectionPoolTest {
 
         assertEquals(pool.stats().availableConnectionCount(), 0);
     }
+
+    @Test
+    public void tracksConnectionsInEstablishment() {
+        TestPublisher<Connection> pub1 = TestPublisher.create();
+        TestPublisher<Connection> pub2 = TestPublisher.create();
+        TestPublisher<Connection> pub3 = TestPublisher.create();
+        TestPublisher<Connection> pub4 = TestPublisher.create();
+
+        when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
+                .thenReturn(pub1.mono())
+                .thenReturn(pub2.mono())
+                .thenReturn(pub3.mono())
+                .thenReturn(pub4.mono());
+
+        SimpleConnectionPool pool = new SimpleConnectionPool(
+                origin,
+                new ConnectionPoolSettings.Builder(defaultConnectionPoolSettings())
+                        .maxConnectionsPerHost(2)
+                        .build(),
+                connectionFactory);
+
+        CompletableFuture<Connection> f1 = Mono.from(pool.borrowConnection()).toFuture();
+        CompletableFuture<Connection> f2 = Mono.from(pool.borrowConnection()).toFuture();
+        CompletableFuture<Connection> f3 = Mono.from(pool.borrowConnection()).toFuture();
+        CompletableFuture<Connection> f4 = Mono.from(pool.borrowConnection()).toFuture();
+
+        pub1.emit(connection1);
+        pub2.emit(connection2);
+        pub3.emit(connection3);
+        pub4.emit(connection4);
+
+        assertTrue(f1.isDone());
+        assertTrue(f2.isDone());
+        assertFalse(f3.isDone());
+        assertFalse(f4.isDone());
+    }
+
+    @Test
+    public void ensureInEstablishmentCountIsDecrementedInError() throws InterruptedException {
+        when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
+                .thenReturn(Mono.error(new RuntimeException("First attempt: connection 1")))
+                .thenReturn(Mono.error(new RuntimeException("Second attempt: connection 1")))
+                .thenReturn(Mono.error(new RuntimeException("Third attempt: connection 1")))
+                .thenReturn(Mono.error(new RuntimeException("First attempt: connection 2")))
+                .thenReturn(Mono.error(new RuntimeException("Second attempt: connection 2")))
+                .thenReturn(Mono.error(new RuntimeException("Third attempt: connection 2")))
+                .thenReturn(Mono.just(connection3));
+
+        SimpleConnectionPool pool = new SimpleConnectionPool(
+                origin,
+                new ConnectionPoolSettings.Builder(defaultConnectionPoolSettings())
+                        .maxConnectionsPerHost(2)
+                        .pendingConnectionTimeout(50, MILLISECONDS)
+                        .build(),
+                connectionFactory);
+
+        StepVerifier.create(pool.borrowConnection())
+                .expectError()
+                .verify();
+
+        StepVerifier.create(pool.borrowConnection())
+                .expectError()
+                .verify();
+
+        // This will fail if `connectionsInEstablishment` count is not decremented after
+        // connection establishment errors:
+        StepVerifier.create(pool.borrowConnection())
+                .expectNext(connection3)
+                .verifyComplete();
+    }
+
 }

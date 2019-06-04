@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -54,6 +54,7 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
     private final AtomicInteger closedConnections = new AtomicInteger();
     private final AtomicInteger terminatedConnections = new AtomicInteger();
     private final AtomicInteger connectionFailures = new AtomicInteger();
+    private final AtomicInteger connectionsInEstablishment = new AtomicInteger();
 
 
     public SimpleConnectionPool(Origin origin, ConnectionPoolSettings poolSettings, Connection.Factory connectionFactory) {
@@ -88,7 +89,10 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
                             poolSettings.maxPendingConnectionsPerHost()));
                 } else {
                     this.waitingSubscribers.add(sink.onCancel(() -> waitingSubscribers.remove(sink)));
-                    if (borrowedCount.get() < poolSettings.maxConnectionsPerHost()) {
+                    int borrowed = borrowedCount.get();
+                    int inEstablishment = connectionsInEstablishment.getAndIncrement();
+
+                    if ((borrowed + inEstablishment) < poolSettings.maxConnectionsPerHost()) {
                         newConnection();
                     }
                 }
@@ -103,8 +107,14 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
         newConnection(3)
                 .doOnNext(it -> it.addConnectionListener(SimpleConnectionPool.this))
                 .subscribe(
-                        this::queueNewConnection,
-                        cause -> connectionFailures.incrementAndGet()
+                        connection -> {
+                            connectionsInEstablishment.decrementAndGet();
+                            this.queueNewConnection(connection);
+                        },
+                        cause -> {
+                            connectionsInEstablishment.decrementAndGet();
+                            connectionFailures.incrementAndGet();
+                        }
                 );
     }
 
