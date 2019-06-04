@@ -51,7 +51,25 @@ class OriginResourcesSpec : StringSpec() {
 
 
     init {
-        "Cleans up threads after use" {
+        "Client thread pool configuration" {
+            val clientThreadCount = run {
+                writeConfig(styxOriginsFile,
+                        "---\n" + (1..count)
+                                .map { appDeclaration("aaa-$it") }
+                                .joinToString("\n"))
+
+                eventually(2.seconds, AssertionError::class.java) {
+                    (1..count).all { configurationApplied("/aaa-$it") }.shouldBeTrue()
+                }
+
+                threadCount("Styx-Client-Worker")
+            }
+
+            // From the static configuration below
+            clientThreadCount shouldBe 3
+        }
+
+        "Uses the same thread pool for reloaded origins" {
 
             val threadCountBefore = run {
                 writeConfig(styxOriginsFile,
@@ -114,6 +132,7 @@ class OriginResourcesSpec : StringSpec() {
           connectors:
             http:
               port: 0
+          clientWorkerThreadsCount: 3
 
         admin:
           connectors:
