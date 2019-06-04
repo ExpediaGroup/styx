@@ -57,7 +57,8 @@ services:
   factories:
     backendServiceRegistry:
       class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry$Factory"
-      config: {originsFile: "${originsFile:classpath:conf/origins.yml}"}
+      config:
+        originsFile: "${originsFile:classpath:conf/origins.yml}"
 #    graphite:
 #      enabled: false
 #      class: "com.hotels.styx.metrics.reporting.graphite.GraphiteReporterServiceFactory"
@@ -82,9 +83,9 @@ loadBalancing:
     factory: {class: "com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy$Factory"}
 
 # Allow and Encode the list of unwise chars.
-url:
-  encoding:
-    unwiseCharactersToEncode:
+#url:
+#  encoding:
+#    unwiseCharactersToEncode: ""
 
 #originRestrictionCookie: yourCookieNameHere
 

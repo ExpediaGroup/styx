@@ -11,4 +11,8 @@ proxy:
       cipherSuites:
         - TLS_RSA_WITH_AES_128_GCM_SHA256
 
-originsFile: ${STYX_HOME:classpath:}/conf/env-development/origins.yml
+services:
+  factories:
+    backendServiceRegistry:
+      config:
+        originsFile: ${STYX_HOME:classpath:}/conf/env-development/origins.yml
