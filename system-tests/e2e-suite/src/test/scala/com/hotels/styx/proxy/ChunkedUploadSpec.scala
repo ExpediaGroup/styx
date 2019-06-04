@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,11 +24,11 @@ import com.google.common.base.Charsets._
 import com.google.common.net.HostAndPort
 import com.hotels.styx.api.extension.Origin.newOriginBuilder
 import com.hotels.styx.common.FreePorts._
+import com.hotels.styx.common.http.handler.HttpAggregator
 import com.hotels.styx.server.HttpServers.createHttpServer
 import com.hotels.styx.support.TestClientSupport
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, ProxyConfig, StyxConfig}
 import com.hotels.styx.support.backends.FakeHttpServer
-import com.hotels.styx.utils.HttpTestClient
 import com.hotels.styx.utils.handlers.ContentDigestHandler
 import com.hotels.styx.{StyxClientSupplier, StyxProxySpec}
 import io.netty.buffer.Unpooled
@@ -325,7 +325,7 @@ class ChunkedUploadSpec extends FunSpec
   def originAndWebServer(appId: String, originId: String) = {
     val serverPort = freePort()
     val origin = newOriginBuilder("localhost", serverPort).applicationId("app").id("app1").build()
-    val server = createHttpServer(serverPort, new ContentDigestHandler(origin))
+    val server = createHttpServer(serverPort, new HttpAggregator(new ContentDigestHandler(origin)))
     server.startAsync().awaitRunning()
 
     origin -> server

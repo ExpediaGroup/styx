@@ -21,6 +21,7 @@ import com.hotels.styx.api.HttpHandler
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpResponse
 import com.hotels.styx.api.HttpResponseStatus.OK
+import com.hotels.styx.api.WebServiceHandler
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.proxy.plugin.NamedPlugin
 import com.hotels.styx.routing.config.BuiltinInterceptorsFactory
@@ -49,6 +50,8 @@ data class RoutingContext(
     fun get() = HttpHandlerFactory.Context(environment, routeDb, factory, plugins, builtinInterceptorsFactory, requestTracking)
 
 }
+
+fun WebServiceHandler.handle(request: HttpRequest) = this.handle(request, HttpInterceptorContext.create())
 
 fun HttpHandler.handle(request: HttpRequest, count: Int = 10000) = this.handle(request.stream(), HttpInterceptorContext.create())
         .flatMap { it.aggregate(count) }

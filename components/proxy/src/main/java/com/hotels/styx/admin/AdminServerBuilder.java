@@ -40,10 +40,13 @@ import com.hotels.styx.admin.handlers.VersionTextHandler;
 import com.hotels.styx.admin.tasks.OriginsCommandHandler;
 import com.hotels.styx.admin.tasks.OriginsReloadCommandHandler;
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.WebServiceHandler;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
+import com.hotels.styx.common.http.handler.HttpAggregator;
 import com.hotels.styx.common.http.handler.HttpMethodFilteringHandler;
+import com.hotels.styx.common.http.handler.HttpStreamer;
 import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingObjectRecord;
@@ -80,6 +83,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public class AdminServerBuilder {
     private static final Logger LOG = getLogger(AdminServerBuilder.class);
+    private static final int MEGABYTE = 1024 * 1024;
 
     private final Environment environment;
     private final Configuration configuration;
@@ -107,11 +111,11 @@ public class AdminServerBuilder {
 
         return new NettyServerBuilderSpec("Admin", environment.serverEnvironment(), new WebServerConnectorFactory())
                 .toNettyServerBuilder(adminServerConfig)
-                .handlerFactory(() -> adminEndpoints(styxConfig))
+                .handlerFactory(() -> new HttpAggregator(adminEndpoints(styxConfig)))
                 .build();
     }
 
-    private StandardHttpRouter adminEndpoints(StyxConfig styxConfig) {
+    private WebServiceHandler adminEndpoints(StyxConfig styxConfig) {
         Optional<Duration> metricsCacheExpiration = styxConfig.adminServerConfig().metricsCacheExpiration();
 
         StandardHttpRouter httpRouter = new StandardHttpRouter();
@@ -188,7 +192,7 @@ public class AdminServerBuilder {
                 .map(PluginAdminEndpointRoute::link)
                 .collect(toList());
 
-        HttpHandler handler = endpointLinks.isEmpty()
+        WebServiceHandler handler = endpointLinks.isEmpty()
                 ? new StaticBodyHttpHandler(HTML_UTF_8, format("This plugin (%s) does not expose any admin interfaces", namedPlugin.name()))
                 : new IndexHandler(endpointLinks);
 
@@ -212,7 +216,7 @@ public class AdminServerBuilder {
         Map<String, HttpHandler> adminInterfaceHandlers = namedPlugin.adminInterfaceHandlers();
 
         return mapToList(adminInterfaceHandlers, (relativePath, handler) ->
-                new PluginAdminEndpointRoute(namedPlugin, relativePath, handler));
+                new PluginAdminEndpointRoute(namedPlugin, relativePath, new HttpStreamer(MEGABYTE, handler)));
     }
 
     // allows key and value to be labelled in lambda instead of having to use Entry.getKey, Entry.getValue
@@ -224,9 +228,9 @@ public class AdminServerBuilder {
 
     private static class Route {
         private final String path;
-        private final HttpHandler handler;
+        private final WebServiceHandler handler;
 
-        Route(String path, HttpHandler handler) {
+        Route(String path, WebServiceHandler handler) {
             this.path = path;
             this.handler = handler;
         }
@@ -235,7 +239,7 @@ public class AdminServerBuilder {
             return path;
         }
 
-        HttpHandler handler() {
+        WebServiceHandler handler() {
             return handler;
         }
     }
@@ -243,7 +247,7 @@ public class AdminServerBuilder {
     private static class PluginAdminEndpointRoute extends Route {
         private final NamedPlugin namedPlugin;
 
-        PluginAdminEndpointRoute(NamedPlugin namedPlugin, String relativePath, HttpHandler handler) {
+        PluginAdminEndpointRoute(NamedPlugin namedPlugin, String relativePath, WebServiceHandler handler) {
             super(pluginAdminEndpointPath(namedPlugin, relativePath), handler);
 
             this.namedPlugin = namedPlugin;

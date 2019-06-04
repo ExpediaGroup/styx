@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,8 +21,9 @@ import com.hotels.styx.admin.CachingSupplier;
 import com.hotels.styx.admin.dashboard.JsonSupplier;
 import com.hotels.styx.admin.handlers.json.JsonReformatter;
 import com.hotels.styx.api.Clock;
-import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.common.http.handler.BaseHttpHandler;
 import org.slf4j.Logger;
 
@@ -32,8 +33,8 @@ import java.util.function.Supplier;
 
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.hotels.styx.api.Clocks.systemClock;
-import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -88,7 +89,7 @@ public class JsonHandler<E> extends BaseHttpHandler {
     }
 
     @Override
-    protected LiveHttpResponse doHandle(LiveHttpRequest request) {
+    protected HttpResponse doHandle(HttpRequest request, HttpInterceptor.Context context) {
         try {
             String jsonContent = jsonSupplier(request).get();
 
@@ -96,18 +97,16 @@ public class JsonHandler<E> extends BaseHttpHandler {
                     .disableCaching()
                     .addHeader(CONTENT_TYPE, JSON_UTF_8.toString())
                     .body(jsonContent, UTF_8)
-                    .build()
-                    .stream();
+                    .build();
 
         } catch (Exception e) {
             return response(INTERNAL_SERVER_ERROR)
                     .body(e.getMessage(), UTF_8)
-                    .build()
-                    .stream();
+                    .build();
         }
     }
 
-    private Supplier<String> jsonSupplier(LiveHttpRequest request) {
+    private Supplier<String> jsonSupplier(HttpRequest request) {
         if (request.queryParam("reformat").isPresent()) {
             return reformatSupplier;
         }

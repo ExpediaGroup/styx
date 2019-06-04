@@ -17,11 +17,11 @@ package com.hotels.styx.admin.handlers;
 
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpMethod;
-import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.WebServiceHandler;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -35,16 +35,16 @@ import static com.hotels.styx.api.HttpMethod.DELETE;
 import static com.hotels.styx.api.HttpMethod.GET;
 import static com.hotels.styx.api.HttpMethod.POST;
 import static com.hotels.styx.api.HttpMethod.PUT;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
-import static com.hotels.styx.api.LiveHttpResponse.response;
 import static java.util.stream.Collectors.toMap;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * A configurable router.
  */
-public class UrlPatternRouter implements HttpHandler {
+public class UrlPatternRouter implements WebServiceHandler {
     private static final Logger LOGGER = getLogger(UrlPatternRouter.class);
     private static final String PLACEHOLDERS_KEY = "UrlRouter.placeholders";
     private final List<RouteDescriptor> alternatives;
@@ -58,7 +58,7 @@ public class UrlPatternRouter implements HttpHandler {
     }
 
     @Override
-    public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
+    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         for (RouteDescriptor route : alternatives) {
             if (request.method().equals(route.method())) {
                 Matcher match = route.uriPattern().matcher(request.path());
@@ -91,22 +91,22 @@ public class UrlPatternRouter implements HttpHandler {
     public static class Builder {
         private final List<RouteDescriptor> alternatives = new LinkedList<>();
 
-        public Builder get(String uriPattern, HttpHandler handler) {
+        public Builder get(String uriPattern, WebServiceHandler handler) {
             alternatives.add(new RouteDescriptor(GET, uriPattern, handler));
             return this;
         }
 
-        public Builder post(String uriPattern, HttpHandler handler) {
+        public Builder post(String uriPattern, WebServiceHandler handler) {
             alternatives.add(new RouteDescriptor(POST, uriPattern, handler));
             return this;
         }
 
-        public Builder put(String uriPattern, HttpHandler handler) {
+        public Builder put(String uriPattern, WebServiceHandler handler) {
             alternatives.add(new RouteDescriptor(PUT, uriPattern, handler));
             return this;
         }
 
-        public Builder delete(String uriPattern, HttpHandler handler) {
+        public Builder delete(String uriPattern, WebServiceHandler handler) {
             alternatives.add(new RouteDescriptor(DELETE, uriPattern, handler));
             return this;
         }
@@ -121,10 +121,10 @@ public class UrlPatternRouter implements HttpHandler {
 
         private final HttpMethod method;
         private final Pattern uriPattern;
-        private final HttpHandler handler;
+        private final WebServiceHandler handler;
         private final List<String> placeholderNames;
 
-        public RouteDescriptor(HttpMethod method, String uriPattern, HttpHandler handler) {
+        public RouteDescriptor(HttpMethod method, String uriPattern, WebServiceHandler handler) {
             this.method = method;
             this.handler = handler;
             this.placeholderNames = placeholders(uriPattern);
@@ -139,7 +139,7 @@ public class UrlPatternRouter implements HttpHandler {
             return uriPattern;
         }
 
-        public HttpHandler handler() {
+        public WebServiceHandler handler() {
             return handler;
         }
 

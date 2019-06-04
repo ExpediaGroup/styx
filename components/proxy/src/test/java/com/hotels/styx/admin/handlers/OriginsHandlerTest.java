@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,19 +24,19 @@ import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.google.common.net.MediaType.JSON_UTF_8;
-import static com.hotels.styx.api.LiveHttpRequest.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.applications.BackendServices.newBackendServices;
 import static com.hotels.styx.applications.yaml.YamlApplicationsProvider.loadFromPath;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
-import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -54,7 +54,7 @@ public class OriginsHandlerTest {
         Iterable<BackendService> expected = loadFromPath(originsFile).get();
 
         withOriginsHandler(originsFile, handler -> {
-            HttpResponse response = waitForResponse(handler.handle(get("/admin/configuration/origins").build(), HttpInterceptorContext.create()));
+            HttpResponse response = Mono.from(handler.handle(get("/admin/configuration/origins").build(), HttpInterceptorContext.create())).block();
 
             assertThat(response.status(), is(OK));
             assertThat(response.contentType(), isValue(JSON_UTF_8.toString()));
@@ -70,7 +70,7 @@ public class OriginsHandlerTest {
         Registry<BackendService> backendServicesRegistry = new MemoryBackedRegistry<>();
         OriginsHandler handler = new OriginsHandler(backendServicesRegistry);
 
-        HttpResponse response = waitForResponse(handler.handle(get("/admin/configuration/origins").build(), HttpInterceptorContext.create()));
+        HttpResponse response = Mono.from(handler.handle(get("/admin/configuration/origins").build(), HttpInterceptorContext.create())).block();
 
         assertThat(response.status(), is(OK));
         assertThat(response.contentType(), isValue(JSON_UTF_8.toString()));
@@ -85,7 +85,7 @@ public class OriginsHandlerTest {
         Iterable<BackendService> expected = loadFromPath(originsFile).get();
 
         withOriginsHandler(originsFile, handler -> {
-            HttpResponse response = waitForResponse(handler.handle(get("/admin/configuration/origins").build(), HttpInterceptorContext.create()));
+            HttpResponse response = Mono.from(handler.handle(get("/admin/configuration/origins").build(), HttpInterceptorContext.create())).block();
 
             assertThat(response.status(), is(OK));
             assertThat(response.contentType(), isValue(JSON_UTF_8.toString()));

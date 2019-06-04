@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@ package com.hotels.styx.admin.handlers;
 
 import com.google.common.net.MediaType;
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Resource;
+import com.hotels.styx.api.WebServiceHandler;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -42,7 +42,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Displays contents of logging configuration file.
  */
-public class LoggingConfigurationHandler implements HttpHandler {
+public class LoggingConfigurationHandler implements WebServiceHandler {
     private static final Logger LOG = getLogger(LoggingConfigurationHandler.class);
 
     private final Resource logConfigLocation;
@@ -54,19 +54,18 @@ public class LoggingConfigurationHandler implements HttpHandler {
     }
 
     @Override
-    public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
+    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         return Eventual.of(generateResponse());
     }
 
-    private LiveHttpResponse generateResponse() {
+    private HttpResponse generateResponse() {
         Content content = contentSupplier.get();
 
         return response(OK)
                 .header(CONTENT_TYPE, content.type)
                 .header(CONTENT_LENGTH, content.length)
                 .body(content.content, UTF_8)
-                .build()
-                .stream();
+                .build();
     }
 
     private Content loadContent() {

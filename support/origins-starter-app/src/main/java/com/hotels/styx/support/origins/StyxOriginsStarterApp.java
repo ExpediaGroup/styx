@@ -19,15 +19,15 @@ package com.hotels.styx.support.origins;
 import com.hotels.styx.StartupConfig;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Resource;
-import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.configuration.Configuration;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.applications.BackendServices;
+import com.hotels.styx.common.http.handler.HttpAggregator;
 import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.ServerEventLoopFactory;
-import com.hotels.styx.server.StandardHttpRouter;
 import com.hotels.styx.server.netty.NettyServerBuilder;
 import com.hotels.styx.server.netty.WebServerConnectorFactory;
 import com.hotels.styx.server.netty.eventloop.PlatformAwareServerEventLoopFactory;
@@ -70,7 +70,7 @@ public class StyxOriginsStarterApp {
                 .name(origin.hostAndPortString())
                 .setServerEventLoopFactory(serverEventLoopFactory)
                 .setHttpConnector(new WebServerConnectorFactory().create(new HttpConnectorConfig(origin.port())))
-                .handlerFactory(() -> new StandardHttpRouter().add("/*", new AppHandler(origin)))
+                .handlerFactory(() -> new HttpAggregator(new AppHandler(origin)))
                 .build();
     }
 

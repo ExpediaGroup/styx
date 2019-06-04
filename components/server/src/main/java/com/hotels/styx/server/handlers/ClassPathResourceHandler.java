@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,14 +16,11 @@
 package com.hotels.styx.server.handlers;
 
 import com.google.common.io.ByteStreams;
-import com.hotels.styx.api.Buffer;
-import com.hotels.styx.api.ByteStream;
+import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.common.http.handler.BaseHttpHandler;
-import reactor.core.publisher.Flux;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -52,7 +49,7 @@ public class ClassPathResourceHandler extends BaseHttpHandler {
     }
 
     @Override
-    protected LiveHttpResponse doHandle(LiveHttpRequest request) {
+    protected HttpResponse doHandle(HttpRequest request, HttpInterceptor.Context context) {
         try {
             String path = request.path();
 
@@ -63,8 +60,7 @@ public class ClassPathResourceHandler extends BaseHttpHandler {
             return new HttpResponse.Builder(OK)
                     .body(resourceBody(path), true)
                     .header(CONTENT_TYPE, mediaTypeOf(path))
-                    .build()
-                    .stream();
+                    .build();
         } catch (FileNotFoundException e) {
             return error(NOT_FOUND);
         } catch (IOException e) {
@@ -78,9 +74,9 @@ public class ClassPathResourceHandler extends BaseHttpHandler {
         }
     }
 
-    private static LiveHttpResponse error(HttpResponseStatus status) {
-        return new LiveHttpResponse.Builder(status)
-                .body(new ByteStream(Flux.just(new Buffer(status.description(), UTF_8))))
+    private static HttpResponse error(HttpResponseStatus status) {
+        return new HttpResponse.Builder(status)
+                .body(status.description(), UTF_8)
                 .build();
     }
 

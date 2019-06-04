@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package com.hotels.styx.admin.handlers;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hotels.styx.api.Clock;
-import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 import reactor.core.publisher.Mono;
@@ -26,7 +26,7 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import static com.hotels.styx.api.LiveHttpRequest.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static java.lang.System.currentTimeMillis;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
@@ -86,7 +86,7 @@ public class JsonHandlerTest {
 
     @Test
     public void prettyPrintsOutputWhenPrettyIsSetToTrue() {
-        LiveHttpRequest request = get("/?pretty=true").build();
+        HttpRequest request = get("/?pretty=true").build();
 
         Supplier<Convertible> supplier = sequentialSupplier(new Convertible("foo", 456));
         JsonHandler<Convertible> handler = new JsonHandler<>(supplier, Optional.empty());
@@ -105,10 +105,9 @@ public class JsonHandlerTest {
         return responseFor(handler, get("/").build());
     }
 
-    private String responseFor(JsonHandler<?> handler, LiveHttpRequest request) {
+    private String responseFor(JsonHandler<?> handler, HttpRequest request) {
         return Mono.from(
                 handler.handle(request, HttpInterceptorContext.create())
-                        .flatMap(response -> response.aggregate(1000000))
                         .map(response -> response.bodyAs(UTF_8))
         ).block();
     }

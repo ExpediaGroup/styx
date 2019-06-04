@@ -22,9 +22,7 @@ import java.util.function.Supplier
 import com.google.common.util.concurrent.AbstractIdleService
 import com.hotels.styx.api._
 import com.hotels.styx.api.extension.Origin.newOriginBuilder
-import com.hotels.styx.common.FreePorts._
-import com.hotels.styx.common.http.handler.NotFoundHandler
-import com.hotels.styx.server.handlers.ReturnResponseHandler.returnsResponse
+import com.hotels.styx.common.http.handler.{HttpAggregator, NotFoundHandler}
 import com.hotels.styx.server.netty.{NettyServerBuilder, ServerConnector, WebServerConnectorFactory}
 import com.hotels.styx.server.{HttpConnectorConfig, HttpServer}
 
@@ -48,7 +46,7 @@ class MockServer(id: String, val port: Int) extends AbstractIdleService with Htt
     val routes = new ConcurrentHashMap[String, HttpHandler]()
 
     override def handle(request: LiveHttpRequest, context: HttpInterceptor.Context): Eventual[LiveHttpResponse] = {
-      val handler: HttpHandler = routes.getOrDefault(request.path(), new NotFoundHandler)
+      val handler: HttpHandler = routes.getOrDefault(request.path(), new HttpAggregator(new NotFoundHandler))
       handler.handle(request, context)
     }
 
@@ -71,7 +69,7 @@ class MockServer(id: String, val port: Int) extends AbstractIdleService with Htt
   }
 
   def stub(path: String, responseSupplier: Supplier[LiveHttpResponse]): MockServer = {
-    router.addRoute(path, requestRecordingHandler(requestQueue, returnsResponse(responseSupplier)))
+    router.addRoute(path, requestRecordingHandler(requestQueue, (request, context) => Eventual.of(responseSupplier.get())))
     this
   }
 

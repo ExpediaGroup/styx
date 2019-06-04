@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,11 +19,11 @@ import com.hotels.styx.StartupConfig;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Mono;
 
 import static com.hotels.styx.StartupConfig.newStartupConfigBuilder;
-import static com.hotels.styx.api.LiveHttpRequest.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
-import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -40,7 +40,7 @@ public class StartupConfigHandlerTest {
 
         StartupConfigHandler handler = new StartupConfigHandler(startupConfig);
 
-        HttpResponse response = waitForResponse(handler.handle(get("/").build(), HttpInterceptorContext.create()));
+        HttpResponse response = Mono.from(handler.handle(get("/").build(), HttpInterceptorContext.create())).block();
 
         assertThat(response.status(), is(OK));
         assertThat(response.bodyAs(UTF_8), matchesRegex("<html><body>" +

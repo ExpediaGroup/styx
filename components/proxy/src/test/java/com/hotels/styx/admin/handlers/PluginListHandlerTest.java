@@ -20,12 +20,12 @@ import com.hotels.styx.configstore.ConfigStore;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Mono;
 
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
-import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.plugins.spi.Plugin.PASS_THROUGH;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
-import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -50,7 +50,7 @@ public class PluginListHandlerTest {
 
         PluginListHandler handler = new PluginListHandler(configStore);
 
-        HttpResponse response = waitForResponse(handler.handle(get("/").build(), HttpInterceptorContext.create()));
+        HttpResponse response = Mono.from(handler.handle(get("/").build(), HttpInterceptorContext.create())).block();
 
         assertThat(response.status(), is(OK));
         assertThat(response.bodyAs(UTF_8), is("" +

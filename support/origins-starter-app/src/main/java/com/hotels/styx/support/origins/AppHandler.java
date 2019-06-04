@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,12 +16,11 @@
 package com.hotels.styx.support.origins;
 
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
-import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.WebServiceHandler;
 import com.hotels.styx.api.extension.Origin;
 
 import java.util.Optional;
@@ -36,7 +35,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.fill;
 import static java.util.UUID.randomUUID;
 
-public class AppHandler implements HttpHandler {
+public class AppHandler implements WebServiceHandler {
     private final Origin origin;
     private final HttpResponse standardResponse;
 
@@ -49,7 +48,7 @@ public class AppHandler implements HttpHandler {
     }
 
     @Override
-    public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
+    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         HttpResponse.Builder responseBuilder = standardResponse.newBuilder()
                 .headers(request.headers())
                 .header(STUB_ORIGIN_INFO, origin.applicationInfo());
@@ -63,8 +62,7 @@ public class AppHandler implements HttpHandler {
                         .map(length -> it.body(generateContent(parseInt(length)), UTF_8))
                         .orElse(it))
                 .orElse(responseBuilder)
-                .build()
-                .stream());
+                .build());
     }
 
     private static String makeAResponse(Origin origin) {

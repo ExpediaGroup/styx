@@ -17,12 +17,13 @@ package com.hotels.styx.proxy;
 
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Eventual;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.client.HttpClient;
-import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.client.StyxHttpClient;
+import com.hotels.styx.common.http.handler.HttpAggregator;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
 import com.hotels.styx.server.HttpConnectorConfig;
@@ -79,7 +80,10 @@ public class StyxProxyTest extends SSLSetup {
 
         HttpServer server = NettyServerBuilder.newBuilder()
                 .setHttpConnector(connector(0))
-                .handlerFactory(() -> new HttpInterceptorPipeline(ImmutableList.of(echoInterceptor), handler::handle, false))
+                .handlerFactory(() -> new HttpInterceptorPipeline(
+                        ImmutableList.of(echoInterceptor),
+                        (request, context) -> new HttpAggregator(new StandardHttpRouter()).handle(request, context),
+                        false))
                 .build();
         server.startAsync().awaitRunning();
         assertThat("Server should be running", server.isRunning());

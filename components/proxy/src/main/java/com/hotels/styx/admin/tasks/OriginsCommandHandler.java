@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,27 +19,28 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.extension.OriginsChangeListener;
 import com.hotels.styx.api.extension.OriginsSnapshot;
-import com.hotels.styx.common.http.handler.BaseHttpHandler;
 import com.hotels.styx.client.origincommands.DisableOrigin;
 import com.hotels.styx.client.origincommands.EnableOrigin;
 import com.hotels.styx.client.origincommands.GetOriginsInventorySnapshot;
+import com.hotels.styx.common.http.handler.BaseHttpHandler;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.LOCATION;
-import static com.hotels.styx.api.Id.id;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.TEMPORARY_REDIRECT;
+import static com.hotels.styx.api.Id.id;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -68,29 +69,26 @@ public class OriginsCommandHandler extends BaseHttpHandler implements OriginsCha
     }
 
     @Override
-    public LiveHttpResponse doHandle(LiveHttpRequest request) {
+    public HttpResponse doHandle(HttpRequest request, HttpInterceptor.Context context) {
         String cmd = request.queryParam("cmd").orElse("");
         String appId = request.queryParam("appId").orElse("");
         String originId = request.queryParam("originId").orElse("");
         if (!isValidCommand(cmd) || isNullOrEmpty(appId) || isNullOrEmpty(originId)) {
             return response(BAD_REQUEST)
                     .body(MISSING_ERROR_MESSAGE, UTF_8)
-                    .build()
-                    .stream();
+                    .build();
         }
 
         if (!originsInventorySnapshotMap.containsKey(id(appId))) {
             return response(BAD_REQUEST)
                     .body(format(INVALID_APP_ID_FORMAT, appId), UTF_8)
-                    .build()
-                    .stream();
+                    .build();
         }
 
         if (!validOriginId(id(appId), id(originId))) {
             return response(BAD_REQUEST)
                     .body(format(INVALID_ORIGIN_ID_FORMAT, originId, appId), UTF_8)
-                    .build()
-                    .stream();
+                    .build();
         }
 
         Object originCommand = newOriginCommand(cmd, id(appId), id(originId));
@@ -100,8 +98,7 @@ public class OriginsCommandHandler extends BaseHttpHandler implements OriginsCha
         return response(TEMPORARY_REDIRECT)
                 .header(LOCATION, "/admin/origins/status")
                 .header(CONTENT_LENGTH, 0)
-                .build()
-                .stream();
+                .build();
     }
 
     private boolean validOriginId(Id appId, Id originId) {

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,18 +18,19 @@ package com.hotels.styx.common.http.handler;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.WebServiceHandler;
 
 /**
  * This class provides a skeleton implementation of the {@link HttpHandler} interface, that can be used when no
  * complex {@link Eventual} mechanism is required.
  */
-public abstract class BaseHttpHandler implements HttpHandler {
+public abstract class BaseHttpHandler implements WebServiceHandler {
 
     @Override
-    public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
-        return Eventual.of(doHandle(request));
+    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+        return Eventual.of(doHandle(request, context));
     }
 
     /**
@@ -38,5 +39,5 @@ public abstract class BaseHttpHandler implements HttpHandler {
      * @param request request
      * @return response
      */
-    protected abstract LiveHttpResponse doHandle(LiveHttpRequest request);
+    protected abstract HttpResponse doHandle(HttpRequest request, HttpInterceptor.Context context);
 }

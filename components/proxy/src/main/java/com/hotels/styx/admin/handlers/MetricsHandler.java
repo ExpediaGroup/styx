@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,22 +18,22 @@ package com.hotels.styx.admin.handlers;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.json.MetricsModule;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.Eventual;
+import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.api.WebServiceHandler;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.infrastructure.configuration.json.mixins.CodaHaleMetricRegistryMixin;
 
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.BiPredicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -42,14 +42,13 @@ import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.common.MapStream.stream;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Handler for showing all registered metrics for styx server. Can cache page content.
  */
-public class MetricsHandler extends JsonHandler<MetricRegistry> {
+public class MetricsHandler implements WebServiceHandler {
     private static final Pattern SPECIFIC_METRICS_PATH_PATTERN = Pattern.compile(".*/metrics/(.+)/?");
     private static final boolean DO_NOT_SHOW_SAMPLES = false;
     private static final String FILTER_PARAM = "filter";
@@ -60,6 +59,7 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
             .addMixIn(CodaHaleMetricRegistry.class, CodaHaleMetricRegistryMixin.class);
 
     private final MetricRegistry metricRegistry;
+    private final UrlPatternRouter urlMatcher;
 
     /**
      * Constructs a new handler.
@@ -68,50 +68,55 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
      * @param cacheExpiration duration for which generated page content should be cached
      */
     public MetricsHandler(MetricRegistry metricRegistry, Optional<Duration> cacheExpiration) {
-        super(requireNonNull(metricRegistry), cacheExpiration,
-            new MetricsModule(SECONDS, MILLISECONDS, DO_NOT_SHOW_SAMPLES),
-            new FullMetricsModule());
+        this.urlMatcher = new UrlPatternRouter.Builder()
+                .get(".*/metrics", new RootMetricsHandler(
+                        metricRegistry,
+                        cacheExpiration,
+                        new MetricsModule(SECONDS, MILLISECONDS, DO_NOT_SHOW_SAMPLES),
+                        new FullMetricsModule()))
+                .get(".*/metrics/.*", (request, context) -> Eventual.of(filteredMetricResponse(request)))
+                .build();
 
         this.metricRegistry = metricRegistry;
     }
 
-    private static class FullMetricsModule extends SimpleModule {
-        FullMetricsModule() {
-            setMixInAnnotation(CodaHaleMetricRegistry.class, CodaHaleMetricRegistryMixin.class);
-        }
-    }
-
     @Override
-    public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
-        MetricRequest metricRequest = new MetricRequest(request);
-
-        return metricRequest.fullMetrics()
-                ? super.handle(request, context)
-                : Eventual.of(restrictedMetricsResponse(metricRequest).build().stream());
+    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+        return this.urlMatcher.handle(request, context);
     }
 
-    private HttpResponse.Builder restrictedMetricsResponse(MetricRequest request) {
-        Map<String, Metric> fullMetrics = metricRegistry.getMetrics();
-
-        Map<String, Metric> restricted = filter(fullMetrics, (name, metric) -> request.matchesRoot(name));
-
-        return restricted.isEmpty()
-                ? response(NOT_FOUND)
-                : search(request, restricted);
+    private static boolean matchesRoot(String metricName, String root) {
+        return root == null || metricName.equals(root) || metricName.startsWith(root + ".");
     }
 
-    private HttpResponse.Builder search(MetricRequest request, Map<String, Metric> metrics) {
-        Map<String, Metric> searched = filter(metrics, (name, metric) -> request.containsSearchTerm(name));
-
-        String body = serialise(searched, request.prettyPrint);
-
-        return response(OK)
-                .body(body, UTF_8)
-                .disableCaching();
+    private static boolean containsSearchTerm(String name, String searchTerm) {
+        return searchTerm == null || name.contains(searchTerm);
     }
 
-    private static <K, V> Map<K, V> filter(Map<K, V> map, BiPredicate<K, V> predicate) {
-        return stream(map).filter(predicate).toMap();
+    private HttpResponse filteredMetricResponse(HttpRequest request) {
+        String root = Optional.of(SPECIFIC_METRICS_PATH_PATTERN.matcher(request.path()))
+                .filter(Matcher::matches)
+                .map(matcher -> matcher.group(1))
+                .orElse(null);
+
+        boolean prettyPrint = request.queryParam(PRETTY_PRINT_PARAM).isPresent();
+        String searchTerm = request.queryParam(FILTER_PARAM).orElse(null);
+
+        Map<String, Metric> result = stream(metricRegistry.getMetrics())
+                .filter((name, metric) -> matchesRoot(name, root))
+                .toMap();
+
+        if (result.isEmpty()) {
+            return response(NOT_FOUND).build();
+        } else {
+            return response(OK)
+                    .body(serialise(
+                            stream(result)
+                                    .filter((name, metric) -> containsSearchTerm(name, searchTerm))
+                                    .toMap(), prettyPrint), UTF_8)
+                    .disableCaching()
+                    .build();
+        }
     }
 
     private String serialise(Object object, boolean pretty) {
@@ -124,35 +129,17 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
         }
     }
 
-    private static class MetricRequest {
-        private final String root;
-        private final String searchTerm;
-        private final boolean prettyPrint;
-        private final String prefix;
-
-        MetricRequest(LiveHttpRequest request) {
-            this.root = metricName(request.path()).orElse(null);
-            this.searchTerm = request.queryParam(FILTER_PARAM).orElse(null);
-            this.prettyPrint = request.queryParam(PRETTY_PRINT_PARAM).isPresent();
-            this.prefix = root + ".";
-        }
-
-        boolean fullMetrics() {
-            return root == null && searchTerm == null;
-        }
-
-        private static Optional<String> metricName(String path) {
-            return Optional.of(SPECIFIC_METRICS_PATH_PATTERN.matcher(path))
-                    .filter(Matcher::matches)
-                    .map(matcher -> matcher.group(1));
-        }
-
-        private boolean matchesRoot(String name) {
-            return root == null || name.equals(root) || name.startsWith(prefix);
-        }
-
-        private boolean containsSearchTerm(String name) {
-            return searchTerm == null || name.contains(searchTerm);
+    private static class RootMetricsHandler extends JsonHandler<MetricRegistry> {
+        public RootMetricsHandler(MetricRegistry data, Optional<Duration> cacheExpiration, Module... modules) {
+            super(data, cacheExpiration, modules);
         }
     }
+
+    private static class FullMetricsModule extends SimpleModule {
+        FullMetricsModule() {
+            setMixInAnnotation(CodaHaleMetricRegistry.class, CodaHaleMetricRegistryMixin.class);
+        }
+    }
+
+
 }

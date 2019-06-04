@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 package com.hotels.styx.admin.handlers;
 
 import com.codahale.metrics.Gauge;
-import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.hamcrest.Description;
@@ -33,10 +33,9 @@ import java.util.Optional;
 import static com.google.common.collect.Iterables.all;
 import static com.hotels.styx.admin.handlers.JVMMetricsHandlerTest.StringsContains.containsStrings;
 import static com.hotels.styx.api.HttpHeaderValues.APPLICATION_JSON;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
-import static com.hotels.styx.api.LiveHttpRequest.get;
-import static com.hotels.styx.support.api.matchers.HttpResponseBodyMatcher.hasBody;
-import static com.hotels.styx.support.api.matchers.HttpResponseStatusMatcher.hasStatus;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -66,30 +65,30 @@ public class JVMMetricsHandlerTest {
 
     @Test
     public void respondsToRequestWithJsonResponse() {
-        LiveHttpResponse response = call(get("/jvm").build());
-        assertThat(response, hasStatus(OK));
+        HttpResponse response = call(get("/jvm").build());
+        assertThat(response.status(), is(OK));
         assertThat(response.contentType().get(), is(APPLICATION_JSON.toString()));
     }
 
     @Test
     public void doesNotExposeIrrelevantMetrics() {
-        LiveHttpResponse response = call(get("/jvm").build());
-        assertThat(response, hasBody(not(containsString("irrelevant"))));
+        HttpResponse response = call(get("/jvm").build());
+        assertThat(response.bodyAs(UTF_8), is(not(containsString("irrelevant"))));
     }
 
     @Test
     public void exposesAllMetricsStartingWithJvm() {
-        LiveHttpResponse response = call(get("/jvm").build());
-        assertThat(response, hasBody(containsStrings(
+        HttpResponse response = call(get("/jvm").build());
+        assertThat(response.bodyAs(UTF_8), containsStrings(
                 "jvm.foo.gauge",
                 "jvm.bar.counter",
                 "jvm.baz.meter",
                 "jvm.hello.timer",
                 "jvm.world.histogram"
-        )));
+        ));
     }
 
-    private LiveHttpResponse call(LiveHttpRequest request) {
+    private HttpResponse call(HttpRequest request) {
         return Mono.from(handler.handle(request, HttpInterceptorContext.create())).block();
     }
 

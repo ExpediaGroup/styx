@@ -16,10 +16,10 @@
 package com.hotels.styx.admin.handlers;
 
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.WebServiceHandler;
 import com.hotels.styx.configstore.ConfigStore;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 
@@ -38,7 +38,7 @@ import static java.util.stream.Collectors.joining;
 /**
  * Returns a simple HTML page with a list of plugins, split into enabled and disabled.
  */
-public class PluginListHandler implements HttpHandler {
+public class PluginListHandler implements WebServiceHandler {
     private final ConfigStore configStore;
 
     public PluginListHandler(ConfigStore configStore) {
@@ -46,7 +46,7 @@ public class PluginListHandler implements HttpHandler {
     }
 
     @Override
-    public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
+    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         List<NamedPlugin> plugins = configStore.valuesStartingWith("plugins", NamedPlugin.class);
 
         Stream<NamedPlugin> enabled = plugins.stream().filter(NamedPlugin::enabled);
@@ -58,8 +58,7 @@ public class PluginListHandler implements HttpHandler {
         return Eventual.of(response(OK)
                 .body(output, UTF_8)
                 .addHeader(CONTENT_TYPE, HTML_UTF_8.toString())
-                .build()
-                .stream());
+                .build());
     }
 
     private static String section(String toggleState, Stream<NamedPlugin> plugins) {
