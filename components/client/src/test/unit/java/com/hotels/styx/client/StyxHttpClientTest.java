@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -45,7 +45,6 @@ import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith;
 import static java.lang.String.format;
-import static java.lang.Thread.getAllStackTraces;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -78,28 +77,6 @@ public class StyxHttpClientTest {
     @AfterMethod
     public void tearDown() {
         server.stop();
-    }
-
-    @Test
-    public void closesThreadPoolAfterUse() throws InterruptedException, ExecutionException {
-        StyxHttpClient client = new StyxHttpClient.Builder()
-                .threadName("test-client")
-                .build();
-
-        // Ensures that a thread is created before the assertions
-        client.send(httpRequest).get();
-
-        assertThat(threadExists("test-client"), is(true));
-
-        client.shutdown().get();
-
-        assertThat(threadExists("test-client"), is(false));
-    }
-
-    private static Boolean threadExists(String threadName) {
-        return getAllStackTraces().keySet().stream()
-                .anyMatch(thread ->
-                        thread.getName().startsWith(threadName));
     }
 
     /*

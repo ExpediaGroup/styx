@@ -89,8 +89,13 @@ class ExpiringConnectionSpec extends FunSpec
     assertThat(response2.status(), is(OK))
 
     eventually(timeout(2.seconds)) {
-      styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.available-connections").get should be(1)
-      styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.connections-terminated").get should be(1)
+      withClue("A connection should be available in pool") {
+        styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.available-connections").get should be(1)
+      }
+
+      withClue("A previous connection should have been terminated") {
+        styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.connections-terminated").get should be(1)
+      }
     }
   }
 

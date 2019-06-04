@@ -25,7 +25,6 @@ import com.hotels.styx.client.HttpConfig;
 import com.hotels.styx.client.HttpRequestOperationFactory;
 import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupFactory;
 import com.hotels.styx.client.ssl.SslContextFactory;
-import com.hotels.styx.common.CompletableFutures;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
@@ -36,7 +35,6 @@ import io.netty.handler.ssl.SslContext;
 import reactor.core.publisher.Mono;
 
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 import static com.hotels.styx.client.HttpConfig.defaultHttpConfig;
 import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
@@ -50,6 +48,12 @@ import static java.util.Objects.requireNonNull;
  * A connection factory that creates connections using netty.
  */
 public class NettyConnectionFactory implements Connection.Factory {
+    private static final PlatformAwareClientEventLoopGroupFactory FACTORY = new PlatformAwareClientEventLoopGroupFactory(
+            "Styx-Client-Global",
+            0);
+    private static final Class<? extends Channel> GLOBAL_CLIENT_EVENT_LOOP_CLASS = FACTORY.clientSocketChannelClass();
+    private static final EventLoopGroup GLOBAL_CLIENT_EVENT_LOOP = FACTORY.newClientWorkerEventLoopGroup();
+
     private final HttpConfig httpConfig;
     private final SslContext sslContext;
     private final boolean sendSni;
@@ -60,14 +64,10 @@ public class NettyConnectionFactory implements Connection.Factory {
     private Class<? extends Channel> clientSocketChannelClass;
 
     private NettyConnectionFactory(Builder builder) {
-        PlatformAwareClientEventLoopGroupFactory eventLoopGroupFactory = new PlatformAwareClientEventLoopGroupFactory(
-                builder.name,
-                builder.clientWorkerThreadsCount
-        );
-        this.eventLoopGroup = eventLoopGroupFactory.newClientWorkerEventLoopGroup();
+        this.clientSocketChannelClass = requireNonNull(builder.channelClass);
+        this.eventLoopGroup = requireNonNull(builder.eventLoopGroup);
         this.httpConfig = requireNonNull(builder.httpConfig);
         this.sslContext = builder.tlsSettings == null ? null : SslContextFactory.get(builder.tlsSettings);
-        this.clientSocketChannelClass = eventLoopGroupFactory.clientSocketChannelClass();
         this.httpRequestOperationFactory = requireNonNull(builder.httpRequestOperationFactory);
         this.sendSni = builder.tlsSettings != null && builder.tlsSettings.sendSni();
         this.sniHost = builder.tlsSettings != null ? builder.tlsSettings.sniHost() : Optional.empty();
@@ -114,10 +114,6 @@ public class NettyConnectionFactory implements Connection.Factory {
         }
     }
 
-    public CompletableFuture<Void> close() {
-        return CompletableFutures.fromNettyFuture(eventLoopGroup.shutdownGracefully());
-    }
-
     private class Initializer extends ChannelInitializer<Channel> {
         @Override
         protected void initChannel(Channel ch) {
@@ -129,30 +125,14 @@ public class NettyConnectionFactory implements Connection.Factory {
      */
     public static final class Builder {
         private HttpRequestOperationFactory httpRequestOperationFactory = httpRequestOperationFactoryBuilder().build();
-        private String name = "Styx-Client";
-        private int clientWorkerThreadsCount = 1;
         private HttpConfig httpConfig = defaultHttpConfig();
         private TlsSettings tlsSettings;
+        private EventLoopGroup eventLoopGroup = GLOBAL_CLIENT_EVENT_LOOP;
+        private Class<? extends Channel> channelClass = GLOBAL_CLIENT_EVENT_LOOP_CLASS;
 
-        /**
-         * Sets the name.
-         *
-         * @param name name
-         * @return this builder
-         */
-        public Builder name(String name) {
-            this.name = requireNonNull(name);
-            return this;
-        }
-
-        /**
-         * Sets number of client worker threads.
-         *
-         * @param clientWorkerThreadsCount number of client worker threads
-         * @return this builder
-         */
-        public Builder clientWorkerThreadsCount(int clientWorkerThreadsCount) {
-            this.clientWorkerThreadsCount = clientWorkerThreadsCount;
+        public Builder nettyEventLoop(EventLoopGroup eventLoopGroup, Class<? extends Channel> channelClass) {
+            this.eventLoopGroup = requireNonNull(eventLoopGroup);
+            this.channelClass = requireNonNull(channelClass);
             return this;
         }
 

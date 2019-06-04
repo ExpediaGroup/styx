@@ -32,6 +32,8 @@ import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
 import com.hotels.styx.startup.PipelineFactory;
 import com.hotels.styx.startup.StyxServerComponents;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 
 import java.util.List;
 import java.util.Map;
@@ -51,18 +53,25 @@ public final class StyxPipelineFactory implements PipelineFactory {
     private final Environment environment;
     private final Map<String, StyxService> services;
     private final List<NamedPlugin> plugins;
+    private final EventLoopGroup eventLoopGroup;
+    private final Class<? extends SocketChannel> nettySocketChannelClass;
+
 
     public StyxPipelineFactory(
             StyxObjectStore<RoutingObjectRecord> routeDb,
             RoutingObjectFactory routingObjectFactory,
             Environment environment,
             Map<String, StyxService> services,
-            List<NamedPlugin> plugins) {
+            List<NamedPlugin> plugins,
+            EventLoopGroup eventLoopGroup,
+            Class<? extends SocketChannel> nettySocketChannelClass) {
         this.routeDb = requireNonNull(routeDb);
         this.routingObjectFactory = requireNonNull(routingObjectFactory);
         this.environment = requireNonNull(environment);
         this.services = requireNonNull(services);
         this.plugins = requireNonNull(plugins);
+        this.eventLoopGroup = requireNonNull(eventLoopGroup);
+        this.nettySocketChannelClass = requireNonNull(nettySocketChannelClass);
     }
 
     @Override
@@ -87,7 +96,7 @@ public final class StyxPipelineFactory implements PipelineFactory {
                 })
                 .orElseGet(() -> {
                     Registry<BackendService> backendServicesRegistry = (Registry<BackendService>) services.get("backendServiceRegistry");
-                    return new StaticPipelineFactory(environment, backendServicesRegistry, plugins, requestTracking);
+                    return new StaticPipelineFactory(environment, backendServicesRegistry, plugins, eventLoopGroup, nettySocketChannelClass, requestTracking);
                 });
 
         return pipelineBuilder.build();

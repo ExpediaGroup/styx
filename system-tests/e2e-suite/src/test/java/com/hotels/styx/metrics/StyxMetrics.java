@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -160,7 +160,6 @@ public class StyxMetrics {
     private static String downloadJsonString(String host, int port) {
         StyxHttpClient client = new StyxHttpClient.Builder().build();
         HttpResponse response = await(client.sendRequest(get(format("http://%s:%d/admin/metrics", host, port)).build()));
-        await(client.shutdown());
         return response.bodyAs(UTF_8);
     }
 

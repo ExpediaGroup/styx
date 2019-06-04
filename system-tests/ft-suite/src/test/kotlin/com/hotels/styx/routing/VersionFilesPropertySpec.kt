@@ -26,14 +26,12 @@ import com.hotels.styx.support.ResourcePaths.fixturesHome
 import io.kotlintest.Spec
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
-import reactor.core.publisher.Mono
 import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
-import java.util.concurrent.TimeUnit.MILLISECONDS
 
-class VersionFilesPropertySpec2 : StringSpec() {
-    val fileLocation = fixturesHome(VersionFilesPropertySpec2::class.java,"/version.txt")
-    val originsOk = fixturesHome(VersionFilesPropertySpec2::class.java, "/conf/origins/origins-correct.yml")
+class VersionFilesPropertySpec : StringSpec() {
+    val fileLocation = fixturesHome(VersionFilesPropertySpec::class.java,"/version.txt")
+    val originsOk = fixturesHome(VersionFilesPropertySpec::class.java, "/conf/origins/origins-correct.yml")
     val yamlText = """
         services:
           factories:
@@ -65,11 +63,7 @@ class VersionFilesPropertySpec2 : StringSpec() {
         }
     }
 
-    val client: StyxHttpClient = StyxHttpClient.Builder()
-            .threadName("functional-test-client")
-            .connectTimeout(1000, MILLISECONDS)
-            .maxHeaderSize(2 * 8192)
-            .build()
+    val client: StyxHttpClient = StyxHttpClient.Builder().build()
 
     val styxServer = StyxServer(StyxServerComponents.Builder()
             .styxConfig(StyxConfig.fromYaml(yamlText))

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -126,7 +126,6 @@ class ProxySpec extends FunSpec
       val client: HttpClient = new StyxHttpClient.Builder()
         .connectTimeout(1000, MILLISECONDS)
         .maxHeaderSize(2 * 8192)
-        .threadName("scalatest-e2e-client")
         .build()
 
       val req = head("/bodiless")

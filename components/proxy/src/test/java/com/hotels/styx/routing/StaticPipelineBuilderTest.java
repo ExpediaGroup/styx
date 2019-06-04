@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,9 +23,12 @@ import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.AbstractRegistry;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.plugins.spi.Plugin;
+import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupFactory;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpInterceptorContext;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import reactor.core.publisher.Mono;
@@ -50,6 +53,10 @@ public class StaticPipelineBuilderTest {
     private BackendServiceClientFactory clientFactory;
     private Registry<BackendService> registry;
 
+    private final PlatformAwareClientEventLoopGroupFactory factory = new PlatformAwareClientEventLoopGroupFactory("Styx", 0);
+    private final EventLoopGroup eventLoopGroup = factory.newClientWorkerEventLoopGroup();
+    private final Class<? extends SocketChannel> socketChannelClass = factory.clientSocketChannelClass();
+
 
     @BeforeMethod
     public void staticPipelineBuilderTest() {
@@ -61,8 +68,7 @@ public class StaticPipelineBuilderTest {
 
     @Test
     public void buildsInterceptorPipelineForBackendServices() throws Exception {
-
-        HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, ImmutableList.of(), false).build();
+        HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, ImmutableList.of(), eventLoopGroup, socketChannelClass, false).build();
         LiveHttpResponse response = Mono.from(handler.handle(get("/foo").build(), HttpInterceptorContext.create())).block();
         assertThat(response.status(), is(OK));
     }
@@ -74,7 +80,7 @@ public class StaticPipelineBuilderTest {
                 interceptor("Test-B", appendResponseHeader("X-From-Plugin", "B"))
         );
 
-        HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, plugins, false).build();
+        HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, plugins, eventLoopGroup, socketChannelClass, false).build();
 
         LiveHttpResponse response = Mono.from(handler.handle(get("/foo").build(), HttpInterceptorContext.create())).block();
         assertThat(response.status(), is(OK));

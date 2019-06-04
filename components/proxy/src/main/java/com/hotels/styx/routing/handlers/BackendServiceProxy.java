@@ -23,6 +23,7 @@ import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
+import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupFactory;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.BackendServicesRouter;
@@ -31,6 +32,8 @@ import com.hotels.styx.proxy.StyxBackendServiceClientFactory;
 import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 
 import java.util.List;
 import java.util.Map;
@@ -47,8 +50,13 @@ public class BackendServiceProxy implements RoutingObject {
 
     private final RouteHandlerAdapter handler;
 
-    private BackendServiceProxy(BackendServiceClientFactory serviceClientFactory, Registry<BackendService> registry, Environment environment) {
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
+    private BackendServiceProxy(
+            BackendServiceClientFactory serviceClientFactory,
+            Registry<BackendService> registry,
+            Environment environment,
+            EventLoopGroup eventLoopGroup,
+            Class<? extends SocketChannel> nettySocketChannelClass) {
+        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment, eventLoopGroup, nettySocketChannelClass);
         registry.addListener(router);
         handler = new RouteHandlerAdapter(router);
     }
@@ -96,7 +104,8 @@ public class BackendServiceProxy implements RoutingObject {
                                 join(".", append(parents, "backendProvider")), provider));
             }
 
-            return new BackendServiceProxy(serviceClientFactory, registry, environment);
+            PlatformAwareClientEventLoopGroupFactory factory = new PlatformAwareClientEventLoopGroupFactory("BackendServiceProxy", 0);
+            return new BackendServiceProxy(serviceClientFactory, registry, environment, factory.newClientWorkerEventLoopGroup(), factory.clientSocketChannelClass());
         }
     }
 

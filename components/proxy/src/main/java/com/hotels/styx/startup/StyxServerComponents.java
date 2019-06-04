@@ -28,6 +28,7 @@ import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
+import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupFactory;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingObject;
@@ -38,6 +39,8 @@ import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.RouteRefLookup.RouteDbRefLookup;
 import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 
 import java.util.HashMap;
 import java.util.List;
@@ -62,12 +65,21 @@ public class StyxServerComponents {
     private final List<NamedPlugin> plugins;
     private final StyxObjectStore<RoutingObjectRecord> routeObjectStore = new StyxObjectStore<>();
     private final RoutingObjectFactory routingObjectFactory;
+    private final EventLoopGroup eventLoopGroup;
+    private final Class<? extends SocketChannel> nettySocketChannelClass;
 
     private StyxServerComponents(Builder builder) {
         StyxConfig styxConfig = requireNonNull(builder.styxConfig);
 
         this.environment = newEnvironment(styxConfig, builder.metricRegistry);
         builder.loggingSetUp.setUp(environment);
+
+        PlatformAwareClientEventLoopGroupFactory factory = new PlatformAwareClientEventLoopGroupFactory(
+                "Styx",
+                environment.configuration().proxyServerConfig().clientWorkerThreadsCount());
+
+        this.eventLoopGroup = factory.newClientWorkerEventLoopGroup();
+        this.nettySocketChannelClass = factory.clientSocketChannelClass();
 
         // TODO In further refactoring, we will probably want this loading to happen outside of this constructor call,
         //  so that it doesn't delay the admin server from starting up
@@ -133,6 +145,14 @@ public class StyxServerComponents {
 
     public RoutingObjectFactory routingObjectFactory() {
         return this.routingObjectFactory;
+    }
+
+    public EventLoopGroup eventLoopGroup() {
+        return this.eventLoopGroup;
+    }
+
+    public Class<? extends SocketChannel> nettySocketChannelClass() {
+        return this.nettySocketChannelClass;
     }
 
     private static Environment newEnvironment(StyxConfig styxConfig, MetricRegistry metricRegistry) {

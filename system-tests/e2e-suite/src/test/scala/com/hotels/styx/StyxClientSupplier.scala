@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -33,13 +33,11 @@ trait StyxClientSupplier extends BeforeAndAfterAll {
   val FIVE_SECONDS: Int = 5 * 1000
 
   val client: StyxHttpClient = new StyxHttpClient.Builder()
-    .threadName("scalatest-e2e-client")
     .connectTimeout(1000, MILLISECONDS)
     .maxHeaderSize(2 * 8192)
     .build()
 
   override protected def afterAll() = {
-    client.shutdown()
     super.afterAll()
   }
 

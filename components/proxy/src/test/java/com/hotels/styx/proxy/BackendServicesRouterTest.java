@@ -26,8 +26,13 @@ import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
+import com.hotels.styx.client.netty.ClientEventLoopFactory;
+import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupFactory;
 import com.hotels.styx.server.HttpInterceptorContext;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 import org.mockito.ArgumentCaptor;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import reactor.core.publisher.Flux;
@@ -63,6 +68,15 @@ public class BackendServicesRouterTest {
 
     private Environment environment;
 
+    private ClientEventLoopFactory factory = new PlatformAwareClientEventLoopGroupFactory("x", 0);
+    private EventLoopGroup eventLoopGroup = this.factory.newClientWorkerEventLoopGroup();
+    private Class<? extends SocketChannel> channelClass = this.factory.clientSocketChannelClass();
+
+    @AfterClass
+    public void tearDown() {
+        eventLoopGroup.shutdown();
+    }
+
     @BeforeMethod
     public void before() {
         environment = new Environment.Builder().build();
@@ -75,7 +89,7 @@ public class BackendServicesRouterTest {
                 appB().newCopy().path("/badheaders").build(),
                 appB().newCopy().id("appB-03").path("/cookies").build());
 
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
+        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment, eventLoopGroup, channelClass);
         router.onChange(changes);
 
         assertThat(router.routes().keySet(), contains("/badheaders", "/cookies", "/headers"));
@@ -87,7 +101,7 @@ public class BackendServicesRouterTest {
                 appA().newCopy().path("/").build(),
                 appB().newCopy().path("/appB/hotel/details.html").build());
 
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
+        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment, eventLoopGroup, channelClass);
         router.onChange(changes);
 
         LiveHttpRequest request = get("/appB/hotel/details.html").build();
@@ -102,7 +116,7 @@ public class BackendServicesRouterTest {
                 appB().newCopy().path("/appB/hotel/details.html").build(),
                 appA().newCopy().path("/").build());
 
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
+        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment, eventLoopGroup, channelClass);
         router.onChange(changes);
 
         LiveHttpRequest request = get("/appB/hotel/details.html").build();
@@ -118,7 +132,7 @@ public class BackendServicesRouterTest {
                 appA().newCopy().path("/").build(),
                 appB().newCopy().path("/appB/hotel/details.html").build());
 
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
+        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment, eventLoopGroup, channelClass);
         router.onChange(changes);
 
         LiveHttpRequest request = get("/").build();
@@ -133,7 +147,7 @@ public class BackendServicesRouterTest {
                 appB().newCopy().path("/appB/hotel/details.html").build(),
                 appA().newCopy().path("/").build());
 
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
+        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment, eventLoopGroup, channelClass);
         router.onChange(changes);
 
         LiveHttpRequest request = get("/").build();
@@ -148,7 +162,7 @@ public class BackendServicesRouterTest {
                 appA().newCopy().path("/").build(),
                 appB().newCopy().path("/appB/").build());
 
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
+        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment, eventLoopGroup, channelClass);
         router.onChange(changes);
 
         LiveHttpRequest request = get("/appB/").build();
@@ -159,7 +173,7 @@ public class BackendServicesRouterTest {
 
     @Test
     public void doesNotMatchRequestIfFinalSlashIsMissing() {
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
+        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment, eventLoopGroup, channelClass);
         router.onChange(added(appB().newCopy().path("/appB/hotel/details.html").build()));
 
         LiveHttpRequest request = get("/ba/").build();
@@ -171,7 +185,7 @@ public class BackendServicesRouterTest {
 
     @Test
     public void throwsExceptionWhenNoApplicationMatches() {
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
+        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment, eventLoopGroup, channelClass);
         router.onChange(added(appB().newCopy().path("/appB/hotel/details.html").build()));
 
         LiveHttpRequest request = get("/qwertyuiop").build();
@@ -180,7 +194,7 @@ public class BackendServicesRouterTest {
 
     @Test
     public void removesExistingServicesBeforeAddingNewOnes() throws Exception {
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
+        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment, eventLoopGroup, channelClass);
         router.onChange(added(appB()));
 
         router.onChange(new Registry.Changes.Builder<BackendService>()
@@ -195,7 +209,7 @@ public class BackendServicesRouterTest {
 
     @Test
     public void updatesRoutesOnBackendServicesChange() throws Exception {
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
+        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment, eventLoopGroup, channelClass);
 
         LiveHttpRequest request = get("/appB/").build();
 
@@ -224,7 +238,7 @@ public class BackendServicesRouterTest {
                 .thenReturn(firstClient)
                 .thenReturn(secondClient);
 
-        BackendServicesRouter router = new BackendServicesRouter(clientFactory, environment);
+        BackendServicesRouter router = new BackendServicesRouter(clientFactory, environment, eventLoopGroup, channelClass);
 
         BackendService bookingApp = appB();
         router.onChange(added(bookingApp));
@@ -252,7 +266,7 @@ public class BackendServicesRouterTest {
                 .thenReturn(firstClient)
                 .thenReturn(secondClient);
 
-        BackendServicesRouter router = new BackendServicesRouter(clientFactory, environment);
+        BackendServicesRouter router = new BackendServicesRouter(clientFactory, environment, eventLoopGroup, channelClass);
 
         BackendService bookingApp = appB();
         router.onChange(added(bookingApp));
@@ -273,7 +287,7 @@ public class BackendServicesRouterTest {
                 .metricRegistry(metrics)
                 .build();
         BackendServicesRouter router = new BackendServicesRouter(
-                new StyxBackendServiceClientFactory(environment), environment);
+                new StyxBackendServiceClientFactory(environment), environment, eventLoopGroup, channelClass);
 
         router.onChange(added(backendService(APP_B, "/appB/", 9094, "appB-01", 9095, "appB-02")));
 
