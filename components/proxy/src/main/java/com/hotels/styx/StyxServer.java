@@ -125,7 +125,7 @@ public final class StyxServer extends AbstractService {
     }
 
     private static boolean skipServerConfigValidation() {
-        String validate = getProperty(VALIDATE_SERVER_CONFIG_PROPERTY, "no");
+        String validate = getProperty(VALIDATE_SERVER_CONFIG_PROPERTY, "yes");
         return "n".equals(validate) || "no".equals(validate);
     }
 
