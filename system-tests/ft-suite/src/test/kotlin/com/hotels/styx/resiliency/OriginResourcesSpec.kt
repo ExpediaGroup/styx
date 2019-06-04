@@ -26,6 +26,11 @@ import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.proxyHttpHostHeader
 import com.hotels.styx.support.wait
 import io.kotlintest.Spec
+import io.kotlintest.eventually
+import io.kotlintest.matchers.boolean.shouldBeTrue
+import io.kotlintest.matchers.numerics.shouldBeGreaterThan
+import io.kotlintest.matchers.withClue
+import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 import java.io.ByteArrayInputStream
@@ -47,37 +52,36 @@ class OriginResourcesSpec : StringSpec() {
 
     init {
         "Cleans up threads after use" {
-            "---" + (1..count)
-                    .map { appDeclaration("aaa-$it") }
-                    .joinToString("\n")
-                    .let { writeConfig(styxOriginsFile, it) }
 
-            // Wait for styx to pick up the configuration
-            Thread.sleep(2000)
+            val threadCountBefore = run {
+                writeConfig(styxOriginsFile,
+                        "---\n" + (1..count)
+                                .map { appDeclaration("aaa-$it") }
+                                .joinToString("\n"))
 
-            (1..count).forEach {
-                client.send(get("/aaa-$it").header(HOST, styxServer().proxyHttpHostHeader()).build())
-                        .wait(debug = false)
-                        .status() shouldBe OK
+                eventually(2.seconds, AssertionError::class.java) {
+                    (1..count).all { configurationApplied("/aaa-$it") }.shouldBeTrue()
+                }
+
+                threadCount("Styx-Client-Worker")
             }
 
-            val threadCountBefore = threadCount("Styx-Client-Worker")
-
-            "---" + (1..count)
-                    .map { appDeclaration("bbb-$it") }
-                    .joinToString("\n")
-                    .let { writeConfig(styxOriginsFile, it) }
-
-            // Wait for styx to pick up the new configuration
-            Thread.sleep(2000)
-
-            (1..count).forEach {
-                client.send(get("/bbb-$it").header(HOST, styxServer().proxyHttpHostHeader()).build())
-                        .wait(debug = false)
-                        .status() shouldBe OK
+            withClue("No `Styx-Client-Worker` threads found. Has the thrad name changed?") {
+                threadCountBefore shouldBeGreaterThan 1
             }
 
-            val threadCountAfter = threadCount("Styx-Client-Worker")
+            val threadCountAfter = run {
+                writeConfig(styxOriginsFile,
+                        "---\n" + (1..count)
+                                .map { appDeclaration("bbb-$it") }
+                                .joinToString("\n"))
+
+                eventually(2.seconds, AssertionError::class.java) {
+                    (1..count).all { configurationApplied("/bbb-$it") }.shouldBeTrue()
+                }
+
+                threadCount("Styx-Client-Worker")
+            }
 
             threadCountBefore shouldBe threadCountAfter
         }
@@ -149,6 +153,9 @@ class OriginResourcesSpec : StringSpec() {
             .filter { it.contains(namePattern) }
             .count()
 
+    fun configurationApplied(prefix: String) = client.send(get(prefix).header(HOST, styxServer().proxyHttpHostHeader()).build())
+            .wait(debug = false)
+            .status() == OK
 }
 
 val client: StyxHttpClient = StyxHttpClient.Builder().build()
