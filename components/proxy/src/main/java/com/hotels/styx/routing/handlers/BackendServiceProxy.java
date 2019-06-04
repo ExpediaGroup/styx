@@ -52,7 +52,8 @@ public class BackendServiceProxy implements RoutingObject {
 
     private BackendServiceProxy(
             BackendServiceClientFactory serviceClientFactory,
-            Registry<BackendService> registry, Environment environment,
+            Registry<BackendService> registry,
+            Environment environment,
             EventLoopGroup eventLoopGroup,
             Class<? extends SocketChannel> nettySocketChannelClass) {
         BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment, eventLoopGroup, nettySocketChannelClass);

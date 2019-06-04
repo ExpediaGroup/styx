@@ -68,7 +68,7 @@ public class StaticPipelineBuilderTest {
 
     @Test
     public void buildsInterceptorPipelineForBackendServices() throws Exception {
-        HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, ImmutableList.of(), eventLoopGroup, socketChannelClass,false).build();
+        HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, ImmutableList.of(), eventLoopGroup, socketChannelClass, false).build();
         LiveHttpResponse response = Mono.from(handler.handle(get("/foo").build(), HttpInterceptorContext.create())).block();
         assertThat(response.status(), is(OK));
     }
@@ -80,7 +80,7 @@ public class StaticPipelineBuilderTest {
                 interceptor("Test-B", appendResponseHeader("X-From-Plugin", "B"))
         );
 
-        HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, plugins, eventLoopGroup, socketChannelClass,false).build();
+        HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, plugins, eventLoopGroup, socketChannelClass, false).build();
 
         LiveHttpResponse response = Mono.from(handler.handle(get("/foo").build(), HttpInterceptorContext.create())).block();
         assertThat(response.status(), is(OK));
