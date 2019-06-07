@@ -80,6 +80,8 @@ admin:
     enabled: true
     expirationMillis: 10000
 
+# A list of services that Styx should run upon starting. Any service that can be constructed by a factory extending
+# com.hotels.styx.api.configuration.ServiceFactory can be included here 
 services:
   factories:
     backendServiceRegistry:
@@ -113,8 +115,6 @@ loadBalancing:
 
 originRestrictionCookie: restrict_origins
 
-
-
 request-logging:
   # Enable logging of requests and responses (with requestId to match them up).
   # Logs are produced on server and origin side, so there is an information on 
@@ -147,13 +147,18 @@ url:
   encoding:
     unwiseCharactersToEncode: "|,;,{,}"
 
+# Configure plugins that Styx will use
 plugins:
+  # List of plugin IDs from the configured plugins under "all". Only the plugins listed in "active" will be loaded. 
   active: plugin1, plugin2
   all:
     plugin1:
       factory:
+        # the name of a class that implements com.hotels.styx.api.plugins.spi.PluginFactory 
         class: "foo.bar.Plugin1Factory"
+        # the path (directory or jar) from which the factory class can be loaded
         classPath: "/foo/bar/"
+      # configuration for the plugin. the exact structure is up to the plugin creator
       config:
         foo: "bar"
         bar: "foo"
