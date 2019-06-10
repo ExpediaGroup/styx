@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -190,30 +190,6 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
     val cookie = response.cookie("styx_origin_app").get()
 
     cookie.value() should fullyMatch regex "app-0[12]"
-
-    cookie.path().get() should be("/")
-    cookie.httpOnly() should be(true)
-    cookie.maxAge().isPresent should be(true)
-  }
-
-  test("Routes to new origin when the origin indicated by sticky session cookie is no longer available.") {
-    server1.stop()
-
-    val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id)
-      .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
-      .build
-
-    val request: LiveHttpRequest = get("/")
-      .cookies(requestCookie("styx_origin_app", "app-02"))
-      .build
-
-    val response = Mono.from(client.sendRequest(request)).block()
-
-    response.status() should be(OK)
-    response.cookies() should have size 1
-    val cookie = response.cookie("styx_origin_app").get()
-
-    cookie.value() should be("app-02")
 
     cookie.path().get() should be("/")
     cookie.httpOnly() should be(true)

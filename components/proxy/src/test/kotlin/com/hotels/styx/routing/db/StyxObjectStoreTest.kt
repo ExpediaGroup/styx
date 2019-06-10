@@ -18,6 +18,7 @@ package com.hotels.styx.routing.db
 import com.hotels.styx.api.configuration.ObjectStore
 import io.kotlintest.eventually
 import io.kotlintest.matchers.boolean.shouldBeTrue
+import io.kotlintest.matchers.collections.shouldNotBeEmpty
 import io.kotlintest.matchers.numerics.shouldBeGreaterThanOrEqual
 import io.kotlintest.milliseconds
 import io.kotlintest.seconds
@@ -26,6 +27,7 @@ import io.kotlintest.specs.FeatureSpec
 import reactor.core.publisher.Flux
 import reactor.test.StepVerifier
 import java.util.Optional
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors.newFixedThreadPool
 import java.util.concurrent.TimeUnit.SECONDS
 
@@ -56,7 +58,7 @@ class StyxObjectStoreTest : FeatureSpec() {
                 db.insert("y", "y")
                 db.insert("z", "z")
 
-                db.entrySet() shouldBe listOf(
+                db.entrySet().map { it.toPair() } shouldBe listOf(
                         "x" to "x",
                         "y" to "y",
                         "z" to "z"
@@ -174,7 +176,7 @@ class StyxObjectStoreTest : FeatureSpec() {
 
             scenario("Notifies watchers") {
                 val db = StyxObjectStore<String>()
-                val watchEvents = arrayListOf<ObjectStore<String>>()
+                val watchEvents = CopyOnWriteArrayList<ObjectStore<String>>()
 
                 db.insert("x", "x")
                 db.insert("y", "y")
@@ -233,8 +235,8 @@ class StyxObjectStoreTest : FeatureSpec() {
         feature("Watch") {
             scenario("Supports multiple watchers") {
                 val db = StyxObjectStore<String>()
-                val watchEvents1 = arrayListOf<ObjectStore<String>>()
-                val watchEvents2 = arrayListOf<ObjectStore<String>>()
+                val watchEvents1 = CopyOnWriteArrayList<ObjectStore<String>>()
+                val watchEvents2 = CopyOnWriteArrayList<ObjectStore<String>>()
 
                 val watcher1 = Flux.from(db.watch()).subscribe { watchEvents1.add(it) }
                 val watcher2 = Flux.from(db.watch()).subscribe { watchEvents2.add(it) }
@@ -281,7 +283,7 @@ class StyxObjectStoreTest : FeatureSpec() {
 
             scenario("Provides immutable snapshot") {
                 val db = StyxObjectStore<String>()
-                val watchEvents = arrayListOf<ObjectStore<String>>()
+                val watchEvents = CopyOnWriteArrayList<ObjectStore<String>>()
 
                 val watcher = Flux.from(db.watch()).subscribe { watchEvents.add(it) }
 
@@ -309,17 +311,66 @@ class StyxObjectStoreTest : FeatureSpec() {
 
             scenario("Provides current snapshot at subscription") {
                 val db = StyxObjectStore<String>()
-                val watchEvents = arrayListOf<ObjectStore<String>>()
+                val watchEvents = CopyOnWriteArrayList<ObjectStore<String>>()
 
                 db.insert("x", "x")
 
-                Flux.from(db.watch()).subscribe() {
+                Flux.from(db.watch()).subscribe {
                     watchEvents.add(it)
                 }
 
                 eventually(1.seconds, AssertionError::class.java) {
                     watchEvents.isNotEmpty().shouldBeTrue()
                     watchEvents[0].get("x") shouldBe Optional.of("x")
+                }
+            }
+
+            scenario("Snapshot provides all entries") {
+                val db = StyxObjectStore<String>()
+                val watchEvents = CopyOnWriteArrayList<ObjectStore<String>>()
+
+                db.insert("x", "payload-x")
+                db.insert("y", "payload-y")
+
+                Flux.from(db.watch()).subscribe {
+                    watchEvents.add(it)
+                }
+
+                eventually(1.seconds, AssertionError::class.java) {
+                    watchEvents.shouldNotBeEmpty()
+                    watchEvents.last()
+                            .entrySet()
+                            .map { it.toPair() }
+                            .let {
+                                it shouldBe listOf(
+                                        "x" to "payload-x",
+                                        "y" to "payload-y")
+                            }
+                }
+
+                db.remove("y")
+                eventually(1.seconds, AssertionError::class.java) {
+                    watchEvents.shouldNotBeEmpty()
+                    watchEvents.last()
+                            .entrySet()
+                            .map { it.toPair() }
+                            .let {
+                                it shouldBe listOf(
+                                        "x" to "payload-x")
+                            }
+                }
+
+                db.insert("z", "payload-z")
+                eventually(1.seconds, AssertionError::class.java) {
+                    watchEvents.shouldNotBeEmpty()
+                    watchEvents.last()
+                            .entrySet()
+                            .map { it.toPair() }
+                            .let {
+                                it shouldBe listOf(
+                                        "x" to "payload-x",
+                                        "z" to "payload-z")
+                            }
                 }
             }
         }

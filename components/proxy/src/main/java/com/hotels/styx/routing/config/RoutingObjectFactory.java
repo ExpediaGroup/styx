@@ -28,6 +28,7 @@ import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.ConditionRouter;
 import com.hotels.styx.routing.handlers.HostProxy;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
+import com.hotels.styx.routing.handlers.LoadBalancingGroup;
 import com.hotels.styx.routing.handlers.PathPrefixRouter;
 import com.hotels.styx.routing.handlers.ProxyToBackend;
 import com.hotels.styx.routing.handlers.RouteRefLookup;
@@ -60,6 +61,7 @@ public class RoutingObjectFactory {
     private static final String PROXY_TO_BACKEND = "ProxyToBackend";
     private static final String PATH_PREFIX_ROUTER = "PathPrefixRouter";
     private static final String HOST_PROXY = "HostProxy";
+    private static final String LOAD_BALANCING_GROUP = "LoadBalancingGroup";
 
 
     static {
@@ -70,6 +72,7 @@ public class RoutingObjectFactory {
                 .put(PROXY_TO_BACKEND, new ProxyToBackend.Factory())
                 .put(PATH_PREFIX_ROUTER, new PathPrefixRouter.Factory())
                 .put(HOST_PROXY, new HostProxy.Factory())
+                .put(LOAD_BALANCING_GROUP, new LoadBalancingGroup.Factory())
                 .build();
 
         BUILTIN_HANDLER_SCHEMAS = ImmutableMap.<String, Schema.FieldType>builder()
@@ -79,6 +82,7 @@ public class RoutingObjectFactory {
                 .put(PROXY_TO_BACKEND, ProxyToBackend.SCHEMA)
                 .put(PATH_PREFIX_ROUTER, PathPrefixRouter.SCHEMA)
                 .put(HOST_PROXY, HostProxy.SCHEMA)
+                .put(LOAD_BALANCING_GROUP, LoadBalancingGroup.SCHEMA)
                 .build();
     }
 

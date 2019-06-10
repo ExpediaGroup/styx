@@ -57,12 +57,7 @@ class StyxObjectStore<T> : ObjectStore<T> {
     /**
      * Retrieves all entries.
      */
-    fun entrySet(): List<Pair<String, T>> {
-        return objects.get().entries.stream()
-                .map { Pair(it.key, it.value.payload) }
-                .toList()
-    }
-
+    override fun entrySet(): Collection<Map.Entry<String, T>> = entrySet(objects.get())
 
     /**
      * Inserts a new object in object store.
@@ -134,11 +129,7 @@ class StyxObjectStore<T> : ObjectStore<T> {
     }
 
     private fun emitInitialSnapshot(sink: FluxSink<ObjectStore<T>>) {
-        sink.next(ObjectStore { key ->
-            Optional
-                    .ofNullable(objects().get(key))
-                    .map { it.payload }
-        })
+        sink.next(snapshot(objects()))
     }
 
     internal fun watchers() = watchers.size
@@ -171,10 +162,27 @@ class StyxObjectStore<T> : ObjectStore<T> {
         }
     }
 
-    private fun snapshot(snapshot: PMap<String, Record<T>>) = ObjectStore<T> { key: String ->
-        Optional.ofNullable(snapshot.get(key))
-                .map { it.payload }
+    private fun snapshot(snapshot: PMap<String, Record<T>>) = object: ObjectStore<T> {
+        override fun get(key: String?): Optional<T> {
+            return Optional.ofNullable(snapshot.get(key))
+                    .map { it.payload }
+        }
+
+        override fun entrySet(): Collection<Map.Entry<String, T>> = entrySet(snapshot)
     }
+
+    private fun entrySet(snapshot: PMap<String, Record<T>>) = snapshot.entries.stream()
+            .map { toPayloadEntry(it) }
+            .toList()
+
+    private fun toPayloadEntry(entry: Map.Entry<String, Record<T>>): Map.Entry<String, T> = object : Map.Entry<String, T> {
+        override val value: T
+            get() = entry.value.payload
+
+        override val key: String
+            get() = entry.key
+    }
+
 }
 
 private typealias ChangeWatcher<T> = (ObjectStore<T>) -> Unit

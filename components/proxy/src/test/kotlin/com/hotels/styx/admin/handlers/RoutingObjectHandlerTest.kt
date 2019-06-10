@@ -22,14 +22,13 @@ import com.hotels.styx.api.HttpRequest.put
 import com.hotels.styx.api.HttpResponseStatus.CREATED
 import com.hotels.styx.api.HttpResponseStatus.NOT_FOUND
 import com.hotels.styx.api.HttpResponseStatus.OK
+import com.hotels.styx.routing.RoutingObjectAdapter
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handle
-import com.hotels.styx.routing.handlers.StaticResponseHandler
 import com.hotels.styx.routing.mockObject
 import io.kotlintest.matchers.types.shouldBeTypeOf
-import io.kotlintest.matchers.types.shouldNotBeSameInstanceAs
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
 import io.mockk.mockk
@@ -65,7 +64,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
             routeDatabase.get("staticResponse").isPresent shouldBe true
             routeDatabase.get("staticResponse").get().type shouldBe "StaticResponseHandler"
             routeDatabase.get("staticResponse").get().config.shouldBeTypeOf<ObjectNode>()
-            routeDatabase.get("staticResponse").get().routingObject.shouldBeTypeOf<StaticResponseHandler>()
+            routeDatabase.get("staticResponse").get().routingObject.shouldBeTypeOf<RoutingObjectAdapter>()
         }
 
         scenario("Retrieving objects") {
@@ -155,9 +154,9 @@ class RoutingObjectHandlerTest : FeatureSpec({
 
         scenario("Replacing existing objects triggers lifecycle methods") {
             val db = StyxObjectStore<RoutingObjectRecord>()
-            val mockObject = mockObject()
+            val mockObject = RoutingObjectAdapter(mockObject())
 
-            db.insert("staticResponse", RoutingObjectRecord("StaticResponseHandler", mockk(), mockObject))
+            db.insert("staticResponse", RoutingObjectRecord("StaticResponseHandler", mockk(), mockk(), mockObject))
             db.get("staticResponse").isPresent shouldBe true
 
             val handler = RoutingObjectHandler(db, objectFactory)
@@ -183,9 +182,9 @@ class RoutingObjectHandlerTest : FeatureSpec({
 
         scenario("Removing existing objects triggers lifecycle methods") {
             val db = StyxObjectStore<RoutingObjectRecord>()
-            val mockObject = mockObject()
+            val mockObject = RoutingObjectAdapter(mockObject())
 
-            db.insert("staticResponse", RoutingObjectRecord("StaticResponseHandler", mockk(), mockObject))
+            db.insert("staticResponse", RoutingObjectRecord("StaticResponseHandler", mockk(), mockk(), mockObject))
 
             val handler = RoutingObjectHandler(db, objectFactory)
 

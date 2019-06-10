@@ -69,7 +69,6 @@ class HostProxySpec : FeatureSpec() {
     }
 
     init {
-
         feature("Executor thread pool") {
             scenario("Runs on StyxHttpClient global thread pool") {
                 testServer.restart()
@@ -229,8 +228,7 @@ class HostProxySpec : FeatureSpec() {
                                 """.trimIndent()) shouldBe CREATED
             }
 
-            // Continues from previous test
-            scenario("Send request") {
+            scenario("... and send request") {
                 client.send(get("/")
                         .header(HOST, styxServer().proxyHttpHostHeader())
                         .build())
@@ -241,23 +239,20 @@ class HostProxySpec : FeatureSpec() {
                         }
             }
 
-            // Continues from previous test
-            scenario("Provides connection pool metrics") {
+            scenario("... and provides connection pool metrics") {
                 styxServer().metrics().let {
                     it["routing.objects.hostProxy.localhost:${mockServer.port()}.connectionspool.connection-attempts"]?.get("value") shouldBe 1
                 }
             }
 
-            // Continues from previous test
-            scenario("Provides origin and application metrics") {
+            scenario("... and provides origin and application metrics") {
                 styxServer().metrics().let {
                     it["routing.objects.hostProxy.localhost:${mockServer.port()}.requests.response.status.200"]?.get("count") shouldBe 1
                     it["routing.objects.hostProxy.localhost:${mockServer.port()}.connectionspool.connection-attempts"]?.get("value") shouldBe 1
                 }
             }
 
-            // Continues from previous test
-            scenario("Unregisters connection pool metrics") {
+            scenario("... and unregisters connection pool metrics") {
                 styxServer().removeRoutingObject("hostProxy")
 
                 eventually(2.seconds, AssertionError::class.java) {
@@ -295,8 +290,7 @@ class HostProxySpec : FeatureSpec() {
                                 """.trimIndent()) shouldBe CREATED
             }
 
-            // Continues from previous test
-            scenario("Send request") {
+            scenario("... and send request") {
                 client.send(get("/")
                         .header(HOST, styxServer().proxyHttpHostHeader())
                         .build())
@@ -307,23 +301,20 @@ class HostProxySpec : FeatureSpec() {
                         }
             }
 
-            // Continues from previous test
-            scenario("Provides connection pool metrics with metric prefix") {
+            scenario("... and provides connection pool metrics with metric prefix") {
                 styxServer().metrics().let {
                     it["origins.myApp.localhost:${mockServer.port()}.connectionspool.connection-attempts"]?.get("value") shouldBe 1
                 }
             }
 
-            // Continues from previous test
-            scenario("Provides origin/application metrics with metric prefix") {
+            scenario("... and provides origin/application metrics with metric prefix") {
                 styxServer().metrics().let {
                     it["origins.myApp.localhost:${mockServer.port()}.requests.response.status.200"]?.get("count") shouldBe 1
                     it["origins.myApp.requests.response.status.200"]?.get("count") shouldBe 1
                 }
             }
 
-            // Continues from previous test
-            scenario("Unregisters prefixed connection pool metrics") {
+            scenario("... and unregisters prefixed connection pool metrics") {
                 styxServer().removeRoutingObject("hostProxy")
 
                 eventually(2.seconds, AssertionError::class.java) {

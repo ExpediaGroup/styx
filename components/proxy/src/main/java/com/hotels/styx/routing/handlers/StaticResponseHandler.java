@@ -52,7 +52,7 @@ public class StaticResponseHandler implements RoutingObject {
     private final int status;
     private final String text;
 
-    private StaticResponseHandler(int status, String text) {
+    public StaticResponseHandler(int status, String text) {
         this.status = status;
         this.text = text;
     }

@@ -139,7 +139,7 @@ final class ServerConfigSchema {
                             optional("logFormat", string()),
                             optional("userDefined", object(opaque())),
                             optional("requestTracking", bool()),
-                            optional("httpHandlers", map(object(
+                            optional("routingObjects", map(object(
                                     optional("name", string()),
                                     field("type", string()),
                                     optional("tags", list(string())),

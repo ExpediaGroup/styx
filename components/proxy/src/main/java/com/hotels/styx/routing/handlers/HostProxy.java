@@ -21,6 +21,7 @@ import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.ResponseEventListener;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.api.extension.service.TlsSettings;
@@ -104,23 +105,28 @@ public class HostProxy implements RoutingObject {
 
     private final String errorMessage;
     private final StyxHostHttpClient client;
+    private OriginMetrics originMetrics;
     private volatile boolean active = true;
 
     @VisibleForTesting
     final HostAndPort hostAndPort;
 
-    public HostProxy(HostAndPort hostAndPort, StyxHostHttpClient client) {
+    public HostProxy(HostAndPort hostAndPort, StyxHostHttpClient client, OriginMetrics originMetrics) {
         this.hostAndPort = requireNonNull(hostAndPort);
         this.errorMessage = format("HostProxy %s:%d is stopped but received traffic.",
                 hostAndPort.getHostText(),
                 hostAndPort.getPort());
         this.client = requireNonNull(client);
+        this.originMetrics = requireNonNull(originMetrics);
     }
 
     @Override
     public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
         if (active) {
-            return new Eventual<>(client.sendRequest(request));
+            return new Eventual<>(
+                    ResponseEventListener.from(client.sendRequest(request))
+                            .whenCancelled(() -> originMetrics.requestCancelled())
+                            .apply());
         } else {
             return Eventual.error(new IllegalStateException(errorMessage));
         }
@@ -206,7 +212,7 @@ public class HostProxy implements RoutingObject {
                     .metricRegistry(context.environment().metricRegistry())
                     .build();
 
-            return new HostProxy(hostAndPort, StyxHostHttpClient.create(connectionPoolFactory.create(origin)));
+            return new HostProxy(hostAndPort, StyxHostHttpClient.create(connectionPoolFactory.create(origin)), originMetrics);
         }
 
         private static Connection.Factory connectionFactory(

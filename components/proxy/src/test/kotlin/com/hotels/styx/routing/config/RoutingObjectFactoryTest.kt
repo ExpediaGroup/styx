@@ -43,7 +43,7 @@ class RoutingObjectFactoryTest : StringSpec({
     }
 
     val routeObjectStore = mockk<StyxObjectStore<RoutingObjectRecord>>()
-    every { routeObjectStore.get("aHandler") } returns Optional.of(RoutingObjectRecord("type", mockk(), mockHandler))
+    every { routeObjectStore.get("aHandler") } returns Optional.of(RoutingObjectRecord.create("type", mockk(), mockk(), mockHandler))
     
     "Builds a new handler as per RoutingObjectDefinition" {
         val routeDef = RoutingObjectDefinition("handler-def", "SomeRoutingObject", mockk())

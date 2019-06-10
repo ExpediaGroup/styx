@@ -21,6 +21,8 @@ import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.RoutingObjectReference;
 import com.hotels.styx.routing.db.StyxObjectStore;
 
+import java.util.Optional;
+
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -47,8 +49,10 @@ public interface RouteRefLookup {
 
         @Override
         public RoutingObject apply(RoutingObjectReference route) {
-            return this.routeDatabase.get(route.name())
-                    .map(RoutingObjectRecord::getRoutingObject)
+            Optional<RoutingObjectRecord> routingObjectRecord = this.routeDatabase.get(route.name());
+
+            return routingObjectRecord
+                    .map(it -> (RoutingObject) it.getRoutingObject())
                     .orElse((liveRequest, na) -> {
                         liveRequest.consume();
 

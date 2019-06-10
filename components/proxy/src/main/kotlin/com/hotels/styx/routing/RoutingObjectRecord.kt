@@ -19,5 +19,14 @@ import com.fasterxml.jackson.databind.JsonNode
 
 data class RoutingObjectRecord(
         val type: String,
+        val tags: Set<String>,
         val config: JsonNode,
-        val routingObject: RoutingObject)
+        val routingObject: RoutingObjectAdapter) {
+    companion object {
+        fun create(type: String, tags: Set<String>, config: JsonNode, routingObject: RoutingObject) = RoutingObjectRecord(
+                type,
+                tags,
+                config,
+                RoutingObjectAdapter(routingObject))
+    }
+}

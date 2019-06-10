@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -39,33 +39,40 @@ public class ResponseEventListener {
     private Consumer<Throwable> contentErrorAction = cause -> { };
     private Runnable onCompletedAction = () -> { };
     private Runnable cancelAction = () -> { };
+    private Runnable whenFinishedAction = () -> { };
 
     private final StateMachine<State> fsm = new StateMachine.Builder<State>()
             .initialState(INITIAL)
             .transition(INITIAL, MessageHeaders.class, event -> STREAMING)
             .transition(INITIAL, MessageCancelled.class, event -> {
                 cancelAction.run();
+                whenFinishedAction.run();
                 return TERMINATED;
             })
             .transition(INITIAL, MessageCompleted.class, event -> {
                 // TODO: Add custom exception type?
                 responseErrorAction.accept(new RuntimeException("Response Observable completed without message headers."));
+                whenFinishedAction.run();
                 return TERMINATED;
             })
             .transition(INITIAL, MessageError.class, event -> {
                 responseErrorAction.accept(event.cause());
+                whenFinishedAction.run();
                 return TERMINATED;
             })
             .transition(STREAMING, ContentEnd.class, event -> {
                 onCompletedAction.run();
+                whenFinishedAction.run();
                 return COMPLETED;
             })
             .transition(STREAMING, ContentError.class, event -> {
                 contentErrorAction.accept(event.cause());
+                whenFinishedAction.run();
                 return TERMINATED;
             })
             .transition(STREAMING, ContentCancelled.class, event -> {
                 cancelAction.run();
+                whenFinishedAction.run();
                 return TERMINATED;
             })
             .onInappropriateEvent((state, event) -> state)
@@ -96,6 +103,11 @@ public class ResponseEventListener {
 
     public ResponseEventListener whenCompleted(Runnable action) {
         this.onCompletedAction = requireNonNull(action);
+        return this;
+    }
+
+    public ResponseEventListener whenFinished(Runnable action) {
+        this.whenFinishedAction = requireNonNull(action);
         return this;
     }
 

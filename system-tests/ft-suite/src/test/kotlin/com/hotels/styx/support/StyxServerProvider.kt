@@ -32,7 +32,7 @@ import java.util.HashMap
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicReference
 
-class StyxServerProvider(val initialConfig: String) {
+class StyxServerProvider(val defaultConfig: String) {
     val serverRef: AtomicReference<StyxServer?> = AtomicReference()
 
     operator fun invoke() = get()
@@ -47,13 +47,13 @@ class StyxServerProvider(val initialConfig: String) {
 
     fun started() = (serverRef.get() == null) || serverRef.get()!!.isRunning
 
-    fun restart(): StyxServerProvider {
+    fun restart(configuration: String = defaultConfig): StyxServerProvider {
         if (started()) {
             stop()
         }
 
         val newServer = StyxServer(StyxServerComponents.Builder()
-                .styxConfig(StyxConfig.fromYaml(initialConfig))
+                .styxConfig(StyxConfig.fromYaml(configuration))
                 .build())
         newServer.startAsync()?.awaitRunning()
 

@@ -309,17 +309,17 @@ class ServerConfigSchemaTest : DescribeSpec({
         }
     }
 
-    describe("HttpHandlers") {
+    describe("routingObjects") {
         it("Is a map of routing objects") {
             validateServerConfiguration(yamlConfig(minimalConfig + """
-                httpHandlers: x
+                routingObjects: x
             """.trimIndent())) shouldBe Optional.of(
-                    "Unexpected field type. Field 'httpHandlers' should be MAP(OBJECT(name, type, tags, config)), but it is STRING")
+                    "Unexpected field type. Field 'routingObjects' should be MAP(OBJECT(name, type, tags, config)), but it is STRING")
         }
 
         it("Validates nested HTTP handlers") {
             validateServerConfiguration(yamlConfig(minimalConfig + """
-                httpHandlers:
+                routingObjects:
                   staticResponse:
                     type: StaticResponseHandler
                     config:
@@ -330,7 +330,7 @@ class ServerConfigSchemaTest : DescribeSpec({
 
         it("Detects configuration errors in nested routing objects") {
             validateServerConfiguration(yamlConfig(minimalConfig + """
-                    httpHandlers:
+                    routingObjects:
                       staticResponse:
                         type: StaticResponseHandler
                         config:
@@ -354,7 +354,7 @@ class ServerConfigSchemaTest : DescribeSpec({
                                 config:
                                   status: 200
                                   contentS: "Fallback"
-                """.trimIndent())) shouldBe Optional.of("Unexpected field: 'httpHandlers[condition].config.fallback.config.handler.config.contentS'")
+                """.trimIndent())) shouldBe Optional.of("Unexpected field: 'routingObjects[condition].config.fallback.config.handler.config.contentS'")
         }
     }
 })

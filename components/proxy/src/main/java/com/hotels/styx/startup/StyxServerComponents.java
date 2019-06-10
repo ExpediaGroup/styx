@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.AsyncEventBus;
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
@@ -31,7 +32,7 @@ import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupFactory;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
-import com.hotels.styx.routing.RoutingObject;
+import com.hotels.styx.routing.RoutingObjectAdapter;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
@@ -107,8 +108,8 @@ public class StyxServerComponents {
                 .map(StyxServerComponents::readHttpHandlers)
                 .orElse(ImmutableMap.of())
                 .forEach((name, record) -> {
-                    RoutingObject handler = routingObjectFactory.build(ImmutableList.of(name), record);
-                    routeObjectStore.insert(name, new RoutingObjectRecord(record.type(), record.config(), handler))
+                    RoutingObjectAdapter adapter = new RoutingObjectAdapter(routingObjectFactory.build(ImmutableList.of(name), record));
+                    routeObjectStore.insert(name, new RoutingObjectRecord(record.type(), ImmutableSet.copyOf(record.tags()), record.config(), adapter))
                             .ifPresent(previous -> previous.getRoutingObject().stop());
                 });
     }
