@@ -66,21 +66,20 @@ proxy:
 admin:
   connectors:
     http:
-      # Server port for Styx admin interface.
+      # Port for accessing the admin server over HTTP.
       port: 9000
-  # Number of threads for handling incoming connections on admin interface. 0 -> availableProcessors / 2 threads will be used.
+  # Number of threads for handling incoming connections on admin interface. If set to 0, availableProcessors / 2 threads will be used.
   bossThreadsCount: 1
   # Number of worker threads for admin interface
   # Worker threads are those performing all the asynchronous I/O operation on the inbound channel.
   # 0 -> availableProcessors / 2 threads will be used
   workerThreadsCount: 2
-  tcpNoDelay: true
-  nioReuseAddress: true
-  nioKeepAlive: true
+  # The maximum length in bytes of the initial line of an HTTP message, e.g. {@code GET http://example.org/ HTTP/1.1}.
   maxInitialLength: 4096
+  # The maximum combined size of the HTTP headers in bytes.
   maxHeaderSize: 8192
+  # The maximum size of an HTTP chunk in bytes.
   maxChunkSize: 8192
-  maxContentLength: 65536
   
   # Whether to cache the generated JSON for the /admin/metrics and /admin/jvm pages
   metricsCache:
