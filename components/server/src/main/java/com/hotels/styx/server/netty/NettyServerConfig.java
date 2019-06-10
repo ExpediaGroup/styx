@@ -136,14 +136,14 @@ public class NettyServerConfig {
     }
 
     /*
-     TODO unused
+     TODO unused: https://github.com/HotelsDotCom/styx/issues/428
      */
     public boolean tcpNoDelay() {
         return this.tcpNoDelay;
     }
 
     /*
-     TODO unused
+     TODO unused: https://github.com/HotelsDotCom/styx/issues/428
      */
     public boolean nioReuseAddress() {
         return this.nioReuseAddress;
@@ -177,7 +177,7 @@ public class NettyServerConfig {
     }
 
     /*
-     TODO unused
+     TODO unused: https://github.com/HotelsDotCom/styx/issues/428
      */
     public int maxContentLength() {
         return this.maxContentLength;
@@ -211,7 +211,7 @@ public class NettyServerConfig {
     }
 
     /*
-     TODO unused
+     TODO unused: https://github.com/HotelsDotCom/styx/issues/428
      */
     public boolean nioKeepAlive() {
         return this.nioKeepAlive;
