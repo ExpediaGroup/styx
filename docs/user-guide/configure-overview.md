@@ -40,9 +40,8 @@ proxy:
        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
   # Boss threads are those establishing new channels.
-  #  If set to 0, availableProcessors / 2 threads will be used
   bossThreadsCount: 1
-  # styx client worker threads are those performing all the asynchronous I/O operation to the backend origins.
+  # Styx client worker threads are those performing all the asynchronous I/O operation to the backend origins.
   # If set to 0, availableProcessors / 2 threads will be used
   clientWorkerThreadsCount: 0
   # Worker threads are those performing all the asynchronous I/O operation on the inbound channel.
@@ -68,7 +67,7 @@ admin:
     http:
       # Port for accessing the admin server over HTTP.
       port: 9000
-  # Number of threads for handling incoming connections on admin interface. If set to 0, availableProcessors / 2 threads will be used.
+  # Number of threads for handling incoming connections on admin interface.
   bossThreadsCount: 1
   # Number of worker threads for admin interface
   # Worker threads are those performing all the asynchronous I/O operation on the inbound channel.
