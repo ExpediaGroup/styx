@@ -20,12 +20,20 @@ import io.netty.channel.ServerChannel;
 
 /**
  * Factory for creating netty channel implementation based on the current system.
- *
  */
 public interface ServerEventLoopFactory {
-
+    /**
+     * EventLoopGroup for establishing new channels.
+     *
+     * @return event loop group
+     */
     EventLoopGroup newBossEventLoopGroup();
 
+    /**
+     * EventLoopGroup for handling events on channels.
+     *
+     * @return event loop group
+     */
     EventLoopGroup newWorkerEventLoopGroup();
 
     Class<? extends ServerChannel> serverChannelClass();

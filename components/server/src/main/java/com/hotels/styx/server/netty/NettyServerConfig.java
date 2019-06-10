@@ -113,6 +113,11 @@ public class NettyServerConfig {
         return connectors;
     }
 
+    /**
+     * Number of threads for establishing new channels.
+     *
+     * @return number of threads
+     */
     public int bossThreadsCount() {
         return this.bossThreadsCount;
     }

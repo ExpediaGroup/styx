@@ -19,27 +19,34 @@ jvmRouteName: "${jvm.route:noJvmRouteSet}"
 proxy:
   connectors:
     http:
-      # Server port for Styx proxy.
+      # Port for accessing the proxy server over HTTP.
       port: 8080
     https:
+      # Port for accessing the proxy server over HTTPS.
       port: 8443
+      # Implementation of SSL functionality, can be JDK or OPENSSL.
       sslProvider: OPENSSL
+      # Timeout for the cached SSL session objects.
       sessionTimeoutMillis: 300000
+      # Size of the cache used for storing SSL session objects.
       sessionCacheSize: 20000
+      # The TLS protocol versions to enable.
       protocols:
         - TLSv1.2
+      # The cipher suites to enable, in the order of preference.
       cipherSuites:
        - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
        - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-  #  0 -> availableProcessors / 2 threads will be used
+  # Boss threads are those establishing new channels.
+  #  If set to 0, availableProcessors / 2 threads will be used
   bossThreadsCount: 1
   # styx client worker threads are those performing all the asynchronous I/O operation to the backend origins.
-  # 0 -> availableProcessors / 2 threads will be used
+  # If set to 0, availableProcessors / 2 threads will be used
   clientWorkerThreadsCount: 0
   # Worker threads are those performing all the asynchronous I/O operation on the inbound channel.
-  # 0 -> availableProcessors / 2 threads will be used
+  # If set to 0, availableProcessors / 2 threads will be used
   workerThreadsCount: 0
   tcpNoDelay: true
   nioReuseAddress: true
@@ -142,9 +149,9 @@ styxHeaders:
 # each proxied request. Accepts a boolean value (true/false).
 requestTracking: false
 
-# Allow and Encode the list of unwise chars.
 url:
   encoding:
+    # Determines which characters should be escaped if found in the URL.
     unwiseCharactersToEncode: "|,;,{,}"
 
 # Configure plugins that Styx will use
