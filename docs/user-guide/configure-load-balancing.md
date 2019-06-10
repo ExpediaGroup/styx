@@ -2,6 +2,7 @@
 
 Styx supports three load balancing strategies:
 
+ - Power of Two
  - Round robin
  - Busy
 
