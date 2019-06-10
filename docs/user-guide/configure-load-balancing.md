@@ -72,7 +72,4 @@ To enable *Round Robin* load balancing strategy:
       strategy:
         factory: {class: "com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy$Factory"}
 
-The *requestCount* attribute determines how long the adaptive strategy
-remains in the Round Robin phase before switching over to the *Busy* strategy.
-Its value is the number of requests proxied *per origin*.
 
