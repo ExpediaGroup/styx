@@ -48,18 +48,18 @@ proxy:
   # Worker threads are those performing all the asynchronous I/O operation on the inbound channel.
   # If set to 0, availableProcessors / 2 threads will be used
   workerThreadsCount: 0
-  tcpNoDelay: true
-  nioReuseAddress: true
-  nioKeepAlive: true
+  # The maximum length in bytes of the initial line of an HTTP message, e.g. {@code GET http://example.org/ HTTP/1.1}.
   maxInitialLength: 4096
+  # The maximum combined size of the HTTP headers in bytes.
   maxHeaderSize: 65536
+  # The maximum size of an HTTP chunk in bytes.
   maxChunkSize: 8192
-  maxContentLength: 65536
   # Time in milliseconds Styx Proxy Service waits for an incoming request from client
   # before replying with 408 Request Timeout.
   requestTimeoutMillis: 12000
   # A timeout for idle persistent connections, in milliseconds.
   keepAliveTimeoutMillis: 120000
+  # Max connections to server before we start rejecting them.
   maxConnectionsCount: 4000
 
 
