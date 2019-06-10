@@ -2,8 +2,8 @@
 
 Styx supports three load balancing strategies:
 
- - Power of Two
- - Round robin
+ - Power of two
+ - Round-robin
  - Busy
 
 Styx also provides a mechanism to bypass the load balancer and force
