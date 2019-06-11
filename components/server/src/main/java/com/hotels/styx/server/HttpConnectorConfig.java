@@ -18,6 +18,8 @@ package com.hotels.styx.server;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Objects;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 /**
  * Http Connector config.
  */
@@ -63,7 +65,7 @@ public class HttpConnectorConfig implements ConnectorConfig {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return toStringHelper(this)
                 .add("port", port)
                 .toString();
     }

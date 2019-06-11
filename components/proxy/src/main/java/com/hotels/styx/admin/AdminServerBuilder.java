@@ -88,7 +88,7 @@ public class AdminServerBuilder {
     private final Environment environment;
     private final Configuration configuration;
     private final RoutingObjectFactory routingObjectFactory;
-    private StyxObjectStore<RoutingObjectRecord> routeDatabase;
+    private final StyxObjectStore<RoutingObjectRecord> routeDatabase;
 
     private Registry<BackendService> backendServicesRegistry;
 

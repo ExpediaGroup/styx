@@ -20,7 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import static com.google.common.base.Objects.toStringHelper;
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
@@ -52,8 +52,11 @@ public final class HealthCheckConfig {
                 builder.unhealthyThreshold);
     }
 
-    private HealthCheckConfig(Optional<String> uri, Optional<Long> intervalMillis, Optional<Long> timeoutMillis,
-                              Optional<Integer> healthyThreshold, Optional<Integer> unhealthyThreshold) {
+    private HealthCheckConfig(Optional<String> uri,
+                              Optional<Long> intervalMillis,
+                              Optional<Long> timeoutMillis,
+                              Optional<Integer> healthyThreshold,
+                              Optional<Integer> unhealthyThreshold) {
         this.uri = uri.map(this::checkValidUri);
         this.intervalMillis = zeroToAbsent(intervalMillis).orElse(DEFAULT_HEALTH_CHECK_INTERVAL);
         this.timeoutMillis = zeroToAbsent(timeoutMillis).orElse(DEFAULT_TIMEOUT_VALUE);
@@ -258,7 +261,7 @@ public final class HealthCheckConfig {
         /**
          * Sets the socket timeout for health-checks in a specified unit.
          *
-         * @param timeout timeout in the specified unit
+         * @param timeout  timeout in the specified unit
          * @param timeUnit time unit of timeout
          * @return this builder
          */

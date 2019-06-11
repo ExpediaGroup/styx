@@ -15,12 +15,13 @@
  */
 package com.hotels.styx.api.extension.service;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import static com.google.common.base.Objects.toStringHelper;
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static java.util.concurrent.TimeUnit.HOURS;
 
 /**
@@ -36,9 +37,13 @@ public class StickySessionConfig {
         this(false, TWELVE_HOURS);
     }
 
-    StickySessionConfig(boolean enabled, Integer timeoutSeconds) {
+    private StickySessionConfig(boolean enabled, Integer timeoutSeconds) {
         this.enabled = enabled;
         this.timeoutSeconds = Optional.ofNullable(timeoutSeconds).orElse(TWELVE_HOURS);
+    }
+
+    private StickySessionConfig(Builder builder) {
+        this(builder.enabled, builder.timeoutSeconds);
     }
 
     public static StickySessionConfig stickySessionDisabled() {
@@ -47,10 +52,6 @@ public class StickySessionConfig {
 
     public static Builder newStickySessionConfigBuilder() {
         return new Builder();
-    }
-
-    private StickySessionConfig(Builder builder) {
-        this(builder.enabled, builder.timeoutSeconds);
     }
 
     public boolean stickySessionEnabled() {

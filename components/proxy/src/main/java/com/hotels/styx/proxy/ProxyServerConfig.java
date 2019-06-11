@@ -48,7 +48,7 @@ public class ProxyServerConfig extends NettyServerConfig {
     /**
      * Builder.
      */
-    @JsonPOJOBuilder(buildMethodName = "build", withPrefix = "set")
+    @JsonPOJOBuilder(withPrefix = "set")
     public static class Builder {
         private final NettyServerConfig.Builder builder = new NettyServerConfig.Builder();
         private Integer clientWorkerThreadsCount;
