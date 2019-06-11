@@ -24,6 +24,7 @@ import com.hotels.styx.server.HttpConnectorConfig
 import com.hotels.styx.servers.MockOriginServer
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.proxyHttpHostHeader
+import com.hotels.styx.support.threadCount
 import com.hotels.styx.support.wait
 import io.kotlintest.Spec
 import io.kotlintest.eventually
@@ -166,11 +167,6 @@ class OriginResourcesSpec : StringSpec() {
                           origins:
                             - { id: "$prefix", host: "localhost:${mockServer.port()}" }
                         """.trimIndent()
-
-    fun threadCount(namePattern: String) = Thread.getAllStackTraces().keys
-            .map { it.name }
-            .filter { it.contains(namePattern) }
-            .count()
 
     fun configurationApplied(prefix: String) = client.send(get(prefix).header(HOST, styxServer().proxyHttpHostHeader()).build())
             .wait(debug = false)
