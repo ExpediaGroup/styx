@@ -33,13 +33,8 @@ admin:
   maxContentLength: 65536
 
 loadBalancing:
-  strategy: adaptive
-  strategies:
-    adaptive:
-      factory: {class: "com.hotels.styx.client.loadbalancing.strategies.StrategyFactory"}
-      warmUpCount: 100
-    rr:
-      factory: {class: "com.hotels.styx.client.loadbalancing.strategies.StrategyFactory"}
+  strategy:
+    factory: {class: "com.hotels.styx.client.loadbalancing.strategies.PowerOfTwoStrategy$Factory"}
 
 metrics:
   graphite:

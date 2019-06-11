@@ -2,7 +2,8 @@
 
 Styx supports three load balancing strategies:
 
- - Round robin
+ - Power of two
+ - Round-robin
  - Busy
 
 Styx also provides a mechanism to bypass the load balancer and force
@@ -71,7 +72,4 @@ To enable *Round Robin* load balancing strategy:
       strategy:
         factory: {class: "com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy$Factory"}
 
-The *requestCount* attribute determines how long the adaptive strategy
-remains in the Round Robin phase before switching over to the *Busy* strategy.
-Its value is the number of requests proxied *per origin*.
 

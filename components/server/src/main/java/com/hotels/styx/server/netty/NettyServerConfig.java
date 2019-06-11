@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -113,10 +113,20 @@ public class NettyServerConfig {
         return connectors;
     }
 
+    /**
+     * Number of threads for establishing new channels.
+     *
+     * @return number of threads
+     */
     public int bossThreadsCount() {
         return this.bossThreadsCount;
     }
 
+    /**
+     * Worker threads are those performing all the asynchronous I/O operation on the inbound channel.
+     *
+     * @return number of threads
+     */
     public int workerThreadsCount() {
         return this.workerThreadsCount;
     }
@@ -125,42 +135,86 @@ public class NettyServerConfig {
         return this.nioAcceptorBacklog;
     }
 
+    /*
+     TODO unused: https://github.com/HotelsDotCom/styx/issues/428
+     */
     public boolean tcpNoDelay() {
         return this.tcpNoDelay;
     }
 
+    /*
+     TODO unused: https://github.com/HotelsDotCom/styx/issues/428
+     */
     public boolean nioReuseAddress() {
         return this.nioReuseAddress;
     }
 
+    /**
+     * The maximum length in bytes of the initial line of an HTTP message, e.g. {@code GET http://example.org/ HTTP/1.1}.
+     *
+     * @return maximum length of initial line
+     */
     public int maxInitialLineLength() {
         return this.maxInitialLineLength;
     }
 
+    /**
+     * The maximum combined size of the HTTP headers in bytes.
+     *
+     * @return maximum combined size of headers
+     */
     public int maxHeaderSize() {
         return this.maxHeaderSize;
     }
 
+    /**
+     * The maximum size of an HTTP chunk in bytes.
+     *
+     * @return maximum chunk size
+     */
     public int maxChunkSize() {
         return this.maxChunkSize;
     }
 
+    /*
+     TODO unused: https://github.com/HotelsDotCom/styx/issues/428
+     */
     public int maxContentLength() {
         return this.maxContentLength;
     }
 
+    /**
+     * This parameter controls the amount of tolerated inactivity while the request is being received.
+     * If a client started sending a request, and then suddenly cuts it off, Styx would detect this after this
+     * duration has elapsed.
+     *
+     * @return time in millis
+     */
     public int requestTimeoutMillis() {
         return this.requestTimeoutMs;
     }
 
+    /**
+     * A timeout for idle persistent connections, in milliseconds.
+     *
+     * @return time in millis
+     */
     public int keepAliveTimeoutMillis() {
         return this.keepAliveTimeoutMillis;
     }
 
+    /**
+     * Max connections to server before we start rejecting them.
+     *
+     * @return max number of connections
+     */
     public int maxConnectionsCount() {
         return this.maxConnectionsCount;
     }
 
+    /*
+     TODO unused: https://github.com/HotelsDotCom/styx/issues/428
+     */
     public boolean nioKeepAlive() {
         return this.nioKeepAlive;
     }

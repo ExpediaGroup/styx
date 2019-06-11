@@ -60,6 +60,11 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
         return "https";
     }
 
+    /**
+     * Implementation of SSL functionality, can be JDK or OPENSSL.
+     *
+     * @return SSL provider
+     */
     public String sslProvider() {
         return sslProvider;
     }
@@ -72,18 +77,38 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
         return certificateKeyFile;
     }
 
+    /**
+     * The cipher suites to enable, in the order of preference.
+     *
+     * @return cipher suites
+     */
     public List<String> ciphers() {
         return cipherSuites;
     }
 
+    /**
+     * Timeout for the cached SSL session objects.
+     *
+     * @return timeout
+     */
     public long sessionTimeoutMillis() {
         return sessionTimeoutMillis;
     }
 
+    /**
+     * Size of the cache used for storing SSL session objects.
+     *
+     * @return cache size
+     */
     public long sessionCacheSize() {
         return sessionCacheSize;
     }
 
+    /**
+     * The TLS protocol versions to enable.
+     *
+     * @return protocols
+     */
     public List<String> protocols() {
         return protocols;
     }
