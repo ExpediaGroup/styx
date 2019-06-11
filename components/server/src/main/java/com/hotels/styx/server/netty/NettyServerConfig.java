@@ -22,14 +22,12 @@ import com.hotels.styx.server.ConnectorConfig;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpsConnectorConfig;
 
-import java.net.URI;
 import java.util.Optional;
 import java.util.stream.Stream;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static java.lang.Math.max;
 import static java.lang.Runtime.getRuntime;
-import static java.lang.String.format;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
 

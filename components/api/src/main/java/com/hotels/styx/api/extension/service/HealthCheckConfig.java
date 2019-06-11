@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -261,7 +261,7 @@ public final class HealthCheckConfig {
         /**
          * Sets the socket timeout for health-checks in a specified unit.
          *
-         * @param timeout  timeout in the specified unit
+         * @param timeout timeout in the specified unit
          * @param timeUnit time unit of timeout
          * @return this builder
          */
