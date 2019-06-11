@@ -184,7 +184,9 @@ public class NettyServerConfig {
     }
 
     /**
-     * Time in milliseconds Styx Proxy Service waits for an incoming request from client.
+     * This parameter controls the amount of tolerated inactivity while the request is being received.
+     * If a client started sending a request, and then suddenly cuts it off, Styx would detect this after this
+     * duration has elapsed.
      *
      * @return time in millis
      */
