@@ -102,7 +102,7 @@ public class HostProxy implements RoutingObject {
             optional("metricPrefix", string())
     );
 
-    private final String message;
+    private final String errorMessage;
     private final StyxHostHttpClient client;
     private volatile boolean active = true;
 
@@ -111,7 +111,7 @@ public class HostProxy implements RoutingObject {
 
     public HostProxy(HostAndPort hostAndPort, StyxHostHttpClient client) {
         this.hostAndPort = requireNonNull(hostAndPort);
-        this.message = format("HostProxy %s:%d is stopped but received traffic.",
+        this.errorMessage = format("HostProxy %s:%d is stopped but received traffic.",
                 hostAndPort.getHostText(),
                 hostAndPort.getPort());
         this.client = requireNonNull(client);
@@ -122,7 +122,7 @@ public class HostProxy implements RoutingObject {
         if (active) {
             return new Eventual<>(client.sendRequest(request));
         } else {
-            return Eventual.error(new IllegalStateException(message));
+            return Eventual.error(new IllegalStateException(errorMessage));
         }
     }
 
@@ -140,30 +140,6 @@ public class HostProxy implements RoutingObject {
         private static final int DEFAULT_REQUEST_TIMEOUT = 60000;
         private static final int DEFAULT_TLS_PORT = 443;
         private static final int DEFAULT_HTTP_PORT = 80;
-
-        private static Connection.Factory connectionFactory(
-                TlsSettings tlsSettings,
-                int responseTimeoutMillis,
-                OriginStatsFactory originStatsFactory,
-                long connectionExpiration) {
-
-            NettyConnectionFactory factory = new NettyConnectionFactory.Builder()
-                    .httpRequestOperationFactory(
-                            httpRequestOperationFactoryBuilder()
-                                    .flowControlEnabled(true)
-                                    .originStatsFactory(originStatsFactory)
-                                    .responseTimeoutMillis(responseTimeoutMillis)
-                                    .build()
-                    )
-                    .tlsSettings(Optional.ofNullable(tlsSettings).orElse(null))
-                    .build();
-
-            if (connectionExpiration > 0) {
-                return new ExpiringConnectionFactory(connectionExpiration, factory);
-            } else {
-                return factory;
-            }
-        }
 
         @Override
         public RoutingObject build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
@@ -231,6 +207,30 @@ public class HostProxy implements RoutingObject {
                     .build();
 
             return new HostProxy(hostAndPort, StyxHostHttpClient.create(connectionPoolFactory.create(origin)));
+        }
+
+        private static Connection.Factory connectionFactory(
+                TlsSettings tlsSettings,
+                int responseTimeoutMillis,
+                OriginStatsFactory originStatsFactory,
+                long connectionExpiration) {
+
+            NettyConnectionFactory factory = new NettyConnectionFactory.Builder()
+                    .httpRequestOperationFactory(
+                            httpRequestOperationFactoryBuilder()
+                                    .flowControlEnabled(true)
+                                    .originStatsFactory(originStatsFactory)
+                                    .responseTimeoutMillis(responseTimeoutMillis)
+                                    .build()
+                    )
+                    .tlsSettings(Optional.ofNullable(tlsSettings).orElse(null))
+                    .build();
+
+            if (connectionExpiration > 0) {
+                return new ExpiringConnectionFactory(connectionExpiration, factory);
+            } else {
+                return factory;
+            }
         }
 
     }

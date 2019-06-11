@@ -41,9 +41,7 @@ class HostProxyTest : FeatureSpec() {
     init {
         feature("Routing and proxying") {
             scenario("Proxies traffic") {
-                HostProxy(HostAndPort.fromString("localhost:80"), client).let {
-                    it.handle(request.stream(), mockk())
-                }
+                HostProxy(HostAndPort.fromString("localhost:80"), client).handle(request.stream(), mockk())
 
                 verify {
                     client?.sendRequest(ofType(LiveHttpRequest::class))
@@ -82,9 +80,9 @@ class HostProxyTest : FeatureSpec() {
                             host: ahost.server.com:1234
                         """.trimIndent())) as HostProxy
 
-                hostProxy.hostAndPort.let {
-                    it.hostText shouldBe "ahost.server.com"
-                    it.port shouldBe 1234
+                hostProxy.hostAndPort.run {
+                    hostText shouldBe "ahost.server.com"
+                    port shouldBe 1234
                 }
             }
 
@@ -97,9 +95,9 @@ class HostProxyTest : FeatureSpec() {
                             host: localhost
                         """.trimIndent())) as HostProxy
 
-                hostProxy.hostAndPort.let {
-                    it.hostText shouldBe "localhost"
-                    it.port shouldBe 80
+                hostProxy.hostAndPort.run {
+                    hostText shouldBe "localhost"
+                    port shouldBe 80
                 }
             }
 
@@ -114,9 +112,9 @@ class HostProxyTest : FeatureSpec() {
                               trustAllCerts: true
                         """.trimIndent())) as HostProxy
 
-                hostProxy.hostAndPort.let {
-                    it.hostText shouldBe "localhost"
-                    it.port shouldBe 443
+                hostProxy.hostAndPort.run {
+                    hostText shouldBe "localhost"
+                    port shouldBe 443
                 }
             }
         }
