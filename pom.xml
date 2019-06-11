@@ -97,6 +97,7 @@
     <jackson.version>2.9.9</jackson.version>
     <jackson.dataformat.version>2.9.9</jackson.dataformat.version>
     <jackson.module.scala.version>2.9.9</jackson.module.scala.version>
+    <jackson-module-kotlin.version>2.9.9</jackson-module-kotlin.version>
     <metrics.version>4.0.5</metrics.version>
     <antlr.version>4.5.1-1</antlr.version>
     <netty.version>4.1.15.Final</netty.version>
@@ -311,6 +312,12 @@
         <groupId>com.fasterxml.jackson.module</groupId>
         <artifactId>jackson-module-scala_${scala.version}</artifactId>
         <version>${jackson.module.scala.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.fasterxml.jackson.module</groupId>
+        <artifactId>jackson-module-kotlin</artifactId>
+        <version>${jackson-module-kotlin.version}</version>
       </dependency>
 
       <!-- Metrics -->

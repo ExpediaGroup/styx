@@ -338,9 +338,9 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                         }
             }
 
-            scenario("!Routes to new origin when the origin indicated by sticky session cookie is no longer available") {
-               TODO("Styx doesn't support this as of today")
-            }
+//            scenario("!Routes to new origin when the origin indicated by sticky session cookie is no longer available") {
+//               TODO("Styx doesn't support this as of today")
+//            }
         }
 
         feature("Origins restriction") {

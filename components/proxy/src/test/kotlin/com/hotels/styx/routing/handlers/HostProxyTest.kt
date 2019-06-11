@@ -49,7 +49,7 @@ class HostProxyTest : FeatureSpec() {
     init {
         feature("Routing and proxying") {
             scenario("Proxies traffic") {
-                HostProxy(HostAndPort.fromString("localhost:80"), client).handle(request.stream(), mockk())
+                HostProxy(HostAndPort.fromString("localhost:80"), client, mockk()).handle(request.stream(), mockk())
 
                 verify {
                     client?.sendRequest(ofType(LiveHttpRequest::class))

@@ -82,7 +82,7 @@ public class RoutingObjectFactory {
                 .put(PROXY_TO_BACKEND, ProxyToBackend.SCHEMA)
                 .put(PATH_PREFIX_ROUTER, PathPrefixRouter.SCHEMA)
                 .put(HOST_PROXY, HostProxy.SCHEMA)
-                .put(LOAD_BALANCING_GROUP, LoadBalancingGroup.SCHEMA)
+                .put(LOAD_BALANCING_GROUP,  LoadBalancingGroup.Companion.getSCHEMA())
                 .build();
     }
 
