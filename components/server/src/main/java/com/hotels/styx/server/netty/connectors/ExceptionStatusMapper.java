@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.server.netty.connectors;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
@@ -27,6 +28,7 @@ import java.util.Optional;
 
 import static java.util.Arrays.asList;
 import static java.util.Comparator.comparing;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -42,10 +44,9 @@ public final class ExceptionStatusMapper {
         this.multimap = ImmutableMultimap.copyOf(builder.multimap);
     }
 
-    Optional<HttpResponseStatus> statusFor(Throwable throwable) {
+    public Optional<HttpResponseStatus> statusFor(Throwable throwable) {
         List<HttpResponseStatus> matchingStatuses = this.multimap.entries().stream()
                 .filter(entry -> entry.getValue().isInstance(throwable))
-                .sorted(comparing(entry -> entry.getKey().code()))
                 .map(Map.Entry::getKey)
                 .collect(toList());
 
@@ -77,4 +78,5 @@ public final class ExceptionStatusMapper {
             return new ExceptionStatusMapper(this);
         }
     }
+
 }

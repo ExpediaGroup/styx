@@ -18,6 +18,7 @@ package com.hotels.styx;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.proxy.interceptors.ConfigurationContextResolverInterceptor;
+import com.hotels.styx.proxy.interceptors.ExceptionMappingInterceptor;
 import com.hotels.styx.proxy.interceptors.HopByHopHeadersRemovingInterceptor;
 import com.hotels.styx.proxy.interceptors.HttpMessageLoggingInterceptor;
 import com.hotels.styx.proxy.interceptors.RequestEnrichingInterceptor;
@@ -38,6 +39,8 @@ final class BuiltInInterceptors {
 
     static List<HttpInterceptor> internalStyxInterceptors(StyxConfig config) {
         ImmutableList.Builder<HttpInterceptor> builder = ImmutableList.builder();
+
+//        builder.add(new ExceptionMappingInterceptor());
 
         boolean loggingEnabled = config.get("request-logging.inbound.enabled", Boolean.class)
                 .orElse(false);
