@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ public class ProxyServerConfig extends NettyServerConfig {
     /**
      * Builder.
      */
-    @JsonPOJOBuilder(buildMethodName = "build", withPrefix = "set")
+    @JsonPOJOBuilder(withPrefix = "set")
     public static class Builder {
         private final NettyServerConfig.Builder builder = new NettyServerConfig.Builder();
         private Integer clientWorkerThreadsCount;

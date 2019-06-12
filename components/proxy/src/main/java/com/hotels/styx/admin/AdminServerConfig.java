@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import com.hotels.styx.server.netty.NettyServerConfig;
 import java.time.Duration;
 import java.util.Optional;
 
-import static com.google.common.base.Objects.firstNonNull;
+import static com.google.common.base.MoreObjects.firstNonNull;
 
 /**
  * xConfigurations for the Admin Server.
@@ -43,11 +43,9 @@ public class AdminServerConfig extends NettyServerConfig {
     private AdminServerConfig(Builder builder) {
         super(builder);
 
-        if (builder.metricsCache != null && builder.metricsCache.enabled) {
-            this.metricsCacheExpiration = Optional.of(Duration.ofMillis(builder.metricsCache.expirationMillis));
-        } else {
-            this.metricsCacheExpiration = Optional.empty();
-        }
+        this.metricsCacheExpiration = Optional.ofNullable(builder.metricsCache)
+                .filter(cache -> cache.enabled)
+                .map(cache -> Duration.ofMillis(cache.expirationMillis));
     }
 
     public Optional<Duration> metricsCacheExpiration() {
@@ -72,7 +70,7 @@ public class AdminServerConfig extends NettyServerConfig {
     /**
      * Builder.
      */
-    @JsonPOJOBuilder(buildMethodName = "build", withPrefix = "set")
+    @JsonPOJOBuilder(withPrefix = "set")
     public static class Builder extends NettyServerConfig.Builder<Builder> {
         private MetricsCache metricsCache;
 
