@@ -26,14 +26,26 @@ class FancyExceptionMatcher {
         this(asList(delegateChain));
     }
 
-    boolean isMatch(Throwable error) {
-        return deepMatch(error, delegateChain);
+    int matchLevel(Throwable error) {
+        return deepMatchLevel(error, delegateChain, 1);
     }
 
-    private static boolean deepMatch(Throwable error, List<Class<? extends Exception>> delegateChain) {
-        return delegateChain.isEmpty()
-                || delegateChain.get(0).isInstance(error)
-                && (delegateChain.size() == 1 || deepMatch(error.getCause(), delegateChain.subList(1, delegateChain.size())));
+    private static int deepMatchLevel(Throwable error, List<Class<? extends Exception>> delegateChain, int level) {
+        System.out.println("Comparing " + error + " to " + delegateChain + " at level=" + level);
+
+        if (delegateChain.isEmpty()) {
+            return level;
+        }
+
+        if (delegateChain.get(0).isInstance(error)) {
+            if (delegateChain.size() == 1) {
+                return level;
+            }
+
+            return deepMatchLevel(error.getCause(), delegateChain.subList(1, delegateChain.size()), level + 1);
+        }
+
+        return 0;
     }
 
 
