@@ -79,14 +79,12 @@ import static org.slf4j.LoggerFactory.getLogger;
 class ProxyConnectorFactory implements ServerConnectorFactory {
     private static final ExceptionStatusMapper EXCEPTION_STATUSES = new ExceptionStatusMapper.Builder()
             .add(REQUEST_TIMEOUT, RequestTimeoutException.class)
-            .add(BAD_GATEWAY,
-                    OriginUnreachableException.class,
-                    NoAvailableHostsException.class,
-                    NoServiceConfiguredException.class,
-                    BadHttpResponseException.class,
-                    ContentOverflowException.class,
-                    TransportLostException.class
-            )
+            .add(BAD_GATEWAY, OriginUnreachableException.class)
+            .add(BAD_GATEWAY, NoAvailableHostsException.class)
+            .add(BAD_GATEWAY, NoServiceConfiguredException.class)
+            .add(BAD_GATEWAY, BadHttpResponseException.class)
+            .add(BAD_GATEWAY, ContentOverflowException.class)
+            .add(BAD_GATEWAY, TransportLostException.class)
             .add(SERVICE_UNAVAILABLE, ResourceExhaustedException.class)
             .add(GATEWAY_TIMEOUT, ResponseTimeoutException.class)
             .add(INTERNAL_SERVER_ERROR, StyxClientException.class)

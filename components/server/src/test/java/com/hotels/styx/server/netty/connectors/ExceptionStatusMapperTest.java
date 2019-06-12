@@ -1,108 +1,56 @@
-/*
-  Copyright (C) 2013-2018 Expedia Inc.
-
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
- */
 package com.hotels.styx.server.netty.connectors;
 
-import com.hotels.styx.api.HttpResponseStatus;
-import com.hotels.styx.support.matchers.LoggingTestSupport;
-import org.testng.annotations.DataProvider;
+import com.hotels.styx.server.BadRequestException;
+import com.hotels.styx.server.netty.connectors.ExceptionStatusMapper.Matched;
+import io.netty.handler.codec.DecoderException;
+import io.netty.handler.codec.TooLongFrameException;
 import org.testng.annotations.Test;
 
-import java.util.Optional;
+import java.util.List;
 
-import static ch.qos.logback.classic.Level.ERROR;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
-import static com.hotels.styx.api.HttpResponseStatus.GATEWAY_TIMEOUT;
-import static com.hotels.styx.api.HttpResponseStatus.REQUEST_TIMEOUT;
-import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
-import static com.hotels.styx.support.matchers.IsOptional.isValue;
-import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
-import static java.lang.String.format;
-import static java.util.regex.Pattern.quote;
+import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
+import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.api.HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE;
+import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 
 public class ExceptionStatusMapperTest {
     private final ExceptionStatusMapper mapper = new ExceptionStatusMapper.Builder()
-            .add(REQUEST_TIMEOUT, Exception1.class)
-            .add(BAD_GATEWAY, Exception2.class, Exception3.class, Exception4.class)
+            .add(BAD_GATEWAY, BadGateway1Exception.class)
+            .add(BAD_GATEWAY, BadGateway2Exception.class)
+            .add(BAD_REQUEST, DecoderException.class, BadRequestException.class)
+            .add(REQUEST_ENTITY_TOO_LARGE, DecoderException.class, BadRequestException.class, TooLongFrameException.class)
             .build();
 
     @Test
-    public void returnsEmptyIfNoStatusMatches() {
-        assertThat(mapper.statusFor(new UnmappedException()), isAbsent());
+    public void matchesAgainstDeepest() {
+        assertThat(mapper.statusFor(new DecoderException()), is(INTERNAL_SERVER_ERROR));
+        assertThat(mapper.statusFor(new DecoderException(new BadRequestException("test"))), is(BAD_REQUEST));
+        assertThat(mapper.statusFor(new DecoderException(new BadRequestException("test", new TooLongFrameException()))), is(REQUEST_ENTITY_TOO_LARGE));
     }
 
     @Test
-    public void retrievesStatus() {
-        assertThat(mapper.statusFor(new Exception1()), isValue(REQUEST_TIMEOUT));
-    }
+    public void hasExpectedLevels() {
+        List<Matched> matches = mapper.matches(new DecoderException(new BadRequestException("test", new TooLongFrameException()))).collect(toList());
 
-    @Test(dataProvider = "badGatewayExceptions")
-    public void multipleExceptionsCanMapToTheSameStatus(Exception e) {
-        assertThat(mapper.statusFor(e), isValue(BAD_GATEWAY));
+        assertThat(matches, contains(
+                new Matched(3, REQUEST_ENTITY_TOO_LARGE),
+                new Matched(2, BAD_REQUEST)
+        ));
     }
 
     @Test
-    public void exceptionMayNotBeMappedToMultipleExceptions() {
-        ExceptionStatusMapper mapper = new ExceptionStatusMapper.Builder()
-                .add(BAD_GATEWAY, Exception1.class)
-                .add(GATEWAY_TIMEOUT, DoubleMappedException.class)
-                .build();
-
-        LoggingTestSupport support = new LoggingTestSupport(ExceptionStatusMapper.class);
-
-        Optional<HttpResponseStatus> status;
-
-        try {
-            status = mapper.statusFor(new DoubleMappedException());
-        } finally {
-            assertThat(support.lastMessage(), is(loggingEvent(ERROR,
-                    "Multiple matching statuses for throwable="
-                            + quote(DoubleMappedException.class.getName())
-                            + " statuses=\\[502 Bad Gateway, 504 Gateway Timeout\\]"
-            )));
-        }
-
-        assertThat(status, isAbsent());
+    public void multipleExceptionsCanMapToTheSameStatus() {
+        assertThat(mapper.statusFor(new BadGateway1Exception()), is(BAD_GATEWAY));
+        assertThat(mapper.statusFor(new BadGateway2Exception()), is(BAD_GATEWAY));
     }
 
-    @DataProvider(name = "badGatewayExceptions")
-    private Object[][] badGatewayExceptions() {
-        return new Object[][]{
-                {new Exception2()},
-                {new Exception3()},
-                {new Exception4()},
-        };
+    private static class BadGateway1Exception extends Exception {
     }
 
-    private static class Exception1 extends Exception {
-    }
-
-    private static class Exception2 extends Exception {
-    }
-
-    private static class Exception3 extends Exception {
-    }
-
-    private static class Exception4 extends Exception {
-    }
-
-    private static class DoubleMappedException extends Exception1 {
-    }
-
-    private static class UnmappedException extends Exception {
+    private static class BadGateway2Exception extends Exception {
     }
 }

@@ -31,8 +31,6 @@ class FancyExceptionMatcher {
     }
 
     private static int deepMatchLevel(Throwable error, List<Class<? extends Exception>> delegateChain, int level) {
-        System.out.println("Comparing " + error + " to " + delegateChain + " at level=" + level);
-
         if (delegateChain.isEmpty()) {
             return level;
         }
@@ -47,6 +45,4 @@ class FancyExceptionMatcher {
 
         return 0;
     }
-
-
 }

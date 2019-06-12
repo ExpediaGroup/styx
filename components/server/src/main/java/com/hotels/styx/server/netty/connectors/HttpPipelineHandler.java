@@ -31,7 +31,6 @@ import com.hotels.styx.client.netty.ConsumerDisconnectedException;
 import com.hotels.styx.common.FsmEventProcessor;
 import com.hotels.styx.common.QueueDrainingEventProcessor;
 import com.hotels.styx.common.StateMachine;
-import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.HttpErrorStatusListener;
 import com.hotels.styx.server.HttpInterceptorContext;
 import com.hotels.styx.server.RequestProgressListener;
@@ -39,8 +38,6 @@ import com.hotels.styx.server.track.RequestTracker;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.embedded.EmbeddedChannel;
-import io.netty.handler.codec.DecoderException;
-import io.netty.handler.codec.TooLongFrameException;
 import org.slf4j.Logger;
 import reactor.core.publisher.Flux;
 import rx.Observable;
@@ -54,9 +51,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
-import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
-import static com.hotels.styx.api.HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.server.HttpErrorStatusListener.IGNORE_ERROR_STATUS;
 import static com.hotels.styx.server.RequestProgressListener.IGNORE_REQUEST_PROGRESS;
@@ -495,22 +490,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
     }
 
     private HttpResponseStatus status(Throwable exception) {
-        return exceptionStatuses.statusFor(exception)
-                .orElseGet(() -> {
-                    if (exception instanceof DecoderException) {
-                        Throwable cause = exception.getCause();
-
-                        if (cause instanceof BadRequestException) {
-                            if (cause.getCause() instanceof TooLongFrameException) {
-                                return REQUEST_ENTITY_TOO_LARGE;
-                            }
-
-                            return BAD_REQUEST;
-                        }
-                    }
-
-                    return INTERNAL_SERVER_ERROR;
-                });
+        return exceptionStatuses.statusFor(exception);
     }
 
     private String warningMessage(String msg) {
