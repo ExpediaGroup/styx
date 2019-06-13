@@ -67,6 +67,7 @@ loadBalancing:
   strategy:
     factory: {class: "com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy$Factory"}
 
-url:
-  encoding:
-    unwiseCharactersToEncode:
+# Allow and Encode the list of unwise chars.
+#url:
+#  encoding:
+#    unwiseCharactersToEncode: ""

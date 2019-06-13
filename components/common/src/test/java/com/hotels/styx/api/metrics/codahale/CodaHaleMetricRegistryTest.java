@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistryListener;
 import com.codahale.metrics.Timer;
+import com.github.rollingmetrics.histogram.util.EmptySnapshot;
 import com.hotels.styx.api.MetricRegistry;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -219,6 +220,7 @@ public class CodaHaleMetricRegistryTest {
     @Test
     public void createsTimerBackedByLatencyStats() {
         Timer timer = metricRegistry.timer("timer");
-        assertThat(timer.getSnapshot(), is(instanceOf(SlidingWindowHistogramReservoir.HistogramSnapshot.class)));
+        // Rollingmetrics Timer creates ans EmptySnapshot() when the histogram is empty. Previously this returned SlidingWindowHistogramReservoir.HistogramSnapshot
+        assertThat(timer.getSnapshot(), is(instanceOf(EmptySnapshot.class)));
     }
 }
