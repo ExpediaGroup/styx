@@ -6,7 +6,7 @@
   <parent>
     <groupId>com.hotels.styx</groupId>
     <artifactId>styx-parent</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.99-SNAPSHOT</version>
   </parent>
 
   <packaging>pom</packaging>
