@@ -84,6 +84,6 @@ loadBalancing:
 # Allow and Encode the list of unwise chars.
 url:
   encoding:
-    unwiseCharactersToEncode:
+    unwiseCharactersToEncode: "|"
 
 #originRestrictionCookie: yourCookieNameHere

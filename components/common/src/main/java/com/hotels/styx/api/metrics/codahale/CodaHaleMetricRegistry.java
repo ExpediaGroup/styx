@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistryListener;
 import com.codahale.metrics.Timer;
+import com.github.rollingmetrics.histogram.HdrBuilder;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.ScopedMetricRegistry;
 
@@ -37,6 +38,7 @@ import java.util.TreeMap;
 public class CodaHaleMetricRegistry implements MetricRegistry {
 
     private final com.codahale.metrics.MetricRegistry metricRegistry;
+    private final HdrBuilder builder = new HdrBuilder();
 
     /**
      * Construct an adapter from an existing codahale registry.
@@ -100,7 +102,7 @@ public class CodaHaleMetricRegistry implements MetricRegistry {
 
         if (metric == null) {
             try {
-                return register(name, newTimer());
+                return register(name, builder.buildTimer());
             } catch (IllegalArgumentException e) {
                 Metric added = metrics.get(name);
                 if (added instanceof Timer) {
@@ -112,7 +114,7 @@ public class CodaHaleMetricRegistry implements MetricRegistry {
     }
 
     private Timer newTimer() {
-        return new SampleCountFromSnapshotTimer(new SlidingWindowHistogramReservoir());
+        return builder.buildTimer();
     }
 
     @Override
