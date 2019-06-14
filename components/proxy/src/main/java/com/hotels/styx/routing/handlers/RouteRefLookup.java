@@ -33,7 +33,7 @@ import static java.util.Objects.requireNonNull;
  */
 public interface RouteRefLookup {
     // Consider modifying this interface to return Optional<RoutingObject>.
-    // Then we can move .orElse handler to RoutingObjectFactory. This will
+    // Then we can move .orElse handler to Builtins. This will
     // prevent NPEs in test RouteRefLookup implementations.
     RoutingObject apply(RoutingObjectReference route);
 

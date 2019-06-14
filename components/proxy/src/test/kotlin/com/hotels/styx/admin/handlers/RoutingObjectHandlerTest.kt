@@ -22,9 +22,9 @@ import com.hotels.styx.api.HttpRequest.put
 import com.hotels.styx.api.HttpResponseStatus.CREATED
 import com.hotels.styx.api.HttpResponseStatus.NOT_FOUND
 import com.hotels.styx.api.HttpResponseStatus.OK
+import com.hotels.styx.routing.RoutingObjectFactoryContext
 import com.hotels.styx.routing.RoutingObjectAdapter
 import com.hotels.styx.routing.RoutingObjectRecord
-import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handle
 import com.hotels.styx.routing.mockObject
@@ -40,7 +40,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
 
     val routeDatabase = StyxObjectStore<RoutingObjectRecord>()
 
-    val objectFactory = RoutingObjectFactory(routeDatabase)
+    val routeFactoryContext = RoutingObjectFactoryContext(objectStore = routeDatabase)
 
     val staticResponseObject = """
                             type: "StaticResponseHandler"
@@ -51,7 +51,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
 
     feature("Route database management") {
         scenario("Injecting new objects") {
-            val handler = RoutingObjectHandler(routeDatabase, objectFactory)
+            val handler = RoutingObjectHandler(routeDatabase, routeFactoryContext.get())
 
             handler.handle(
                     put("/admin/routing/objects/staticResponse")
@@ -68,7 +68,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
         }
 
         scenario("Retrieving objects") {
-            val handler = RoutingObjectHandler(routeDatabase, objectFactory)
+            val handler = RoutingObjectHandler(routeDatabase, routeFactoryContext.get())
 
             handler.handle(
                     put("/admin/routing/objects/staticResponse")
@@ -97,7 +97,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
         }
 
         scenario("Fetching all routing objects") {
-            val handler = RoutingObjectHandler(routeDatabase, objectFactory)
+            val handler = RoutingObjectHandler(routeDatabase, routeFactoryContext.get())
 
             handler.handle(
                     put("/admin/routing/objects/staticResponse")
@@ -159,7 +159,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
             db.insert("staticResponse", RoutingObjectRecord("StaticResponseHandler", mockk(), mockk(), mockObject))
             db.get("staticResponse").isPresent shouldBe true
 
-            val handler = RoutingObjectHandler(db, objectFactory)
+            val handler = RoutingObjectHandler(db, routeFactoryContext.get())
 
             handler.handle(
                     put("/admin/routing/objects/staticResponse")
@@ -186,7 +186,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
 
             db.insert("staticResponse", RoutingObjectRecord("StaticResponseHandler", mockk(), mockk(), mockObject))
 
-            val handler = RoutingObjectHandler(db, objectFactory)
+            val handler = RoutingObjectHandler(db, routeFactoryContext.get())
 
             handler.handle(
                     delete("/admin/routing/objects/staticResponse").build())
@@ -202,7 +202,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
         scenario("Removing a non-existent object") {
             val db = StyxObjectStore<RoutingObjectRecord>()
 
-            val handler = RoutingObjectHandler(db, objectFactory)
+            val handler = RoutingObjectHandler(db, routeFactoryContext.get())
 
             handler.handle(
                     delete("/admin/routing/objects/staticResponse").build())

@@ -20,9 +20,9 @@ import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponse.response
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpResponse
+import com.hotels.styx.routing.RoutingObjectFactoryContext
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.routing.RoutingObjectRecord
-import com.hotels.styx.routing.config.RoutingObjectFactory.DEFAULT_REFERENCE_LOOKUP
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.RouteRefLookup
 import com.hotels.styx.server.HttpInterceptorContext
@@ -36,7 +36,7 @@ import io.mockk.verify
 import reactor.core.publisher.toMono
 import java.util.Optional
 
-class RoutingObjectFactoryTest : StringSpec({
+class BuiltinsTest : StringSpec({
 
     val mockHandler = mockk<RoutingObject> {
         every { handle(any(), any()) } returns Eventual.of(LiveHttpResponse.response(OK).build())
@@ -49,12 +49,10 @@ class RoutingObjectFactoryTest : StringSpec({
         val routeDef = RoutingObjectDefinition("handler-def", "SomeRoutingObject", mockk())
         val handlerFactory = httpHandlerFactory(mockHandler)
 
-        val routingObjectFactory = RoutingObjectFactory(
-                DEFAULT_REFERENCE_LOOKUP,
-                mapOf("SomeRoutingObject" to handlerFactory))
+        val context = RoutingObjectFactoryContext(objectFactories = mapOf("SomeRoutingObject" to handlerFactory))
 
         withClue("Should create a routing object handler") {
-            val handler = routingObjectFactory.build(listOf("parents"), routeDef)
+            val handler = Builtins.build(listOf("parents"), context.get(), routeDef)
             (handler != null).shouldBe(true)
         }
 
@@ -65,10 +63,10 @@ class RoutingObjectFactoryTest : StringSpec({
 
     "Doesn't accept unregistered types" {
         val config = RoutingObjectDefinition("foo", "ConfigType", mockk())
-        val routingObjectFactory = RoutingObjectFactory(routeObjectStore)
+        val context = RoutingObjectFactoryContext(objectStore = routeObjectStore)
 
         val e = shouldThrow<IllegalArgumentException> {
-            routingObjectFactory.build(listOf(), config)
+            Builtins.build(listOf(), context.get(), config)
         }
 
         e.message.shouldBe("Unknown handler type 'ConfigType'")
@@ -76,9 +74,10 @@ class RoutingObjectFactoryTest : StringSpec({
 
     "Returns handler from a configuration reference" {
         val routeDb = mapOf("aHandler" to RoutingObject { request, context -> Eventual.of(response(OK).build().stream()) })
-        val routingObjectFactory = RoutingObjectFactory( { ref -> routeDb[ref.name()] } )
 
-        val handler = routingObjectFactory.build(listOf(), RoutingObjectReference("aHandler"))
+        val context = RoutingObjectFactoryContext(routeRefLookup = RouteRefLookup { ref -> routeDb[ref.name()] })
+
+        val handler = Builtins.build(listOf(), context.get(), RoutingObjectReference("aHandler"))
 
         val response = handler.handle(get("/").build().stream(), HttpInterceptorContext.create())
                 .toMono()
@@ -91,9 +90,9 @@ class RoutingObjectFactoryTest : StringSpec({
         val referenceLookup = mockk<RouteRefLookup>()
         every {referenceLookup.apply(RoutingObjectReference("aHandler")) } returns RoutingObject { request, context -> Eventual.of(response(OK).build().stream()) }
 
-        val routingObjectFactory = RoutingObjectFactory(referenceLookup)
+        val context = RoutingObjectFactoryContext(routeRefLookup = referenceLookup)
 
-        val handler = routingObjectFactory.build(listOf(), RoutingObjectReference("aHandler"))
+        val handler = Builtins.build(listOf(), context.get(), RoutingObjectReference("aHandler"))
 
         handler.handle(get("/").build().stream(), HttpInterceptorContext.create()).toMono().block()
         handler.handle(get("/").build().stream(), HttpInterceptorContext.create()).toMono().block()
@@ -108,8 +107,8 @@ class RoutingObjectFactoryTest : StringSpec({
 })
 
 
-fun httpHandlerFactory(handler: RoutingObject): HttpHandlerFactory {
-    val factory: HttpHandlerFactory = mockk()
+fun httpHandlerFactory(handler: RoutingObject): RoutingObjectFactory {
+    val factory: RoutingObjectFactory = mockk()
 
     every {
         factory.build(any(), any(), any())

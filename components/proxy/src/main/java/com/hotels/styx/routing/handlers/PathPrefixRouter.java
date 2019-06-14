@@ -17,6 +17,7 @@ package com.hotels.styx.routing.handlers;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
@@ -25,7 +26,8 @@ import com.hotels.styx.common.Pair;
 import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.routing.RoutingObject;
-import com.hotels.styx.routing.config.HttpHandlerFactory;
+import com.hotels.styx.routing.config.Builtins;
+import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import com.hotels.styx.server.NoServiceConfiguredException;
 
@@ -87,7 +89,7 @@ public class PathPrefixRouter {
     /**
      * A factory for constructing PathPrefixRouter objects.
      */
-    public static class Factory implements HttpHandlerFactory {
+    public static class Factory implements RoutingObjectFactory {
 
         @Override
         public RoutingObject build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
@@ -98,7 +100,7 @@ public class PathPrefixRouter {
 
             PathPrefixRouter pathPrefixRouter = new PathPrefixRouter(
                     config.routes.stream()
-                            .map(route -> pair(route.prefix, context.factory().build(toRoutingConfigNode(route.destination))))
+                            .map(route -> pair(route.prefix, Builtins.build(ImmutableList.of(""), context, toRoutingConfigNode(route.destination))))
                             .collect(toList())
             );
 

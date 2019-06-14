@@ -18,6 +18,7 @@ package com.hotels.styx.routing.db
 import com.hotels.styx.api.configuration.ObjectStore
 import io.kotlintest.eventually
 import io.kotlintest.matchers.boolean.shouldBeTrue
+import io.kotlintest.matchers.collections.shouldBeEmpty
 import io.kotlintest.matchers.collections.shouldNotBeEmpty
 import io.kotlintest.matchers.numerics.shouldBeGreaterThanOrEqual
 import io.kotlintest.milliseconds
@@ -213,7 +214,7 @@ class StyxObjectStoreTest : FeatureSpec() {
                 executor.shutdown()
                 executor.awaitTermination(2, SECONDS)
 
-                db.entrySet() shouldBe emptyList()
+                db.entrySet().shouldBeEmpty()
             }
 
             scenario("Returns Optional.empty, when previous value doesn't exist") {

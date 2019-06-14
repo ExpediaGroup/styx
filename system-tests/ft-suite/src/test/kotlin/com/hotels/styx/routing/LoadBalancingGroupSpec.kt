@@ -131,7 +131,6 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                             .wait()
                             .let {
                                 withClue("Response should come from App-A instances only") {
-                                    println("it: $it")
                                     it.bodyAs(UTF_8) shouldContain "mock-server-0.".toRegex()
                                 }
                             }

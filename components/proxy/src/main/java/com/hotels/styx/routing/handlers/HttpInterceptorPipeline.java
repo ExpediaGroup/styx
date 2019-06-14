@@ -25,8 +25,9 @@ import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingObject;
-import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
-import com.hotels.styx.routing.config.HttpHandlerFactory;
+import com.hotels.styx.routing.config.Builtins;
+import com.hotels.styx.routing.config.HttpInterceptorFactory;
+import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.RoutingConfigParser;
 import com.hotels.styx.routing.config.RoutingObjectConfiguration;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
@@ -83,12 +84,12 @@ public class HttpInterceptorPipeline implements RoutingObject {
     /**
      * An yaml config based builder for HttpInterceptorPipeline.
      */
-    public static class Factory implements HttpHandlerFactory {
+    public static class Factory implements RoutingObjectFactory {
 
         @Override
         public RoutingObject build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
             JsonNode pipeline = configBlock.config().get("pipeline");
-            List<HttpInterceptor> interceptors = getHttpInterceptors(append(parents, "pipeline"), toMap(context.plugins()), context.builtinInterceptorsFactory(), pipeline);
+            List<HttpInterceptor> interceptors = getHttpInterceptors(append(parents, "pipeline"), toMap(context.plugins()), context.interceptorFactories(), pipeline);
 
             JsonNode handlerConfig = new JsonNodeConfig(configBlock.config())
                     .get("handler", JsonNode.class)
@@ -96,7 +97,7 @@ public class HttpInterceptorPipeline implements RoutingObject {
 
             return new HttpInterceptorPipeline(
                     interceptors,
-                    context.factory().build(append(parents, "handler"), toRoutingConfigNode(handlerConfig)),
+                    Builtins.build(append(parents, "handler"), context, toRoutingConfigNode(handlerConfig)),
                     context.requestTracking());
         }
 
@@ -110,7 +111,7 @@ public class HttpInterceptorPipeline implements RoutingObject {
         private static List<HttpInterceptor> getHttpInterceptors(
                 List<String> parents,
                 Map<String, NamedPlugin> plugins,
-                BuiltinInterceptorsFactory interceptorFactory,
+                Map<String, HttpInterceptorFactory> interceptorFactories,
                 JsonNode pipeline) {
             if (pipeline == null || pipeline.isNull()) {
                 return ImmutableList.of();
@@ -124,7 +125,7 @@ public class HttpInterceptorPipeline implements RoutingObject {
                             return plugins.get(name);
                         } else {
                             RoutingObjectDefinition block = (RoutingObjectDefinition) node;
-                            return interceptorFactory.build(block);
+                            return Builtins.build(block, interceptorFactories);
                         }
                     })
                     .collect(Collectors.toList());

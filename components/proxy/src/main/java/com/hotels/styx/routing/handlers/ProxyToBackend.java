@@ -38,7 +38,7 @@ import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.StyxBackendServiceClientFactory;
 import com.hotels.styx.routing.RoutingObject;
-import com.hotels.styx.routing.config.HttpHandlerFactory;
+import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
 
 import java.util.List;
@@ -72,7 +72,7 @@ public class ProxyToBackend implements RoutingObject {
     /**
      * ProxyToBackend factory that instantiates an object from the Yaml configuration.
      */
-    public static class Factory implements HttpHandlerFactory {
+    public static class Factory implements RoutingObjectFactory {
         @VisibleForTesting
         static RoutingObject build(List<String> parents, Context context, RoutingObjectDefinition configBlock, BackendServiceClientFactory clientFactory) {
             JsonNodeConfig jsConfig = new JsonNodeConfig(configBlock.config());

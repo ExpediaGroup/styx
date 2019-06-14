@@ -26,7 +26,7 @@ import com.hotels.styx.api.extension.service.spi.Registry
 import com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded
 import com.hotels.styx.client.BackendServiceClient
 import com.hotels.styx.proxy.BackendServiceClientFactory
-import com.hotels.styx.routing.RoutingContext
+import com.hotels.styx.routing.RoutingObjectFactoryContext
 import com.hotels.styx.routing.routingObjectDef
 import com.hotels.styx.server.HttpInterceptorContext
 import io.kotlintest.shouldBe
@@ -44,7 +44,7 @@ class BackendServiceProxyTest : StringSpec({
     val baRequest = LiveHttpRequest.get("/ba/x").build()
 
     val environment = Environment.Builder().build()
-    val context = RoutingContext(environment = environment).get()
+    val context = RoutingObjectFactoryContext(environment = environment).get()
 
 
     "builds a backend service proxy from the configuration " {

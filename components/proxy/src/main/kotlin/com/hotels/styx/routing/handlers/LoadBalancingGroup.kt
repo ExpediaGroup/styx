@@ -41,7 +41,7 @@ import com.hotels.styx.config.schema.SchemaDsl.string
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.routing.RoutingObjectRecord
-import com.hotels.styx.routing.config.HttpHandlerFactory
+import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.config.RoutingObjectDefinition
 import org.slf4j.LoggerFactory
 import reactor.core.Disposable
@@ -50,7 +50,13 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletableFuture.completedFuture
 import java.util.concurrent.atomic.AtomicReference
 
-class LoadBalancingGroup(val client: StyxBackendServiceClient, val changeWatcher: Disposable) : RoutingObject {
+/**
+ * Balances load between other routing objects.
+ * It has been designed to work with {@link PathPrefixRouter} and {@link HostProxy}
+ * objects to implement application routing capability. In reality it will work
+ * with any routing object.
+ */
+internal class LoadBalancingGroup(val client: StyxBackendServiceClient, val changeWatcher: Disposable) : RoutingObject {
 
     override fun handle(request: LiveHttpRequest?, context: HttpInterceptor.Context?) = Eventual(client.sendRequest(request))
 
@@ -73,8 +79,8 @@ class LoadBalancingGroup(val client: StyxBackendServiceClient, val changeWatcher
 
     }
 
-    class Factory : HttpHandlerFactory {
-        override fun build(parents: List<String>, context: HttpHandlerFactory.Context, configBlock: RoutingObjectDefinition): RoutingObject {
+    class Factory : RoutingObjectFactory {
+        override fun build(parents: List<String>, context: RoutingObjectFactory.Context, configBlock: RoutingObjectDefinition): RoutingObject {
 
             val appId = parents.last()
             val config = JsonNodeConfig(configBlock.config()).`as`(Config::class.java)
@@ -142,11 +148,11 @@ class LoadBalancingGroup(val client: StyxBackendServiceClient, val changeWatcher
         }
 
         private fun watchFailed(name: String, cause: Throwable) {
-            LOGGER.error("{} watch error - cause={}", name, cause)
+            LOGGER.error("{}: Illegal state: watch error. Cause={}", name, cause)
         }
 
         private fun watchCompleted(name: String) {
-            LOGGER.error("{} watch complete", name)
+            LOGGER.error("{}: Illegal state: watch completed", name)
         }
 
     }

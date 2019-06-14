@@ -34,9 +34,9 @@ import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingObjectAdapter;
 import com.hotels.styx.routing.RoutingObjectRecord;
-import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
-import com.hotels.styx.routing.config.RoutingObjectDefinition;
+import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
+import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.RouteRefLookup.RouteDbRefLookup;
 import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
@@ -49,7 +49,8 @@ import java.util.Map;
 
 import static com.hotels.styx.Version.readVersionFrom;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
-import static com.hotels.styx.routing.config.RoutingObjectFactory.BUILTIN_HANDLER_FACTORIES;
+import static com.hotels.styx.routing.config.Builtins.BUILTIN_HANDLER_FACTORIES;
+import static com.hotels.styx.routing.config.Builtins.INTERCEPTOR_FACTORIES;
 import static com.hotels.styx.startup.ServicesLoader.SERVICES_FROM_CONFIG;
 import static com.hotels.styx.startup.StyxServerComponents.LoggingSetUp.DO_NOT_MODIFY;
 import static com.hotels.styx.startup.extensions.PluginLoadingForStartup.loadPlugins;
@@ -65,9 +66,9 @@ public class StyxServerComponents {
     private final Map<String, StyxService> services;
     private final List<NamedPlugin> plugins;
     private final StyxObjectStore<RoutingObjectRecord> routeObjectStore = new StyxObjectStore<>();
-    private final RoutingObjectFactory routingObjectFactory;
     private final EventLoopGroup eventLoopGroup;
     private final Class<? extends SocketChannel> nettySocketChannelClass;
+    private final RoutingObjectFactory.Context routingObjectContext;
 
     private StyxServerComponents(Builder builder) {
         StyxConfig styxConfig = requireNonNull(builder.styxConfig);
@@ -88,13 +89,13 @@ public class StyxServerComponents {
                 ? loadPlugins(environment)
                 : loadPlugins(environment, builder.configuredPluginFactories);
 
-        this.routingObjectFactory = new RoutingObjectFactory(
+        this.routingObjectContext = new RoutingObjectFactory.Context(
                 new RouteDbRefLookup(this.routeObjectStore),
+                environment,
+                routeObjectStore,
                 BUILTIN_HANDLER_FACTORIES,
-                this.environment,
-                this.routeObjectStore,
-                this.plugins,
-                new BuiltinInterceptorsFactory(),
+                plugins,
+                INTERCEPTOR_FACTORIES,
                 false);
 
         this.services = mergeServices(
@@ -108,7 +109,7 @@ public class StyxServerComponents {
                 .map(StyxServerComponents::readHttpHandlers)
                 .orElse(ImmutableMap.of())
                 .forEach((name, record) -> {
-                    RoutingObjectAdapter adapter = new RoutingObjectAdapter(routingObjectFactory.build(ImmutableList.of(name), record));
+                    RoutingObjectAdapter adapter = new RoutingObjectAdapter(Builtins.build(ImmutableList.of(name), routingObjectContext, record));
                     routeObjectStore.insert(name, new RoutingObjectRecord(record.type(), ImmutableSet.copyOf(record.tags()), record.config(), adapter))
                             .ifPresent(previous -> previous.getRoutingObject().stop());
                 });
@@ -144,8 +145,8 @@ public class StyxServerComponents {
         return this.routeObjectStore;
     }
 
-    public RoutingObjectFactory routingObjectFactory() {
-        return this.routingObjectFactory;
+    public RoutingObjectFactory.Context routingObjectFactoryContext() {
+        return this.routingObjectContext;
     }
 
     public EventLoopGroup eventLoopGroup() {

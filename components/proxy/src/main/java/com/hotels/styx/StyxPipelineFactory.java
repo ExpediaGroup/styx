@@ -26,8 +26,9 @@ import com.hotels.styx.routing.HttpPipelineFactory;
 import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.StaticPipelineFactory;
-import com.hotels.styx.routing.config.RoutingObjectConfiguration;
+import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
+import com.hotels.styx.routing.config.RoutingObjectConfiguration;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
 import com.hotels.styx.startup.PipelineFactory;
@@ -49,7 +50,7 @@ import static java.util.Objects.requireNonNull;
 public final class StyxPipelineFactory implements PipelineFactory {
 
     private final StyxObjectStore<RoutingObjectRecord> routeDb;
-    private final RoutingObjectFactory routingObjectFactory;
+    private final RoutingObjectFactory.Context builtinRoutingObjects;
     private final Environment environment;
     private final Map<String, StyxService> services;
     private final List<NamedPlugin> plugins;
@@ -59,14 +60,14 @@ public final class StyxPipelineFactory implements PipelineFactory {
 
     public StyxPipelineFactory(
             StyxObjectStore<RoutingObjectRecord> routeDb,
-            RoutingObjectFactory routingObjectFactory,
+            RoutingObjectFactory.Context builtinRoutingObjects,
             Environment environment,
             Map<String, StyxService> services,
             List<NamedPlugin> plugins,
             EventLoopGroup eventLoopGroup,
             Class<? extends SocketChannel> nettySocketChannelClass) {
         this.routeDb = requireNonNull(routeDb);
-        this.routingObjectFactory = requireNonNull(routingObjectFactory);
+        this.builtinRoutingObjects = requireNonNull(builtinRoutingObjects);
         this.environment = requireNonNull(environment);
         this.services = requireNonNull(services);
         this.plugins = requireNonNull(plugins);
@@ -80,11 +81,11 @@ public final class StyxPipelineFactory implements PipelineFactory {
 
         return new HttpInterceptorPipeline(
                 internalStyxInterceptors(environment.styxConfig()),
-                configuredPipeline(routingObjectFactory),
+                configuredPipeline(builtinRoutingObjects),
                 requestTracking);
     }
 
-    private RoutingObject configuredPipeline(RoutingObjectFactory routingObjectFactory) {
+    private RoutingObject configuredPipeline(RoutingObjectFactory.Context routingObjectFactoryContext) {
         boolean requestTracking = environment.configuration().get("requestTracking", Boolean.class).orElse(false);
 
         Optional<JsonNode> rootHandlerNode = environment.configuration().get("httpPipeline", JsonNode.class);
@@ -92,7 +93,7 @@ public final class StyxPipelineFactory implements PipelineFactory {
         HttpPipelineFactory pipelineBuilder = rootHandlerNode
                 .map(jsonNode -> {
                     RoutingObjectConfiguration node = toRoutingConfigNode(jsonNode);
-                    return (HttpPipelineFactory) () -> routingObjectFactory.build(ImmutableList.of("httpPipeline"), node);
+                    return (HttpPipelineFactory) () -> Builtins.build(ImmutableList.of("httpPipeline"), routingObjectFactoryContext, node);
                 })
                 .orElseGet(() -> {
                     Registry<BackendService> backendServicesRegistry = (Registry<BackendService>) services.get("backendServiceRegistry");

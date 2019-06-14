@@ -25,7 +25,6 @@ import java.util.Optional
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.streams.toList
 
 /**
  * Styx Route Database.
@@ -164,25 +163,16 @@ class StyxObjectStore<T> : ObjectStore<T> {
 
     private fun snapshot(snapshot: PMap<String, Record<T>>) = object: ObjectStore<T> {
         override fun get(key: String?): Optional<T> {
-            return Optional.ofNullable(snapshot.get(key))
-                    .map { it.payload }
+            return Optional.ofNullable(snapshot[key]?.payload)
         }
 
         override fun entrySet(): Collection<Map.Entry<String, T>> = entrySet(snapshot)
     }
 
-    private fun entrySet(snapshot: PMap<String, Record<T>>) = snapshot.entries.stream()
-            .map { toPayloadEntry(it) }
-            .toList()
 
-    private fun toPayloadEntry(entry: Map.Entry<String, Record<T>>): Map.Entry<String, T> = object : Map.Entry<String, T> {
-        override val value: T
-            get() = entry.value.payload
-
-        override val key: String
-            get() = entry.key
-    }
-
+    private fun entrySet(snapshot: PMap<String, Record<T>>): Collection<Map.Entry<String, T>> = snapshot
+            .mapValues { it.value.payload }
+            .entries
 }
 
 private typealias ChangeWatcher<T> = (ObjectStore<T>) -> Unit

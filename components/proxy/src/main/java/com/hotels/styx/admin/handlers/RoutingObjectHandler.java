@@ -29,8 +29,9 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.WebServiceHandler;
 import com.hotels.styx.routing.RoutingObjectAdapter;
 import com.hotels.styx.routing.RoutingObjectRecord;
-import com.hotels.styx.routing.config.RoutingObjectDefinition;
+import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
+import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import org.slf4j.Logger;
 
@@ -64,7 +65,7 @@ public class RoutingObjectHandler implements WebServiceHandler {
     private final UrlPatternRouter urlRouter;
 
 
-    public RoutingObjectHandler(StyxObjectStore<RoutingObjectRecord> routeDatabase, RoutingObjectFactory objectFactory) {
+    public RoutingObjectHandler(StyxObjectStore<RoutingObjectRecord> routeDatabase, RoutingObjectFactory.Context routingObjectFactoryContext) {
         urlRouter = new UrlPatternRouter.Builder()
                 .get("/admin/routing/objects", (request, context) -> {
                     String output = routeDatabase.entrySet()
@@ -95,7 +96,7 @@ public class RoutingObjectHandler implements WebServiceHandler {
 
                     try {
                         RoutingObjectDefinition payload = YAML_MAPPER.readValue(body, RoutingObjectDefinition.class);
-                        RoutingObjectAdapter adapter = new RoutingObjectAdapter(objectFactory.build(emptyList(), payload));
+                        RoutingObjectAdapter adapter = new RoutingObjectAdapter(Builtins.build(emptyList(), routingObjectFactoryContext, payload));
 
                         routeDatabase.insert(name, new RoutingObjectRecord(payload.type(), ImmutableSet.copyOf(payload.tags()), payload.config(), adapter))
                                 .ifPresent(previous -> previous.getRoutingObject().stop());

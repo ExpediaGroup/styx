@@ -33,11 +33,11 @@ class RoutingObjectAdapterTest : FeatureSpec({
 
         val publisher1 = TestPublisher.create<LiveHttpResponse>()
         val publisher2 = TestPublisher.create<LiveHttpResponse>()
-        val publidher3 = TestPublisher.create<LiveHttpResponse>()
+        val publisher3 = TestPublisher.create<LiveHttpResponse>()
 
         val delegate = mockk<RoutingObject> {
             every { handle(any(), any()) }
-                    .returnsMany(listOf(Eventual(publisher1), Eventual(publisher2), Eventual(publidher3)))
+                    .returnsMany(listOf(Eventual(publisher1), Eventual(publisher2), Eventual(publisher3)))
         }
 
         RoutingObjectAdapter(delegate)
@@ -65,7 +65,7 @@ class RoutingObjectAdapterTest : FeatureSpec({
                     it.metric().ongoingConnections().shouldBe(2)
 
                     publisher2.complete()
-                    publidher3.complete()
+                    publisher3.complete()
                     it.metric().ongoingConnections().shouldBe(0)
                 }
     }

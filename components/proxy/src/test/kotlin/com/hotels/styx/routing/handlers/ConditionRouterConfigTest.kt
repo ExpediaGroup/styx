@@ -21,9 +21,8 @@ import com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse.response
-import com.hotels.styx.routing.RoutingContext
+import com.hotels.styx.routing.RoutingObjectFactoryContext
 import com.hotels.styx.routing.RoutingObject
-import com.hotels.styx.routing.config.HttpHandlerFactory
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.handle
 import com.hotels.styx.routing.mockObject
@@ -31,7 +30,6 @@ import com.hotels.styx.routing.mockObjectFactory
 import com.hotels.styx.routing.ref
 import com.hotels.styx.routing.routeLookup
 import com.hotels.styx.routing.routingObjectDef
-import com.hotels.styx.routing.routingObjectFactory
 import com.hotels.styx.server.HttpInterceptorContext
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
@@ -46,11 +44,11 @@ class ConditionRouterConfigTest : FeatureSpec({
 
     val request = LiveHttpRequest.get("/foo").build()
 
-    val context = RoutingContext(
-            factory = routingObjectFactory(routeLookup {
+    val context = RoutingObjectFactoryContext(
+            routeRefLookup = routeLookup {
                 ref("secureHandler" to RoutingObject { _, _ -> Eventual.of(response(OK).header("source", "secure").build()) })
                 ref("fallbackHandler" to RoutingObject { _, _ -> Eventual.of(response(OK).header("source", "fallback").build()) })
-            }))
+            })
 
     val config = routingObjectDef("""
               name: main-router
@@ -179,11 +177,14 @@ class ConditionRouterConfigTest : FeatureSpec({
         }
 
         scenario("Passes parentage attribute path to the builtins factory") {
-            val builtinsFactory = mockk<RoutingObjectFactory> {
-                every { build(any(), any()) } returns mockObject()
+
+            val staticResponseFactory = mockk<RoutingObjectFactory> {
+                every { build(any(), any(), any()) } returns mockObject()
             }
 
-            val context = RoutingContext(factory = builtinsFactory)
+            val context = RoutingObjectFactoryContext(
+                    objectFactories = mapOf(
+                            "StaticResponseHandler" to staticResponseFactory))
 
             ConditionRouter.Factory().build(listOf("config", "config"), context.get(), routingObjectDef("""
                 name: main-router
@@ -213,9 +214,9 @@ class ConditionRouterConfigTest : FeatureSpec({
                 """.trimIndent()))
 
             verify {
-                builtinsFactory.build(listOf("config", "config", "routes", "destination[0]"), any())
-                builtinsFactory.build(listOf("config", "config", "routes", "destination[1]"), any())
-                builtinsFactory.build(listOf("config", "config", "fallback"), any())
+                staticResponseFactory.build(listOf("config", "config", "routes", "destination[0]"), any(), any())
+                staticResponseFactory.build(listOf("config", "config", "routes", "destination[1]"), any(), any())
+                staticResponseFactory.build(listOf("config", "config", "fallback"), any(), any())
             }
         }
     }
@@ -248,9 +249,8 @@ class ConditionRouterConfigTest : FeatureSpec({
         scenario("Calls stop() on inlined fallback handler") {
             val mockObject: RoutingObject = mockObject()
 
-            val context = RoutingContext(
-                    factory = routingObjectFactory(
-                            builtins = mapOf("TestObject" to mockObjectFactory(listOf(mockObject)))))
+            val context = RoutingObjectFactoryContext(
+                    objectFactories = mapOf("TestObject" to mockObjectFactory(listOf(mockObject))))
 
             val router = ConditionRouter.Factory().build(listOf(), context.get(), routingObjectDef("""
                 type: ConditionRouter
@@ -270,11 +270,10 @@ class ConditionRouterConfigTest : FeatureSpec({
         scenario("Does not call stop() on fallback handler reference") {
             val mockObject = mockObject()
 
-            val context = RoutingContext(
-                    factory = routingObjectFactory(
-                            routeLookup {
-                                ref("fallbackHandler" to mockObject)
-                            }))
+            val context = RoutingObjectFactoryContext(
+                    routeRefLookup = routeLookup {
+                        ref("fallbackHandler" to mockObject)
+                    })
 
             val router = ConditionRouter.Factory().build(listOf(), context.get(), routingObjectDef("""
                 type: ConditionRouter
@@ -295,16 +294,14 @@ class ConditionRouterConfigTest : FeatureSpec({
             val instance1: RoutingObject = mockObject()
             val instance2: RoutingObject = mockObject()
 
-            val mockObjectFactory = mockk<HttpHandlerFactory> {
+            val mockObjectFactory = mockk<RoutingObjectFactory> {
                 every { build(any(), any(), any()) } returnsMany listOf(instance1, instance2)
             }
 
-            val context = RoutingContext(
-                    factory = routingObjectFactory(
-                            builtins = mapOf("TestObject" to mockObjectFactory(listOf(instance1, instance2)))))
-                    .get()
+            val context = RoutingObjectFactoryContext(
+                    objectFactories = mapOf("TestObject" to mockObjectFactory(listOf(instance1, instance2))))
 
-            val router = ConditionRouter.Factory().build(listOf(), context, routingObjectDef("""
+            val router = ConditionRouter.Factory().build(listOf(), context.get(), routingObjectDef("""
                 type: ConditionRouter
                 config:
                   routes:
@@ -330,12 +327,11 @@ class ConditionRouterConfigTest : FeatureSpec({
             val mockObject1: RoutingObject = mockObject()
             val mockObject2: RoutingObject = mockObject()
 
-            val context = RoutingContext(
-                    factory = routingObjectFactory(
-                            routeLookup {
-                                ref("ref1" to mockObject1)
-                                ref("ref2" to mockObject2)
-                            }))
+            val context = RoutingObjectFactoryContext(
+                    routeRefLookup = routeLookup {
+                        ref("ref1" to mockObject1)
+                        ref("ref2" to mockObject2)
+                    })
                     .get()
 
             val router = ConditionRouter.Factory().build(listOf(), context, routingObjectDef("""

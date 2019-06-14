@@ -20,7 +20,7 @@ import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.configuration.ObjectStore
 import com.hotels.styx.api.exceptions.NoAvailableHostsException
-import com.hotels.styx.routing.RoutingContext
+import com.hotels.styx.routing.RoutingObjectFactoryContext
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handle
@@ -60,7 +60,7 @@ class LoadBalancingGroupTest : FeatureSpec() {
 
             routeDb.watch().waitUntil { it.entrySet().size == 5 }
 
-            val lbGroup = factory.build(listOf("appX"), RoutingContext(routeDb = routeDb).get(), routingObjectDef("""
+            val lbGroup = factory.build(listOf("appX"), RoutingObjectFactoryContext(objectStore = routeDb).get(), routingObjectDef("""
                 type: LoadBalancingGroup
                 config:
                   origins: appX
@@ -77,8 +77,6 @@ class LoadBalancingGroupTest : FeatureSpec() {
                                 frequencies[it] = current + 1
                             }
                 }
-
-                println("Frequencies: " + frequencies)
 
                 frequencies["appx-01"]?.shouldBeGreaterThan(20)
                 frequencies["appx-02"]?.shouldBeGreaterThan(20)
@@ -206,13 +204,13 @@ class LoadBalancingGroupTest : FeatureSpec() {
     }
 }
 
-fun Publisher<ObjectStore<RoutingObjectRecord>>.waitUntil(duration: Duration = Duration.ofSeconds(1), predicate: (ObjectStore<RoutingObjectRecord>) -> Boolean) = this
+internal fun Publisher<ObjectStore<RoutingObjectRecord>>.waitUntil(duration: Duration = Duration.ofSeconds(1), predicate: (ObjectStore<RoutingObjectRecord>) -> Boolean) = this
         .toFlux()
         .filter(predicate)
         .blockFirst(duration)
 
 
-fun HttpHandler.call(request: HttpRequest, maxContentBytes: Int = 100000) = this.handle(request.stream(), HttpInterceptorContext.create())
+internal fun HttpHandler.call(request: HttpRequest, maxContentBytes: Int = 100000) = this.handle(request.stream(), HttpInterceptorContext.create())
         .flatMap { it.aggregate(maxContentBytes) }
         .toMono()
         .block()

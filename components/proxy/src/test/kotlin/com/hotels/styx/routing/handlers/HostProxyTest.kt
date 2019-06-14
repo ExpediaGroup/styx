@@ -26,7 +26,7 @@ import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.client.StyxHostHttpClient
 import com.hotels.styx.client.applications.metrics.OriginMetrics
-import com.hotels.styx.routing.RoutingContext
+import com.hotels.styx.routing.RoutingObjectFactoryContext
 import com.hotels.styx.routing.handle
 import com.hotels.styx.routing.routingObjectDef
 import com.hotels.styx.server.HttpInterceptorContext
@@ -106,7 +106,7 @@ class HostProxyTest : FeatureSpec() {
                         .toMono()
                         .block()
                         .let { response ->
-                            response.body()
+                            response!!.body()
                                     .toFlux()
                                     .subscribe()
                                     .dispose()
@@ -118,7 +118,7 @@ class HostProxyTest : FeatureSpec() {
         }
 
         feature("HostProxy.Factory") {
-            val context = RoutingContext()
+            val context = RoutingObjectFactoryContext()
 
             scenario("Uses configured host and port number") {
                 val factory = HostProxy.Factory()

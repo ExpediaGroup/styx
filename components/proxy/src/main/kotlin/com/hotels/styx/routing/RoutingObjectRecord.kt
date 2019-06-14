@@ -17,7 +17,7 @@ package com.hotels.styx.routing
 
 import com.fasterxml.jackson.databind.JsonNode
 
-data class RoutingObjectRecord(
+internal data class RoutingObjectRecord(
         val type: String,
         val tags: Set<String>,
         val config: JsonNode,

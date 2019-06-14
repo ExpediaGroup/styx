@@ -36,7 +36,7 @@ import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.routing.RoutingObject;
-import com.hotels.styx.routing.config.HttpHandlerFactory;
+import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import org.jetbrains.annotations.NotNull;
 
@@ -142,7 +142,7 @@ public class HostProxy implements RoutingObject {
     /**
      * A factory for creating HostProxy routingObject objects.
      */
-    public static class Factory implements HttpHandlerFactory {
+    public static class Factory implements RoutingObjectFactory {
         private static final int DEFAULT_REQUEST_TIMEOUT = 60000;
         private static final int DEFAULT_TLS_PORT = 443;
         private static final int DEFAULT_HTTP_PORT = 80;
