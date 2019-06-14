@@ -40,7 +40,6 @@ import java.io.Reader;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 
-import static com.hotels.styx.ServerConfigSchema.validateServerConfiguration;
 import static com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSource;
 import static com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.shutdownLogging;
@@ -100,29 +99,13 @@ public final class StyxServer extends AbstractService {
                 .build()
                 .parse(configSource(startupConfig.configFileLocation()));
 
-        validateConfiguration(startupConfig, yamlConfiguration);
-
         StyxServerComponents components = new StyxServerComponents.Builder()
+                .disableConfigValidation(skipServerConfigValidation())
                 .styxConfig(new StyxConfig(startupConfig, yamlConfiguration))
                 .loggingSetUp(FROM_CONFIG)
                 .build();
 
         return new StyxServer(components, stopwatch);
-    }
-
-    private static void validateConfiguration(StartupConfig startupConfig, YamlConfiguration yamlConfiguration) {
-        if (skipServerConfigValidation()) {
-            LOG.warn("Server configuration validation disabled. The Styx server configuration will not be validated.");
-        } else {
-            validateServerConfiguration(yamlConfiguration)
-                    .ifPresent(message -> {
-                        LOG.info("Styx server failed to start due to configuration error.");
-                        LOG.info("The configuration was sourced from " + startupConfig.configFileLocation());
-                        LOG.info(message);
-                        throw new SchemaValidationException(message);
-                    });
-            LOG.info("Configuration validated successfully.");
-        }
     }
 
     private static boolean skipServerConfigValidation() {

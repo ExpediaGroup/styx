@@ -154,4 +154,12 @@ public final class StyxConfig implements Configuration {
     public String toString() {
         return configuration.toString();
     }
+
+    // This is exposed so that we can validate the config (which is only possible if the config is represented by JsonNodes
+    // internally, e.g. as YamlConfiguration).
+    Optional<YamlConfiguration> yamlConfiguration() {
+        return Optional.of(configuration)
+                .filter(config -> config instanceof YamlConfiguration)
+                .map(YamlConfiguration.class::cast);
+    }
 }

@@ -42,11 +42,13 @@ import com.hotels.styx.routing.handlers.RouteRefLookup.RouteDbRefLookup;
 import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
+import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.hotels.styx.StyxConfigValidation.validate;
 import static com.hotels.styx.Version.readVersionFrom;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
 import static com.hotels.styx.routing.config.Builtins.BUILTIN_HANDLER_FACTORIES;
@@ -57,11 +59,14 @@ import static com.hotels.styx.startup.extensions.PluginLoadingForStartup.loadPlu
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static java.util.stream.Collectors.toList;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Configuration required to set-up the core Styx services, such as the proxy and admin servers.
  */
 public class StyxServerComponents {
+    private static final Logger LOG = getLogger(StyxServerComponents.class);
+
     private final Environment environment;
     private final Map<String, StyxService> services;
     private final List<NamedPlugin> plugins;
@@ -72,6 +77,12 @@ public class StyxServerComponents {
 
     private StyxServerComponents(Builder builder) {
         StyxConfig styxConfig = requireNonNull(builder.styxConfig);
+
+        if (!builder.disableConfigValidation) {
+            validate(styxConfig);
+        } else {
+            LOG.warn("Server configuration validation disabled. The Styx server configuration will not be validated.");
+        }
 
         this.environment = newEnvironment(styxConfig, builder.metricRegistry);
         builder.loggingSetUp.setUp(environment);
@@ -196,6 +207,7 @@ public class StyxServerComponents {
         private MetricRegistry metricRegistry = new CodaHaleMetricRegistry();
 
         private final Map<String, StyxService> additionalServices = new HashMap<>();
+        private boolean disableConfigValidation;
 
         public Builder styxConfig(StyxConfig styxConfig) {
             this.styxConfig = requireNonNull(styxConfig);
@@ -250,6 +262,11 @@ public class StyxServerComponents {
         @VisibleForTesting
         public Builder additionalServices(Map<String, StyxService> services) {
             this.additionalServices.putAll(services);
+            return this;
+        }
+
+        public Builder disableConfigValidation(boolean disableConfigValidation) {
+            this.disableConfigValidation = disableConfigValidation;
             return this;
         }
 
