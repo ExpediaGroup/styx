@@ -78,12 +78,12 @@ class LoadBalancingGroupTest : FeatureSpec() {
                             }
                 }
 
-                frequencies["appx-01"]?.shouldBeGreaterThan(20)
-                frequencies["appx-02"]?.shouldBeGreaterThan(20)
-                frequencies["appx-03"]?.shouldBeGreaterThan(20)
+                frequencies["appx-01"]!!.shouldBeGreaterThan(20)
+                frequencies["appx-02"]!!.shouldBeGreaterThan(20)
+                frequencies["appx-03"]!!.shouldBeGreaterThan(20)
 
-                frequencies["appy-01"]?.shouldBeNull()
-                frequencies["appy-02"]?.shouldBeNull()
+                frequencies["appy-01"].shouldBeNull()
+                frequencies["appy-02"].shouldBeNull()
             }
 
 
@@ -111,11 +111,9 @@ class LoadBalancingGroupTest : FeatureSpec() {
                             }
                 }
 
-                println("Frequencies: " + frequencies)
-
-                frequencies["appx-04"]?.shouldBeGreaterThan(20)
-                frequencies["appx-05"]?.shouldBeGreaterThan(20)
-                frequencies["appx-06"]?.shouldBeGreaterThan(20)
+                frequencies["appx-04"]!!.shouldBeGreaterThan(20)
+                frequencies["appx-05"]!!.shouldBeGreaterThan(20)
+                frequencies["appx-06"]!!.shouldBeGreaterThan(20)
             }
 
             scenario("... and detects replaced origins") {
@@ -136,11 +134,9 @@ class LoadBalancingGroupTest : FeatureSpec() {
                             }
                 }
 
-                println("Frequencies: " + frequencies)
-
-                frequencies["appx-04-a"]?.shouldBeGreaterThan(20)
-                frequencies["appx-05-b"]?.shouldBeGreaterThan(20)
-                frequencies["appx-06-c"]?.shouldBeGreaterThan(20)
+                frequencies["appx-04-a"]!!.shouldBeGreaterThan(20)
+                frequencies["appx-05-b"]!!.shouldBeGreaterThan(20)
+                frequencies["appx-06-c"]!!.shouldBeGreaterThan(20)
             }
 
             scenario("... and emits NoAvailableHostsException when load balancing group is empty") {

@@ -52,7 +52,7 @@ class HostProxyTest : FeatureSpec() {
                 HostProxy(HostAndPort.fromString("localhost:80"), client, mockk()).handle(request.stream(), mockk())
 
                 verify {
-                    client?.sendRequest(ofType(LiveHttpRequest::class))
+                    client!!.sendRequest(ofType(LiveHttpRequest::class))
                 }
             }
 
@@ -70,7 +70,7 @@ class HostProxyTest : FeatureSpec() {
                 exception.message shouldBe ("HostProxy localhost:80 is stopped but received traffic.")
 
                 verify(exactly = 0) {
-                    client?.sendRequest(any())
+                    client!!.sendRequest(any())
                 }
             }
 

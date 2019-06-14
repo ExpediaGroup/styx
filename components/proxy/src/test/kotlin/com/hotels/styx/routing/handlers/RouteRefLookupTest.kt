@@ -20,7 +20,7 @@ import com.hotels.styx.api.ByteStream
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.NOT_FOUND
 import com.hotels.styx.api.LiveHttpRequest
-import com.hotels.styx.routing.RoutingObjectAdapter
+import com.hotels.styx.routing.RoutingObjectDecorator
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.RoutingObjectReference
 import com.hotels.styx.routing.db.StyxObjectStore
@@ -39,7 +39,7 @@ import java.util.Optional
 
 class RouteRefLookupTest : StringSpec({
     "Retrieves handler from route database" {
-        val handler = RoutingObjectAdapter(mockk())
+        val handler = RoutingObjectDecorator(mockk())
 
         val routeDb = mockk<StyxObjectStore<RoutingObjectRecord>>()
         every { routeDb.get(any()) } returns Optional.of(RoutingObjectRecord("StaticResponseHandler", mockk(), mockk(), handler))

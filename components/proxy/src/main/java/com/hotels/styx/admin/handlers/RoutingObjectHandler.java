@@ -27,7 +27,7 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.WebServiceHandler;
-import com.hotels.styx.routing.RoutingObjectAdapter;
+import com.hotels.styx.routing.RoutingObjectDecorator;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
@@ -96,7 +96,7 @@ public class RoutingObjectHandler implements WebServiceHandler {
 
                     try {
                         RoutingObjectDefinition payload = YAML_MAPPER.readValue(body, RoutingObjectDefinition.class);
-                        RoutingObjectAdapter adapter = new RoutingObjectAdapter(Builtins.build(emptyList(), routingObjectFactoryContext, payload));
+                        RoutingObjectDecorator adapter = new RoutingObjectDecorator(Builtins.build(emptyList(), routingObjectFactoryContext, payload));
 
                         routeDatabase.insert(name, new RoutingObjectRecord(payload.type(), ImmutableSet.copyOf(payload.tags()), payload.config(), adapter))
                                 .ifPresent(previous -> previous.getRoutingObject().stop());

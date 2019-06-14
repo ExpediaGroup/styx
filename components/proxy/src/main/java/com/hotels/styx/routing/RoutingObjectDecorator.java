@@ -31,7 +31,7 @@ import static java.util.Objects.requireNonNull;
  * Adapts routing object into Styx core.
  * Provides a load balancing metric for the adapted routing object.
  */
-public class RoutingObjectAdapter implements RoutingObject {
+public class RoutingObjectDecorator implements RoutingObject {
 
     private final RoutingObject delegate;
 
@@ -42,7 +42,7 @@ public class RoutingObjectAdapter implements RoutingObject {
      * Routing object adapater constructor.
      * @param routingObject
      */
-    public RoutingObjectAdapter(RoutingObject routingObject) {
+    public RoutingObjectDecorator(RoutingObject routingObject) {
         this.delegate = requireNonNull(routingObject);
     }
 

@@ -229,7 +229,7 @@ public class HostProxy implements RoutingObject {
                                     .responseTimeoutMillis(responseTimeoutMillis)
                                     .build()
                     )
-                    .tlsSettings(Optional.ofNullable(tlsSettings).orElse(null))
+                    .tlsSettings(tlsSettings)
                     .build();
 
             if (connectionExpiration > 0) {

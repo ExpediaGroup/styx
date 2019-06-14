@@ -23,7 +23,7 @@ import com.hotels.styx.api.HttpResponseStatus.CREATED
 import com.hotels.styx.api.HttpResponseStatus.NOT_FOUND
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.routing.RoutingObjectFactoryContext
-import com.hotels.styx.routing.RoutingObjectAdapter
+import com.hotels.styx.routing.RoutingObjectDecorator
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handle
@@ -64,7 +64,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
             routeDatabase.get("staticResponse").isPresent shouldBe true
             routeDatabase.get("staticResponse").get().type shouldBe "StaticResponseHandler"
             routeDatabase.get("staticResponse").get().config.shouldBeTypeOf<ObjectNode>()
-            routeDatabase.get("staticResponse").get().routingObject.shouldBeTypeOf<RoutingObjectAdapter>()
+            routeDatabase.get("staticResponse").get().routingObject.shouldBeTypeOf<RoutingObjectDecorator>()
         }
 
         scenario("Retrieving objects") {
@@ -154,7 +154,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
 
         scenario("Replacing existing objects triggers lifecycle methods") {
             val db = StyxObjectStore<RoutingObjectRecord>()
-            val mockObject = RoutingObjectAdapter(mockObject())
+            val mockObject = RoutingObjectDecorator(mockObject())
 
             db.insert("staticResponse", RoutingObjectRecord("StaticResponseHandler", mockk(), mockk(), mockObject))
             db.get("staticResponse").isPresent shouldBe true
@@ -182,7 +182,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
 
         scenario("Removing existing objects triggers lifecycle methods") {
             val db = StyxObjectStore<RoutingObjectRecord>()
-            val mockObject = RoutingObjectAdapter(mockObject())
+            val mockObject = RoutingObjectDecorator(mockObject())
 
             db.insert("staticResponse", RoutingObjectRecord("StaticResponseHandler", mockk(), mockk(), mockObject))
 

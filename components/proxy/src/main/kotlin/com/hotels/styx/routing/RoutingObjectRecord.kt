@@ -17,16 +17,19 @@ package com.hotels.styx.routing
 
 import com.fasterxml.jackson.databind.JsonNode
 
+/**
+ * Holds routing object and its associated metadata.
+ */
 internal data class RoutingObjectRecord(
         val type: String,
         val tags: Set<String>,
         val config: JsonNode,
-        val routingObject: RoutingObjectAdapter) {
+        val routingObject: RoutingObjectDecorator) {
     companion object {
         fun create(type: String, tags: Set<String>, config: JsonNode, routingObject: RoutingObject) = RoutingObjectRecord(
                 type,
                 tags,
                 config,
-                RoutingObjectAdapter(routingObject))
+                RoutingObjectDecorator(routingObject))
     }
 }
