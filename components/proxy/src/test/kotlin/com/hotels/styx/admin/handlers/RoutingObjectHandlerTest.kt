@@ -23,7 +23,7 @@ import com.hotels.styx.api.HttpResponseStatus.CREATED
 import com.hotels.styx.api.HttpResponseStatus.NOT_FOUND
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.routing.RoutingObjectFactoryContext
-import com.hotels.styx.routing.RoutingObjectDecorator
+import com.hotels.styx.routing.RoutingMetadataDecorator
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handle
@@ -58,13 +58,13 @@ class RoutingObjectHandlerTest : FeatureSpec({
                             .body(staticResponseObject, UTF_8)
                             .build())
                     .toMono()
-                    .block()
-                    ?.status() shouldBe CREATED
+                    .block()!!
+                    .status() shouldBe CREATED
 
             routeDatabase.get("staticResponse").isPresent shouldBe true
             routeDatabase.get("staticResponse").get().type shouldBe "StaticResponseHandler"
             routeDatabase.get("staticResponse").get().config.shouldBeTypeOf<ObjectNode>()
-            routeDatabase.get("staticResponse").get().routingObject.shouldBeTypeOf<RoutingObjectDecorator>()
+            routeDatabase.get("staticResponse").get().routingObject.shouldBeTypeOf<RoutingMetadataDecorator>()
         }
 
         scenario("Retrieving objects") {
@@ -75,15 +75,15 @@ class RoutingObjectHandlerTest : FeatureSpec({
                             .body(staticResponseObject, UTF_8)
                             .build())
                     .toMono()
-                    .block()
-                    ?.status() shouldBe CREATED
+                    .block()!!
+                    .status() shouldBe CREATED
 
-            val response = handler.handle(get("/admin/routing/objects/staticResponse").build())
+            handler.handle(get("/admin/routing/objects/staticResponse").build())
                     .toMono()
                     .block()
-
-            response!!.status() shouldBe OK
-            response.bodyAs(UTF_8).trim() shouldBe """
+                    .let {
+                        it!!.status() shouldBe OK
+                        it.bodyAs(UTF_8).trim() shouldBe """
                             ---
                             name: "staticResponse"
                             type: "StaticResponseHandler"
@@ -92,8 +92,10 @@ class RoutingObjectHandlerTest : FeatureSpec({
                               status: 200
                               content: "Hello, world!"
                               """
-                    .trimIndent()
-                    .trim()
+                                .trimIndent()
+                                .trim()
+                    }
+
         }
 
         scenario("Fetching all routing objects") {
@@ -104,10 +106,10 @@ class RoutingObjectHandlerTest : FeatureSpec({
                             .body(staticResponseObject, UTF_8)
                             .build())
                     .toMono()
-                    .block()
-                    ?.status() shouldBe CREATED
+                    .block()!!
+                    .status() shouldBe CREATED
 
-            val r = handler.handle(
+            handler.handle(
                     put("/admin/routing/objects/conditionRouter")
                             .body("""
                                 type: ConditionRouter
@@ -120,41 +122,44 @@ class RoutingObjectHandlerTest : FeatureSpec({
                             .build())
                     .toMono()
                     .block()
+                    .let {
+                        println(it!!.bodyAs(UTF_8))
+                        it.status() shouldBe CREATED
+                    }
 
-            println(r?.bodyAs(UTF_8))
-            r?.status() shouldBe CREATED
 
 
-            val response = handler.handle(get("/admin/routing/objects").build())
+            handler.handle(get("/admin/routing/objects").build())
                     .toMono()
                     .block()
+                    .let {
+                        it!!.status() shouldBe OK
+                        it.bodyAs(UTF_8).trim() shouldBe """
+                                ---
+                                name: "conditionRouter"
+                                type: "ConditionRouter"
+                                tags: []
+                                config:
+                                  routes:
+                                  - condition: "path() == \"/bar\""
+                                    destination: "b"
+                                  fallback: "fb"
 
-            response?.status() shouldBe OK
+                                ---
+                                name: "staticResponse"
+                                type: "StaticResponseHandler"
+                                tags: []
+                                config:
+                                  status: 200
+                                  content: "Hello, world!"
+                            """.trimIndent().trim()
+                    }
 
-            response?.bodyAs(UTF_8)?.trim() shouldBe """
-                ---
-                name: "conditionRouter"
-                type: "ConditionRouter"
-                tags: []
-                config:
-                  routes:
-                  - condition: "path() == \"/bar\""
-                    destination: "b"
-                  fallback: "fb"
-
-                ---
-                name: "staticResponse"
-                type: "StaticResponseHandler"
-                tags: []
-                config:
-                  status: 200
-                  content: "Hello, world!"
-            """.trimIndent().trim()
         }
 
         scenario("Replacing existing objects triggers lifecycle methods") {
             val db = StyxObjectStore<RoutingObjectRecord>()
-            val mockObject = RoutingObjectDecorator(mockObject())
+            val mockObject = RoutingMetadataDecorator(mockObject())
 
             db.insert("staticResponse", RoutingObjectRecord("StaticResponseHandler", mockk(), mockk(), mockObject))
             db.get("staticResponse").isPresent shouldBe true
@@ -171,8 +176,8 @@ class RoutingObjectHandlerTest : FeatureSpec({
                                 """.trimIndent(), UTF_8)
                             .build())
                     .toMono()
-                    .block()
-                    ?.status() shouldBe CREATED
+                    .block()!!
+                    .status() shouldBe CREATED
 
             db.get("staticResponse").isPresent shouldBe true
             db.get("staticResponse").get().type shouldBe "StaticResponseHandler"
@@ -182,7 +187,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
 
         scenario("Removing existing objects triggers lifecycle methods") {
             val db = StyxObjectStore<RoutingObjectRecord>()
-            val mockObject = RoutingObjectDecorator(mockObject())
+            val mockObject = RoutingMetadataDecorator(mockObject())
 
             db.insert("staticResponse", RoutingObjectRecord("StaticResponseHandler", mockk(), mockk(), mockObject))
 
@@ -191,8 +196,8 @@ class RoutingObjectHandlerTest : FeatureSpec({
             handler.handle(
                     delete("/admin/routing/objects/staticResponse").build())
                     .toMono()
-                    .block()
-                    ?.status() shouldBe OK
+                    .block()!!
+                    .status() shouldBe OK
 
             db.get("staticResponse").isPresent shouldBe false
 
@@ -207,8 +212,8 @@ class RoutingObjectHandlerTest : FeatureSpec({
             handler.handle(
                     delete("/admin/routing/objects/staticResponse").build())
                     .toMono()
-                    .block()
-                    ?.status() shouldBe NOT_FOUND
+                    .block()!!
+                    .status() shouldBe NOT_FOUND
         }
 
     }

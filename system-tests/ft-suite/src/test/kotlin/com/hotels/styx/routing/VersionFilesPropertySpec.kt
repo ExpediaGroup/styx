@@ -54,12 +54,14 @@ class VersionFilesPropertySpec : StringSpec() {
                     .header(HOST, "${styxServer.adminHttpAddress().hostName}:${styxServer.adminHttpAddress().port}")
                     .build();
 
-            val response = client.send(request)
+            client.send(request)
                     .toMono()
-                    .block();
+                    .block()
+                    .let {
+                        it!!.status() shouldBe (OK)
+                        it.bodyAs(UTF_8) shouldBe ("MyFakeVersionText\n")
 
-            response?.status() shouldBe (OK)
-            response?.bodyAs(UTF_8) shouldBe ("MyFakeVersionText\n")
+                    }
         }
     }
 

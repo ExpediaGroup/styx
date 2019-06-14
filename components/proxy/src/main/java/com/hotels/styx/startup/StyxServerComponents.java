@@ -32,7 +32,7 @@ import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupFactory;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
-import com.hotels.styx.routing.RoutingObjectDecorator;
+import com.hotels.styx.routing.RoutingMetadataDecorator;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
@@ -109,7 +109,7 @@ public class StyxServerComponents {
                 .map(StyxServerComponents::readHttpHandlers)
                 .orElse(ImmutableMap.of())
                 .forEach((name, record) -> {
-                    RoutingObjectDecorator adapter = new RoutingObjectDecorator(Builtins.build(ImmutableList.of(name), routingObjectContext, record));
+                    RoutingMetadataDecorator adapter = new RoutingMetadataDecorator(Builtins.build(ImmutableList.of(name), routingObjectContext, record));
                     routeObjectStore.insert(name, new RoutingObjectRecord(record.type(), ImmutableSet.copyOf(record.tags()), record.config(), adapter))
                             .ifPresent(previous -> previous.getRoutingObject().stop());
                 });

@@ -58,7 +58,7 @@ import java.util.concurrent.atomic.AtomicReference
  */
 internal class LoadBalancingGroup(val client: StyxBackendServiceClient, val changeWatcher: Disposable) : RoutingObject {
 
-    override fun handle(request: LiveHttpRequest?, context: HttpInterceptor.Context?) = Eventual(client.sendRequest(request))
+    override fun handle(request: LiveHttpRequest, context: HttpInterceptor.Context) = Eventual(client.sendRequest(request))
 
     override fun stop(): CompletableFuture<Void> {
         changeWatcher.dispose()
@@ -80,9 +80,9 @@ internal class LoadBalancingGroup(val client: StyxBackendServiceClient, val chan
     }
 
     class Factory : RoutingObjectFactory {
-        override fun build(parents: List<String>, context: RoutingObjectFactory.Context, configBlock: RoutingObjectDefinition): RoutingObject {
+        override fun build(fullName: List<String>, context: RoutingObjectFactory.Context, configBlock: RoutingObjectDefinition): RoutingObject {
 
-            val appId = parents.last()
+            val appId = fullName.last()
             val config = JsonNodeConfig(configBlock.config()).`as`(Config::class.java)
 
             val routeDb = context.routeDb()

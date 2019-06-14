@@ -40,9 +40,9 @@ import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * Builds a routing object based on its actual type.
+ * Contains mappings of builtin routing object and interceptor names to their factory methods.
  */
-public class Builtins {
+public final class Builtins {
     public static final ImmutableMap<String, Schema.FieldType> BUILTIN_HANDLER_SCHEMAS;
     public static final ImmutableMap<String, RoutingObjectFactory> BUILTIN_HANDLER_FACTORIES;
     public static final RouteRefLookup DEFAULT_REFERENCE_LOOKUP = reference -> (request, ctx) ->
@@ -82,6 +82,9 @@ public class Builtins {
                 .put(HOST_PROXY, HostProxy.SCHEMA)
                 .put(LOAD_BALANCING_GROUP,  LoadBalancingGroup.Companion.getSCHEMA())
                 .build();
+    }
+
+    private Builtins() {
     }
 
     public static RoutingObject build(List<String> parents, RoutingObjectFactory.Context context, RoutingObjectConfiguration configNode) {

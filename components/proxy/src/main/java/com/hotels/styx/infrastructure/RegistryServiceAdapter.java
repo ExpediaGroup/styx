@@ -24,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import static java.util.Objects.requireNonNull;
 
 /**
- * RegistryServiceAdapter - add a description later.
+ * RegistryServiceAdapter adapts BackendService registry to a Styx Service.
  */
 public class RegistryServiceAdapter extends AbstractStyxService implements Registry<BackendService> {
     private Registry<BackendService> delegate;

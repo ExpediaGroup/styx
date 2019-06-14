@@ -122,23 +122,23 @@ public class ConditionRouter implements HttpRouter {
         }
 
         @Override
-        public RoutingObject build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
+        public RoutingObject build(List<String> fullName, Context context, RoutingObjectDefinition configBlock) {
             ConditionRouterConfig config = new JsonNodeConfig(configBlock.config()).as(ConditionRouterConfig.class);
             if (config.routes == null) {
-                throw missingAttributeError(configBlock, join(".", parents), "routes");
+                throw missingAttributeError(configBlock, join(".", fullName), "routes");
             }
 
             AtomicInteger index = new AtomicInteger(0);
             List<Route> routes = config.routes.stream()
                     .map(routeConfig -> buildRoute(
-                            append(parents, "routes"),
+                            append(fullName, "routes"),
                             context,
                             index.getAndIncrement(),
                             routeConfig.condition,
                             routeConfig.destination))
                     .collect(Collectors.toList());
 
-            RoutingObject fallbackHandler = buildFallbackHandler(parents, context, config);
+            RoutingObject fallbackHandler = buildFallbackHandler(fullName, context, config);
 
             ConditionRouter router = new ConditionRouter(routes, fallbackHandler);
 

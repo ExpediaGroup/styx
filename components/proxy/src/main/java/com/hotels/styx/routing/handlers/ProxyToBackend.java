@@ -132,8 +132,8 @@ public class ProxyToBackend implements RoutingObject {
         }
 
         @Override
-        public RoutingObject build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
-            return build(parents, context, configBlock, new StyxBackendServiceClientFactory(context.environment()));
+        public RoutingObject build(List<String> fullName, Context context, RoutingObjectDefinition configBlock) {
+            return build(fullName, context, configBlock, new StyxBackendServiceClientFactory(context.environment()));
         }
 
     }

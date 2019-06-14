@@ -58,8 +58,10 @@ class ProxyToBackendTest : StringSpec({
     "builds ProxyToBackend handler" {
         val handler = ProxyToBackend.Factory.build(listOf(), context, config, clientFactory());
 
-        val response = handler.handle(LiveHttpRequest.get("/foo").build(), HttpInterceptorContext.create()).toMono().block()
-        response?.status() shouldBe (OK)
+        handler.handle(LiveHttpRequest.get("/foo").build(), HttpInterceptorContext.create())
+                .toMono()
+                .block()!!
+                .status() shouldBe (OK)
     }
 
     "throws for missing mandatory 'backend' attribute" {
@@ -105,8 +107,8 @@ private fun clientFactory() = BackendServiceClientFactory { backendService, orig
         backendService.connectionPoolConfig().maxConnectionsPerHost() shouldBe (45)
         backendService.connectionPoolConfig().maxPendingConnectionsPerHost() shouldBe (15)
         backendService.responseTimeoutMillis() shouldBe (60000)
-        backendService.origins().first()?.id() shouldBe (id("ba1"))
-        backendService.origins().first()?.port() shouldBe (9094)
+        backendService.origins().first()!!.id() shouldBe (id("ba1"))
+        backendService.origins().first()!!.port() shouldBe (9094)
         Mono.just(LiveHttpResponse.response(OK)
                 .addHeader("X-Backend-Service", "y")
                 .build())

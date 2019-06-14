@@ -26,7 +26,7 @@ import io.mockk.verify
 import reactor.core.publisher.toMono
 import reactor.test.publisher.TestPublisher
 
-class RoutingObjectDecoratorTest : FeatureSpec({
+class RoutingMetadataDecoratorTest : FeatureSpec({
     val request = get("/").build()
 
     feature("Maintains load balancing metrics") {
@@ -40,7 +40,7 @@ class RoutingObjectDecoratorTest : FeatureSpec({
                     .returnsMany(listOf(Eventual(publisher1), Eventual(publisher2), Eventual(publisher3)))
         }
 
-        RoutingObjectDecorator(delegate)
+        RoutingMetadataDecorator(delegate)
                 .let {
 
                     it.handle(request)
@@ -73,7 +73,7 @@ class RoutingObjectDecoratorTest : FeatureSpec({
     feature("Calls close on delegate") {
         val delegate = mockk<RoutingObject>(relaxed = true)
 
-        RoutingObjectDecorator(delegate).stop()
+        RoutingMetadataDecorator(delegate).stop()
 
         verify { delegate.stop() }
     }

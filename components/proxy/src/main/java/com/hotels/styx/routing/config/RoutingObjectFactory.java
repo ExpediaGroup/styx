@@ -28,25 +28,24 @@ import java.util.Map;
 import static java.util.Objects.requireNonNull;
 
 /**
- * A factory for constructing HTTP handler objects from a RoutingObjectDefinition yaml config block.
+ * A factory for constructing Styx routing objects from a RoutingObjectDefinition
+ * yaml config block.
  */
 public interface RoutingObjectFactory {
     /**
-     * Constructs a terminal action handler according to routing configuration block.
+     * Constructs a RoutingObject instance according to configuration block.
      * <p>
-     * Constructs a terminal action handler for the HTTP request. The handler is constructed
-     * according to the definition codified in the RoutingObjectDefinition instance.
-     * The RoutingObjectFactory is a factory object for constructing any dependant routing
-     * objects. The objectVariables is a map of already instantiated routing objects
-     * that can be referred from the handler being built.
+     * The routing object is constructed according to the definition codified in
+     * the RoutingObjectDefinition instance. Context provides access to
+     * core Styx components necessary for constructing dependant objects.
      * <p>
      *
-     * @param parents
-     * @param context
-     * @param configBlock
-     * @return
+     * @param fullName a fully qualified attribute name, including parents
+     * @param context a routing object factory context
+     * @param configBlock routing object configuration
+     * @return a RoutingObject with all dependant objects
      */
-    RoutingObject build(List<String> parents, Context context, RoutingObjectDefinition configBlock);
+    RoutingObject build(List<String> fullName, Context context, RoutingObjectDefinition configBlock);
 
     /**
      * Contextual information for factory class.

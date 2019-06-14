@@ -92,16 +92,16 @@ public class BackendServiceProxy implements RoutingObject {
         }
 
         @Override
-        public RoutingObject build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
+        public RoutingObject build(List<String> fullName, Context context, RoutingObjectDefinition configBlock) {
             JsonNodeConfig config = new JsonNodeConfig(configBlock.config());
             String provider = config.get("backendProvider")
-                    .orElseThrow(() -> missingAttributeError(configBlock, join(".", parents), "backendProvider"));
+                    .orElseThrow(() -> missingAttributeError(configBlock, join(".", fullName), "backendProvider"));
 
             Registry<BackendService> registry = backendRegistries.get(provider);
             if (registry == null) {
                 throw new IllegalArgumentException(
                         format("No such backend service provider exists, attribute='%s', name='%s'",
-                                join(".", append(parents, "backendProvider")), provider));
+                                join(".", append(fullName, "backendProvider")), provider));
             }
 
             PlatformAwareClientEventLoopGroupFactory factory = new PlatformAwareClientEventLoopGroupFactory("BackendServiceProxy", 0);

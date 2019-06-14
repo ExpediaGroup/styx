@@ -110,8 +110,12 @@ class HttpInterceptorPipelineTest : FeatureSpec({
                             content: hello
                     """.trimIndent()))
 
-            val response = handler.handle(hwaRequest, null).toMono().block()
-            response?.headers("X-Test-Header") shouldBe (listOf("B", "A"))
+            handler.handle(hwaRequest, null)
+                    .toMono()
+                    .block()
+                    .let {
+                        it!!.headers("X-Test-Header") shouldBe (listOf("B", "A"))
+                    }
         }
 
         scenario("it Treats absent 'pipeline' attribute as empty pipeline") {
@@ -131,8 +135,10 @@ class HttpInterceptorPipelineTest : FeatureSpec({
                             content: hello
                       """.trimIndent()))
 
-            val response = handler.handle(hwaRequest, null).toMono().block()
-            response?.status() shouldBe (OK)
+            handler.handle(hwaRequest, null)
+                    .toMono()
+                    .block()!!
+                    .status() shouldBe (OK)
         }
 
         scenario("Handler can be an object reference") {
@@ -151,8 +157,10 @@ class HttpInterceptorPipelineTest : FeatureSpec({
                         handler: referenceToAnotherRoutingObject
                       """.trimIndent()))
 
-            val response = handler.handle(hwaRequest, null).toMono().block()
-            response?.status() shouldBe OK
+            handler.handle(hwaRequest, null)
+                    .toMono()
+                    .block()!!
+                    .status() shouldBe OK
         }
 
         scenario("Supports inline interceptor definitions") {
@@ -185,8 +193,10 @@ class HttpInterceptorPipelineTest : FeatureSpec({
                             content: hello
                      """.trimIndent()))
 
-            val response = handler.handle(hwaRequest, null).toMono().block()
-            response?.headers("X-Test-Header") shouldBe (listOf("B", "A"))
+            handler.handle(hwaRequest, null)
+                    .toMono()
+                    .block()!!
+                    .headers("X-Test-Header") shouldBe (listOf("B", "A"))
         }
 
 

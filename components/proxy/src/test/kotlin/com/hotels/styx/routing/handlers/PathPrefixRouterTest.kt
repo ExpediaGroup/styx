@@ -110,13 +110,11 @@ class PathPrefixRouterTest : FeatureSpec({
 
             handler.handle(HttpRequest.get("/x").build())
                     .toMono()
-                    .block()
-                    ?.bodyAs(UTF_8) shouldBe "root"
+                    .block()!!.bodyAs(UTF_8) shouldBe "root"
 
             handler.handle(HttpRequest.get("/foo/").build())
                     .toMono()
-                    .block()
-                    ?.bodyAs(UTF_8) shouldBe "foo"
+                    .block()!!.bodyAs(UTF_8) shouldBe "foo"
         }
 
         scenario("Supports inline routing object definitions") {
@@ -136,8 +134,7 @@ class PathPrefixRouterTest : FeatureSpec({
 
             handler.handle(HttpRequest.get("/foo").build())
                     .toMono()
-                    .block()
-                    ?.bodyAs(UTF_8) shouldBe "hello"
+                    .block()!!.bodyAs(UTF_8) shouldBe "hello"
         }
 
         scenario("Missing routes attribute") {

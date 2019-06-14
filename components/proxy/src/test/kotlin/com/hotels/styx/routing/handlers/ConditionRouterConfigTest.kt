@@ -75,16 +75,21 @@ class ConditionRouterConfigTest : FeatureSpec({
     feature("Factory") {
         scenario("Builds an instance with fallback handler") {
             val router = ConditionRouter.Factory().build(listOf(), context.get(), config)
-            val response = router.handle(request, HttpInterceptorContext(true)).toMono().block()
 
-            response?.status() shouldBe (OK)
+            router.handle(request, HttpInterceptorContext(true))
+                    .toMono()
+                    .block()!!
+                    .status() shouldBe (OK)
         }
 
         scenario("Builds condition router instance routes") {
             val router = ConditionRouter.Factory().build(listOf(), context.get(), config)
-            val response = router.handle(request, HttpInterceptorContext()).toMono().block()
 
-            response?.status()?.code() shouldBe (301)
+            router.handle(request, HttpInterceptorContext())
+                    .toMono()
+                    .block()!!
+                    .status()
+                    .code() shouldBe (301)
         }
 
 
@@ -99,9 +104,10 @@ class ConditionRouterConfigTest : FeatureSpec({
                 fallback: fallbackHandler
             """.trimIndent()))
 
-            val response = router.handle(request, HttpInterceptorContext()).toMono().block()
-
-            response?.header("source")?.get() shouldBe ("fallback")
+            router.handle(request, HttpInterceptorContext())
+                    .toMono()
+                    .block()!!
+                    .header("source").get() shouldBe ("fallback")
         }
 
         scenario("Route destination can be specified as a handler reference") {
@@ -116,8 +122,10 @@ class ConditionRouterConfigTest : FeatureSpec({
                 """.trimIndent())
             )
 
-            val response = router.handle(request, HttpInterceptorContext(true)).toMono().block()
-            response?.header("source")?.get() shouldBe ("secure")
+            router.handle(request, HttpInterceptorContext(true))
+                    .toMono()
+                    .block()!!
+                    .header("source").get() shouldBe ("secure")
         }
 
 
@@ -239,9 +247,10 @@ class ConditionRouterConfigTest : FeatureSpec({
                           content: "secure"
                 """.trimIndent()))
 
-            val response = router.handle(request, HttpInterceptorContext()).toMono().block()
-
-            response?.status() shouldBe (BAD_GATEWAY)
+            router.handle(request, HttpInterceptorContext())
+                    .toMono()
+                    .block()!!
+                    .status() shouldBe (BAD_GATEWAY)
         }
     }
 

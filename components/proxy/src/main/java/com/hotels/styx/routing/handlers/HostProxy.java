@@ -148,7 +148,7 @@ public class HostProxy implements RoutingObject {
         private static final int DEFAULT_HTTP_PORT = 80;
 
         @Override
-        public RoutingObject build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
+        public RoutingObject build(List<String> fullName, Context context, RoutingObjectDefinition configBlock) {
             JsonNodeConfig config = new JsonNodeConfig(configBlock.config());
 
             ConnectionPoolSettings poolSettings = config.get("connectionPool", ConnectionPoolSettings.class)
@@ -166,7 +166,7 @@ public class HostProxy implements RoutingObject {
             HostAndPort hostAndPort = config.get("host")
                     .map(HostAndPort::fromString)
                     .map(it -> addDefaultPort(it, tlsSettings))
-                    .orElseThrow(() -> missingAttributeError(configBlock, join(".", parents), "host"));
+                    .orElseThrow(() -> missingAttributeError(configBlock, join(".", fullName), "host"));
 
             return createHostProxyHandler(context, hostAndPort, poolSettings, tlsSettings, responseTimeoutMillis, metricPrefix);
         }

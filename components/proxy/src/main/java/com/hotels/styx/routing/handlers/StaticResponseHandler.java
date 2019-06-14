@@ -77,7 +77,7 @@ public class StaticResponseHandler implements RoutingObject {
      * Builds a static response handler from Yaml configuration.
      */
     public static class Factory implements RoutingObjectFactory {
-        public RoutingObject build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
+        public RoutingObject build(List<String> fullName, Context context, RoutingObjectDefinition configBlock) {
             requireNonNull(configBlock.config());
 
             StaticResponseConfig config = new JsonNodeConfig(configBlock.config())

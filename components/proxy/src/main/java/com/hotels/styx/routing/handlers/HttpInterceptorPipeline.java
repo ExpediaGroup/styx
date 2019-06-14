@@ -87,17 +87,17 @@ public class HttpInterceptorPipeline implements RoutingObject {
     public static class Factory implements RoutingObjectFactory {
 
         @Override
-        public RoutingObject build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
+        public RoutingObject build(List<String> fullName, Context context, RoutingObjectDefinition configBlock) {
             JsonNode pipeline = configBlock.config().get("pipeline");
-            List<HttpInterceptor> interceptors = getHttpInterceptors(append(parents, "pipeline"), toMap(context.plugins()), context.interceptorFactories(), pipeline);
+            List<HttpInterceptor> interceptors = getHttpInterceptors(append(fullName, "pipeline"), toMap(context.plugins()), context.interceptorFactories(), pipeline);
 
             JsonNode handlerConfig = new JsonNodeConfig(configBlock.config())
                     .get("handler", JsonNode.class)
-                    .orElseThrow(() -> missingAttributeError(configBlock, join(".", parents), "handler"));
+                    .orElseThrow(() -> missingAttributeError(configBlock, join(".", fullName), "handler"));
 
             return new HttpInterceptorPipeline(
                     interceptors,
-                    Builtins.build(append(parents, "handler"), context, toRoutingConfigNode(handlerConfig)),
+                    Builtins.build(append(fullName, "handler"), context, toRoutingConfigNode(handlerConfig)),
                     context.requestTracking());
         }
 

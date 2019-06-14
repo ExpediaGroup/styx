@@ -38,9 +38,11 @@ class StaticResponseHandlerTest: StringSpec({
 
     "builds static response handler" {
         val handler = StaticResponseHandler.Factory().build(listOf(), context, config)
-        val response = handler.handle(LiveHttpRequest.get("/foo").build(), HttpInterceptorContext.create()).toMono().block()
 
-        response?.status() shouldBe (CREATED)
+        handler.handle(LiveHttpRequest.get("/foo").build(), HttpInterceptorContext.create())
+                .toMono()
+                .block()!!
+                .status() shouldBe (CREATED)
     }
 
 })

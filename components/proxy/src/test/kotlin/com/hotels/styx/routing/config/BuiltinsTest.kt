@@ -81,9 +81,8 @@ class BuiltinsTest : StringSpec({
 
         val response = handler.handle(get("/").build().stream(), HttpInterceptorContext.create())
                 .toMono()
-                .block()
-
-        response?.status() shouldBe (OK)
+                .block()!!
+                .status() shouldBe (OK)
     }
 
     "Looks up handler for every request" {

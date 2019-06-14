@@ -64,14 +64,20 @@ class BackendServiceProxyTest : StringSpec({
         val handler = BackendServiceProxy.Factory(environment, clientFactory(), services).build(listOf(), context, config)
         backendRegistry.reload()
 
-        val hwaResponse = handler.handle(hwaRequest, HttpInterceptorContext.create()).toMono().block()
-        hwaResponse?.header("X-Backend-Service")?.get() shouldBe("hwa")
+        handler.handle(hwaRequest, HttpInterceptorContext.create())
+                .toMono()
+                .block()!!
+                .header("X-Backend-Service").get() shouldBe("hwa")
 
-        val laResponse = handler.handle(laRequest, HttpInterceptorContext.create()).toMono().block()
-        laResponse?.header("X-Backend-Service")?.get() shouldBe("la")
+        handler.handle(laRequest, HttpInterceptorContext.create())
+                .toMono()
+                .block()!!
+                .header("X-Backend-Service").get() shouldBe("la")
 
-        val baResponse = handler.handle(baRequest, HttpInterceptorContext.create()).toMono().block()
-        baResponse?.header("X-Backend-Service")?.get() shouldBe("ba")
+        handler.handle(baRequest, HttpInterceptorContext.create())
+                .toMono()
+                .block()!!
+                .header("X-Backend-Service").get() shouldBe("ba")
     }
 
     "errors when backendProvider attribute is not specified" {

@@ -76,8 +76,8 @@ class RoutingRestApiSpec : StringSpec() {
                             """.trimIndent(), UTF_8)
                             .build())
                     .toMono()
-                    .block()
-                    ?.status() shouldBe CREATED
+                    .block()!!
+                    .status() shouldBe CREATED
 
             client.send(
                     put("/admin/routing/objects/root")
@@ -89,18 +89,20 @@ class RoutingRestApiSpec : StringSpec() {
                             """.trimIndent(), UTF_8)
                             .build())
                     .toMono()
-                    .block()
-                    ?.status() shouldBe CREATED
+                    .block()!!
+                    .status() shouldBe CREATED
 
-            val response = client.send(
+            client.send(
                     get("/11")
                             .header(HOST, "${styxServer.proxyHttpAddress().hostName}:${styxServer.proxyHttpAddress().port}")
                             .build())
                     .toMono()
-                    .block();
+                    .block()
+                    .let {
+                        it!!.status() shouldBe (OK)
+                        it.bodyAs(UTF_8) shouldBe ("Responder")
+                    }
 
-            response?.status() shouldBe (OK)
-            response?.bodyAs(UTF_8) shouldBe ("Responder")
         }
 
         "Removes routing objects" {
@@ -109,16 +111,16 @@ class RoutingRestApiSpec : StringSpec() {
                             .header(HOST, "${styxServer.adminHttpAddress().hostName}:${styxServer.adminHttpAddress().port}")
                             .build())
                     .toMono()
-                    .block()
-                    ?.status() shouldBe OK
+                    .block()!!
+                    .status() shouldBe OK
 
             client.send(
                     get("/11")
                             .header(HOST, "${styxServer.proxyHttpAddress().hostName}:${styxServer.proxyHttpAddress().port}")
                             .build())
                     .toMono()
-                    .block()
-                    ?.status() shouldBe NOT_FOUND
+                    .block()!!
+                    .status() shouldBe NOT_FOUND
         }
 
         "Lists routing objects" {
@@ -133,34 +135,35 @@ class RoutingRestApiSpec : StringSpec() {
                             """.trimIndent(), UTF_8)
                             .build())
                     .toMono()
-                    .block()
-                    ?.status() shouldBe CREATED
+                    .block()!!
+                    .status() shouldBe CREATED
 
-            val info = client.send(
+            client.send(
                     get("/admin/routing/objects")
                             .header(HOST, "${styxServer.adminHttpAddress().hostName}:${styxServer.adminHttpAddress().port}")
                             .build())
                     .toMono()
                     .block()
+                    .let {
+                        it!!.status() shouldBe OK
+                        it.bodyAs(UTF_8).trim() shouldBe """
+                                ---
+                                name: "responder"
+                                type: "StaticResponseHandler"
+                                tags: []
+                                config:
+                                  status: 200
+                                  content: "Responder"
 
-            info?.status() shouldBe OK
-            info?.bodyAs(UTF_8)?.trim() shouldBe """
-                ---
-                name: "responder"
-                type: "StaticResponseHandler"
-                tags: []
-                config:
-                  status: 200
-                  content: "Responder"
-
-                ---
-                name: "root"
-                type: "StaticResponseHandler"
-                tags: []
-                config:
-                  status: 200
-                  content: "Root"
-                """.trimIndent().trim()
+                                ---
+                                name: "root"
+                                type: "StaticResponseHandler"
+                                tags: []
+                                config:
+                                  status: 200
+                                  content: "Root"
+                                """.trimIndent().trim()
+                    }
         }
     }
 
@@ -183,8 +186,8 @@ class RoutingRestApiSpec : StringSpec() {
                             """.trimIndent(), UTF_8)
                         .build())
                 .toMono()
-                .block()
-                ?.status() shouldBe CREATED
+                .block()!!
+                .status() shouldBe CREATED
     }
 
     override fun beforeSpec(spec: Spec) {

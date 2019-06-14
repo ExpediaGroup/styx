@@ -92,10 +92,10 @@ public class PathPrefixRouter {
     public static class Factory implements RoutingObjectFactory {
 
         @Override
-        public RoutingObject build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
+        public RoutingObject build(List<String> fullName, Context context, RoutingObjectDefinition configBlock) {
             PathPrefixRouterConfig config = new JsonNodeConfig(configBlock.config()).as(PathPrefixRouterConfig.class);
             if (config.routes == null) {
-                throw missingAttributeError(configBlock, join(".", parents), "routes");
+                throw missingAttributeError(configBlock, join(".", fullName), "routes");
             }
 
             PathPrefixRouter pathPrefixRouter = new PathPrefixRouter(

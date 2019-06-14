@@ -28,10 +28,11 @@ import java.util.concurrent.atomic.LongAdder;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Adapts routing object into Styx core.
- * Provides a load balancing metric for the adapted routing object.
+ * Decorates a RoutingObject instance with additional metadata. This includes, but not
+ * limited to, a load balancing metric. Styx core needs this metadata to use the
+ * routing object in the forwarding path.
  */
-public class RoutingObjectDecorator implements RoutingObject {
+public class RoutingMetadataDecorator implements RoutingObject {
 
     private final RoutingObject delegate;
 
@@ -42,7 +43,7 @@ public class RoutingObjectDecorator implements RoutingObject {
      * Routing object adapater constructor.
      * @param routingObject
      */
-    public RoutingObjectDecorator(RoutingObject routingObject) {
+    public RoutingMetadataDecorator(RoutingObject routingObject) {
         this.delegate = requireNonNull(routingObject);
     }
 
