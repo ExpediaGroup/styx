@@ -48,7 +48,7 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
     private final Origin origin;
 
     private final ConcurrentLinkedDeque<MonoSink<Connection>> waitingSubscribers;
-    private final Queue<Connection> activeConnections;
+    private final Queue<Connection> availableConnections;
     private final AtomicInteger borrowedCount = new AtomicInteger();
     private final SimpleConnectionPool.ConnectionPoolStats stats = new SimpleConnectionPool.ConnectionPoolStats();
     private final AtomicInteger connectionAttempts = new AtomicInteger();
@@ -63,7 +63,7 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
         this.poolSettings = requireNonNull(poolSettings);
         this.connectionSettings = new ConnectionSettings(poolSettings.connectTimeoutMillis());
         this.connectionFactory = requireNonNull(connectionFactory);
-        this.activeConnections = new ConcurrentLinkedDeque<>();
+        this.availableConnections = new ConcurrentLinkedDeque<>();
         this.waitingSubscribers = new ConcurrentLinkedDeque<>();
     }
 
@@ -128,10 +128,10 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
     }
 
     private Connection dequeue() {
-        Connection connection = activeConnections.poll();
+        Connection connection = availableConnections.poll();
 
         while (nonNull(connection) && !connection.isConnected()) {
-            connection = activeConnections.poll();
+            connection = availableConnections.poll();
         }
 
         return connection;
@@ -140,7 +140,7 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
     private void queueNewConnection(Connection connection) {
         MonoSink<Connection> subscriber = waitingSubscribers.poll();
         if (subscriber == null) {
-            activeConnections.add(connection);
+            availableConnections.add(connection);
         } else {
             borrowedCount.incrementAndGet();
             subscriber.success(connection);
@@ -180,7 +180,7 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
     @Override
     public void connectionClosed(Connection connection) {
         terminatedConnections.incrementAndGet();
-        activeConnections.remove(connection);
+        availableConnections.remove(connection);
     }
 
     public ConnectionPool.Stats stats() {
@@ -191,7 +191,7 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
     private class ConnectionPoolStats implements Stats {
         @Override
         public int availableConnectionCount() {
-            return activeConnections.size();
+            return availableConnections.size();
         }
 
         @Override
@@ -232,7 +232,7 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
         @Override
         public String toString() {
             return MoreObjects.toStringHelper(this)
-                    .add("\nactiveConnections", availableConnectionCount())
+                    .add("\navailableConnections", availableConnectionCount())
                     .add("\npendingConnections", pendingConnectionCount())
                     .add("\nbusyConnections", busyConnectionCount())
                     .add("\nconnectionAttempts", connectionAttempts())
