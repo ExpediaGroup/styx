@@ -76,26 +76,17 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
         return Mono.<Connection>create(sink -> {
             Connection connection = dequeue();
             if (connection != null) {
-                if (borrowedCount.getAndIncrement() < poolSettings.maxConnectionsPerHost()) {
-                    sink.success(connection);
-                } else {
-                    borrowedCount.decrementAndGet();
-                    queueNewConnection(connection);
-                }
+                borrowedCount.incrementAndGet();
+                sink.success(connection);
             } else {
-                if (waitingSubscribers.size() >= poolSettings.maxPendingConnectionsPerHost()) {
+                if (waitingSubscribers.size() < poolSettings.maxPendingConnectionsPerHost()) {
+                    this.waitingSubscribers.add(sink.onDispose(() -> waitingSubscribers.remove(sink)));
+                    newConnection();
+                } else {
                     sink.error(new MaxPendingConnectionsExceededException(
                             origin,
                             poolSettings.maxPendingConnectionsPerHost(),
                             poolSettings.maxPendingConnectionsPerHost()));
-                } else {
-                    this.waitingSubscribers.add(sink.onCancel(() -> waitingSubscribers.remove(sink)));
-                    int borrowed = borrowedCount.get();
-                    int inEstablishment = connectionsInEstablishment.getAndIncrement();
-
-                    if ((borrowed + inEstablishment) < poolSettings.maxConnectionsPerHost()) {
-                        newConnection();
-                    }
                 }
             }
         }).timeout(
@@ -104,6 +95,14 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
     }
 
     private void newConnection() {
+        int borrowed = borrowedCount.get();
+        int inEstablishment = connectionsInEstablishment.getAndIncrement();
+
+        if ((borrowed + inEstablishment) >= poolSettings.maxConnectionsPerHost()) {
+            connectionsInEstablishment.decrementAndGet();
+            return;
+        }
+
         connectionAttempts.incrementAndGet();
         newConnection(MAX_ATTEMPTS)
                 .doOnNext(it -> it.addConnectionListener(SimpleConnectionPool.this))
