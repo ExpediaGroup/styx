@@ -81,11 +81,16 @@ class StatsReportingConnectionPool implements ConnectionPool {
         removeMetrics();
     }
 
-    private void removeMetrics() {
-        MetricRegistry scopedRegistry = getMetricScope(connectionPool);
-        asList("busy-connections", "pending-connections", "available-connections", "ttfb",
-                "connection-attempts", "connection-failures", "connections-closed", "connections-terminated")
-                .forEach(scopedRegistry::deregister);
+    private static void registerMetrics(ConnectionPool hostConnectionPool, MetricRegistry scopedRegistry) {
+        ConnectionPool.Stats stats = hostConnectionPool.stats();
+        scopedRegistry.register("busy-connections", (Gauge<Integer>) stats::busyConnectionCount);
+        scopedRegistry.register("pending-connections", (Gauge<Integer>) stats::pendingConnectionCount);
+        scopedRegistry.register("available-connections", (Gauge<Integer>) stats::availableConnectionCount);
+        scopedRegistry.register("connection-attempts", (Gauge<Integer>) () -> (int) stats.connectionAttempts());
+        scopedRegistry.register("connection-failures", (Gauge<Integer>) () -> (int) stats.connectionFailures());
+        scopedRegistry.register("connections-closed", (Gauge<Integer>) () -> (int) stats.closedConnections());
+        scopedRegistry.register("connections-terminated", (Gauge<Integer>) () -> (int) stats.terminatedConnections());
+        scopedRegistry.register("in-establishment", (Gauge<Integer>) () -> (int) stats.connectionsInEstablishment());
     }
 
     private void registerMetrics() {
@@ -98,15 +103,12 @@ class StatsReportingConnectionPool implements ConnectionPool {
         }
     }
 
-    private static void registerMetrics(ConnectionPool hostConnectionPool, MetricRegistry scopedRegistry) {
-        ConnectionPool.Stats stats = hostConnectionPool.stats();
-        scopedRegistry.register("busy-connections", (Gauge<Integer>) stats::busyConnectionCount);
-        scopedRegistry.register("pending-connections", (Gauge<Integer>) stats::pendingConnectionCount);
-        scopedRegistry.register("available-connections", (Gauge<Integer>) stats::availableConnectionCount);
-        scopedRegistry.register("connection-attempts", (Gauge<Integer>) () -> (int) stats.connectionAttempts());
-        scopedRegistry.register("connection-failures", (Gauge<Integer>) () -> (int) stats.connectionFailures());
-        scopedRegistry.register("connections-closed", (Gauge<Integer>) () -> (int) stats.closedConnections());
-        scopedRegistry.register("connections-terminated", (Gauge<Integer>) () -> (int) stats.terminatedConnections());
+    private void removeMetrics() {
+        MetricRegistry scopedRegistry = getMetricScope(connectionPool);
+        asList("busy-connections", "pending-connections", "available-connections", "ttfb",
+                "connection-attempts", "connection-failures", "connections-closed", "connections-terminated",
+                "in-establishment")
+                .forEach(scopedRegistry::deregister);
     }
 
     private MetricRegistry getMetricScope(ConnectionPool hostConnectionPool) {

@@ -23,7 +23,6 @@ import rx.Observable;
 
 import java.io.Closeable;
 import java.util.EventListener;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * A connection to an origin.

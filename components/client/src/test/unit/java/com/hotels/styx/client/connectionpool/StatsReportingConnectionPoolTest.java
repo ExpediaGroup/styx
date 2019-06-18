@@ -45,6 +45,7 @@ public class StatsReportingConnectionPoolTest {
                 "origins.generic-app.backend-01.connectionspool.busy-connections",
                 "origins.generic-app.backend-01.connectionspool.pending-connections",
                 "origins.generic-app.backend-01.connectionspool.connection-attempts",
+                "origins.generic-app.backend-01.connectionspool.in-establishment",
                 "origins.generic-app.backend-01.connectionspool.connection-failures",
                 "origins.generic-app.backend-01.connectionspool.connections-closed",
                 "origins.generic-app.backend-01.connectionspool.connections-terminated"
