@@ -40,6 +40,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public class SimpleConnectionPool implements ConnectionPool, Connection.Listener {
     private static final Logger LOG = getLogger(SimpleConnectionPool.class);
+    private static final int MAX_ATTEMPTS = 3;
 
     private final ConnectionPoolSettings poolSettings;
     private final ConnectionSettings connectionSettings;
@@ -104,7 +105,7 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
 
     private void newConnection() {
         connectionAttempts.incrementAndGet();
-        newConnection(3)
+        newConnection(MAX_ATTEMPTS)
                 .doOnNext(it -> it.addConnectionListener(SimpleConnectionPool.this))
                 .subscribe(
                         connection -> {
@@ -222,6 +223,11 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
         @Override
         public int terminatedConnections() {
             return terminatedConnections.get();
+        }
+
+        @Override
+        public int connectionsInEstablishment() {
+            return connectionsInEstablishment.get();
         }
 
         @Override

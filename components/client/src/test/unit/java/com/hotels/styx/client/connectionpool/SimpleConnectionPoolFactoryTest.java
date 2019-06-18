@@ -48,7 +48,8 @@ public class SimpleConnectionPoolFactoryTest {
         assertThat(metricRegistry.getGauges().keySet(), hasItems(
                 "origins.test-app.origin-X.connectionspool.pending-connections",
                 "origins.test-app.origin-X.connectionspool.available-connections",
-                "origins.test-app.origin-X.connectionspool.busy-connections"
+                "origins.test-app.origin-X.connectionspool.busy-connections",
+                "origins.test-app.origin-X.connectionspool.in-establishment"
         ));
     }
 }
