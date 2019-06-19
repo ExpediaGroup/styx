@@ -90,7 +90,7 @@ class StatsReportingConnectionPool implements ConnectionPool {
         scopedRegistry.register("connection-failures", (Gauge<Integer>) () -> (int) stats.connectionFailures());
         scopedRegistry.register("connections-closed", (Gauge<Integer>) () -> (int) stats.closedConnections());
         scopedRegistry.register("connections-terminated", (Gauge<Integer>) () -> (int) stats.terminatedConnections());
-        scopedRegistry.register("in-establishment", (Gauge<Integer>) () -> (int) stats.connectionsInEstablishment());
+        scopedRegistry.register("connections-in-establishment", (Gauge<Integer>) () -> (int) stats.connectionsInEstablishment());
     }
 
     private void registerMetrics() {
@@ -107,7 +107,7 @@ class StatsReportingConnectionPool implements ConnectionPool {
         MetricRegistry scopedRegistry = getMetricScope(connectionPool);
         asList("busy-connections", "pending-connections", "available-connections", "ttfb",
                 "connection-attempts", "connection-failures", "connections-closed", "connections-terminated",
-                "in-establishment")
+                "connections-in-establishment")
                 .forEach(scopedRegistry::deregister);
     }
 

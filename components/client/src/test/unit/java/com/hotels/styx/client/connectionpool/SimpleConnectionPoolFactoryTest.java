@@ -49,7 +49,7 @@ public class SimpleConnectionPoolFactoryTest {
                 "origins.test-app.origin-X.connectionspool.pending-connections",
                 "origins.test-app.origin-X.connectionspool.available-connections",
                 "origins.test-app.origin-X.connectionspool.busy-connections",
-                "origins.test-app.origin-X.connectionspool.in-establishment"
+                "origins.test-app.origin-X.connectionspool.connections-in-establishment"
         ));
     }
 }
