@@ -256,7 +256,7 @@ class StyxObjectStoreTest : FeatureSpec() {
 
                 // ... otherwise we aren't guaranteed what events are going show up.
                 //
-                // The ordering between initial watch event in relation to db.inserts are
+                // The ordering between initial watch event in relation to objectStore.inserts are
                 // non-deterministic.
                 eventually(1.seconds, AssertionError::class.java) {
                     watchEvents1.size shouldBe 3
