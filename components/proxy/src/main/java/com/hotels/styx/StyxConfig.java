@@ -19,8 +19,9 @@ import com.google.common.base.Splitter;
 import com.hotels.styx.admin.AdminServerConfig;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.common.io.ResourceFactory;
 import com.hotels.styx.client.StyxHeaderConfig;
+import com.hotels.styx.common.Lazy;
+import com.hotels.styx.common.io.ResourceFactory;
 import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration;
 import com.hotels.styx.proxy.ProxyServerConfig;
@@ -30,6 +31,7 @@ import java.nio.file.Paths;
 import java.util.Optional;
 
 import static com.hotels.styx.StartupConfig.defaultStartupConfig;
+import static com.hotels.styx.common.Lazy.lazy;
 import static com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSource;
 import static com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML;
 import static java.util.Objects.requireNonNull;
@@ -45,9 +47,9 @@ public final class StyxConfig implements Configuration {
     private final StartupConfig startupConfig;
     private final Configuration configuration;
 
-    private final ProxyServerConfig proxyServerConfig;
-    private final AdminServerConfig adminServerConfig;
-    private final StyxHeaderConfig styxHeaderConfig;
+    private final Lazy<ProxyServerConfig> proxyServerConfig;
+    private final Lazy<AdminServerConfig> adminServerConfig;
+    private final Lazy<StyxHeaderConfig> styxHeaderConfig;
 
     public StyxConfig() {
         this(defaultStartupConfig(), EMPTY_CONFIGURATION);
@@ -64,10 +66,9 @@ public final class StyxConfig implements Configuration {
     public StyxConfig(StartupConfig startupConfig, Configuration configuration) {
         this.startupConfig = requireNonNull(startupConfig);
         this.configuration = requireNonNull(configuration);
-        this.adminServerConfig = get("admin", AdminServerConfig.class).orElseGet(AdminServerConfig::new);
-        this.proxyServerConfig = get("proxy", ProxyServerConfig.class).orElseGet(ProxyServerConfig::new);
-
-        this.styxHeaderConfig = get("styxHeaders", StyxHeaderConfig.class).orElseGet(StyxHeaderConfig::new);
+        this.proxyServerConfig = lazy(() -> get("proxy", ProxyServerConfig.class).orElseGet(ProxyServerConfig::new));
+        this.adminServerConfig = lazy(() -> get("admin", AdminServerConfig.class).orElseGet(AdminServerConfig::new));
+        this.styxHeaderConfig = lazy(() -> get("styxHeaders", StyxHeaderConfig.class).orElseGet(StyxHeaderConfig::new));
     }
 
     private static Configuration loadYamlConfiguration(String yaml) {
@@ -93,19 +94,19 @@ public final class StyxConfig implements Configuration {
     }
 
     public StyxHeaderConfig styxHeaderConfig() {
-        return styxHeaderConfig;
+        return styxHeaderConfig.get();
     }
 
     public ProxyServerConfig proxyServerConfig() {
-        return proxyServerConfig;
+        return proxyServerConfig.get();
     }
 
     public AdminServerConfig adminServerConfig() {
-        return this.adminServerConfig;
+        return this.adminServerConfig.get();
     }
 
     public int port() {
-        return proxyServerConfig.httpConnectorConfig().get().port();
+        return proxyServerConfig().httpConnectorConfig().get().port();
     }
 
     public Optional<String> applicationsConfigurationPath() {

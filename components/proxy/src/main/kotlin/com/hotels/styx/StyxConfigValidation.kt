@@ -15,9 +15,6 @@
  */
 package com.hotels.styx
 
-import com.hotels.styx.OutcomeType.FAIL
-import com.hotels.styx.OutcomeType.NO_VALIDATION
-import com.hotels.styx.OutcomeType.PASS
 import com.hotels.styx.ServerConfigSchema.validateServerConfiguration
 import com.hotels.styx.config.schema.SchemaValidationException
 import org.slf4j.Logger
@@ -32,27 +29,26 @@ val LOG: Logger = getLogger("com.hotels.styx")
 // TODO it would be nice if we could implement this without violating encapsulation by knowing whether YAML is used internally
 // TODO but that should be designed carefully so that our class model still makes sense.
 fun validate(config: StyxConfig) {
-    val outcome: Outcome = config.yamlConfiguration()!!.map {
+    val outcome: Outcome = config.yamlConfiguration().map {
         validateServerConfiguration(it)
-                .map { errorMessage -> Outcome(FAIL, errorMessage) }
-                .orElse(Outcome(PASS))
-    }.orElse(Outcome(NO_VALIDATION))
+                .map { errorMessage -> ValidationFailure(errorMessage) as Outcome }
+                .orElse(ValidationSuccess)
+    }.orElse(NoValidation)
 
-    when (outcome.type) {
-        PASS -> LOG.info("Configuration validated successfully.")
-        NO_VALIDATION -> LOG.info("Configuration could not be validated as it does not use YAML")
-        else -> {
-            val message: String = outcome.error!!
-            LOG.info("Styx server failed to start due to configuration error.");
-            LOG.info("The configuration was sourced from " + config.startupConfig().configFileLocation());
-            LOG.info(message);
+    when (outcome) {
+        ValidationSuccess -> LOG.info("Configuration validated successfully.")
+        NoValidation -> LOG.info("Configuration could not be validated as it does not use YAML")
+        is ValidationFailure -> {
+            val message: String = outcome.error
+            LOG.error("Styx server failed to start due to configuration error.")
+            LOG.error("The configuration was sourced from " + config.startupConfig().configFileLocation())
+            LOG.error(message)
             throw SchemaValidationException(message);
         }
     }
 }
 
-enum class OutcomeType {
-    PASS, FAIL, NO_VALIDATION
-}
-
-data class Outcome(val type: OutcomeType, val error: String? = null)
+sealed class Outcome
+object ValidationSuccess : Outcome()
+data class ValidationFailure(val error: String): Outcome()
+object NoValidation: Outcome()
