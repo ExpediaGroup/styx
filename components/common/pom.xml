@@ -124,18 +124,6 @@
               </sources>
             </configuration>
           </execution>
-<!--          <execution>-->
-<!--            <id>add-kotlin-test-sources</id>-->
-<!--            <phase>generate-test-sources</phase>-->
-<!--            <goals>-->
-<!--              <goal>add-test-source</goal>-->
-<!--            </goals>-->
-<!--            <configuration>-->
-<!--              <sources>-->
-<!--                <source>src/test/kotlin</source>-->
-<!--              </sources>-->
-<!--            </configuration>-->
-<!--          </execution>-->
         </executions>
       </plugin>
     </plugins>
