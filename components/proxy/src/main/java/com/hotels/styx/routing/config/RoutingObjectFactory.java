@@ -28,7 +28,7 @@ import java.util.Map;
 import static java.util.Objects.requireNonNull;
 
 /**
- * A factory for constructing Styx routing objects from a RoutingObjectDefinition
+ * A factory for constructing Styx routing objects from a StyxObjectDefinition
  * yaml config block.
  */
 public interface RoutingObjectFactory {
@@ -36,7 +36,7 @@ public interface RoutingObjectFactory {
      * Constructs a RoutingObject instance according to configuration block.
      * <p>
      * The routing object is constructed according to the definition codified in
-     * the RoutingObjectDefinition instance. Context provides access to
+     * the StyxObjectDefinition instance. Context provides access to
      * core Styx components necessary for constructing dependant objects.
      * <p>
      *
@@ -45,7 +45,7 @@ public interface RoutingObjectFactory {
      * @param configBlock routing object configuration
      * @return a RoutingObject with all dependant objects
      */
-    RoutingObject build(List<String> fullName, Context context, RoutingObjectDefinition configBlock);
+    RoutingObject build(List<String> fullName, Context context, StyxObjectDefinition configBlock);
 
     /**
      * Contextual information for factory class.

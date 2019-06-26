@@ -42,7 +42,7 @@ import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.RoutingObjectFactory
-import com.hotels.styx.routing.config.RoutingObjectDefinition
+import com.hotels.styx.routing.config.StyxObjectDefinition
 import org.slf4j.LoggerFactory
 import reactor.core.Disposable
 import reactor.core.publisher.toFlux
@@ -80,7 +80,7 @@ internal class LoadBalancingGroup(val client: StyxBackendServiceClient, val chan
     }
 
     class Factory : RoutingObjectFactory {
-        override fun build(fullName: List<String>, context: RoutingObjectFactory.Context, configBlock: RoutingObjectDefinition): RoutingObject {
+        override fun build(fullName: List<String>, context: RoutingObjectFactory.Context, configBlock: StyxObjectDefinition): RoutingObject {
 
             val appId = fullName.last()
             val config = JsonNodeConfig(configBlock.config()).`as`(Config::class.java)

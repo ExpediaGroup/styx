@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
@@ -31,7 +32,7 @@ import com.hotels.styx.routing.RoutingMetadataDecorator;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
-import com.hotels.styx.routing.config.RoutingObjectDefinition;
+import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import org.slf4j.Logger;
 
@@ -95,7 +96,7 @@ public class RoutingObjectHandler implements WebServiceHandler {
                     String name = placeholders(context).get("objectName");
 
                     try {
-                        RoutingObjectDefinition payload = YAML_MAPPER.readValue(body, RoutingObjectDefinition.class);
+                        StyxObjectDefinition payload = YAML_MAPPER.readValue(body, StyxObjectDefinition.class);
                         RoutingMetadataDecorator decorator = new RoutingMetadataDecorator(Builtins.build(emptyList(), routingObjectFactoryContext, payload));
 
                         routeDatabase.insert(name, new RoutingObjectRecord(payload.type(), ImmutableSet.copyOf(payload.tags()), payload.config(), decorator))
@@ -117,12 +118,12 @@ public class RoutingObjectHandler implements WebServiceHandler {
                 .build();
     }
 
-    private static String serialise(String name, RoutingObjectRecord app) {
+    private static String serialise(String name, RoutingObjectRecord record) {
         JsonNode node = YAML_MAPPER
-                .addMixIn(RoutingObjectDefinition.class, RoutingObjectDefMixin.class)
-                .valueToTree(new RoutingObjectDefinition(name, app.getType(), emptyList(), app.getConfig()));
+                .addMixIn(StyxObjectDefinition.class, RoutingObjectDefMixin.class)
+                .valueToTree(new StyxObjectDefinition(name, record.getType(), ImmutableList.copyOf(record.getTags()), record.getConfig()));
 
-        ((ObjectNode) node).set("config", app.getConfig());
+        ((ObjectNode) node).set("config", record.getConfig());
 
         try {
             return YAML_MAPPER.writeValueAsString(node);

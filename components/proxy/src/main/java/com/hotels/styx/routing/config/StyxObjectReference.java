@@ -20,10 +20,10 @@ import java.util.Objects;
 /**
  * A routing config object that is a named reference to an object specified elsewhere.
  */
-public class RoutingObjectReference implements RoutingObjectConfiguration {
+public class StyxObjectReference implements StyxObjectConfiguration {
     private final String name;
 
-    public RoutingObjectReference(String name) {
+    public StyxObjectReference(String name) {
         this.name = name;
     }
 
@@ -39,7 +39,7 @@ public class RoutingObjectReference implements RoutingObjectConfiguration {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        RoutingObjectReference that = (RoutingObjectReference) o;
+        StyxObjectReference that = (StyxObjectReference) o;
         return Objects.equals(name, that.name);
     }
 
@@ -50,7 +50,7 @@ public class RoutingObjectReference implements RoutingObjectConfiguration {
 
     @Override
     public String toString() {
-        return "RoutingObjectReference{"
+        return "StyxObjectReference{"
                 + "name='" + name + '\''
                 + '}';
     }

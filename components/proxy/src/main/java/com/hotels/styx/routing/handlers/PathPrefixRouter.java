@@ -28,7 +28,7 @@ import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
-import com.hotels.styx.routing.config.RoutingObjectDefinition;
+import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.server.NoServiceConfiguredException;
 
 import java.util.List;
@@ -92,7 +92,7 @@ public class PathPrefixRouter {
     public static class Factory implements RoutingObjectFactory {
 
         @Override
-        public RoutingObject build(List<String> fullName, Context context, RoutingObjectDefinition configBlock) {
+        public RoutingObject build(List<String> fullName, Context context, StyxObjectDefinition configBlock) {
             PathPrefixRouterConfig config = new JsonNodeConfig(configBlock.config()).as(PathPrefixRouterConfig.class);
             if (config.routes == null) {
                 throw missingAttributeError(configBlock, join(".", fullName), "routes");

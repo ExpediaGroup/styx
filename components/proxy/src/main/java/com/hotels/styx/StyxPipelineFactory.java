@@ -29,7 +29,7 @@ import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.StaticPipelineFactory;
 import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
-import com.hotels.styx.routing.config.RoutingObjectConfiguration;
+import com.hotels.styx.routing.config.StyxObjectConfiguration;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
 import com.hotels.styx.startup.PipelineFactory;
@@ -93,7 +93,7 @@ public final class StyxPipelineFactory implements PipelineFactory {
 
         HttpPipelineFactory pipelineBuilder = rootHandlerNode
                 .map(jsonNode -> {
-                    RoutingObjectConfiguration node = toRoutingConfigNode(jsonNode);
+                    StyxObjectConfiguration node = toRoutingConfigNode(jsonNode);
                     return (HttpPipelineFactory) () -> Builtins.build(ImmutableList.of("httpPipeline"), routingObjectFactoryContext, node);
                 })
                 .orElseGet(() -> {

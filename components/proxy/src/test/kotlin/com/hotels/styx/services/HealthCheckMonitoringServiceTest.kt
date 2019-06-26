@@ -24,6 +24,7 @@ import com.hotels.styx.routing.mockObject
 import io.kotlintest.matchers.boolean.shouldBeFalse
 import io.kotlintest.matchers.boolean.shouldBeTrue
 import io.kotlintest.matchers.collections.shouldContain
+import io.kotlintest.matchers.collections.shouldContainAll
 import io.kotlintest.matchers.collections.shouldContainExactly
 import io.kotlintest.matchers.withClue
 import io.kotlintest.milliseconds
@@ -256,21 +257,21 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
         }
     }
 
-    feature("Health check monitor factory") {
-
-        fun routingObjectDef(text: String) = YamlConfig(text).`as`((RoutingObjectDefinition::class.java))
-
-        """
-            path: /version.txt
-            objects: aaa
-            timeoutMillis: 2000
-            intervalMillis: 15000
-            healthyThreshold: 3
-            unhealthyThreshold: 4 
-        """.trimIndent()
-
-        val service = HealthCheckMonitoringServiceFactory()
-                .create(mockk(), mockk())
-    }
+//    feature("Health check monitor factory") {
+//
+//        fun routingObjectDef(text: String) = YamlConfig(text).`as`((StyxObjectDefinition::class.java))
+//
+//        """
+//            path: /version.txt
+//            objects: aaa
+//            timeoutMillis: 2000
+//            intervalMillis: 15000
+//            healthyThreshold: 3
+//            unhealthyThreshold: 4
+//        """.trimIndent()
+//
+//        val service = HealthCheckMonitoringServiceFactory()
+//                .create(mockk(), mockk())
+//    }
 
 })

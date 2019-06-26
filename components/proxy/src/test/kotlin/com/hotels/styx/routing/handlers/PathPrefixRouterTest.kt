@@ -25,7 +25,7 @@ import com.hotels.styx.routing.RoutingObjectFactoryContext
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.config.Builtins
 import com.hotels.styx.routing.config.Builtins.BUILTIN_HANDLER_SCHEMAS
-import com.hotels.styx.routing.config.RoutingObjectReference
+import com.hotels.styx.routing.config.StyxObjectReference
 import com.hotels.styx.routing.handle
 import com.hotels.styx.routing.mockObject
 import com.hotels.styx.routing.ref
@@ -52,7 +52,7 @@ class PathPrefixRouterTest : FeatureSpec({
         }
 
         scenario("Root path") {
-            val rootHandler = Builtins.build(listOf(""), context.get(), RoutingObjectReference("root"))
+            val rootHandler = Builtins.build(listOf(""), context.get(), StyxObjectReference("root"))
             val router = PathPrefixRouter(listOf(pair("/", rootHandler)))
 
             router.route(get("/").build()) shouldBe Optional.of(rootHandler)
@@ -62,11 +62,11 @@ class PathPrefixRouterTest : FeatureSpec({
         }
 
         scenario("Choice of most specific path") {
-            val fooFileHandler = Builtins.build(listOf(""), context.get(), RoutingObjectReference("foo-file"))
-            val fooPathHandler = Builtins.build(listOf(""), context.get(), RoutingObjectReference("foo-path"))
-            val fooBarFileHandler = Builtins.build(listOf(""), context.get(), RoutingObjectReference("foo-bar-file"))
-            val fooBarPathHandler = Builtins.build(listOf(""), context.get(), RoutingObjectReference("foo-bar-path"))
-            val fooBazFileHandler = Builtins.build(listOf(""), context.get(), RoutingObjectReference("foo-baz-file"))
+            val fooFileHandler = Builtins.build(listOf(""), context.get(), StyxObjectReference("foo-file"))
+            val fooPathHandler = Builtins.build(listOf(""), context.get(), StyxObjectReference("foo-path"))
+            val fooBarFileHandler = Builtins.build(listOf(""), context.get(), StyxObjectReference("foo-bar-file"))
+            val fooBarPathHandler = Builtins.build(listOf(""), context.get(), StyxObjectReference("foo-bar-path"))
+            val fooBazFileHandler = Builtins.build(listOf(""), context.get(), StyxObjectReference("foo-baz-file"))
 
             val router = PathPrefixRouter(listOf(
                     pair("/foo", fooFileHandler),

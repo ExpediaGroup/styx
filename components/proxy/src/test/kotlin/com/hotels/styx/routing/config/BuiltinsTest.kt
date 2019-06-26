@@ -45,8 +45,8 @@ class BuiltinsTest : StringSpec({
     val routeObjectStore = mockk<StyxObjectStore<RoutingObjectRecord>>()
     every { routeObjectStore.get("aHandler") } returns Optional.of(RoutingObjectRecord.create("type", mockk(), mockk(), mockHandler))
     
-    "Builds a new handler as per RoutingObjectDefinition" {
-        val routeDef = RoutingObjectDefinition("handler-def", "SomeRoutingObject", mockk())
+    "Builds a new handler as per StyxObjectDefinition" {
+        val routeDef = StyxObjectDefinition("handler-def", "SomeRoutingObject", mockk())
         val handlerFactory = httpHandlerFactory(mockHandler)
 
         val context = RoutingObjectFactoryContext(objectFactories = mapOf("SomeRoutingObject" to handlerFactory))
@@ -62,7 +62,7 @@ class BuiltinsTest : StringSpec({
     }
 
     "Doesn't accept unregistered types" {
-        val config = RoutingObjectDefinition("foo", "ConfigType", mockk())
+        val config = StyxObjectDefinition("foo", "ConfigType", mockk())
         val context = RoutingObjectFactoryContext(objectStore = routeObjectStore)
 
         val e = shouldThrow<IllegalArgumentException> {
@@ -77,9 +77,9 @@ class BuiltinsTest : StringSpec({
 
         val context = RoutingObjectFactoryContext(routeRefLookup = RouteRefLookup { ref -> routeDb[ref.name()] })
 
-        val handler = Builtins.build(listOf(), context.get(), RoutingObjectReference("aHandler"))
+        val handler = Builtins.build(listOf(), context.get(), StyxObjectReference("aHandler"))
 
-        val response = handler.handle(get("/").build().stream(), HttpInterceptorContext.create())
+        handler.handle(get("/").build().stream(), HttpInterceptorContext.create())
                 .toMono()
                 .block()!!
                 .status() shouldBe (OK)
@@ -87,11 +87,11 @@ class BuiltinsTest : StringSpec({
 
     "Looks up handler for every request" {
         val referenceLookup = mockk<RouteRefLookup>()
-        every {referenceLookup.apply(RoutingObjectReference("aHandler")) } returns RoutingObject { request, context -> Eventual.of(response(OK).build().stream()) }
+        every {referenceLookup.apply(StyxObjectReference("aHandler")) } returns RoutingObject { request, context -> Eventual.of(response(OK).build().stream()) }
 
         val context = RoutingObjectFactoryContext(routeRefLookup = referenceLookup)
 
-        val handler = Builtins.build(listOf(), context.get(), RoutingObjectReference("aHandler"))
+        val handler = Builtins.build(listOf(), context.get(), StyxObjectReference("aHandler"))
 
         handler.handle(get("/").build().stream(), HttpInterceptorContext.create()).toMono().block()
         handler.handle(get("/").build().stream(), HttpInterceptorContext.create()).toMono().block()
@@ -99,7 +99,7 @@ class BuiltinsTest : StringSpec({
         handler.handle(get("/").build().stream(), HttpInterceptorContext.create()).toMono().block()
 
         verify(exactly = 4) {
-            referenceLookup.apply(RoutingObjectReference("aHandler"))
+            referenceLookup.apply(StyxObjectReference("aHandler"))
         }
     }
 

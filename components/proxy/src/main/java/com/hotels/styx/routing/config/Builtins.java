@@ -87,27 +87,27 @@ public final class Builtins {
     private Builtins() {
     }
 
-    public static RoutingObject build(List<String> parents, RoutingObjectFactory.Context context, RoutingObjectConfiguration configNode) {
-        if (configNode instanceof RoutingObjectDefinition) {
-            RoutingObjectDefinition configBlock = (RoutingObjectDefinition) configNode;
+    public static RoutingObject build(List<String> parents, RoutingObjectFactory.Context context, StyxObjectConfiguration configNode) {
+        if (configNode instanceof StyxObjectDefinition) {
+            StyxObjectDefinition configBlock = (StyxObjectDefinition) configNode;
             String type = configBlock.type();
 
             RoutingObjectFactory factory = context.objectFactories().get(type);
             checkArgument(factory != null, format("Unknown handler type '%s'", type));
 
             return factory.build(parents, context, configBlock);
-        } else if (configNode instanceof RoutingObjectReference) {
+        } else if (configNode instanceof StyxObjectReference) {
             return (request, httpContext) -> context.refLookup()
-                    .apply((RoutingObjectReference) configNode)
+                    .apply((StyxObjectReference) configNode)
                     .handle(request, httpContext);
         } else {
             throw new UnsupportedOperationException(format("Unsupported configuration node type: '%s'", configNode.getClass().getName()));
         }
     }
 
-    public static HttpInterceptor build(RoutingObjectConfiguration configBlock, Map<String, HttpInterceptorFactory> interceptorFactories) {
-        if (configBlock instanceof RoutingObjectDefinition) {
-            RoutingObjectDefinition block = (RoutingObjectDefinition) configBlock;
+    public static HttpInterceptor build(StyxObjectConfiguration configBlock, Map<String, HttpInterceptorFactory> interceptorFactories) {
+        if (configBlock instanceof StyxObjectDefinition) {
+            StyxObjectDefinition block = (StyxObjectDefinition) configBlock;
             String type = block.type();
 
             HttpInterceptorFactory constructor = interceptorFactories.get(type);

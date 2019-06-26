@@ -37,7 +37,7 @@ import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
-import com.hotels.styx.routing.config.RoutingObjectDefinition;
+import com.hotels.styx.routing.config.StyxObjectDefinition;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -148,7 +148,7 @@ public class HostProxy implements RoutingObject {
         private static final int DEFAULT_HTTP_PORT = 80;
 
         @Override
-        public RoutingObject build(List<String> fullName, Context context, RoutingObjectDefinition configBlock) {
+        public RoutingObject build(List<String> fullName, Context context, StyxObjectDefinition configBlock) {
             JsonNodeConfig config = new JsonNodeConfig(configBlock.config());
 
             ConnectionPoolSettings poolSettings = config.get("connectionPool", ConnectionPoolSettings.class)

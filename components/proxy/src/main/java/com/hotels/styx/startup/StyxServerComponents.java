@@ -36,13 +36,15 @@ import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingMetadataDecorator;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.Builtins;
-import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
+import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.RouteRefLookup.RouteDbRefLookup;
 import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -72,6 +74,8 @@ public class StyxServerComponents {
     private final Class<? extends SocketChannel> nettySocketChannelClass;
     private final RoutingObjectFactory.Context routingObjectContext;
     private final StartupConfig startupConfig;
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(StyxServerComponents.class);
 
     private StyxServerComponents(Builder builder) {
         StyxConfig styxConfig = requireNonNull(builder.styxConfig);
@@ -111,22 +115,29 @@ public class StyxServerComponents {
         this.plugins.forEach(plugin -> this.environment.configStore().set("plugins." + plugin.name(), plugin));
 
         this.environment.configuration().get("routingObjects", JsonNode.class)
-                .map(StyxServerComponents::readHttpHandlers)
+                .map(StyxServerComponents::readComponents)
                 .orElse(ImmutableMap.of())
                 .forEach((name, record) -> {
                     RoutingMetadataDecorator adapter = new RoutingMetadataDecorator(Builtins.build(ImmutableList.of(name), routingObjectContext, record));
                     routeObjectStore.insert(name, new RoutingObjectRecord(record.type(), ImmutableSet.copyOf(record.tags()), record.config(), adapter))
                             .ifPresent(previous -> previous.getRoutingObject().stop());
                 });
+
+        this.environment.configuration().get("providers", JsonNode.class)
+                .map(StyxServerComponents::readComponents)
+                .orElse(ImmutableMap.of())
+                .forEach((name, record) -> {
+                    LOGGER.warn("record: " + name + ": " + record);
+                });
     }
 
-    private static Map<String, RoutingObjectDefinition> readHttpHandlers(JsonNode root) {
-        Map<String, RoutingObjectDefinition> handlers = new HashMap<>();
+    private static Map<String, StyxObjectDefinition> readComponents(JsonNode root) {
+        Map<String, StyxObjectDefinition> handlers = new HashMap<>();
 
         root.fields().forEachRemaining(
                 entry -> {
                     String name = entry.getKey();
-                    RoutingObjectDefinition handlerDef = new JsonNodeConfig(entry.getValue()).as(RoutingObjectDefinition.class);
+                    StyxObjectDefinition handlerDef = new JsonNodeConfig(entry.getValue()).as(StyxObjectDefinition.class);
                     handlers.put(name, handlerDef);
                 }
         );

@@ -30,8 +30,8 @@ import com.hotels.styx.routing.config.Builtins.DEFAULT_REFERENCE_LOOKUP
 import com.hotels.styx.routing.config.Builtins.INTERCEPTOR_FACTORIES
 import com.hotels.styx.routing.config.HttpInterceptorFactory
 import com.hotels.styx.routing.config.RoutingObjectFactory
-import com.hotels.styx.routing.config.RoutingObjectDefinition
-import com.hotels.styx.routing.config.RoutingObjectReference
+import com.hotels.styx.routing.config.StyxObjectDefinition
+import com.hotels.styx.routing.config.StyxObjectReference
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.RouteRefLookup
 import com.hotels.styx.server.HttpInterceptorContext
@@ -42,7 +42,7 @@ import java.lang.RuntimeException
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.concurrent.CompletableFuture
 
-fun routingObjectDef(text: String) = YamlConfig(text).`as`((RoutingObjectDefinition::class.java))
+fun routingObjectDef(text: String) = YamlConfig(text).`as`((StyxObjectDefinition::class.java))
 
 internal data class RoutingObjectFactoryContext(
         val routeRefLookup: RouteRefLookup = DEFAULT_REFERENCE_LOOKUP,
@@ -62,12 +62,12 @@ fun HttpHandler.handle(request: HttpRequest, count: Int = 10000) = this.handle(r
         .flatMap { it.aggregate(count) }
 
 // DSL for routing object database & object creation:
-fun HashMap<RoutingObjectReference, RoutingObject>.ref(pair: Pair<String, RoutingObject>) {
-    put(RoutingObjectReference(pair.first), pair.second)
+fun HashMap<StyxObjectReference, RoutingObject>.ref(pair: Pair<String, RoutingObject>) {
+    put(StyxObjectReference(pair.first), pair.second)
 }
 
-fun routeLookup(block: HashMap<RoutingObjectReference, RoutingObject>.() -> Unit): RouteRefLookup {
-    val refLookup = HashMap<RoutingObjectReference, RoutingObject>()
+fun routeLookup(block: HashMap<StyxObjectReference, RoutingObject>.() -> Unit): RouteRefLookup {
+    val refLookup = HashMap<StyxObjectReference, RoutingObject>()
     refLookup.block()
     return RouteRefLookup { refLookup[it] }
 }
