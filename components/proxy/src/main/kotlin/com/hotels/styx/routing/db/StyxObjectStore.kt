@@ -71,7 +71,23 @@ class StyxObjectStore<T> : ObjectStore<T> {
      * @property payload the object itself
      * @return the previous value
      */
-    fun insert(key: String, payload: T) = insert(key, setOf(), payload)
+    fun insert(key: String, payload: T): Optional<T> {
+        require(key.isNotEmpty())
+
+        var current = objects.get()
+        var new = current.plus(key, payload)
+
+        while (!objects.compareAndSet(current, new)) {
+            current = objects.get()
+            new = current.plus(key, payload)
+        }
+
+        queue {
+            notifyWatchers(new)
+        }
+
+        return Optional.ofNullable(current[key])
+    }
 
 
     /**
@@ -136,22 +152,6 @@ class StyxObjectStore<T> : ObjectStore<T> {
 
     private fun queue(task: () -> Unit) {
         executor.submit(task)
-    }
-
-    private fun insert(key: String, tags: Set<String>, payload: T): Optional<T> {
-        var current = objects.get()
-        var new = current.plus(key, payload)
-
-        while (!objects.compareAndSet(current, new)) {
-            current = objects.get()
-            new = current.plus(key, payload)
-        }
-
-        queue {
-            notifyWatchers(new)
-        }
-
-        return Optional.ofNullable(current[key])
     }
 
     private fun notifyWatchers(objectsV2: PMap<String, T>) {

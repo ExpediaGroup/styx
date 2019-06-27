@@ -16,10 +16,9 @@
 package com.hotels.styx.services
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.databind.JsonNode
 import com.hotels.styx.api.Environment
 import com.hotels.styx.api.HttpRequest
-import com.hotels.styx.api.configuration.Configuration
-import com.hotels.styx.api.configuration.ServiceFactory
 import com.hotels.styx.api.extension.service.spi.AbstractStyxService
 import com.hotels.styx.api.extension.service.spi.StyxService
 import com.hotels.styx.config.schema.SchemaDsl
@@ -27,10 +26,15 @@ import com.hotels.styx.config.schema.SchemaDsl.field
 import com.hotels.styx.config.schema.SchemaDsl.integer
 import com.hotels.styx.config.schema.SchemaDsl.optional
 import com.hotels.styx.config.schema.SchemaDsl.string
+import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
+import com.hotels.styx.serviceproviders.ServiceProviderFactory
+import com.hotels.styx.services.HealthCheckMonitoringService.Companion.ACTIVE_TAG
+import com.hotels.styx.services.HealthCheckMonitoringService.Companion.DISABLED_TAG
 import com.hotels.styx.services.HealthCheckMonitoringService.Companion.EXECUTOR
+import com.hotels.styx.services.HealthCheckMonitoringService.Companion.INACTIVE_TAG
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Flux
 import reactor.core.publisher.toMono
@@ -46,7 +50,7 @@ import java.util.concurrent.atomic.AtomicReference
 internal class HealthCheckMonitoringService(
         val objectStore: StyxObjectStore<RoutingObjectRecord>,
         val application: String,
-        val urlPath: String,
+        urlPath: String,
         val period: Duration,
         activeThreshold: Int,
         inactiveThreshold: Int,
@@ -62,7 +66,11 @@ internal class HealthCheckMonitoringService(
                 optional("unhealthyThreshold", integer())
         )
 
-        val EXECUTOR = ScheduledThreadPoolExecutor(2)
+        val DISABLED_TAG = "state:disabled"
+        val ACTIVE_TAG = "state:active"
+        val INACTIVE_TAG = "state:inactive"
+
+        internal val EXECUTOR = ScheduledThreadPoolExecutor(2)
 
         private val LOGGER = LoggerFactory.getLogger(HealthCheckMonitoringService::class.java)
     }
@@ -72,6 +80,7 @@ internal class HealthCheckMonitoringService(
     private val futureRef: AtomicReference<ScheduledFuture<*>> = AtomicReference()
 
     override fun startService() = CompletableFuture.runAsync {
+        LOGGER.info("HealthCheckService - {} - {}", period.toMillis(), period.toMillis())
         futureRef.set(executor.scheduleAtFixedRate(
                 { runChecks(application, objectStore) },
                 period.toMillis(),
@@ -125,17 +134,12 @@ internal data class HealthCheckConfiguration(
         @JsonProperty val healthyThreshod: Int,
         @JsonProperty val unhealthyThreshold: Int)
 
-internal class HealthCheckMonitoringServiceFactory : ServiceFactory<StyxService> {
-    override fun create(environment: Environment, configuration: Configuration): StyxService {
-
-
-        // TODO: Pass this in via environment, etc:
-        val objectStore = StyxObjectStore<RoutingObjectRecord>()
-
-        val config = configuration.`as`(HealthCheckConfiguration::class.java)
+internal class HealthCheckMonitoringServiceFactory : ServiceProviderFactory {
+    override fun create(environment: Environment, configuration: JsonNode, routeDatabase: StyxObjectStore<RoutingObjectRecord>): StyxService {
+        val config = JsonNodeConfig(configuration).`as`(HealthCheckConfiguration::class.java)
 
         return HealthCheckMonitoringService(
-                objectStore,
+                routeDatabase,
                 config.objects,
                 config.path,
                 Duration.ofMillis(config.intervalMillis),
@@ -144,10 +148,6 @@ internal class HealthCheckMonitoringServiceFactory : ServiceFactory<StyxService>
                 EXECUTOR)
     }
 }
-
-private val DISABLED_TAG = "state:disabled"
-private val ACTIVE_TAG = "state:active"
-private val INACTIVE_TAG = "state:inactive"
 
 internal fun objectHealthFrom(string: String) = Optional.ofNullable(
         when {

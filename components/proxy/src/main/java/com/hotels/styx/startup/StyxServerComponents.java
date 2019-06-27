@@ -34,12 +34,16 @@ import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupF
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingMetadataDecorator;
+import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.routing.db.StyxObjectStore;
+import com.hotels.styx.routing.handlers.ProviderObjectRecord;
 import com.hotels.styx.routing.handlers.RouteRefLookup.RouteDbRefLookup;
+import com.hotels.styx.serviceproviders.ServiceProviderFactory;
+import com.hotels.styx.services.HealthCheckMonitoringServiceFactory;
 import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
@@ -54,6 +58,7 @@ import static com.hotels.styx.StartupConfig.newStartupConfigBuilder;
 import static com.hotels.styx.Version.readVersionFrom;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
 import static com.hotels.styx.routing.config.Builtins.BUILTIN_HANDLER_FACTORIES;
+import static com.hotels.styx.routing.config.Builtins.BUILTIN_SERVICE_PROVIDER_FACTORIES;
 import static com.hotels.styx.routing.config.Builtins.INTERCEPTOR_FACTORIES;
 import static com.hotels.styx.startup.ServicesLoader.SERVICES_FROM_CONFIG;
 import static com.hotels.styx.startup.StyxServerComponents.LoggingSetUp.DO_NOT_MODIFY;
@@ -70,10 +75,12 @@ public class StyxServerComponents {
     private final Map<String, StyxService> services;
     private final List<NamedPlugin> plugins;
     private final StyxObjectStore<RoutingObjectRecord> routeObjectStore = new StyxObjectStore<>();
+    private final StyxObjectStore<ProviderObjectRecord> providerObjectStore = new StyxObjectStore<>();
     private final EventLoopGroup eventLoopGroup;
     private final Class<? extends SocketChannel> nettySocketChannelClass;
     private final RoutingObjectFactory.Context routingObjectContext;
     private final StartupConfig startupConfig;
+    private final Map<String, RoutingObjectFactory> routingObjectFactories;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StyxServerComponents.class);
 
@@ -81,6 +88,10 @@ public class StyxServerComponents {
         StyxConfig styxConfig = requireNonNull(builder.styxConfig);
 
         this.startupConfig = builder.startupConfig == null ? newStartupConfigBuilder().build() : builder.startupConfig;
+        this.routingObjectFactories = new ImmutableMap.Builder<String, RoutingObjectFactory>()
+                .putAll(BUILTIN_HANDLER_FACTORIES)
+                .putAll(builder.additionalRoutingObjectFactories)
+                .build();
 
         this.environment = newEnvironment(styxConfig, builder.metricRegistry);
         builder.loggingSetUp.setUp(environment);
@@ -102,7 +113,7 @@ public class StyxServerComponents {
                 new RouteDbRefLookup(this.routeObjectStore),
                 environment,
                 routeObjectStore,
-                BUILTIN_HANDLER_FACTORIES,
+                this.routingObjectFactories,
                 plugins,
                 INTERCEPTOR_FACTORIES,
                 false);
@@ -117,17 +128,30 @@ public class StyxServerComponents {
         this.environment.configuration().get("routingObjects", JsonNode.class)
                 .map(StyxServerComponents::readComponents)
                 .orElse(ImmutableMap.of())
-                .forEach((name, record) -> {
-                    RoutingMetadataDecorator adapter = new RoutingMetadataDecorator(Builtins.build(ImmutableList.of(name), routingObjectContext, record));
-                    routeObjectStore.insert(name, new RoutingObjectRecord(record.type(), ImmutableSet.copyOf(record.tags()), record.config(), adapter))
+                .forEach((name, definition) -> {
+                    RoutingObject routingObject = Builtins.build(ImmutableList.of(name), routingObjectContext, definition);
+                    RoutingMetadataDecorator adapter = new RoutingMetadataDecorator(routingObject);
+
+                    routeObjectStore.insert(name, new RoutingObjectRecord(definition.type(), ImmutableSet.copyOf(definition.tags()), definition.config(), adapter))
                             .ifPresent(previous -> previous.getRoutingObject().stop());
                 });
+
+        ImmutableMap<String, ServiceProviderFactory> factories = ImmutableMap.of("HealthCheckMonitor", new HealthCheckMonitoringServiceFactory());
 
         this.environment.configuration().get("providers", JsonNode.class)
                 .map(StyxServerComponents::readComponents)
                 .orElse(ImmutableMap.of())
-                .forEach((name, record) -> {
-                    LOGGER.warn("record: " + name + ": " + record);
+                .forEach((name, definition) -> {
+                    LOGGER.warn("definition: " + name + ": " + definition);
+
+                    // Build provider object
+                    StyxService provider = Builtins.build(definition, BUILTIN_SERVICE_PROVIDER_FACTORIES, environment, routeObjectStore);
+
+                    // Create a provider object record
+                    ProviderObjectRecord record = new ProviderObjectRecord(definition.type(), ImmutableSet.copyOf(definition.tags()), definition.config(), provider);
+
+                    // Insert provider object record into database
+                    providerObjectStore.insert(name, record);
                 });
     }
 
@@ -159,6 +183,10 @@ public class StyxServerComponents {
 
     public StyxObjectStore<RoutingObjectRecord> routeDatabase() {
         return this.routeObjectStore;
+    }
+
+    public StyxObjectStore<ProviderObjectRecord> servicesDatabase() {
+        return this.providerObjectStore;
     }
 
     public RoutingObjectFactory.Context routingObjectFactoryContext() {
@@ -212,6 +240,7 @@ public class StyxServerComponents {
         private MetricRegistry metricRegistry = new CodaHaleMetricRegistry();
         private StartupConfig startupConfig;
 
+        private final Map<String, RoutingObjectFactory> additionalRoutingObjectFactories = new HashMap<>();
         private final Map<String, StyxService> additionalServices = new HashMap<>();
 
         public Builder styxConfig(StyxConfig styxConfig) {
@@ -272,6 +301,12 @@ public class StyxServerComponents {
 
         public Builder startupConfig(StartupConfig startupConfig) {
             this.startupConfig = startupConfig;
+            return this;
+        }
+
+        @VisibleForTesting
+        public Builder additionalRoutingObjects(Map<String, RoutingObjectFactory> additionalRoutingObjectFactories) {
+            this.additionalRoutingObjectFactories.putAll(additionalRoutingObjectFactories);
             return this;
         }
 

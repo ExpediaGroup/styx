@@ -173,6 +173,16 @@ public final class StyxServer extends AbstractService {
         this.proxyServer = proxyServerSetUp.createProxyServer(components);
         this.adminServer = createAdminServer(components);
 
+        components.servicesDatabase()
+                .entrySet()
+                .forEach(entry -> {
+                    StyxService service = entry.getValue().getStyxService();
+                    service.start()
+                            .thenAccept(ignore -> {
+                                LOG.debug("Service '{}/{}' started", entry.getValue().getType(), entry.getKey());
+                            });
+                });
+
         this.serviceManager = new ServiceManager(new ArrayList<Service>() {
             {
                 add(proxyServer);

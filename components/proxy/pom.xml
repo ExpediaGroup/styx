@@ -12,7 +12,6 @@
 
   <properties>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
-    <arrow.version>0.8.2</arrow.version>
   </properties>
 
   <dependencies>
@@ -172,36 +171,6 @@
     <dependency>
       <groupId>io.projectreactor</groupId>
       <artifactId>reactor-test</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>io.arrow-kt</groupId>
-      <artifactId>arrow-core</artifactId>
-      <version>${arrow.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>io.arrow-kt</groupId>
-      <artifactId>arrow-core-extensions</artifactId>
-      <version>0.9.0</version>
-    </dependency>
-
-    <dependency>
-      <groupId>io.arrow-kt</groupId>
-      <artifactId>arrow-syntax</artifactId>
-      <version>${arrow.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>io.arrow-kt</groupId>
-      <artifactId>arrow-typeclasses</artifactId>
-      <version>${arrow.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>io.arrow-kt</groupId>
-      <artifactId>arrow-extras-extensions</artifactId>
-      <version>0.9.0</version>
     </dependency>
 
   </dependencies>

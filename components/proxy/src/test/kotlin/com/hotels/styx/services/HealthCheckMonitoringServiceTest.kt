@@ -107,17 +107,6 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
         }
     }
 
-    // TODO: removal of previous origins - should tidy up tags?
-
-    // TODO: Objects timing out
-
-    // TODO: Active threshold
-
-    // TODO: Scheduler interval vs. Probe timeout
-
-    // TODO: Document corner cases
-
-
     feature("Extracting health check state from tags") {
         objectHealthFrom("") shouldBe Optional.empty()
         objectHealthFrom("state:") shouldBe Optional.empty()
@@ -256,22 +245,4 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
             tagIsIncomplete(setOf("aaa", "state:inactive:1", "bbb")).shouldBeFalse()
         }
     }
-
-//    feature("Health check monitor factory") {
-//
-//        fun routingObjectDef(text: String) = YamlConfig(text).`as`((StyxObjectDefinition::class.java))
-//
-//        """
-//            path: /version.txt
-//            objects: aaa
-//            timeoutMillis: 2000
-//            intervalMillis: 15000
-//            healthyThreshold: 3
-//            unhealthyThreshold: 4
-//        """.trimIndent()
-//
-//        val service = HealthCheckMonitoringServiceFactory()
-//                .create(mockk(), mockk())
-//    }
-
 })

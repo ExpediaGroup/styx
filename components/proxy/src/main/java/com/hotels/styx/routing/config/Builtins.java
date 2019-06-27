@@ -16,10 +16,14 @@
 package com.hotels.styx.routing.config;
 
 import com.google.common.collect.ImmutableMap;
+import com.hotels.styx.Environment;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.routing.RoutingObject;
+import com.hotels.styx.routing.RoutingObjectRecord;
+import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.ConditionRouter;
 import com.hotels.styx.routing.handlers.HostProxy;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
@@ -29,6 +33,8 @@ import com.hotels.styx.routing.handlers.ProxyToBackend;
 import com.hotels.styx.routing.handlers.RouteRefLookup;
 import com.hotels.styx.routing.handlers.StaticResponseHandler;
 import com.hotels.styx.routing.interceptors.RewriteInterceptor;
+import com.hotels.styx.serviceproviders.ServiceProviderFactory;
+import com.hotels.styx.services.HealthCheckMonitoringServiceFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -45,13 +51,17 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public final class Builtins {
     public static final ImmutableMap<String, Schema.FieldType> BUILTIN_HANDLER_SCHEMAS;
     public static final ImmutableMap<String, RoutingObjectFactory> BUILTIN_HANDLER_FACTORIES;
+    public static final ImmutableMap<String, HttpInterceptorFactory> INTERCEPTOR_FACTORIES =
+            ImmutableMap.of("Rewrite", new RewriteInterceptor.Factory());
+
+    public static final ImmutableMap<String, ServiceProviderFactory> BUILTIN_SERVICE_PROVIDER_FACTORIES =
+            ImmutableMap.of("HealthCheckMonitor", new HealthCheckMonitoringServiceFactory());
+
     public static final RouteRefLookup DEFAULT_REFERENCE_LOOKUP = reference -> (request, ctx) ->
             Eventual.of(response(NOT_FOUND)
                     .body(format("Handler not found for '%s'.", reference), UTF_8)
                     .build()
                     .stream());
-    public static final ImmutableMap<String, HttpInterceptorFactory> INTERCEPTOR_FACTORIES =
-            ImmutableMap.of("Rewrite", new RewriteInterceptor.Factory());
 
     private static final String STATIC_RESPONSE = "StaticResponseHandler";
     private static final String CONDITION_ROUTER = "ConditionRouter";
@@ -111,11 +121,18 @@ public final class Builtins {
             String type = block.type();
 
             HttpInterceptorFactory constructor = interceptorFactories.get(type);
-            checkArgument(constructor != null, format("Unknown handler type '%s'", type));
+            checkArgument(constructor != null, format("Unknown service provider type '%s'", type));
 
             return constructor.build(block);
         } else {
             throw new UnsupportedOperationException("Routing config node must be an config block, not a reference");
         }
+    }
+
+    public static StyxService build(StyxObjectDefinition providerDef, Map<String, ServiceProviderFactory> factories, Environment environment, StyxObjectStore<RoutingObjectRecord> objectStore) {
+        ServiceProviderFactory constructor = factories.get(providerDef.type());
+        checkArgument(constructor != null, format("Unknown service provider type '%s' for '%s' provider", providerDef.type(), providerDef.name()));
+
+        return constructor.create(environment, providerDef.config(), objectStore);
     }
 }

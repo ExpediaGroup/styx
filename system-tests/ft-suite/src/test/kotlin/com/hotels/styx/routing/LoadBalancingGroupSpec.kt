@@ -129,6 +129,71 @@ class LoadBalancingGroupSpec : FeatureSpec() {
             }
         }
 
+        feature("Object discovery") {
+            scenario("Ignores inactive objects") {
+                styxServer.restart(configuration = """
+                                proxy:
+                                  connectors:
+                                    http:
+                                      port: 0
+
+                                admin:
+                                  connectors:
+                                    http:
+                                      port: 0
+
+                                routingObjects:
+                                  app-A-01:
+                                    type: HostProxy
+                                    tags:
+                                      - App-A
+                                      - state:inactive
+                                    config:
+                                      host: localhost:${appA01.port()}
+
+                                  app-A-02:
+                                    type: HostProxy
+                                    tags:
+                                      - App-A
+                                      - state:inactive:3
+                                    config:
+                                      host: localhost:${appA02.port()}
+
+                                  app-A-03:
+                                    type: HostProxy
+                                    tags:
+                                      - App-A
+                                    config:
+                                      host: localhost:${appA03.port()}
+
+                                  app-B-01:
+                                    type: HostProxy
+                                    tags:
+                                      - App-B
+                                    config:
+                                      host: localhost:${appB01.port()}
+
+                                services:
+                                  factories:
+                                    backendServiceRegistry:
+                                      class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry${'$'}Factory"
+                                      config: {originsFile: "$originsOk"}
+
+                                httpPipeline:
+                                  type: LoadBalancingGroup
+                                  config:
+                                    origins: App-A
+                        """.trimIndent())
+
+                for (i in 1..50) {
+                    withClue("Response should come from active instances only") {
+                        client.send(get("/").header(HOST, styxServer().proxyHttpHostHeader()).build())
+                                .wait(debug = false)!!.bodyAs(UTF_8) shouldBe "mock-server-03"
+                    }
+                }
+            }
+        }
+
         feature("Configuration via REST API") {
             styxServer.restart(configuration = """
                                 proxy:
@@ -323,7 +388,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
             }
 
             scenario("!Routes to new origin when the origin indicated by sticky session cookie is no longer available") {
-               // See bug: https://github.com/HotelsDotCom/styx/issues/434
+                // See bug: https://github.com/HotelsDotCom/styx/issues/434
             }
         }
 
@@ -382,7 +447,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                         """.trimIndent())
 
             scenario("Routes to origin indicated by cookie") {
-                for(i in 1..10) {
+                for (i in 1..10) {
                     client.send(get("/")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .cookies(requestCookie("orc", "appA-02"))
@@ -396,7 +461,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
             }
 
             scenario("Routes to range of origins indicated by cookie") {
-                for(i in 1..10) {
+                for (i in 1..10) {
                     client.send(get("/")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .cookies(requestCookie("orc", "appA-0(2|3)"))
@@ -410,7 +475,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
             }
 
             scenario("Respond with BAD_GATEWAY when all desired hosts are unavailable") {
-                for(i in 1..10) {
+                for (i in 1..10) {
                     client.send(get("/")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .cookies(requestCookie("orc", "(?!)"))
@@ -423,7 +488,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
             }
 
             scenario("Routes to list of origins indicated by cookie.") {
-                for(i in 1..10) {
+                for (i in 1..10) {
                     client.send(get("/")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .cookies(requestCookie("orc", "appA-02,appA-0[13]"))
