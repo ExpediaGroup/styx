@@ -106,6 +106,13 @@ public class ResponseEventListener {
         return this;
     }
 
+    /**
+     * Executes an action when the response terminates for any reason, normally,
+     * abnormally, or due to cancellation.
+     *
+     * @param action a runnable action
+     * @return the builder
+     */
     public ResponseEventListener whenFinished(Runnable action) {
         this.whenFinishedAction = requireNonNull(action);
         return this;
