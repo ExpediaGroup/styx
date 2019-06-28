@@ -21,15 +21,17 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.api.WebServiceHandler;
+import com.hotels.styx.routing.RoutingMetadataDecorator;
 import com.hotels.styx.routing.RoutingObjectRecord;
-import com.hotels.styx.routing.config.RoutingObjectDefinition;
+import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
+import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import org.slf4j.Logger;
 
@@ -63,12 +65,12 @@ public class RoutingObjectHandler implements WebServiceHandler {
     private final UrlPatternRouter urlRouter;
 
 
-    public RoutingObjectHandler(StyxObjectStore<RoutingObjectRecord> routeDatabase, RoutingObjectFactory objectFactory) {
+    public RoutingObjectHandler(StyxObjectStore<RoutingObjectRecord> routeDatabase, RoutingObjectFactory.Context routingObjectFactoryContext) {
         urlRouter = new UrlPatternRouter.Builder()
                 .get("/admin/routing/objects", (request, context) -> {
                     String output = routeDatabase.entrySet()
                             .stream()
-                            .map(entry -> serialise(entry.getFirst(), entry.getSecond()))
+                            .map(entry -> serialise(entry.getKey(), entry.getValue()))
                             .collect(joining("\n"));
 
                     return Eventual.of(response(OK)
@@ -94,9 +96,9 @@ public class RoutingObjectHandler implements WebServiceHandler {
 
                     try {
                         RoutingObjectDefinition payload = YAML_MAPPER.readValue(body, RoutingObjectDefinition.class);
-                        RoutingObject httpHandler = objectFactory.build(emptyList(), payload);
+                        RoutingMetadataDecorator decorator = new RoutingMetadataDecorator(Builtins.build(emptyList(), routingObjectFactoryContext, payload));
 
-                        routeDatabase.insert(name, new RoutingObjectRecord(payload.type(), payload.config(), httpHandler))
+                        routeDatabase.insert(name, new RoutingObjectRecord(payload.type(), ImmutableSet.copyOf(payload.tags()), payload.config(), decorator))
                                 .ifPresent(previous -> previous.getRoutingObject().stop());
 
                         return Eventual.of(response(CREATED).build());
@@ -132,10 +134,6 @@ public class RoutingObjectHandler implements WebServiceHandler {
     @Override
     public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         return urlRouter.handle(request, context);
-    }
-
-    private interface FullHttpHandler {
-        Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context);
     }
 
     private static class ResourceNotFoundException extends RuntimeException {

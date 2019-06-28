@@ -21,17 +21,16 @@ import com.hotels.styx.api.LiveHttpRequest.get
 import com.hotels.styx.common.Pair.pair
 import com.hotels.styx.config.schema.SchemaValidationException
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
-import com.hotels.styx.routing.RoutingContext
-import com.hotels.styx.routing.config.HttpHandlerFactory
+import com.hotels.styx.routing.RoutingObjectFactoryContext
 import com.hotels.styx.routing.config.RoutingObjectFactory
-import com.hotels.styx.routing.config.RoutingObjectFactory.BUILTIN_HANDLER_SCHEMAS
+import com.hotels.styx.routing.config.Builtins
+import com.hotels.styx.routing.config.Builtins.BUILTIN_HANDLER_SCHEMAS
 import com.hotels.styx.routing.config.RoutingObjectReference
 import com.hotels.styx.routing.handle
 import com.hotels.styx.routing.mockObject
 import com.hotels.styx.routing.ref
 import com.hotels.styx.routing.routeLookup
 import com.hotels.styx.routing.routingObjectDef
-import com.hotels.styx.routing.routingObjectFactory
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import io.kotlintest.specs.FeatureSpec
@@ -42,9 +41,7 @@ import java.util.Optional
 
 class PathPrefixRouterTest : FeatureSpec({
 
-    val factory = RoutingObjectFactory()
-
-    val context = RoutingContext()
+    val context = RoutingObjectFactoryContext()
 
 
     feature("PathPrefixRouter") {
@@ -55,7 +52,7 @@ class PathPrefixRouterTest : FeatureSpec({
         }
 
         scenario("Root path") {
-            val rootHandler = factory.build(RoutingObjectReference("root"))
+            val rootHandler = Builtins.build(listOf(""), context.get(), RoutingObjectReference("root"))
             val router = PathPrefixRouter(listOf(pair("/", rootHandler)))
 
             router.route(get("/").build()) shouldBe Optional.of(rootHandler)
@@ -65,11 +62,11 @@ class PathPrefixRouterTest : FeatureSpec({
         }
 
         scenario("Choice of most specific path") {
-            val fooFileHandler = factory.build(RoutingObjectReference("foo-file"))
-            val fooPathHandler = factory.build(RoutingObjectReference("foo-path"))
-            val fooBarFileHandler = factory.build(RoutingObjectReference("foo-bar-file"))
-            val fooBarPathHandler = factory.build(RoutingObjectReference("foo-bar-path"))
-            val fooBazFileHandler = factory.build(RoutingObjectReference("foo-baz-file"))
+            val fooFileHandler = Builtins.build(listOf(""), context.get(), RoutingObjectReference("foo-file"))
+            val fooPathHandler = Builtins.build(listOf(""), context.get(), RoutingObjectReference("foo-path"))
+            val fooBarFileHandler = Builtins.build(listOf(""), context.get(), RoutingObjectReference("foo-bar-file"))
+            val fooBarPathHandler = Builtins.build(listOf(""), context.get(), RoutingObjectReference("foo-bar-path"))
+            val fooBazFileHandler = Builtins.build(listOf(""), context.get(), RoutingObjectReference("foo-baz-file"))
 
             val router = PathPrefixRouter(listOf(
                     pair("/foo", fooFileHandler),
@@ -102,26 +99,22 @@ class PathPrefixRouterTest : FeatureSpec({
                       - { prefix: /foo/, destination: foo }
                     """.trimIndent())
 
-            val context = RoutingContext(
-                    factory = routingObjectFactory(
-                            lookup = routeLookup {
-                                ref("root" to mockObject("root"))
-                                ref("foo" to mockObject("foo"))
-                            }
-                    )
+            val context = RoutingObjectFactoryContext(
+                    routeRefLookup = routeLookup {
+                        ref("root" to mockObject("root"))
+                        ref("foo" to mockObject("foo"))
+                    }
             )
 
             val handler = PathPrefixRouter.Factory().build(listOf(), context.get(), routingDef);
 
             handler.handle(HttpRequest.get("/x").build())
                     .toMono()
-                    .block()
-                    ?.bodyAs(UTF_8) shouldBe "root"
+                    .block()!!.bodyAs(UTF_8) shouldBe "root"
 
             handler.handle(HttpRequest.get("/foo/").build())
                     .toMono()
-                    .block()
-                    ?.bodyAs(UTF_8) shouldBe "foo"
+                    .block()!!.bodyAs(UTF_8) shouldBe "foo"
         }
 
         scenario("Supports inline routing object definitions") {
@@ -141,8 +134,7 @@ class PathPrefixRouterTest : FeatureSpec({
 
             handler.handle(HttpRequest.get("/foo").build())
                     .toMono()
-                    .block()
-                    ?.bodyAs(UTF_8) shouldBe "hello"
+                    .block()!!.bodyAs(UTF_8) shouldBe "hello"
         }
 
         scenario("Missing routes attribute") {
@@ -238,13 +230,12 @@ class PathPrefixRouterTest : FeatureSpec({
             val child1 = mockObject()
             val child2 = mockObject()
 
-            val context = RoutingContext(
-                    factory = routingObjectFactory(
-                            builtins = mapOf(
-                                    "FirstTestHandler" to HttpHandlerFactory { _, _, _ -> child1 },
-                                    "SecondTestHandler" to HttpHandlerFactory { _, _, _ -> child2 }
+            val context = RoutingObjectFactoryContext(
+                    objectFactories = mapOf(
+                                    "FirstTestHandler" to RoutingObjectFactory { _, _, _ -> child1 },
+                                    "SecondTestHandler" to RoutingObjectFactory { _, _, _ -> child2 }
                             )
-                    ))
+                    )
 
             val routingDef = routingObjectDef("""
                   type: PathPrefixRouter
@@ -273,13 +264,12 @@ class PathPrefixRouterTest : FeatureSpec({
             val child1 = mockObject()
             val child2 = mockObject()
 
-            val context = RoutingContext(
-                    factory = routingObjectFactory(
-                            lookup = routeLookup {
+            val context = RoutingObjectFactoryContext(
+                    routeRefLookup = routeLookup {
                                 ref("destinationNameOne" to child1)
                                 ref("destinationNameTwo" to child2)
                             }
-                    ))
+                    )
 
             val routingDef = routingObjectDef("""
                   type: PathPrefixRouter

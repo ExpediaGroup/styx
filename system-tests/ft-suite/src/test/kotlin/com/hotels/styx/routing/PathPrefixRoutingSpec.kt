@@ -38,15 +38,15 @@ class PathPrefixRoutingSpec : StringSpec() {
                     .header(HOST, proxyHost)
                     .build())
                     .toMono()
-                    .block()
-                    ?.bodyAs(UTF_8) shouldBe "I'm default"
+                    .block()!!
+                    .bodyAs(UTF_8) shouldBe "I'm default"
 
             client.send(get("/database/a/path")
                     .header(HOST, proxyHost)
                     .build())
                     .toMono()
-                    .block()
-                    ?.bodyAs(UTF_8) shouldBe "I'm database"
+                    .block()!!
+                    .bodyAs(UTF_8) shouldBe "I'm database"
         }
     }
 

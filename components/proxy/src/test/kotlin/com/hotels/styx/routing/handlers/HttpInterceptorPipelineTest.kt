@@ -18,16 +18,13 @@ package com.hotels.styx.routing.handlers
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin
-import com.hotels.styx.routing.RoutingContext
-import com.hotels.styx.routing.config.BuiltinInterceptorsFactory
-import com.hotels.styx.routing.config.HttpHandlerFactory
+import com.hotels.styx.routing.RoutingObjectFactoryContext
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.interceptors.RewriteInterceptor
 import com.hotels.styx.routing.mockObject
 import com.hotels.styx.routing.ref
 import com.hotels.styx.routing.routeLookup
 import com.hotels.styx.routing.routingObjectDef
-import com.hotels.styx.routing.routingObjectFactory
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import io.kotlintest.specs.FeatureSpec
@@ -42,7 +39,7 @@ class HttpInterceptorPipelineTest : FeatureSpec({
     feature("Factory") {
         scenario("it errors when there is a reference to non-existing pipeline") {
 
-            val context = RoutingContext(
+            val context = RoutingObjectFactoryContext(
                     plugins = listOf(
                             namedPlugin("interceptor1", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "A").build() }) }),
                             namedPlugin("interceptor2", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "A").build() }) })
@@ -69,7 +66,7 @@ class HttpInterceptorPipelineTest : FeatureSpec({
         }
 
         scenario("it errors when handler configuration is missing") {
-            val context = RoutingContext(
+            val context = RoutingObjectFactoryContext(
                     plugins = listOf(
                             namedPlugin("interceptor1", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "A").build() }) }),
                             namedPlugin("interceptor2", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "A").build() }) })
@@ -91,7 +88,7 @@ class HttpInterceptorPipelineTest : FeatureSpec({
         }
 
         scenario("it builds an interceptor pipeline from the configuration") {
-            val context = RoutingContext(
+            val context = RoutingObjectFactoryContext(
                     plugins = listOf(
                             namedPlugin("interceptor1", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "A").build() }) }),
                             namedPlugin("interceptor2", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "B").build() }) })))
@@ -113,12 +110,16 @@ class HttpInterceptorPipelineTest : FeatureSpec({
                             content: hello
                     """.trimIndent()))
 
-            val response = handler.handle(hwaRequest, null).toMono().block()
-            response?.headers("X-Test-Header") shouldBe (listOf("B", "A"))
+            handler.handle(hwaRequest, null)
+                    .toMono()
+                    .block()
+                    .let {
+                        it!!.headers("X-Test-Header") shouldBe (listOf("B", "A"))
+                    }
         }
 
         scenario("it Treats absent 'pipeline' attribute as empty pipeline") {
-            val context = RoutingContext()
+            val context = RoutingObjectFactoryContext()
 
             val handler = HttpInterceptorPipeline.Factory().build(
                     listOf("config"),
@@ -134,17 +135,17 @@ class HttpInterceptorPipelineTest : FeatureSpec({
                             content: hello
                       """.trimIndent()))
 
-            val response = handler.handle(hwaRequest, null).toMono().block()
-            response?.status() shouldBe (OK)
+            handler.handle(hwaRequest, null)
+                    .toMono()
+                    .block()!!
+                    .status() shouldBe (OK)
         }
 
         scenario("Handler can be an object reference") {
-            val context = RoutingContext(
-                    factory = routingObjectFactory(
-                            routeLookup {
-                                ref("referenceToAnotherRoutingObject" to mockObject())
-                            }
-                    )
+            val context = RoutingObjectFactoryContext(
+                    routeRefLookup = routeLookup {
+                        ref("referenceToAnotherRoutingObject" to mockObject())
+                    }
             )
 
             val handler = HttpInterceptorPipeline.Factory().build(
@@ -156,17 +157,19 @@ class HttpInterceptorPipelineTest : FeatureSpec({
                         handler: referenceToAnotherRoutingObject
                       """.trimIndent()))
 
-            val response = handler.handle(hwaRequest, null).toMono().block()
-            response?.status() shouldBe OK
+            handler.handle(hwaRequest, null)
+                    .toMono()
+                    .block()!!
+                    .status() shouldBe OK
         }
 
         scenario("Supports inline interceptor definitions") {
-            val context = RoutingContext(
+            val context = RoutingObjectFactoryContext(
                     plugins = listOf(
                             namedPlugin("interceptor1", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "A").build() }) }),
                             namedPlugin("interceptor2", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "B").build() }) })
                     ),
-                    builtinInterceptorsFactory = BuiltinInterceptorsFactory(mapOf("Rewrite" to RewriteInterceptor.Factory()))
+                    interceptorFactories = mapOf("Rewrite" to RewriteInterceptor.Factory())
             )
 
             val handler = HttpInterceptorPipeline.Factory().build(listOf("config"),
@@ -190,18 +193,22 @@ class HttpInterceptorPipelineTest : FeatureSpec({
                             content: hello
                      """.trimIndent()))
 
-            val response = handler.handle(hwaRequest, null).toMono().block()
-            response?.headers("X-Test-Header") shouldBe (listOf("B", "A"))
+            handler.handle(hwaRequest, null)
+                    .toMono()
+                    .block()!!
+                    .headers("X-Test-Header") shouldBe (listOf("B", "A"))
         }
 
 
-        scenario("passes full configuration attribute path (config.config.handler) to the builtins factory") {
+        scenario("passes full configuration attribute path (config.config.handler) to the builtins objectFactories") {
 
-            val builtinsFactory = mockk<RoutingObjectFactory> {
-                every { build(any(), any()) } returns mockObject()
+            val mockFactory = mockk<RoutingObjectFactory> {
+                every { build(any(), any(), any()) } returns mockObject()
             }
 
-            val context = RoutingContext(factory = builtinsFactory)
+            val context = RoutingObjectFactoryContext(objectFactories = mapOf(
+                    "BackendServiceProxy" to mockFactory
+            ))
 
             HttpInterceptorPipeline.Factory().build(
                     listOf("config", "config"),
@@ -216,7 +223,7 @@ class HttpInterceptorPipelineTest : FeatureSpec({
                     """.trimIndent()))
 
             verify {
-                builtinsFactory.build(listOf("config", "config", "handler"), any())
+                mockFactory.build(listOf("config", "config", "handler"), any(), any())
             }
         }
 
@@ -226,9 +233,7 @@ class HttpInterceptorPipelineTest : FeatureSpec({
         scenario("Calls stop() for inlined handler") {
             val childHandler = mockObject()
 
-            val context = RoutingContext(factory = routingObjectFactory(
-                    builtins = mapOf("BackendServiceProxy" to HttpHandlerFactory { _, _, _ -> childHandler })
-            ))
+            val context = RoutingObjectFactoryContext(objectFactories = mapOf("BackendServiceProxy" to RoutingObjectFactory { _, _, _ -> childHandler }))
 
             val interceptorPipeline = HttpInterceptorPipeline.Factory().build(
                     listOf(),
@@ -250,12 +255,10 @@ class HttpInterceptorPipelineTest : FeatureSpec({
         scenario("Does not call stop() for referenced handler") {
             val childHandler = mockObject()
 
-            val context = RoutingContext(
-                    factory = routingObjectFactory(
-                            lookup = routeLookup {
-                                ref("handlerRef" to childHandler)
-                            }
-                    ))
+            val context = RoutingObjectFactoryContext(
+                    routeRefLookup = routeLookup {
+                        ref("handlerRef" to childHandler)
+                    })
 
             val interceptorPipeline = HttpInterceptorPipeline.Factory().build(
                     listOf(),

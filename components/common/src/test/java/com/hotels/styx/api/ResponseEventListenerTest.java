@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ public class ResponseEventListenerTest {
     private AtomicReference<Throwable> responseError;
     private AtomicReference<Throwable> contentError;
     private AtomicBoolean completed;
+    private AtomicBoolean finished;
 
     @BeforeMethod
     public void setUp() {
@@ -45,6 +46,7 @@ public class ResponseEventListenerTest {
         responseError = new AtomicReference<>();
         contentError = new AtomicReference<>();
         completed = new AtomicBoolean();
+        finished = new AtomicBoolean();
     }
 
     @Test
@@ -56,6 +58,7 @@ public class ResponseEventListenerTest {
                 .whenResponseError(cause -> responseError.set(cause))
                 .whenContentError(cause -> contentError.set(cause))
                 .whenCompleted(() -> completed.set(true))
+                .whenFinished(() -> finished.set(true))
                 .apply();
 
         StepVerifier.create(listener)
@@ -65,6 +68,7 @@ public class ResponseEventListenerTest {
                     assertNull(responseError.get());
                     assertNull(contentError.get());
                     assertTrue(completed.get());
+                    assertTrue(finished.get());
                 })
                 .verifyComplete();
     }
@@ -75,6 +79,7 @@ public class ResponseEventListenerTest {
 
         Flux<LiveHttpResponse> listener = ResponseEventListener.from(publisher)
                 .whenCancelled(() -> cancelled.set(true))
+                .whenFinished(() -> finished.set(true))
                 .apply();
 
         StepVerifier.create(listener)
@@ -83,6 +88,7 @@ public class ResponseEventListenerTest {
                 .verify();
 
         assertTrue(cancelled.get());
+        assertTrue(finished.get());
     }
 
     @Test
@@ -94,6 +100,7 @@ public class ResponseEventListenerTest {
                         .body(new ByteStream(contentPublisher))
                         .build()))
                 .whenCancelled(() -> cancelled.set(true))
+                .whenFinished(() -> finished.set(true))
                 .apply();
 
         StepVerifier.create(listener)
@@ -105,6 +112,7 @@ public class ResponseEventListenerTest {
                 .verifyComplete();
 
         assertTrue(cancelled.get());
+        assertTrue(finished.get());
     }
 
     @Test
@@ -113,6 +121,7 @@ public class ResponseEventListenerTest {
 
         Flux<LiveHttpResponse> listener = ResponseEventListener.from(publisher)
                 .whenResponseError(cause -> responseError.set(cause))
+                .whenFinished(() -> finished.set(true))
                 .apply();
 
         StepVerifier.create(listener)
@@ -120,6 +129,7 @@ public class ResponseEventListenerTest {
                 .verify();
 
         assertTrue(responseError.get() instanceof RuntimeException);
+        assertTrue(finished.get());
     }
 
     @Test
@@ -134,6 +144,7 @@ public class ResponseEventListenerTest {
                 .whenCancelled(() -> cancelled.set(true))
                 .whenResponseError(cause -> responseError.set(cause))
                 .whenContentError(cause -> contentError.set(cause))
+                .whenFinished(() -> finished.set(true))
                 .apply();
 
         StepVerifier.create(listener)
@@ -143,6 +154,7 @@ public class ResponseEventListenerTest {
         assertFalse(cancelled.get());
         assertNull(responseError.get());
         assertNull(contentError.get());
+        assertTrue(finished.get());
     }
 
     @Test
@@ -154,6 +166,7 @@ public class ResponseEventListenerTest {
 
         Publisher<LiveHttpResponse> listener = ResponseEventListener.from(publisher)
                 .whenContentError(cause -> responseError.set(cause))
+                .whenFinished(() -> finished.set(true))
                 .apply();
 
         StepVerifier.create(listener)
@@ -161,6 +174,7 @@ public class ResponseEventListenerTest {
                 .verifyComplete();
 
         assertTrue(responseError.get() instanceof RuntimeException);
+        assertTrue(finished.get());
     }
 
     @Test
@@ -168,6 +182,7 @@ public class ResponseEventListenerTest {
 
         Publisher<LiveHttpResponse> listener = ResponseEventListener.from(Mono.empty())
                 .whenResponseError(cause -> responseError.set(cause))
+                .whenFinished(() -> finished.set(true))
                 .apply();
 
         StepVerifier.create(listener)
@@ -175,5 +190,6 @@ public class ResponseEventListenerTest {
                 .verifyComplete();
 
         assertTrue(responseError.get() instanceof RuntimeException);
+        assertTrue(finished.get());
     }
 }

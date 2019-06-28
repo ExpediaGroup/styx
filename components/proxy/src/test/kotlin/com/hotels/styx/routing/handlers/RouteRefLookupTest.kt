@@ -20,7 +20,7 @@ import com.hotels.styx.api.ByteStream
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.NOT_FOUND
 import com.hotels.styx.api.LiveHttpRequest
-import com.hotels.styx.routing.RoutingObject
+import com.hotels.styx.routing.RoutingMetadataDecorator
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.RoutingObjectReference
 import com.hotels.styx.routing.db.StyxObjectStore
@@ -39,10 +39,10 @@ import java.util.Optional
 
 class RouteRefLookupTest : StringSpec({
     "Retrieves handler from route database" {
-        val handler = mockk<RoutingObject>()
+        val handler = RoutingMetadataDecorator(mockk())
 
         val routeDb = mockk<StyxObjectStore<RoutingObjectRecord>>()
-        every { routeDb.get(any()) } returns Optional.of(RoutingObjectRecord("StaticResponseHandler", mockk(), handler))
+        every { routeDb.get(any()) } returns Optional.of(RoutingObjectRecord("StaticResponseHandler", mockk(), mockk(), handler))
 
         RouteDbRefLookup(routeDb).apply(RoutingObjectReference("handler1")) shouldBe handler
     }
@@ -56,8 +56,8 @@ class RouteRefLookupTest : StringSpec({
                 .toMono()
                 .block()
 
-        response?.status() shouldBe NOT_FOUND
-        response?.bodyAs(UTF_8) shouldBe "Not found: handler1"
+        response!!.status() shouldBe NOT_FOUND
+        response.bodyAs(UTF_8) shouldBe "Not found: handler1"
     }
 
     "Error handler consumes the request body" {
@@ -77,8 +77,8 @@ class RouteRefLookupTest : StringSpec({
                 .flatMap { it.aggregate(1000).toMono() }
                 .block()
 
-        response?.status() shouldBe NOT_FOUND
-        response?.bodyAs(UTF_8) shouldBe "Not found: handler1"
+        response!!.status() shouldBe NOT_FOUND
+        response.bodyAs(UTF_8) shouldBe "Not found: handler1"
 
         probe.wasSubscribed() shouldBe true
         probe.wasRequested() shouldBe true

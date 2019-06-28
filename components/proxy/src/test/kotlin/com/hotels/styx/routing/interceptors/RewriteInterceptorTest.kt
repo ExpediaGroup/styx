@@ -43,7 +43,7 @@ class RewriteInterceptorTest : StringSpec({
         val capturingChain = CapturingChain()
 
         interceptor.intercept(LiveHttpRequest.get("/foo").build(), capturingChain).toMono().block()
-        capturingChain.request()?.path() shouldBe ("/app/foo")
+        capturingChain.request()!!.path() shouldBe ("/app/foo")
     }
 
 
@@ -58,7 +58,7 @@ class RewriteInterceptorTest : StringSpec({
         val capturingChain = CapturingChain()
 
         interceptor.intercept(LiveHttpRequest.get("/foo").build(), capturingChain).toMono().block()
-        capturingChain.request()?.path() shouldBe ("/foo")
+        capturingChain.request()!!.path() shouldBe ("/foo")
     }
 
 })

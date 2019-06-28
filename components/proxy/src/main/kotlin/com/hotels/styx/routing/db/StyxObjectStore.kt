@@ -25,7 +25,6 @@ import java.util.Optional
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.streams.toList
 
 /**
  * Styx Route Database.
@@ -57,12 +56,7 @@ class StyxObjectStore<T> : ObjectStore<T> {
     /**
      * Retrieves all entries.
      */
-    fun entrySet(): List<Pair<String, T>> {
-        return objects.get().entries.stream()
-                .map { Pair(it.key, it.value.payload) }
-                .toList()
-    }
-
+    override fun entrySet(): Collection<Map.Entry<String, T>> = entrySet(objects.get())
 
     /**
      * Inserts a new object in object store.
@@ -134,11 +128,7 @@ class StyxObjectStore<T> : ObjectStore<T> {
     }
 
     private fun emitInitialSnapshot(sink: FluxSink<ObjectStore<T>>) {
-        sink.next(ObjectStore { key ->
-            Optional
-                    .ofNullable(objects().get(key))
-                    .map { it.payload }
-        })
+        sink.next(snapshot(objects()))
     }
 
     internal fun watchers() = watchers.size
@@ -171,10 +161,18 @@ class StyxObjectStore<T> : ObjectStore<T> {
         }
     }
 
-    private fun snapshot(snapshot: PMap<String, Record<T>>) = ObjectStore<T> { key: String ->
-        Optional.ofNullable(snapshot.get(key))
-                .map { it.payload }
+    private fun snapshot(snapshot: PMap<String, Record<T>>) = object: ObjectStore<T> {
+        override fun get(key: String?): Optional<T> {
+            return Optional.ofNullable(snapshot[key]?.payload)
+        }
+
+        override fun entrySet(): Collection<Map.Entry<String, T>> = entrySet(snapshot)
     }
+
+
+    private fun entrySet(snapshot: PMap<String, Record<T>>): Collection<Map.Entry<String, T>> = snapshot
+            .mapValues { it.value.payload }
+            .entries
 }
 
 private typealias ChangeWatcher<T> = (ObjectStore<T>) -> Unit

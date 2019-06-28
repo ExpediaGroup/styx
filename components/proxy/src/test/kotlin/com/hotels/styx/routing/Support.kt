@@ -24,11 +24,12 @@ import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.WebServiceHandler
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.proxy.plugin.NamedPlugin
-import com.hotels.styx.routing.config.BuiltinInterceptorsFactory
-import com.hotels.styx.routing.config.HttpHandlerFactory
-import com.hotels.styx.routing.config.RoutingObjectDefinition
+import com.hotels.styx.routing.config.Builtins.BUILTIN_HANDLER_FACTORIES
+import com.hotels.styx.routing.config.Builtins.DEFAULT_REFERENCE_LOOKUP
+import com.hotels.styx.routing.config.Builtins.INTERCEPTOR_FACTORIES
+import com.hotels.styx.routing.config.HttpInterceptorFactory
 import com.hotels.styx.routing.config.RoutingObjectFactory
-import com.hotels.styx.routing.config.RoutingObjectFactory.BUILTIN_HANDLER_FACTORIES
+import com.hotels.styx.routing.config.RoutingObjectDefinition
 import com.hotels.styx.routing.config.RoutingObjectReference
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.RouteRefLookup
@@ -40,14 +41,15 @@ import java.util.concurrent.CompletableFuture
 
 fun routingObjectDef(text: String) = YamlConfig(text).`as`((RoutingObjectDefinition::class.java))
 
-data class RoutingContext(
+internal data class RoutingObjectFactoryContext(
+        val routeRefLookup: RouteRefLookup = DEFAULT_REFERENCE_LOOKUP,
         val environment: Environment = Environment.Builder().build(),
-        val routeDb: StyxObjectStore<RoutingObjectRecord> = StyxObjectStore(),
-        val factory: RoutingObjectFactory = routingObjectFactory(),
+        val objectStore: StyxObjectStore<RoutingObjectRecord> = StyxObjectStore(),
+        val objectFactories: Map<String, RoutingObjectFactory> = BUILTIN_HANDLER_FACTORIES,
         val plugins: Iterable<NamedPlugin> = listOf(),
-        val builtinInterceptorsFactory: BuiltinInterceptorsFactory = mockk(),
+        val interceptorFactories: Map<String, HttpInterceptorFactory> = INTERCEPTOR_FACTORIES,
         val requestTracking: Boolean = false) {
-    fun get() = HttpHandlerFactory.Context(environment, routeDb, factory, plugins, builtinInterceptorsFactory, requestTracking)
+    fun get() = RoutingObjectFactory.Context(routeRefLookup, environment, objectStore, objectFactories, plugins, INTERCEPTOR_FACTORIES, requestTracking)
 
 }
 
@@ -67,14 +69,11 @@ fun routeLookup(block: HashMap<RoutingObjectReference, RoutingObject>.() -> Unit
     return RouteRefLookup { refLookup[it] }
 }
 
-fun routingObjectFactory(lookup: RouteRefLookup = routeLookup { }, builtins: Map<String, HttpHandlerFactory> = BUILTIN_HANDLER_FACTORIES) =
-        RoutingObjectFactory(lookup, builtins)
-
 fun mockObject(content: String = "") = mockk<RoutingObject> {
     every { handle(any(), any()) } returns Eventual.of(HttpResponse.response(OK).body(content, UTF_8).build().stream())
     every { stop() } returns CompletableFuture.completedFuture(null)
 }
 
-fun mockObjectFactory(objects: List<RoutingObject>) = mockk<HttpHandlerFactory> {
+fun mockObjectFactory(objects: List<RoutingObject>) = mockk<RoutingObjectFactory> {
     every { build(any(), any(), any()) } returnsMany objects
 }

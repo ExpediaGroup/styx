@@ -15,6 +15,8 @@
  */
 package com.hotels.styx.api.configuration;
 
+import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -26,10 +28,17 @@ import java.util.Optional;
 public interface ObjectStore<T> {
 
     /**
-     * A repository of named objects.
+     * Returns a named object.
      *
      * @param key object's name
      * @return an object if known
      */
     Optional<T> get(String key);
+
+    /**
+     * Returns a list of full contents.
+     *
+     * @return a collection of all entries.
+     */
+    Collection<Map.Entry<String, T>> entrySet();
 }

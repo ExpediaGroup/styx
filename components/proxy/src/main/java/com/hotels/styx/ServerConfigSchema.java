@@ -31,10 +31,11 @@ import static com.hotels.styx.config.schema.SchemaDsl.map;
 import static com.hotels.styx.config.schema.SchemaDsl.object;
 import static com.hotels.styx.config.schema.SchemaDsl.opaque;
 import static com.hotels.styx.config.schema.SchemaDsl.optional;
+import static com.hotels.styx.config.schema.SchemaDsl.routingObject;
 import static com.hotels.styx.config.schema.SchemaDsl.string;
 import static com.hotels.styx.config.schema.SchemaDsl.union;
 import static com.hotels.styx.config.validator.DocumentFormat.newDocument;
-import static com.hotels.styx.routing.config.RoutingObjectFactory.BUILTIN_HANDLER_SCHEMAS;
+import static com.hotels.styx.routing.config.Builtins.BUILTIN_HANDLER_SCHEMAS;
 
 final class ServerConfigSchema {
 
@@ -135,11 +136,11 @@ final class ServerConfigSchema {
                             optional("jvmRouteName", string()),
                             optional("originRestrictionCookie", string()),
                             optional("responseInfoHeaderFormat", string()),
-                            optional("httpPipeline", object(opaque())),
+                            optional("httpPipeline", routingObject()),
                             optional("logFormat", string()),
                             optional("userDefined", object(opaque())),
                             optional("requestTracking", bool()),
-                            optional("httpHandlers", map(object(
+                            optional("routingObjects", map(object(
                                     optional("name", string()),
                                     field("type", string()),
                                     optional("tags", list(string())),

@@ -21,6 +21,7 @@ import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.ResponseEventListener;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.api.extension.service.TlsSettings;
@@ -35,7 +36,7 @@ import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.routing.RoutingObject;
-import com.hotels.styx.routing.config.HttpHandlerFactory;
+import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import org.jetbrains.annotations.NotNull;
 
@@ -104,23 +105,28 @@ public class HostProxy implements RoutingObject {
 
     private final String errorMessage;
     private final StyxHostHttpClient client;
+    private OriginMetrics originMetrics;
     private volatile boolean active = true;
 
     @VisibleForTesting
     final HostAndPort hostAndPort;
 
-    public HostProxy(HostAndPort hostAndPort, StyxHostHttpClient client) {
+    public HostProxy(HostAndPort hostAndPort, StyxHostHttpClient client, OriginMetrics originMetrics) {
         this.hostAndPort = requireNonNull(hostAndPort);
         this.errorMessage = format("HostProxy %s:%d is stopped but received traffic.",
                 hostAndPort.getHostText(),
                 hostAndPort.getPort());
         this.client = requireNonNull(client);
+        this.originMetrics = requireNonNull(originMetrics);
     }
 
     @Override
     public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
         if (active) {
-            return new Eventual<>(client.sendRequest(request));
+            return new Eventual<>(
+                    ResponseEventListener.from(client.sendRequest(request))
+                            .whenCancelled(() -> originMetrics.requestCancelled())
+                            .apply());
         } else {
             return Eventual.error(new IllegalStateException(errorMessage));
         }
@@ -136,13 +142,13 @@ public class HostProxy implements RoutingObject {
     /**
      * A factory for creating HostProxy routingObject objects.
      */
-    public static class Factory implements HttpHandlerFactory {
+    public static class Factory implements RoutingObjectFactory {
         private static final int DEFAULT_REQUEST_TIMEOUT = 60000;
         private static final int DEFAULT_TLS_PORT = 443;
         private static final int DEFAULT_HTTP_PORT = 80;
 
         @Override
-        public RoutingObject build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
+        public RoutingObject build(List<String> fullName, Context context, RoutingObjectDefinition configBlock) {
             JsonNodeConfig config = new JsonNodeConfig(configBlock.config());
 
             ConnectionPoolSettings poolSettings = config.get("connectionPool", ConnectionPoolSettings.class)
@@ -160,7 +166,7 @@ public class HostProxy implements RoutingObject {
             HostAndPort hostAndPort = config.get("host")
                     .map(HostAndPort::fromString)
                     .map(it -> addDefaultPort(it, tlsSettings))
-                    .orElseThrow(() -> missingAttributeError(configBlock, join(".", parents), "host"));
+                    .orElseThrow(() -> missingAttributeError(configBlock, join(".", fullName), "host"));
 
             return createHostProxyHandler(context, hostAndPort, poolSettings, tlsSettings, responseTimeoutMillis, metricPrefix);
         }
@@ -206,7 +212,7 @@ public class HostProxy implements RoutingObject {
                     .metricRegistry(context.environment().metricRegistry())
                     .build();
 
-            return new HostProxy(hostAndPort, StyxHostHttpClient.create(connectionPoolFactory.create(origin)));
+            return new HostProxy(hostAndPort, StyxHostHttpClient.create(connectionPoolFactory.create(origin)), originMetrics);
         }
 
         private static Connection.Factory connectionFactory(
@@ -223,7 +229,7 @@ public class HostProxy implements RoutingObject {
                                     .responseTimeoutMillis(responseTimeoutMillis)
                                     .build()
                     )
-                    .tlsSettings(Optional.ofNullable(tlsSettings).orElse(null))
+                    .tlsSettings(tlsSettings)
                     .build();
 
             if (connectionExpiration > 0) {

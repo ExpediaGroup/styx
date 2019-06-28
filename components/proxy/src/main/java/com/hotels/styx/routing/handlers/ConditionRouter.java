@@ -26,10 +26,10 @@ import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.RouteHandlerAdapter;
 import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.routing.RoutingObject;
-import com.hotels.styx.routing.config.HttpHandlerFactory;
+import com.hotels.styx.routing.config.Builtins;
+import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.RoutingObjectConfiguration;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
-import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.server.HttpRouter;
 import com.hotels.styx.server.routing.AntlrMatcher;
 import com.hotels.styx.server.routing.antlr.DslFunctionResolutionError;
@@ -90,7 +90,7 @@ public class ConditionRouter implements HttpRouter {
     /**
      * Builds a condition router from the yaml routing configuration.
      */
-    public static class Factory implements HttpHandlerFactory {
+    public static class Factory implements RoutingObjectFactory {
 
         private static RoutingObject buildFallbackHandler(
                 List<String> parents,
@@ -99,19 +99,19 @@ public class ConditionRouter implements HttpRouter {
             if (config.fallback == null) {
                 return (request, na) -> Eventual.of(LiveHttpResponse.response(BAD_GATEWAY).build());
             } else {
-                return context.factory().build(append(parents, "fallback"), config.fallback);
+                return Builtins.build(append(parents, "fallback"), context, config.fallback);
             }
         }
 
         private static Route buildRoute(
                 List<String> parents,
-                RoutingObjectFactory routingObjectFactory,
+                Context context,
                 int index,
                 String condition,
                 RoutingObjectConfiguration destination) {
             try {
                 String attribute = format("destination[%d]", index);
-                RoutingObject handler = routingObjectFactory.build(append(parents, attribute), destination);
+                RoutingObject handler = Builtins.build(append(parents, attribute), context, destination);
                 return new Route(condition, handler);
             } catch (DslSyntaxError | DslFunctionResolutionError e) {
                 String attribute = format("condition[%d]", index);
@@ -122,23 +122,23 @@ public class ConditionRouter implements HttpRouter {
         }
 
         @Override
-        public RoutingObject build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
+        public RoutingObject build(List<String> fullName, Context context, RoutingObjectDefinition configBlock) {
             ConditionRouterConfig config = new JsonNodeConfig(configBlock.config()).as(ConditionRouterConfig.class);
             if (config.routes == null) {
-                throw missingAttributeError(configBlock, join(".", parents), "routes");
+                throw missingAttributeError(configBlock, join(".", fullName), "routes");
             }
 
             AtomicInteger index = new AtomicInteger(0);
             List<Route> routes = config.routes.stream()
                     .map(routeConfig -> buildRoute(
-                            append(parents, "routes"),
-                            context.factory(),
+                            append(fullName, "routes"),
+                            context,
                             index.getAndIncrement(),
                             routeConfig.condition,
                             routeConfig.destination))
                     .collect(Collectors.toList());
 
-            RoutingObject fallbackHandler = buildFallbackHandler(parents, context, config);
+            RoutingObject fallbackHandler = buildFallbackHandler(fullName, context, config);
 
             ConditionRouter router = new ConditionRouter(routes, fallbackHandler);
 

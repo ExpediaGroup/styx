@@ -19,6 +19,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.module.kotlin.KotlinModule;
 import com.hotels.styx.api.configuration.ConversionException;
 import com.hotels.styx.api.configuration.Configuration;
 
@@ -38,7 +39,9 @@ import static java.util.Objects.requireNonNull;
  * jackson API and Styx API.
  */
 public class JsonNodeConfig implements Configuration {
-    static final ObjectMapper YAML_MAPPER = addStyxMixins(new ObjectMapper(new YAMLFactory()))
+    static final ObjectMapper YAML_MAPPER = addStyxMixins(
+            new ObjectMapper(new YAMLFactory())
+                    .registerModule(new KotlinModule()))
             .configure(FAIL_ON_UNKNOWN_PROPERTIES, false)
             .configure(AUTO_CLOSE_SOURCE, true);
 
@@ -58,7 +61,7 @@ public class JsonNodeConfig implements Configuration {
      * Construct an instance from a JSON node.
      *
      * @param rootNode a JSON node
-     * @param mapper mapper to convert JSON into objects
+     * @param mapper   mapper to convert JSON into objects
      */
     protected JsonNodeConfig(JsonNode rootNode, ObjectMapper mapper) {
         this.rootNode = requireNonNull(rootNode);

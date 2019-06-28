@@ -69,7 +69,6 @@ class HostProxySpec : FeatureSpec() {
     }
 
     init {
-
         feature("Executor thread pool") {
             scenario("Runs on StyxHttpClient global thread pool") {
                 testServer.restart()
@@ -128,8 +127,8 @@ class HostProxySpec : FeatureSpec() {
                         .build())
                         .wait()
                         .let {
-                            it?.status() shouldBe OK
-                            it?.bodyAs(UTF_8) shouldBe "Hello - HTTPS"
+                            it!!.status() shouldBe OK
+                            it.bodyAs(UTF_8) shouldBe "Hello - HTTPS"
                         }
             }
         }
@@ -154,16 +153,16 @@ class HostProxySpec : FeatureSpec() {
                 requestFutures
                         .forEach {
                             val clientResponse = it.wait()
-                            clientResponse?.status() shouldBe HttpResponseStatus.OK
-                            clientResponse?.bodyAs(UTF_8) shouldBe "Hello - HTTP"
+                            clientResponse!!.status() shouldBe HttpResponseStatus.OK
+                            clientResponse.bodyAs(UTF_8) shouldBe "Hello - HTTP"
                         }
 
                 testServer().metrics().let {
-                    (it["connections.total-connections"]?.get("count") as Int) shouldBeInRange 1..2
+                    (it["connections.total-connections"]!!.get("count") as Int) shouldBeInRange 1..2
                 }
 
                 styxServer().metrics().let {
-                    (it["routing.objects.hostProxy.localhost:${testServer().proxyHttpAddress().port}.connectionspool.connection-attempts"]?.get("value") as Int) shouldBeInRange 1..2
+                    (it["routing.objects.hostProxy.localhost:${testServer().proxyHttpAddress().port}.connectionspool.connection-attempts"]!!.get("value") as Int) shouldBeInRange 1..2
                 }
 
             }
@@ -191,8 +190,8 @@ class HostProxySpec : FeatureSpec() {
 
                 eventually(1.seconds, AssertionError::class.java) {
                     styxServer().metrics().let {
-                        it["routing.objects.hostProxy.localhost:${testServer().proxyHttpAddress().port}.connectionspool.available-connections"]?.get("value") shouldBe 1
-                        it["routing.objects.hostProxy.localhost:${testServer().proxyHttpAddress().port}.connectionspool.connections-closed"]?.get("value") shouldBe 0
+                        it["routing.objects.hostProxy.localhost:${testServer().proxyHttpAddress().port}.connectionspool.available-connections"]!!.get("value") shouldBe 1
+                        it["routing.objects.hostProxy.localhost:${testServer().proxyHttpAddress().port}.connectionspool.connections-closed"]!!.get("value") shouldBe 0
                     }
                 }
 
@@ -207,8 +206,8 @@ class HostProxySpec : FeatureSpec() {
 
                 eventually(1.seconds, AssertionError::class.java) {
                     styxServer().metrics().let {
-                        it["routing.objects.hostProxy.localhost:${testServer().proxyHttpAddress().port}.connectionspool.available-connections"]?.get("value") shouldBe 1
-                        it["routing.objects.hostProxy.localhost:${testServer().proxyHttpAddress().port}.connectionspool.connections-terminated"]?.get("value") shouldBe 1
+                        it["routing.objects.hostProxy.localhost:${testServer().proxyHttpAddress().port}.connectionspool.available-connections"]!!.get("value") shouldBe 1
+                        it["routing.objects.hostProxy.localhost:${testServer().proxyHttpAddress().port}.connectionspool.connections-terminated"]!!.get("value") shouldBe 1
                     }
                 }
 
@@ -229,35 +228,31 @@ class HostProxySpec : FeatureSpec() {
                                 """.trimIndent()) shouldBe CREATED
             }
 
-            // Continues from previous test
-            scenario("Send request") {
+            scenario("... and send request") {
                 client.send(get("/")
                         .header(HOST, styxServer().proxyHttpHostHeader())
                         .build())
                         .wait()
                         .let {
-                            it?.status() shouldBe HttpResponseStatus.OK
-                            it?.bodyAs(UTF_8) shouldBe "mock-server-01"
+                            it!!.status() shouldBe HttpResponseStatus.OK
+                            it.bodyAs(UTF_8) shouldBe "mock-server-01"
                         }
             }
 
-            // Continues from previous test
-            scenario("Provides connection pool metrics") {
+            scenario("... and provides connection pool metrics") {
                 styxServer().metrics().let {
-                    it["routing.objects.hostProxy.localhost:${mockServer.port()}.connectionspool.connection-attempts"]?.get("value") shouldBe 1
+                    it["routing.objects.hostProxy.localhost:${mockServer.port()}.connectionspool.connection-attempts"]!!.get("value") shouldBe 1
                 }
             }
 
-            // Continues from previous test
-            scenario("Provides origin and application metrics") {
+            scenario("... and provides origin and application metrics") {
                 styxServer().metrics().let {
-                    it["routing.objects.hostProxy.localhost:${mockServer.port()}.requests.response.status.200"]?.get("count") shouldBe 1
-                    it["routing.objects.hostProxy.localhost:${mockServer.port()}.connectionspool.connection-attempts"]?.get("value") shouldBe 1
+                    it["routing.objects.hostProxy.localhost:${mockServer.port()}.requests.response.status.200"]!!.get("count") shouldBe 1
+                    it["routing.objects.hostProxy.localhost:${mockServer.port()}.connectionspool.connection-attempts"]!!.get("value") shouldBe 1
                 }
             }
 
-            // Continues from previous test
-            scenario("Unregisters connection pool metrics") {
+            scenario("... and unregisters connection pool metrics") {
                 styxServer().removeRoutingObject("hostProxy")
 
                 eventually(2.seconds, AssertionError::class.java) {
@@ -295,35 +290,31 @@ class HostProxySpec : FeatureSpec() {
                                 """.trimIndent()) shouldBe CREATED
             }
 
-            // Continues from previous test
-            scenario("Send request") {
+            scenario("... and send request") {
                 client.send(get("/")
                         .header(HOST, styxServer().proxyHttpHostHeader())
                         .build())
                         .wait()
                         .let {
-                            it?.status() shouldBe HttpResponseStatus.OK
-                            it?.bodyAs(UTF_8) shouldBe "mock-server-01"
+                            it!!.status() shouldBe HttpResponseStatus.OK
+                            it.bodyAs(UTF_8) shouldBe "mock-server-01"
                         }
             }
 
-            // Continues from previous test
-            scenario("Provides connection pool metrics with metric prefix") {
+            scenario("... and provides connection pool metrics with metric prefix") {
                 styxServer().metrics().let {
-                    it["origins.myApp.localhost:${mockServer.port()}.connectionspool.connection-attempts"]?.get("value") shouldBe 1
+                    it["origins.myApp.localhost:${mockServer.port()}.connectionspool.connection-attempts"]!!.get("value") shouldBe 1
                 }
             }
 
-            // Continues from previous test
-            scenario("Provides origin/application metrics with metric prefix") {
+            scenario("... and provides origin/application metrics with metric prefix") {
                 styxServer().metrics().let {
-                    it["origins.myApp.localhost:${mockServer.port()}.requests.response.status.200"]?.get("count") shouldBe 1
-                    it["origins.myApp.requests.response.status.200"]?.get("count") shouldBe 1
+                    it["origins.myApp.localhost:${mockServer.port()}.requests.response.status.200"]!!.get("count") shouldBe 1
+                    it["origins.myApp.requests.response.status.200"]!!.get("count") shouldBe 1
                 }
             }
 
-            // Continues from previous test
-            scenario("Unregisters prefixed connection pool metrics") {
+            scenario("... and unregisters prefixed connection pool metrics") {
                 styxServer().removeRoutingObject("hostProxy")
 
                 eventually(2.seconds, AssertionError::class.java) {

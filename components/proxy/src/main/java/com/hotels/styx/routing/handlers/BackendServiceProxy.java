@@ -30,7 +30,7 @@ import com.hotels.styx.proxy.BackendServicesRouter;
 import com.hotels.styx.proxy.RouteHandlerAdapter;
 import com.hotels.styx.proxy.StyxBackendServiceClientFactory;
 import com.hotels.styx.routing.RoutingObject;
-import com.hotels.styx.routing.config.HttpHandlerFactory;
+import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
@@ -69,7 +69,7 @@ public class BackendServiceProxy implements RoutingObject {
     /**
      * Builds a BackendServiceProxy from yaml routing configuration.
      */
-    public static class Factory implements HttpHandlerFactory {
+    public static class Factory implements RoutingObjectFactory {
         private final BackendServiceClientFactory serviceClientFactory;
         private final Map<String, Registry<BackendService>> backendRegistries;
         private final Environment environment;
@@ -92,16 +92,16 @@ public class BackendServiceProxy implements RoutingObject {
         }
 
         @Override
-        public RoutingObject build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
+        public RoutingObject build(List<String> fullName, Context context, RoutingObjectDefinition configBlock) {
             JsonNodeConfig config = new JsonNodeConfig(configBlock.config());
             String provider = config.get("backendProvider")
-                    .orElseThrow(() -> missingAttributeError(configBlock, join(".", parents), "backendProvider"));
+                    .orElseThrow(() -> missingAttributeError(configBlock, join(".", fullName), "backendProvider"));
 
             Registry<BackendService> registry = backendRegistries.get(provider);
             if (registry == null) {
                 throw new IllegalArgumentException(
                         format("No such backend service provider exists, attribute='%s', name='%s'",
-                                join(".", append(parents, "backendProvider")), provider));
+                                join(".", append(fullName, "backendProvider")), provider));
             }
 
             PlatformAwareClientEventLoopGroupFactory factory = new PlatformAwareClientEventLoopGroupFactory("BackendServiceProxy", 0);

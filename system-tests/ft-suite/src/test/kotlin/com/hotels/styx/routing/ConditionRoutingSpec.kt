@@ -26,7 +26,7 @@ import com.hotels.styx.support.ResourcePaths.fixturesHome
 import io.kotlintest.Spec
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
-import reactor.core.publisher.Mono
+import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
 
 class ConditionRoutingSpec : StringSpec() {
@@ -37,11 +37,15 @@ class ConditionRoutingSpec : StringSpec() {
                     .header(HOST, "${styxServer.proxyHttpAddress().hostName}:${styxServer.proxyHttpAddress().port}")
                     .build();
 
-            val response = Mono.fromCompletionStage(client.send(request))
-                    .block();
+            client.send(request)
+                    .toMono()
+                    .block()
+                    .let {
+                        it!!.status() shouldBe (OK)
+                        it.bodyAs(UTF_8) shouldBe ("Hello, from http server!")
 
-            response?.status() shouldBe (OK)
-            response?.bodyAs(UTF_8) shouldBe ("Hello, from http server!")
+                    }
+
         }
 
         "Routes HTTPS protocol" {
@@ -49,13 +53,14 @@ class ConditionRoutingSpec : StringSpec() {
                     .header(HOST, "${styxServer.proxyHttpsAddress().hostName}:${styxServer.proxyHttpsAddress().port}")
                     .build();
 
-            val response = Mono.fromCompletionStage(
-                    client.secure()
-                            .send(request))
-                    .block();
-
-            response?.status() shouldBe (OK)
-            response?.bodyAs(UTF_8) shouldBe ("Hello, from secure server!")
+            client.secure()
+                    .send(request)
+                    .toMono()
+                    .block()
+                    .let {
+                        it!!.status() shouldBe (OK)
+                        it.bodyAs(UTF_8) shouldBe ("Hello, from secure server!")
+                    }
         }
     }
 

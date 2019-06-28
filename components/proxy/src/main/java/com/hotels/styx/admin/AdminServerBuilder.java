@@ -87,7 +87,7 @@ public class AdminServerBuilder {
 
     private final Environment environment;
     private final Configuration configuration;
-    private final RoutingObjectFactory routingObjectFactory;
+    private final RoutingObjectFactory.Context routingObjectFactoryContext;
     private final StyxObjectStore<RoutingObjectRecord> routeDatabase;
 
     private Registry<BackendService> backendServicesRegistry;
@@ -95,7 +95,7 @@ public class AdminServerBuilder {
     public AdminServerBuilder(StyxServerComponents serverComponents) {
         this.environment = requireNonNull(serverComponents.environment());
         this.routeDatabase = requireNonNull(serverComponents.routeDatabase());
-        this.routingObjectFactory = requireNonNull(serverComponents.routingObjectFactory());
+        this.routingObjectFactoryContext = requireNonNull(serverComponents.routingObjectFactoryContext());
         this.configuration = this.environment.configuration();
     }
 
@@ -135,7 +135,7 @@ public class AdminServerBuilder {
         httpRouter.add("/admin/configuration/logging", new LoggingConfigurationHandler(styxConfig.startupConfig().logConfigLocation()));
         httpRouter.add("/admin/configuration/startup", new StartupConfigHandler(styxConfig.startupConfig()));
 
-        RoutingObjectHandler routingObjectHandler = new RoutingObjectHandler(routeDatabase, routingObjectFactory);
+        RoutingObjectHandler routingObjectHandler = new RoutingObjectHandler(routeDatabase, routingObjectFactoryContext);
         httpRouter.add("/admin/routing", routingObjectHandler);
         httpRouter.add("/admin/routing/", routingObjectHandler);
 

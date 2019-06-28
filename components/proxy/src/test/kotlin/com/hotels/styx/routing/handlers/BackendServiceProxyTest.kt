@@ -26,7 +26,7 @@ import com.hotels.styx.api.extension.service.spi.Registry
 import com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded
 import com.hotels.styx.client.BackendServiceClient
 import com.hotels.styx.proxy.BackendServiceClientFactory
-import com.hotels.styx.routing.RoutingContext
+import com.hotels.styx.routing.RoutingObjectFactoryContext
 import com.hotels.styx.routing.routingObjectDef
 import com.hotels.styx.server.HttpInterceptorContext
 import io.kotlintest.shouldBe
@@ -44,7 +44,7 @@ class BackendServiceProxyTest : StringSpec({
     val baRequest = LiveHttpRequest.get("/ba/x").build()
 
     val environment = Environment.Builder().build()
-    val context = RoutingContext(environment = environment).get()
+    val context = RoutingObjectFactoryContext(environment = environment).get()
 
 
     "builds a backend service proxy from the configuration " {
@@ -64,14 +64,20 @@ class BackendServiceProxyTest : StringSpec({
         val handler = BackendServiceProxy.Factory(environment, clientFactory(), services).build(listOf(), context, config)
         backendRegistry.reload()
 
-        val hwaResponse = handler.handle(hwaRequest, HttpInterceptorContext.create()).toMono().block()
-        hwaResponse?.header("X-Backend-Service")?.get() shouldBe("hwa")
+        handler.handle(hwaRequest, HttpInterceptorContext.create())
+                .toMono()
+                .block()!!
+                .header("X-Backend-Service").get() shouldBe("hwa")
 
-        val laResponse = handler.handle(laRequest, HttpInterceptorContext.create()).toMono().block()
-        laResponse?.header("X-Backend-Service")?.get() shouldBe("la")
+        handler.handle(laRequest, HttpInterceptorContext.create())
+                .toMono()
+                .block()!!
+                .header("X-Backend-Service").get() shouldBe("la")
 
-        val baResponse = handler.handle(baRequest, HttpInterceptorContext.create()).toMono().block()
-        baResponse?.header("X-Backend-Service")?.get() shouldBe("ba")
+        handler.handle(baRequest, HttpInterceptorContext.create())
+                .toMono()
+                .block()!!
+                .header("X-Backend-Service").get() shouldBe("ba")
     }
 
     "errors when backendProvider attribute is not specified" {
