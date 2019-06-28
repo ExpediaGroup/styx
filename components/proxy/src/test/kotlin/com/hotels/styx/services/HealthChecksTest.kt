@@ -21,9 +21,11 @@ import com.hotels.styx.api.HttpInterceptor
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse
+import com.hotels.styx.api.extension.service.spi.StyxService
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
+import com.hotels.styx.routing.handlers.ProviderObjectRecord
 import com.hotels.styx.routing.handlers.StaticResponseHandler
 import io.kotlintest.matchers.boolean.shouldBeFalse
 import io.kotlintest.matchers.boolean.shouldBeTrue
@@ -159,6 +161,10 @@ class HealthChecksTest : FeatureSpec({
 
 internal fun StyxObjectStore<RoutingObjectRecord>.record(key: String, type: String, tags: Set<String>, config: JsonNode, routingObject: RoutingObject) {
     insert(key, RoutingObjectRecord.create(type, tags, config, routingObject))
+}
+
+internal fun StyxObjectStore<ProviderObjectRecord>.record(key: String, type: String, tags: Set<String>, config: JsonNode, styxService: StyxService) {
+    insert(key, ProviderObjectRecord(type, tags, config, styxService))
 }
 
 internal fun <T> styxObjectStore(init: StyxObjectStore<T>.() -> Unit): StyxObjectStore<T> {

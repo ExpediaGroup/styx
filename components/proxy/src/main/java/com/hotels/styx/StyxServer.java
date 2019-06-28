@@ -16,6 +16,7 @@
 package com.hotels.styx;
 
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.CharStreams;
 import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.Service;
@@ -173,23 +174,18 @@ public final class StyxServer extends AbstractService {
         this.proxyServer = proxyServerSetUp.createProxyServer(components);
         this.adminServer = createAdminServer(components);
 
-        components.servicesDatabase()
-                .entrySet()
-                .forEach(entry -> {
-                    StyxService service = entry.getValue().getStyxService();
-                    service.start()
-                            .thenAccept(ignore -> {
-                                LOG.debug("Service '{}/{}' started", entry.getValue().getType(), entry.getKey());
-                            });
-                });
-
         this.serviceManager = new ServiceManager(new ArrayList<Service>() {
             {
                 add(proxyServer);
                 add(adminServer);
-                components.services().values().stream()
-                        .map(StyxServer::toGuavaService)
-                        .forEach(this::add);
+
+                ImmutableList.<StyxService>builder()
+                    .add(new ServiceProviderMonitor("Styx-Service-Monitor", components.servicesDatabase()))
+                    .addAll(components.services().values())
+                    .build()
+                    .stream()
+                    .map(StyxServer::toGuavaService)
+                    .forEach(this::add);
             }
         });
     }
