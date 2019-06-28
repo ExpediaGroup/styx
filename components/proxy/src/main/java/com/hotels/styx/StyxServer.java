@@ -25,6 +25,7 @@ import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.config.schema.SchemaValidationException;
+import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration;
 import com.hotels.styx.server.HttpServer;
@@ -246,8 +247,10 @@ public final class StyxServer extends AbstractService {
     }
 
     private static HttpServer createAdminServer(StyxServerComponents config) {
+        Registry<BackendService> registry = (Registry<BackendService>) config.services().get("backendServiceRegistry");
+
         return new AdminServerBuilder(config)
-                .backendServicesRegistry((Registry<BackendService>) config.services().get("backendServiceRegistry"))
+                .backendServicesRegistry(registry != null ? registry : new MemoryBackedRegistry<>())
                 .build();
     }
 

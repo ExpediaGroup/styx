@@ -21,6 +21,7 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.extension.service.spi.StyxService;
+import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.HttpPipelineFactory;
 import com.hotels.styx.routing.RoutingObject;
@@ -96,8 +97,15 @@ public final class StyxPipelineFactory implements PipelineFactory {
                     return (HttpPipelineFactory) () -> Builtins.build(ImmutableList.of("httpPipeline"), routingObjectFactoryContext, node);
                 })
                 .orElseGet(() -> {
-                    Registry<BackendService> backendServicesRegistry = (Registry<BackendService>) services.get("backendServiceRegistry");
-                    return new StaticPipelineFactory(environment, backendServicesRegistry, plugins, eventLoopGroup, nettySocketChannelClass, requestTracking);
+                    Registry<BackendService> registry = (Registry<BackendService>) services.get("backendServiceRegistry");
+
+                    return new StaticPipelineFactory(
+                            environment,
+                            registry != null ? registry : new MemoryBackedRegistry<>(),
+                            plugins,
+                            eventLoopGroup,
+                            nettySocketChannelClass,
+                            requestTracking);
                 });
 
         return pipelineBuilder.build();

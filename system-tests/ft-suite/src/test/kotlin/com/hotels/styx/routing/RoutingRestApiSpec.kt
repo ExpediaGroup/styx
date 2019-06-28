@@ -26,7 +26,6 @@ import com.hotels.styx.api.HttpResponseStatus.NOT_FOUND
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.startup.StyxServerComponents
-import com.hotels.styx.support.ResourcePaths.fixturesHome
 import io.kotlintest.Spec
 import io.kotlintest.TestCase
 import io.kotlintest.shouldBe
@@ -36,7 +35,6 @@ import java.nio.charset.StandardCharsets.UTF_8
 
 class RoutingRestApiSpec : StringSpec() {
 
-    val originsOk = fixturesHome(RoutingRestApiSpec::class.java, "/conf/origins/origins-correct.yml")
     val yamlText = """
         proxy:
           connectors:
@@ -48,12 +46,6 @@ class RoutingRestApiSpec : StringSpec() {
               sslProvider: JDK
               sessionTimeoutMillis: 300000
               sessionCacheSize: 20000
-
-        services:
-          factories:
-            backendServiceRegistry:
-              class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry${'$'}Factory"
-              config: {originsFile: "$originsOk"}
 
         admin:
           connectors:
