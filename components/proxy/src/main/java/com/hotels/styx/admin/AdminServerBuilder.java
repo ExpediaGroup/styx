@@ -18,6 +18,7 @@ package com.hotels.styx.admin;
 import com.codahale.metrics.json.MetricsModule;
 import com.google.common.collect.ImmutableSortedSet;
 import com.hotels.styx.Environment;
+import com.hotels.styx.StartupConfig;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.admin.dashboard.DashboardData;
 import com.hotels.styx.admin.dashboard.DashboardDataSupplier;
@@ -111,16 +112,16 @@ public class AdminServerBuilder {
 
         return new NettyServerBuilderSpec("Admin", environment.serverEnvironment(), new WebServerConnectorFactory())
                 .toNettyServerBuilder(adminServerConfig)
-                .handlerFactory(() -> new HttpAggregator(adminEndpoints(styxConfig)))
+                .handlerFactory(() -> new HttpAggregator(adminEndpoints(styxConfig, environment.startupConfig())))
                 .build();
     }
 
-    private WebServiceHandler adminEndpoints(StyxConfig styxConfig) {
+    private WebServiceHandler adminEndpoints(StyxConfig styxConfig, StartupConfig startupConfig) {
         Optional<Duration> metricsCacheExpiration = styxConfig.adminServerConfig().metricsCacheExpiration();
 
         StandardHttpRouter httpRouter = new StandardHttpRouter();
         httpRouter.add("/", new IndexHandler(indexLinkPaths()));
-        httpRouter.add("/version.txt", new VersionTextHandler(styxConfig.versionFiles()));
+        httpRouter.add("/version.txt", new VersionTextHandler(styxConfig.versionFiles(startupConfig)));
         httpRouter.add("/admin", new IndexHandler(indexLinkPaths()));
         httpRouter.add("/admin/ping", new PingHandler());
         httpRouter.add("/admin/threads", new ThreadsHandler());
@@ -132,8 +133,8 @@ public class AdminServerBuilder {
         httpRouter.add("/admin/configuration/origins", new OriginsHandler(backendServicesRegistry));
         httpRouter.add("/admin/jvm", new JVMMetricsHandler(environment.metricRegistry(), metricsCacheExpiration));
         httpRouter.add("/admin/origins/status", new OriginsInventoryHandler(environment.eventBus()));
-        httpRouter.add("/admin/configuration/logging", new LoggingConfigurationHandler(styxConfig.startupConfig().logConfigLocation()));
-        httpRouter.add("/admin/configuration/startup", new StartupConfigHandler(styxConfig.startupConfig()));
+        httpRouter.add("/admin/configuration/logging", new LoggingConfigurationHandler(startupConfig.logConfigLocation()));
+        httpRouter.add("/admin/configuration/startup", new StartupConfigHandler(startupConfig));
 
         RoutingObjectHandler routingObjectHandler = new RoutingObjectHandler(routeDatabase, routingObjectFactoryContext);
         httpRouter.add("/admin/routing", routingObjectHandler);

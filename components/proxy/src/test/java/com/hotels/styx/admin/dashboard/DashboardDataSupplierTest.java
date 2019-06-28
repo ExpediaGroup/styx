@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ import static org.mockito.Mockito.when;
 
 public class DashboardDataSupplierTest {
     Environment environment = new Environment.Builder().build();
-    StyxConfig styxConfig = StyxConfig.fromYaml("jvmRouteName: STYXPRES");
+    StyxConfig styxConfig = StyxConfig.fromYaml("jvmRouteName: STYXPRES", false);
     AtomicInteger nextPort = new AtomicInteger(9090);
 
     @Test

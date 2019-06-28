@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.AsyncEventBus;
 import com.hotels.styx.Environment;
+import com.hotels.styx.StartupConfig;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.Version;
 import com.hotels.styx.api.MetricRegistry;
@@ -44,11 +45,12 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import org.slf4j.Logger;
 
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.hotels.styx.StyxConfigValidationKt.validate;
+import static com.hotels.styx.StartupConfig.newStartupConfigBuilder;
 import static com.hotels.styx.Version.readVersionFrom;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
 import static com.hotels.styx.routing.config.Builtins.BUILTIN_HANDLER_FACTORIES;
@@ -78,13 +80,9 @@ public class StyxServerComponents {
     private StyxServerComponents(Builder builder) {
         StyxConfig styxConfig = requireNonNull(builder.styxConfig);
 
-        if (!builder.disableConfigValidation) {
-            validate(styxConfig);
-        } else {
-            LOG.warn("Server configuration validation disabled. The Styx server configuration will not be validated.");
-        }
+        StartupConfig startupConfig = builder.startupConfig == null ? newStartupConfigBuilder().build() : builder.startupConfig;
 
-        this.environment = newEnvironment(styxConfig, builder.metricRegistry);
+        this.environment = newEnvironment(styxConfig, startupConfig, builder.metricRegistry);
         builder.loggingSetUp.setUp(environment);
 
         PlatformAwareClientEventLoopGroupFactory factory = new PlatformAwareClientEventLoopGroupFactory(
@@ -168,8 +166,9 @@ public class StyxServerComponents {
         return this.nettySocketChannelClass;
     }
 
-    private static Environment newEnvironment(StyxConfig styxConfig, MetricRegistry metricRegistry) {
+    private static Environment newEnvironment(StyxConfig styxConfig, StartupConfig startupConfig, MetricRegistry metricRegistry) {
         return new Environment.Builder()
+                .startupConfig(startupConfig)
                 .configuration(styxConfig)
                 .metricRegistry(metricRegistry)
                 .buildInfo(readBuildInfo())
@@ -205,9 +204,9 @@ public class StyxServerComponents {
         private List<ConfiguredPluginFactory> configuredPluginFactories;
         private ServicesLoader servicesLoader = SERVICES_FROM_CONFIG;
         private MetricRegistry metricRegistry = new CodaHaleMetricRegistry();
+        private StartupConfig startupConfig;
 
         private final Map<String, StyxService> additionalServices = new HashMap<>();
-        private boolean disableConfigValidation;
 
         public Builder styxConfig(StyxConfig styxConfig) {
             this.styxConfig = requireNonNull(styxConfig);
@@ -265,8 +264,8 @@ public class StyxServerComponents {
             return this;
         }
 
-        public Builder disableConfigValidation(boolean disableConfigValidation) {
-            this.disableConfigValidation = disableConfigValidation;
+        public Builder startupConfig(StartupConfig startupConfig) {
+            this.startupConfig = startupConfig;
             return this;
         }
 
@@ -281,7 +280,14 @@ public class StyxServerComponents {
     public interface LoggingSetUp {
         LoggingSetUp DO_NOT_MODIFY = environment -> {
         };
-        LoggingSetUp FROM_CONFIG = environment -> setUpLogging(environment.configuration().logConfigLocation());
+        LoggingSetUp FROM_CONFIG = environment -> setUpLogging(
+                Paths.get(environment
+                        .startupConfig()
+                        .logConfigLocation()
+                        .url()
+                        .getFile())
+                        .toString()
+        );
 
         void setUp(Environment environment);
 

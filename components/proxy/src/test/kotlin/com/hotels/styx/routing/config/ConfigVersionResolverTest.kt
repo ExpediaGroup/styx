@@ -33,7 +33,7 @@ class ConfigVersionResolverTest : StringSpec({
                 type: ProxyToBackend
                 config:
                   bar: 1
-        """.trimIndent())
+        """.trimIndent(), false)
 
         ConfigVersionResolver(config).version().shouldBe(ROUTING_CONFIG_V2)
     }

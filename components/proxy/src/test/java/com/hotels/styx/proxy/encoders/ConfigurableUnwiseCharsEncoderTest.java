@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -80,6 +80,6 @@ public class ConfigurableUnwiseCharsEncoderTest {
                 "  encoding:\n" +
                 "    unwiseCharactersToEncode: \"%s\"\n", unwiseCharSet);
 
-        return StyxConfig.fromYaml(yaml);
+        return StyxConfig.fromYaml(yaml, false);
     }
 }
