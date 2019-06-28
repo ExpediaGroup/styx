@@ -63,11 +63,6 @@
     </dependency>
 
     <dependency>
-      <groupId>com.github.vladimir-bukhtoyarov</groupId>
-      <artifactId>rolling-metrics</artifactId>
-    </dependency>
-
-    <dependency>
       <groupId>com.fasterxml.jackson.dataformat</groupId>
       <artifactId>jackson-dataformat-yaml</artifactId>
       <scope>test</scope>

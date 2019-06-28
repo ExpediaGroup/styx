@@ -21,7 +21,7 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistryListener;
 import com.codahale.metrics.Timer;
-import com.github.rollingmetrics.histogram.util.EmptySnapshot;
+import com.codahale.metrics.UniformSnapshot;
 import com.hotels.styx.api.MetricRegistry;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -221,6 +221,6 @@ public class CodaHaleMetricRegistryTest {
     public void createsTimerBackedByLatencyStats() {
         Timer timer = metricRegistry.timer("timer");
         // Rollingmetrics Timer creates ans EmptySnapshot() when the histogram is empty. Previously this returned SlidingWindowHistogramReservoir.HistogramSnapshot
-        assertThat(timer.getSnapshot(), is(instanceOf(EmptySnapshot.class)));
+        assertThat(timer.getSnapshot(), is(instanceOf(UniformSnapshot.class)));
     }
 }

@@ -98,7 +98,6 @@
     <jackson.dataformat.version>2.9.9</jackson.dataformat.version>
     <jackson.module.scala.version>2.9.9</jackson.module.scala.version>
     <metrics.version>4.0.5</metrics.version>
-    <rollingmetrics.version>2.0.5</rollingmetrics.version>
     <antlr.version>4.5.1-1</antlr.version>
     <netty.version>4.1.15.Final</netty.version>
     <netty-tcnative.version>2.0.6.Final</netty-tcnative.version>
@@ -355,12 +354,6 @@
         <groupId>org.hdrhistogram</groupId>
         <artifactId>HdrHistogram</artifactId>
         <version>2.1.4</version>
-      </dependency>
-
-      <dependency>
-        <groupId>com.github.vladimir-bukhtoyarov</groupId>
-        <artifactId>rolling-metrics</artifactId>
-        <version>${rollingmetrics.version}</version>
       </dependency>
 
       <dependency>

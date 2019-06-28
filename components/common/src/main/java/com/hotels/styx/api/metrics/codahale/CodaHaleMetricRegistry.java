@@ -22,8 +22,8 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistryListener;
+import com.codahale.metrics.SlidingTimeWindowArrayReservoir;
 import com.codahale.metrics.Timer;
-import com.github.rollingmetrics.histogram.HdrBuilder;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.ScopedMetricRegistry;
 
@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A {@link MetricRegistry} that acts as an adapter for Codahale's {@link com.codahale.metrics.MetricRegistry}.
@@ -38,7 +39,6 @@ import java.util.TreeMap;
 public class CodaHaleMetricRegistry implements MetricRegistry {
 
     private final com.codahale.metrics.MetricRegistry metricRegistry;
-    private final HdrBuilder builder = new HdrBuilder();
 
     /**
      * Construct an adapter from an existing codahale registry.
@@ -102,7 +102,7 @@ public class CodaHaleMetricRegistry implements MetricRegistry {
 
         if (metric == null) {
             try {
-                return register(name, builder.buildTimer());
+                return register(name,  newTimer() );
             } catch (IllegalArgumentException e) {
                 Metric added = metrics.get(name);
                 if (added instanceof Timer) {
@@ -114,7 +114,7 @@ public class CodaHaleMetricRegistry implements MetricRegistry {
     }
 
     private Timer newTimer() {
-        return builder.buildTimer();
+        return new Timer(new SlidingTimeWindowArrayReservoir(1, TimeUnit.MINUTES));
     }
 
     @Override
@@ -217,17 +217,6 @@ public class CodaHaleMetricRegistry implements MetricRegistry {
                 builder.append('.');
             }
             builder.append(part);
-        }
-    }
-
-    private static class SampleCountFromSnapshotTimer extends Timer {
-        public SampleCountFromSnapshotTimer(SlidingWindowHistogramReservoir slidingWindowHistogramReservoir) {
-            super(slidingWindowHistogramReservoir);
-        }
-
-        @Override
-        public long getCount() {
-            return (long) getSnapshot().size();
         }
     }
 
