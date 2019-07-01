@@ -1,49 +1,59 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <parent>
-    <groupId>com.hotels.styx</groupId>
-    <artifactId>styx-parent</artifactId>
-    <version>1.0-SNAPSHOT</version>
-  </parent>
+
 
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>plugin-examples</artifactId>
   <name>Styx proxy plugin examples</name>
+  <groupId>com.hotels.styx</groupId>
+  <version>1.0-SNAPSHOT</version>
 
   <properties>
     <main.basedir>${project.parent.basedir}</main.basedir>
+    <java.source>1.8</java.source>
+    <java.target>1.8</java.target>
+
+    <rxjava.version>1.1.6</rxjava.version>
+    <jackson.version>2.9.9</jackson.version>
+    <testng.version>6.14.3</testng.version>
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>com.hotels.styx</groupId>
       <artifactId>styx-api</artifactId>
+      <version>1.0-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>io.reactivex</groupId>
       <artifactId>rxjava</artifactId>
+      <version>${rxjava.version}</version>
     </dependency>
 
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
+      <version>${jackson.version}</version>
     </dependency>
 
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
+      <version>${jackson.version}</version>
     </dependency>
 
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
+      <version>${jackson.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.testng</groupId>
       <artifactId>testng</artifactId>
+      <version>${testng.version}</version>
     </dependency>
 
   </dependencies>
@@ -73,6 +83,38 @@
             <goals>
               <goal>test-jar</goal>
             </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- This plugin was copied from the parent pom. It may not all be relevant. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.3</version>
+        <configuration>
+          <source>${java.source}</source>
+          <target>${java.target}</target>
+        </configuration>
+        <executions>
+          <!-- Replacing default-compile as it is treated specially by maven -->
+          <execution>
+            <id>default-compile</id>
+            <phase>none</phase>
+          </execution>
+          <!-- Replacing default-testCompile as it is treated specially by maven -->
+          <execution>
+            <id>default-testCompile</id>
+            <phase>none</phase>
+          </execution>
+          <execution>
+            <id>java-compile</id>
+            <phase>compile</phase>
+            <goals> <goal>compile</goal> </goals>
+          </execution>
+          <execution>
+            <id>java-test-compile</id>
+            <phase>test-compile</phase>
+            <goals> <goal>testCompile</goal> </goals>
           </execution>
         </executions>
       </plugin>
