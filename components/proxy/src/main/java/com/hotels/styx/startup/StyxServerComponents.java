@@ -36,16 +36,14 @@ import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingMetadataDecorator;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.Builtins;
-import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
+import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.RouteRefLookup.RouteDbRefLookup;
 import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
-import org.slf4j.Logger;
 
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,14 +59,11 @@ import static com.hotels.styx.startup.extensions.PluginLoadingForStartup.loadPlu
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static java.util.stream.Collectors.toList;
-import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Configuration required to set-up the core Styx services, such as the proxy and admin servers.
  */
 public class StyxServerComponents {
-    private static final Logger LOG = getLogger(StyxServerComponents.class);
-
     private final Environment environment;
     private final Map<String, StyxService> services;
     private final List<NamedPlugin> plugins;
@@ -76,13 +71,14 @@ public class StyxServerComponents {
     private final EventLoopGroup eventLoopGroup;
     private final Class<? extends SocketChannel> nettySocketChannelClass;
     private final RoutingObjectFactory.Context routingObjectContext;
+    private final StartupConfig startupConfig;
 
     private StyxServerComponents(Builder builder) {
         StyxConfig styxConfig = requireNonNull(builder.styxConfig);
 
-        StartupConfig startupConfig = builder.startupConfig == null ? newStartupConfigBuilder().build() : builder.startupConfig;
+        this.startupConfig = builder.startupConfig == null ? newStartupConfigBuilder().build() : builder.startupConfig;
 
-        this.environment = newEnvironment(styxConfig, startupConfig, builder.metricRegistry);
+        this.environment = newEnvironment(styxConfig, builder.metricRegistry);
         builder.loggingSetUp.setUp(environment);
 
         PlatformAwareClientEventLoopGroupFactory factory = new PlatformAwareClientEventLoopGroupFactory(
@@ -166,9 +162,12 @@ public class StyxServerComponents {
         return this.nettySocketChannelClass;
     }
 
-    private static Environment newEnvironment(StyxConfig styxConfig, StartupConfig startupConfig, MetricRegistry metricRegistry) {
+    public StartupConfig startupConfig() {
+        return startupConfig;
+    }
+
+    private static Environment newEnvironment(StyxConfig styxConfig, MetricRegistry metricRegistry) {
         return new Environment.Builder()
-                .startupConfig(startupConfig)
                 .configuration(styxConfig)
                 .metricRegistry(metricRegistry)
                 .buildInfo(readBuildInfo())
@@ -178,10 +177,6 @@ public class StyxServerComponents {
 
     private static Version readBuildInfo() {
         return readVersionFrom("/version.json");
-    }
-
-    private static void setUpLogging(String logConfigLocation) {
-        initLogging(logConfigLocation, true);
     }
 
     private static Map<String, StyxService> mergeServices(Map<String, StyxService> configServices, Map<String, StyxService> additionalServices) {
@@ -229,7 +224,7 @@ public class StyxServerComponents {
 
         @VisibleForTesting
         public Builder loggingSetUp(String logConfigLocation) {
-            this.loggingSetUp = LoggingSetUp.from(logConfigLocation);
+            this.loggingSetUp = env -> initLogging(logConfigLocation, true);
             return this;
         }
 
@@ -280,19 +275,7 @@ public class StyxServerComponents {
     public interface LoggingSetUp {
         LoggingSetUp DO_NOT_MODIFY = environment -> {
         };
-        LoggingSetUp FROM_CONFIG = environment -> setUpLogging(
-                Paths.get(environment
-                        .startupConfig()
-                        .logConfigLocation()
-                        .url()
-                        .getFile())
-                        .toString()
-        );
 
         void setUp(Environment environment);
-
-        static LoggingSetUp from(String logConfigLocation) {
-            return environment -> setUpLogging(logConfigLocation);
-        }
     }
 }

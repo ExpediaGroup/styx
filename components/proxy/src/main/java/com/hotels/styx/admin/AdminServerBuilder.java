@@ -90,6 +90,7 @@ public class AdminServerBuilder {
     private final Configuration configuration;
     private final RoutingObjectFactory.Context routingObjectFactoryContext;
     private final StyxObjectStore<RoutingObjectRecord> routeDatabase;
+    private final StartupConfig startupConfig;
 
     private Registry<BackendService> backendServicesRegistry;
 
@@ -98,6 +99,7 @@ public class AdminServerBuilder {
         this.routeDatabase = requireNonNull(serverComponents.routeDatabase());
         this.routingObjectFactoryContext = requireNonNull(serverComponents.routingObjectFactoryContext());
         this.configuration = this.environment.configuration();
+        this.startupConfig = serverComponents.startupConfig();
     }
 
     public AdminServerBuilder backendServicesRegistry(Registry<BackendService> backendServicesRegistry) {
@@ -112,7 +114,7 @@ public class AdminServerBuilder {
 
         return new NettyServerBuilderSpec("Admin", environment.serverEnvironment(), new WebServerConnectorFactory())
                 .toNettyServerBuilder(adminServerConfig)
-                .handlerFactory(() -> new HttpAggregator(adminEndpoints(styxConfig, environment.startupConfig())))
+                .handlerFactory(() -> new HttpAggregator(adminEndpoints(styxConfig, startupConfig)))
                 .build();
     }
 

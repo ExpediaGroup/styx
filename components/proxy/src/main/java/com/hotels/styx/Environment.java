@@ -38,14 +38,12 @@ public final class Environment implements com.hotels.styx.api.Environment {
     private final StyxConfig configuration;
     private final HttpErrorStatusListener httpErrorStatusListener;
     private final ServerEnvironment serverEnvironment;
-    private final StartupConfig startupConfig;
 
     private Environment(Builder builder) {
         this.eventBus = firstNonNull(builder.eventBus, () -> new EventBus("Styx"));
         this.configStore = new ConfigStore();
 
         this.configuration = requireNonNull(builder.configuration);
-        this.startupConfig = builder.startupConfig;
         this.version = firstNonNull(builder.version, Version::newVersion);
         this.serverEnvironment = new ServerEnvironment(firstNonNull(builder.metricRegistry, CodaHaleMetricRegistry::new));
 
@@ -78,10 +76,6 @@ public final class Environment implements com.hotels.styx.api.Environment {
         return this.configuration;
     }
 
-    public StartupConfig startupConfig() {
-        return startupConfig;
-    }
-
     @Override
     public MetricRegistry metricRegistry() {
         return serverEnvironment.metricRegistry();
@@ -110,7 +104,6 @@ public final class Environment implements com.hotels.styx.api.Environment {
         private Version version;
         private EventBus eventBus;
         private StyxConfig configuration = StyxConfig.defaultConfig();
-        private StartupConfig startupConfig;
 
         public Builder configuration(StyxConfig configuration) {
             this.configuration = requireNonNull(configuration);
@@ -129,11 +122,6 @@ public final class Environment implements com.hotels.styx.api.Environment {
 
         public Builder eventBus(EventBus eventBus) {
             this.eventBus = eventBus;
-            return this;
-        }
-
-        public Builder startupConfig(StartupConfig startupConfig) {
-            this.startupConfig = startupConfig;
             return this;
         }
 

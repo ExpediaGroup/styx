@@ -39,11 +39,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.InetSocketAddress;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 
+import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.shutdownLogging;
 import static com.hotels.styx.startup.CoreMetrics.registerCoreMetrics;
-import static com.hotels.styx.startup.StyxServerComponents.LoggingSetUp.FROM_CONFIG;
 import static io.netty.util.ResourceLeakDetector.Level.DISABLED;
 import static java.lang.Runtime.getRuntime;
 import static java.lang.String.format;
@@ -95,10 +96,18 @@ public final class StyxServer extends AbstractService {
         StyxServerComponents components = new StyxServerComponents.Builder()
                 .styxConfig(parseConfiguration(startupConfig))
                 .startupConfig(startupConfig)
-                .loggingSetUp(FROM_CONFIG)
+                .loggingSetUp(environment -> initLogging(logConfigLocation(startupConfig), true))
                 .build();
 
         return new StyxServer(components, stopwatch);
+    }
+
+    private static String logConfigLocation(StartupConfig startupConfig) {
+        return Paths.get(startupConfig
+                .logConfigLocation()
+                .url()
+                .getFile())
+                .toString();
     }
 
     @NotNull
