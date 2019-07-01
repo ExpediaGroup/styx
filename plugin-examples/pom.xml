@@ -123,4 +123,21 @@
     </plugins>
 
   </build>
+
+  <distributionManagement>
+    <repository>
+      <id>central</id>
+      <name>libs-release</name>
+      <url>${libs.release.url}</url>
+    </repository>
+    <snapshotRepository>
+      <id>snapshots</id>
+      <name>libs-snapshot</name>
+      <url>${libs.snapshot.url}</url>
+    </snapshotRepository>
+    <site>
+      <id>Styx-Site</id>
+      <url>${site.url}</url>
+    </site>
+  </distributionManagement>
 </project>
