@@ -20,6 +20,7 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Mono;
 
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
@@ -30,15 +31,15 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * This is a unit test for your plugin. Please change it to test the behaviour you expect your plugin to exhibit.
  */
-public class ExamplePluginTest {
-    private final ExamplePluginConfig config = new ExamplePluginConfig("foo", "bar");
-    private final ExamplePlugin plugin = new ExamplePlugin(config);
+public class ModifyHeadersExamplePluginTest {
+    private final ModifyHeadersExamplePluginConfig config = new ModifyHeadersExamplePluginConfig("foo", "bar");
+    private final ModifyHeadersExamplePlugin plugin = new ModifyHeadersExamplePlugin(config);
 
     /**
-     * This tests the behaviours added in the example plugin.
+     * This tests the behaviours added in the ModifyHeadersExamplePlugin.
      */
     @Test
-    public void addsExtraHeaders() throws Exception {
+    public void addsExtraHeaders() {
         // a simple way to mock the downstream system
         HttpInterceptor.Chain chain = request -> {
             assertThat(request.header("myRequestHeader").orElse(null), is("foo"));
@@ -51,9 +52,9 @@ public class ExamplePluginTest {
                 .build();
 
 
-        // since this is a test, we want to wait for the response, so we call CompletableFuture.get
-        LiveHttpResponse response = plugin.intercept(request, chain).asCompletableFuture().get();
+        // since this is a test, we want to wait for the response
+        LiveHttpResponse response = Mono.from(plugin.intercept(request, chain)).block();
 
-        assertThat(response.header("myResponseheader").orElse(null), is("bar"));
+        assertThat(response.header("myResponseHeader").orElse(null), is("bar"));
     }
 }
