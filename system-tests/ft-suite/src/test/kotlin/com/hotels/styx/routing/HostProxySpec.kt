@@ -345,6 +345,9 @@ class HostProxySpec : FeatureSpec() {
                                   connectors:
                                     http:
                                       port: 0
+                                      
+                                services:
+                                  factories: {}                                     
 
                                 httpPipeline: hostProxy
                               """.trimIndent())
@@ -361,6 +364,9 @@ class HostProxySpec : FeatureSpec() {
                                   connectors:
                                     http:
                                       port: 0
+                                      
+                                services:
+                                  factories: {}
 
                                 httpPipeline:
                                   type: ConditionRouter
