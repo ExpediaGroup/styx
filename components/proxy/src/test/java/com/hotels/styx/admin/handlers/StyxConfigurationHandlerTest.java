@@ -100,6 +100,6 @@ public class StyxConfigurationHandlerTest {
     }
 
     private static StyxConfigurationHandler configurationBrowserHandler(String yaml) {
-        return new StyxConfigurationHandler(new StyxConfig(yaml));
+        return new StyxConfigurationHandler(StyxConfig.fromYaml(yaml, false));
     }
 }

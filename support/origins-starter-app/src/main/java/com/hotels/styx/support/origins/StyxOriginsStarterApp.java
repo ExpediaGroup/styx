@@ -86,7 +86,7 @@ public class StyxOriginsStarterApp {
         if (args.length < 4) {
             Configuration configurationFromFile = config(startupConfig.configFileLocation(), System.getProperties());
 
-            StyxConfig config = new StyxConfig(startupConfig, configurationFromFile);
+            StyxConfig config = new StyxConfig(configurationFromFile);
 
             String originsFile = config.applicationsConfigurationPath().orElseThrow(() ->
                     new IllegalStateException("Cannot start origins: No origins file specified"));

@@ -70,7 +70,7 @@ public class FileBackedBackendServicesRegistryFactoryTest {
     public void instantiatesFromYaml() {
 
         environment = new com.hotels.styx.Environment.Builder()
-                .configuration(StyxConfig.fromYaml("config: {originsFile: '${CONFIG_LOCATION:classpath:}/conf/origins/backend-factory-origins.yml'}"))
+                .configuration(StyxConfig.fromYaml("config: {originsFile: '${CONFIG_LOCATION:classpath:}/conf/origins/backend-factory-origins.yml'}", false))
                 .build();
 
         JsonNodeConfig factoryConfig = new JsonNodeConfig(environment.configuration().get("config", JsonNode.class).get());

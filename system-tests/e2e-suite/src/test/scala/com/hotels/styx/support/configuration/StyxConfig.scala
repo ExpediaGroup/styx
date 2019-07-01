@@ -152,7 +152,7 @@ case class StyxYamlConfig(yamlConfig: String,
 
   override def startServer(backendsRegistry: StyxService): StyxServer = {
     val config: YamlConfiguration = Config.config(yamlConfig)
-    val styxConfig = new com.hotels.styx.StyxConfig(yamlConfig)
+    val styxConfig = com.hotels.styx.StyxConfig.fromYaml(yamlConfig)
 
     val styxServer = new StyxServer(new StyxServerComponents.Builder()
       .styxConfig(styxConfig)
@@ -166,7 +166,7 @@ case class StyxYamlConfig(yamlConfig: String,
 
   override def startServer(): StyxServer = {
     val config: YamlConfiguration = Config.config(yamlConfig)
-    val styxConfig = new com.hotels.styx.StyxConfig(yamlConfig)
+    val styxConfig = com.hotels.styx.StyxConfig.fromYaml(yamlConfig)
 
     val styxServer = new StyxServer(new StyxServerComponents.Builder()
       .styxConfig(styxConfig)

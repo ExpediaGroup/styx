@@ -21,31 +21,30 @@ import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
 import com.hotels.styx.admin.AdminServerBuilder;
+import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.config.schema.SchemaValidationException;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
-import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
-import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.startup.ProxyServerSetUp;
 import com.hotels.styx.startup.StyxServerComponents;
 import io.netty.util.ResourceLeakDetector;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.InetSocketAddress;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 
-import static com.hotels.styx.ServerConfigSchema.validateServerConfiguration;
-import static com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSource;
-import static com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML;
+import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.shutdownLogging;
 import static com.hotels.styx.startup.CoreMetrics.registerCoreMetrics;
-import static com.hotels.styx.startup.StyxServerComponents.LoggingSetUp.FROM_CONFIG;
 import static io.netty.util.ResourceLeakDetector.Level.DISABLED;
 import static java.lang.Runtime.getRuntime;
 import static java.lang.String.format;
@@ -94,40 +93,42 @@ public final class StyxServer extends AbstractService {
         LOG.info("Styx configFileLocation={}", startupConfig.configFileLocation());
         LOG.info("Styx logConfigLocation={}", startupConfig.logConfigLocation());
 
-        YamlConfiguration yamlConfiguration = new ConfigurationParser.Builder<YamlConfiguration>()
-                .format(YAML)
-                .overrides(System.getProperties())
-                .build()
-                .parse(configSource(startupConfig.configFileLocation()));
-
-        validateConfiguration(startupConfig, yamlConfiguration);
-
         StyxServerComponents components = new StyxServerComponents.Builder()
-                .styxConfig(new StyxConfig(startupConfig, yamlConfiguration))
-                .loggingSetUp(FROM_CONFIG)
+                .styxConfig(parseConfiguration(startupConfig))
+                .startupConfig(startupConfig)
+                .loggingSetUp(environment -> initLogging(logConfigLocation(startupConfig), true))
                 .build();
 
         return new StyxServer(components, stopwatch);
     }
 
-    private static void validateConfiguration(StartupConfig startupConfig, YamlConfiguration yamlConfiguration) {
-        if (skipServerConfigValidation()) {
-            LOG.warn("Server configuration validation disabled. The Styx server configuration will not be validated.");
-        } else {
-            validateServerConfiguration(yamlConfiguration)
-                    .ifPresent(message -> {
-                        LOG.info("Styx server failed to start due to configuration error.");
-                        LOG.info("The configuration was sourced from " + startupConfig.configFileLocation());
-                        LOG.info(message);
-                        throw new SchemaValidationException(message);
-                    });
-            LOG.info("Configuration validated successfully.");
+    private static String logConfigLocation(StartupConfig startupConfig) {
+        return Paths.get(startupConfig
+                .logConfigLocation()
+                .url()
+                .getFile())
+                .toString();
+    }
+
+    @NotNull
+    private static StyxConfig parseConfiguration(StartupConfig startupConfig) {
+        String yaml = readYaml(startupConfig.configFileLocation());
+
+        try {
+            return StyxConfig.fromYaml(yaml);
+        } catch (SchemaValidationException e) {
+            String errorFormat = "Styx server failed to start due to configuration error in file [%s]: %s";
+
+            throw new SchemaValidationException(format(errorFormat, startupConfig.configFileLocation(), e.getMessage()));
         }
     }
 
-    private static boolean skipServerConfigValidation() {
-        String validate = getProperty(VALIDATE_SERVER_CONFIG_PROPERTY, "yes");
-        return "n".equals(validate) || "no".equals(validate);
+    private static String readYaml(Resource resource) {
+        try (Reader reader = new BufferedReader(new InputStreamReader(resource.inputStream()))) {
+            return CharStreams.toString(reader);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private final HttpServer proxyServer;

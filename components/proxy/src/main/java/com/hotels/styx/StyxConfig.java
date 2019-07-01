@@ -19,62 +19,49 @@ import com.google.common.base.Splitter;
 import com.hotels.styx.admin.AdminServerConfig;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.common.io.ResourceFactory;
 import com.hotels.styx.client.StyxHeaderConfig;
+import com.hotels.styx.common.io.ResourceFactory;
+import com.hotels.styx.config.schema.SchemaValidationException;
 import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration;
 import com.hotels.styx.proxy.ProxyServerConfig;
+import org.slf4j.Logger;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Optional;
 
-import static com.hotels.styx.StartupConfig.defaultStartupConfig;
+import static com.hotels.styx.ServerConfigSchema.validateServerConfiguration;
 import static com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSource;
 import static com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML;
+import static java.lang.System.getProperty;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Styx configuration.
  */
 public final class StyxConfig implements Configuration {
+    private static final Logger LOG = getLogger(StyxConfig.class);
+    private static final String VALIDATE_SERVER_CONFIG_PROPERTY = "validateServerConfig";
+
     public static final String NO_JVM_ROUTE_SET = "noJvmRouteSet";
 
-    private final StartupConfig startupConfig;
     private final Configuration configuration;
-
     private final ProxyServerConfig proxyServerConfig;
     private final AdminServerConfig adminServerConfig;
     private final StyxHeaderConfig styxHeaderConfig;
 
     public StyxConfig() {
-        this(defaultStartupConfig(), EMPTY_CONFIGURATION);
+        this(EMPTY_CONFIGURATION);
     }
 
     public StyxConfig(Configuration configuration) {
-        this(defaultStartupConfig(), configuration);
-    }
-
-    public StyxConfig(String yaml) {
-        this(loadYamlConfiguration(yaml));
-    }
-
-    public StyxConfig(StartupConfig startupConfig, Configuration configuration) {
-        this.startupConfig = requireNonNull(startupConfig);
         this.configuration = requireNonNull(configuration);
         this.adminServerConfig = get("admin", AdminServerConfig.class).orElseGet(AdminServerConfig::new);
         this.proxyServerConfig = get("proxy", ProxyServerConfig.class).orElseGet(ProxyServerConfig::new);
-
         this.styxHeaderConfig = get("styxHeaders", StyxHeaderConfig.class).orElseGet(StyxHeaderConfig::new);
-    }
-
-    private static Configuration loadYamlConfiguration(String yaml) {
-        return new ConfigurationParser.Builder<YamlConfiguration>()
-                .format(YAML)
-                .build()
-                .parse(configSource(yaml));
     }
 
     @Override
@@ -101,32 +88,22 @@ public final class StyxConfig implements Configuration {
     }
 
     public AdminServerConfig adminServerConfig() {
-        return this.adminServerConfig;
+        return adminServerConfig;
     }
 
     public int port() {
-        return proxyServerConfig.httpConnectorConfig().get().port();
+        return proxyServerConfig().httpConnectorConfig().get().port();
     }
 
     public Optional<String> applicationsConfigurationPath() {
         return get("originsFile", String.class);
     }
 
-    public Path rootPath() {
-        return this.startupConfig.styxHome();
-    }
+    public Iterable<Resource> versionFiles(StartupConfig startupConfig) {
+        Path rootPath = startupConfig.styxHome();
 
-    public String logConfigLocation() {
-        return Paths.get(startupConfig.logConfigLocation().url().getFile()).toString();
-    }
-
-    public StartupConfig startupConfig() {
-        return startupConfig;
-    }
-
-    public Iterable<Resource> versionFiles() {
         String versionFilesAsString = get("userDefined.versionFiles", String.class)
-                .orElseGet(() -> rootPath().resolve("styx-version.txt").toString());
+                .orElseGet(() -> rootPath.resolve("styx-version.txt").toString());
 
         Iterable<String> versionFiles = versionFiles(versionFilesAsString);
 
@@ -135,15 +112,37 @@ public final class StyxConfig implements Configuration {
                 .collect(toList());
     }
 
-    private static Iterable<String> versionFiles(String versionFilesAsString) {
-        return Splitter.on(',')
-                .trimResults()
-                .omitEmptyStrings()
-                .split(versionFilesAsString);
+    /**
+     * Parses StyxConfig from YAML. The system property "validateServerConfig" will be checked
+     * to determine if validation should be performed. A setting of "no", or "n" will disable it.
+     * If the property has any other value, or is absent, validation will be enabled.
+     *
+     * @param yamlText YAML
+     * @return parsed StyxConfig
+     */
+    public static StyxConfig fromYaml(String yamlText) {
+        return fromYaml(yamlText, !skipServerConfigValidation());
     }
 
-    public static StyxConfig fromYaml(String yamlText) {
-        return new StyxConfig(yamlText);
+    /**
+     * Parses StyxConfig from YAML. Validation can be enabled or disabled.
+     *
+     * @param yamlText YAML
+     * @param validateConfiguration true to validate, false to ignore invalid config
+     * @return parsed StyxConfig
+     */
+    public static StyxConfig fromYaml(String yamlText, boolean validateConfiguration) {
+        YamlConfiguration configuration = loadYamlConfiguration(yamlText);
+
+        if (validateConfiguration) {
+            validateServerConfiguration(configuration).ifPresent(it -> {
+                throw new SchemaValidationException(it);
+            });
+        } else {
+            LOG.warn("Styx config validation disabled");
+        }
+
+        return new StyxConfig(configuration);
     }
 
     public static StyxConfig defaultConfig() {
@@ -153,5 +152,25 @@ public final class StyxConfig implements Configuration {
     @Override
     public String toString() {
         return configuration.toString();
+    }
+
+    private static boolean skipServerConfigValidation() {
+        String validate = getProperty(VALIDATE_SERVER_CONFIG_PROPERTY, "yes");
+        return "n".equals(validate) || "no".equals(validate);
+    }
+
+    private static Iterable<String> versionFiles(String versionFilesAsString) {
+        return Splitter.on(',')
+                .trimResults()
+                .omitEmptyStrings()
+                .split(versionFilesAsString);
+    }
+
+    private static YamlConfiguration loadYamlConfiguration(String yaml) {
+        return new ConfigurationParser.Builder<YamlConfiguration>()
+                .format(YAML)
+                .overrides(System.getProperties())
+                .build()
+                .parse(configSource(yaml));
     }
 }

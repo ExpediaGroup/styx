@@ -323,7 +323,7 @@ public class ServiceProvisionTest {
 
 
     private static Environment environmentWithConfig(String yaml) {
-        Configuration conf = StyxConfig.fromYaml(yaml);
+        Configuration conf = StyxConfig.fromYaml(yaml, false);
 
         return new SimpleEnvironment.Builder()
                 .configuration(conf)

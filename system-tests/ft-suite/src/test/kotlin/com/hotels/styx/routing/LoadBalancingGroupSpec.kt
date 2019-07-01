@@ -57,6 +57,9 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                   connectors:
                                     http:
                                       port: 0
+                                      
+                                services:
+                                  factories: {}
 
                                 httpPipeline: hostProxy
                               """.trimIndent())
@@ -75,6 +78,9 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                   connectors:
                                     http:
                                       port: 0
+                                      
+                                services:
+                                  factories: {}
 
                                 routingObjects:
                                   app-A-01:
@@ -134,6 +140,9 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                   connectors:
                                     http:
                                       port: 0
+                                      
+                                services:
+                                  factories: {}
 
                                 httpPipeline:
                                   type: LoadBalancingGroup
@@ -206,6 +215,9 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                   connectors:
                                     http:
                                       port: 0
+                                      
+                                services:
+                                  factories: {}
 
                                 routingObjects:
                                     app-A-01:
@@ -327,6 +339,9 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                   connectors:
                                     http:
                                       port: 0
+                                      
+                                services:
+                                  factories: {}
 
                                 routingObjects:
                                     appA-01:

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ public class StyxConfigTest {
             "  reporting:\n" +
             "   prefix: \"STYXHPT\"\n";
 
-    final StyxConfig styxConfig = StyxConfig.fromYaml(yaml);
+    final StyxConfig styxConfig = StyxConfig.fromYaml(yaml, false);
     final ProxyServerConfig serverConfig = styxConfig.proxyServerConfig();
 
     @Test
@@ -65,7 +65,7 @@ public class StyxConfigTest {
                 "proxy:\n" +
                 "  bossThreadsCount: 32\n";
 
-        StyxConfig styxConfig = StyxConfig.fromYaml(yaml);
+        StyxConfig styxConfig = StyxConfig.fromYaml(yaml, false);
         assertThat(styxConfig.proxyServerConfig().bossThreadsCount(), is(32));
     }
 
@@ -80,7 +80,7 @@ public class StyxConfigTest {
                 "proxy:\n" +
                 "  workerThreadsCount: 32\n";
 
-        StyxConfig styxConfig = StyxConfig.fromYaml(yaml);
+        StyxConfig styxConfig = StyxConfig.fromYaml(yaml, false);
         assertThat(styxConfig.proxyServerConfig().workerThreadsCount(), is(32));
     }
 
@@ -95,7 +95,7 @@ public class StyxConfigTest {
                 "proxy:\n" +
                 "  workerThreadsCount: 0\n";
 
-        StyxConfig styxConfig = StyxConfig.fromYaml(yaml);
+        StyxConfig styxConfig = StyxConfig.fromYaml(yaml, false);
         assertThat(styxConfig.proxyServerConfig().workerThreadsCount(), is(HALF_OF_AVAILABLE_PROCESSORS));
     }
 
@@ -105,7 +105,7 @@ public class StyxConfigTest {
                 "proxy:\n" +
                 "  clientWorkerThreadsCount: 32\n";
 
-        StyxConfig styxConfig = StyxConfig.fromYaml(yaml);
+        StyxConfig styxConfig = StyxConfig.fromYaml(yaml, false);
         assertThat(styxConfig.proxyServerConfig().clientWorkerThreadsCount(), is(32));
     }
 
@@ -120,17 +120,17 @@ public class StyxConfigTest {
                 "proxy:\n" +
                 "  clientWorkerThreadsCount: 0\n";
 
-        StyxConfig styxConfig = StyxConfig.fromYaml(yaml);
+        StyxConfig styxConfig = StyxConfig.fromYaml(yaml, false);
         assertThat(styxConfig.proxyServerConfig().clientWorkerThreadsCount(), is(HALF_OF_AVAILABLE_PROCESSORS));
     }
 
     @Test
-    public void readsReadTimeoutValue() throws Exception {
+    public void readsReadTimeoutValue() {
         String yaml = "" +
                 "proxy:\n" +
                 "  requestTimeoutMillis: 10000\n";
 
-        StyxConfig styxConfig = StyxConfig.fromYaml(yaml);
+        StyxConfig styxConfig = StyxConfig.fromYaml(yaml, false);
 
         assertThat(styxConfig.get("proxy.requestTimeoutMillis", Integer.class), isValue(10000));
         assertThat(styxConfig.proxyServerConfig().requestTimeoutMillis(), is(10000));
