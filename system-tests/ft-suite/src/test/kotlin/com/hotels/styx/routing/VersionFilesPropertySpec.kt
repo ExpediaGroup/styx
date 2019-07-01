@@ -31,13 +31,11 @@ import java.nio.charset.StandardCharsets.UTF_8
 
 class VersionFilesPropertySpec : StringSpec() {
     val fileLocation = fixturesHome(VersionFilesPropertySpec::class.java,"/version.txt")
-    val originsOk = fixturesHome(VersionFilesPropertySpec::class.java, "/conf/origins/origins-correct.yml")
     val yamlText = """
-        services:
-          factories:
-            backendServiceRegistry:
-              class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry${'$'}Factory"
-              config: {originsFile: "$originsOk"}
+        proxy:
+          connectors:
+            http:
+              port: 0
 
         admin:
           connectors:

@@ -25,7 +25,6 @@ import com.hotels.styx.api.RequestCookie.requestCookie
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.server.HttpConnectorConfig
 import com.hotels.styx.servers.MockOriginServer
-import com.hotels.styx.support.ResourcePaths
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.newRoutingObject
 import com.hotels.styx.support.proxyHttpHostHeader
@@ -47,8 +46,6 @@ class LoadBalancingGroupSpec : FeatureSpec() {
 
     val client: StyxHttpClient = StyxHttpClient.Builder().build()
 
-    val originsOk = ResourcePaths.fixturesHome(ConditionRoutingSpec::class.java, "/conf/origins/origins-correct.yml")
-
     val styxServer = StyxServerProvider("""
                                 proxy:
                                   connectors:
@@ -60,12 +57,6 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                   connectors:
                                     http:
                                       port: 0
-
-                                services:
-                                  factories:
-                                    backendServiceRegistry:
-                                      class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry${'$'}Factory"
-                                      config: {originsFile: "$originsOk"}
 
                                 httpPipeline: hostProxy
                               """.trimIndent())
@@ -114,12 +105,6 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                     config:
                                       host: localhost:${appB01.port()}
 
-                                services:
-                                  factories:
-                                    backendServiceRegistry:
-                                      class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry${'$'}Factory"
-                                      config: {originsFile: "$originsOk"}
-
                                 httpPipeline:
                                   type: LoadBalancingGroup
                                   config:
@@ -150,12 +135,6 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                     http:
                                       port: 0
 
-                                services:
-                                  factories:
-                                    backendServiceRegistry:
-                                      class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry${'$'}Factory"
-                                      config: {originsFile: "$originsOk"}
-
                                 httpPipeline:
                                   type: LoadBalancingGroup
                                   config:
@@ -166,7 +145,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
 
                 withClue("Load balancing group shouldn't have been configured yet") {
                     client.send(get("/").header(HOST, styxServer().proxyHttpHostHeader()).build())
-                            .wait()
+                            .wait()!!
                             .let {
                                 it.status() shouldBe (BAD_GATEWAY)
                             }
@@ -185,7 +164,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                 withClue("Couldn't get a response from mock-server-01") {
                     eventually(1.seconds, AssertionError::class.java) {
                         client.send(get("/").header(HOST, styxServer().proxyHttpHostHeader()).build())
-                                .wait()
+                                .wait()!!
                                 .let {
                                     it.status() shouldBe OK
                                     it.bodyAs(UTF_8) shouldBe "mock-server-01"
@@ -197,7 +176,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
             scenario("... and detects removed origins") {
                 withClue("Origin is not reachable") {
                     client.send(get("/").header(HOST, styxServer().proxyHttpHostHeader()).build())
-                            .wait()
+                            .wait()!!
                             .let {
                                 it.status() shouldBe (OK)
                             }
@@ -207,7 +186,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
 
                 withClue("Origin is still reachable after removal") {
                     client.send(get("/").header(HOST, styxServer().proxyHttpHostHeader()).build())
-                            .wait()
+                            .wait()!!
                             .let {
                                 it.status() shouldBe (BAD_GATEWAY)
                             }
@@ -227,12 +206,6 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                   connectors:
                                     http:
                                       port: 0
-
-                                services:
-                                  factories:
-                                    backendServiceRegistry:
-                                      class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry${'$'}Factory"
-                                      config: {originsFile: "$originsOk"}
 
                                 routingObjects:
                                     app-A-01:
@@ -274,7 +247,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
 
             scenario("Responds with sticky session cookie when STICKY_SESSION_ENABLED=true") {
                 client.send(get("/sticky/").header(HOST, styxServer().proxyHttpHostHeader()).build())
-                        .wait()
+                        .wait()!!
                         .cookie("styx_origin_stickyApp")
                         .get()
                         .let {
@@ -288,7 +261,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
 
             scenario("Responds without sticky session cookie when sticky session is not enabled") {
                 client.send(get("/normal/").header(HOST, styxServer().proxyHttpHostHeader()).build())
-                        .wait()
+                        .wait()!!
                         .cookie("styx_origin_app") shouldBe Optional.empty()
             }
 
@@ -298,7 +271,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .cookies(requestCookie("styx_origin_stickyApp", "app-A-02"))
                             .build())
-                            .wait()
+                            .wait()!!
                             .let {
                                 it.status() shouldBe OK
                                 it.bodyAs(UTF_8) shouldBe ("mock-server-02")
@@ -315,7 +288,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                     requestCookie("other_cookie2", "bar"),
                                     requestCookie("styx_origin_stickyApp", "app-A-02"))
                             .build())
-                            .wait()
+                            .wait()!!
                             .let {
                                 it.status() shouldBe OK
                                 it.bodyAs(UTF_8) shouldBe ("mock-server-02")
@@ -330,7 +303,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                         .cookies(
                                 requestCookie("styx_origin_stickyApp", "NA"))
                         .build())
-                        .wait()
+                        .wait()!!
                         .let {
                             it.status() shouldBe OK
                             it.bodyAs(UTF_8) shouldMatch ("mock-server-0.")
@@ -354,12 +327,6 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                   connectors:
                                     http:
                                       port: 0
-
-                                services:
-                                  factories:
-                                    backendServiceRegistry:
-                                      class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry${'$'}Factory"
-                                      config: {originsFile: "$originsOk"}
 
                                 routingObjects:
                                     appA-01:
@@ -405,7 +372,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .cookies(requestCookie("orc", "appA-02"))
                             .build())
-                            .wait()
+                            .wait()!!
                             .let {
                                 it.status() shouldBe OK
                                 it.bodyAs(UTF_8) shouldBe "mock-server-02"
@@ -419,7 +386,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .cookies(requestCookie("orc", "appA-0(2|3)"))
                             .build())
-                            .wait()
+                            .wait()!!
                             .let {
                                 it.status() shouldBe OK
                                 it.bodyAs(UTF_8) shouldMatch "mock-server-0[23]"
@@ -433,7 +400,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .cookies(requestCookie("orc", "(?!)"))
                             .build())
-                            .wait()
+                            .wait()!!
                             .let {
                                 it.status() shouldBe BAD_GATEWAY
                             }
@@ -446,7 +413,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .cookies(requestCookie("orc", "appA-02,appA-0[13]"))
                             .build())
-                            .wait()
+                            .wait()!!
                             .let {
                                 it.status() shouldBe OK
                                 it.bodyAs(UTF_8) shouldMatch "mock-server-0[123]"

@@ -103,7 +103,7 @@ fun StyxServer.metrics(): Map<String, Map<String, Any>> {
             .send(HttpRequest.get("/admin/metrics")
                     .header(HttpHeaderNames.HOST, this.adminHostHeader())
                     .build())
-            .wait()
+            .wait()!!
             .bodyAs(StandardCharsets.UTF_8)
 
     return flattenMetricsMap(metricsText) as Map<String, Map<String, Any>>

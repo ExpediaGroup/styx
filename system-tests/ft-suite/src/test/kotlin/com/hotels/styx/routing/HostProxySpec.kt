@@ -27,7 +27,6 @@ import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.server.HttpConnectorConfig
 import com.hotels.styx.servers.MockOriginServer
-import com.hotels.styx.support.ResourcePaths
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.metrics
 import com.hotels.styx.support.newRoutingObject
@@ -55,8 +54,6 @@ class HostProxySpec : FeatureSpec() {
     // Run the tests sequentially:
     override fun isolationMode(): IsolationMode = IsolationMode.SingleInstance
 
-    val originsOk = ResourcePaths.fixturesHome(ConditionRoutingSpec::class.java, "/conf/origins/origins-correct.yml")
-
     override fun beforeSpec(spec: Spec) {
         testServer.restart()
         styxServer.restart()
@@ -82,7 +79,7 @@ class HostProxySpec : FeatureSpec() {
                         """.trimIndent()) shouldBe CREATED
 
                     client.send(get("/").header(HOST, styxServer().proxyHttpHostHeader()).build())
-                            .wait()
+                            .wait()!!
                             .status() shouldBe OK
 
                     styxServer().removeRoutingObject("hostProxy")
@@ -105,7 +102,7 @@ class HostProxySpec : FeatureSpec() {
                     client.send(get("/slow/n")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
-                            .wait()
+                            .wait()!!
                             .status() shouldBe GATEWAY_TIMEOUT
                 }.let { delay ->
                     delay shouldBe (beGreaterThan(600) and beLessThan(1000))
@@ -185,7 +182,7 @@ class HostProxySpec : FeatureSpec() {
                 client.send(get("/")
                         .header(HOST, styxServer().proxyHttpHostHeader())
                         .build())
-                        .wait()
+                        .wait()!!
                         .status() shouldBe OK
 
                 eventually(1.seconds, AssertionError::class.java) {
@@ -201,7 +198,7 @@ class HostProxySpec : FeatureSpec() {
                 client.send(get("/")
                         .header(HOST, styxServer().proxyHttpHostHeader())
                         .build())
-                        .wait()
+                        .wait()!!
                         .status() shouldBe OK
 
                 eventually(1.seconds, AssertionError::class.java) {
@@ -349,12 +346,6 @@ class HostProxySpec : FeatureSpec() {
                                     http:
                                       port: 0
 
-                                services:
-                                  factories:
-                                    backendServiceRegistry:
-                                      class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry${'$'}Factory"
-                                      config: {originsFile: "$originsOk"}
-
                                 httpPipeline: hostProxy
                               """.trimIndent())
 
@@ -370,12 +361,6 @@ class HostProxySpec : FeatureSpec() {
                                   connectors:
                                     http:
                                       port: 0
-
-                                services:
-                                  factories:
-                                    backendServiceRegistry:
-                                      class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry${'$'}Factory"
-                                      config: {originsFile: "$originsOk"}
 
                                 httpPipeline:
                                   type: ConditionRouter
