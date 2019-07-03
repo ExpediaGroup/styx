@@ -93,6 +93,7 @@ class TimeoutsSpec extends FunSpec
     }
 
     describe("Response timeouts") {
+
       it("should return a 504 if a backend takes longer than the configured response timeout to start returning a response") {
         val testClient = aggregatingTestClient("localhost", styxServer.httpPort)
 
@@ -101,9 +102,9 @@ class TimeoutsSpec extends FunSpec
           val slowRequest = new DefaultFullHttpRequest(HTTP_1_1, HttpMethod.GET, "/slowResponseHeader")
           slowRequest.headers().add(HOST, styxServer.proxyHost)
 
-          testClient.write(slowRequest)
 
           val responseTime = time {
+            testClient.write(slowRequest)
             val response = testClient.waitForResponse().asInstanceOf[FullHttpResponse]
             assert(response.status() == GATEWAY_TIMEOUT)
           }
