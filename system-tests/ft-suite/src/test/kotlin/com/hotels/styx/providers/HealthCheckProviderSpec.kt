@@ -87,8 +87,6 @@ class HealthCheckProviderSpec : FeatureSpec() {
                   origins: aaa
             """.trimIndent())
 
-    val httpClient = StyxHttpClient.Builder().build()
-
     fun hostProxy(tag: String, remote: StyxServerProvider) = """
         type: HostProxy
         tags:

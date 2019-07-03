@@ -48,13 +48,13 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.atomic.AtomicReference
 
 internal class HealthCheckMonitoringService(
-        val objectStore: StyxObjectStore<RoutingObjectRecord>,
-        val application: String,
+        private val objectStore: StyxObjectStore<RoutingObjectRecord>,
+        private val application: String,
         urlPath: String,
-        val period: Duration,
+        private val period: Duration,
         activeThreshold: Int,
         inactiveThreshold: Int,
-        val executor: ScheduledExecutorService) : AbstractStyxService("HealthCheckMonitoringService") {
+        private val executor: ScheduledExecutorService) : AbstractStyxService("HealthCheckMonitoringService") {
 
     companion object {
         val SCHEMA = SchemaDsl.`object`(

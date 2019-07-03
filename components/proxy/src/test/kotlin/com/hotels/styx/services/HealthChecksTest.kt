@@ -121,42 +121,6 @@ class HealthChecksTest : FeatureSpec({
         }
     }
 
-    feature("CheckOriginState") {
-        val db = styxObjectStore<RoutingObjectRecord> {
-            "aaa-01" to RoutingObjectRecord.create("StaticResponse", setOf("aaa"), mockk(), StaticResponseHandler(200, "hello"))
-            "aaa-02" to RoutingObjectRecord.create("StaticResponse", setOf("aaa"), mockk(), StaticResponseHandler(200, "hello"))
-            "aaa-03" to RoutingObjectRecord.create("StaticResponse", setOf("aaa"), mockk(), StaticResponseHandler(200, "hello"))
-            "aaa-04" to RoutingObjectRecord.create("StaticResponse", setOf("aaa"), mockk(), StaticResponseHandler(200, "hello"))
-        }
-
-        val monitoredObjects = AtomicReference<PSet<String>>(HashTreePSet.empty())
-        val objectStates = AtomicReference<PMap<String, ObjectHealth>>(HashTreePMap.empty())
-
-        db.watch()
-                .toFlux()
-                .subscribe { snapshot ->
-
-                    val names = snapshot.entrySet()
-                            .filter { it.value.tags.contains("aaa") }
-                            .filter { !it.value.tags.contains("state:disabled") }
-                            .map { it.key }
-                            .toSet()
-
-                    val v2 = HashTreePSet.from(names)
-                    val v1 = monitoredObjects.get()
-
-                    val newObjects = v2.minusAll(v1)
-                    val removedObjects = v1.minusAll(v2)
-
-                    objectStates.updateAndGet {
-                        it.minusAll(removedObjects)
-                                .plusAll(newObjects
-                                        .map { it to ObjectInactive(0) }
-                                        .toMap())
-                    }
-                }
-    }
-
 })
 
 internal fun StyxObjectStore<RoutingObjectRecord>.record(key: String, type: String, tags: Set<String>, config: JsonNode, routingObject: RoutingObject) {

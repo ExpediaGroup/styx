@@ -170,7 +170,6 @@ class StyxObjectStore<T> : ObjectStore<T> {
 
 
     private fun entrySet(snapshot: PMap<String, T>): Collection<Map.Entry<String, T>> = snapshot
-            .mapValues { it.value }
             .entries
 }
 

@@ -41,7 +41,7 @@ internal class ServiceProviderMonitor(name: String, val serviceProviderDatabase:
                         .forEach { name, record ->
                             val service = record.styxService
                             service.start()
-                                    .thenAccept({ ignore -> LOG.debug("Service '{}/{}' started", record.type, name) })
+                                    .thenAccept { LOG.debug("Service '{}/{}' started", record.type, name) }
                         }
             }
 
@@ -50,7 +50,7 @@ internal class ServiceProviderMonitor(name: String, val serviceProviderDatabase:
                         .forEach { name, record ->
                             val service = record.styxService
                             service.stop()
-                                    .thenAccept({ ignore -> LOG.debug("Service '{}/{}' stopped", record.type, name) })
+                                    .thenAccept { LOG.debug("Service '{}/{}' stopped", record.type, name) }
                         }
             }
 }

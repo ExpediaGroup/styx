@@ -48,7 +48,6 @@ import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -66,6 +65,7 @@ import static com.hotels.styx.startup.extensions.PluginLoadingForStartup.loadPlu
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static java.util.stream.Collectors.toList;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Configuration required to set-up the core Styx services, such as the proxy and admin servers.
@@ -82,7 +82,7 @@ public class StyxServerComponents {
     private final StartupConfig startupConfig;
     private final Map<String, RoutingObjectFactory> routingObjectFactories;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(StyxServerComponents.class);
+    private static final Logger LOGGER = getLogger(StyxServerComponents.class);
 
     private StyxServerComponents(Builder builder) {
         StyxConfig styxConfig = requireNonNull(builder.styxConfig);

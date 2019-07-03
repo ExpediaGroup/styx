@@ -87,6 +87,21 @@ public class HttpInterceptorPipeline implements RoutingObject {
     public static class Factory implements RoutingObjectFactory {
 
         // Note: `pipeline` has to represent a JSON array:
+        @Override
+        public RoutingObject build(List<String> fullName, Context context, StyxObjectDefinition configBlock) {
+            JsonNode pipeline = configBlock.config().get("pipeline");
+            List<HttpInterceptor> interceptors = getHttpInterceptors(append(fullName, "pipeline"), toMap(context.plugins()), context.interceptorFactories(), pipeline);
+
+            JsonNode handlerConfig = new JsonNodeConfig(configBlock.config())
+                    .get("handler", JsonNode.class)
+                    .orElseThrow(() -> missingAttributeError(configBlock, join(".", fullName), "handler"));
+
+            return new HttpInterceptorPipeline(
+                    interceptors,
+                    Builtins.build(append(fullName, "handler"), context, toRoutingConfigNode(handlerConfig)),
+                    context.requestTracking());
+        }
+
         private static List<StyxObjectConfiguration> styxHttpPipeline(JsonNode pipeline) {
             return stream(pipeline.spliterator(), false)
                     .map(RoutingConfigParser::toRoutingConfigNode)
@@ -126,21 +141,6 @@ public class HttpInterceptorPipeline implements RoutingObject {
                     }
                 }
             });
-        }
-
-        @Override
-        public RoutingObject build(List<String> fullName, Context context, StyxObjectDefinition configBlock) {
-            JsonNode pipeline = configBlock.config().get("pipeline");
-            List<HttpInterceptor> interceptors = getHttpInterceptors(append(fullName, "pipeline"), toMap(context.plugins()), context.interceptorFactories(), pipeline);
-
-            JsonNode handlerConfig = new JsonNodeConfig(configBlock.config())
-                    .get("handler", JsonNode.class)
-                    .orElseThrow(() -> missingAttributeError(configBlock, join(".", fullName), "handler"));
-
-            return new HttpInterceptorPipeline(
-                    interceptors,
-                    Builtins.build(append(fullName, "handler"), context, toRoutingConfigNode(handlerConfig)),
-                    context.requestTracking());
         }
 
         private static Map<String, NamedPlugin> toMap(Iterable<NamedPlugin> plugins) {

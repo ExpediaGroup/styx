@@ -36,7 +36,7 @@ import io.mockk.verify
 import java.util.Optional
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeUnit.MILLISECONDS
 
 class HealthCheckMonitoringServiceTest : FeatureSpec({
 
@@ -48,20 +48,20 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
         }
 
         val monitor = HealthCheckMonitoringService(
-                mockk(relaxed = true) {
+                objectStore = mockk(relaxed = true) {
                     every { entrySet() } returns emptyList()
                 },
-                "aaa",
-                "/",
-                100.milliseconds,
-                2,
-                2,
-                executor
+                application = "aaa",
+                urlPath = "/",
+                period = 100.milliseconds,
+                activeThreshold = 2,
+                inactiveThreshold = 2,
+                executor = executor
         )
 
         scenario("Starts scheduled executor") {
             monitor.start().get()
-            verify { executor.scheduleAtFixedRate(any(), 100.milliseconds.toMillis(), 100.milliseconds.toMillis(), TimeUnit.MILLISECONDS) }
+            verify { executor.scheduleAtFixedRate(any(), 100, 100, MILLISECONDS) }
         }
 
         scenario("Stops scheduled executor") {
@@ -160,7 +160,7 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
             verify(exactly = 1) { handler01.handle(any(), any()) }
             verify(exactly = 1) { handler01.handle(any(), any()) }
 
-            probeRequests.map { it.url().path() } shouldBe(listOf("/healthCheck.txt", "/healthCheck.txt"))
+            probeRequests.map { it.url().path() } shouldBe (listOf("/healthCheck.txt", "/healthCheck.txt"))
         }
 
         scenario("... and re-tags after each probe") {
