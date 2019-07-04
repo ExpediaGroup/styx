@@ -1,4 +1,4 @@
-ARG TAG=11-jre-slim
+ARG TAG=11-jdk
 FROM openjdk:${TAG}
 
 ARG STYX_VERSION=""
