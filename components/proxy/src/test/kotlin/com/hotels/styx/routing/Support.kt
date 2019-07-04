@@ -20,6 +20,7 @@ import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpHandler
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpResponse
+import com.hotels.styx.api.HttpResponse.response
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.WebServiceHandler
@@ -72,6 +73,25 @@ fun routeLookup(block: HashMap<StyxObjectReference, RoutingObject>.() -> Unit): 
     return RouteRefLookup { refLookup[it] }
 }
 
+/**
+ * Creates a mock routing object with specified capturing behaviour for incoming HTTP requests.
+ *
+ * Three possible capture behavours are:
+ *
+ * CaptureSlot - captures only one LiveHttpRequest
+ * CaptureList - captures all LiveHttpRequest messages into a list
+ * DontCapture - don't capture anything
+ *
+ * An example:
+ *
+ *         val probeRequests = mutableListOf<LiveHttpRequest>()
+ *
+ *         val handler = mockObject("handler-01", CaptureList(probeRequests))
+ *
+ *         verify(exactly = 1) { handler.handle(any(), any()) }
+ *         probeRequests.map { it.url().path() } shouldBe (listOf("/healthCheck.txt", "/healthCheck.txt"))
+ *
+ */
 fun mockObject(content: String = "", capture: ArgumentCapture = DontCapture) = mockk<RoutingObject> {
     every {
         handle(when {
@@ -79,21 +99,29 @@ fun mockObject(content: String = "", capture: ArgumentCapture = DontCapture) = m
             capture is CaptureList -> capture(capture.list)
             else -> any()
         }, any())
-    } returns Eventual.of(HttpResponse.response(OK).body(content, UTF_8).build().stream())
+    } returns Eventual.of(response(OK).body(content, UTF_8).build().stream())
 
     every { stop() } returns CompletableFuture.completedFuture(null)
-}
-
-fun failingMockObject() = mockk<RoutingObject> {
-    every { handle(any(), any()) } returns Eventual.error(RuntimeException("Error occurred!"))
-    every { stop() } returns CompletableFuture.completedFuture(null)
-}
-
-fun mockObjectFactory(objects: List<RoutingObject>) = mockk<RoutingObjectFactory> {
-    every { build(any(), any(), any()) } returnsMany objects
 }
 
 sealed class ArgumentCapture
 data class CaptureSlot(val slot: CapturingSlot<LiveHttpRequest>) : ArgumentCapture()
 data class CaptureList(val list: MutableList<LiveHttpRequest>) : ArgumentCapture()
 object DontCapture : ArgumentCapture()
+
+
+/**
+ * Createa a mock Routing Object that simulates request processing failures.
+ */
+fun failingMockObject() = mockk<RoutingObject> {
+    every { handle(any(), any()) } returns Eventual.error(RuntimeException("Error occurred!"))
+    every { stop() } returns CompletableFuture.completedFuture(null)
+}
+
+/**
+ * Creates a mock RoutingObjectFactory. Takes a list of routing objects as its sole argument.
+ * Each factory invocation will return next object from the list.
+ */
+fun mockObjectFactory(objects: List<RoutingObject>) = mockk<RoutingObjectFactory> {
+    every { build(any(), any(), any()) } returnsMany objects
+}
