@@ -97,6 +97,15 @@ public final class Builtins {
     private Builtins() {
     }
 
+    /**
+     * Buiulds a routing object.
+     *
+     * @param parents fully qualified attribute name
+     * @param context a context to styx environment
+     * @param configNode routing object configuration
+     *
+     * @return a routing object
+     */
     public static RoutingObject build(List<String> parents, RoutingObjectFactory.Context context, StyxObjectConfiguration configNode) {
         if (configNode instanceof StyxObjectDefinition) {
             StyxObjectDefinition configBlock = (StyxObjectDefinition) configNode;
@@ -115,6 +124,14 @@ public final class Builtins {
         }
     }
 
+    /**
+     * Builds a HTTP interceptor.
+     *
+     * @param configBlock configuration
+     * @param interceptorFactories built-in interceptor factories by name
+     *
+     * @return an HTTP interceptor
+     */
     public static HttpInterceptor build(StyxObjectConfiguration configBlock, Map<String, HttpInterceptorFactory> interceptorFactories) {
         if (configBlock instanceof StyxObjectDefinition) {
             StyxObjectDefinition block = (StyxObjectDefinition) configBlock;
@@ -129,6 +146,16 @@ public final class Builtins {
         }
     }
 
+    /**
+     * Builds a Styx service.
+     *
+     * @param providerDef Styx service object configuration
+     * @param factories service provider factories by name
+     * @param environment Styx environment
+     * @param objectStore Styx object store
+     *
+     * @return a Styx service
+     */
     public static StyxService build(StyxObjectDefinition providerDef, Map<String, ServiceProviderFactory> factories, Environment environment, StyxObjectStore<RoutingObjectRecord> objectStore) {
         ServiceProviderFactory constructor = factories.get(providerDef.type());
         checkArgument(constructor != null, format("Unknown service provider type '%s' for '%s' provider", providerDef.type(), providerDef.name()));

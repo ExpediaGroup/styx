@@ -142,6 +142,9 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                     http:
                                       port: 0
 
+                                services:
+                                  factories: {}
+
                                 routingObjects:
                                   app-A-01:
                                     type: HostProxy
@@ -172,12 +175,6 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                       - App-B
                                     config:
                                       host: localhost:${appB01.port()}
-
-                                services:
-                                  factories:
-                                    backendServiceRegistry:
-                                      class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry${'$'}Factory"
-                                      config: {originsFile: "$originsOk"}
 
                                 httpPipeline:
                                   type: LoadBalancingGroup

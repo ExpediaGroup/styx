@@ -22,18 +22,18 @@ import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.db.StyxObjectStore;
 
 /**
- * A generic factory that can be implemented in order to facilitate creating objects whose type is not known
+ * A generic factory that can be implemented to create objects whose type is not known
  * until read from configuration.
  *
  */
 public interface ServiceProviderFactory {
     /**
-     * Create an instance of the product.
+     * Create a service provider instance.
      *
      * @param environment          environment
-     * @param serviceConfiguration configuration specific to the factory product
+     * @param serviceConfiguration Styx service configuration
      *
-     * @return product instance
+     * @return Styx service instance
      */
     StyxService create(Environment environment, JsonNode serviceConfiguration, StyxObjectStore<RoutingObjectRecord> routeDatabase);
 }

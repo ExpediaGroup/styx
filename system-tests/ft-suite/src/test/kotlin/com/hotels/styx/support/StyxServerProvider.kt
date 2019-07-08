@@ -56,7 +56,7 @@ class StyxServerProvider(val defaultConfig: String, val defaultAdditionalRouting
         }
 
         val newServer = StyxServer(StyxServerComponents.Builder()
-                .styxConfig(StyxConfig.fromYaml(configuration))
+                .styxConfig(StyxConfig.fromYaml(configuration, false))
                 .additionalRoutingObjects(additionalRoutingObjects)
                 .build())
         newServer.startAsync()?.awaitRunning()
