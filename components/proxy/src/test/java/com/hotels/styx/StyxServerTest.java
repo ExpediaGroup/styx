@@ -41,16 +41,21 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.lang.reflect.Field;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import static ch.qos.logback.classic.Level.ERROR;
+import static ch.qos.logback.classic.Level.INFO;
 import static com.google.common.util.concurrent.Service.State.FAILED;
 import static com.hotels.styx.api.configuration.Configuration.EMPTY_CONFIGURATION;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
+import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static io.netty.util.ResourceLeakDetector.Level.DISABLED;
+import static java.lang.System.clearProperty;
 import static java.lang.System.currentTimeMillis;
+import static java.lang.System.setProperty;
 import static java.util.Collections.emptyList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
@@ -177,6 +182,38 @@ public class StyxServerTest {
         }
     }
 
+    @Test
+    public void startsFromMain() {
+        try {
+            setProperty("UNIT_TESTING_MODE", "true");
+            setProperty("STYX_HOME", fixturesHome());
+            StyxServer.main(new String[0]);
+
+            eventually(() -> assertThat(log.log(), hasItem(loggingEvent(INFO, "Started Styx server in \\d+ ms"))));
+        } finally {
+            clearProperty("STYX_HOME");
+        }
+    }
+
+    @Test
+    public void logsExceptionWhenConfigurationIsInvalid() {
+        try {
+            setProperty("UNIT_TESTING_MODE", "true");
+            setProperty("STYX_HOME", fixturesHome());
+            setProperty("CONFIG_FILE_LOCATION", Paths.get(fixturesHome()).resolve("conf/invalid.yml").toString());
+
+            Runtime runtime = captureSystemExit(() -> StyxServer.main(new String[0]));
+            verify(runtime).exit(2);
+
+            eventually(() -> assertThat(log.log(), hasItem(loggingEvent(ERROR,
+                    "Styx server failed to start due to configuration error in file .+: Missing a mandatory field 'proxy'"
+            ))));
+        } finally {
+            clearProperty("STYX_HOME");
+            clearProperty("CONFIG_FILE_LOCATION");
+        }
+    }
+
     private static StyxService registryThatFailsToStart() {
         Registry<BackendService> registry = mock(Registry.class);
         when(registry.get()).thenReturn(emptyList());
@@ -256,15 +293,16 @@ public class StyxServerTest {
 
     private static void eventually(Runnable block) {
         long startTime = currentTimeMillis();
+        Throwable lastError = null;
         while (currentTimeMillis() - startTime < 3000) {
             try {
                 block.run();
                 return;
-            } catch (Exception e) {
-                // pass
+            } catch (AssertionError | Exception e) {
+                lastError = e;
             }
         }
-        throw new AssertionError("Eventually block did not complete in 3 seconds.");
+        throw new AssertionError("Eventually block did not complete in 3 seconds.", lastError);
     }
 
     private static Runtime captureSystemExit(Runnable block) {

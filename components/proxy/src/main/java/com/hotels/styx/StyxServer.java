@@ -41,6 +41,7 @@ import java.io.Reader;
 import java.net.InetSocketAddress;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Optional;
 
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.shutdownLogging;
@@ -56,7 +57,6 @@ import static org.slf4j.LoggerFactory.getLogger;
  * Entry point for styx proxy server.
  */
 public final class StyxServer extends AbstractService {
-    private static final String VALIDATE_SERVER_CONFIG_PROPERTY = "validateServerConfig";
     private static final Logger LOG = getLogger(StyxServer.class);
 
     static {
@@ -77,6 +77,7 @@ public final class StyxServer extends AbstractService {
 
             styxServer.startAsync().awaitRunning();
         } catch (SchemaValidationException cause) {
+            LOG.error(cause.getMessage());
             System.exit(2);
         } catch (Throwable cause) {
             LOG.error("Error in Styx server startup.", cause);
@@ -96,10 +97,23 @@ public final class StyxServer extends AbstractService {
         StyxServerComponents components = new StyxServerComponents.Builder()
                 .styxConfig(parseConfiguration(startupConfig))
                 .startupConfig(startupConfig)
-                .loggingSetUp(environment -> initLogging(logConfigLocation(startupConfig), true))
+                .loggingSetUp(environment -> activateLogbackConfigurer(startupConfig))
                 .build();
 
         return new StyxServer(components, stopwatch);
+    }
+
+    private static void activateLogbackConfigurer(StartupConfig startupConfig) {
+        // the LOGBackConfigurer overrides the logger, so we can't use LoggingTestSupport in unit tests if it runs.
+        if (!isUnitTestingMode()) {
+            initLogging(logConfigLocation(startupConfig), true);
+        }
+    }
+
+    private static boolean isUnitTestingMode() {
+        return Optional.ofNullable(System.getProperty("UNIT_TESTING_MODE"))
+                .filter(value -> !value.isEmpty())
+                .isPresent();
     }
 
     private static String logConfigLocation(StartupConfig startupConfig) {
