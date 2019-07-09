@@ -36,7 +36,9 @@ import com.hotels.styx.startup.ProxyServerSetUp;
 import com.hotels.styx.startup.StyxServerComponents;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import io.netty.util.ResourceLeakDetector;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -78,6 +80,18 @@ public class StyxServerTest {
     public void removeAppender() {
         log.stop();
         pssLog.stop();
+    }
+
+    @BeforeClass
+    public void bypassLogbackConfigurer() {
+        // Only affects running StyxServer from main method
+        setProperty("UNIT_TESTING_MODE", "true");
+    }
+
+    @AfterClass
+    public void doneBypassingLogbackConfigurer() {
+        // Only affects running StyxServer from main method
+        clearProperty("UNIT_TESTING_MODE");
     }
 
     @Test
@@ -185,7 +199,6 @@ public class StyxServerTest {
     @Test
     public void startsFromMain() {
         try {
-            setProperty("UNIT_TESTING_MODE", "true");
             setProperty("STYX_HOME", fixturesHome());
             StyxServer.main(new String[0]);
 
@@ -198,7 +211,6 @@ public class StyxServerTest {
     @Test
     public void logsExceptionWhenConfigurationIsInvalid() {
         try {
-            setProperty("UNIT_TESTING_MODE", "true");
             setProperty("STYX_HOME", fixturesHome());
             setProperty("CONFIG_FILE_LOCATION", Paths.get(fixturesHome()).resolve("conf/invalid.yml").toString());
 
