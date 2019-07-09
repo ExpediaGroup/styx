@@ -16,12 +16,13 @@
 package com.hotels.styx.proxy;
 
 import com.codahale.metrics.Counter;
+import com.codahale.metrics.Meter;
+import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.server.HttpErrorStatusListener;
-import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.plugins.spi.PluginException;
+import com.hotels.styx.server.HttpErrorStatusListener;
 
 import java.net.InetSocketAddress;
 
@@ -33,6 +34,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class HttpErrorStatusMetrics implements HttpErrorStatusListener {
     private final MetricRegistry metricRegistry;
+    private final Meter styxErrors;
 
     /**
      * Construct a reporter with a given registry to report to.
@@ -41,6 +43,10 @@ public class HttpErrorStatusMetrics implements HttpErrorStatusListener {
      */
     public HttpErrorStatusMetrics(MetricRegistry metricRegistry) {
         this.metricRegistry = requireNonNull(metricRegistry);
+
+        // This means we can find the expected metric names in the registry, even before the corresponding events have occurred
+        preregisterMetrics();
+        styxErrors = metricRegistry.meter("styx.errors");
     }
 
     @Override
@@ -79,7 +85,7 @@ public class HttpErrorStatusMetrics implements HttpErrorStatusListener {
     private void incrementExceptionCounter(Throwable cause, HttpResponseStatus status) {
         if (!(cause instanceof PluginException)) {
             if (INTERNAL_SERVER_ERROR.equals(status)) {
-                metricRegistry.meter("styx.errors").mark();
+                styxErrors.mark();
             }
             exceptionCounter(cause).inc();
         }
@@ -103,4 +109,8 @@ public class HttpErrorStatusMetrics implements HttpErrorStatusListener {
         }
     }
 
+    private void preregisterMetrics() {
+        metricRegistry.counter("styx.response.status.200");
+        metricRegistry.counter("styx.exception." + formattedExceptionName(Exception.class));
+    }
 }
