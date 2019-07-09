@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -109,6 +109,7 @@ public class HttpErrorStatusMetrics implements HttpErrorStatusListener {
         }
     }
 
+    // we can't preregister every possible name in these categories, but getting the prefix there will make things easier
     private void preregisterMetrics() {
         metricRegistry.counter("styx.response.status.200");
         metricRegistry.counter("styx.exception." + formattedExceptionName(Exception.class));

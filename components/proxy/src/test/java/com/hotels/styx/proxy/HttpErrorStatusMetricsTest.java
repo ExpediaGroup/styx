@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,22 +16,27 @@
 package com.hotels.styx.proxy;
 
 import com.codahale.metrics.Counter;
+import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricFilter;
-import com.hotels.styx.server.HttpErrorStatusListener;
-import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.HttpResponseStatus;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.PluginException;
+import com.hotels.styx.server.HttpErrorStatusListener;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.net.InetSocketAddress;
 import java.util.Collection;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
-import static com.hotels.styx.api.LiveHttpRequest.get;
+import static com.hotels.styx.CustomHttpResponseStatus.ORIGIN_CONNECTION_REFUSED;
+import static com.hotels.styx.CustomHttpResponseStatus.ORIGIN_CONNECTION_TIMED_OUT;
+import static com.hotels.styx.CustomHttpResponseStatus.ORIGIN_SERVER_TIMED_OUT;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.CONFLICT;
@@ -56,14 +61,14 @@ import static com.hotels.styx.api.HttpResponseStatus.REQUEST_TIMEOUT;
 import static com.hotels.styx.api.HttpResponseStatus.REQUEST_URI_TOO_LONG;
 import static com.hotels.styx.api.HttpResponseStatus.UNAUTHORIZED;
 import static com.hotels.styx.api.HttpResponseStatus.UNSUPPORTED_MEDIA_TYPE;
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.proxy.HttpErrorStatusMetrics.formattedExceptionName;
-import static com.hotels.styx.CustomHttpResponseStatus.ORIGIN_CONNECTION_REFUSED;
-import static com.hotels.styx.CustomHttpResponseStatus.ORIGIN_CONNECTION_TIMED_OUT;
-import static com.hotels.styx.CustomHttpResponseStatus.ORIGIN_SERVER_TIMED_OUT;
+import static com.hotels.styx.support.matchers.IsOptional.isPresent;
 import static java.lang.System.arraycopy;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
@@ -77,6 +82,18 @@ public class HttpErrorStatusMetricsTest {
     public void setUp() {
         registry = new CodaHaleMetricRegistry();
         errorListener = new HttpErrorStatusMetrics(registry);
+    }
+
+    @Test
+    public void metricsArePreRegistered() {
+        assertThat(registry.getMeters().get("styx.errors"), is(instanceOf(Meter.class)));
+        assertThat(registry.getMeters().get("styx.errors").getCount(), is(0L));
+
+        assertThat(registry.getCounters().get("styx.response.status.200"), is(instanceOf(Counter.class)));
+        assertThat(registry.getCounters().get("styx.response.status.200").getCount(), is(0L));
+
+        assertThat(registry.getCounters().get("styx.exception.java_lang_Exception"), is(instanceOf(Counter.class)));
+        assertThat(registry.getCounters().get("styx.exception.java_lang_Exception").getCount(), is(0L));
     }
 
     @Test(dataProvider = "non500ServerErrors")
