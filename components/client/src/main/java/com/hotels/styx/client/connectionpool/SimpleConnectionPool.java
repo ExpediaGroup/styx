@@ -22,7 +22,6 @@ import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
 import org.reactivestreams.Publisher;
-import org.slf4j.Logger;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoSink;
 
@@ -33,13 +32,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
-import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * A connection pool implementation.
  */
 public class SimpleConnectionPool implements ConnectionPool, Connection.Listener {
-    private static final Logger LOG = getLogger(SimpleConnectionPool.class);
     private static final int MAX_ATTEMPTS = 3;
 
     private final ConnectionPoolSettings poolSettings;
@@ -57,8 +54,7 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
     private final AtomicInteger connectionFailures = new AtomicInteger();
     private final AtomicInteger connectionsInEstablishment = new AtomicInteger();
 
-
-    public SimpleConnectionPool(Origin origin, ConnectionPoolSettings poolSettings, Connection.Factory connectionFactory) {
+    SimpleConnectionPool(Origin origin, ConnectionPoolSettings poolSettings, Connection.Factory connectionFactory) {
         this.origin = requireNonNull(origin);
         this.poolSettings = requireNonNull(poolSettings);
         this.connectionSettings = new ConnectionSettings(poolSettings.connectTimeoutMillis());
@@ -187,6 +183,13 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
         return this.stats;
     }
 
+    private double utilisation() {
+        int usage = borrowedCount.get() + waitingSubscribers.size();
+        int limit = poolSettings.maxConnectionsPerHost() + poolSettings.maxPendingConnectionsPerHost();
+
+        return usage / limit;
+    }
+
     @VisibleForTesting
     private class ConnectionPoolStats implements Stats {
         @Override
@@ -227,6 +230,11 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
         @Override
         public int connectionsInEstablishment() {
             return connectionsInEstablishment.get();
+        }
+
+        @Override
+        public double percentageUtilisation() {
+            return 100.0 * SimpleConnectionPool.this.utilisation();
         }
 
         @Override

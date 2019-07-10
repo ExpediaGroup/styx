@@ -34,7 +34,7 @@ class StatsReportingConnectionPool implements ConnectionPool {
     private final ConnectionPool connectionPool;
     private final MetricRegistry metricRegistry;
 
-    public StatsReportingConnectionPool(ConnectionPool connectionPool, MetricRegistry metricRegistry) {
+    StatsReportingConnectionPool(ConnectionPool connectionPool, MetricRegistry metricRegistry) {
         this.connectionPool = connectionPool;
         this.metricRegistry = metricRegistry;
         registerMetrics();
@@ -91,6 +91,7 @@ class StatsReportingConnectionPool implements ConnectionPool {
         scopedRegistry.register("connections-closed", (Gauge<Integer>) () -> (int) stats.closedConnections());
         scopedRegistry.register("connections-terminated", (Gauge<Integer>) () -> (int) stats.terminatedConnections());
         scopedRegistry.register("connections-in-establishment", (Gauge<Integer>) () -> (int) stats.connectionsInEstablishment());
+        scopedRegistry.register("connection-pool-utilisation", (Gauge<Double>) stats::percentageUtilisation);
     }
 
     private void registerMetrics() {
@@ -99,7 +100,7 @@ class StatsReportingConnectionPool implements ConnectionPool {
             registerMetrics(connectionPool, scopedRegistry);
         } catch (IllegalArgumentException e) {
             // metrics already registered.
-            LOGGER.debug("IllegalArgumentException when registering metrics with CodaHale: {}", e);
+            LOGGER.debug("IllegalArgumentException when registering metrics with CodaHale: ", e);
         }
     }
 
@@ -107,7 +108,7 @@ class StatsReportingConnectionPool implements ConnectionPool {
         MetricRegistry scopedRegistry = getMetricScope(connectionPool);
         asList("busy-connections", "pending-connections", "available-connections", "ttfb",
                 "connection-attempts", "connection-failures", "connections-closed", "connections-terminated",
-                "connections-in-establishment")
+                "connections-in-establishment", "connection-pool-utilisation")
                 .forEach(scopedRegistry::deregister);
     }
 

@@ -92,6 +92,13 @@ public interface ConnectionPool extends Closeable {
          * @return
          */
         int connectionsInEstablishment();
+
+        /**
+         * Percentage of connection pool utilised.
+         *
+         * @return percentage utilised.
+         */
+        double percentageUtilisation();
     }
 
     /**

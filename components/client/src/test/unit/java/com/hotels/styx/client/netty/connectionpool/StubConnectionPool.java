@@ -120,6 +120,11 @@ public class StubConnectionPool implements ConnectionPool, Comparable<Connection
             public int connectionsInEstablishment() {
                 return 0;
             }
+
+            @Override
+            public double percentageUtilisation() {
+                return 0;
+            }
         };
     }
 

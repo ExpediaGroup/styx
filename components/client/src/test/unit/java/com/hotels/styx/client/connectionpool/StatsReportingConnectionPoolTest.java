@@ -48,7 +48,8 @@ public class StatsReportingConnectionPoolTest {
                 "origins.generic-app.backend-01.connectionspool.connections-in-establishment",
                 "origins.generic-app.backend-01.connectionspool.connection-failures",
                 "origins.generic-app.backend-01.connectionspool.connections-closed",
-                "origins.generic-app.backend-01.connectionspool.connections-terminated"
+                "origins.generic-app.backend-01.connectionspool.connections-terminated",
+                "origins.generic-app.backend-01.connectionspool.connection-pool-utilisation"
         ));
         pool.close();
         assertThat(metricRegistry.getNames(), is(empty()));
