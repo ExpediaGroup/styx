@@ -184,8 +184,8 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
     }
 
     private double utilisation() {
-        int usage = borrowedCount.get() + waitingSubscribers.size();
-        int limit = poolSettings.maxConnectionsPerHost() + poolSettings.maxPendingConnectionsPerHost();
+        double usage = borrowedCount.get() + waitingSubscribers.size();
+        double limit = poolSettings.maxConnectionsPerHost() + poolSettings.maxPendingConnectionsPerHost();
 
         return usage / limit;
     }
