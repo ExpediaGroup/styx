@@ -16,16 +16,13 @@
 package com.hotels.styx.api;
 
 import com.hotels.styx.common.EventProcessor;
-import com.hotels.styx.common.FsmEventProcessor;
 import com.hotels.styx.common.QueueDrainingEventProcessor;
-import com.hotels.styx.common.StateMachine;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
 import java.util.function.Consumer;
 
 import static com.hotels.styx.api.ResponseEventListener.State.COMPLETED;
-import static com.hotels.styx.api.ResponseEventListener.State.INITIAL;
 import static com.hotels.styx.api.ResponseEventListener.State.STREAMING;
 import static com.hotels.styx.api.ResponseEventListener.State.TERMINATED;
 import static java.util.Objects.requireNonNull;
@@ -41,42 +38,7 @@ public class ResponseEventListener {
     private Runnable cancelAction = () -> { };
     private Runnable whenFinishedAction = () -> { };
 
-    private final StateMachine<State> fsm = new StateMachine.Builder<State>()
-            .initialState(INITIAL)
-            .transition(INITIAL, MessageHeaders.class, event -> STREAMING)
-            .transition(INITIAL, MessageCancelled.class, event -> {
-                cancelAction.run();
-                whenFinishedAction.run();
-                return TERMINATED;
-            })
-            .transition(INITIAL, MessageCompleted.class, event -> {
-                // TODO: Add custom exception type?
-                responseErrorAction.accept(new RuntimeException("Response Observable completed without message headers."));
-                whenFinishedAction.run();
-                return TERMINATED;
-            })
-            .transition(INITIAL, MessageError.class, event -> {
-                responseErrorAction.accept(event.cause());
-                whenFinishedAction.run();
-                return TERMINATED;
-            })
-            .transition(STREAMING, ContentEnd.class, event -> {
-                onCompletedAction.run();
-                whenFinishedAction.run();
-                return COMPLETED;
-            })
-            .transition(STREAMING, ContentError.class, event -> {
-                contentErrorAction.accept(event.cause());
-                whenFinishedAction.run();
-                return TERMINATED;
-            })
-            .transition(STREAMING, ContentCancelled.class, event -> {
-                cancelAction.run();
-                whenFinishedAction.run();
-                return TERMINATED;
-            })
-            .onInappropriateEvent((state, event) -> state)
-            .build();
+    private volatile com.hotels.styx.api.ResponseEventListener.State state = com.hotels.styx.api.ResponseEventListener.State.INITIAL;
 
     private ResponseEventListener(Publisher<LiveHttpResponse> publisher) {
         this.publisher = Flux.from(requireNonNull(publisher));
@@ -119,9 +81,47 @@ public class ResponseEventListener {
     }
 
     public Flux<LiveHttpResponse> apply() {
+
         EventProcessor eventProcessor = new QueueDrainingEventProcessor(
-                new FsmEventProcessor<>(fsm, (throwable, state) -> {
-                }, ""));
+                event -> {
+                    switch (state) {
+                        case INITIAL:
+                            if (event instanceof MessageHeaders) {
+                                state = STREAMING;
+                            } else if (event instanceof MessageCancelled) {
+                                cancelAction.run();
+                                whenFinishedAction.run();
+                                state = TERMINATED;
+                            } else if (event instanceof MessageCompleted) {
+                                // TODO: Add custom exception type?
+                                responseErrorAction.accept(new RuntimeException("Response Observable completed without message headers."));
+                                whenFinishedAction.run();
+                                state = TERMINATED;
+                            } else if (event instanceof MessageError) {
+                                responseErrorAction.accept(((MessageError) event).cause());
+                                whenFinishedAction.run();
+                                state = TERMINATED;
+                            }
+
+                            break;
+                        case STREAMING:
+                            if (event instanceof ContentEnd) {
+                                onCompletedAction.run();
+                                whenFinishedAction.run();
+                                state = COMPLETED;
+                            } else if (event instanceof ContentError) {
+                                contentErrorAction.accept(((ContentError) event).cause());
+                                whenFinishedAction.run();
+                                state = TERMINATED;
+                            } else if (event instanceof ContentCancelled) {
+                                cancelAction.run();
+                                whenFinishedAction.run();
+                                state = TERMINATED;
+                            }
+
+                            break;
+                    }
+                });
 
         return publisher
                 .doOnNext(headers -> eventProcessor.submit(new MessageHeaders()))
