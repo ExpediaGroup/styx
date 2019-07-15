@@ -28,8 +28,8 @@ import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
-import com.hotels.styx.routing.config.RoutingObjectConfiguration;
-import com.hotels.styx.routing.config.RoutingObjectDefinition;
+import com.hotels.styx.routing.config.StyxObjectConfiguration;
+import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.server.HttpRouter;
 import com.hotels.styx.server.routing.AntlrMatcher;
 import com.hotels.styx.server.routing.antlr.DslFunctionResolutionError;
@@ -108,7 +108,7 @@ public class ConditionRouter implements HttpRouter {
                 Context context,
                 int index,
                 String condition,
-                RoutingObjectConfiguration destination) {
+                StyxObjectConfiguration destination) {
             try {
                 String attribute = format("destination[%d]", index);
                 RoutingObject handler = Builtins.build(append(parents, attribute), context, destination);
@@ -122,7 +122,7 @@ public class ConditionRouter implements HttpRouter {
         }
 
         @Override
-        public RoutingObject build(List<String> fullName, Context context, RoutingObjectDefinition configBlock) {
+        public RoutingObject build(List<String> fullName, Context context, StyxObjectDefinition configBlock) {
             ConditionRouterConfig config = new JsonNodeConfig(configBlock.config()).as(ConditionRouterConfig.class);
             if (config.routes == null) {
                 throw missingAttributeError(configBlock, join(".", fullName), "routes");
@@ -158,7 +158,7 @@ public class ConditionRouter implements HttpRouter {
 
         private static class ConditionRouterConfig {
             private final List<ConditionRouterRouteConfig> routes;
-            private final RoutingObjectConfiguration fallback;
+            private final StyxObjectConfiguration fallback;
 
             private ConditionRouterConfig(@JsonProperty("routes") List<ConditionRouterRouteConfig> routes,
                                           @JsonProperty("fallback") JsonNode fallback) {
@@ -169,7 +169,7 @@ public class ConditionRouter implements HttpRouter {
 
         private static class ConditionRouterRouteConfig {
             private final String condition;
-            private final RoutingObjectConfiguration destination;
+            private final StyxObjectConfiguration destination;
 
             public ConditionRouterRouteConfig(@JsonProperty("condition") String condition,
                                               @JsonProperty("destination") JsonNode destination) {

@@ -27,14 +27,14 @@ import static java.util.Optional.ofNullable;
  */
 public class RoutingConfigParser {
 
-    public static RoutingObjectConfiguration toRoutingConfigNode(JsonNode jsonNode) {
+    public static StyxObjectConfiguration toRoutingConfigNode(JsonNode jsonNode) {
         if (jsonNode.getNodeType() == JsonNodeType.STRING) {
-            return new RoutingObjectReference(jsonNode.asText());
+            return new StyxObjectReference(jsonNode.asText());
         } else if (jsonNode.getNodeType() == JsonNodeType.OBJECT) {
             String name = getOrElse(jsonNode, "name", "");
             String type = getMandatory(jsonNode, "type", format("Routing config definition must have a 'type' attribute in def='%s'", name));
             JsonNode conf = jsonNode.get("config");
-            return new RoutingObjectDefinition(name, type, conf);
+            return new StyxObjectDefinition(name, type, conf);
         }
         throw new IllegalArgumentException("invalid configuration");
     }

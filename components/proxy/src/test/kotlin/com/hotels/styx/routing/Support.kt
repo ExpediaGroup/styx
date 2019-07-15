@@ -20,7 +20,9 @@ import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpHandler
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpResponse
+import com.hotels.styx.api.HttpResponse.response
 import com.hotels.styx.api.HttpResponseStatus.OK
+import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.WebServiceHandler
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.proxy.plugin.NamedPlugin
@@ -29,17 +31,19 @@ import com.hotels.styx.routing.config.Builtins.DEFAULT_REFERENCE_LOOKUP
 import com.hotels.styx.routing.config.Builtins.INTERCEPTOR_FACTORIES
 import com.hotels.styx.routing.config.HttpInterceptorFactory
 import com.hotels.styx.routing.config.RoutingObjectFactory
-import com.hotels.styx.routing.config.RoutingObjectDefinition
-import com.hotels.styx.routing.config.RoutingObjectReference
+import com.hotels.styx.routing.config.StyxObjectDefinition
+import com.hotels.styx.routing.config.StyxObjectReference
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.RouteRefLookup
 import com.hotels.styx.server.HttpInterceptorContext
+import io.mockk.CapturingSlot
 import io.mockk.every
 import io.mockk.mockk
+import java.lang.RuntimeException
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.concurrent.CompletableFuture
 
-fun routingObjectDef(text: String) = YamlConfig(text).`as`((RoutingObjectDefinition::class.java))
+fun routingObjectDef(text: String) = YamlConfig(text).`as`((StyxObjectDefinition::class.java))
 
 internal data class RoutingObjectFactoryContext(
         val routeRefLookup: RouteRefLookup = DEFAULT_REFERENCE_LOOKUP,
@@ -59,21 +63,65 @@ fun HttpHandler.handle(request: HttpRequest, count: Int = 10000) = this.handle(r
         .flatMap { it.aggregate(count) }
 
 // DSL for routing object database & object creation:
-fun HashMap<RoutingObjectReference, RoutingObject>.ref(pair: Pair<String, RoutingObject>) {
-    put(RoutingObjectReference(pair.first), pair.second)
+fun HashMap<StyxObjectReference, RoutingObject>.ref(pair: Pair<String, RoutingObject>) {
+    put(StyxObjectReference(pair.first), pair.second)
 }
 
-fun routeLookup(block: HashMap<RoutingObjectReference, RoutingObject>.() -> Unit): RouteRefLookup {
-    val refLookup = HashMap<RoutingObjectReference, RoutingObject>()
+fun routeLookup(block: HashMap<StyxObjectReference, RoutingObject>.() -> Unit): RouteRefLookup {
+    val refLookup = HashMap<StyxObjectReference, RoutingObject>()
     refLookup.block()
     return RouteRefLookup { refLookup[it] }
 }
 
-fun mockObject(content: String = "") = mockk<RoutingObject> {
-    every { handle(any(), any()) } returns Eventual.of(HttpResponse.response(OK).body(content, UTF_8).build().stream())
+/**
+ * Creates a mock routing object with specified capturing behaviour for incoming HTTP requests.
+ *
+ * Three possible capture behavours are:
+ *
+ * CaptureSlot - captures only one LiveHttpRequest
+ * CaptureList - captures all LiveHttpRequest messages into a list
+ * DontCapture - don't capture anything
+ *
+ * An example:
+ *
+ *         val probeRequests = mutableListOf<LiveHttpRequest>()
+ *
+ *         val handler = mockObject("handler-01", CaptureList(probeRequests))
+ *
+ *         verify(exactly = 1) { handler.handle(any(), any()) }
+ *         probeRequests.map { it.url().path() } shouldBe (listOf("/healthCheck.txt", "/healthCheck.txt"))
+ *
+ */
+fun mockObject(content: String = "", capture: ArgumentCapture = DontCapture) = mockk<RoutingObject> {
+    every {
+        handle(when {
+            capture is CaptureSlot -> capture(capture.slot)
+            capture is CaptureList -> capture(capture.list)
+            else -> any()
+        }, any())
+    } returns Eventual.of(response(OK).body(content, UTF_8).build().stream())
+
     every { stop() } returns CompletableFuture.completedFuture(null)
 }
 
+sealed class ArgumentCapture
+data class CaptureSlot(val slot: CapturingSlot<LiveHttpRequest>) : ArgumentCapture()
+data class CaptureList(val list: MutableList<LiveHttpRequest>) : ArgumentCapture()
+object DontCapture : ArgumentCapture()
+
+
+/**
+ * Createa a mock Routing Object that simulates request processing failures.
+ */
+fun failingMockObject() = mockk<RoutingObject> {
+    every { handle(any(), any()) } returns Eventual.error(RuntimeException("Error occurred!"))
+    every { stop() } returns CompletableFuture.completedFuture(null)
+}
+
+/**
+ * Creates a mock RoutingObjectFactory. Takes a list of routing objects as its sole argument.
+ * Each factory invocation will return next object from the list.
+ */
 fun mockObjectFactory(objects: List<RoutingObject>) = mockk<RoutingObjectFactory> {
     every { build(any(), any(), any()) } returnsMany objects
 }

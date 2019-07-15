@@ -33,8 +33,8 @@ class RoutingConfigParserTest : StringSpec({
 
         val routingObjectRef = RoutingConfigParser.toRoutingConfigNode(jsonNode)
 
-        routingObjectRef.shouldBeTypeOf<RoutingObjectReference>()
-        (routingObjectRef as RoutingObjectReference).name().shouldBe("aString")
+        routingObjectRef.shouldBeTypeOf<StyxObjectReference>()
+        (routingObjectRef as StyxObjectReference).name().shouldBe("aString")
     }
 
     "Parses routing object definitions" {
@@ -67,9 +67,9 @@ class RoutingConfigParserTest : StringSpec({
 
         val routingObjectDef = RoutingConfigParser.toRoutingConfigNode(jsonNode)
 
-        routingObjectDef.shouldBeTypeOf<RoutingObjectDefinition>()
+        routingObjectDef.shouldBeTypeOf<StyxObjectDefinition>()
 
-        (routingObjectDef as RoutingObjectDefinition).name() shouldBe("main-router")
+        (routingObjectDef as StyxObjectDefinition).name() shouldBe("main-router")
         routingObjectDef.type() shouldBe("ConditionRouter")
 
         routingObjectDef.config().shouldBeInstanceOf<JsonNode>()
@@ -86,8 +86,8 @@ class RoutingConfigParserTest : StringSpec({
 
         val routingObjectDef = RoutingConfigParser.toRoutingConfigNode(jsonNode)
 
-        routingObjectDef.shouldBeTypeOf<RoutingObjectDefinition>()
-        (routingObjectDef as RoutingObjectDefinition).name() shouldBe ("")
+        routingObjectDef.shouldBeTypeOf<StyxObjectDefinition>()
+        (routingObjectDef as StyxObjectDefinition).name() shouldBe ("")
         routingObjectDef.type() shouldBe("ConditionRouter")
         routingObjectDef.config().shouldBeInstanceOf<JsonNode>()
     }

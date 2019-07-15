@@ -26,7 +26,7 @@ import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
-import com.hotels.styx.routing.config.RoutingObjectDefinition;
+import com.hotels.styx.routing.config.StyxObjectDefinition;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
@@ -77,7 +77,7 @@ public class StaticResponseHandler implements RoutingObject {
      * Builds a static response handler from Yaml configuration.
      */
     public static class Factory implements RoutingObjectFactory {
-        public RoutingObject build(List<String> fullName, Context context, RoutingObjectDefinition configBlock) {
+        public RoutingObject build(List<String> fullName, Context context, StyxObjectDefinition configBlock) {
             requireNonNull(configBlock.config());
 
             StaticResponseConfig config = new JsonNodeConfig(configBlock.config())

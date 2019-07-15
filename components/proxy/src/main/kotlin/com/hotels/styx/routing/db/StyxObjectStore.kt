@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicReference
  * Styx Route Database.
  */
 class StyxObjectStore<T> : ObjectStore<T> {
-    private val objects: AtomicReference<PMap<String, Record<T>>> = AtomicReference(HashTreePMap.empty())
+    private val objects: AtomicReference<PMap<String, T>> = AtomicReference(HashTreePMap.empty())
     private val watchers = CopyOnWriteArrayList<ChangeWatcher<T>>()
 
     companion object {
@@ -50,7 +50,6 @@ class StyxObjectStore<T> : ObjectStore<T> {
 
     override fun get(name: String): Optional<T> {
         return Optional.ofNullable(objects().get(name))
-                .map { it.payload }
     }
 
     /**
@@ -72,7 +71,23 @@ class StyxObjectStore<T> : ObjectStore<T> {
      * @property payload the object itself
      * @return the previous value
      */
-    fun insert(key: String, payload: T) = insert(key, setOf(), payload)
+    fun insert(key: String, payload: T): Optional<T> {
+        require(key.isNotEmpty())
+
+        var current = objects.get()
+        var new = current.plus(key, payload)
+
+        while (!objects.compareAndSet(current, new)) {
+            current = objects.get()
+            new = current.plus(key, payload)
+        }
+
+        queue {
+            notifyWatchers(new)
+        }
+
+        return Optional.ofNullable(current[key])
+    }
 
 
     /**
@@ -103,7 +118,7 @@ class StyxObjectStore<T> : ObjectStore<T> {
             }
         }
 
-        return Optional.ofNullable(current[key]?.payload)
+        return Optional.ofNullable(current[key])
     }
 
     /**
@@ -139,42 +154,23 @@ class StyxObjectStore<T> : ObjectStore<T> {
         executor.submit(task)
     }
 
-    private fun insert(key: String, tags: Set<String>, payload: T): Optional<T> {
-        var current = objects.get()
-        var new = current.plus(key, Record(key, tags, payload))
-
-        while (!objects.compareAndSet(current, new)) {
-            current = objects.get()
-            new = current.plus(key, Record(key, tags, payload))
-        }
-
-        queue {
-            notifyWatchers(new)
-        }
-
-        return Optional.ofNullable(current[key]?.payload)
-    }
-
-    private fun notifyWatchers(objectsV2: PMap<String, Record<T>>) {
+    private fun notifyWatchers(objectsV2: PMap<String, T>) {
         watchers.forEach { listener ->
             listener.invoke(snapshot(objectsV2))
         }
     }
 
-    private fun snapshot(snapshot: PMap<String, Record<T>>) = object: ObjectStore<T> {
+    private fun snapshot(snapshot: PMap<String, T>) = object: ObjectStore<T> {
         override fun get(key: String?): Optional<T> {
-            return Optional.ofNullable(snapshot[key]?.payload)
+            return Optional.ofNullable(snapshot[key])
         }
 
         override fun entrySet(): Collection<Map.Entry<String, T>> = entrySet(snapshot)
     }
 
 
-    private fun entrySet(snapshot: PMap<String, Record<T>>): Collection<Map.Entry<String, T>> = snapshot
-            .mapValues { it.value.payload }
+    private fun entrySet(snapshot: PMap<String, T>): Collection<Map.Entry<String, T>> = snapshot
             .entries
 }
 
 private typealias ChangeWatcher<T> = (ObjectStore<T>) -> Unit
-
-private data class Record<T>(val key: String, val tags: Set<String>, val payload: T)

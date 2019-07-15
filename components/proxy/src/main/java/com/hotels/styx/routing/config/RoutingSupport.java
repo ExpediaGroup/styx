@@ -38,7 +38,7 @@ public final class RoutingSupport {
         return builder.build();
     }
 
-    public static RuntimeException missingAttributeError(RoutingObjectDefinition routingDef, String parent, String expected) {
+    public static RuntimeException missingAttributeError(StyxObjectDefinition routingDef, String parent, String expected) {
         return new IllegalArgumentException(
                 format("Routing object definition of type '%s', attribute='%s', is missing a mandatory '%s' attribute.",
                         routingDef.type(), parent, expected));

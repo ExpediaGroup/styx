@@ -16,6 +16,7 @@
 package com.hotels.styx;
 
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.CharStreams;
 import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.Service;
@@ -41,7 +42,9 @@ import java.io.Reader;
 import java.net.InetSocketAddress;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.shutdownLogging;
@@ -177,9 +180,11 @@ public final class StyxServer extends AbstractService {
             {
                 add(proxyServer);
                 add(adminServer);
-                components.services().values().stream()
-                        .map(StyxServer::toGuavaService)
-                        .forEach(this::add);
+
+                concat(components.services().values(),
+                        new ServiceProviderMonitor("Styx-Service-Monitor", components.servicesDatabase()))
+                    .map(StyxServer::toGuavaService)
+                    .forEach(this::add);
             }
         });
     }
@@ -299,4 +304,13 @@ public final class StyxServer extends AbstractService {
             styxServer.notifyStopped();
         }
     }
+
+    private static Stream<StyxService> concat(Collection<StyxService> services, StyxService service) {
+        return ImmutableList.<StyxService>builder()
+                .add(service)
+                .addAll(services)
+                .build()
+                .stream();
+    }
+
 }

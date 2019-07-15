@@ -28,21 +28,21 @@ import static java.util.Objects.requireNonNull;
 /**
  * An yaml configuration block used in routing configuration to configure an HTTP handler.
  */
-@JsonDeserialize(builder = RoutingObjectDefinition.Builder.class)
-public class RoutingObjectDefinition implements RoutingObjectConfiguration {
+@JsonDeserialize(builder = StyxObjectDefinition.Builder.class)
+public class StyxObjectDefinition implements StyxObjectConfiguration {
     private final String name;
     private final String type;
     private final List<String> tags;
     private final JsonNode config;
 
-    public RoutingObjectDefinition(String name, String type, List<String> tags, JsonNode config) {
+    public StyxObjectDefinition(String name, String type, List<String> tags, JsonNode config) {
         this.name = requireNonNull(name);
         this.type = requireNonNull(type);
         this.tags = ImmutableList.copyOf(tags);
         this.config = requireNonNull(config);
     }
 
-    public RoutingObjectDefinition(String name, String type, JsonNode config) {
+    public StyxObjectDefinition(String name, String type, JsonNode config) {
         this(name, type, ImmutableList.of(), config);
     }
 
@@ -97,8 +97,8 @@ public class RoutingObjectDefinition implements RoutingObjectConfiguration {
             return this;
         }
 
-        public RoutingObjectDefinition build() {
-            return new RoutingObjectDefinition(name, type, tags, config);
+        public StyxObjectDefinition build() {
+            return new StyxObjectDefinition(name, type, tags, config);
         }
     }
 }

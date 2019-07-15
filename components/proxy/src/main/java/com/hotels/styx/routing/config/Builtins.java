@@ -16,10 +16,14 @@
 package com.hotels.styx.routing.config;
 
 import com.google.common.collect.ImmutableMap;
+import com.hotels.styx.Environment;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.routing.RoutingObject;
+import com.hotels.styx.routing.RoutingObjectRecord;
+import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.ConditionRouter;
 import com.hotels.styx.routing.handlers.HostProxy;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
@@ -29,6 +33,8 @@ import com.hotels.styx.routing.handlers.ProxyToBackend;
 import com.hotels.styx.routing.handlers.RouteRefLookup;
 import com.hotels.styx.routing.handlers.StaticResponseHandler;
 import com.hotels.styx.routing.interceptors.RewriteInterceptor;
+import com.hotels.styx.serviceproviders.ServiceProviderFactory;
+import com.hotels.styx.services.HealthCheckMonitoringServiceFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -45,13 +51,17 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public final class Builtins {
     public static final ImmutableMap<String, Schema.FieldType> BUILTIN_HANDLER_SCHEMAS;
     public static final ImmutableMap<String, RoutingObjectFactory> BUILTIN_HANDLER_FACTORIES;
+    public static final ImmutableMap<String, HttpInterceptorFactory> INTERCEPTOR_FACTORIES =
+            ImmutableMap.of("Rewrite", new RewriteInterceptor.Factory());
+
+    public static final ImmutableMap<String, ServiceProviderFactory> BUILTIN_SERVICE_PROVIDER_FACTORIES =
+            ImmutableMap.of("HealthCheckMonitor", new HealthCheckMonitoringServiceFactory());
+
     public static final RouteRefLookup DEFAULT_REFERENCE_LOOKUP = reference -> (request, ctx) ->
             Eventual.of(response(NOT_FOUND)
                     .body(format("Handler not found for '%s'.", reference), UTF_8)
                     .build()
                     .stream());
-    public static final ImmutableMap<String, HttpInterceptorFactory> INTERCEPTOR_FACTORIES =
-            ImmutableMap.of("Rewrite", new RewriteInterceptor.Factory());
 
     private static final String STATIC_RESPONSE = "StaticResponseHandler";
     private static final String CONDITION_ROUTER = "ConditionRouter";
@@ -87,35 +97,69 @@ public final class Builtins {
     private Builtins() {
     }
 
-    public static RoutingObject build(List<String> parents, RoutingObjectFactory.Context context, RoutingObjectConfiguration configNode) {
-        if (configNode instanceof RoutingObjectDefinition) {
-            RoutingObjectDefinition configBlock = (RoutingObjectDefinition) configNode;
+    /**
+     * Buiulds a routing object.
+     *
+     * @param parents fully qualified attribute name
+     * @param context a context to styx environment
+     * @param configNode routing object configuration
+     *
+     * @return a routing object
+     */
+    public static RoutingObject build(List<String> parents, RoutingObjectFactory.Context context, StyxObjectConfiguration configNode) {
+        if (configNode instanceof StyxObjectDefinition) {
+            StyxObjectDefinition configBlock = (StyxObjectDefinition) configNode;
             String type = configBlock.type();
 
             RoutingObjectFactory factory = context.objectFactories().get(type);
             checkArgument(factory != null, format("Unknown handler type '%s'", type));
 
             return factory.build(parents, context, configBlock);
-        } else if (configNode instanceof RoutingObjectReference) {
+        } else if (configNode instanceof StyxObjectReference) {
             return (request, httpContext) -> context.refLookup()
-                    .apply((RoutingObjectReference) configNode)
+                    .apply((StyxObjectReference) configNode)
                     .handle(request, httpContext);
         } else {
             throw new UnsupportedOperationException(format("Unsupported configuration node type: '%s'", configNode.getClass().getName()));
         }
     }
 
-    public static HttpInterceptor build(RoutingObjectConfiguration configBlock, Map<String, HttpInterceptorFactory> interceptorFactories) {
-        if (configBlock instanceof RoutingObjectDefinition) {
-            RoutingObjectDefinition block = (RoutingObjectDefinition) configBlock;
+    /**
+     * Builds a HTTP interceptor.
+     *
+     * @param configBlock configuration
+     * @param interceptorFactories built-in interceptor factories by name
+     *
+     * @return an HTTP interceptor
+     */
+    public static HttpInterceptor build(StyxObjectConfiguration configBlock, Map<String, HttpInterceptorFactory> interceptorFactories) {
+        if (configBlock instanceof StyxObjectDefinition) {
+            StyxObjectDefinition block = (StyxObjectDefinition) configBlock;
             String type = block.type();
 
             HttpInterceptorFactory constructor = interceptorFactories.get(type);
-            checkArgument(constructor != null, format("Unknown handler type '%s'", type));
+            checkArgument(constructor != null, format("Unknown service provider type '%s'", type));
 
             return constructor.build(block);
         } else {
             throw new UnsupportedOperationException("Routing config node must be an config block, not a reference");
         }
+    }
+
+    /**
+     * Builds a Styx service.
+     *
+     * @param providerDef Styx service object configuration
+     * @param factories service provider factories by name
+     * @param environment Styx environment
+     * @param objectStore Styx object store
+     *
+     * @return a Styx service
+     */
+    public static StyxService build(StyxObjectDefinition providerDef, Map<String, ServiceProviderFactory> factories, Environment environment, StyxObjectStore<RoutingObjectRecord> objectStore) {
+        ServiceProviderFactory constructor = factories.get(providerDef.type());
+        checkArgument(constructor != null, format("Unknown service provider type '%s' for '%s' provider", providerDef.type(), providerDef.name()));
+
+        return constructor.create(environment, providerDef.config(), objectStore);
     }
 }

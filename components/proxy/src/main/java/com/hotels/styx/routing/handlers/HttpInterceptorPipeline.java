@@ -29,9 +29,9 @@ import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.HttpInterceptorFactory;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.RoutingConfigParser;
-import com.hotels.styx.routing.config.RoutingObjectConfiguration;
-import com.hotels.styx.routing.config.RoutingObjectDefinition;
-import com.hotels.styx.routing.config.RoutingObjectReference;
+import com.hotels.styx.routing.config.StyxObjectConfiguration;
+import com.hotels.styx.routing.config.StyxObjectDefinition;
+import com.hotels.styx.routing.config.StyxObjectReference;
 import com.hotels.styx.server.track.CurrentRequestTracker;
 import com.hotels.styx.server.track.RequestTracker;
 
@@ -86,8 +86,9 @@ public class HttpInterceptorPipeline implements RoutingObject {
      */
     public static class Factory implements RoutingObjectFactory {
 
+        // Note: `pipeline` has to represent a JSON array:
         @Override
-        public RoutingObject build(List<String> fullName, Context context, RoutingObjectDefinition configBlock) {
+        public RoutingObject build(List<String> fullName, Context context, StyxObjectDefinition configBlock) {
             JsonNode pipeline = configBlock.config().get("pipeline");
             List<HttpInterceptor> interceptors = getHttpInterceptors(append(fullName, "pipeline"), toMap(context.plugins()), context.interceptorFactories(), pipeline);
 
@@ -101,8 +102,7 @@ public class HttpInterceptorPipeline implements RoutingObject {
                     context.requestTracking());
         }
 
-        // Note: `pipeline` has to represent a JSON array:
-        private static List<RoutingObjectConfiguration> styxHttpPipeline(JsonNode pipeline) {
+        private static List<StyxObjectConfiguration> styxHttpPipeline(JsonNode pipeline) {
             return stream(pipeline.spliterator(), false)
                     .map(RoutingConfigParser::toRoutingConfigNode)
                     .collect(Collectors.toList());
@@ -116,25 +116,25 @@ public class HttpInterceptorPipeline implements RoutingObject {
             if (pipeline == null || pipeline.isNull()) {
                 return ImmutableList.of();
             }
-            List<RoutingObjectConfiguration> interceptorConfigs = styxHttpPipeline(pipeline);
+            List<StyxObjectConfiguration> interceptorConfigs = styxHttpPipeline(pipeline);
             ensureValidPluginReferences(parents, plugins, interceptorConfigs);
             return interceptorConfigs.stream()
                     .map(node -> {
-                        if (node instanceof RoutingObjectReference) {
-                            String name = ((RoutingObjectReference) node).name();
+                        if (node instanceof StyxObjectReference) {
+                            String name = ((StyxObjectReference) node).name();
                             return plugins.get(name);
                         } else {
-                            RoutingObjectDefinition block = (RoutingObjectDefinition) node;
+                            StyxObjectDefinition block = (StyxObjectDefinition) node;
                             return Builtins.build(block, interceptorFactories);
                         }
                     })
                     .collect(Collectors.toList());
         }
 
-        private static void ensureValidPluginReferences(List<String> parents, Map<String, NamedPlugin> plugins, List<RoutingObjectConfiguration> interceptors) {
+        private static void ensureValidPluginReferences(List<String> parents, Map<String, NamedPlugin> plugins, List<StyxObjectConfiguration> interceptors) {
             interceptors.forEach(node -> {
-                if (node instanceof RoutingObjectReference) {
-                    String name = ((RoutingObjectReference) node).name();
+                if (node instanceof StyxObjectReference) {
+                    String name = ((StyxObjectReference) node).name();
                     if (!plugins.containsKey(name)) {
                         throw new IllegalArgumentException(String.format("No such plugin or interceptor exists, attribute='%s', name='%s'",
                                 join(".", parents), name));

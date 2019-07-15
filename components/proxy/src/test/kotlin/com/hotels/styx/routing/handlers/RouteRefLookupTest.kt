@@ -22,7 +22,7 @@ import com.hotels.styx.api.HttpResponseStatus.NOT_FOUND
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.routing.RoutingMetadataDecorator
 import com.hotels.styx.routing.RoutingObjectRecord
-import com.hotels.styx.routing.config.RoutingObjectReference
+import com.hotels.styx.routing.config.StyxObjectReference
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handle
 import com.hotels.styx.routing.handlers.RouteRefLookup.RouteDbRefLookup
@@ -44,14 +44,14 @@ class RouteRefLookupTest : StringSpec({
         val routeDb = mockk<StyxObjectStore<RoutingObjectRecord>>()
         every { routeDb.get(any()) } returns Optional.of(RoutingObjectRecord("StaticResponseHandler", mockk(), mockk(), handler))
 
-        RouteDbRefLookup(routeDb).apply(RoutingObjectReference("handler1")) shouldBe handler
+        RouteDbRefLookup(routeDb).apply(StyxObjectReference("handler1")) shouldBe handler
     }
 
     "Returns error handler when route object is not found" {
         val routeDb = mockk<StyxObjectStore<RoutingObjectRecord>>()
         every { routeDb.get(any()) } returns Optional.empty()
 
-        val response = RouteDbRefLookup(routeDb).apply(RoutingObjectReference("handler1"))
+        val response = RouteDbRefLookup(routeDb).apply(StyxObjectReference("handler1"))
                 .handle(get("/").build())
                 .toMono()
                 .block()
@@ -69,7 +69,7 @@ class RouteRefLookupTest : StringSpec({
                         Buffer("aaa", UTF_8),
                         Buffer("bbb", UTF_8)))
 
-        val response = RouteDbRefLookup(routeDb).apply(RoutingObjectReference("handler1"))
+        val response = RouteDbRefLookup(routeDb).apply(StyxObjectReference("handler1"))
                 .handle(LiveHttpRequest.post("/")
                         .body(ByteStream(probe.flux()))
                         .build(), HttpInterceptorContext.create())

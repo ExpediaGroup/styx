@@ -42,7 +42,8 @@ import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.RoutingObjectFactory
-import com.hotels.styx.routing.config.RoutingObjectDefinition
+import com.hotels.styx.routing.config.StyxObjectDefinition
+import com.hotels.styx.services.HealthCheckMonitoringService.Companion.INACTIVE_TAG
 import org.slf4j.LoggerFactory
 import reactor.core.Disposable
 import reactor.core.publisher.toFlux
@@ -80,7 +81,7 @@ internal class LoadBalancingGroup(val client: StyxBackendServiceClient, val chan
     }
 
     class Factory : RoutingObjectFactory {
-        override fun build(fullName: List<String>, context: RoutingObjectFactory.Context, configBlock: RoutingObjectDefinition): RoutingObject {
+        override fun build(fullName: List<String>, context: RoutingObjectFactory.Context, configBlock: StyxObjectDefinition): RoutingObject {
 
             val appId = fullName.last()
             val config = JsonNodeConfig(configBlock.config()).`as`(Config::class.java)
@@ -122,14 +123,19 @@ internal class LoadBalancingGroup(val client: StyxBackendServiceClient, val chan
         private fun routeDatabaseChanged(appId: String, snapshot: ObjectStore<RoutingObjectRecord>, remoteHosts: AtomicReference<Set<RemoteHost>>) {
             val newSet = snapshot.entrySet()
                     .filter { isTaggedWith(it, appId) }
+                    .filterNot { isTaggedWith(it, "$INACTIVE_TAG.*".toRegex()) }
                     .map { toRemoteHost(appId, it) }
                     .toSet()
 
             remoteHosts.set(newSet)
         }
 
-        private fun isTaggedWith(recordEntry: Map.Entry<String, RoutingObjectRecord>, appId: String): Boolean {
-            return recordEntry.value.tags.contains(appId)
+        private fun isTaggedWith(recordEntry: Map.Entry<String, RoutingObjectRecord>, tag: String): Boolean {
+            return recordEntry.value.tags.contains(tag)
+        }
+
+        private fun isTaggedWith(recordEntry: Map.Entry<String, RoutingObjectRecord>, tag: Regex): Boolean {
+            return recordEntry.value.tags.firstOrNull { it.matches(tag) } != null
         }
 
         private fun toRemoteHost(appId: String, record: Map.Entry<String, RoutingObjectRecord>): RemoteHost {
@@ -154,7 +160,6 @@ internal class LoadBalancingGroup(val client: StyxBackendServiceClient, val chan
         private fun watchCompleted(name: String) {
             LOGGER.error("{}: Illegal state: watch completed", name)
         }
-
     }
 
     data class Config(

@@ -15,17 +15,22 @@
  */
 package com.hotels.styx.routing.config
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.hotels.styx.Environment
 import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponse.response
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpResponse
+import com.hotels.styx.api.extension.service.spi.StyxService
 import com.hotels.styx.routing.RoutingObjectFactoryContext
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.RouteRefLookup
 import com.hotels.styx.server.HttpInterceptorContext
+import com.hotels.styx.serviceproviders.ServiceProviderFactory
+import io.kotlintest.matchers.types.shouldBeInstanceOf
 import io.kotlintest.matchers.withClue
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
@@ -44,9 +49,9 @@ class BuiltinsTest : StringSpec({
 
     val routeObjectStore = mockk<StyxObjectStore<RoutingObjectRecord>>()
     every { routeObjectStore.get("aHandler") } returns Optional.of(RoutingObjectRecord.create("type", mockk(), mockk(), mockHandler))
-    
-    "Builds a new handler as per RoutingObjectDefinition" {
-        val routeDef = RoutingObjectDefinition("handler-def", "SomeRoutingObject", mockk())
+
+    "Builds a new handler as per StyxObjectDefinition" {
+        val routeDef = StyxObjectDefinition("handler-def", "SomeRoutingObject", mockk())
         val handlerFactory = httpHandlerFactory(mockHandler)
 
         val context = RoutingObjectFactoryContext(objectFactories = mapOf("SomeRoutingObject" to handlerFactory))
@@ -62,7 +67,7 @@ class BuiltinsTest : StringSpec({
     }
 
     "Doesn't accept unregistered types" {
-        val config = RoutingObjectDefinition("foo", "ConfigType", mockk())
+        val config = StyxObjectDefinition("foo", "ConfigType", mockk())
         val context = RoutingObjectFactoryContext(objectStore = routeObjectStore)
 
         val e = shouldThrow<IllegalArgumentException> {
@@ -77,9 +82,9 @@ class BuiltinsTest : StringSpec({
 
         val context = RoutingObjectFactoryContext(routeRefLookup = RouteRefLookup { ref -> routeDb[ref.name()] })
 
-        val handler = Builtins.build(listOf(), context.get(), RoutingObjectReference("aHandler"))
+        val handler = Builtins.build(listOf(), context.get(), StyxObjectReference("aHandler"))
 
-        val response = handler.handle(get("/").build().stream(), HttpInterceptorContext.create())
+        handler.handle(get("/").build().stream(), HttpInterceptorContext.create())
                 .toMono()
                 .block()!!
                 .status() shouldBe (OK)
@@ -87,11 +92,11 @@ class BuiltinsTest : StringSpec({
 
     "Looks up handler for every request" {
         val referenceLookup = mockk<RouteRefLookup>()
-        every {referenceLookup.apply(RoutingObjectReference("aHandler")) } returns RoutingObject { request, context -> Eventual.of(response(OK).build().stream()) }
+        every { referenceLookup.apply(StyxObjectReference("aHandler")) } returns RoutingObject { request, context -> Eventual.of(response(OK).build().stream()) }
 
         val context = RoutingObjectFactoryContext(routeRefLookup = referenceLookup)
 
-        val handler = Builtins.build(listOf(), context.get(), RoutingObjectReference("aHandler"))
+        val handler = Builtins.build(listOf(), context.get(), StyxObjectReference("aHandler"))
 
         handler.handle(get("/").build().stream(), HttpInterceptorContext.create()).toMono().block()
         handler.handle(get("/").build().stream(), HttpInterceptorContext.create()).toMono().block()
@@ -99,8 +104,41 @@ class BuiltinsTest : StringSpec({
         handler.handle(get("/").build().stream(), HttpInterceptorContext.create()).toMono().block()
 
         verify(exactly = 4) {
-            referenceLookup.apply(RoutingObjectReference("aHandler"))
+            referenceLookup.apply(StyxObjectReference("aHandler"))
         }
+    }
+
+    "ServiceProvider factory delegates to appropriate service provider factory method" {
+        val factory = mockk<ServiceProviderFactory> {
+            every { create(any(), any(), any()) } returns mockk()
+        }
+
+        val environment = Environment.Builder().build()
+
+        val serviceConfig = mockk<JsonNode>()
+
+        val objectStore = StyxObjectStore<RoutingObjectRecord>()
+
+        Builtins.build(
+                StyxObjectDefinition("healthCheckMonitor", "HealthCheckMonitor", serviceConfig),
+                mapOf("HealthCheckMonitor" to factory),
+                environment,
+                objectStore)
+                .shouldBeInstanceOf<StyxService>()
+
+        verify { factory.create(environment, serviceConfig, objectStore) }
+    }
+
+    "ServiceProvider factory throws an exception for unknown service provider factory name" {
+        shouldThrow<java.lang.IllegalArgumentException> {
+            Builtins.build(
+                    StyxObjectDefinition("healthMonitor", "ABC", mockk()),
+                    mapOf(),
+                    Environment.Builder().build(),
+                    StyxObjectStore())
+                    .shouldBeInstanceOf<StyxService>()
+        }.message shouldBe "Unknown service provider type 'ABC' for 'healthMonitor' provider"
+
     }
 
 })

@@ -13,13 +13,16 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.routing.config;
+package com.hotels.styx.routing.handlers
 
-import com.hotels.styx.api.HttpInterceptor;
+import com.fasterxml.jackson.databind.JsonNode
+import com.hotels.styx.api.extension.service.spi.StyxService
 
 /**
- * Builder for built-in interceptors.
+ * A routing object and its associated configuration metadata.
  */
-public interface HttpInterceptorFactory {
-    HttpInterceptor build(StyxObjectDefinition configBlock);
-}
+internal data class ProviderObjectRecord(
+        val type: String,
+        val tags: Set<String>,
+        val config: JsonNode,
+        val styxService: StyxService)

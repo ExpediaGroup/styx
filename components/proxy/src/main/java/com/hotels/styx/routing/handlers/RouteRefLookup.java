@@ -18,7 +18,7 @@ package com.hotels.styx.routing.handlers;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.RoutingObjectRecord;
-import com.hotels.styx.routing.config.RoutingObjectReference;
+import com.hotels.styx.routing.config.StyxObjectReference;
 import com.hotels.styx.routing.db.StyxObjectStore;
 
 import java.util.Optional;
@@ -35,7 +35,7 @@ public interface RouteRefLookup {
     // Consider modifying this interface to return Optional<RoutingObject>.
     // Then we can move .orElse handler to Builtins. This will
     // prevent NPEs in test RouteRefLookup implementations.
-    RoutingObject apply(RoutingObjectReference route);
+    RoutingObject apply(StyxObjectReference route);
 
     /**
      * A StyxObjectStore based route reference lookup function.
@@ -48,7 +48,7 @@ public interface RouteRefLookup {
         }
 
         @Override
-        public RoutingObject apply(RoutingObjectReference route) {
+        public RoutingObject apply(StyxObjectReference route) {
             Optional<RoutingObjectRecord> routingObjectRecord = this.routeDatabase.get(route.name());
 
             return routingObjectRecord
