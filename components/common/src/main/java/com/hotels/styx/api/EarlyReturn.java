@@ -17,19 +17,46 @@ package com.hotels.styx.api;
 
 /**
  * Some convenience methods and values for early-return behaviour.
+ *
+ * The main purpose of this is to ensure that the request is consumed, as well as cutting down on boilerplate.
  */
 public final class EarlyReturn {
+    /**
+     * Number of bytes to limit request body aggregation to, in order to mitigate denial-of-service attacks.
+     * This value is used by the methods in this class, but can also be used by external code, if desired.
+     */
     public static final int REQUEST_BYTE_LIMIT_ON_ERROR = 1_000_000;
 
+    /**
+     * Consume request content and return an error.
+     *
+     * @param request live request
+     * @param error error
+     * @return eventual live response
+     */
     public static Eventual<LiveHttpResponse> returnEarlyWithError(LiveHttpRequest request, Throwable error) {
         return request.aggregate(REQUEST_BYTE_LIMIT_ON_ERROR).flatMap(anyRequest ->
                 Eventual.error(error));
     }
 
+    /**
+     * Consume request content and return a response.
+     *
+     * @param request live request
+     * @param response live response
+     * @return live response
+     */
     public static Eventual<LiveHttpResponse> returnEarlyWithResponse(LiveHttpRequest request, LiveHttpResponse response) {
         return request.aggregate(REQUEST_BYTE_LIMIT_ON_ERROR).map(anyRequest -> response);
     }
 
+    /**
+     * Consume request content and return a response.
+     *
+     * @param request live request
+     * @param response non-live response
+     * @return live response
+     */
     public static Eventual<LiveHttpResponse> returnEarlyWithResponse(LiveHttpRequest request, HttpResponse response) {
         return request.aggregate(REQUEST_BYTE_LIMIT_ON_ERROR).map(anyRequest -> response.stream());
     }
