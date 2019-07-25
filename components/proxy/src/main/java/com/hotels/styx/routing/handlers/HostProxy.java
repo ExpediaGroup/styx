@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hotels.styx.api.EarlyReturn.returnEarlyWithError;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
 import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
@@ -128,7 +129,7 @@ public class HostProxy implements RoutingObject {
                             .whenCancelled(() -> originMetrics.requestCancelled())
                             .apply());
         } else {
-            return Eventual.error(new IllegalStateException(errorMessage));
+            return returnEarlyWithError(request, new IllegalStateException(errorMessage));
         }
     }
 

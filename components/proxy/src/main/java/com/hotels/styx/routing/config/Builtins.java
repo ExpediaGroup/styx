@@ -17,7 +17,6 @@ package com.hotels.styx.routing.config;
 
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.Environment;
-import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.config.schema.Schema;
@@ -40,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.hotels.styx.api.EarlyReturn.returnEarlyWithResponse;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static java.lang.String.format;
@@ -58,7 +58,7 @@ public final class Builtins {
             ImmutableMap.of("HealthCheckMonitor", new HealthCheckMonitoringServiceFactory());
 
     public static final RouteRefLookup DEFAULT_REFERENCE_LOOKUP = reference -> (request, ctx) ->
-            Eventual.of(response(NOT_FOUND)
+            returnEarlyWithResponse(request, response(NOT_FOUND)
                     .body(format("Handler not found for '%s'.", reference), UTF_8)
                     .build()
                     .stream());

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,13 +18,14 @@ package com.hotels.styx.http;
 import com.google.common.io.Files;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.client.StyxHttpClient;
+import com.hotels.styx.common.http.handler.HttpAggregator;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.handlers.StaticFileHandler;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-import com.hotels.styx.client.HttpClient;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -52,7 +53,7 @@ public class StaticFileOnRealServerIT {
     @BeforeClass
     public void startServer() {
         dir = Files.createTempDir();
-        webServer = createHttpServer(0, new StaticFileHandler(dir));
+        webServer = createHttpServer(0, new HttpAggregator(new StaticFileHandler(dir)));
         webServer.startAsync().awaitRunning();
         serverEndpoint = toHostAndPort(webServer.httpAddress());
     }

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package loadtest.plugins;
 
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.Eventual;
 
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
@@ -29,10 +28,12 @@ final class AdminHandlers {
     }
 
     static ImmutableMap<String, HttpHandler> adminHandlers(String endpoint, String responseContent) {
-        return ImmutableMap.of(endpoint, (request, context) -> Eventual.of(response(OK)
-                .body(responseContent, UTF_8)
-                .build()
-                .stream()
-        ));
+        return ImmutableMap.of(endpoint, (request, context) ->
+                request.aggregate(1_000_000).map(anyRequest ->
+                        response(OK)
+                                .body(responseContent, UTF_8)
+                                .build()
+                                .stream()
+                ));
     }
 }

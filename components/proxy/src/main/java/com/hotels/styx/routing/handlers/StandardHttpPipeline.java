@@ -15,28 +15,30 @@
  */
 package com.hotels.styx.routing.handlers;
 
+import com.hotels.styx.api.Eventual;
+import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.server.track.RequestTracker;
+import rx.Observable;
+
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.hotels.styx.api.EarlyReturn.returnEarlyWithError;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static rx.Observable.create;
 import static rx.RxReactiveStreams.toObservable;
 import static rx.RxReactiveStreams.toPublisher;
 
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.LiveHttpResponse;
-
-import com.hotels.styx.server.track.RequestTracker;
-import rx.Observable;
-
 /**
  * The pipeline consists of a chain of interceptors followed by a handler.
  */
 class StandardHttpPipeline implements HttpHandler {
+    private static final int REQUEST_BYTE_LIMIT_ON_ERROR = 1_000_000;
+
     private final List<HttpInterceptor> interceptors;
     private final HttpHandler handler;
     private final RequestTracker requestTracker;
@@ -93,7 +95,7 @@ class StandardHttpPipeline implements HttpHandler {
                 try {
                     return interceptor.intercept(request, chain);
                 } catch (Throwable e) {
-                    return Eventual.error(e);
+                    return returnEarlyWithError(request, e);
                 }
             }
 

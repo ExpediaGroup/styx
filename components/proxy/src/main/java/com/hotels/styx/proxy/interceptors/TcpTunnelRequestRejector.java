@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 
+import static com.hotels.styx.api.EarlyReturn.returnEarlyWithResponse;
 import static com.hotels.styx.api.HttpMethod.CONNECT;
 import static com.hotels.styx.api.HttpResponseStatus.METHOD_NOT_ALLOWED;
 import static com.hotels.styx.api.LiveHttpResponse.response;
@@ -29,16 +30,10 @@ import static com.hotels.styx.api.LiveHttpResponse.response;
  * (see issue #312 https://github.com/HotelsDotCom/styx/issues/312).
  */
 public class TcpTunnelRequestRejector implements HttpInterceptor {
-
     @Override
     public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
-
-        if (CONNECT.equals(request.method())) {
-            return Eventual.of(response(METHOD_NOT_ALLOWED).build());
-        } else {
-            return chain.proceed(request);
-        }
+        return CONNECT.equals(request.method())
+                ? returnEarlyWithResponse(request, response(METHOD_NOT_ALLOWED).build())
+                : chain.proceed(request);
     }
-
-
 }

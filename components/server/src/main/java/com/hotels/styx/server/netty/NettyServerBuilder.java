@@ -16,9 +16,7 @@
 package com.hotels.styx.server.netty;
 
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.MetricRegistry;
-import com.hotels.styx.api.Eventual;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.ServerEventLoopFactory;
 import com.hotels.styx.server.netty.eventloop.PlatformAwareServerEventLoopFactory;
@@ -33,7 +31,9 @@ import java.util.function.Supplier;
 import static com.google.common.base.Objects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Lists.newCopyOnWriteArrayList;
+import static com.hotels.styx.api.EarlyReturn.returnEarlyWithResponse;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.server.netty.eventloop.ServerEventLoopFactories.memoize;
 import static java.util.Arrays.asList;
 
@@ -50,7 +50,8 @@ public final class NettyServerBuilder {
     private Optional<ServerConnector> httpConnector = Optional.empty();
     private Optional<ServerConnector> httpsConnector = Optional.empty();
     private final List<Runnable> startupActions = newCopyOnWriteArrayList();
-    private Supplier<HttpHandler> handlerFactory = () -> (request, context) -> Eventual.of(LiveHttpResponse.response(NOT_FOUND).build());
+    private Supplier<HttpHandler> handlerFactory = () -> (request, context) ->
+            returnEarlyWithResponse(request, response(NOT_FOUND).build());
 
     public static NettyServerBuilder newBuilder() {
         return new NettyServerBuilder();

@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.routing.handlers;
 
-import com.hotels.styx.api.Eventual;
 import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.StyxObjectReference;
@@ -23,6 +22,7 @@ import com.hotels.styx.routing.db.StyxObjectStore;
 
 import java.util.Optional;
 
+import static com.hotels.styx.api.EarlyReturn.returnEarlyWithResponse;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -53,15 +53,13 @@ public interface RouteRefLookup {
 
             return routingObjectRecord
                     .map(it -> (RoutingObject) it.getRoutingObject())
-                    .orElse((liveRequest, na) -> {
-                        liveRequest.consume();
-
-                        return Eventual.of(response(NOT_FOUND)
-                                .body("Not found: " + route.name(), UTF_8)
-                                .build()
-                                .stream()
-                        );
-                    });
+                    .orElse((liveRequest, na) ->
+                            returnEarlyWithResponse(liveRequest,
+                                    response(NOT_FOUND)
+                                            .body("Not found: " + route.name(), UTF_8)
+                                            .build()
+                                            .stream()
+                            ));
         }
     }
 }

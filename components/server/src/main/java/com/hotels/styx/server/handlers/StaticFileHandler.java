@@ -18,12 +18,10 @@ package com.hotels.styx.server.handlers;
 import com.google.common.io.Files;
 import com.google.common.net.MediaType;
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.common.http.handler.HttpAggregator;
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.WebServiceHandler;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -32,16 +30,16 @@ import java.util.Optional;
 
 import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
-import static com.hotels.styx.server.handlers.MediaTypes.mediaTypeOf;
-import static com.hotels.styx.common.http.handler.NotFoundHandler.NOT_FOUND_HANDLER;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.common.http.handler.NotFoundHandler.NOT_FOUND_HANDLER;
+import static com.hotels.styx.server.handlers.MediaTypes.mediaTypeOf;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * HTTP handler that provides a static file.
  */
-public class StaticFileHandler implements HttpHandler {
+public class StaticFileHandler implements WebServiceHandler {
     private static final Logger LOG = getLogger(StaticFileHandler.class);
     private final File dir;
 
@@ -55,19 +53,18 @@ public class StaticFileHandler implements HttpHandler {
     }
 
     @Override
-    public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
+    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         try {
             return resolveFile(request.path())
                     .map(ResolvedFile::new)
                     .map(resolvedFile -> HttpResponse.response()
                             .addHeader(CONTENT_TYPE, resolvedFile.mediaType)
                             .body(resolvedFile.content, UTF_8)
-                            .build()
-                            .stream())
+                            .build())
                     .map(Eventual::of)
-                    .orElseGet(() -> new HttpAggregator(NOT_FOUND_HANDLER).handle(request, context));
+                    .orElseGet(() -> NOT_FOUND_HANDLER.handle(request, context));
         } catch (IOException e) {
-            return Eventual.of(HttpResponse.response(INTERNAL_SERVER_ERROR).build().stream());
+            return Eventual.of(HttpResponse.response(INTERNAL_SERVER_ERROR).build());
         }
     }
 

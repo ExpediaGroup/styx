@@ -24,6 +24,8 @@ import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.server.HttpRouter;
 import com.hotels.styx.server.NoServiceConfiguredException;
 
+import static com.hotels.styx.api.EarlyReturn.returnEarlyWithError;
+
 /**
  * A {@link HttpHandler} implementation.
  */
@@ -38,6 +40,6 @@ public class RouteHandlerAdapter implements RoutingObject {
     public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
         return router.route(request, context)
                 .map(handler -> handler.handle(request, context))
-                .orElseGet(() -> Eventual.error(new NoServiceConfiguredException(request.path())));
+                .orElseGet(() -> returnEarlyWithError(request, new NoServiceConfiguredException(request.path())));
     }
 }

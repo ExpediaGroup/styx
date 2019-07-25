@@ -17,14 +17,13 @@ package com.hotels.styx.routing.handlers;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.RouteHandlerAdapter;
-import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
@@ -41,14 +40,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import static com.hotels.styx.api.EarlyReturn.returnEarlyWithResponse;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
-import static com.hotels.styx.routing.config.RoutingConfigParser.toRoutingConfigNode;
 import static com.hotels.styx.config.schema.SchemaDsl.field;
 import static com.hotels.styx.config.schema.SchemaDsl.list;
 import static com.hotels.styx.config.schema.SchemaDsl.object;
 import static com.hotels.styx.config.schema.SchemaDsl.optional;
 import static com.hotels.styx.config.schema.SchemaDsl.routingObject;
 import static com.hotels.styx.config.schema.SchemaDsl.string;
+import static com.hotels.styx.routing.config.RoutingConfigParser.toRoutingConfigNode;
 import static com.hotels.styx.routing.config.RoutingSupport.append;
 import static com.hotels.styx.routing.config.RoutingSupport.missingAttributeError;
 import static java.lang.String.format;
@@ -97,7 +97,7 @@ public class ConditionRouter implements HttpRouter {
                 Context context,
                 ConditionRouterConfig config) {
             if (config.fallback == null) {
-                return (request, na) -> Eventual.of(LiveHttpResponse.response(BAD_GATEWAY).build());
+                return (request, na) -> returnEarlyWithResponse(request, LiveHttpResponse.response(BAD_GATEWAY).build());
             } else {
                 return Builtins.build(append(parents, "fallback"), context, config.fallback);
             }

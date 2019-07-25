@@ -20,17 +20,19 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.WebServiceHandler;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
+import com.hotels.styx.common.http.handler.HttpAggregator;
 import org.slf4j.Logger;
 
 import java.util.Map;
 
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+import static com.hotels.styx.api.HttpResponse.response;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -68,19 +70,17 @@ public class DemoPlugin implements Plugin {
     @Override
     public Map<String, HttpHandler> adminInterfaceHandlers() {
         return ImmutableMap.of(
-                "example", adminHandler()
+                "example", new HttpAggregator(adminHandler())
         );
     }
 
-    private HttpHandler adminHandler() {
+    private WebServiceHandler adminHandler() {
         return (request, context) -> {
             LOGGER.info("Demo plugin serving admin page");
 
-            return Eventual.of(
-                    HttpResponse.response().header(CONTENT_TYPE, PLAIN_TEXT_UTF_8)
+            return Eventual.of(response().header(CONTENT_TYPE, PLAIN_TEXT_UTF_8)
                             .body("This is an admin page provided by a demo plugin used to test Styx's plugin functionality. Text from config=" + config.adminText, UTF_8)
-                            .build()
-                            .stream());
+                            .build());
         };
     }
 

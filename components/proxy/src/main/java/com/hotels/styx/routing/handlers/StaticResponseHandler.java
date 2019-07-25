@@ -16,8 +16,6 @@
 package com.hotels.styx.routing.handlers;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hotels.styx.api.Buffer;
-import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
@@ -27,12 +25,12 @@ import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
-import reactor.core.publisher.Flux;
 
 import java.util.List;
 
+import static com.hotels.styx.api.EarlyReturn.returnEarlyWithResponse;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.statusWithCode;
-import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.config.schema.SchemaDsl.field;
 import static com.hotels.styx.config.schema.SchemaDsl.integer;
 import static com.hotels.styx.config.schema.SchemaDsl.object;
@@ -59,7 +57,11 @@ public class StaticResponseHandler implements RoutingObject {
 
     @Override
     public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
-        return Eventual.of(response(statusWithCode(status)).body(new ByteStream(Flux.just(new Buffer(text, UTF_8)))).build());
+        return returnEarlyWithResponse(request,
+                response(statusWithCode(status))
+                        .body(text, UTF_8)
+                        .build()
+                        .stream());
     }
 
     private static class StaticResponseConfig {
