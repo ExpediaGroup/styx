@@ -43,6 +43,8 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
  * for implementing a StyxSerive interface.
  */
 public abstract class AbstractStyxService implements StyxService {
+    private static final int MAX_CONTENT_BYTES_FOR_STATUS_PAGE = 1024;
+
     private final String name;
     private final AtomicReference<StyxServiceStatus> status = new AtomicReference<>(CREATED);
 
@@ -98,7 +100,7 @@ public abstract class AbstractStyxService implements StyxService {
     @Override
     public Map<String, HttpHandler> adminInterfaceHandlers() {
         return ImmutableMap.of("status", (request, context) ->
-                request.aggregate(1_000_000).map(anyRequest ->
+                request.aggregate(MAX_CONTENT_BYTES_FOR_STATUS_PAGE).map(anyRequest ->
                         response(OK)
                                 .addHeader(CONTENT_TYPE, APPLICATION_JSON)
                                 .body(format("{ name: \"%s\" status: \"%s\" }", name, status), UTF_8)
