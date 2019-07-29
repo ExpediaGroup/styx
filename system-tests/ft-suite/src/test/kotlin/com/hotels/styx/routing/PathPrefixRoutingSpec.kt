@@ -89,6 +89,8 @@ class PathPrefixRoutingSpec : StringSpec() {
               content: "I'm database"
 
         httpPipeline: root
+        services: 
+          factories: {}
       """.trimIndent()
 
     val client: StyxHttpClient = StyxHttpClient.Builder().build()

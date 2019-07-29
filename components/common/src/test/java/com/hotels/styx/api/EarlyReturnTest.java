@@ -25,6 +25,7 @@ import static com.hotels.styx.api.LiveHttpRequest.post;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.testng.Assert.fail;
 
 public class EarlyReturnTest {
     @Test
@@ -44,6 +45,7 @@ public class EarlyReturnTest {
 
         try {
             Mono.from(eventual).block();
+            fail("Exception not thrown");
         } catch (Exception e) {
             assertThat(e, is(myException));
         }

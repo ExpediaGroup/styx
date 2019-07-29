@@ -44,6 +44,8 @@ class VersionFilesPropertySpec : StringSpec() {
 
         userDefined:
           versionFiles: $fileLocation
+        services: 
+          factories: {}
       """.trimIndent()
 
     init {

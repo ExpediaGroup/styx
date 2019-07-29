@@ -53,6 +53,8 @@ class RoutingRestApiSpec : StringSpec() {
               port: 0
 
         httpPipeline: root
+        services: 
+          factories: {}
       """.trimIndent()
 
     init {

@@ -15,50 +15,53 @@
  */
 package com.hotels.styx.api;
 
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Mono;
+
 /**
  * Some convenience methods and values for early-return behaviour.
- *
+ * <p>
  * The main purpose of this is to ensure that the request is consumed, as well as cutting down on boilerplate.
  */
 public final class EarlyReturn {
-    /**
-     * Number of bytes to limit request body aggregation to, in order to mitigate denial-of-service attacks.
-     * This value is used by the methods in this class, but can also be used by external code, if desired.
-     */
-    public static final int REQUEST_BYTE_LIMIT_ON_ERROR = 1_000_000;
 
     /**
      * Consume request content and return an error.
      *
      * @param request live request
-     * @param error error
+     * @param error   error
      * @return eventual live response
      */
     public static Eventual<LiveHttpResponse> returnEarlyWithError(LiveHttpRequest request, Throwable error) {
-        return request.aggregate(REQUEST_BYTE_LIMIT_ON_ERROR).flatMap(anyRequest ->
-                Eventual.error(error));
+        return dropAndReplace(request, Eventual.error(error));
     }
 
     /**
      * Consume request content and return a response.
      *
-     * @param request live request
+     * @param request  live request
      * @param response live response
      * @return live response
      */
     public static Eventual<LiveHttpResponse> returnEarlyWithResponse(LiveHttpRequest request, LiveHttpResponse response) {
-        return request.aggregate(REQUEST_BYTE_LIMIT_ON_ERROR).map(anyRequest -> response);
+        return dropAndReplace(request, Eventual.of(response));
     }
 
     /**
      * Consume request content and return a response.
      *
-     * @param request live request
+     * @param request  live request
      * @param response non-live response
      * @return live response
      */
     public static Eventual<LiveHttpResponse> returnEarlyWithResponse(LiveHttpRequest request, HttpResponse response) {
-        return request.aggregate(REQUEST_BYTE_LIMIT_ON_ERROR).map(anyRequest -> response.stream());
+        return dropAndReplace(request, Eventual.of(response.stream()));
+    }
+
+    private static <T> Eventual<T> dropAndReplace(LiveHttpRequest request, Publisher<T> other) {
+        return new Eventual<>(
+                Mono.from(request.<T>consume2())
+                        .concatWith(other));
     }
 
     private EarlyReturn() {

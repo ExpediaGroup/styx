@@ -83,6 +83,7 @@ class ConditionRoutingSpec : StringSpec() {
         httpPipeline:
           type: InterceptorPipeline
           config:
+            pipeline: []
             handler:
               type: ConditionRouter
               config:
@@ -99,6 +100,8 @@ class ConditionRoutingSpec : StringSpec() {
                   config:
                     status: 200
                     content: "Hello, from http server!"
+        services: 
+          factories: {}
       """.trimIndent()
 
     val client: StyxHttpClient = StyxHttpClient.Builder().build()

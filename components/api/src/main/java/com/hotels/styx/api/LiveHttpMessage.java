@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@
   limitations under the License.
  */
 package com.hotels.styx.api;
+
+import org.reactivestreams.Publisher;
 
 import java.util.List;
 import java.util.Optional;
@@ -102,6 +104,7 @@ interface LiveHttpMessage {
      * <p>
      */
     default void consume() {
+        // TODO is there any point to this aggregate call? Can't we just do body().drop().subscribe(...) or something?
         body().drop().aggregate(1)
                 .thenApply(buffer -> {
                     buffer.delegate().release();
@@ -109,5 +112,8 @@ interface LiveHttpMessage {
                 });
     }
 
-
+    default <T> Eventual<T> consume2() {
+        // Note: since the ByteStream will have zero elements, we can safely ignoring the original element type of body().drop().
+        return new Eventual<T>((Publisher) body().drop());
+    }
 }
