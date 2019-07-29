@@ -62,7 +62,7 @@ public class ResponseEventListenerTest {
                 .apply();
 
         StepVerifier.create(listener)
-                .consumeNextWith(LiveHttpMessage::consume)
+                .consumeNextWith(LiveHttpMessage::consumeInBackground)
                 .then(() -> {
                     assertFalse(cancelled.get());
                     assertNull(responseError.get());
@@ -148,7 +148,7 @@ public class ResponseEventListenerTest {
                 .apply();
 
         StepVerifier.create(listener)
-                .consumeNextWith(LiveHttpMessage::consume)
+                .consumeNextWith(LiveHttpMessage::consumeInBackground)
                 .verifyError();
 
         assertFalse(cancelled.get());
@@ -170,7 +170,7 @@ public class ResponseEventListenerTest {
                 .apply();
 
         StepVerifier.create(listener)
-                .consumeNextWith(LiveHttpMessage::consume)
+                .consumeNextWith(LiveHttpMessage::consumeInBackground)
                 .verifyComplete();
 
         assertTrue(responseError.get() instanceof RuntimeException);

@@ -15,9 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import org.reactivestreams.Publisher;
-import reactor.core.publisher.Mono;
-
 /**
  * Some convenience methods and values for early-return behaviour.
  * <p>
@@ -33,7 +30,7 @@ public final class EarlyReturn {
      * @return eventual live response
      */
     public static Eventual<LiveHttpResponse> returnEarlyWithError(LiveHttpRequest request, Throwable error) {
-        return dropAndReplace(request, Eventual.error(error));
+        return request.consume().flatMap(any -> Eventual.error(error));
     }
 
     /**
@@ -44,7 +41,7 @@ public final class EarlyReturn {
      * @return live response
      */
     public static Eventual<LiveHttpResponse> returnEarlyWithResponse(LiveHttpRequest request, LiveHttpResponse response) {
-        return dropAndReplace(request, Eventual.of(response));
+        return request.consume().flatMap(any -> Eventual.of(response));
     }
 
     /**
@@ -55,13 +52,7 @@ public final class EarlyReturn {
      * @return live response
      */
     public static Eventual<LiveHttpResponse> returnEarlyWithResponse(LiveHttpRequest request, HttpResponse response) {
-        return dropAndReplace(request, Eventual.of(response.stream()));
-    }
-
-    private static <T> Eventual<T> dropAndReplace(LiveHttpRequest request, Publisher<T> other) {
-        return new Eventual<>(
-                Mono.from(request.<T>consume2())
-                        .concatWith(other));
+        return request.consume().flatMap(any -> Eventual.of(response.stream()));
     }
 
     private EarlyReturn() {

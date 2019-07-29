@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -228,6 +228,10 @@ public class LiveHttpResponse implements LiveHttpMessage {
         return cookies().stream()
                 .filter(cookie -> cookie.name().equals(name))
                 .findFirst();
+    }
+
+    public Eventual<LiveHttpResponse> consume() {
+        return MessageBodyConsumption.consume(this, LiveHttpResponse.class);
     }
 
     @Override

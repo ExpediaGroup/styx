@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -342,7 +342,22 @@ public class LiveHttpResponseTest {
                 .body(new ByteStream(Flux.just(buf1, buf2)))
                 .build();
 
-        response.consume();
+        response.consumeInBackground();
+
+        assertEquals(buf1.delegate().refCnt(), 0);
+        assertEquals(buf2.delegate().refCnt(), 0);
+    }
+
+    @Test
+    public void consumesBody2() {
+        Buffer buf1 = new Buffer("foo", UTF_8);
+        Buffer buf2 = new Buffer("bar", UTF_8);
+
+        LiveHttpResponse response = response()
+                .body(new ByteStream(Flux.just(buf1, buf2)))
+                .build();
+
+        Mono.from(response.consume()).block();
 
         assertEquals(buf1.delegate().refCnt(), 0);
         assertEquals(buf2.delegate().refCnt(), 0);

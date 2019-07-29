@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ public class RequestsTest {
     @Test
     public void requestDoFinallyActivatesWhenSuccessfullyCompleted() {
         Requests.doFinally(request, completed::set)
-                .consume();
+                .consumeInBackground();
 
         publisher.next(new Buffer("content", UTF_8));
         assertThat(completed.get(), is(nullValue()));
@@ -60,7 +60,7 @@ public class RequestsTest {
     @Test
     public void responseDoFinallyActivatesWhenSuccessfullyCompleted() {
         Requests.doFinally(response, completed::set)
-                .consume();
+                .consumeInBackground();
 
         publisher.next(new Buffer("content", UTF_8));
         assertThat(completed.get(), is(nullValue()));
@@ -74,7 +74,7 @@ public class RequestsTest {
         RuntimeException cause = new RuntimeException("help!!");
 
         Requests.doFinally(request, completed::set)
-                .consume();
+                .consumeInBackground();
 
         publisher.next(new Buffer("content", UTF_8));
         assertThat(completed.get(), is(nullValue()));
@@ -88,7 +88,7 @@ public class RequestsTest {
         RuntimeException cause = new RuntimeException("help!!");
 
         Requests.doFinally(response, completed::set)
-                .consume();
+                .consumeInBackground();
 
         publisher.next(new Buffer("content", UTF_8));
         assertThat(completed.get(), is(nullValue()));
@@ -100,7 +100,7 @@ public class RequestsTest {
     @Test
     public void requestDoOnCompleteActivatesWhenSuccessfullyCompleted() {
         Requests.doOnComplete(request, () -> completed.set(Optional.empty()))
-                .consume();
+                .consumeInBackground();
 
         publisher.next(new Buffer("content", UTF_8));
         assertThat(completed.get(), is(nullValue()));
@@ -112,7 +112,7 @@ public class RequestsTest {
     @Test
     public void responseDoOnCompleteActivatesWhenSuccessfullyCompleted() {
         Requests.doOnComplete(response, () -> completed.set(Optional.empty()))
-                .consume();
+                .consumeInBackground();
 
         publisher.next(new Buffer("content", UTF_8));
         assertThat(completed.get(), is(nullValue()));
@@ -126,7 +126,7 @@ public class RequestsTest {
         RuntimeException cause = new RuntimeException("help!!");
 
         Requests.doOnComplete(request, () -> completed.set(Optional.empty()))
-                .consume();
+                .consumeInBackground();
 
         publisher.next(new Buffer("content", UTF_8));
         assertThat(completed.get(), is(nullValue()));
@@ -140,7 +140,7 @@ public class RequestsTest {
         RuntimeException cause = new RuntimeException("help!!");
 
         Requests.doOnComplete(response, () -> completed.set(Optional.empty()))
-                .consume();
+                .consumeInBackground();
 
         publisher.next(new Buffer("content", UTF_8));
         assertThat(completed.get(), is(nullValue()));
@@ -152,7 +152,7 @@ public class RequestsTest {
     @Test
     public void requestDoOnErrorDoesNotActivatesWhenSuccessfullyCompleted() {
         Requests.doOnError(request, (cause) -> completed.set(Optional.of(cause)))
-                .consume();
+                .consumeInBackground();
 
         publisher.next(new Buffer("content", UTF_8));
         assertThat(completed.get(), is(nullValue()));
@@ -164,7 +164,7 @@ public class RequestsTest {
     @Test
     public void responseDoOnErrorDoesNotActivatesWhenSuccessfullyCompleted() {
         Requests.doOnError(response, (cause) -> completed.set(Optional.of(cause)))
-                .consume();
+                .consumeInBackground();
 
         publisher.next(new Buffer("content", UTF_8));
         assertThat(completed.get(), is(nullValue()));
@@ -178,7 +178,7 @@ public class RequestsTest {
         RuntimeException cause = new RuntimeException("help!!");
 
         Requests.doOnError(request, (it) -> completed.set(Optional.of(it)))
-                .consume();
+                .consumeInBackground();
 
         publisher.next(new Buffer("content", UTF_8));
         assertThat(completed.get(), is(nullValue()));
@@ -193,7 +193,7 @@ public class RequestsTest {
         RuntimeException cause = new RuntimeException("help!!");
 
         Requests.doOnError(response, (it) -> completed.set(Optional.of(it)))
-                .consume();
+                .consumeInBackground();
 
         publisher.next(new Buffer("content", UTF_8));
         assertThat(completed.get(), is(nullValue()));

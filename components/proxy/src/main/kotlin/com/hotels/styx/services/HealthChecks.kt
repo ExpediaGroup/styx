@@ -35,8 +35,12 @@ fun urlProbe(probe: HttpRequest, timeout: Duration): Probe =
         { routingObject ->
             routingObject
                     .handle(probe.stream(), HttpInterceptorContext.create())
+                    // replacing old consume method with this causes test failure. reason currently unknown.
+//                    .flatMap {
+//                        it.consume2()
+//                    }
                     .map {
-                        it.consume()
+                        it.consumeInBackground()
                         it.status().code() < 400
                     }
                     .toMono()

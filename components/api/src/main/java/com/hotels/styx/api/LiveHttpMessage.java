@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
@@ -107,8 +106,8 @@ interface LiveHttpMessage {
      * open for connection pooling.
      * <p>
      */
-    default void consume() {
-        consume2().subscribe(new Subscriber<Object>() {
+    default void consumeInBackground() {
+        consume().subscribe(new Subscriber<Object>() {
             @Override
             public void onSubscribe(Subscription s) {
                 s.request(MAX_VALUE);
@@ -132,8 +131,5 @@ interface LiveHttpMessage {
         });
     }
 
-    default <T> Eventual<T> consume2() {
-        // Note: since the ByteStream will have zero elements, we can safely ignoring the original element type of body().drop().
-        return new Eventual<T>((Publisher) body().drop());
-    }
+    <T extends LiveHttpMessage> Eventual<T> consume();
 }

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import reactor.core.publisher.BaseSubscriber;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import reactor.test.publisher.TestPublisher;
 import rx.Observable;
@@ -68,7 +69,7 @@ public class StyxHostHttpClientTest {
         StyxHostHttpClient hostClient = new StyxHostHttpClient(pool);
 
         StepVerifier.create(hostClient.sendRequest(request))
-                .consumeNextWith(response -> response.consume())
+                .consumeNextWith(response -> Mono.from(response.consume()).block())
                 .expectComplete()
                 .verify();
 
@@ -99,7 +100,7 @@ public class StyxHostHttpClientTest {
         verify(pool, never()).closeConnection(any(Connection.class));
 
         // ... until response body is consumed:
-        transformedResponse.get().consume();
+        Mono.from(transformedResponse.get().consume()).block();
 
         // Finally, the connection is returned after the response body is fully consumed:
         verify(pool).returnConnection(any(Connection.class));
@@ -144,7 +145,7 @@ public class StyxHostHttpClientTest {
                 .expectError()
                 .verify();
 
-        newResponse.get().consume();
+        Mono.from(newResponse.get().consume()).block();
 
         verify(pool).returnConnection(any(Connection.class));
     }
