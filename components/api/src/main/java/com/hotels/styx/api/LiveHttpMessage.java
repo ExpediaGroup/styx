@@ -16,12 +16,16 @@
 package com.hotels.styx.api;
 
 import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 
 import java.util.List;
 import java.util.Optional;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+import static java.lang.Long.MAX_VALUE;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * All behaviour common to both streaming requests and streaming responses.
@@ -104,12 +108,28 @@ interface LiveHttpMessage {
      * <p>
      */
     default void consume() {
-        // TODO is there any point to this aggregate call? Can't we just do body().drop().subscribe(...) or something?
-        body().drop().aggregate(1)
-                .thenApply(buffer -> {
-                    buffer.delegate().release();
-                    return null;
-                });
+        consume2().subscribe(new Subscriber<Object>() {
+            @Override
+            public void onSubscribe(Subscription s) {
+                s.request(MAX_VALUE);
+            }
+
+            @Override
+            public void onNext(Object o) {
+                // ignore
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                // this will get the implementation class
+                getLogger(LiveHttpMessage.this.getClass()).error("Unexpected error", t);
+            }
+
+            @Override
+            public void onComplete() {
+                // ignore
+            }
+        });
     }
 
     default <T> Eventual<T> consume2() {
