@@ -383,6 +383,7 @@ public class LiveHttpRequest implements LiveHttpMessage {
                 .findFirst();
     }
 
+    @Override
     public Eventual<LiveHttpRequest> consume() {
         return MessageBodyConsumption.consume(this, LiveHttpRequest.class);
     }

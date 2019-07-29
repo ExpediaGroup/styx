@@ -105,6 +105,8 @@ interface LiveHttpMessage {
      * all the traffic. This has the benefit of keeping the underlying TCP connection
      * open for connection pooling.
      * <p>
+     *
+     * The consumption begins immediately, running in the background.
      */
     default void consumeInBackground() {
         consume().subscribe(new Subscriber<Object>() {
@@ -131,5 +133,15 @@ interface LiveHttpMessage {
         });
     }
 
+    /**
+     * Consume the message by discarding the message body.
+     * <p>
+     * This method reads the entire message body from the networks and black holes
+     * all the traffic. This has the benefit of keeping the underlying TCP connection
+     * open for connection pooling.
+     * <p>
+     *
+     * The consumption doesn't begin until the returned Eventual is subscribed to.
+     */
     <T extends LiveHttpMessage> Eventual<T> consume();
 }

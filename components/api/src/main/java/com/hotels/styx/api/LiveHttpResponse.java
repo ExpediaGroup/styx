@@ -230,6 +230,7 @@ public class LiveHttpResponse implements LiveHttpMessage {
                 .findFirst();
     }
 
+    @Override
     public Eventual<LiveHttpResponse> consume() {
         return MessageBodyConsumption.consume(this, LiveHttpResponse.class);
     }

@@ -334,7 +334,7 @@ public class LiveHttpResponseTest {
     }
 
     @Test
-    public void consumesBody() {
+    public void consumesBodyInBackground() {
         Buffer buf1 = new Buffer("foo", UTF_8);
         Buffer buf2 = new Buffer("bar", UTF_8);
 
@@ -349,7 +349,7 @@ public class LiveHttpResponseTest {
     }
 
     @Test
-    public void consumesBody2() {
+    public void consumesBodyInFlow() {
         Buffer buf1 = new Buffer("foo", UTF_8);
         Buffer buf2 = new Buffer("bar", UTF_8);
 
