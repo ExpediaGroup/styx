@@ -37,8 +37,6 @@ import static rx.RxReactiveStreams.toPublisher;
  * The pipeline consists of a chain of interceptors followed by a handler.
  */
 class StandardHttpPipeline implements HttpHandler {
-    private static final int REQUEST_BYTE_LIMIT_ON_ERROR = 1_000_000;
-
     private final List<HttpInterceptor> interceptors;
     private final HttpHandler handler;
     private final RequestTracker requestTracker;

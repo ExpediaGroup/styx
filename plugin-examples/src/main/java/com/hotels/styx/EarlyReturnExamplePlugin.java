@@ -31,13 +31,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * the HTTP response
  * The eventual object is returned immediately, even if the response has not yet arrived.
  */
-
 public class EarlyReturnExamplePlugin implements Plugin {
-
     @Override
     public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
         if (request.header("X-Respond").isPresent()) {
-            return request.aggregate(1_000_000).map(anyRequest ->
+            return request.consume().map(anyRequest ->
                     HttpResponse.response(OK)
                             .header(CONTENT_TYPE, "text/plain; charset=utf-8")
                             .body("Responding from plugin", UTF_8)
