@@ -41,8 +41,14 @@ fun urlProbe(probe: HttpRequest, timeout: Duration): Probe =
             routingObject
                     .handle(probe.stream(), HttpInterceptorContext.create())
                     .map {
-                        it.consumeInBackground()
-                        it.status().code() < 400
+                        try {
+                            it.consumeInBackground()
+                        } catch(e : Exception) {
+                            e.printStackTrace()
+                        }
+                        val ret = it.status().code() < 400
+                        println("Gonna return $ret")
+                        ret
                     }
                     .toMono()
                     .timeout(timeout)
