@@ -98,7 +98,7 @@ public abstract class AbstractStyxService implements StyxService {
     @Override
     public Map<String, HttpHandler> adminInterfaceHandlers() {
         return ImmutableMap.of("status", (request, context) ->
-                request.consume().map(anyRequest ->
+                request.consume(1024).map(anyRequest ->
                         response(OK)
                                 .addHeader(CONTENT_TYPE, APPLICATION_JSON)
                                 .body(format("{ name: \"%s\" status: \"%s\" }", name, status), UTF_8)

@@ -15,16 +15,11 @@
  */
 package com.hotels.styx.api;
 
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
-
 import java.util.List;
 import java.util.Optional;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
-import static java.lang.Long.MAX_VALUE;
-import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * All behaviour common to both streaming requests and streaming responses.
@@ -97,51 +92,4 @@ interface LiveHttpMessage {
     default boolean chunked() {
         return HttpMessageSupport.chunked(headers());
     }
-
-    /**
-     * Consume the message by discarding the message body.
-     * <p>
-     * This method reads the entire message body from the networks and black holes
-     * all the traffic. This has the benefit of keeping the underlying TCP connection
-     * open for connection pooling.
-     * <p>
-     *
-     * The consumption begins immediately, running in the background.
-     */
-    default void consumeInBackground() {
-        consume().subscribe(new Subscriber<Object>() {
-            @Override
-            public void onSubscribe(Subscription s) {
-                s.request(MAX_VALUE);
-            }
-
-            @Override
-            public void onNext(Object o) {
-                // ignore
-            }
-
-            @Override
-            public void onError(Throwable t) {
-                // this will get the implementation class
-                getLogger(LiveHttpMessage.this.getClass()).error("Unexpected error", t);
-            }
-
-            @Override
-            public void onComplete() {
-                // ignore
-            }
-        });
-    }
-
-    /**
-     * Consume the message by discarding the message body.
-     * <p>
-     * This method reads the entire message body from the networks and black holes
-     * all the traffic. This has the benefit of keeping the underlying TCP connection
-     * open for connection pooling.
-     * <p>
-     *
-     * The consumption doesn't begin until the returned Eventual is subscribed to.
-     */
-    <T extends LiveHttpMessage> Eventual<T> consume();
 }

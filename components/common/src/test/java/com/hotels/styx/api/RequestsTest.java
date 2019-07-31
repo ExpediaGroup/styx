@@ -15,6 +15,8 @@
  */
 package com.hotels.styx.api;
 
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import reactor.test.publisher.TestPublisher;
@@ -22,13 +24,14 @@ import reactor.test.publisher.TestPublisher;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
-import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.slf4j.LoggerFactory.getLogger;
 
 public class RequestsTest {
 
@@ -47,8 +50,7 @@ public class RequestsTest {
 
     @Test
     public void requestDoFinallyActivatesWhenSuccessfullyCompleted() {
-        Requests.doFinally(request, completed::set)
-                .consumeInBackground();
+        consumeInBackground(Requests.doFinally(request, completed::set));
 
         publisher.next(new Buffer("content", UTF_8));
         assertThat(completed.get(), is(nullValue()));
@@ -59,8 +61,7 @@ public class RequestsTest {
 
     @Test
     public void responseDoFinallyActivatesWhenSuccessfullyCompleted() {
-        Requests.doFinally(response, completed::set)
-                .consumeInBackground();
+        consumeInBackground(Requests.doFinally(response, completed::set));
 
         publisher.next(new Buffer("content", UTF_8));
         assertThat(completed.get(), is(nullValue()));
@@ -72,9 +73,7 @@ public class RequestsTest {
     @Test
     public void requestDoFinallyActivatesWhenErrors() {
         RuntimeException cause = new RuntimeException("help!!");
-
-        Requests.doFinally(request, completed::set)
-                .consumeInBackground();
+        consumeInBackground(Requests.doFinally(request, completed::set));
 
         publisher.next(new Buffer("content", UTF_8));
         assertThat(completed.get(), is(nullValue()));
@@ -86,9 +85,7 @@ public class RequestsTest {
     @Test
     public void responseDoFinallyActivatesWhenErrors() {
         RuntimeException cause = new RuntimeException("help!!");
-
-        Requests.doFinally(response, completed::set)
-                .consumeInBackground();
+        consumeInBackground(Requests.doFinally(response, completed::set));
 
         publisher.next(new Buffer("content", UTF_8));
         assertThat(completed.get(), is(nullValue()));
@@ -99,8 +96,7 @@ public class RequestsTest {
 
     @Test
     public void requestDoOnCompleteActivatesWhenSuccessfullyCompleted() {
-        Requests.doOnComplete(request, () -> completed.set(Optional.empty()))
-                .consumeInBackground();
+        consumeInBackground(Requests.doOnComplete(request, () -> completed.set(Optional.empty())));
 
         publisher.next(new Buffer("content", UTF_8));
         assertThat(completed.get(), is(nullValue()));
@@ -111,8 +107,7 @@ public class RequestsTest {
 
     @Test
     public void responseDoOnCompleteActivatesWhenSuccessfullyCompleted() {
-        Requests.doOnComplete(response, () -> completed.set(Optional.empty()))
-                .consumeInBackground();
+        consumeInBackground(Requests.doOnComplete(response, () -> completed.set(Optional.empty())));
 
         publisher.next(new Buffer("content", UTF_8));
         assertThat(completed.get(), is(nullValue()));
@@ -124,9 +119,7 @@ public class RequestsTest {
     @Test
     public void requestDoOnCompleteDoesNotActivatesWhenErrors() {
         RuntimeException cause = new RuntimeException("help!!");
-
-        Requests.doOnComplete(request, () -> completed.set(Optional.empty()))
-                .consumeInBackground();
+        consumeInBackground(Requests.doOnComplete(request, () -> completed.set(Optional.empty())));
 
         publisher.next(new Buffer("content", UTF_8));
         assertThat(completed.get(), is(nullValue()));
@@ -138,9 +131,7 @@ public class RequestsTest {
     @Test
     public void responseDoOnCompleteDoesNotActivatesWhenErrors() {
         RuntimeException cause = new RuntimeException("help!!");
-
-        Requests.doOnComplete(response, () -> completed.set(Optional.empty()))
-                .consumeInBackground();
+        consumeInBackground(Requests.doOnComplete(response, () -> completed.set(Optional.empty())));
 
         publisher.next(new Buffer("content", UTF_8));
         assertThat(completed.get(), is(nullValue()));
@@ -151,8 +142,7 @@ public class RequestsTest {
 
     @Test
     public void requestDoOnErrorDoesNotActivatesWhenSuccessfullyCompleted() {
-        Requests.doOnError(request, (cause) -> completed.set(Optional.of(cause)))
-                .consumeInBackground();
+        consumeInBackground(Requests.doOnError(request, (cause) -> completed.set(Optional.of(cause))));
 
         publisher.next(new Buffer("content", UTF_8));
         assertThat(completed.get(), is(nullValue()));
@@ -163,8 +153,7 @@ public class RequestsTest {
 
     @Test
     public void responseDoOnErrorDoesNotActivatesWhenSuccessfullyCompleted() {
-        Requests.doOnError(response, (cause) -> completed.set(Optional.of(cause)))
-                .consumeInBackground();
+        consumeInBackground(Requests.doOnError(response, (cause) -> completed.set(Optional.of(cause))));
 
         publisher.next(new Buffer("content", UTF_8));
         assertThat(completed.get(), is(nullValue()));
@@ -176,9 +165,7 @@ public class RequestsTest {
     @Test
     public void requestDoOnErrorActivatesWhenErrors() {
         RuntimeException cause = new RuntimeException("help!!");
-
-        Requests.doOnError(request, (it) -> completed.set(Optional.of(it)))
-                .consumeInBackground();
+        consumeInBackground(Requests.doOnError(request, (it) -> completed.set(Optional.of(it))));
 
         publisher.next(new Buffer("content", UTF_8));
         assertThat(completed.get(), is(nullValue()));
@@ -191,14 +178,54 @@ public class RequestsTest {
     @Test
     public void responseDoOnErrorActivatesWhenErrors() {
         RuntimeException cause = new RuntimeException("help!!");
-
-        Requests.doOnError(response, (it) -> completed.set(Optional.of(it)))
-                .consumeInBackground();
+        consumeInBackground(Requests.doOnError(response, (it) -> completed.set(Optional.of(it))));
 
         publisher.next(new Buffer("content", UTF_8));
         assertThat(completed.get(), is(nullValue()));
 
         publisher.error(cause);
         assertThat(completed.get(), is(Optional.of(cause)));
+    }
+
+    private static void consumeInBackground(LiveHttpRequest request) {
+        request.consume(1_000_000).subscribe(new Subscriber<LiveHttpRequest>() {
+            public void onSubscribe(Subscription s) {
+                s.request(Long.MAX_VALUE);
+            }
+
+            public void onNext(LiveHttpRequest o) {
+                // ignore
+            }
+
+            public void onError(Throwable t) {
+                // this will get the implementation class
+                getLogger(ResponseEventListenerTest.class).error("Unexpected error", t);
+            }
+
+            public void onComplete() {
+                // ignore
+            }
+        });
+    }
+
+    private static void consumeInBackground(LiveHttpResponse response) {
+        response.consume(1_000_000).subscribe(new Subscriber<LiveHttpResponse>() {
+            public void onSubscribe(Subscription s) {
+                s.request(Long.MAX_VALUE);
+            }
+
+            public void onNext(LiveHttpResponse o) {
+                // ignore
+            }
+
+            public void onError(Throwable t) {
+                // this will get the implementation class
+                getLogger(ResponseEventListenerTest.class).error("Unexpected error", t);
+            }
+
+            public void onComplete() {
+                // ignore
+            }
+        });
     }
 }

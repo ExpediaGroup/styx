@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -562,9 +562,36 @@ public class LiveHttpRequestTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "Invalid Content-Length found. -3")
     public void ensuresContentLengthIsPositive() {
-        LiveHttpRequest.post("/y")
+        post("/y")
                 .header("Content-Length", -3)
                 .build();
+    }
+
+    @Test
+    public void consumesBody() {
+        Buffer buf1 = new Buffer("foo", UTF_8);
+        Buffer buf2 = new Buffer("bar", UTF_8);
+
+        LiveHttpRequest response = post("/")
+                .body(new ByteStream(Flux.just(buf1, buf2)))
+                .build();
+
+        Mono.from(response.consume(1024)).block();
+
+        assertEquals(buf1.delegate().refCnt(), 0);
+        assertEquals(buf2.delegate().refCnt(), 0);
+    }
+
+    @Test(expectedExceptions = ContentOverflowException.class, expectedExceptionsMessageRegExp = "Maximum content size exceeded. Maximum size allowed is 1 bytes.")
+    public void bodyConsumptionLimitsMaxBytes() {
+        Buffer buf1 = new Buffer("foo", UTF_8);
+        Buffer buf2 = new Buffer("bar", UTF_8);
+
+        LiveHttpRequest response = post("/")
+                .body(new ByteStream(Flux.just(buf1, buf2)))
+                .build();
+
+        Mono.from(response.consume(1)).block();
     }
 
     private static ByteStream body(String... contents) {

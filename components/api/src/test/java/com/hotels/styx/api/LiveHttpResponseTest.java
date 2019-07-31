@@ -334,7 +334,7 @@ public class LiveHttpResponseTest {
     }
 
     @Test
-    public void consumesBodyInBackground() {
+    public void consumesBody() {
         Buffer buf1 = new Buffer("foo", UTF_8);
         Buffer buf2 = new Buffer("bar", UTF_8);
 
@@ -342,14 +342,14 @@ public class LiveHttpResponseTest {
                 .body(new ByteStream(Flux.just(buf1, buf2)))
                 .build();
 
-        response.consumeInBackground();
+        Mono.from(response.consume(1024)).block();
 
         assertEquals(buf1.delegate().refCnt(), 0);
         assertEquals(buf2.delegate().refCnt(), 0);
     }
 
-    @Test
-    public void consumesBodyInFlow() {
+    @Test(expectedExceptions = ContentOverflowException.class, expectedExceptionsMessageRegExp = "Maximum content size exceeded. Maximum size allowed is 1 bytes.")
+    public void bodyConsumptionLimitsMaxBytes() {
         Buffer buf1 = new Buffer("foo", UTF_8);
         Buffer buf2 = new Buffer("bar", UTF_8);
 
@@ -357,10 +357,7 @@ public class LiveHttpResponseTest {
                 .body(new ByteStream(Flux.just(buf1, buf2)))
                 .build();
 
-        Mono.from(response.consume()).block();
-
-        assertEquals(buf1.delegate().refCnt(), 0);
-        assertEquals(buf2.delegate().refCnt(), 0);
+        Mono.from(response.consume(1)).block();
     }
 
     @Test

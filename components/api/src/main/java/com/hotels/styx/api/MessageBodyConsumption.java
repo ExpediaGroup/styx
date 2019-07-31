@@ -15,24 +15,16 @@
  */
 package com.hotels.styx.api;
 
-import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
 final class MessageBodyConsumption {
     private MessageBodyConsumption() {
     }
 
-    static <T extends LiveHttpMessage> Eventual<T> consume(T message, Class<T> type) {
-        // Not strictly necessary, but we're playing with generics and unchecked casting here,
-        // so this will probably help us if any bugs appear due to misuse of this method.
-        if (!type.isInstance(message)) {
-            throw new IllegalArgumentException("Incorrect type: " + type);
-        }
+    static <T extends LiveHttpMessage> Eventual<T> consume(T message, int maxContentBytes) {
+        ByteStream byteStream = message.body().drop(maxContentBytes);
+        Mono<T> mono = Mono.from(byteStream).map(any -> message);
 
-        // Note: since the ByteStream will have zero elements, we can ignore the original element type of body().drop().
-        Publisher typeErased = message.body().drop();
-        Mono<T> replaceWithOriginalMessage = Mono.from(typeErased).concatWith(Mono.just(message)).single();
-
-        return new Eventual<>(replaceWithOriginalMessage);
+        return new Eventual<>(mono);
     }
 }

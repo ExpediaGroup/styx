@@ -16,9 +16,14 @@
 package com.hotels.styx.services
 
 import com.hotels.styx.api.HttpRequest
+import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.server.HttpInterceptorContext
 import org.reactivestreams.Publisher
+import org.reactivestreams.Subscriber
+import org.reactivestreams.Subscription
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory.getLogger
 import reactor.core.publisher.Mono
 import reactor.core.publisher.toMono
 import java.time.Duration
@@ -35,10 +40,6 @@ fun urlProbe(probe: HttpRequest, timeout: Duration): Probe =
         { routingObject ->
             routingObject
                     .handle(probe.stream(), HttpInterceptorContext.create())
-                    // replacing old consume method with this causes test failure. reason currently unknown.
-//                    .flatMap {
-//                        it.consume2()
-//                    }
                     .map {
                         it.consumeInBackground()
                         it.status().code() < 400
@@ -67,3 +68,26 @@ fun healthCheckFunction(activeThreshold: Int, inactiveThreshold: Int): CheckStat
                 }
             }
         }
+
+val logger : Logger = getLogger("HealthChecks.kt")
+
+fun LiveHttpResponse.consumeInBackground() {
+    consume(1_000_000).subscribe(object : Subscriber<LiveHttpResponse> {
+        override fun onSubscribe(s: Subscription) {
+            s.request(Long.MAX_VALUE)
+        }
+
+        override fun onNext(o: LiveHttpResponse) {
+            // ignore
+        }
+
+        override fun onError(t: Throwable) {
+            // this will get the implementation class
+            logger.error("Unexpected error", t)
+        }
+
+        override fun onComplete() {
+            // ignore
+        }
+    })
+}

@@ -21,6 +21,7 @@ package com.hotels.styx.api;
  * The main purpose of this is to ensure that the request is consumed, as well as cutting down on boilerplate.
  */
 public final class EarlyReturn {
+    private static final int BYTE_LIMIT = 1000_000;
 
     /**
      * Consume request content and return an error.
@@ -30,7 +31,7 @@ public final class EarlyReturn {
      * @return eventual live response
      */
     public static Eventual<LiveHttpResponse> returnEarlyWithError(LiveHttpRequest request, Throwable error) {
-        return request.consume().flatMap(any -> Eventual.error(error));
+        return request.consume(BYTE_LIMIT).flatMap(any -> Eventual.error(error));
     }
 
     /**
@@ -41,7 +42,7 @@ public final class EarlyReturn {
      * @return live response
      */
     public static Eventual<LiveHttpResponse> returnEarlyWithResponse(LiveHttpRequest request, LiveHttpResponse response) {
-        return request.consume().flatMap(any -> Eventual.of(response));
+        return request.consume(BYTE_LIMIT).flatMap(any -> Eventual.of(response));
     }
 
     /**
@@ -52,7 +53,7 @@ public final class EarlyReturn {
      * @return live response
      */
     public static Eventual<LiveHttpResponse> returnEarlyWithResponse(LiveHttpRequest request, HttpResponse response) {
-        return request.consume().flatMap(any -> Eventual.of(response.stream()));
+        return request.consume(BYTE_LIMIT).flatMap(any -> Eventual.of(response.stream()));
     }
 
     private EarlyReturn() {

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import io.netty.buffer.Unpooled;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.nio.charset.Charset;
 import java.util.Optional;
@@ -117,6 +118,20 @@ public class ByteStream implements Publisher<Buffer> {
         return new ByteStream(Flux.from(stream)
                 .doOnNext(buffer -> buffer.delegate().release())
                 .filter(buffer -> false));
+    }
+
+    /**
+     * Transform the stream by dropping all {@link Buffer} objects.
+     *
+     * The {@code drop} returns a new {@code ByteStream} object with all upstream
+     * buffers removed. The {@code drop} automatically decrements the reference
+     * counts for each dropped {@link Buffer}.
+     *
+     * @return an empty {@link ByteStream}
+     */
+    ByteStream drop(int maxContentBytes) {
+        return new ByteStream(Mono.fromFuture(
+                new ByteStreamDropper(this.stream, maxContentBytes).apply()));
     }
 
     /**

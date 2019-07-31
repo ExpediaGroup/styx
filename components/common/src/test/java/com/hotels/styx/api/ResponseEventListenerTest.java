@@ -16,6 +16,8 @@
 package com.hotels.styx.api;
 
 import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import reactor.core.publisher.EmitterProcessor;
@@ -29,6 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpResponse.response;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.slf4j.LoggerFactory.getLogger;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
@@ -62,7 +65,7 @@ public class ResponseEventListenerTest {
                 .apply();
 
         StepVerifier.create(listener)
-                .consumeNextWith(LiveHttpMessage::consumeInBackground)
+                .consumeNextWith(ResponseEventListenerTest::consumeInBackground)
                 .then(() -> {
                     assertFalse(cancelled.get());
                     assertNull(responseError.get());
@@ -148,7 +151,7 @@ public class ResponseEventListenerTest {
                 .apply();
 
         StepVerifier.create(listener)
-                .consumeNextWith(LiveHttpMessage::consumeInBackground)
+                .consumeNextWith(ResponseEventListenerTest::consumeInBackground)
                 .verifyError();
 
         assertFalse(cancelled.get());
@@ -170,7 +173,7 @@ public class ResponseEventListenerTest {
                 .apply();
 
         StepVerifier.create(listener)
-                .consumeNextWith(LiveHttpMessage::consumeInBackground)
+                .consumeNextWith(ResponseEventListenerTest::consumeInBackground)
                 .verifyComplete();
 
         assertTrue(responseError.get() instanceof RuntimeException);
@@ -191,5 +194,26 @@ public class ResponseEventListenerTest {
 
         assertTrue(responseError.get() instanceof RuntimeException);
         assertTrue(finished.get());
+    }
+
+    private static void consumeInBackground(LiveHttpResponse response) {
+        response.consume(1_000_000).subscribe(new Subscriber<LiveHttpResponse>() {
+            public void onSubscribe(Subscription s) {
+                s.request(Long.MAX_VALUE);
+            }
+
+            public void onNext(LiveHttpResponse o) {
+                // ignore
+            }
+
+            public void onError(Throwable t) {
+                // this will get the implementation class
+                getLogger(ResponseEventListenerTest.class).error("Unexpected error", t);
+            }
+
+            public void onComplete() {
+                // ignore
+            }
+        });
     }
 }

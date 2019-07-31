@@ -230,9 +230,18 @@ public class LiveHttpResponse implements LiveHttpMessage {
                 .findFirst();
     }
 
-    @Override
-    public Eventual<LiveHttpResponse> consume() {
-        return MessageBodyConsumption.consume(this, LiveHttpResponse.class);
+    /**
+     * Consume the message by discarding the message body.
+     * <p>
+     * This method reads the entire message body from the networks and black holes
+     * all the traffic. This has the benefit of keeping the underlying TCP connection
+     * open for connection pooling.
+     * <p>
+     *
+     * The consumption doesn't begin until the returned Eventual is subscribed to.
+     */
+    public Eventual<LiveHttpResponse> consume(int maxContentBytes) {
+        return MessageBodyConsumption.consume(this, maxContentBytes);
     }
 
     @Override

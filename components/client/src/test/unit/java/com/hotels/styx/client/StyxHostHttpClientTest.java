@@ -69,7 +69,7 @@ public class StyxHostHttpClientTest {
         StyxHostHttpClient hostClient = new StyxHostHttpClient(pool);
 
         StepVerifier.create(hostClient.sendRequest(request))
-                .consumeNextWith(response -> Mono.from(response.consume()).block())
+                .consumeNextWith(response -> Mono.from(response.consume(1000)).block())
                 .expectComplete()
                 .verify();
 
@@ -100,7 +100,7 @@ public class StyxHostHttpClientTest {
         verify(pool, never()).closeConnection(any(Connection.class));
 
         // ... until response body is consumed:
-        Mono.from(transformedResponse.get().consume()).block();
+        Mono.from(transformedResponse.get().consume(1000)).block();
 
         // Finally, the connection is returned after the response body is fully consumed:
         verify(pool).returnConnection(any(Connection.class));
@@ -145,7 +145,7 @@ public class StyxHostHttpClientTest {
                 .expectError()
                 .verify();
 
-        Mono.from(newResponse.get().consume()).block();
+        Mono.from(newResponse.get().consume(1000)).block();
 
         verify(pool).returnConnection(any(Connection.class));
     }
