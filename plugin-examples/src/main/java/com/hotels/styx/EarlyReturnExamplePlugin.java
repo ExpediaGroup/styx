@@ -35,7 +35,7 @@ public class EarlyReturnExamplePlugin implements Plugin {
     @Override
     public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
         if (request.header("X-Respond").isPresent()) {
-            return request.consume().map(anyRequest ->
+            return request.consume(1024).map(anyRequest ->
                     HttpResponse.response(OK)
                             .header(CONTENT_TYPE, "text/plain; charset=utf-8")
                             .body("Responding from plugin", UTF_8)

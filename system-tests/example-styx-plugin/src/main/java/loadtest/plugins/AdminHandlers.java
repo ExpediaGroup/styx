@@ -29,7 +29,7 @@ final class AdminHandlers {
 
     static ImmutableMap<String, HttpHandler> adminHandlers(String endpoint, String responseContent) {
         return ImmutableMap.of(endpoint, (request, context) ->
-                request.consume().map(anyRequest ->
+                request.consume(100_000).map(anyRequest ->
                         response(OK)
                                 .body(responseContent, UTF_8)
                                 .build()
