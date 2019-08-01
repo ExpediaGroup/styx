@@ -19,6 +19,7 @@ import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.server.HttpInterceptorContext
+import io.netty.util.IllegalReferenceCountException
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
@@ -41,18 +42,17 @@ fun urlProbe(probe: HttpRequest, timeout: Duration): Probe =
             routingObject
                     .handle(probe.stream(), HttpInterceptorContext.create())
                     .map {
-                        try {
-                            it.consumeInBackground()
-                        } catch(e : Exception) {
-                            e.printStackTrace()
-                        }
-                        val ret = it.status().code() < 400
-//                        println("Gonna return $ret")
-                        ret
+                        it.consumeInBackground()
+                        it.status().code() < 400
                     }
                     .toMono()
                     .timeout(timeout)
-                    .onErrorResume { Mono.just(false) }
+                    .onErrorResume {
+                        when(it) {
+                            is IllegalReferenceCountException -> Mono.error<Boolean>(it)
+                            else -> Mono.just(false)
+                        }
+                    }
         }
 
 fun healthCheckFunction(activeThreshold: Int, inactiveThreshold: Int): CheckState =
