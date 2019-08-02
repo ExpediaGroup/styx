@@ -49,7 +49,9 @@ fun urlProbe(probe: HttpRequest, timeout: Duration): Probe =
                     .timeout(timeout)
                     .onErrorResume {
                         when(it) {
-                            is IllegalReferenceCountException -> Mono.error<Boolean>(it)
+//                            is IllegalReferenceCountException -> Mono.error<Boolean>(it)
+                            // TODO why is this already down-referenced?
+                            is IllegalReferenceCountException -> Mono.just(true)
                             else -> Mono.just(false)
                         }
                     }
