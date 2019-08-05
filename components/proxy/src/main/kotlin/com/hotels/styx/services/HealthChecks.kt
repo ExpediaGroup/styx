@@ -48,12 +48,7 @@ fun urlProbe(probe: HttpRequest, timeout: Duration): Probe =
                     .toMono()
                     .timeout(timeout)
                     .onErrorResume {
-                        when(it) {
-//                            is IllegalReferenceCountException -> Mono.error<Boolean>(it)
-                            // TODO why is this already down-referenced?
-                            is IllegalReferenceCountException -> Mono.just(true)
-                            else -> Mono.just(false)
-                        }
+                        Mono.just(false)
                     }
         }
 
@@ -80,22 +75,29 @@ fun healthCheckFunction(activeThreshold: Int, inactiveThreshold: Int): CheckStat
 val logger : Logger = getLogger("HealthChecks.kt")
 
 fun LiveHttpResponse.consumeInBackground() {
-    consume(1_000_000).subscribe(object : Subscriber<LiveHttpResponse> {
-        override fun onSubscribe(s: Subscription) {
-            s.request(Long.MAX_VALUE)
-        }
+    try {
+        consume(1_000_000).subscribe(object : Subscriber<LiveHttpResponse> {
+            override fun onSubscribe(s: Subscription) {
+                s.request(Long.MAX_VALUE)
+            }
 
-        override fun onNext(o: LiveHttpResponse) {
-            // ignore
-        }
+            override fun onNext(o: LiveHttpResponse) {
+                // ignore
+            }
 
-        override fun onError(t: Throwable) {
-            // this will get the implementation class
-            logger.error("Unexpected error", t)
-        }
+            override fun onError(t: Throwable) {
+                // this will get the implementation class
+                logger.error("Unexpected error", t)
+            }
 
-        override fun onComplete() {
-            // ignore
-        }
-    })
+            override fun onComplete() {
+                // ignore
+            }
+        })
+    } catch(e : IllegalReferenceCountException) {
+        // TODO why is this already down-referenced?
+        // This is a workaround, for a failure that occurs in HealthCheckMonitoringServiceTest
+        // It's not clear why we are trying to down-reference something with a reference count of zero.
+        // It's also not clear if this exception will cause additional problems due to the health-check not finishing normally
+    }
 }

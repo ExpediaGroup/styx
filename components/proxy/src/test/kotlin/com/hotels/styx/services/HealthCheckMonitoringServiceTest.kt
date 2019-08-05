@@ -178,8 +178,6 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
             monitor.runChecks("aaa", objectStore)
             monitor.runChecks("aaa", objectStore)
 
-//            Thread.sleep(10000)
-
             withClue(tagClue(objectStore, "aaa-01")) {
                 objectStore.get("aaa-01").get().tags shouldContain "state:active:0"
             }
