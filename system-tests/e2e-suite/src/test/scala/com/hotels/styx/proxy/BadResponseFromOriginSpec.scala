@@ -15,7 +15,10 @@
  */
 package com.hotels.styx.proxy
 
+import java.util.Optional
+
 import com.google.common.base.Charsets.UTF_8
+import com.hotels.styx.api.HttpHeaderNames.CONNECTION
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY
 import com.hotels.styx.client.StyxHeaderConfig.STYX_INFO_DEFAULT
@@ -108,6 +111,8 @@ class BadResponseFromOriginSpec extends FunSpec
       response.status() should be(BAD_GATEWAY)
       assertThat(response.headers().get(STYX_INFO_DEFAULT), matches(matchesRegex("noJvmRouteSet;[0-9a-f-]+")))
       response.bodyAs(UTF_8) should be("Site temporarily unavailable.")
+      response.header(CONNECTION) should be(Optional.of("close"))
+
       eventually(timeout(7.seconds)) {
         styxServer.metricsSnapshot.count("styx.response.status.502").get should be(1)
       }

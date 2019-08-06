@@ -32,6 +32,7 @@ import com.hotels.styx.support.matchers.RegExMatcher.matchesRegex
 import com.hotels.styx.utils.HttpTestClient
 import io.netty.buffer.Unpooled
 import io.netty.channel.{Channel, ChannelInitializer}
+import io.netty.handler.codec.http.HttpHeaderNames.CONNECTION
 import io.netty.handler.codec.http.HttpMethod.GET
 import io.netty.handler.codec.http.HttpResponseStatus._
 import io.netty.handler.codec.http.HttpVersion.HTTP_1_1
@@ -89,6 +90,7 @@ class BadRequestsSpec extends FunSpec
           assert(response.status == BAD_REQUEST, s"\nExpecting 400 Bad Request in message: \n$response \n\n$content\n\n")
           assert(content == BAD_REQUEST.reasonPhrase())
           assertThat(response.headers().get(STYX_INFO_DEFAULT), matchesRegex("noJvmRouteSet;"))
+          assertThat(response.headers().get(CONNECTION), is("close"))
 
           assertThat(loggingSupport.log(), hasItem(loggingEvent(ERROR, "Failure status=\"400 Bad Request\"", "io.netty.handler.codec.DecoderException", "com.hotels.styx.server.BadRequestException.*")))
           eventually(timeout(5 seconds)) {
@@ -109,6 +111,7 @@ class BadRequestsSpec extends FunSpec
           assert(response.status == BAD_REQUEST, s"\nExpecting 400 Bad Request in message: \n$response \n\n$content\n\n")
           assertThat(response.headers().get(STYX_INFO_DEFAULT), matchesRegex("noJvmRouteSet;"))
           assert(content == BAD_REQUEST.reasonPhrase())
+          assertThat(response.headers().get(CONNECTION), is("close"))
         }
       }
 
@@ -130,6 +133,7 @@ class BadRequestsSpec extends FunSpec
           val content = response.content().toString(UTF_8)
           assert(response.status == BAD_REQUEST, s"\nExpecting 400 Bad Request in message: \n$response \n\n$content\n\n")
           assertThat(response.headers().get(STYX_INFO_DEFAULT), matchesRegex("noJvmRouteSet;"))
+          assertThat(response.headers().get(CONNECTION), is("close"))
 
           assertThat(loggingSupport.log(), hasItem(loggingEvent(ERROR, "Failure status=\"400 Bad Request\"", "io.netty.handler.codec.DecoderException", "com.hotels.styx.server.BadRequestException: Bad Host header. .*")))
         }
@@ -171,6 +175,7 @@ class BadRequestsSpec extends FunSpec
           val content = response.content().toString(UTF_8)
           assert(response.status == REQUEST_TIMEOUT, s"\nExpecting 408 Request Timeout in message: \n$response \n\n$content\n\n")
           assertThat(response.headers().get(STYX_INFO_DEFAULT), matchesRegex("noJvmRouteSet;[0-9a-f-]+"))
+          assertThat(response.headers().get(CONNECTION), is("close"))
           assertThat(loggingSupport.log(), hasItem(loggingEvent(ERROR, "Failure status=\"408 Request Timeout\"", "com.hotels.styx.server.RequestTimeoutException", "message=DefaultHttpRequest.decodeResult: success.*")))
         }
       }

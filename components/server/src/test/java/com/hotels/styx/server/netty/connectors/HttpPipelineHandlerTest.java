@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -47,12 +47,14 @@ import org.mockito.ArgumentCaptor;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Mono;
 import rx.Observable;
 import rx.subjects.PublishSubject;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -601,11 +603,15 @@ public class HttpPipelineHandlerTest {
 
         handler.channelRead0(ctx, request);
 
-        verify(responseWriter).write(HttpResponse.response(INTERNAL_SERVER_ERROR)
-                .header(CONTENT_LENGTH, 29)
-                .body("Site temporarily unavailable.", UTF_8)
-                .build()
-                .stream());
+        ArgumentCaptor<LiveHttpResponse> captor = ArgumentCaptor.forClass(LiveHttpResponse.class);
+        verify(responseWriter).write(captor.capture());
+
+        HttpResponse response = Mono.from(captor.getValue().aggregate(100)).block();
+
+        assertThat(response.status(), is(INTERNAL_SERVER_ERROR));
+        assertThat(response.header(CONNECTION), is(Optional.of("close")));
+        assertThat(response.header(CONTENT_LENGTH), is(Optional.of("29")));
+        assertThat(response.bodyAs(UTF_8), is("Site temporarily unavailable."));
 
         verify(responseEnhancer).enhance(any(LiveHttpResponse.Transformer.class), eq(request));
         verify(errorListener).proxyErrorOccurred(request, InetSocketAddress.createUnresolved("localhost", 2), INTERNAL_SERVER_ERROR, cause);
@@ -622,6 +628,7 @@ public class HttpPipelineHandlerTest {
         verify(responseEnhancer).enhance(any(LiveHttpResponse.Transformer.class), eq(null));
         verify(responseWriter).write(response(REQUEST_TIMEOUT)
                 .header(CONTENT_LENGTH, 15)
+                .header(CONNECTION, "close")
                 .build());
     }
 
@@ -636,6 +643,7 @@ public class HttpPipelineHandlerTest {
         verify(responseEnhancer).enhance(any(LiveHttpResponse.Transformer.class), eq(request));
         verify(responseWriter).write(response(REQUEST_ENTITY_TOO_LARGE)
                 .header(CONTENT_LENGTH, 24)
+                .header(CONNECTION, "close")
                 .build());
     }
 
@@ -650,6 +658,7 @@ public class HttpPipelineHandlerTest {
         verify(responseEnhancer).enhance(any(LiveHttpResponse.Transformer.class), eq(request));
         verify(responseWriter).write(response(BAD_REQUEST)
                 .header(CONTENT_LENGTH, 11)
+                .header(CONNECTION, "close")
                 .build());
     }
 
@@ -679,11 +688,16 @@ public class HttpPipelineHandlerTest {
         responseObservable.onError(new ContentOverflowException("Request Send Error"));
 
         assertThat(responseUnsubscribed.get(), is(true));
-        verify(responseWriter).write(HttpResponse.response(BAD_GATEWAY)
-                .header(CONTENT_LENGTH, "29")
-                .body("Site temporarily unavailable.", UTF_8)
-                .build()
-                .stream());
+
+        ArgumentCaptor<LiveHttpResponse> captor = ArgumentCaptor.forClass(LiveHttpResponse.class);
+        verify(responseWriter).write(captor.capture());
+
+        HttpResponse response = Mono.from(captor.getValue().aggregate(100)).block();
+        assertThat(response.status(), is(BAD_GATEWAY));
+        assertThat(response.header(CONNECTION), is(Optional.of("close")));
+        assertThat(response.header(CONTENT_LENGTH), is(Optional.of("29")));
+        assertThat(response.bodyAs(UTF_8), is("Site temporarily unavailable."));
+
         verify(responseEnhancer).enhance(any(LiveHttpResponse.Transformer.class), eq(request));
 
         writerFuture.complete(null);
@@ -705,11 +719,15 @@ public class HttpPipelineHandlerTest {
         responseObservable.onError(new StyxClientException("Client error occurred", new RuntimeException("Something went wrong")));
 
         assertThat(responseUnsubscribed.get(), is(true));
-        verify(responseWriter).write(HttpResponse.response(INTERNAL_SERVER_ERROR)
-                .header(CONTENT_LENGTH, "29")
-                .body("Site temporarily unavailable.", UTF_8)
-                .build()
-                .stream());
+
+        ArgumentCaptor<LiveHttpResponse> captor = ArgumentCaptor.forClass(LiveHttpResponse.class);
+        verify(responseWriter).write(captor.capture());
+
+        HttpResponse response = Mono.from(captor.getValue().aggregate(100)).block();
+        assertThat(response.status(), is(INTERNAL_SERVER_ERROR));
+        assertThat(response.header(CONNECTION), is(Optional.of("close")));
+        assertThat(response.header(CONTENT_LENGTH), is(Optional.of("29")));
+        assertThat(response.bodyAs(UTF_8), is("Site temporarily unavailable."));
 
         writerFuture.complete(null);
         verify(statsCollector).onComplete(request.id(), 500);

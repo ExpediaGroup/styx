@@ -156,6 +156,14 @@ public class HttpRequestOperation implements Operation<NettyConnection, LiveHttp
                         Requests.doFinally(response, cause -> {
                             if (nettyConnection.isConnected()) {
                                 removeProxyBridgeHandlers(nettyConnection);
+
+                                // MK: Request is no longer ongoing. The request body onComplete event has arrived,
+                                //     and the EMPTY_LAST_CONTENT chunk has been queued to Netty Client executor.
+                                //     So the channel remains open, and the log is never written.
+                                //
+                                //     Next, the connection is returned to the pool. The next connection gets the
+                                //     connection and sends the headers. Bang! the Netty HTTP is out of sync!
+                                //
                                 if (requestIsOngoing(requestRequestBodyChunkSubscriber.get())) {
                                     LOGGER.warn("Origin responded too quickly to an ongoing request, or it was cancelled. Connection={}, Request={}.",
                                             new Object[]{nettyConnection.channel(), this.request});
@@ -237,25 +245,25 @@ public class HttpRequestOperation implements Operation<NettyConnection, LiveHttp
         public void write() {
             Channel originChannel = this.nettyConnection.channel();
             if (originChannel.isActive()) {
-                io.netty.handler.codec.http.HttpRequest msg = makeRequest(request);
+                io.netty.handler.codec.http.HttpRequest messageHeaders = makeRequest(request);
 
-                originChannel.writeAndFlush(msg)
-                        .addListener(subscribeToResponseBody());
+                originChannel.writeAndFlush(messageHeaders)
+                        .addListener(subscribeToRequestBody());
             } else {
                 responseFromOriginObserver.onError(new TransportLostException(originChannel.remoteAddress(), nettyConnection.getOrigin()));
             }
         }
 
-        private ChannelFutureListener subscribeToResponseBody() {
-            return future -> {
-                if (future.isSuccess()) {
-                    future.channel().read();
+        private ChannelFutureListener subscribeToRequestBody() {
+            return headersFuture -> {
+                if (headersFuture.isSuccess()) {
+                    headersFuture.channel().read();
                     Observable<ByteBuf> bufferObservable = toObservable(request.body()).map(Buffers::toByteBuf);
                     bufferObservable.subscribe(requestBodyChunkSubscriber);
                 } else {
                     String channelIdentifier = String.format("%s -> %s", nettyConnection.channel().localAddress(), nettyConnection.channel().remoteAddress());
                     LOGGER.error(format("Failed to send request headers. origin=%s connection=%s request=%s",
-                            nettyConnection.getOrigin(), channelIdentifier, request), future.cause());
+                            nettyConnection.getOrigin(), channelIdentifier, request), headersFuture.cause());
                     responseFromOriginObserver.onError(new TransportLostException(nettyConnection.channel().remoteAddress(), nettyConnection.getOrigin()));
                 }
             };
@@ -290,8 +298,11 @@ public class HttpRequestOperation implements Operation<NettyConnection, LiveHttp
 
         @Override
         public void onCompleted() {
-            completed = true;
-            channel.writeAndFlush(EMPTY_LAST_CONTENT);
+            // MK: This comes from a server thread, and Netty therefore queues it to the Client thread executor.
+            //     But "completed" flag is set to true regardless. Really it should be considered "completed"
+            //     only after Netty acknowledges writeAndFlush.
+            channel.writeAndFlush(EMPTY_LAST_CONTENT)
+                    .addListener(future -> completed = true);
         }
 
         @Override
