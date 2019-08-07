@@ -1,7 +1,8 @@
+dist: xenial
 language: java
 script: mvn verify -Pquality,linux
 jdk:
- - oraclejdk9
+ - oraclejdk8
 cache:
   directories:
   - ~/.m2/repository
