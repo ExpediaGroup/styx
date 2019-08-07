@@ -1,8 +1,6 @@
-dist: xenial
-language: java
+dist: trusty
+language: generic
 script: mvn verify -Pquality,linux
-jdk:
- - oraclejdk8
 cache:
   directories:
   - ~/.m2/repository
