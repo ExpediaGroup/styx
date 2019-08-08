@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,12 +15,13 @@
  */
 package com.hotels.styx.proxy
 
+import java.util.Optional
 import java.util.concurrent.TimeUnit.SECONDS
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.google.common.base.Charsets.UTF_8
 import com.google.common.net.HostAndPort._
-import com.hotels.styx._
+import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec, api}
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.{BAD_REQUEST, OK}
 import com.hotels.styx.support.backends.FakeHttpServer
@@ -93,6 +94,7 @@ class BadFramingSpec extends FunSpec
 
       val response = decodedRequest(request)
       response.status() should be(BAD_REQUEST)
+      response.header(api.HttpHeaderNames.CONNECTION) shouldBe Optional.of("close")
     }
 
 
@@ -105,6 +107,7 @@ class BadFramingSpec extends FunSpec
 
       val response = decodedRequest(request)
       response.status() should be(BAD_REQUEST)
+      response.header(api.HttpHeaderNames.CONNECTION) shouldBe Optional.of("close")
     }
 
 
@@ -117,6 +120,7 @@ class BadFramingSpec extends FunSpec
 
       val response = decodedRequest(request)
       response.status() should be(BAD_REQUEST)
+      response.header(api.HttpHeaderNames.CONNECTION) shouldBe Optional.of("close")
     }
 
 
