@@ -20,8 +20,10 @@ import com.hotels.styx.common.QueueDrainingEventProcessor;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
+import java.util.Optional;
 import java.util.function.Consumer;
 
+import static com.hotels.styx.api.ResponseEventListener.State.INITIAL;
 import static com.hotels.styx.api.ResponseEventListener.State.COMPLETED;
 import static com.hotels.styx.api.ResponseEventListener.State.STREAMING;
 import static com.hotels.styx.api.ResponseEventListener.State.TERMINATED;
@@ -128,10 +130,12 @@ public class ResponseEventListener {
                 .doOnComplete(() -> eventProcessor.submit(new MessageCompleted()))
                 .doOnError(cause -> eventProcessor.submit(new MessageError(cause)))
                 .doOnCancel(() -> eventProcessor.submit(new MessageCancelled()))
-                .map(response -> Requests.doOnError(response, cause -> eventProcessor.submit(new ContentError(cause))))
-                .map(response -> Requests.doOnComplete(response, () -> eventProcessor.submit(new ContentEnd())))
-                .map(response -> Requests.doOnCancel(response, () -> eventProcessor.submit(new ContentCancelled())));
-
+                .map(response ->
+                    response.newBuilder()
+                            .body(it -> it.doOnEnd(ifError(cause -> eventProcessor.submit(new ContentError(cause)))))
+                            .body(it -> it.doOnEnd(ifSuccessful(() -> eventProcessor.submit(new ContentEnd()))))
+                            .body(it -> it.doOnCancel(() -> eventProcessor.submit(new ContentCancelled())))
+                            .build());
     }
 
     enum State {
@@ -141,6 +145,17 @@ public class ResponseEventListener {
         COMPLETED
     }
 
+    private static Consumer<Optional<Throwable>> ifError(Consumer<Throwable> action) {
+        return maybeCause -> maybeCause.ifPresent(action);
+    }
+
+    private static Consumer<Optional<Throwable>> ifSuccessful(Runnable action) {
+        return maybeCause -> {
+            if (!maybeCause.isPresent()) {
+                action.run();
+            }
+        };
+    }
 
     private static class MessageHeaders {
 
