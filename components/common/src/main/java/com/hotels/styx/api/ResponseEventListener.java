@@ -40,7 +40,7 @@ public class ResponseEventListener {
     private Runnable cancelAction = () -> { };
     private Runnable whenFinishedAction = () -> { };
 
-    private volatile com.hotels.styx.api.ResponseEventListener.State state = com.hotels.styx.api.ResponseEventListener.State.INITIAL;
+    private volatile State state = INITIAL;
 
     private ResponseEventListener(Publisher<LiveHttpResponse> publisher) {
         this.publisher = Flux.from(requireNonNull(publisher));
