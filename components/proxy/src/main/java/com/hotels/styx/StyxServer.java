@@ -26,6 +26,7 @@ import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.extension.service.spi.StyxService;
+import com.hotels.styx.common.format.HttpHeaderFormatter;
 import com.hotels.styx.config.schema.SchemaValidationException;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.server.HttpServer;
@@ -43,6 +44,8 @@ import java.net.InetSocketAddress;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -161,6 +164,8 @@ public final class StyxServer extends AbstractService {
     public StyxServer(StyxServerComponents components, Stopwatch stopwatch) {
         this.stopwatch = stopwatch;
 
+        initialiseHttpHeaderSanitiser(components.environment().configuration());
+
         registerCoreMetrics(components.environment().buildInfo(), components.environment().metricRegistry());
 
         ProxyServerSetUp proxyServerSetUp = new ProxyServerSetUp(
@@ -187,6 +192,13 @@ public final class StyxServer extends AbstractService {
                     .forEach(this::add);
             }
         });
+    }
+
+    private void initialiseHttpHeaderSanitiser(StyxConfig config) {
+        List<String> headerValuesToHide = config.get("request-logging.hideHeaders", List.class).orElse(Collections.emptyList());
+        List<String> cookieValuesToHide = config.get("request-logging.hideCookies", List.class).orElse(Collections.emptyList());
+
+        HttpHeaderFormatter.initialise(headerValuesToHide, cookieValuesToHide);
     }
 
     public InetSocketAddress proxyHttpAddress() {

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -68,8 +68,9 @@ public class HttpRequestMessageLoggerTest {
         LiveHttpRequest styxRequest = get("http://www.hotels.com/foo/bar/request").build();
         new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", false).logRequest(styxRequest, origin, true);
 
-        assertThat(log.lastMessage(), is(loggingEvent(INFO, format("requestId=%s, secure=true, request=\\{method=GET, uri=%s, origin=\"%s\"\\}",
-                styxRequest.id(), styxRequest.url(), origin.hostAndPortString()))));
+        assertThat(log.lastMessage(), is(loggingEvent(INFO,
+                format("requestId=%s, request=LiveHttpRequest\\{version=HTTP/1.1, method=GET, url=%s, id=%s}, secure=true, origin=MyApp:h1:%s",
+                    styxRequest.id(), styxRequest.url(), styxRequest.id(), origin.hostAndPortString()))));
     }
 
     @Test
@@ -78,8 +79,8 @@ public class HttpRequestMessageLoggerTest {
         new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", true).logRequest(styxRequest, origin, true);
 
         assertThat(log.lastMessage(), is(loggingEvent(INFO,
-                format("requestId=%s, secure=true, request=\\{method=GET, uri=%s, origin=\"%s\", headers=\\[Host=www.hotels.com\\]\\}",
-                        styxRequest.id(), styxRequest.url(), origin.hostAndPortString()))));
+                format("requestId=%s, request=LiveHttpRequest\\{version=HTTP/1.1, method=GET, url=%s, headers=\\[Host:www.hotels.com\\], id=%s}, secure=true, origin=MyApp:h1:%s",
+                        styxRequest.id(), styxRequest.url(), styxRequest.id(), origin.hostAndPortString()))));
     }
 
     @Test
@@ -88,7 +89,7 @@ public class HttpRequestMessageLoggerTest {
         LiveHttpResponse styxResponse = response(OK).build();
         new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", false).logResponse(styxRequest, styxResponse);
 
-        assertThat(log.lastMessage(), is(loggingEvent(INFO, format("requestId=%s, response=\\{status=200 OK\\}", styxRequest.id()))));
+        assertThat(log.lastMessage(), is(loggingEvent(INFO, format("requestId=%s, response=LiveHttpResponse\\{version=HTTP/1.1, status=200 OK\\}", styxRequest.id()))));
     }
 
     @Test
@@ -97,7 +98,7 @@ public class HttpRequestMessageLoggerTest {
         LiveHttpResponse styxResponse = response(OK).build();
         new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", true).logResponse(styxRequest, styxResponse);
 
-        assertThat(log.lastMessage(), is(loggingEvent(INFO, format("requestId=%s, response=\\{status=200 OK\\, headers=\\[\\]}", styxRequest.id()))));
+        assertThat(log.lastMessage(), is(loggingEvent(INFO, format("requestId=%s, response=LiveHttpResponse\\{version=HTTP/1.1, status=200 OK, headers=\\[\\]\\}", styxRequest.id()))));
     }
 
     @Test
@@ -121,7 +122,7 @@ public class HttpRequestMessageLoggerTest {
 
         return new Object[][]{
                 {normalRequest, null, WARN, "requestId=.*, response=null"},
-                {null, normalResponse, INFO, "requestId=null, response=\\{status=200 OK\\}"},
+                {null, normalResponse, INFO, "requestId=null, response=LiveHttpResponse\\{version=HTTP/1.1, status=200 OK\\}"},
                 {null, null, WARN, "requestId=null, response=null"},
         };
     }

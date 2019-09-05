@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpVersion;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
@@ -54,6 +55,7 @@ public class HttpMessageLoggingInterceptorTest {
     @Test
     public void logsRequestsAndResponses() {
         LiveHttpRequest request = get("/")
+                .version(HttpVersion.HTTP_1_1)
                 .header("ReqHeader", "ReqHeaderValue")
                 .cookies(requestCookie("ReqCookie", "ReqCookieValue"))
                 .build();
@@ -64,12 +66,12 @@ public class HttpMessageLoggingInterceptorTest {
                 .cookies(responseCookie("RespCookie", "RespCookieValue").build())
         )));
 
-        String requestPattern = "request=\\{method=GET, uri=/, origin=\"N/A\", headers=\\[ReqHeader=ReqHeaderValue, Cookie=ReqCookie=ReqCookieValue\\]\\}";
-        String responsePattern = "response=\\{status=200 OK, headers=\\[RespHeader=RespHeaderValue\\, Set-Cookie=RespCookie=RespCookieValue]\\}";
+        String requestPattern = "request=LiveHttpRequest\\{version=HTTP/1.1, method=GET, url=/, headers=\\[ReqHeader:ReqHeaderValue, Cookie:ReqCookie=ReqCookieValue\\], id=" + request.id() + "\\}";
+        String responsePattern = "response=LiveHttpResponse\\{version=HTTP/1.1, status=200 OK, headers=\\[RespHeader:RespHeaderValue\\, Set-Cookie:RespCookie=RespCookieValue]\\}";
 
         assertThat(responseLogSupport.log(), contains(
-                loggingEvent(INFO, "requestId=" + request.id() + ", secure=true, " + requestPattern),
-                loggingEvent(INFO, "requestId=" + request.id() + ", secure=true, " + responsePattern)));
+                loggingEvent(INFO, "requestId=" + request.id() + ", " + requestPattern + ", secure=true, origin=null"),
+                loggingEvent(INFO, "requestId=" + request.id() + ", " + responsePattern +  ", secure=true")));
     }
 
     @Test
@@ -86,12 +88,12 @@ public class HttpMessageLoggingInterceptorTest {
                         .cookies(responseCookie("RespCookie", "RespCookieValue").build())
         )));
 
-        String requestPattern = "request=\\{method=GET, uri=/, origin=\"N/A\"}";
-        String responsePattern = "response=\\{status=200 OK}";
+        String requestPattern = "request=LiveHttpRequest\\{version=HTTP/1.1, method=GET, url=/, id=" + request.id() + "\\}";
+        String responsePattern = "response=LiveHttpResponse\\{version=HTTP/1.1, status=200 OK\\}";
 
         assertThat(responseLogSupport.log(), contains(
-                loggingEvent(INFO, "requestId=" + request.id() + ", secure=true, " + requestPattern),
-                loggingEvent(INFO, "requestId=" + request.id() + ", secure=true, " + responsePattern)));
+                loggingEvent(INFO, "requestId=" + request.id() + ", " + requestPattern + ", secure=true, origin=null"),
+                loggingEvent(INFO, "requestId=" + request.id() + ", " + responsePattern +  ", secure=true")));
     }
 
     @Test
@@ -103,12 +105,12 @@ public class HttpMessageLoggingInterceptorTest {
 
         consume(interceptor.intercept(request, chain(response(OK))));
 
-        String requestPattern = "request=\\{method=GET, uri=/, origin=\"N/A\", headers=\\[ReqHeader=ReqHeaderValue, Cookie=ReqCookie=ReqCookieValue\\]\\}";
-        String responsePattern = "response=\\{status=200 OK, headers=\\[\\]\\}";
+        String requestPattern = "request=LiveHttpRequest\\{version=HTTP/1.1, method=GET, url=/, headers=\\[ReqHeader:ReqHeaderValue, Cookie:ReqCookie=ReqCookieValue\\], id=" + request.id() + "\\}";
+        String responsePattern = "response=LiveHttpResponse\\{version=HTTP/1.1, status=200 OK, headers=\\[\\]\\}";
 
         assertThat(responseLogSupport.log(), contains(
-                loggingEvent(INFO, "requestId=" + request.id() + ", secure=true, " + requestPattern),
-                loggingEvent(INFO, "requestId=" + request.id() + ", secure=true, " + responsePattern)));
+                loggingEvent(INFO, "requestId=" + request.id() + ", " + requestPattern + ", secure=true, origin=null"),
+                loggingEvent(INFO, "requestId=" + request.id() + ", " + responsePattern +  ", secure=true")));
     }
 
 

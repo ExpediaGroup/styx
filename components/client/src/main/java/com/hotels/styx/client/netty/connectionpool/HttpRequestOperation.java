@@ -49,6 +49,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.google.common.base.Objects.toStringHelper;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.extension.service.BackendService.DEFAULT_RESPONSE_TIMEOUT_MILLIS;
+import static com.hotels.styx.common.format.HttpMessageFormatter.formatRequest;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
@@ -159,7 +160,7 @@ public class HttpRequestOperation implements Operation<NettyConnection, LiveHttp
 
                                 if (requestIsOngoing(requestRequestBodyChunkSubscriber.get())) {
                                     LOGGER.warn("Origin responded too quickly to an ongoing request, or it was cancelled. Connection={}, Request={}.",
-                                            new Object[]{nettyConnection.channel(), this.request});
+                                            new Object[]{nettyConnection.channel(), formatRequest(this.request)});
                                     nettyConnection.close();
                                 }
                             }
@@ -192,7 +193,7 @@ public class HttpRequestOperation implements Operation<NettyConnection, LiveHttp
         } catch (NoSuchElementException cause) {
             long elapsedTime = System.currentTimeMillis() - requestTime;
             LOGGER.error("Failed to remove pipeline handlers from pooled connection. elapsedTime={}, request={}, terminationCount={}, executionCount={}, cause={}",
-                    new Object[]{elapsedTime, request, terminationCount.get(), executeCount.get(), cause});
+                    new Object[]{elapsedTime, formatRequest(request), terminationCount.get(), executeCount.get(), cause});
         }
     }
 
@@ -256,7 +257,7 @@ public class HttpRequestOperation implements Operation<NettyConnection, LiveHttp
                 } else {
                     String channelIdentifier = String.format("%s -> %s", nettyConnection.channel().localAddress(), nettyConnection.channel().remoteAddress());
                     LOGGER.error(format("Failed to send request headers. origin=%s connection=%s request=%s",
-                            nettyConnection.getOrigin(), channelIdentifier, request), headersFuture.cause());
+                            nettyConnection.getOrigin(), channelIdentifier, formatRequest(request)), headersFuture.cause());
                     responseFromOriginObserver.onError(new TransportLostException(nettyConnection.channel().remoteAddress(), nettyConnection.getOrigin()));
                 }
             };
@@ -311,7 +312,7 @@ public class HttpRequestOperation implements Operation<NettyConnection, LiveHttp
                         } else {
                             String channelIdentifier = String.format("%s -> %s", nettyConnection.channel().localAddress(), nettyConnection.channel().remoteAddress());
                             LOGGER.error(format("Failed to send request body data. origin=%s connection=%s request=%s",
-                                    nettyConnection.getOrigin(), channelIdentifier, request), future.cause());
+                                    nettyConnection.getOrigin(), channelIdentifier, formatRequest(request)), future.cause());
                             this.onError(new TransportLostException(nettyConnection.channel().remoteAddress(), nettyConnection.getOrigin()));
                         }
                     });

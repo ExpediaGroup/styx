@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hotels.styx.common.format.HttpMessageFormatter.formatResponse;
 import static io.netty.handler.codec.http.HttpHeaders.setTransferEncodingChunked;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static java.util.Objects.requireNonNull;
@@ -74,7 +75,6 @@ class HttpResponseWriter {
                                     contentBytesWritten.get(),
                                     writeOpsAcked.get(),
                                     writeOps.get(),
-                                    response,
                                     writeOp.cause()});
                     future.completeExceptionally(writeOp.cause());
                 }

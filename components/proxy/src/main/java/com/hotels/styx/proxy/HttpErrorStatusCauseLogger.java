@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import org.slf4j.Logger;
 
 import java.net.InetSocketAddress;
 
+import static com.hotels.styx.common.format.HttpMessageFormatter.formatRequest;
+import static com.hotels.styx.common.format.HttpMessageFormatter.formatResponse;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -44,7 +46,7 @@ public class HttpErrorStatusCauseLogger implements HttpErrorStatusListener {
     @Override
     public void proxyErrorOccurred(LiveHttpRequest request, InetSocketAddress clientAddress, HttpResponseStatus status, Throwable cause) {
         if (status.code() == 500) {
-            LOG.error("Failure status=\"{}\" during request={}, clientAddress={}", new Object[]{status, request, clientAddress, cause});
+            LOG.error("Failure status=\"{}\" during request={}, clientAddress={}", new Object[]{status, formatRequest(request), clientAddress, cause});
         } else {
             proxyErrorOccurred(status, cause);
         }
@@ -57,12 +59,12 @@ public class HttpErrorStatusCauseLogger implements HttpErrorStatusListener {
 
     @Override
     public void proxyWriteFailure(LiveHttpRequest request, LiveHttpResponse response, Throwable cause) {
-        LOG.error("Error writing response. request={}, response={}, cause={}", new Object[]{request, response, cause});
+        LOG.error("Error writing response. request={}, response={}, cause={}", new Object[]{formatRequest(request), formatResponse(response), cause});
     }
 
     @Override
     public void proxyingFailure(LiveHttpRequest request, LiveHttpResponse response, Throwable cause) {
-        LOG.error("Error proxying request. request={} response={} cause={}", new Object[]{request, response, cause});
+        LOG.error("Error proxying request. request={} response={} cause={}", new Object[]{formatRequest(request), formatResponse(response), cause});
     }
 
     private static String withoutStackTrace(Throwable cause) {

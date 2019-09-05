@@ -47,6 +47,7 @@ import rx.observers.TestSubscriber;
 
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
+import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Charsets.US_ASCII;
 import static com.google.common.base.Charsets.UTF_8;
@@ -332,7 +333,9 @@ public class NettyToStyxRequestDecoderTest {
     }
 
     private void assertThatHttpHeadersAreSame(Iterable<HttpHeader> headers, HttpHeaders headers1) {
-        assertThat(newArrayList(headers).toString(), is(newArrayList(headers1).toString()));
+        for (HttpHeader header : headers) {
+            assertThat(header.value(), is(headers1.get(header.name())));
+        }
     }
 
     private static HttpRequest newPostRequest(String path) {

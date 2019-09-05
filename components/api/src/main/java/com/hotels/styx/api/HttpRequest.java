@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -349,8 +349,7 @@ public class HttpRequest implements HttpMessage {
         return toStringHelper(this)
                 .add("version", version)
                 .add("method", method)
-                .add("uri", url)
-                .add("headers", headers)
+                .add("url", url)
                 .add("id", id)
                 .toString();
     }
