@@ -112,6 +112,12 @@ class ServerConfigSchemaTest : DescribeSpec({
                       outbound:
                         enabled: true
                         longFormat: false
+                      hideHeaders:
+                        - header1
+                        - header2
+                      hideCookies:
+                        - cookie1
+                        - cookie2                        
             """.trimIndent()
             )) shouldBe (Optional.empty())
         }

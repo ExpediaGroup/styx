@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -113,10 +113,10 @@ class HttpMessageLoggingSpec extends FunSpec
         assertThat(logger.log.size(), is(2))
 
         assertThat(logger.log(), hasItem(loggingEvent(INFO,
-          "requestId=[-a-z0-9]+, secure=false, request=\\{method=GET, uri=http://localhost:[0-9]+/foobar, origin=\"N/A\", headers=\\[Host=localhost:[0-9]+\\]}")))
+          "requestId=[-a-z0-9]+, request=LiveHttpRequest\\{version=HTTP/1.1, method=GET, url=http://localhost:[0-9]+/foobar, headers=\\[Host:localhost:[0-9]+\\], id=[-a-z0-9]+\\}, secure=false, origin=null")))
 
         assertThat(logger.log(), hasItem(loggingEvent(INFO,
-          "requestId=[-a-z0-9]+, secure=false, response=\\{status=200 OK, headers=\\[Server=Jetty\\(6.1.26\\), " + ORIGIN_ID_DEFAULT + "=generic-app-01, Via=1.1 styx\\]\\}")))
+          "requestId=[-a-z0-9]+, response=LiveHttpResponse\\{version=HTTP/1.1, status=200 OK, headers=\\[Server:Jetty\\(6.1.26\\), " + ORIGIN_ID_DEFAULT + ":generic-app-01, Via:1.1 styx\\]\\}, secure=false")))
       }
     }
 
@@ -131,10 +131,10 @@ class HttpMessageLoggingSpec extends FunSpec
         assertThat(logger.log.size(), is(2))
 
         assertThat(logger.log(), hasItem(loggingEvent(INFO,
-          "requestId=[-a-z0-9]+, secure=true, request=\\{method=GET, uri=https://localhost:[0-9]+/foobar, origin=\"N/A\", headers=.*}")))
+          "requestId=[-a-z0-9]+, request=LiveHttpRequest\\{version=HTTP/1.1, method=GET, url=https://localhost:[0-9]+/foobar, headers=.*, id=[-a-z0-9]+\\}, secure=true, origin=null")))
 
         assertThat(logger.log(), hasItem(loggingEvent(INFO,
-          "requestId=[-a-z0-9]+, secure=true, response=\\{status=200 OK, headers=\\[Server=Jetty\\(6.1.26\\), " + ORIGIN_ID_DEFAULT + "=generic-app-01, Via=1.1 styx\\]\\}")))
+          "requestId=[-a-z0-9]+, response=LiveHttpResponse\\{version=HTTP/1.1, status=200 OK, headers=\\[Server:Jetty\\(6.1.26\\), " + ORIGIN_ID_DEFAULT + ":generic-app-01, Via:1.1 styx\\]\\}, secure=true")))
       }
     }
   }

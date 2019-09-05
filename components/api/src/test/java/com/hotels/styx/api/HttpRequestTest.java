@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -131,10 +131,8 @@ public class HttpRequestTest {
                 .cookies(requestCookie("cfoo", "bar"))
                 .build();
 
-        assertThat(request.toString(), is("HttpRequest{version=HTTP/1.1, method=PATCH, uri=https://hotels.com, " +
-                "headers=[headerName=a, Cookie=cfoo=bar, Host=hotels.com], id=id}"));
-
-        assertThat(request.headers("headerName"), is(singletonList("a")));
+        assertThat(request.toString(), is("HttpRequest{version=HTTP/1.1, method=PATCH, url=https://hotels.com, id=id}"));
+        assertThat(request.headers().toString(), is("[headerName=a, Cookie=cfoo=bar, Host=hotels.com]"));
     }
 
     @Test

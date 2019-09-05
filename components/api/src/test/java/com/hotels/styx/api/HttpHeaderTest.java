@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ public class HttpHeaderTest {
     @Test
     public void createsSingleValueHeader() {
         HttpHeader header = header("name", "value");
-        assertThat(header.toString(), is("name=value"));
+        assertThat(header.toString(), is("name:value"));
         assertThat(header.value(), is("value"));
         assertThat(header.values(), contains("value"));
     }
@@ -39,7 +39,7 @@ public class HttpHeaderTest {
     @Test
     public void createsMultipleValueHeader() {
         HttpHeader header = header("name", "value1", "value2");
-        assertThat(header.toString(), is("name=value1, value2"));
+        assertThat(header.toString(), is("name:value1, value2"));
         assertThat(header.value(), is("value1"));
         assertThat(header.values(), contains("value1", "value2"));
     }
