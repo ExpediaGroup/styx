@@ -16,41 +16,56 @@
 package com.hotels.styx.client.netty;
 
 import ch.qos.logback.classic.Level;
+import com.hotels.styx.api.Id;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.Id;
 import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.common.logging.HttpRequestMessageLogger;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static ch.qos.logback.classic.Level.INFO;
 import static ch.qos.logback.classic.Level.WARN;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
-import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
-import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static java.lang.String.format;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.when;
 
 public class HttpRequestMessageLoggerTest {
 
-    private final Id appId;
-    private final Origin origin;
+    private static final String FORMATTED_REQUEST = "request";
+    private static final String FORMATTED_RESPONSE = "response";
+    private Id appId;
+    private Origin origin;
     private LoggingTestSupport log;
 
-    public HttpRequestMessageLoggerTest() {
+    @Mock
+    private HttpMessageFormatter httpMessageFormatter;
+
+    @BeforeClass
+    public void setup() {
+        MockitoAnnotations.initMocks(this);
         this.appId = id("MyApp");
         this.origin = newOriginBuilder("hostA", 80)
                 .applicationId(this.appId)
                 .id("h1")
                 .build();
+        when(httpMessageFormatter.formatRequest(any(LiveHttpRequest.class))).thenReturn(FORMATTED_REQUEST);
+        when(httpMessageFormatter.formatResponse(any(LiveHttpResponse.class))).thenReturn(FORMATTED_RESPONSE);
     }
 
     @BeforeMethod
@@ -66,28 +81,28 @@ public class HttpRequestMessageLoggerTest {
     @Test
     public void logsClientSideRequestShortFormat() {
         LiveHttpRequest styxRequest = get("http://www.hotels.com/foo/bar/request").build();
-        new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", false).logRequest(styxRequest, origin, true);
+        new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", false, httpMessageFormatter).logRequest(styxRequest, origin, true);
 
         assertThat(log.lastMessage(), is(loggingEvent(INFO,
-                format("requestId=%s, request=LiveHttpRequest\\{version=HTTP/1.1, method=GET, url=%s, id=%s}, secure=true, origin=MyApp:h1:%s",
-                    styxRequest.id(), styxRequest.url(), styxRequest.id(), origin.hostAndPortString()))));
+                format("requestId=%s, request=LiveHttpRequest\\{version=HTTP/1.1, method=GET, url=%s, id=%s}, secure=true, origin=%s",
+                    styxRequest.id(), styxRequest.url(), styxRequest.id(), origin))));
     }
 
     @Test
     public void logsClientSideRequestLongFormat() {
         LiveHttpRequest styxRequest = get("http://www.hotels.com/foo/bar/request").build();
-        new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", true).logRequest(styxRequest, origin, true);
+        new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", true, httpMessageFormatter).logRequest(styxRequest, origin, true);
 
         assertThat(log.lastMessage(), is(loggingEvent(INFO,
-                format("requestId=%s, request=LiveHttpRequest\\{version=HTTP/1.1, method=GET, url=%s, headers=\\[Host:www.hotels.com\\], id=%s}, secure=true, origin=MyApp:h1:%s",
-                        styxRequest.id(), styxRequest.url(), styxRequest.id(), origin.hostAndPortString()))));
+                format("requestId=%s, request=" + FORMATTED_REQUEST + ", secure=true, origin=%s",
+                        styxRequest.id(), origin))));
     }
 
     @Test
     public void logsClientSideResponseDetailsShortFormat() {
         LiveHttpRequest styxRequest = get("http://www.hotels.com/foo/bar/request").build();
         LiveHttpResponse styxResponse = response(OK).build();
-        new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", false).logResponse(styxRequest, styxResponse);
+        new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", false, httpMessageFormatter).logResponse(styxRequest, styxResponse);
 
         assertThat(log.lastMessage(), is(loggingEvent(INFO, format("requestId=%s, response=LiveHttpResponse\\{version=HTTP/1.1, status=200 OK\\}", styxRequest.id()))));
     }
@@ -96,21 +111,21 @@ public class HttpRequestMessageLoggerTest {
     public void logsClientSideResponseDetailsLongFormat() {
         LiveHttpRequest styxRequest = get("http://www.hotels.com/foo/bar/request").build();
         LiveHttpResponse styxResponse = response(OK).build();
-        new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", true).logResponse(styxRequest, styxResponse);
+        new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", true, httpMessageFormatter).logResponse(styxRequest, styxResponse);
 
-        assertThat(log.lastMessage(), is(loggingEvent(INFO, format("requestId=%s, response=LiveHttpResponse\\{version=HTTP/1.1, status=200 OK, headers=\\[\\]\\}", styxRequest.id()))));
+        assertThat(log.lastMessage(), is(loggingEvent(INFO, format("requestId=%s, response=" + FORMATTED_RESPONSE,styxRequest.id()))));
     }
 
     @Test
     public void requestLoggingDoesNotThrowExceptionWhenReceivingNullArguments() {
-        new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", false).logRequest(null, origin, true);
+        new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", false, httpMessageFormatter).logRequest(null, origin, true);
 
         assertThat(log.lastMessage(), is(loggingEvent(WARN, "requestId=N/A, request=null, origin=MyApp:h1:hostA:80")));
     }
 
     @Test(dataProvider = "responseLogUnexpectedArguments")
     public void responseLoggingDoesNotThrowExceptionWhenReceivingNullArguments(LiveHttpRequest request, LiveHttpResponse response, Level expectedLogLevel, String expectedLogMessage) {
-        new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", false).logResponse(request, response);
+        new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", false, httpMessageFormatter).logResponse(request, response);
 
         assertThat(log.lastMessage(), is(loggingEvent(expectedLogLevel, expectedLogMessage)));
     }

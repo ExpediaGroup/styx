@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -141,7 +141,7 @@ class ProxyResiliencySpec extends FunSpec
 
   def ensureErrorCodeReceivedWhenPartiallySent(sent: Try[Unit], status: HttpResponseStatus): Unit = {
     if (sent.isFailure && status != BAD_REQUEST) {
-      fail("Failed to send request, expected 400 BAD REQUEST but styx responded with status: [%s]".format(status))
+      fail("Failed to send request, expected 400 BAD FORMATTED_REQUEST but styx responded with status: [%s]".format(status))
     }
   }
 

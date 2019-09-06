@@ -40,10 +40,10 @@ public class HttpHeaderFormatterTest {
 
         List<String> headersToHide = Arrays.asList("HEADER1", "HEADER3");
         List<String> cookiesToHide = Arrays.asList("COOKIE2", "COOKIE4");
-        HttpHeaderFormatter.initialise(headersToHide, cookiesToHide);
+        String formattedHeaders = new HttpHeaderFormatter(headersToHide, cookiesToHide).format(headers);
 
-        assertThat(HttpHeaderFormatter.instance().format(headers),
-                is("[header1:****, header2:b, header3:****, header4:d, COOKIE:cookie1=e;cookie2=****, SET-COOKIE:cookie3=g;cookie4=****]"));
+        assertThat(formattedHeaders,
+                is("header1:****, header2:b, header3:****, header4:d, COOKIE:cookie1=e;cookie2=****, SET-COOKIE:cookie3=g;cookie4=****"));
     }
 
 }

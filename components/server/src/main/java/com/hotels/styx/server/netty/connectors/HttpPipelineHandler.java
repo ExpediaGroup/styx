@@ -73,8 +73,6 @@ import static com.hotels.styx.api.HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE;
 import static com.hotels.styx.api.HttpResponseStatus.REQUEST_TIMEOUT;
 import static com.hotels.styx.api.HttpResponseStatus.SERVICE_UNAVAILABLE;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
-import static com.hotels.styx.common.format.HttpMessageFormatter.formatRequest;
-import static com.hotels.styx.common.format.HttpMessageFormatter.formatResponse;
 import static com.hotels.styx.server.HttpErrorStatusListener.IGNORE_ERROR_STATUS;
 import static com.hotels.styx.server.RequestProgressListener.IGNORE_REQUEST_PROGRESS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
@@ -231,7 +229,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
     }
 
     private State onSpuriousRequest(LiveHttpRequest request, State state) {
-        LOGGER.warn(warningMessage("message='Spurious request received while handling another request', spuriousRequest=" + formatRequest(request)));
+        LOGGER.warn(warningMessage("message='Spurious request received while handling another request', spuriousRequest=" + request));
 
         metrics.counter("requests.cancelled.spuriousRequest").inc();
         statsSink.onTerminate(ongoingRequest.id());
@@ -242,7 +240,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
 
     private State onPrematureRequest(LiveHttpRequest request, ChannelHandlerContext ctx) {
         if (prematureRequest != null) {
-            LOGGER.warn(warningMessage("message='Spurious request received while handling another request', spuriousRequest=%s" + formatRequest(request)));
+            LOGGER.warn(warningMessage("message='Spurious request received while handling another request', spuriousRequest=%s" + request));
 
             metrics.counter("requests.cancelled.spuriousRequest").inc();
             cancelSubscription();
@@ -547,7 +545,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
 
     private String warningMessage(String msg) {
         return format("%s, state=%s, request=%s, ongoingResponse=%s, prematureRequest=%s",
-                msg, state(), formatRequest(ongoingRequest), formatResponse(ongoingResponse), prematureRequest);
+                msg, state(), ongoingRequest, ongoingResponse, prematureRequest);
     }
 
     @FunctionalInterface

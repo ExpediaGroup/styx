@@ -160,7 +160,7 @@ public class HttpPipelineHandlerTest {
         pipeline = mock(HttpHandler.class);
         when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class))).thenReturn(new Eventual<>(toPublisher(responseObservable.doOnUnsubscribe(() -> responseUnsubscribed.set(true)))));
 
-        request = get("/foo").id("REQUEST-1-ID").build();
+        request = get("/foo").id("FORMATTED_REQUEST-1-ID").build();
         response = response().build();
 
         responseEnhancer = mock(ResponseEnhancer.class);
@@ -189,7 +189,7 @@ public class HttpPipelineHandlerTest {
                 .thenReturn(new Eventual<>(toPublisher(responseObservable.doOnUnsubscribe(() -> responseUnsubscribed.set(true)))))
                 .thenReturn(new Eventual<>(toPublisher(responseObservable2.doOnUnsubscribe(() -> responseUnsubscribed2.set(true)))));
 
-        request2 = get("/bar").id("REQUEST-2-ID").build();
+        request2 = get("/bar").id("FORMATTED_REQUEST-2-ID").build();
 
         setupHandlerTo(ACCEPTING_REQUESTS);
     }

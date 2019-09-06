@@ -20,9 +20,13 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpVersion;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.server.HttpInterceptorContext;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import reactor.core.publisher.Mono;
@@ -36,15 +40,31 @@ import static com.hotels.styx.api.ResponseCookie.responseCookie;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.when;
 
 public class HttpMessageLoggingInterceptorTest {
+
+    private static final String FORMATTED_REQUEST = "request";
+    private static final String FORMATTED_RESPONSE = "response";
+
     private LoggingTestSupport responseLogSupport;
     private HttpMessageLoggingInterceptor interceptor;
+
+    @Mock
+    private HttpMessageFormatter httpMessageFormatter;
+
+    @BeforeClass
+    public void setup() {
+        MockitoAnnotations.initMocks(this);
+        when(httpMessageFormatter.formatRequest(any(LiveHttpRequest.class))).thenReturn(FORMATTED_REQUEST);
+        when(httpMessageFormatter.formatResponse(any(LiveHttpResponse.class))).thenReturn(FORMATTED_RESPONSE);
+    }
 
     @BeforeMethod
     public void before() {
         responseLogSupport = new LoggingTestSupport("com.hotels.styx.http-messages.inbound");
-        interceptor = new HttpMessageLoggingInterceptor(true);
+        interceptor = new HttpMessageLoggingInterceptor(true, httpMessageFormatter);
     }
 
     @AfterMethod
@@ -66,17 +86,14 @@ public class HttpMessageLoggingInterceptorTest {
                 .cookies(responseCookie("RespCookie", "RespCookieValue").build())
         )));
 
-        String requestPattern = "request=LiveHttpRequest\\{version=HTTP/1.1, method=GET, url=/, headers=\\[ReqHeader:ReqHeaderValue, Cookie:ReqCookie=ReqCookieValue\\], id=" + request.id() + "\\}";
-        String responsePattern = "response=LiveHttpResponse\\{version=HTTP/1.1, status=200 OK, headers=\\[RespHeader:RespHeaderValue\\, Set-Cookie:RespCookie=RespCookieValue]\\}";
-
         assertThat(responseLogSupport.log(), contains(
-                loggingEvent(INFO, "requestId=" + request.id() + ", " + requestPattern + ", secure=true, origin=null"),
-                loggingEvent(INFO, "requestId=" + request.id() + ", " + responsePattern +  ", secure=true")));
+                loggingEvent(INFO, "requestId=" + request.id() + ", request=" + FORMATTED_REQUEST + ", secure=true, origin=null"),
+                loggingEvent(INFO, "requestId=" + request.id() + ", response=" + FORMATTED_RESPONSE +  ", secure=true")));
     }
 
     @Test
     public void logsRequestsAndResponsesShort() {
-        interceptor = new HttpMessageLoggingInterceptor(false);
+        interceptor = new HttpMessageLoggingInterceptor(false, httpMessageFormatter);
         LiveHttpRequest request = get("/")
                 .header("ReqHeader", "ReqHeaderValue")
                 .cookies(requestCookie("ReqCookie", "ReqCookieValue"))
@@ -105,12 +122,9 @@ public class HttpMessageLoggingInterceptorTest {
 
         consume(interceptor.intercept(request, chain(response(OK))));
 
-        String requestPattern = "request=LiveHttpRequest\\{version=HTTP/1.1, method=GET, url=/, headers=\\[ReqHeader:ReqHeaderValue, Cookie:ReqCookie=ReqCookieValue\\], id=" + request.id() + "\\}";
-        String responsePattern = "response=LiveHttpResponse\\{version=HTTP/1.1, status=200 OK, headers=\\[\\]\\}";
-
         assertThat(responseLogSupport.log(), contains(
-                loggingEvent(INFO, "requestId=" + request.id() + ", " + requestPattern + ", secure=true, origin=null"),
-                loggingEvent(INFO, "requestId=" + request.id() + ", " + responsePattern +  ", secure=true")));
+                loggingEvent(INFO, "requestId=" + request.id() + ", request=" + FORMATTED_REQUEST + ", secure=true, origin=null"),
+                loggingEvent(INFO, "requestId=" + request.id() + ", response=" + FORMATTED_RESPONSE +  ", secure=true")));
     }
 
 
