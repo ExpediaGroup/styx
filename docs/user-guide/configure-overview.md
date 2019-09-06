@@ -125,12 +125,24 @@ request-logging:
   # Logs are produced on server and origin side, so there is an information on 
   # how the server-side (inbound) and origin-side (outbound) request/response look like.
   # In long format log entry contains additionally headers and cookies. 
+  # The hideHeaders and hideCookies options take a list of header or cookie names.
+  # Any header or cookie in these lists will be obfuscated in the logged message output
+  # e.g.
+  
+      headers=[Content-Type:****, Cookie:sessionID=****;samlToken=****]
+
+  # Config example
   inbound:
     enabled: ${REQUEST_LOGGING_INBOUND_ENABLED:false}
     longFormat: ${REQUEST_LOGGING_INBOUND_LONG_FORMAT:false}
   outbound:
     enabled: ${REQUEST_LOGGING_OUTBOUND_ENABLED:false}
     longFormat: ${REQUEST_LOGGING_OUTBOUND_LONG_FORMAT:false}
+  hideHeaders:
+    - Content-Type
+  hideCookies:
+    - sessionID
+    - samlToken
 
 # Configures the names of the headers that Styx adds to messages it proxies (see headers.md)
 # If not configured, defaults will be used.
