@@ -18,6 +18,7 @@ package com.hotels.styx;
 import com.google.common.eventbus.EventBus;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.configstore.ConfigStore;
 import com.hotels.styx.proxy.HttpErrorStatusCauseLogger;
 import com.hotels.styx.proxy.HttpErrorStatusMetrics;
@@ -38,6 +39,7 @@ public final class Environment implements com.hotels.styx.api.Environment {
     private final StyxConfig configuration;
     private final HttpErrorStatusListener httpErrorStatusListener;
     private final ServerEnvironment serverEnvironment;
+    private final HttpMessageFormatter httpMessageFormatter;
 
     private Environment(Builder builder) {
         this.eventBus = firstNonNull(builder.eventBus, () -> new EventBus("Styx"));
@@ -46,8 +48,11 @@ public final class Environment implements com.hotels.styx.api.Environment {
         this.configuration = requireNonNull(builder.configuration);
         this.version = firstNonNull(builder.version, Version::newVersion);
         this.serverEnvironment = new ServerEnvironment(firstNonNull(builder.metricRegistry, CodaHaleMetricRegistry::new));
+        this.httpMessageFormatter = builder.httpMessageFormatter;
 
-        this.httpErrorStatusListener = HttpErrorStatusListener.compose(new HttpErrorStatusCauseLogger(), new HttpErrorStatusMetrics(serverEnvironment.metricRegistry()));
+        this.httpErrorStatusListener = HttpErrorStatusListener.compose(
+                new HttpErrorStatusCauseLogger(httpMessageFormatter),
+                new HttpErrorStatusMetrics(serverEnvironment.metricRegistry()));
     }
 
     // prevent unnecessary construction of defaults
@@ -95,6 +100,9 @@ public final class Environment implements com.hotels.styx.api.Environment {
         return serverEnvironment;
     }
 
+    public HttpMessageFormatter httpMessageFormatter() {
+        return httpMessageFormatter;
+    }
 
     /**
      * Builder for {@link com.hotels.styx.Environment}.
@@ -104,6 +112,7 @@ public final class Environment implements com.hotels.styx.api.Environment {
         private Version version;
         private EventBus eventBus;
         private StyxConfig configuration = StyxConfig.defaultConfig();
+        private HttpMessageFormatter httpMessageFormatter;
 
         public Builder configuration(StyxConfig configuration) {
             this.configuration = requireNonNull(configuration);
@@ -122,6 +131,11 @@ public final class Environment implements com.hotels.styx.api.Environment {
 
         public Builder eventBus(EventBus eventBus) {
             this.eventBus = eventBus;
+            return this;
+        }
+
+        public Builder httpMessageFormatter(HttpMessageFormatter httpMessageFormatter) {
+            this.httpMessageFormatter = httpMessageFormatter;
             return this;
         }
 

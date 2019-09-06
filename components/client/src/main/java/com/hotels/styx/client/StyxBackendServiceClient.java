@@ -52,7 +52,6 @@ import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.extension.service.StickySessionConfig.stickySessionDisabled;
 import static com.hotels.styx.client.StyxHeaderConfig.ORIGIN_ID_DEFAULT;
 import static com.hotels.styx.client.stickysession.StickySessionCookie.newStickySessionCookie;
-import static com.hotels.styx.common.format.HttpMessageFormatter.formatRequest;
 import static io.netty.handler.codec.http.HttpMethod.HEAD;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
@@ -258,7 +257,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
 
     private static void logError(LiveHttpRequest request, Throwable throwable) {
         LOGGER.error("Error Handling request={} exceptionClass={} exceptionMessage=\"{}\"",
-                new Object[]{formatRequest(request), throwable.getClass().getName(), throwable.getMessage()});
+                new Object[]{request, throwable.getClass().getName(), throwable.getMessage()});
     }
 
     private LiveHttpResponse removeUnexpectedResponseBody(LiveHttpRequest request, LiveHttpResponse response) {

@@ -16,8 +16,12 @@
 package com.hotels.styx.proxy;
 
 import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -29,15 +33,29 @@ import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.when;
 
 public class HttpErrorStatusCauseLoggerTest {
-    HttpErrorStatusCauseLogger httpErrorStatusCauseLogger;
-    LoggingTestSupport loggingTestSupport;
+
+    private static final String FORMATTED_REQUEST = "request";
+
+    private HttpErrorStatusCauseLogger httpErrorStatusCauseLogger;
+    private LoggingTestSupport loggingTestSupport;
+
+    @Mock
+    private HttpMessageFormatter httpMessageFormatter;
+
+    @BeforeClass
+    public void setup() {
+        MockitoAnnotations.initMocks(this);
+        when(httpMessageFormatter.formatRequest(any(LiveHttpRequest.class))).thenReturn(FORMATTED_REQUEST);
+    }
 
     @BeforeMethod
     public void setUp() {
         loggingTestSupport = new LoggingTestSupport(HttpErrorStatusCauseLogger.class);
-        httpErrorStatusCauseLogger = new HttpErrorStatusCauseLogger();
+        httpErrorStatusCauseLogger = new HttpErrorStatusCauseLogger(httpMessageFormatter);
     }
 
     @AfterMethod
@@ -81,7 +99,7 @@ public class HttpErrorStatusCauseLoggerTest {
         assertThat(loggingTestSupport.log(), hasItem(
                 loggingEvent(
                         ERROR,
-                        "Failure status=\"500 Internal Server Error\" during request=LiveHttpRequest\\{version=HTTP/1.1, method=GET, url=/foo, headers=\\[\\], id=.*\\}, clientAddress=localhost:80",
+                        "Failure status=\"500 Internal Server Error\" during request=" + FORMATTED_REQUEST + ", clientAddress=localhost:80",
                         "java.lang.Exception",
                         "This is just a test")));
     }

@@ -18,14 +18,15 @@ package com.hotels.styx.client.netty.connectionpool;
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Buffers;
 import com.hotels.styx.api.HttpMethod;
+import com.hotels.styx.api.HttpVersion;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.HttpVersion;
 import com.hotels.styx.api.Requests;
 import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.Operation;
 import com.hotels.styx.client.OriginStatsFactory;
+import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.common.logging.HttpRequestMessageLogger;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -49,7 +50,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.google.common.base.Objects.toStringHelper;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.extension.service.BackendService.DEFAULT_RESPONSE_TIMEOUT_MILLIS;
-import static com.hotels.styx.common.format.HttpMessageFormatter.formatRequest;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
@@ -80,8 +80,8 @@ public class HttpRequestOperation implements Operation<NettyConnection, LiveHttp
      * @param originStatsFactory OriginStats factory
      */
     @VisibleForTesting
-    public HttpRequestOperation(LiveHttpRequest request, OriginStatsFactory originStatsFactory) {
-        this(request, originStatsFactory, DEFAULT_RESPONSE_TIMEOUT_MILLIS, false, false);
+    public HttpRequestOperation(LiveHttpRequest request, OriginStatsFactory originStatsFactory, HttpMessageFormatter httpMessageFormatter) {
+        this(request, originStatsFactory, DEFAULT_RESPONSE_TIMEOUT_MILLIS, false, false, httpMessageFormatter);
     }
 
     /**
@@ -92,12 +92,12 @@ public class HttpRequestOperation implements Operation<NettyConnection, LiveHttp
      * @param requestLoggingEnabled
      */
     public HttpRequestOperation(LiveHttpRequest request, OriginStatsFactory originStatsFactory,
-                                int responseTimeoutMillis, boolean requestLoggingEnabled, boolean longFormat) {
+                                int responseTimeoutMillis, boolean requestLoggingEnabled, boolean longFormat, HttpMessageFormatter httpMessageFormatter) {
         this.request = requireNonNull(request);
         this.originStatsFactory = Optional.ofNullable(originStatsFactory);
         this.responseTimeoutMillis = responseTimeoutMillis;
         this.requestLoggingEnabled = requestLoggingEnabled;
-        this.httpRequestMessageLogger = new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", longFormat);
+        this.httpRequestMessageLogger = new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", longFormat, httpMessageFormatter);
     }
 
     @VisibleForTesting
@@ -160,7 +160,7 @@ public class HttpRequestOperation implements Operation<NettyConnection, LiveHttp
 
                                 if (requestIsOngoing(requestRequestBodyChunkSubscriber.get())) {
                                     LOGGER.warn("Origin responded too quickly to an ongoing request, or it was cancelled. Connection={}, Request={}.",
-                                            new Object[]{nettyConnection.channel(), formatRequest(this.request)});
+                                            new Object[]{nettyConnection.channel(), this.request});
                                     nettyConnection.close();
                                 }
                             }
@@ -193,7 +193,7 @@ public class HttpRequestOperation implements Operation<NettyConnection, LiveHttp
         } catch (NoSuchElementException cause) {
             long elapsedTime = System.currentTimeMillis() - requestTime;
             LOGGER.error("Failed to remove pipeline handlers from pooled connection. elapsedTime={}, request={}, terminationCount={}, executionCount={}, cause={}",
-                    new Object[]{elapsedTime, formatRequest(request), terminationCount.get(), executeCount.get(), cause});
+                    new Object[]{elapsedTime, request, terminationCount.get(), executeCount.get(), cause});
         }
     }
 
@@ -257,7 +257,7 @@ public class HttpRequestOperation implements Operation<NettyConnection, LiveHttp
                 } else {
                     String channelIdentifier = String.format("%s -> %s", nettyConnection.channel().localAddress(), nettyConnection.channel().remoteAddress());
                     LOGGER.error(format("Failed to send request headers. origin=%s connection=%s request=%s",
-                            nettyConnection.getOrigin(), channelIdentifier, formatRequest(request)), headersFuture.cause());
+                            nettyConnection.getOrigin(), channelIdentifier, request), headersFuture.cause());
                     responseFromOriginObserver.onError(new TransportLostException(nettyConnection.channel().remoteAddress(), nettyConnection.getOrigin()));
                 }
             };
@@ -312,7 +312,7 @@ public class HttpRequestOperation implements Operation<NettyConnection, LiveHttp
                         } else {
                             String channelIdentifier = String.format("%s -> %s", nettyConnection.channel().localAddress(), nettyConnection.channel().remoteAddress());
                             LOGGER.error(format("Failed to send request body data. origin=%s connection=%s request=%s",
-                                    nettyConnection.getOrigin(), channelIdentifier, formatRequest(request)), future.cause());
+                                    nettyConnection.getOrigin(), channelIdentifier, request), future.cause());
                             this.onError(new TransportLostException(nettyConnection.channel().remoteAddress(), nettyConnection.getOrigin()));
                         }
                     });

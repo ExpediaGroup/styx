@@ -24,52 +24,45 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 
 public class HttpHeaderFormatter {
 
     private static final List<String> COOKIE_HEADER_NAMES = Arrays.asList("cookie", "set-cookie");
-    private static HttpHeaderFormatter instance;
-
-    public static void initialise(List<String> headerValuesToHide, List<String> cookieValuesToHide) {
-        headerValuesToHide.replaceAll(String::toLowerCase);
-        cookieValuesToHide.replaceAll(String::toLowerCase);
-        instance = new HttpHeaderFormatter(headerValuesToHide, cookieValuesToHide);
-    }
-
-    public static HttpHeaderFormatter instance() {
-        return instance == null
-                ? new HttpHeaderFormatter(emptyList(), emptyList())
-                : instance;
-    }
 
     private List<String> headerValuesToHide;
     private List<String> cookieValuesToHide;
 
-    private HttpHeaderFormatter(List<String> headerValuesToHide, List<String> cookieValuesToHide) {
+    public HttpHeaderFormatter(List<String> headerValuesToHide, List<String> cookieValuesToHide) {
         this.headerValuesToHide = requireNonNull(headerValuesToHide);
         this.cookieValuesToHide = requireNonNull(cookieValuesToHide);
     }
 
     public String format(HttpHeaders headers) {
-        String sanitisedHeaders = StreamSupport.stream(headers.spliterator(), false)
+        return StreamSupport.stream(headers.spliterator(), false)
                 .map(this::hideOrFormatHeader)
                 .collect(Collectors.joining(", "));
-
-        return "[" + sanitisedHeaders + "]";
     }
 
     private String hideOrFormatHeader(HttpHeader header) {
-        return headerValuesToHide.contains(header.name().toLowerCase())
+        return shouldHideHeader(header)
                 ? header.name() + ":****"
                 : formatHeaderAsCookieIfNecessary(header);
     }
 
+    private boolean shouldHideHeader(HttpHeader header) {
+        return headerValuesToHide.stream()
+                .anyMatch(h -> h.equalsIgnoreCase(header.name()));
+    }
+
     private String formatHeaderAsCookieIfNecessary(HttpHeader header) {
-        return COOKIE_HEADER_NAMES.contains(header.name().toLowerCase())
+        return isHeaderACookie(header)
                 ? formatCookieHeader(header)
                 : header.toString();
+    }
+
+    private boolean isHeaderACookie(HttpHeader header) {
+        return COOKIE_HEADER_NAMES.contains(header.name().toLowerCase());
     }
 
     private String formatCookieHeader(HttpHeader header) {
@@ -81,9 +74,14 @@ public class HttpHeaderFormatter {
     }
 
     private String hideOrFormatCookie(RequestCookie cookie) {
-        return cookieValuesToHide.contains(cookie.name().toLowerCase())
+        return shouldHideCookie(cookie)
                 ? cookie.name() + "=****"
                 : cookie.toString();
+    }
+
+    private boolean shouldHideCookie(RequestCookie cookie) {
+        return cookieValuesToHide.stream()
+                .anyMatch(h -> h.equalsIgnoreCase(cookie.name()));
     }
 
 }

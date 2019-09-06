@@ -44,6 +44,7 @@ import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitorFactory;
 import com.hotels.styx.client.healthcheck.UrlRequestHealthCheck;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
+import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.server.HttpRouter;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
@@ -131,7 +132,8 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                     requestLoggingEnabled,
                     longFormat,
                     originStatsFactory,
-                    poolSettings.connectionExpirationSeconds());
+                    poolSettings.connectionExpirationSeconds(),
+                    environment.httpMessageFormatter());
 
             ConnectionPool.Factory connectionPoolFactory = new SimpleConnectionPoolFactory.Builder()
                     .connectionFactory(connectionFactory)
@@ -139,7 +141,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                     .metricRegistry(originsMetrics)
                     .build();
 
-            StyxHttpClient healthCheckClient = healthCheckClient(backendService);
+            StyxHttpClient healthCheckClient = healthCheckClient(backendService, environment.httpMessageFormatter());
 
             OriginHealthStatusMonitor healthStatusMonitor = healthStatusMonitor(backendService, healthCheckClient);
 
@@ -178,10 +180,11 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                                 healthCheckClient);
     }
 
-    private StyxHttpClient healthCheckClient(BackendService backendService) {
+    private StyxHttpClient healthCheckClient(BackendService backendService, HttpMessageFormatter httpMessageFormatter) {
         StyxHttpClient.Builder builder = new StyxHttpClient.Builder()
                 .connectTimeout(backendService.connectionPoolConfig().connectTimeoutMillis(), MILLISECONDS)
-                .userAgent("Styx/" + environment.buildInfo().releaseVersion());
+                .userAgent("Styx/" + environment.buildInfo().releaseVersion())
+                .httpMessageFormatter(httpMessageFormatter);
 
         backendService.tlsSettings().ifPresent(builder::tlsSettings);
 
@@ -196,7 +199,8 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
             boolean requestLoggingEnabled,
             boolean longFormat,
             OriginStatsFactory originStatsFactory,
-            long connectionExpiration) {
+            long connectionExpiration,
+            HttpMessageFormatter httpMessageFormatter) {
 
         Connection.Factory factory = new NettyConnectionFactory.Builder()
                 .nettyEventLoop(nettyEventLoopGroup, socketChannelClass)
@@ -207,6 +211,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                                 .responseTimeoutMillis(responseTimeoutMillis)
                                 .requestLoggingEnabled(requestLoggingEnabled)
                                 .longFormat(longFormat)
+                                .httpMessageFormatter(httpMessageFormatter)
                                 .build()
                 )
                 .tlsSettings(tlsSettings)

@@ -18,21 +18,23 @@ package com.hotels.styx.common.logging;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.common.format.HttpMessageFormatter;
 import org.slf4j.Logger;
 
-import static com.hotels.styx.common.format.HttpMessageFormatter.formatRequest;
-import static com.hotels.styx.common.format.HttpMessageFormatter.formatResponse;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Logs client side requests and responses when enabled. Disabled by default.
  */
 public class HttpRequestMessageLogger {
+
     private final Logger logger;
     private final boolean longFormatEnabled;
+    private final HttpMessageFormatter httpMessageFormatter;
 
-    public HttpRequestMessageLogger(String name, boolean longFormatEnabled) {
+    public HttpRequestMessageLogger(String name, boolean longFormatEnabled, HttpMessageFormatter httpMessageFormatter) {
         this.longFormatEnabled = longFormatEnabled;
+        this.httpMessageFormatter = httpMessageFormatter;
         logger = getLogger(name);
     }
 
@@ -69,11 +71,11 @@ public class HttpRequestMessageLogger {
     }
 
     private String requestAsString(LiveHttpRequest request) {
-        return longFormatEnabled ? formatRequest(request) : request.toString();
+        return longFormatEnabled ? httpMessageFormatter.formatRequest(request) : request.toString();
     }
 
     private String responseAsString(LiveHttpResponse response) {
-        return longFormatEnabled ? formatResponse(response) : response.toString();
+        return longFormatEnabled ? httpMessageFormatter.formatResponse(response) : response.toString();
     }
 
     private static Object id(LiveHttpRequest request) {

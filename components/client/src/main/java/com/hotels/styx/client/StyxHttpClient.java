@@ -27,6 +27,7 @@ import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.client.ssl.SslContextFactory;
+import com.hotels.styx.common.format.HttpMessageFormatter;
 import io.netty.handler.ssl.SslContext;
 import reactor.core.publisher.Mono;
 import rx.RxReactiveStreams;
@@ -38,7 +39,6 @@ import java.util.concurrent.TimeUnit;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderNames.USER_AGENT;
-import static com.hotels.styx.common.format.HttpMessageFormatter.formatRequest;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.client.HttpConfig.newHttpConfigBuilder;
 import static java.util.Objects.requireNonNull;
@@ -159,7 +159,7 @@ public final class StyxHttpClient implements HttpClient {
                 .orElseGet(() -> {
                     checkArgument(request.url().isAbsolute(), "host header is not set for request=%s", request);
                     return request.url().authority().map(Url.Authority::hostAndPort)
-                            .orElseThrow(() -> new IllegalArgumentException("Cannot send request " + formatRequest(request) + " as URL is not absolute and no HOST header is present"));
+                            .orElseThrow(() -> new IllegalArgumentException("Cannot send request " + request + " as URL is not absolute and no HOST header is present"));
                 });
 
         HostAndPort host = HostAndPort.fromString(hostAndPort);
@@ -182,6 +182,7 @@ public final class StyxHttpClient implements HttpClient {
         private TlsSettings tlsSettings;
         private boolean isHttps;
         private String userAgent;
+        private HttpMessageFormatter httpMessageFormatter;
 
         public Builder() {
         }
@@ -311,6 +312,11 @@ public final class StyxHttpClient implements HttpClient {
             return new Builder(this);
         }
 
+        public Builder httpMessageFormatter(HttpMessageFormatter httpMessageFormatter) {
+            this.httpMessageFormatter = httpMessageFormatter;
+            return this;
+        }
+
         /**
          * Construct a client instance.
          *
@@ -325,7 +331,8 @@ public final class StyxHttpClient implements HttpClient {
                             null,
                             responseTimeout,
                             false,
-                            false))
+                            false,
+                            httpMessageFormatter))
                     .build();
 
             return new StyxHttpClient(connectionFactory, this.copy());

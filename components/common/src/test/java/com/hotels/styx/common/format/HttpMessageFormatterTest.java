@@ -17,9 +17,14 @@ package com.hotels.styx.common.format;
 
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertTrue;
 
 public class HttpMessageFormatterTest {
@@ -34,12 +39,25 @@ public class HttpMessageFormatterTest {
             .header("HeaderName", "HeaderValue")
             .build();
 
-    private static final String HTTP_REQUEST_PATTERN = "\\{version=HTTP/1.1, method=GET, url=/, headers=\\[HeaderName:HeaderValue\\], id=[a-zA-Z0-9-]*}";
-    private static final String HTTP_RESPONSE_PATTERN = "\\{version=HTTP/1.1, status=200 OK, headers=\\[HeaderName:HeaderValue\\]}";
+    private static final String FORMATTED_HEADERS = "headers";
+    private static final String HTTP_REQUEST_PATTERN = "\\{version=HTTP/1.1, method=GET, url=/, headers=\\[" + FORMATTED_HEADERS + "\\], id=[a-zA-Z0-9-]*}";
+    private static final String HTTP_RESPONSE_PATTERN = "\\{version=HTTP/1.1, status=200 OK, headers=\\[" + FORMATTED_HEADERS + "\\]}";
+
+    @Mock
+    private HttpHeaderFormatter httpHeaderFormatter;
+
+    private HttpMessageFormatter httpMessageFormatter;
+
+    @BeforeClass
+    public void setup() {
+        MockitoAnnotations.initMocks(this);
+        httpMessageFormatter = new HttpMessageFormatter(httpHeaderFormatter);
+        when(httpHeaderFormatter.format(any())).thenReturn(FORMATTED_HEADERS);
+    }
 
     @Test
     public void shouldFormatHttpRequest() {
-        String formattedRequest = HttpMessageFormatter.formatRequest(httpRequest);
+        String formattedRequest = httpMessageFormatter.formatRequest(httpRequest);
         String expected = "HttpRequest" + HTTP_REQUEST_PATTERN;
 
         assertMatchesRegex(formattedRequest, expected);
@@ -47,7 +65,7 @@ public class HttpMessageFormatterTest {
 
     @Test
     public void shouldFormatLiveHttpRequest() {
-        String formattedRequest = HttpMessageFormatter.formatRequest(httpRequest.stream());
+        String formattedRequest = httpMessageFormatter.formatRequest(httpRequest.stream());
         String expected = "LiveHttpRequest" + HTTP_REQUEST_PATTERN;
 
         assertMatchesRegex(formattedRequest, expected);
@@ -55,7 +73,7 @@ public class HttpMessageFormatterTest {
 
     @Test
     public void shouldFormatHttpResponse() {
-        String formattedResponse = HttpMessageFormatter.formatResponse(httpResponse);
+        String formattedResponse = httpMessageFormatter.formatResponse(httpResponse);
         String expected = "HttpResponse" + HTTP_RESPONSE_PATTERN;
 
         assertMatchesRegex(formattedResponse, expected);
@@ -63,7 +81,7 @@ public class HttpMessageFormatterTest {
 
     @Test
     public void shouldFormatLiveHttpResponse() {
-        String formattedResponse = HttpMessageFormatter.formatResponse(httpResponse.stream());
+        String formattedResponse = httpMessageFormatter.formatResponse(httpResponse.stream());
         String expected = "LiveHttpResponse" + HTTP_RESPONSE_PATTERN;
 
         assertMatchesRegex(formattedResponse, expected);

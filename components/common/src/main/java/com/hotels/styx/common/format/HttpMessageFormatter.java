@@ -26,8 +26,14 @@ import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Url;
 
 public class HttpMessageFormatter {
+    
+    private HttpHeaderFormatter httpHeaderFormatter;
 
-    public static String formatRequest(HttpRequest request) {
+    public HttpMessageFormatter(HttpHeaderFormatter httpHeaderFormatter) {
+        this.httpHeaderFormatter = httpHeaderFormatter;
+    }
+
+    public String formatRequest(HttpRequest request) {
         return request == null ? null
             : formatRequest(
                 HttpRequest.class.getSimpleName(),
@@ -38,7 +44,7 @@ public class HttpMessageFormatter {
                 request.headers());
     }
 
-    public static String formatRequest(LiveHttpRequest request) {
+    public String formatRequest(LiveHttpRequest request) {
         return request == null ? null
             : formatRequest(
                 LiveHttpRequest.class.getSimpleName(),
@@ -49,7 +55,7 @@ public class HttpMessageFormatter {
                 request.headers());
     }
 
-    public static String formatResponse(HttpResponse response) {
+    public String formatResponse(HttpResponse response) {
         return response == null ? null
             : formatResponse(
                 HttpResponse.class.getSimpleName(),
@@ -58,7 +64,7 @@ public class HttpMessageFormatter {
                 response.headers());
     }
 
-    public static String formatResponse(LiveHttpResponse response) {
+    public String formatResponse(LiveHttpResponse response) {
         return response == null ? null
             : formatResponse(
                 LiveHttpResponse.class.getSimpleName(),
@@ -67,20 +73,20 @@ public class HttpMessageFormatter {
                 response.headers());
     }
 
-    private static String formatRequest(String simpleName, HttpVersion version, HttpMethod method, Url url, Object id, HttpHeaders headers) {
+    private String formatRequest(String simpleName, HttpVersion version, HttpMethod method, Url url, Object id, HttpHeaders headers) {
         return simpleName +
                 "{version=" + version +
                 ", method=" + method +
                 ", url=" + url +
-                ", headers=" + HttpHeaderFormatter.instance().format(headers) +
-                ", id=" + id + "}";
+                ", headers=[" + httpHeaderFormatter.format(headers) +
+                "], id=" + id + "}";
     }
 
-    private static String formatResponse(String simpleName, HttpVersion version, HttpResponseStatus status, HttpHeaders headers) {
+    private String formatResponse(String simpleName, HttpVersion version, HttpResponseStatus status, HttpHeaders headers) {
         return simpleName +
                 "{version=" + version +
                 ", status=" + status +
-                ", headers=" + HttpHeaderFormatter.instance().format(headers) + "}";
+                ", headers=[" + httpHeaderFormatter.format(headers) + "]}";
     }
 
 }
