@@ -16,25 +16,27 @@
 package com.hotels.styx.routing.config;
 
 import com.google.common.collect.ImmutableMap;
-import com.hotels.styx.Environment;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.routing.RoutingObject;
-import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.ConditionRouter;
 import com.hotels.styx.routing.handlers.HostProxy;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
 import com.hotels.styx.routing.handlers.LoadBalancingGroup;
 import com.hotels.styx.routing.handlers.PathPrefixRouter;
+import com.hotels.styx.routing.handlers.ProviderObjectRecord;
 import com.hotels.styx.routing.handlers.ProxyToBackend;
 import com.hotels.styx.routing.handlers.RouteRefLookup;
 import com.hotels.styx.routing.handlers.StaticResponseHandler;
 import com.hotels.styx.routing.interceptors.RewriteInterceptor;
 import com.hotels.styx.serviceproviders.ServiceProviderFactory;
+import com.hotels.styx.services.HealthCheckMonitoringService;
 import com.hotels.styx.services.HealthCheckMonitoringServiceFactory;
+import com.hotels.styx.services.YamlFileConfigurationService;
+import com.hotels.styx.services.YamlFileConfigurationServiceFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -49,27 +51,36 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * Contains mappings of builtin routing object and interceptor names to their factory methods.
  */
 public final class Builtins {
+    public static final String STATIC_RESPONSE = "StaticResponseHandler";
+    public static final String CONDITION_ROUTER = "ConditionRouter";
+    public static final String INTERCEPTOR_PIPELINE = "InterceptorPipeline";
+    public static final String PROXY_TO_BACKEND = "ProxyToBackend";
+    public static final String PATH_PREFIX_ROUTER = "PathPrefixRouter";
+    public static final String HOST_PROXY = "HostProxy";
+    public static final String LOAD_BALANCING_GROUP = "LoadBalancingGroup";
+
+    public static final String HEALTH_CHECK_MONITOR = "HealthCheckMonitor";
+    public static final String YAML_FILE_CONFIGURATION_SERVICE = "YamlFileConfigurationService";
+
     public static final ImmutableMap<String, Schema.FieldType> BUILTIN_HANDLER_SCHEMAS;
     public static final ImmutableMap<String, RoutingObjectFactory> BUILTIN_HANDLER_FACTORIES;
     public static final ImmutableMap<String, HttpInterceptorFactory> INTERCEPTOR_FACTORIES =
             ImmutableMap.of("Rewrite", new RewriteInterceptor.Factory());
 
     public static final ImmutableMap<String, ServiceProviderFactory> BUILTIN_SERVICE_PROVIDER_FACTORIES =
-            ImmutableMap.of("HealthCheckMonitor", new HealthCheckMonitoringServiceFactory());
+            ImmutableMap.of(HEALTH_CHECK_MONITOR, new HealthCheckMonitoringServiceFactory(),
+                    YAML_FILE_CONFIGURATION_SERVICE, new YamlFileConfigurationServiceFactory()
+            );
+
+    public static final ImmutableMap<String, Schema.FieldType> BUILTIN_SERVICE_PROVIDER_SCHEMAS =
+            ImmutableMap.of(HEALTH_CHECK_MONITOR, HealthCheckMonitoringService.SCHEMA,
+                    YAML_FILE_CONFIGURATION_SERVICE, YamlFileConfigurationService.SCHEMA);
 
     public static final RouteRefLookup DEFAULT_REFERENCE_LOOKUP = reference -> (request, ctx) ->
             Eventual.of(response(NOT_FOUND)
                     .body(format("Handler not found for '%s'.", reference), UTF_8)
                     .build()
                     .stream());
-
-    private static final String STATIC_RESPONSE = "StaticResponseHandler";
-    private static final String CONDITION_ROUTER = "ConditionRouter";
-    private static final String INTERCEPTOR_PIPELINE = "InterceptorPipeline";
-    private static final String PROXY_TO_BACKEND = "ProxyToBackend";
-    private static final String PATH_PREFIX_ROUTER = "PathPrefixRouter";
-    private static final String HOST_PROXY = "HostProxy";
-    private static final String LOAD_BALANCING_GROUP = "LoadBalancingGroup";
 
 
     static {
@@ -150,16 +161,19 @@ public final class Builtins {
      * Builds a Styx service.
      *
      * @param providerDef Styx service object configuration
-     * @param factories service provider factories by name
-     * @param environment Styx environment
-     * @param objectStore Styx object store
+     * @param factories Service provider factories by name
+     * @param context Routing object factory context
      *
      * @return a Styx service
      */
-    public static StyxService build(StyxObjectDefinition providerDef, Map<String, ServiceProviderFactory> factories, Environment environment, StyxObjectStore<RoutingObjectRecord> objectStore) {
+    public static StyxService build(
+            StyxObjectDefinition providerDef,
+            StyxObjectStore<ProviderObjectRecord> serviceDb,
+            Map<String, ServiceProviderFactory> factories,
+            RoutingObjectFactory.Context context) {
         ServiceProviderFactory constructor = factories.get(providerDef.type());
         checkArgument(constructor != null, format("Unknown service provider type '%s' for '%s' provider", providerDef.type(), providerDef.name()));
 
-        return constructor.create(environment, providerDef.config(), objectStore);
+        return constructor.create(context, providerDef.config(), serviceDb);
     }
 }

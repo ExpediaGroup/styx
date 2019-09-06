@@ -43,7 +43,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * Monitors a file system object and notifies the consumer of any changes.
  */
-class FileChangeMonitor implements FileMonitor {
+public class FileChangeMonitor implements FileMonitor {
     private final Path monitoredFile;
     private final ScheduledExecutorService executor = newSingleThreadScheduledExecutor();
     private final long pollPeriod;
@@ -51,6 +51,7 @@ class FileChangeMonitor implements FileMonitor {
 
     private final AtomicReference<FileTime> lastChangedTime = new AtomicReference<>(FileTime.fromMillis(0));
     private final AtomicReference<HashCode> hashCode = new AtomicReference<>();
+    private final long initialDelay;
 
     private volatile boolean performHashCheck;
     private ScheduledFuture<?> monitoredTask;
@@ -59,30 +60,37 @@ class FileChangeMonitor implements FileMonitor {
 
     @VisibleForTesting
     FileChangeMonitor(String monitoredFile, long pollPeriod, TimeUnit timeUnit) {
+        this(monitoredFile, pollPeriod, pollPeriod, timeUnit);
+    }
+
+    public FileChangeMonitor(String monitoredFile, long initialDelay, long pollPeriod, TimeUnit timeUnit) {
         requireExists(requireNonNull(monitoredFile));
         this.monitoredFile = Paths.get(monitoredFile);
         this.pollPeriod = pollPeriod;
+        this.initialDelay = initialDelay;
         this.timeUnit = requireNonNull(timeUnit);
         this.hashCode.set(HashCode.fromLong(0));
     }
 
     public FileChangeMonitor(String monitoredFile) {
-        this(monitoredFile, 1, SECONDS);
+        this(monitoredFile, 0, 1, SECONDS);
     }
 
     @Override
     public void start(Listener listener) {
+        LOGGER.debug("start, initialDelay={}, pollPeriod={}, timeUnit={}", new Object[] {initialDelay, pollPeriod, timeUnit});
         synchronized (this) {
             if (monitoredTask != null) {
                 String message = format("File monitor for '%s' is already started", monitoredFile);
                 throw new IllegalStateException(message);
             }
 
-            monitoredTask = executor.scheduleAtFixedRate(detectFileChangesTask(listener), pollPeriod, pollPeriod, timeUnit);
+            monitoredTask = executor.scheduleAtFixedRate(detectFileChangesTask(listener), initialDelay, pollPeriod, timeUnit);
         }
     }
 
     public void stop() {
+        LOGGER.debug("stop");
         if (monitoredTask != null) {
             monitoredTask.cancel(true);
         }
@@ -90,6 +98,8 @@ class FileChangeMonitor implements FileMonitor {
 
     private Runnable detectFileChangesTask(Listener listener) {
         return () -> {
+            LOGGER.debug("Poll {}", monitoredFile);
+
             if (!exists(monitoredFile)) {
                 LOGGER.debug("Monitored file does not exist. Path={}", monitoredFile);
 

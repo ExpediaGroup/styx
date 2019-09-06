@@ -15,12 +15,14 @@
  */
 package com.hotels.styx.routing.handlers;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.net.HostAndPort;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.ResponseEventListener;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
@@ -108,14 +110,13 @@ public class HostProxy implements RoutingObject {
     private OriginMetrics originMetrics;
     private volatile boolean active = true;
 
-    @VisibleForTesting
-    final HostAndPort hostAndPort;
+    @VisibleForTesting final String host;
+    @VisibleForTesting final int port;
 
-    public HostProxy(HostAndPort hostAndPort, StyxHostHttpClient client, OriginMetrics originMetrics) {
-        this.hostAndPort = requireNonNull(hostAndPort);
-        this.errorMessage = format("HostProxy %s:%d is stopped but received traffic.",
-                hostAndPort.getHostText(),
-                hostAndPort.getPort());
+    public HostProxy(String host, int port, StyxHostHttpClient client, OriginMetrics originMetrics) {
+        this.host = requireNonNull(host);
+        this.port = port;
+        this.errorMessage = format("HostProxy %s:%d is stopped but received traffic.", host, port);
         this.client = requireNonNull(client);
         this.originMetrics = requireNonNull(originMetrics);
     }
@@ -137,6 +138,55 @@ public class HostProxy implements RoutingObject {
         active = false;
         client.close();
         return completedFuture(null);
+    }
+
+    /**
+     * HostProxy configuration.
+     */
+    public static class HostProxyConfiguration {
+        private final String host;
+        private final ConnectionPoolSettings connectionPool;
+        private final TlsSettings tlsSettings;
+        private final int responseTimeoutMillis;
+        private final String metricPrefix;
+
+        public HostProxyConfiguration(
+                String host,
+                ConnectionPoolSettings connectionPool,
+                TlsSettings tlsSettings,
+                int responseTimeoutMillis,
+                String metricPrefix) {
+            this.host = host;
+            this.connectionPool = connectionPool;
+            this.tlsSettings = tlsSettings;
+            this.responseTimeoutMillis = responseTimeoutMillis;
+            this.metricPrefix = metricPrefix;
+        }
+
+        @JsonProperty("host")
+        public String host() {
+            return host;
+        }
+
+        @JsonProperty("connectionPool")
+        public ConnectionPoolSettings connectionPool() {
+            return connectionPool;
+        }
+
+        @JsonProperty("tlsSettings")
+        public TlsSettings tlsSettings() {
+            return tlsSettings;
+        }
+
+        @JsonProperty("responseTimeoutMillis")
+        public int responseTimeoutMillis() {
+            return responseTimeoutMillis;
+        }
+
+        @JsonProperty("metricPrefix")
+        public String metricPrefix() {
+            return metricPrefix;
+        }
     }
 
     /**
@@ -168,7 +218,14 @@ public class HostProxy implements RoutingObject {
                     .map(it -> addDefaultPort(it, tlsSettings))
                     .orElseThrow(() -> missingAttributeError(configBlock, join(".", fullName), "host"));
 
-            return createHostProxyHandler(context, hostAndPort, poolSettings, tlsSettings, responseTimeoutMillis, metricPrefix);
+            return createHostProxyHandler(
+                    context.environment().metricRegistry(),
+                    hostAndPort.getHostText(),
+                    hostAndPort.getPort(),
+                    poolSettings,
+                    tlsSettings,
+                    responseTimeoutMillis,
+                    metricPrefix);
         }
 
         private static HostAndPort addDefaultPort(HostAndPort hostAndPort, TlsSettings tlsSettings) {
@@ -184,22 +241,23 @@ public class HostProxy implements RoutingObject {
         }
 
         @NotNull
-        private static HostProxy createHostProxyHandler(
-                Context context,
-                HostAndPort hostAndPort,
+        public static HostProxy createHostProxyHandler(
+                MetricRegistry metricRegistry,
+                String host,
+                int port,
                 ConnectionPoolSettings poolSettings,
                 TlsSettings tlsSettings,
                 int responseTimeoutMillis,
                 String metricPrefix) {
 
-            Origin origin = newOriginBuilder(hostAndPort.getHostText(), hostAndPort.getPort())
+            Origin origin = newOriginBuilder(host, port)
                     .applicationId(metricPrefix)
-                    .id(format("%s:%s", hostAndPort.getHostText(), hostAndPort.getPort()))
+                    .id(format("%s:%s", host, port))
                     .build();
 
             OriginMetrics originMetrics = OriginMetrics.create(
                     origin,
-                    context.environment().metricRegistry());
+                    metricRegistry);
 
             ConnectionPool.Factory connectionPoolFactory = new SimpleConnectionPoolFactory.Builder()
                     .connectionFactory(
@@ -209,10 +267,10 @@ public class HostProxy implements RoutingObject {
                                     theOrigin -> originMetrics,
                                     poolSettings.connectionExpirationSeconds()))
                     .connectionPoolSettings(poolSettings)
-                    .metricRegistry(context.environment().metricRegistry())
+                    .metricRegistry(metricRegistry)
                     .build();
 
-            return new HostProxy(hostAndPort, StyxHostHttpClient.create(connectionPoolFactory.create(origin)), originMetrics);
+            return new HostProxy(host, port, StyxHostHttpClient.create(connectionPoolFactory.create(origin)), originMetrics);
         }
 
         private static Connection.Factory connectionFactory(

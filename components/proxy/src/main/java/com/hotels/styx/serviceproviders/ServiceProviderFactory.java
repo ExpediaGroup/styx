@@ -16,10 +16,10 @@
 package com.hotels.styx.serviceproviders;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.extension.service.spi.StyxService;
-import com.hotels.styx.routing.RoutingObjectRecord;
+import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.db.StyxObjectStore;
+import com.hotels.styx.routing.handlers.ProviderObjectRecord;
 
 /**
  * A generic factory that can be implemented to create objects whose type is not known
@@ -30,10 +30,11 @@ public interface ServiceProviderFactory {
     /**
      * Create a service provider instance.
      *
-     * @param environment          environment
+     * @param context              Routing object factory context
      * @param serviceConfiguration Styx service configuration
+     * @param serviceDb            Styx service database
      *
      * @return Styx service instance
      */
-    StyxService create(Environment environment, JsonNode serviceConfiguration, StyxObjectStore<RoutingObjectRecord> routeDatabase);
+    StyxService create(RoutingObjectFactory.Context context, JsonNode serviceConfiguration, StyxObjectStore<ProviderObjectRecord> serviceDb);
 }

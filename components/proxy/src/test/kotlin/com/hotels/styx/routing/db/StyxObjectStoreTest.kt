@@ -138,6 +138,45 @@ class StyxObjectStoreTest : FeatureSpec() {
             }
         }
 
+        feature("Compute") {
+            scenario("Compute a new value when key doesn't already exist") {
+                val db = StyxObjectStore<String>()
+
+                StepVerifier.create(db.watch())
+                        .expectNextCount(1)
+                        .then { db.compute("key") { currentEntry -> "first value" } }
+                        .assertNext { it.get("key") shouldBe Optional.of("first value") }
+                        .thenCancel()
+                        .verify()
+            }
+
+            scenario("Retains the existing value") {
+                val db = StyxObjectStore<String>()
+
+                db.insert("key", "old value")
+
+                StepVerifier.create(db.watch())
+                        .expectNextCount(1)
+                        .then { db.compute("key") { currentEntry -> "old value" } }
+                        .expectNoEvent(10.milliseconds)
+                        .thenCancel()
+                        .verify()
+            }
+
+            scenario("Replace an existing value") {
+                val db = StyxObjectStore<String>()
+
+                db.insert("key", "old value")
+
+                StepVerifier.create(db.watch())
+                        .expectNextCount(1)
+                        .then { db.compute("key") { currentEntry -> "new value" } }
+                        .assertNext { it.get("key") shouldBe Optional.of("new value") }
+                        .thenCancel()
+                        .verify()
+            }
+        }
+
         feature("Remove") {
             scenario("Removes previously stored objects") {
                 val db = StyxObjectStore<String>()

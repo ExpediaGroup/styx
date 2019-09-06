@@ -69,7 +69,7 @@ internal class LoadBalancingGroup(val client: StyxBackendServiceClient, val chan
     companion object {
         val SCHEMA = `object`(
                 field("origins", string()),
-                optional("originsRestrictionCookie", string()),
+                optional("originRestrictionCookie", string()),
                 optional("stickySession", `object`(
                         field("enabled", bool()),
                         field("timeoutSeconds", integer())
@@ -103,7 +103,7 @@ internal class LoadBalancingGroup(val client: StyxBackendServiceClient, val chan
                     .metricsRegistry(context.environment().metricRegistry())
                     .originIdHeader(context.environment().configuration().styxHeaderConfig().originIdHeaderName())
                     .stickySessionConfig(config.stickySession ?: StickySessionConfig.stickySessionDisabled())
-                    .originsRestrictionCookieName(config.originsRestrictionCookie)
+                    .originsRestrictionCookieName(config.originRestrictionCookie)
                     .build()
 
             return LoadBalancingGroup(client, watch)
@@ -113,7 +113,7 @@ internal class LoadBalancingGroup(val client: StyxBackendServiceClient, val chan
             val loadBalancer = PowerOfTwoStrategy(activeOrigins)
             return if (config.stickySessionConfig.stickySessionEnabled()) {
                 StickySessionLoadBalancingStrategy(activeOrigins, loadBalancer)
-            } else if (config.originsRestrictionCookie == null) {
+            } else if (config.originRestrictionCookie == null) {
                 loadBalancer
             } else {
                 OriginRestrictionLoadBalancingStrategy(activeOrigins, loadBalancer)
@@ -165,7 +165,7 @@ internal class LoadBalancingGroup(val client: StyxBackendServiceClient, val chan
     data class Config(
             @JsonProperty val origins: String,
             @JsonProperty val strategy: String?,
-            @JsonProperty val originsRestrictionCookie: String?,
+            @JsonProperty val originRestrictionCookie: String?,
             @JsonProperty val stickySession: StickySessionConfig?
     ) {
         val stickySessionConfig: StickySessionConfig

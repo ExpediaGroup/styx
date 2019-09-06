@@ -119,25 +119,42 @@ public class PathPrefixRouter {
                 }
             };
         }
+    }
 
-        private static class PathPrefixConfig {
-            private final String prefix;
-            private final JsonNode destination;
+    /**
+     * PathPrefixRouter configuration.
+     */
+    public static class PathPrefixConfig {
+        private final String prefix;
+        private final JsonNode destination;
 
-            public PathPrefixConfig(@JsonProperty("prefix") String prefix,
-                                    @JsonProperty("destination") JsonNode destination) {
-                this.prefix = prefix;
-                this.destination = destination;
-            }
+        public PathPrefixConfig(@JsonProperty("prefix") String prefix,
+                                @JsonProperty("destination") JsonNode destination) {
+            this.prefix = prefix;
+            this.destination = destination;
         }
 
-        private static class PathPrefixRouterConfig {
-            private final List<PathPrefixConfig> routes;
+        public String prefix() {
+            return prefix;
+        }
 
-            public PathPrefixRouterConfig(@JsonProperty("routes") List<PathPrefixConfig> routes) {
-                this.routes = routes;
-            }
+        public JsonNode destination() {
+            return destination;
         }
     }
 
+    /**
+     * PathPrefixRouter configuration.
+     */
+    public static class PathPrefixRouterConfig {
+        private final List<PathPrefixConfig> routes;
+
+        public PathPrefixRouterConfig(@JsonProperty("routes") List<PathPrefixConfig> routes) {
+            this.routes = routes;
+        }
+
+        public List<PathPrefixConfig> routes() {
+            return routes;
+        }
+    }
 }

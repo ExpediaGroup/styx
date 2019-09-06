@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.routing.handlers
 
-import com.google.common.net.HostAndPort
 import com.hotels.styx.api.ByteStream
 import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpRequest
@@ -49,7 +48,7 @@ class HostProxyTest : FeatureSpec() {
     init {
         feature("Routing and proxying") {
             scenario("Proxies traffic") {
-                HostProxy(HostAndPort.fromString("localhost:80"), client, mockk()).handle(request.stream(), mockk())
+                HostProxy("localhost", 80, client, mockk()).handle(request.stream(), mockk())
 
                 verify {
                     client!!.sendRequest(ofType(LiveHttpRequest::class))
@@ -57,7 +56,7 @@ class HostProxyTest : FeatureSpec() {
             }
 
             scenario("Requests arriving at stopped HostProxy object") {
-                val exception = HostProxy(HostAndPort.fromString("localhost:80"), client, mockk()).let {
+                val exception = HostProxy("localhost", 80, client, mockk()).let {
                     it.stop()
 
                     shouldThrow<IllegalStateException> {
@@ -80,7 +79,7 @@ class HostProxyTest : FeatureSpec() {
 
                 every { client.sendRequest(any()) } returns Eventual(Mono.never())
 
-                val hostProxy = HostProxy(HostAndPort.fromString("abc:80"), client, originMetrics)
+                val hostProxy = HostProxy("abc", 80, client, originMetrics)
 
                 hostProxy.handle(get("/").build())
                         .toMono()
@@ -100,7 +99,7 @@ class HostProxyTest : FeatureSpec() {
                                 .body(ByteStream(Flux.never()))
                                 .build())
 
-                val hostProxy = HostProxy(HostAndPort.fromString("abc:80"), client, originMetrics)
+                val hostProxy = HostProxy("abc", 80, client, originMetrics)
 
                 hostProxy.handle(LiveHttpRequest.get("/").build(), HttpInterceptorContext.create())
                         .toMono()
@@ -129,10 +128,8 @@ class HostProxyTest : FeatureSpec() {
                             host: ahost.server.com:1234
                         """.trimIndent())) as HostProxy
 
-                hostProxy.hostAndPort.run {
-                    hostText shouldBe "ahost.server.com"
-                    port shouldBe 1234
-                }
+                hostProxy.host shouldBe "ahost.server.com"
+                hostProxy.port shouldBe  1234
             }
 
             scenario("Port defaults to 80") {
@@ -144,10 +141,8 @@ class HostProxyTest : FeatureSpec() {
                             host: localhost
                         """.trimIndent())) as HostProxy
 
-                hostProxy.hostAndPort.run {
-                    hostText shouldBe "localhost"
-                    port shouldBe 80
-                }
+                hostProxy.host shouldBe "localhost"
+                hostProxy.port shouldBe  80
             }
 
             scenario("Port defaults to 443 when TLS settings are present") {
@@ -161,10 +156,8 @@ class HostProxyTest : FeatureSpec() {
                               trustAllCerts: true
                         """.trimIndent())) as HostProxy
 
-                hostProxy.hostAndPort.run {
-                    hostText shouldBe "localhost"
-                    port shouldBe 443
-                }
+                hostProxy.host shouldBe "localhost"
+                hostProxy.port shouldBe 443
             }
         }
     }

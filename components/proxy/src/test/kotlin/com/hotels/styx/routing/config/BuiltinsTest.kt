@@ -16,17 +16,17 @@
 package com.hotels.styx.routing.config
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.hotels.styx.Environment
 import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponse.response
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.api.extension.service.spi.StyxService
-import com.hotels.styx.routing.RoutingObjectFactoryContext
 import com.hotels.styx.routing.RoutingObject
+import com.hotels.styx.routing.RoutingObjectFactoryContext
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
+import com.hotels.styx.routing.handlers.ProviderObjectRecord
 import com.hotels.styx.routing.handlers.RouteRefLookup
 import com.hotels.styx.server.HttpInterceptorContext
 import com.hotels.styx.serviceproviders.ServiceProviderFactory
@@ -113,32 +113,29 @@ class BuiltinsTest : StringSpec({
             every { create(any(), any(), any()) } returns mockk()
         }
 
-        val environment = Environment.Builder().build()
-
+        val context = RoutingObjectFactoryContext().get()
         val serviceConfig = mockk<JsonNode>()
-
-        val objectStore = StyxObjectStore<RoutingObjectRecord>()
+        val serviceDb = mockk<StyxObjectStore<ProviderObjectRecord>>()
 
         Builtins.build(
                 StyxObjectDefinition("healthCheckMonitor", "HealthCheckMonitor", serviceConfig),
+                serviceDb,
                 mapOf("HealthCheckMonitor" to factory),
-                environment,
-                objectStore)
-                .shouldBeInstanceOf<StyxService>()
+                context
+        )
 
-        verify { factory.create(environment, serviceConfig, objectStore) }
+        verify { factory.create(context, serviceConfig, serviceDb) }
     }
 
     "ServiceProvider factory throws an exception for unknown service provider factory name" {
         shouldThrow<java.lang.IllegalArgumentException> {
             Builtins.build(
                     StyxObjectDefinition("healthMonitor", "ABC", mockk()),
+                    mockk(),
                     mapOf(),
-                    Environment.Builder().build(),
-                    StyxObjectStore())
+                    RoutingObjectFactoryContext().get())
                     .shouldBeInstanceOf<StyxService>()
         }.message shouldBe "Unknown service provider type 'ABC' for 'healthMonitor' provider"
-
     }
 
 })

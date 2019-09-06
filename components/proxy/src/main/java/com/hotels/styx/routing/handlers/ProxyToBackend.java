@@ -53,7 +53,11 @@ import static java.lang.String.join;
 
 /**
  * Routing object that proxies a request to a configured backend.
+ *
+ * @deprecated  Will be removed in Styx 1.1 release. Use a combination of HostProxy and LoadBalancingGroup
+ *              to achieve same functionality.
  */
+@Deprecated
 public class ProxyToBackend implements RoutingObject {
     public static final Schema.FieldType SCHEMA = object(
             field("backend", object(opaque()))

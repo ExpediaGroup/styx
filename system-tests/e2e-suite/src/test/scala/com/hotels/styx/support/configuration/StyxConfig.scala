@@ -96,11 +96,10 @@ case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),
 
     val java: util.Map[String, StyxService] = services(backendsRegistry).asJava
 
-    val styxServerBuilder = newCoreConfig(styxConfig, backendsRegistry, this.plugins)
-      .additionalServices(java)
-      .loggingSetUp(this.logbackXmlLocation.toString)
-
-    val styxServer = new StyxServer(styxServerBuilder.build())
+    val styxServer = new StyxServer(
+      serverComponents(styxConfig, backendsRegistry, this.plugins)
+        .additionalServices(java)
+        .loggingSetUp(this.logbackXmlLocation.toString).build())
     styxServer.startAsync().awaitRunning()
     styxServer
   }
