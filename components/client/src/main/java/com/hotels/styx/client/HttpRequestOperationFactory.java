@@ -22,6 +22,8 @@ import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
 import com.hotels.styx.common.format.DefaultHttpMessageFormatter;
 import com.hotels.styx.common.format.HttpMessageFormatter;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * A Factory for creating an HttpRequestOperation from an LiveHttpRequest.
  */
@@ -43,7 +45,7 @@ public interface HttpRequestOperationFactory {
         boolean flowControlEnabled;
         boolean requestLoggingEnabled;
         boolean longFormat;
-        HttpMessageFormatter httpMessageFormatter;
+        HttpMessageFormatter httpMessageFormatter = new DefaultHttpMessageFormatter();
 
         public static Builder httpRequestOperationFactoryBuilder() {
             return new Builder();
@@ -75,7 +77,7 @@ public interface HttpRequestOperationFactory {
         }
 
         public Builder httpMessageFormatter(HttpMessageFormatter httpMessageFormatter) {
-            this.httpMessageFormatter = httpMessageFormatter;
+            this.httpMessageFormatter = requireNonNull(httpMessageFormatter);
             return this;
         }
 
@@ -86,13 +88,7 @@ public interface HttpRequestOperationFactory {
                     responseTimeoutMillis,
                     requestLoggingEnabled,
                     longFormat,
-                    getHttpMessageFormatter());
-        }
-
-        private HttpMessageFormatter getHttpMessageFormatter() {
-            return httpMessageFormatter == null
-                            ? new DefaultHttpMessageFormatter()
-                            : httpMessageFormatter;
+                    httpMessageFormatter);
         }
     }
 
