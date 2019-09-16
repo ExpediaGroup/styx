@@ -24,11 +24,8 @@ import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Url;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.TlsSettings;
-import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.client.ssl.SslContextFactory;
-import com.hotels.styx.common.format.DefaultHttpMessageFormatter;
-import com.hotels.styx.common.format.HttpMessageFormatter;
 import io.netty.handler.ssl.SslContext;
 import reactor.core.publisher.Mono;
 import rx.RxReactiveStreams;
@@ -184,7 +181,6 @@ public final class StyxHttpClient implements HttpClient {
         private TlsSettings tlsSettings;
         private boolean isHttps;
         private String userAgent;
-        private HttpMessageFormatter httpMessageFormatter;
 
         public Builder() {
         }
@@ -312,11 +308,6 @@ public final class StyxHttpClient implements HttpClient {
 
         Builder copy() {
             return new Builder(this);
-        }
-
-        public Builder httpMessageFormatter(HttpMessageFormatter httpMessageFormatter) {
-            this.httpMessageFormatter = httpMessageFormatter;
-            return this;
         }
 
         /**
