@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 
 import java.net.InetSocketAddress;
 
+import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -35,7 +36,7 @@ public class HttpErrorStatusCauseLogger implements HttpErrorStatusListener {
     private HttpMessageFormatter formatter;
 
     public HttpErrorStatusCauseLogger(HttpMessageFormatter formatter) {
-        this.formatter = formatter;
+        this.formatter = requireNonNull(formatter);
     }
 
     @Override
