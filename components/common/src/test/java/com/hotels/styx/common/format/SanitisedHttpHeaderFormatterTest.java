@@ -24,7 +24,7 @@ import java.util.List;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class HttpHeaderFormatterTest {
+public class SanitisedHttpHeaderFormatterTest {
 
     @Test
     public void formatShouldFormatRequest() {
@@ -39,11 +39,11 @@ public class HttpHeaderFormatterTest {
                 .build();
 
         List<String> headersToHide = Arrays.asList("HEADER1", "HEADER3");
-        List<String> cookiesToHide = Arrays.asList("COOKIE2", "COOKIE4");
-        String formattedHeaders = new HttpHeaderFormatter(headersToHide, cookiesToHide).format(headers);
+        List<String> cookiesToHide = Arrays.asList("cookie2", "cookie4");
+        String formattedHeaders = new SanitisedHttpHeaderFormatter(headersToHide, cookiesToHide).format(headers);
 
         assertThat(formattedHeaders,
-                is("header1:****, header2:b, header3:****, header4:d, COOKIE:cookie1=e;cookie2=****, SET-COOKIE:cookie3=g;cookie4=****"));
+                is("header1=****, header2=b, header3=****, header4=d, COOKIE=cookie1=e;cookie2=****, SET-COOKIE=cookie3=g;cookie4=****"));
     }
 
 }

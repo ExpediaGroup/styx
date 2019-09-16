@@ -131,7 +131,7 @@ public class HttpRequestTest {
                 .cookies(requestCookie("cfoo", "bar"))
                 .build();
 
-        assertThat(request.toString(), is("HttpRequest{version=HTTP/1.1, method=PATCH, url=https://hotels.com, id=id}"));
+        assertThat(request.toString(), is("HttpRequest{version=HTTP/1.1, method=PATCH, uri=https://hotels.com, id=id}"));
         assertThat(request.headers().toString(), is("[headerName=a, Cookie=cfoo=bar, Host=hotels.com]"));
     }
 

@@ -26,16 +26,16 @@ import java.util.stream.StreamSupport;
 
 import static java.util.Objects.requireNonNull;
 
-public class HttpHeaderFormatter {
+public class SanitisedHttpHeaderFormatter {
 
     private static final List<String> COOKIE_HEADER_NAMES = Arrays.asList("cookie", "set-cookie");
 
-    private List<String> headerValuesToHide;
-    private List<String> cookieValuesToHide;
+    private final List<String> headersToHide;
+    private final List<String> cookiesToHide;
 
-    public HttpHeaderFormatter(List<String> headerValuesToHide, List<String> cookieValuesToHide) {
-        this.headerValuesToHide = requireNonNull(headerValuesToHide);
-        this.cookieValuesToHide = requireNonNull(cookieValuesToHide);
+    public SanitisedHttpHeaderFormatter(List<String> headersToHide, List<String> cookiesToHide) {
+        this.headersToHide = requireNonNull(headersToHide);
+        this.cookiesToHide = requireNonNull(cookiesToHide);
     }
 
     public String format(HttpHeaders headers) {
@@ -46,12 +46,12 @@ public class HttpHeaderFormatter {
 
     private String hideOrFormatHeader(HttpHeader header) {
         return shouldHideHeader(header)
-                ? header.name() + ":****"
+                ? header.name() + "=****"
                 : formatHeaderAsCookieIfNecessary(header);
     }
 
     private boolean shouldHideHeader(HttpHeader header) {
-        return headerValuesToHide.stream()
+        return headersToHide.stream()
                 .anyMatch(h -> h.equalsIgnoreCase(header.name()));
     }
 
@@ -70,7 +70,7 @@ public class HttpHeaderFormatter {
                 .map(this::hideOrFormatCookie)
                 .collect(Collectors.joining(";"));
 
-        return header.name() + ":" + cookies;
+        return header.name() + "=" + cookies;
     }
 
     private String hideOrFormatCookie(RequestCookie cookie) {
@@ -80,8 +80,7 @@ public class HttpHeaderFormatter {
     }
 
     private boolean shouldHideCookie(RequestCookie cookie) {
-        return cookieValuesToHide.stream()
-                .anyMatch(h -> h.equalsIgnoreCase(cookie.name()));
+        return cookiesToHide.contains(cookie.name());
     }
 
 }

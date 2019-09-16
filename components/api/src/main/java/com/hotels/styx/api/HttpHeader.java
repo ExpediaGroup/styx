@@ -98,6 +98,6 @@ public final class HttpHeader {
 
     @Override
     public String toString() {
-        return name + ":" + HEADER_VALUES_JOINER.join(values);
+        return name + "=" + HEADER_VALUES_JOINER.join(values);
     }
 }

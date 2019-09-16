@@ -31,8 +31,8 @@ import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupFactory;
-import com.hotels.styx.common.format.HttpHeaderFormatter;
-import com.hotels.styx.common.format.HttpMessageFormatter;
+import com.hotels.styx.common.format.SanitisedHttpHeaderFormatter;
+import com.hotels.styx.common.format.SanitisedHttpMessageFormatter;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingMetadataDecorator;
@@ -210,18 +210,18 @@ public class StyxServerComponents {
 
     private static Environment newEnvironment(StyxConfig config, MetricRegistry metricRegistry) {
 
-        HttpHeaderFormatter headerFormatter = new HttpHeaderFormatter(
+        SanitisedHttpHeaderFormatter headerFormatter = new SanitisedHttpHeaderFormatter(
                 config.get("request-logging.hideHeaders", List.class).orElse(emptyList()),
                 config.get("request-logging.hideCookies", List.class).orElse(emptyList()));
 
-        HttpMessageFormatter httpMessageFormatter = new HttpMessageFormatter(headerFormatter);
+        SanitisedHttpMessageFormatter sanitisedHttpMessageFormatter = new SanitisedHttpMessageFormatter(headerFormatter);
 
         return new Environment.Builder()
                 .configuration(config)
                 .metricRegistry(metricRegistry)
                 .buildInfo(readBuildInfo())
                 .eventBus(new AsyncEventBus("styx", newSingleThreadExecutor()))
-                .httpMessageFormatter(httpMessageFormatter)
+                .httpMessageFormatter(sanitisedHttpMessageFormatter)
                 .build();
     }
 
@@ -250,7 +250,6 @@ public class StyxServerComponents {
         private ServicesLoader servicesLoader = SERVICES_FROM_CONFIG;
         private MetricRegistry metricRegistry = new CodaHaleMetricRegistry();
         private StartupConfig startupConfig;
-        private HttpMessageFormatter httpMessageFormatter;
 
         private final Map<String, RoutingObjectFactory> additionalRoutingObjectFactories = new HashMap<>();
         private final Map<String, StyxService> additionalServices = new HashMap<>();
@@ -271,11 +270,6 @@ public class StyxServerComponents {
 
         public Builder loggingSetUp(LoggingSetUp loggingSetUp) {
             this.loggingSetUp = requireNonNull(loggingSetUp);
-            return this;
-        }
-
-        public Builder httpMessageFormatter(HttpMessageFormatter httpMessageFormatter) {
-            this.httpMessageFormatter = httpMessageFormatter;
             return this;
         }
 

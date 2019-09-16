@@ -129,7 +129,7 @@ request-logging:
   # Any header or cookie in these lists will be obfuscated in the logged message output
   # e.g.
   
-      headers=[Content-Type:****, Cookie:sessionID=****;samlToken=****]
+      headers=[Content-Type=****, Cookie=sessionID=****;samlToken=****]
 
   # Config example
   inbound:

@@ -27,6 +27,7 @@ import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.Operation;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.common.format.HttpMessageFormatter;
+import com.hotels.styx.common.format.SanitisedHttpMessageFormatter;
 import com.hotels.styx.common.logging.HttpRequestMessageLogger;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -80,8 +81,8 @@ public class HttpRequestOperation implements Operation<NettyConnection, LiveHttp
      * @param originStatsFactory OriginStats factory
      */
     @VisibleForTesting
-    public HttpRequestOperation(LiveHttpRequest request, OriginStatsFactory originStatsFactory, HttpMessageFormatter httpMessageFormatter) {
-        this(request, originStatsFactory, DEFAULT_RESPONSE_TIMEOUT_MILLIS, false, false, httpMessageFormatter);
+    public HttpRequestOperation(LiveHttpRequest request, OriginStatsFactory originStatsFactory, SanitisedHttpMessageFormatter sanitisedHttpMessageFormatter) {
+        this(request, originStatsFactory, DEFAULT_RESPONSE_TIMEOUT_MILLIS, false, false, sanitisedHttpMessageFormatter);
     }
 
     /**

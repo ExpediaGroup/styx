@@ -27,6 +27,7 @@ import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.client.ssl.SslContextFactory;
+import com.hotels.styx.common.format.DefaultHttpMessageFormatter;
 import com.hotels.styx.common.format.HttpMessageFormatter;
 import io.netty.handler.ssl.SslContext;
 import reactor.core.publisher.Mono;
@@ -41,6 +42,7 @@ import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderNames.USER_AGENT;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.client.HttpConfig.newHttpConfigBuilder;
+import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -323,16 +325,13 @@ public final class StyxHttpClient implements HttpClient {
          * @return a new instance
          */
         public StyxHttpClient build() {
+
             NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder()
                     .httpConfig(newHttpConfigBuilder().setMaxHeadersSize(maxHeaderSize).build())
                     .tlsSettings(tlsSettings)
-                    .httpRequestOperationFactory(request -> new HttpRequestOperation(
-                            request,
-                            null,
-                            responseTimeout,
-                            false,
-                            false,
-                            httpMessageFormatter))
+                    .httpRequestOperationFactory(httpRequestOperationFactoryBuilder()
+                            .responseTimeoutMillis(responseTimeout)
+                            .build())
                     .build();
 
             return new StyxHttpClient(connectionFactory, this.copy());

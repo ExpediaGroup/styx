@@ -388,7 +388,7 @@ public class LiveHttpRequest implements LiveHttpMessage {
         return toStringHelper(this)
                 .add("version", version)
                 .add("method", method)
-                .add("url", url)
+                .add("uri", url)
                 .add("id", id)
                 .toString();
     }

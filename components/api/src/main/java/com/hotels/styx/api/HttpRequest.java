@@ -349,7 +349,7 @@ public class HttpRequest implements HttpMessage {
         return toStringHelper(this)
                 .add("version", version)
                 .add("method", method)
-                .add("url", url)
+                .add("uri", url)
                 .add("id", id)
                 .toString();
     }
