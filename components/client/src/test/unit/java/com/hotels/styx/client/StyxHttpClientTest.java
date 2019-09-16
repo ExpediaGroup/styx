@@ -24,6 +24,8 @@ import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
+import com.hotels.styx.common.format.SanitisedHttpHeaderFormatter;
+import com.hotels.styx.common.format.SanitisedHttpMessageFormatter;
 import io.netty.handler.ssl.SslContext;
 import org.mockito.ArgumentCaptor;
 import org.testng.annotations.AfterMethod;
@@ -45,6 +47,7 @@ import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith;
 import static java.lang.String.format;
+import static java.util.Collections.emptyList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -54,6 +57,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class StyxHttpClientTest {
+
+    private static final SanitisedHttpMessageFormatter HTTP_MESSAGE_FORMATTER = new SanitisedHttpMessageFormatter(new SanitisedHttpHeaderFormatter(emptyList(), emptyList()));
+
     private HttpRequest httpRequest;
     private HttpRequest secureRequest;
     private WireMockServer server;
@@ -90,6 +96,7 @@ public class StyxHttpClientTest {
         StyxHttpClient client = builder.build();
 
         builder.userAgent("v2");
+        builder.httpMessageFormatter(HTTP_MESSAGE_FORMATTER);
 
         assertThat(client.send(httpRequest).get().status(), is(OK));
         server.verify(
@@ -105,6 +112,7 @@ public class StyxHttpClientTest {
     public void requiresValidTlsSettins() {
         new StyxHttpClient.Builder()
                 .tlsSettings(null)
+                .httpMessageFormatter(HTTP_MESSAGE_FORMATTER)
                 .build();
     }
 
@@ -117,6 +125,7 @@ public class StyxHttpClientTest {
     public void usesDefaultUserAgent() throws ExecutionException, InterruptedException {
         StyxHttpClient client = new StyxHttpClient.Builder()
                 .userAgent("Simple-Client-Parent-Settings")
+                .httpMessageFormatter(HTTP_MESSAGE_FORMATTER)
                 .build();
 
         HttpResponse response = client.send(httpRequest).get();
@@ -135,6 +144,7 @@ public class StyxHttpClientTest {
     @Test
     public void doesNotSetAnyUserAgentIfNotSpecified() throws ExecutionException, InterruptedException {
         StyxHttpClient client = new StyxHttpClient.Builder()
+                .httpMessageFormatter(HTTP_MESSAGE_FORMATTER)
                 .build();
 
         client.send(httpRequest).get();
@@ -153,6 +163,7 @@ public class StyxHttpClientTest {
     public void replacesUserAgentIfAlreadyPresentInRequest() throws ExecutionException, InterruptedException {
         StyxHttpClient client = new StyxHttpClient.Builder()
                 .userAgent("My default user agent value")
+                .httpMessageFormatter(HTTP_MESSAGE_FORMATTER)
                 .build();
 
         HttpRequest request = get("/")
@@ -177,6 +188,7 @@ public class StyxHttpClientTest {
     public void usesDefaultTlsSettings() throws ExecutionException, InterruptedException {
         StyxHttpClient client = new StyxHttpClient.Builder()
                 .tlsSettings(new TlsSettings.Builder().build())
+                .httpMessageFormatter(HTTP_MESSAGE_FORMATTER)
                 .build();
 
         HttpResponse response = client.send(secureRequest)
@@ -192,6 +204,7 @@ public class StyxHttpClientTest {
     @Test
     public void overridesTlsSettingsWithSecure() throws ExecutionException, InterruptedException {
         StyxHttpClient client = new StyxHttpClient.Builder()
+                .httpMessageFormatter(HTTP_MESSAGE_FORMATTER)
                 .build();
 
         HttpResponse response = client
@@ -209,6 +222,7 @@ public class StyxHttpClientTest {
     @Test
     public void overridesTlsSettingsWithSecureBoolean() throws ExecutionException, InterruptedException {
         StyxHttpClient client = new StyxHttpClient.Builder()
+                .httpMessageFormatter(HTTP_MESSAGE_FORMATTER)
                 .build();
 
         HttpResponse response = client
@@ -227,6 +241,7 @@ public class StyxHttpClientTest {
     public void overridesTlsSettingsWithSecureBooleanFalse() throws ExecutionException, InterruptedException {
         StyxHttpClient client = new StyxHttpClient.Builder()
                 .tlsSettings(new TlsSettings.Builder().build())
+                .httpMessageFormatter(HTTP_MESSAGE_FORMATTER)
                 .build();
 
         HttpResponse response = client
@@ -245,6 +260,7 @@ public class StyxHttpClientTest {
     @Test
     public void sendsMessagesInOriginUrlFormat() throws ExecutionException, InterruptedException {
         HttpResponse response = new StyxHttpClient.Builder()
+                .httpMessageFormatter(HTTP_MESSAGE_FORMATTER)
                 .build()
                 .send(
                         get("/index.html")
@@ -266,6 +282,7 @@ public class StyxHttpClientTest {
     @Test
     public void sendsStreamingRequests() throws ExecutionException, InterruptedException {
         LiveHttpResponse response = new StyxHttpClient.Builder()
+                .httpMessageFormatter(HTTP_MESSAGE_FORMATTER)
                 .build()
                 .streaming()
                 .send(httpRequest.stream())
@@ -288,6 +305,7 @@ public class StyxHttpClientTest {
     @Test
     public void sendsSecureStreamingRequests() throws ExecutionException, InterruptedException {
         LiveHttpResponse response = new StyxHttpClient.Builder()
+                .httpMessageFormatter(HTTP_MESSAGE_FORMATTER)
                 .build()
                 .secure(true)
                 .streaming()
@@ -313,6 +331,7 @@ public class StyxHttpClientTest {
     public void defaultResponseTimeout() throws Throwable {
         StyxHttpClient client = new StyxHttpClient.Builder()
                 .responseTimeout(1, SECONDS)
+                .httpMessageFormatter(HTTP_MESSAGE_FORMATTER)
                 .build();
 
         server.stubFor(WireMock.get(urlStartingWith("/slowResponse"))
@@ -341,6 +360,7 @@ public class StyxHttpClientTest {
      */
     public void sendsMessagesInAbsoluteUrlFormat() throws ExecutionException, InterruptedException {
         HttpResponse response = new StyxHttpClient.Builder()
+                .httpMessageFormatter(HTTP_MESSAGE_FORMATTER)
                 .build()
                 .send(get(format("http://%s/index.html", hostString(server.port()))).build())
                 .get();

@@ -49,7 +49,6 @@ public class HttpRequestMessageLoggerTest {
 
     private static final String FORMATTED_REQUEST = "request";
     private static final String FORMATTED_RESPONSE = "response";
-    private Id appId;
     private Origin origin;
     private LoggingTestSupport log;
 
@@ -59,9 +58,8 @@ public class HttpRequestMessageLoggerTest {
     @BeforeClass
     public void setup() {
         MockitoAnnotations.initMocks(this);
-        this.appId = id("MyApp");
         this.origin = newOriginBuilder("hostA", 80)
-                .applicationId(this.appId)
+                .applicationId(id("MyApp"))
                 .id("h1")
                 .build();
         when(httpMessageFormatter.formatRequest(any(LiveHttpRequest.class))).thenReturn(FORMATTED_REQUEST);
@@ -84,7 +82,7 @@ public class HttpRequestMessageLoggerTest {
         new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", false, httpMessageFormatter).logRequest(styxRequest, origin, true);
 
         assertThat(log.lastMessage(), is(loggingEvent(INFO,
-                format("requestId=%s, request=LiveHttpRequest\\{version=HTTP/1.1, method=GET, url=%s, id=%s}, secure=true, origin=%s",
+                format("requestId=%s, request=LiveHttpRequest\\{version=HTTP/1.1, method=GET, uri=%s, id=%s}, secure=true, origin=%s",
                     styxRequest.id(), styxRequest.url(), styxRequest.id(), origin))));
     }
 

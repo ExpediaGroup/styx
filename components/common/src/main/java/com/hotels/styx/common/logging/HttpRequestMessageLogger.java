@@ -21,6 +21,7 @@ import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.common.format.HttpMessageFormatter;
 import org.slf4j.Logger;
 
+import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -34,8 +35,8 @@ public class HttpRequestMessageLogger {
 
     public HttpRequestMessageLogger(String name, boolean longFormatEnabled, HttpMessageFormatter httpMessageFormatter) {
         this.longFormatEnabled = longFormatEnabled;
-        this.httpMessageFormatter = httpMessageFormatter;
-        logger = getLogger(name);
+        this.httpMessageFormatter = requireNonNull(httpMessageFormatter);
+        this.logger = getLogger(name);
     }
 
     public void logRequest(LiveHttpRequest request, Origin origin) {

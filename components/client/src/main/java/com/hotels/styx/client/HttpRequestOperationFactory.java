@@ -19,6 +19,7 @@ import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.OriginStatsFactory.CachingOriginStatsFactory;
 import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
+import com.hotels.styx.common.format.DefaultHttpMessageFormatter;
 import com.hotels.styx.common.format.HttpMessageFormatter;
 
 /**
@@ -85,7 +86,13 @@ public interface HttpRequestOperationFactory {
                     responseTimeoutMillis,
                     requestLoggingEnabled,
                     longFormat,
-                    httpMessageFormatter);
+                    getHttpMessageFormatter());
+        }
+
+        private HttpMessageFormatter getHttpMessageFormatter() {
+            return httpMessageFormatter == null
+                            ? new DefaultHttpMessageFormatter()
+                            : httpMessageFormatter;
         }
     }
 

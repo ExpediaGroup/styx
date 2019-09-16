@@ -20,14 +20,22 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 
-public interface HttpMessageFormatter {
+public class DefaultHttpMessageFormatter implements HttpMessageFormatter {
 
-    String formatRequest(HttpRequest request);
+    public String formatRequest(HttpRequest request) {
+        return request == null ? null : request.toString();
+    }
 
-    String formatRequest(LiveHttpRequest request);
+    public String formatRequest(LiveHttpRequest request) {
+        return request == null ? null : request.toString();
+    }
 
-    String formatResponse(HttpResponse response);
+    public String formatResponse(HttpResponse response) {
+        return response == null ? null : response.toString();
+    }
 
-    String formatResponse(LiveHttpResponse response);
+    public String formatResponse(LiveHttpResponse response) {
+        return response == null ? null : response.toString();
+    }
 
 }

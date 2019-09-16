@@ -105,7 +105,7 @@ public class HttpMessageLoggingInterceptorTest {
                         .cookies(responseCookie("RespCookie", "RespCookieValue").build())
         )));
 
-        String requestPattern = "request=LiveHttpRequest\\{version=HTTP/1.1, method=GET, url=/, id=" + request.id() + "\\}";
+        String requestPattern = "request=LiveHttpRequest\\{version=HTTP/1.1, method=GET, uri=/, id=" + request.id() + "\\}";
         String responsePattern = "response=LiveHttpResponse\\{version=HTTP/1.1, status=200 OK\\}";
 
         assertThat(responseLogSupport.log(), contains(

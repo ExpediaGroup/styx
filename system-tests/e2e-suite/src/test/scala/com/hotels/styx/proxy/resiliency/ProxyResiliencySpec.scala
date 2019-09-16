@@ -141,7 +141,7 @@ class ProxyResiliencySpec extends FunSpec
 
   def ensureErrorCodeReceivedWhenPartiallySent(sent: Try[Unit], status: HttpResponseStatus): Unit = {
     if (sent.isFailure && status != BAD_REQUEST) {
-      fail("Failed to send request, expected 400 BAD FORMATTED_REQUEST but styx responded with status: [%s]".format(status))
+      fail("Failed to send request, expected 400 BAD REQUEST but styx responded with status: [%s]".format(status))
     }
   }
 
