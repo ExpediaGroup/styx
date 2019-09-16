@@ -33,7 +33,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class HttpErrorStatusCauseLogger implements HttpErrorStatusListener {
 
     private static final Logger LOG = getLogger(HttpErrorStatusCauseLogger.class);
-    private HttpMessageFormatter formatter;
+    private final HttpMessageFormatter formatter;
 
     public HttpErrorStatusCauseLogger(HttpMessageFormatter formatter) {
         this.formatter = requireNonNull(formatter);
