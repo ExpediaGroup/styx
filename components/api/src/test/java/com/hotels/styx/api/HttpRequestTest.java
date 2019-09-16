@@ -23,9 +23,6 @@ import reactor.test.StepVerifier;
 
 import java.util.Optional;
 
-import static com.hotels.styx.api.HttpRequest.get;
-import static com.hotels.styx.api.HttpRequest.patch;
-import static com.hotels.styx.api.HttpRequest.put;
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
@@ -33,6 +30,9 @@ import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpMethod.DELETE;
 import static com.hotels.styx.api.HttpMethod.GET;
 import static com.hotels.styx.api.HttpMethod.POST;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpRequest.patch;
+import static com.hotels.styx.api.HttpRequest.put;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_0;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.RequestCookie.requestCookie;

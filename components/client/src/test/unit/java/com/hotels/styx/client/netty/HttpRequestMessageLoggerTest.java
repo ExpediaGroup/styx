@@ -16,7 +16,6 @@
 package com.hotels.styx.client.netty;
 
 import ch.qos.logback.classic.Level;
-import com.hotels.styx.api.Id;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.extension.Origin;

@@ -33,7 +33,6 @@ import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginStatsFactory.CachingOriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
-import com.hotels.styx.client.StyxHeaderConfig;
 import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
@@ -141,14 +140,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                     .metricRegistry(originsMetrics)
                     .build();
 
-            StyxHttpClient healthCheckClient = healthCheckClient(backendService, environment.httpMessageFormatter());
-
-            OriginHealthStatusMonitor healthStatusMonitor = healthStatusMonitor(backendService, healthCheckClient);
-
-            StyxHostHttpClient.Factory hostClientFactory = (ConnectionPool connectionPool) -> {
-                StyxHeaderConfig headerConfig = environment.styxConfig().styxHeaderConfig();
-                return StyxHostHttpClient.create(connectionPool);
-            };
+            OriginHealthStatusMonitor healthStatusMonitor = healthStatusMonitor(backendService);
 
             OriginsInventory inventory = new OriginsInventory.Builder(backendService.id())
                     .eventBus(environment.eventBus())
@@ -156,7 +148,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                     .connectionPoolFactory(connectionPoolFactory)
                     .originHealthMonitor(healthStatusMonitor)
                     .initialOrigins(backendService.origins())
-                    .hostClientFactory(hostClientFactory)
+                    .hostClientFactory(StyxHostHttpClient::create)
                     .build();
 
             pipeline = new ProxyToClientPipeline(newClientHandler(backendService, inventory, originStatsFactory), () -> {
@@ -169,7 +161,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
         });
     }
 
-    private OriginHealthStatusMonitor healthStatusMonitor(BackendService backendService, StyxHttpClient healthCheckClient) {
+    private OriginHealthStatusMonitor healthStatusMonitor(BackendService backendService) {
         return new OriginHealthStatusMonitorFactory()
                         .create(backendService.id(),
                                 backendService.healthCheckConfig(),
@@ -177,14 +169,13 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                                         backendService.id(),
                                         environment.metricRegistry(),
                                         backendService.healthCheckConfig()),
-                                healthCheckClient);
+                                healthCheckClient(backendService));
     }
 
-    private StyxHttpClient healthCheckClient(BackendService backendService, HttpMessageFormatter httpMessageFormatter) {
+    private StyxHttpClient healthCheckClient(BackendService backendService) {
         StyxHttpClient.Builder builder = new StyxHttpClient.Builder()
                 .connectTimeout(backendService.connectionPoolConfig().connectTimeoutMillis(), MILLISECONDS)
-                .userAgent("Styx/" + environment.buildInfo().releaseVersion())
-                .httpMessageFormatter(httpMessageFormatter);
+                .userAgent("Styx/" + environment.buildInfo().releaseVersion());
 
         backendService.tlsSettings().ifPresent(builder::tlsSettings);
 
