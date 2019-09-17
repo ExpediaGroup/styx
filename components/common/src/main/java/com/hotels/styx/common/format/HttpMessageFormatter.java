@@ -20,6 +20,9 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 
+/**
+ * A common interface for formatting requests and responses.
+ */
 public interface HttpMessageFormatter {
 
     String formatRequest(HttpRequest request);
