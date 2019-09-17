@@ -26,6 +26,9 @@ import java.util.stream.StreamSupport;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * Formats HttpHeaders so that the specified list of headers and cookies are obfuscated.
+ */
 public class SanitisedHttpHeaderFormatter {
 
     private static final List<String> COOKIE_HEADER_NAMES = Arrays.asList("cookie", "set-cookie");

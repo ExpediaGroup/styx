@@ -28,7 +28,7 @@ import com.hotels.styx.api.Url;
 import static java.util.Objects.requireNonNull;
 
 public class SanitisedHttpMessageFormatter implements HttpMessageFormatter {
-    
+
     private final SanitisedHttpHeaderFormatter sanitisedHttpHeaderFormatter;
 
     public SanitisedHttpMessageFormatter(SanitisedHttpHeaderFormatter sanitisedHttpHeaderFormatter) {
@@ -80,19 +80,19 @@ public class SanitisedHttpMessageFormatter implements HttpMessageFormatter {
     }
 
     private String formatRequest(String simpleName, HttpVersion version, HttpMethod method, Url url, Object id, HttpHeaders headers) {
-        return simpleName +
-                "{version=" + version +
-                ", method=" + method +
-                ", uri=" + url +
-                ", headers=[" + sanitisedHttpHeaderFormatter.format(headers) +
-                "], id=" + id + "}";
+        return simpleName
+            + "{version=" + version
+            + ", method=" + method
+            + ", uri=" + url
+            + ", headers=[" + sanitisedHttpHeaderFormatter.format(headers)
+            + "], id=" + id + "}";
     }
 
     private String formatResponse(String simpleName, HttpVersion version, HttpResponseStatus status, HttpHeaders headers) {
-        return simpleName +
-                "{version=" + version +
-                ", status=" + status +
-                ", headers=[" + sanitisedHttpHeaderFormatter.format(headers) + "]}";
+        return simpleName
+            + "{version=" + version
+            + ", status=" + status
+            + ", headers=[" + sanitisedHttpHeaderFormatter.format(headers) + "]}";
     }
 
 }
