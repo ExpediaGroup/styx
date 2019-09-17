@@ -27,6 +27,9 @@ import com.hotels.styx.api.Url;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * Formats requests and responses so that the headers are sanitised using the provided {@link SanitisedHttpHeaderFormatter}.
+ */
 public class SanitisedHttpMessageFormatter implements HttpMessageFormatter {
 
     private final SanitisedHttpHeaderFormatter sanitisedHttpHeaderFormatter;
