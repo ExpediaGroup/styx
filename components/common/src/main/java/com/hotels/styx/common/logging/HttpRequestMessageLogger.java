@@ -41,17 +41,17 @@ public class HttpRequestMessageLogger {
 
     public void logRequest(LiveHttpRequest request, Origin origin) {
         if (request == null) {
-            logger.warn("requestId=N/A, request=null, origin={}", origin);
+            logger.warn("requestId=N/A, origin={}, request=null", origin);
         } else {
-            logger.info("requestId={}, request={}, origin={}", new Object[] {request.id(), requestAsString(request), origin});
+            logger.info("requestId={}, origin={}, request={}", new Object[] {request.id(), origin, requestAsString(request)});
         }
     }
 
     public void logRequest(LiveHttpRequest request, Origin origin, boolean secure) {
         if (request == null) {
-            logger.warn("requestId=N/A, request=null, origin={}", origin);
+            logger.warn("requestId=N/A, origin={}, request=null", origin);
         } else {
-            logger.info("requestId={}, request={}, secure={}, origin={}", new Object[] {request.id(), requestAsString(request), secure, origin});
+            logger.info("requestId={}, secure={}, origin={}, request={}", new Object[] {request.id(), secure, origin, requestAsString(request)});
         }
     }
 
@@ -67,7 +67,7 @@ public class HttpRequestMessageLogger {
         if (response == null) {
             logger.warn("requestId={}, response=null", id(request));
         } else {
-            logger.info("requestId={}, response={}, secure={}", new Object[] {id(request), responseAsString(response), secure});
+            logger.info("requestId={}, secure={}, response={}", new Object[] {id(request), secure, responseAsString(response)});
         }
     }
 

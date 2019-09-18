@@ -32,6 +32,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class SanitisedHttpMessageFormatter implements HttpMessageFormatter {
 
+    private static final String NOT_APPLICABLE = "N/A";
     private final SanitisedHttpHeaderFormatter sanitisedHttpHeaderFormatter;
 
     public SanitisedHttpMessageFormatter(SanitisedHttpHeaderFormatter sanitisedHttpHeaderFormatter) {
@@ -40,9 +41,8 @@ public class SanitisedHttpMessageFormatter implements HttpMessageFormatter {
 
     @Override
     public String formatRequest(HttpRequest request) {
-        return request == null ? null
+        return request == null ? NOT_APPLICABLE
             : formatRequest(
-                HttpRequest.class.getSimpleName(),
                 request.version(),
                 request.method(),
                 request.url(),
@@ -52,9 +52,8 @@ public class SanitisedHttpMessageFormatter implements HttpMessageFormatter {
 
     @Override
     public String formatRequest(LiveHttpRequest request) {
-        return request == null ? null
+        return request == null ? NOT_APPLICABLE
             : formatRequest(
-                LiveHttpRequest.class.getSimpleName(),
                 request.version(),
                 request.method(),
                 request.url(),
@@ -64,9 +63,8 @@ public class SanitisedHttpMessageFormatter implements HttpMessageFormatter {
 
     @Override
     public String formatResponse(HttpResponse response) {
-        return response == null ? null
+        return response == null ? NOT_APPLICABLE
             : formatResponse(
-                HttpResponse.class.getSimpleName(),
                 response.version(),
                 response.status(),
                 response.headers());
@@ -74,26 +72,23 @@ public class SanitisedHttpMessageFormatter implements HttpMessageFormatter {
 
     @Override
     public String formatResponse(LiveHttpResponse response) {
-        return response == null ? null
+        return response == null ? NOT_APPLICABLE
             : formatResponse(
-                LiveHttpResponse.class.getSimpleName(),
                 response.version(),
                 response.status(),
                 response.headers());
     }
 
-    private String formatRequest(String simpleName, HttpVersion version, HttpMethod method, Url url, Object id, HttpHeaders headers) {
-        return simpleName
-            + "{version=" + version
+    private String formatRequest(HttpVersion version, HttpMethod method, Url url, Object id, HttpHeaders headers) {
+        return "{version=" + version
             + ", method=" + method
             + ", uri=" + url
             + ", headers=[" + sanitisedHttpHeaderFormatter.format(headers)
             + "], id=" + id + "}";
     }
 
-    private String formatResponse(String simpleName, HttpVersion version, HttpResponseStatus status, HttpHeaders headers) {
-        return simpleName
-            + "{version=" + version
+    private String formatResponse(HttpVersion version, HttpResponseStatus status, HttpHeaders headers) {
+        return "{version=" + version
             + ", status=" + status
             + ", headers=[" + sanitisedHttpHeaderFormatter.format(headers) + "]}";
     }
