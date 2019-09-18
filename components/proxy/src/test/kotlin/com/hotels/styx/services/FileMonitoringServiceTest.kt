@@ -44,7 +44,7 @@ class FileMonitoringServiceTest : StringSpec() {
     }
 
     init {
-        "!Triggers action when starts" {
+        "Triggers action when starts" {
             val result = AtomicReference("")
 
             val service = FileMonitoringService("FileMonitoringService", monitoredFile.absolutePath) {
@@ -62,7 +62,7 @@ class FileMonitoringServiceTest : StringSpec() {
         }
 
 
-        "!When starts, fails to read file (file doesn't exist)" {
+        "When starts, fails to read file (file doesn't exist)" {
             val result = AtomicReference("")
 
             kotlin.runCatching {
@@ -74,7 +74,7 @@ class FileMonitoringServiceTest : StringSpec() {
             }
         }
 
-        "!Notifies listener when file content changes." {
+        "Notifies listener when file content changes." {
             val result = AtomicReference("")
 
             val service = FileMonitoringService("FileMonitoringService", monitoredFile.absolutePath) {
@@ -97,7 +97,7 @@ class FileMonitoringServiceTest : StringSpec() {
             }
         }
 
-        // todo: Investigate this:
+        // TODO: Investigate this:
         "!Doesn't notify listeners when file is updated but MD5 checksum doesn't change." {
             val result = AtomicReference("")
             val updateCount = AtomicInteger(0)
@@ -122,11 +122,6 @@ class FileMonitoringServiceTest : StringSpec() {
             } finally {
                 service.stop()
             }
-        }
-
-
-        "When file changes, fails to read file (file doesn't exist)" {
-
         }
 
     }
