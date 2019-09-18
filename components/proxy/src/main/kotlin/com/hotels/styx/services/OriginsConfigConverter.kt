@@ -15,10 +15,9 @@
  */
 package com.hotels.styx.services
 
-import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE
 import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.hotels.styx.api.extension.Origin
@@ -61,24 +60,24 @@ internal class OriginsConfigConverter(
         }
 
         private val MAPPER = ObjectMappers.addStyxMixins(ObjectMapper(YAMLFactory()))
-                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-                .configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, true)
+                .disable(FAIL_ON_UNKNOWN_PROPERTIES)
+                .configure(AUTO_CLOSE_SOURCE, true)
 
         private val TYPE = object : TypeReference<List<BackendService>>() {
         }
     }
 
     internal fun routingObjects(apps: List<BackendService>) =
-            apps.flatMap { translate(it, originRestrictionCookie) } +
+            apps.flatMap { toBackendServiceObjects(it, originRestrictionCookie) } +
                     Pair(ROOT_OBJECT_NAME, pathPrefixRouter(apps))
 
     internal fun pathPrefixRouter(apps: List<BackendService>): RoutingObjectRecord {
         val prefix = """
-        ---
-        type: $PATH_PREFIX_ROUTER
-        config:
-          routes:
-        """.trimIndent()
+            ---
+            type: $PATH_PREFIX_ROUTER
+            config:
+              routes:
+            """.trimIndent()
 
         val origins = apps
                 .map { "   - { prefix: ${it.path()}, destination: ${it.id()} }" }
@@ -130,67 +129,66 @@ internal class OriginsConfigConverter(
                 providerObject)
     }
 
-    private fun translate(app: BackendService, originsRestrictionCookie: String? = null): List<Pair<String, RoutingObjectRecord>> {
-        val poolSettings = app.connectionPoolConfig()
-        val tlsSettings = app.tlsSettings().orElse(null)
-        val responseTimeout = app.responseTimeoutMillis()
-
+    private fun toBackendServiceObjects(app: BackendService, originsRestrictionCookie: String? = null): List<Pair<String, RoutingObjectRecord>> {
         val hostProxies = app.origins()
                 .sortedBy { it.id().toString() }
-                .map {
-                    val name = "${app.id()}.${it.id()}"
-                    val config = toHostProxyConfig(poolSettings, tlsSettings, responseTimeout, it)
-                    val routingObject = Builtins.build(
-                            listOf(name),
-                            context,
-                            StyxObjectDefinition(name, HOST_PROXY, config)
-                    )
-                    val record = RoutingObjectRecord.create(HOST_PROXY,
-                            setOf(OBJECT_CREATOR_TAG, app.id().toString()),
-                            config,
-                            routingObject)
-                    Pair(name, record)
-                }
+                .map { hostProxy(app, it) }
 
-        val config = toLoadBalancingGroupConfig(app.id().toString(), originsRestrictionCookie, app.stickySessionConfig())
+        return hostProxies + loadBalancingGroup(app, originsRestrictionCookie)
+    }
+
+    internal fun loadBalancingGroup(app: BackendService, originsRestrictionCookie: String? = null): Pair<String, RoutingObjectRecord> {
+        val config = loadBalancingGroupConfig(app.id().toString(), originsRestrictionCookie, app.stickySessionConfig())
         val lbGroupName = "${app.id()}"
-        val lbGroupObject = Builtins.build(
-                listOf(lbGroupName),
-                context,
-                StyxObjectDefinition("${app.id()}", LOAD_BALANCING_GROUP, config))
 
         val lbGroupRecord = RoutingObjectRecord.create(LOAD_BALANCING_GROUP,
                 setOf(OBJECT_CREATOR_TAG),
                 config,
-                lbGroupObject)
+                Builtins.build(
+                        listOf(lbGroupName),
+                        context,
+                        StyxObjectDefinition("${app.id()}", LOAD_BALANCING_GROUP, config)))
 
-        return hostProxies + Pair(lbGroupName, lbGroupRecord)
+        return Pair(lbGroupName, lbGroupRecord)
     }
 
-    private fun toHostProxyConfig(poolSettings: ConnectionPoolSettings,
-                                  tlsSettings: TlsSettings?,
-                                  responseTimeout: Int,
-                                  origin: Origin): JsonNode {
+    private fun loadBalancingGroupConfig(origins: String,
+                                         originsRestrictionCookie: String?,
+                                         stickySession: StickySessionConfig?) =
+            MAPPER.readTree(MAPPER.writeValueAsString(
+                    LoadBalancingGroup.Config(origins, null, originsRestrictionCookie, stickySession)))
 
-        val str = MAPPER.writeValueAsString(
-                HostProxy.HostProxyConfiguration(
-                        "${origin.host()}:${origin.port()}",
-                        poolSettings,
-                        tlsSettings,
-                        responseTimeout,
-                        "origins.${origin.id()}.${origin.id()}")
-        )
 
-        return MAPPER.readTree(str)
+    internal fun hostProxy(app: BackendService, origin: Origin): Pair<String, RoutingObjectRecord> {
+        val name = "${app.id()}.${origin.id()}"
+
+        val config = hostProxyConfig(
+                app.connectionPoolConfig(),
+                app.tlsSettings().orElse(null),
+                app.responseTimeoutMillis(),
+                origin)
+
+        val record = RoutingObjectRecord.create(HOST_PROXY,
+                setOf(OBJECT_CREATOR_TAG, app.id().toString()),
+                config,
+                Builtins.build(
+                        listOf(name),
+                        context,
+                        StyxObjectDefinition(name, HOST_PROXY, config)
+                ))
+
+        return Pair(name, record)
     }
 
-    private fun toLoadBalancingGroupConfig(origins: String,
-                                           originsRestrictionCookie: String?,
-                                           stickySession: StickySessionConfig?): JsonNode {
-        val str = MAPPER.writeValueAsString(
-                LoadBalancingGroup.Config(origins, null, originsRestrictionCookie, stickySession))
-
-        return MAPPER.readTree(str)
-    }
-
+    private fun hostProxyConfig(poolSettings: ConnectionPoolSettings,
+                                tlsSettings: TlsSettings?,
+                                responseTimeout: Int,
+                                origin: Origin) =
+            MAPPER.readTree(MAPPER.writeValueAsString(
+                    HostProxy.HostProxyConfiguration(
+                            "${origin.host()}:${origin.port()}",
+                            poolSettings,
+                            tlsSettings,
+                            responseTimeout,
+                            "origins.${origin.id()}.${origin.id()}")))
 }
