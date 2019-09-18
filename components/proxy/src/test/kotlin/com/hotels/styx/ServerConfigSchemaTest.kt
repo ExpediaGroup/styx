@@ -153,7 +153,7 @@ class ServerConfigSchemaTest : DescribeSpec({
                 styxHeaders:
                   styxInfo:
                     name: "X-Styx-Info"
-                    format: "xyz"
+                    valueFormat: "xyz"
                   originId:
                     name: "X-Origin-Id"
                   requestId:
@@ -173,25 +173,25 @@ class ServerConfigSchemaTest : DescribeSpec({
 
     describe("StyxHeaders Object") {
 
-        it("Aaccepts 'format' field for 'styxInfo' only") {
+        it("Aaccepts 'valueFormat' field for 'styxInfo' only") {
             validateServerConfiguration(yamlConfig(minimalConfig + """
                 styxHeaders:
                   originId:
                     name: "X-Origin-Id"
-                    format: "x"
+                    valueFormat: "x"
                 """.trimIndent()
-            )) shouldBe (Optional.of("Unexpected field: 'styxHeaders.originId.format'"))
+            )) shouldBe (Optional.of("Unexpected field: 'styxHeaders.originId.valueFormat'"))
 
             validateServerConfiguration(yamlConfig(minimalConfig + """
                 styxHeaders:
                   requestId:
                     name: "X-Request-Id"
-                    format: "x"
+                    valueFormat: "x"
               """.trimIndent()
-            )) shouldBe (Optional.of("Unexpected field: 'styxHeaders.requestId.format'"))
+            )) shouldBe (Optional.of("Unexpected field: 'styxHeaders.requestId.valueFormat'"))
         }
 
-        it("Accepts a missing optional 'format' in 'styxInfo' configuration") {
+        it("Accepts a missing optional 'valueFormat' in 'styxInfo' configuration") {
             validateServerConfiguration(yamlConfig(minimalConfig + """
                 styxHeaders:
                   styxInfo:
