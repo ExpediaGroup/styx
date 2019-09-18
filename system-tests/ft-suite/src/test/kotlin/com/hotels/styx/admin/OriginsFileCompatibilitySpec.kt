@@ -70,7 +70,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 """.trimIndent(),
             loggingConfig = ResourcePaths.fixturesHome(
                     OriginsFileCompatibilitySpec::class.java,
-                    "/conf/logback/logback-debug-stdout.xml")
+                    "/conf/logback/logback-OriginsFileComparibilitySpec.xml")
                     .toAbsolutePath())
 
     init {
