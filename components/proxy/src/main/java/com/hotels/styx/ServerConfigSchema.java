@@ -116,7 +116,7 @@ final class ServerConfigSchema {
                             optional("styxHeaders", object(
                                     optional("styxInfo", object(
                                             field("name", string()),
-                                            optional("format", string())
+                                            optional("valueFormat", string())
                                     )),
                                     optional("originId", object(
                                             field("name", string())
