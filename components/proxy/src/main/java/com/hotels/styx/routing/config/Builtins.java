@@ -62,10 +62,13 @@ public final class Builtins {
     public static final String HEALTH_CHECK_MONITOR = "HealthCheckMonitor";
     public static final String YAML_FILE_CONFIGURATION_SERVICE = "YamlFileConfigurationService";
 
+    public static final String REWRITE = "Rewrite";
+
     public static final ImmutableMap<String, Schema.FieldType> BUILTIN_HANDLER_SCHEMAS;
     public static final ImmutableMap<String, RoutingObjectFactory> BUILTIN_HANDLER_FACTORIES;
+
     public static final ImmutableMap<String, HttpInterceptorFactory> INTERCEPTOR_FACTORIES =
-            ImmutableMap.of("Rewrite", new RewriteInterceptor.Factory());
+            ImmutableMap.of(REWRITE, new RewriteInterceptor.Factory());
 
     public static final ImmutableMap<String, ServiceProviderFactory> BUILTIN_SERVICE_PROVIDER_FACTORIES =
             ImmutableMap.of(HEALTH_CHECK_MONITOR, new HealthCheckMonitoringServiceFactory(),

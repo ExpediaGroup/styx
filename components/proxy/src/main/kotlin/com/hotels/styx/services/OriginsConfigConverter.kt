@@ -36,14 +36,17 @@ import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.Builtins
 import com.hotels.styx.routing.config.Builtins.HEALTH_CHECK_MONITOR
 import com.hotels.styx.routing.config.Builtins.HOST_PROXY
+import com.hotels.styx.routing.config.Builtins.INTERCEPTOR_PIPELINE
 import com.hotels.styx.routing.config.Builtins.LOAD_BALANCING_GROUP
 import com.hotels.styx.routing.config.Builtins.PATH_PREFIX_ROUTER
+import com.hotels.styx.routing.config.Builtins.REWRITE
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.config.StyxObjectDefinition
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.HostProxy.HostProxyConfiguration
 import com.hotels.styx.routing.handlers.LoadBalancingGroup
 import com.hotels.styx.routing.handlers.ProviderObjectRecord
+import org.slf4j.LoggerFactory
 
 
 internal class OriginsConfigConverter(
@@ -120,6 +123,7 @@ internal class OriginsConfigConverter(
     }
 
     companion object {
+        val LOGGER = LoggerFactory.getLogger(this::class.java)
         val OBJECT_CREATOR_TAG = "source=OriginsFileConverter"
         val ROOT_OBJECT_NAME = "pathPrefixRouter"
 
@@ -141,11 +145,15 @@ internal class OriginsConfigConverter(
                 .map { hostProxy(app, it) }
                 .plus(loadBalancingGroup(app, originsRestrictionCookie))
 
-        internal fun loadBalancingGroup(app: BackendService, originsRestrictionCookie: String? = null) = StyxObjectDefinition(
-                "${app.id()}",
-                LOAD_BALANCING_GROUP,
-                listOf(OBJECT_CREATOR_TAG),
-                loadBalancingGroupConfig(app.id().toString(), originsRestrictionCookie, app.stickySessionConfig()))
+        internal fun loadBalancingGroup(app: BackendService, originsRestrictionCookie: String? = null) = if (app.rewrites().isEmpty()) {
+            StyxObjectDefinition(
+                    "${app.id()}",
+                    LOAD_BALANCING_GROUP,
+                    listOf(OBJECT_CREATOR_TAG),
+                    loadBalancingGroupConfig(app.id().toString(), originsRestrictionCookie, app.stickySessionConfig()))
+        } else {
+            interceptorPipelineConfig(app, originsRestrictionCookie)
+        }
 
         internal fun hostProxy(app: BackendService, origin: Origin) = StyxObjectDefinition(
                 "${app.id()}.${origin.id()}",
@@ -160,7 +168,55 @@ internal class OriginsConfigConverter(
         private fun loadBalancingGroupConfig(origins: String,
                                              originsRestrictionCookie: String?,
                                              stickySession: StickySessionConfig?): JsonNode = MAPPER.valueToTree(
-                LoadBalancingGroup.Config(origins, null, originsRestrictionCookie, stickySession))
+                LoadBalancingGroup.Config(origins, originsRestrictionCookie, stickySession))
+
+        internal fun interceptorPipelineConfig(app: BackendService, originsRestrictionCookie: String?): StyxObjectDefinition {
+            val rewrites = app.rewrites()
+                    .map { """- { urlPattern: "${it.urlPattern()}", replacement: "${it.replacement()}" }""" }
+                    .joinToString(separator = "\n")
+                    .prependIndent("  ")
+
+            val rewriteInterceptor = """
+                - type: $REWRITE
+                  config:
+                __rewrites__
+                """.trimIndent()
+                    .replace("__rewrites__", rewrites)
+
+            val lbConfig = MAPPER.writeValueAsString(loadBalancingGroupConfig(app.id().toString(), originsRestrictionCookie, app.stickySessionConfig()))
+                    .dropWhile { it == '-' || it == '\n' }
+                    .prependIndent("  ")
+
+            val handler = """
+                type: $LOAD_BALANCING_GROUP
+                name: "${app.id()}-lb"
+                tags: 
+                  - $OBJECT_CREATOR_TAG
+                config:
+                __config__
+            """.trimIndent()
+                    .replace("__config__", lbConfig)
+
+            val yamlConfig = """
+                ---
+                type: $INTERCEPTOR_PIPELINE
+                name: ${app.id()}
+                tags: 
+                  - $OBJECT_CREATOR_TAG
+                config:
+                  pipeline:
+                __rewriteInterceptor__
+                  handler:
+                __handlers__
+                """.trimIndent()
+                    .replace("__rewriteInterceptor__", rewriteInterceptor.prependIndent("    "))
+                    .replace("__handlers__", handler.prependIndent("    "))
+
+            return ConfigurationParser.Builder<YamlConfiguration>()
+                    .format(YAML)
+                    .build()
+                    .parse(configSource(yamlConfig)).`as`(StyxObjectDefinition::class.java)
+        }
 
         private fun hostProxyConfig(poolSettings: ConnectionPoolSettings,
                                     tlsSettings: TlsSettings?,

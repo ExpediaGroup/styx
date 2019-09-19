@@ -164,7 +164,6 @@ internal class LoadBalancingGroup(val client: StyxBackendServiceClient, val chan
 
     data class Config(
             @JsonProperty val origins: String,
-            @JsonProperty val strategy: String?,
             @JsonProperty val originRestrictionCookie: String?,
             @JsonProperty val stickySession: StickySessionConfig?
     ) {

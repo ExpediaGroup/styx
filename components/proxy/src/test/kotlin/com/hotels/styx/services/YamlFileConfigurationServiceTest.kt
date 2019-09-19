@@ -314,11 +314,6 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                 }
             }
 
-            test("!Rewrites changes") {
-                // Rewrite rules are not supported. Need to investigate if they can be
-                // supported as routing objects instead of bespoke feature.
-            }
-
             test("Health checking is enabled") {
                 writeOrigins("""
                         ---

@@ -16,11 +16,13 @@
 package com.hotels.styx.services
 
 import com.hotels.styx.routing.RoutingObjectFactoryContext
+import com.hotels.styx.routing.config.Builtins.INTERCEPTOR_PIPELINE
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.ProviderObjectRecord
 import com.hotels.styx.services.OriginsConfigConverter.Companion.OBJECT_CREATOR_TAG
 import com.hotels.styx.services.OriginsConfigConverter.Companion.ROOT_OBJECT_NAME
 import com.hotels.styx.services.OriginsConfigConverter.Companion.deserialiseOrigins
+import com.hotels.styx.services.OriginsConfigConverter.Companion.loadBalancingGroup
 import io.kotlintest.matchers.collections.shouldContainAll
 import io.kotlintest.matchers.types.shouldNotBeNull
 import io.kotlintest.shouldBe
@@ -65,6 +67,52 @@ class OriginsConfigConverterTest : StringSpec({
                     it[3].second.tags.shouldContainAll("source=OriginsFileConverter")
                     it[3].second.type.shouldBe("PathPrefixRouter")
                     it[3].second.routingObject.shouldNotBeNull()
+                }
+    }
+
+    "Translates one rewrite rules" {
+        val config = """
+            ---
+            - id: "app"
+              path: "/"
+              rewrites:
+              - urlPattern: "/abc/(.*)"
+                replacement: "/$1"
+              origins:
+              - { id: "app1", host: "localhost:9090" }
+            """.trimIndent()
+
+        val app = deserialiseOrigins(config)[0]
+
+        loadBalancingGroup(app, null)
+                .let {
+                    it.name() shouldBe "app"
+                    it.type() shouldBe INTERCEPTOR_PIPELINE
+                    it.tags().shouldContainAll("source=OriginsFileConverter")
+                }
+    }
+
+    "Translates many rewrite rules" {
+        val config = """
+            ---
+            - id: "app"
+              path: "/"
+              rewrites:
+              - urlPattern: "/abc/(.*)"
+                replacement: "/$1"
+              - urlPattern: "/def/(.*)"
+                replacement: "/$1"
+              origins:
+              - { id: "app2", host: "localhost:9091" }
+            """.trimIndent()
+
+        val app = deserialiseOrigins(config)[0]
+
+        loadBalancingGroup(app, null)
+                .let {
+                    it.name() shouldBe "app"
+                    it.type() shouldBe INTERCEPTOR_PIPELINE
+                    it.tags().shouldContainAll("source=OriginsFileConverter")
                 }
     }
 

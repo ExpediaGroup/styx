@@ -16,6 +16,8 @@
 package com.hotels.styx.admin
 
 import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor
+import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY
@@ -70,7 +72,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 """.trimIndent(),
             loggingConfig = ResourcePaths.fixturesHome(
                     OriginsFileCompatibilitySpec::class.java,
-                    "/conf/logback/logback-OriginsFileComparibilitySpec.xml")
+                    "/conf/logback/logback.xml")
                     .toAbsolutePath())
 
     init {
@@ -87,7 +89,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 println("Object database: " + dumpObjectDatabase())
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    client.send(get("/")
+                    client.send(get("/1")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                             .wait().let {
@@ -116,7 +118,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     """.trimIndent())
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    client.send(get("/")
+                    client.send(get("/2")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                             .wait().let {
@@ -126,7 +128,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 }
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    client.send(get("/")
+                    client.send(get("/3")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                             .wait().let {
@@ -147,7 +149,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 delay(2.seconds.toMillis())
 
                 (1..20).forEach {
-                    client.send(get("/")
+                    client.send(get("/4")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                             .wait().let {
@@ -170,7 +172,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     """.trimIndent())
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    client.send(get("/b/")
+                    client.send(get("/b/5")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                             .wait().let {
@@ -179,7 +181,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                             }
                 }
 
-                client.send(get("/")
+                client.send(get("/6")
                         .header(HOST, styxServer().proxyHttpHostHeader())
                         .build())
                         .wait().let {
@@ -201,7 +203,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     """.trimIndent())
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    client.send(get("/")
+                    client.send(get("/7")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                             .wait().let {
@@ -210,7 +212,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                             }
                 }
 
-                client.send(get("/a/")
+                client.send(get("/a/8")
                         .header(HOST, styxServer().proxyHttpHostHeader())
                         .build())
                         .wait().let {
@@ -228,7 +230,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     """.trimIndent())
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    client.send(get("/")
+                    client.send(get("/9")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                             .wait().let {
@@ -245,7 +247,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     """.trimIndent())
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    client.send(get("/")
+                    client.send(get("/10")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                             .wait().let {
@@ -269,7 +271,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     """.trimIndent())
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    client.send(get("/")
+                    client.send(get("/11")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                             .wait().let {
@@ -290,7 +292,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     """.trimIndent())
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    client.send(get("/")
+                    client.send(get("/12")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                             .wait().let {
@@ -298,6 +300,56 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                                 it.bodyAs(UTF_8) shouldBe "appTls-01"
                             }
                 }
+            }
+
+            test("Rewrites") {
+                writeOrigins("""
+                    - id: appB
+                      path: "/b/"
+                      rewrites:
+                        - urlPattern: "/b/(.*)"
+                          replacement: "/rewritten/$1"
+                      origins:
+                      - { id: "appB-01", host: "localhost:${mockServerB01.port()}" } 
+                    - id: appC
+                      path: "/c/"
+                      rewrites:
+                        - urlPattern: /c/abc/(.*)
+                          replacement: /rewritten/${'$'}1
+                        - urlPattern: /c/def/(.*)
+                          replacement: /rewritten2/${'$'}1
+                      origins:
+                      - { id: "appC-01", host: "localhost:${mockServerC01.port()}" }
+                    """.trimIndent())
+
+                eventually(2.seconds, AssertionError::class.java) {
+                    client.send(get("/b/hello")
+                            .header(HOST, styxServer().proxyHttpHostHeader())
+                            .build())
+                            .wait().let {
+                                it!!.status() shouldBe OK
+                                it.bodyAs(UTF_8) shouldBe "appB-01"
+                            }
+                }
+
+                client.send(get("/c/abc/hello")
+                        .header(HOST, styxServer().proxyHttpHostHeader())
+                        .build())
+                        .wait().let {
+                            it!!.status() shouldBe OK
+                            it.bodyAs(UTF_8) shouldBe "appC-01"
+                        }
+                client.send(get("/c/def/hello2")
+                        .header(HOST, styxServer().proxyHttpHostHeader())
+                        .build())
+                        .wait().let {
+                            it!!.status() shouldBe OK
+                            it.bodyAs(UTF_8) shouldBe "appC-01"
+                        }
+
+                mockServerB01.verify(getRequestedFor(urlEqualTo("/rewritten/hello")))
+                mockServerC01.verify(getRequestedFor(urlEqualTo("/rewritten/hello")))
+                mockServerC01.verify(getRequestedFor(urlEqualTo("/rewritten2/hello2")))
             }
         }
 
@@ -338,7 +390,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
             test("Routes to origin indicated by origins restriction cookie") {
                 // Poll for server to become available
                 eventually(2.seconds, AssertionError::class.java) {
-                    client.send(get("/")
+                    client.send(get("/13")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                             .wait().let {
@@ -347,7 +399,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 }
 
                 for (i in 1..10) {
-                    client.send(get("/")
+                    client.send(get("/14")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .cookies(requestCookie("ABC", "appA.appA-02"))
                             .build())
@@ -375,7 +427,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     """.trimIndent())
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    client.send(get("/1")
+                    client.send(get("/15")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                             .wait().let {
@@ -400,7 +452,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
 
                 delay(2.seconds.toMillis())
 
-                client.send(get("/2")
+                client.send(get("/16")
                         .header(HOST, styxServer().proxyHttpHostHeader())
                         .build())
                         .wait().let {
@@ -421,7 +473,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 delay(2.seconds.toMillis())
 
                 eventually(3.seconds, AssertionError::class.java) {
-                    client.send(get("/3")
+                    client.send(get("/17")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                             .wait().let {
@@ -446,7 +498,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 println("Object database: " + dumpObjectDatabase())
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    client.send(get("/")
+                    client.send(get("/18")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                             .wait().let {
@@ -463,7 +515,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
 
                 delay(2.seconds.toMillis())
 
-                client.send(get("/")
+                client.send(get("/19")
                         .header(HOST, styxServer().proxyHttpHostHeader())
                         .build())
                         .wait().let {
@@ -480,7 +532,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 """.trimIndent())
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    client.send(get("/")
+                    client.send(get("/20")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                             .wait().let {
@@ -523,6 +575,12 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     .withStatus(200)
                     .withBody("appB-01"))
 
+    val mockServerC01 = MockOriginServer.create("appC", "appC-01", 0, HttpConnectorConfig(0))
+            .start()
+            .stub(WireMock.get(WireMock.urlMatching("/.*")), WireMock.aResponse()
+                    .withStatus(200)
+                    .withBody("appC-01"))
+
     val mockTlsv12Server = MockOriginServer.create("appTls", "appTls-01", 0,
             HttpsConnectorConfig.Builder()
                     .port(0)
@@ -541,6 +599,8 @@ class OriginsFileCompatibilitySpec : FunSpec() {
         mockServerA01.stop()
         mockServerA02.stop()
         mockServerB01.stop()
+        mockServerC01.stop()
+        mockTlsv12Server.stop()
     }
 }
 
