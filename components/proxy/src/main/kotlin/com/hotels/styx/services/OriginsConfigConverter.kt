@@ -18,6 +18,7 @@ package com.hotels.styx.services
 import com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.hotels.styx.api.extension.Origin
@@ -40,7 +41,7 @@ import com.hotels.styx.routing.config.Builtins.PATH_PREFIX_ROUTER
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.config.StyxObjectDefinition
 import com.hotels.styx.routing.db.StyxObjectStore
-import com.hotels.styx.routing.handlers.HostProxy
+import com.hotels.styx.routing.handlers.HostProxy.HostProxyConfiguration
 import com.hotels.styx.routing.handlers.LoadBalancingGroup
 import com.hotels.styx.routing.handlers.ProviderObjectRecord
 
@@ -158,20 +159,18 @@ internal class OriginsConfigConverter(
 
         private fun loadBalancingGroupConfig(origins: String,
                                              originsRestrictionCookie: String?,
-                                             stickySession: StickySessionConfig?) =
-                MAPPER.readTree(MAPPER.writeValueAsString(
-                        LoadBalancingGroup.Config(origins, null, originsRestrictionCookie, stickySession)))
+                                             stickySession: StickySessionConfig?): JsonNode = MAPPER.valueToTree(
+                LoadBalancingGroup.Config(origins, null, originsRestrictionCookie, stickySession))
 
         private fun hostProxyConfig(poolSettings: ConnectionPoolSettings,
                                     tlsSettings: TlsSettings?,
                                     responseTimeout: Int,
-                                    origin: Origin) =
-                MAPPER.readTree(MAPPER.writeValueAsString(
-                        HostProxy.HostProxyConfiguration(
-                                "${origin.host()}:${origin.port()}",
-                                poolSettings,
-                                tlsSettings,
-                                responseTimeout,
-                                "origins.${origin.id()}.${origin.id()}")))
+                                    origin: Origin): JsonNode = MAPPER.valueToTree(
+                HostProxyConfiguration(
+                        "${origin.host()}:${origin.port()}",
+                        poolSettings,
+                        tlsSettings,
+                        responseTimeout,
+                        "origins.${origin.id()}.${origin.id()}"))
     }
 }
