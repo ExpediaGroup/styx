@@ -121,18 +121,11 @@ class StyxObjectStore<T> : ObjectStore<T> {
     fun compute(key: String, computation: (T?) -> T): Optional<T> {
         require(key.isNotEmpty()) { "ObjectStore compute: empty keys are not allowed." }
 
-            var current = objects.get()
-            var result = computation(current.get(key))
+            var current: PMap<String, T>
+            var result: T
+            var new: PMap<String, T>
 
-            var new = if (result != current.get(key)){
-                // Consumer REPLACES an existing value or ADDS a new value
-                current.plus(key, result)
-            } else {
-                // Consumer KEEPS the existing value
-                current
-            }
-
-            while(!objects.compareAndSet(current, new)) {
+            do {
                 current = objects.get()
                 result = computation(current.get(key))
 
@@ -143,7 +136,7 @@ class StyxObjectStore<T> : ObjectStore<T> {
                     // Consumer KEEPS the existing value
                     current
                 }
-            }
+            } while(!objects.compareAndSet(current, new))
 
             if (current != new) {
                 // Notify only if content changed:
