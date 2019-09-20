@@ -139,20 +139,20 @@ internal class OriginsConfigConverter(
         private val TYPE = object : TypeReference<List<BackendService>>() {
         }
 
-        private fun toBackendServiceObjects(app: BackendService, originsRestrictionCookie: String? = null) = app
+        private fun toBackendServiceObjects(app: BackendService, originRestrictionCookie: String? = null) = app
                 .origins()
                 .sortedBy { it.id().toString() }
                 .map { hostProxy(app, it) }
-                .plus(loadBalancingGroup(app, originsRestrictionCookie))
+                .plus(loadBalancingGroup(app, originRestrictionCookie))
 
-        internal fun loadBalancingGroup(app: BackendService, originsRestrictionCookie: String? = null) = if (app.rewrites().isEmpty()) {
+        internal fun loadBalancingGroup(app: BackendService, originRestrictionCookie: String? = null) = if (app.rewrites().isEmpty()) {
             StyxObjectDefinition(
                     "${app.id()}",
                     LOAD_BALANCING_GROUP,
                     listOf(OBJECT_CREATOR_TAG),
-                    loadBalancingGroupConfig(app.id().toString(), originsRestrictionCookie, app.stickySessionConfig()))
+                    loadBalancingGroupConfig(app.id().toString(), originRestrictionCookie, app.stickySessionConfig()))
         } else {
-            interceptorPipelineConfig(app, originsRestrictionCookie)
+            interceptorPipelineConfig(app, originRestrictionCookie)
         }
 
         internal fun hostProxy(app: BackendService, origin: Origin) = StyxObjectDefinition(
@@ -166,11 +166,11 @@ internal class OriginsConfigConverter(
                         origin))
 
         private fun loadBalancingGroupConfig(origins: String,
-                                             originsRestrictionCookie: String?,
+                                             originRestrictionCookie: String?,
                                              stickySession: StickySessionConfig?): JsonNode = MAPPER.valueToTree(
-                LoadBalancingGroup.Config(origins, originsRestrictionCookie, stickySession))
+                LoadBalancingGroup.Config(origins, originRestrictionCookie, stickySession))
 
-        internal fun interceptorPipelineConfig(app: BackendService, originsRestrictionCookie: String?): StyxObjectDefinition {
+        internal fun interceptorPipelineConfig(app: BackendService, originRestrictionCookie: String?): StyxObjectDefinition {
             val rewrites = app.rewrites()
                     .map { """- { urlPattern: "${it.urlPattern()}", replacement: "${it.replacement()}" }""" }
                     .joinToString(separator = "\n")
@@ -183,7 +183,7 @@ internal class OriginsConfigConverter(
                 """.trimIndent()
                     .replace("__rewrites__", rewrites)
 
-            val lbConfig = MAPPER.writeValueAsString(loadBalancingGroupConfig(app.id().toString(), originsRestrictionCookie, app.stickySessionConfig()))
+            val lbConfig = MAPPER.writeValueAsString(loadBalancingGroupConfig(app.id().toString(), originRestrictionCookie, app.stickySessionConfig()))
                     .dropWhile { it == '-' || it == '\n' }
                     .prependIndent("  ")
 

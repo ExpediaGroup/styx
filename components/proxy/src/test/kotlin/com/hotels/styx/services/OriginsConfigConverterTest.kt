@@ -227,7 +227,7 @@ class OriginsConfigConverterTest : StringSpec({
                 }
     }
 
-    "HealthCheckTranslator converts a list of applications to HealthCheckObjects" {
+    "Creates HealthCheckObjects from a list of applications" {
         val translator = OriginsConfigConverter(serviceDb, RoutingObjectFactoryContext().get(), "")
 
         val config = """
