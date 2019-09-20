@@ -98,24 +98,6 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                 }
             }
 
-            // TODO: Can't be tested as FileChangeMonitor fails to start if the origins file doesn't exist.
-            //       Enable this later when the restriction is lifted.
-            test("!If file doesn't exist, it waits for it to become available") {
-                val routeDb = StyxObjectStore<RoutingObjectRecord>()
-                val serviceDb = StyxObjectStore<ProviderObjectRecord>()
-
-                with(YamlFileConfigurationService(
-                        routeDb,
-                        OriginsConfigConverter(serviceDb, RoutingObjectFactoryContext(objectStore = routeDb).get(), "origins-cookie"),
-                        YamlFileConfigurationServiceConfig("/a/b/c", pollInterval = pollInterval),
-                        serviceDb)) {
-                    it.start().join()
-                    eventually(2.seconds, AssertionError::class.java) {
-                        routeDb.entrySet().size shouldBe 0
-                    }
-                }
-            }
-
             test("It recovers from syntax errors") {
                 val routeDb = StyxObjectStore<RoutingObjectRecord>()
                 val serviceDb = StyxObjectStore<ProviderObjectRecord>()
