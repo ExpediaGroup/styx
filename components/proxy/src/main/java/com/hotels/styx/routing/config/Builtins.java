@@ -70,6 +70,9 @@ public final class Builtins {
     public static final ImmutableMap<String, HttpInterceptorFactory> INTERCEPTOR_FACTORIES =
             ImmutableMap.of(REWRITE, new RewriteInterceptor.Factory());
 
+    public static final ImmutableMap<String, Schema.FieldType> INTERCEPTOR_SCHEMAS =
+            ImmutableMap.of(REWRITE, RewriteInterceptor.SCHEMA);
+
     public static final ImmutableMap<String, ServiceProviderFactory> BUILTIN_SERVICE_PROVIDER_FACTORIES =
             ImmutableMap.of(HEALTH_CHECK_MONITOR, new HealthCheckMonitoringServiceFactory(),
                     YAML_FILE_CONFIGURATION_SERVICE, new YamlFileConfigurationServiceFactory()

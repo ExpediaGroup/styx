@@ -232,18 +232,18 @@ class HealthCheckProviderSpec : FeatureSpec() {
 
     val testServer01 = StyxServerProvider(
             testServerConfig.format(1), defaultAdditionalRoutingObjects = mapOf(
-                    "TestEndpoint" to RoutingObjectFactory { _, _, _ -> TestEndpoint(content = "origin-01", active = origin01Active) }
-            ))
+                    "TestEndpoint" to RoutingObjectFactory { _, _, _ -> TestEndpoint(content = "origin-01", active = origin01Active) }),
+            validateConfig = false)
 
     val testServer02 = StyxServerProvider(
             testServerConfig.format(2), defaultAdditionalRoutingObjects = mapOf(
-                    "TestEndpoint" to RoutingObjectFactory { _, _, _ -> TestEndpoint(content = "origin-02", active = origin02Active) }
-            ))
+                    "TestEndpoint" to RoutingObjectFactory { _, _, _ -> TestEndpoint(content = "origin-02", active = origin02Active) }),
+            validateConfig = false)
 
     val testServer03 = StyxServerProvider(
             testServerConfig.format(3), defaultAdditionalRoutingObjects = mapOf(
-                    "TestEndpoint" to RoutingObjectFactory { _, _, _ -> TestEndpoint(content = "origin-03") }
-            ))
+                    "TestEndpoint" to RoutingObjectFactory { _, _, _ -> TestEndpoint(content = "origin-03") }),
+            validateConfig = false)
 
     override fun beforeSpec(spec: Spec) {
         testServer01.restart()

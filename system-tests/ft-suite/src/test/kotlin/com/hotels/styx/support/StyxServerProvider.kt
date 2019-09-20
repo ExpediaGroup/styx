@@ -37,7 +37,11 @@ import java.util.Optional
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicReference
 
-class StyxServerProvider(val defaultConfig: String, val defaultAdditionalRoutingObjects: Map<String, RoutingObjectFactory> = mapOf(), val loggingConfig: Path? = null) {
+class StyxServerProvider(
+        val defaultConfig: String,
+        val defaultAdditionalRoutingObjects: Map<String, RoutingObjectFactory> = mapOf(),
+        val loggingConfig: Path? = null,
+        val validateConfig: Boolean = true) {
     val serverRef: AtomicReference<StyxServer?> = AtomicReference()
 
     operator fun invoke() = get()
@@ -52,13 +56,16 @@ class StyxServerProvider(val defaultConfig: String, val defaultAdditionalRouting
 
     fun started() = (serverRef.get() == null) || serverRef.get()!!.isRunning
 
-    fun restart(configuration: String = defaultConfig, additionalRoutingObjects: Map<String, RoutingObjectFactory> = defaultAdditionalRoutingObjects): StyxServerProvider {
+    fun restart(
+            configuration: String = this.defaultConfig,
+            additionalRoutingObjects: Map<String, RoutingObjectFactory> = this.defaultAdditionalRoutingObjects,
+            validateConfig: Boolean = this.validateConfig): StyxServerProvider {
         if (started()) {
             stop()
         }
 
         var components = StyxServerComponents.Builder()
-                .styxConfig(StyxConfig.fromYaml(configuration, false))
+                .styxConfig(StyxConfig.fromYaml(configuration, validateConfig))
                 .additionalRoutingObjects(additionalRoutingObjects)
 
         components = if (loggingConfig != null) components.loggingSetUp(loggingConfig.toString()) else components

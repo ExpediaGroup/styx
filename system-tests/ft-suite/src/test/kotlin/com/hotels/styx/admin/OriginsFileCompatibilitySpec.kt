@@ -67,7 +67,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     config:
                       originsFile: ${originsFile.absolutePath}
                       monitor: True
-                      pollInterval: PT0.1S
+                      pollInterval: PT0.1S 
                 httpPipeline: pathPrefixRouter
                 """.trimIndent(),
             loggingConfig = ResourcePaths.fixturesHome(
