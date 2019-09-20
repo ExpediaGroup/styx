@@ -72,7 +72,7 @@ class StyxObjectStore<T> : ObjectStore<T> {
      * @return the previous value
      */
     fun insert(key: String, payload: T): Optional<T> {
-        require(key.isNotEmpty())
+        require(key.isNotEmpty()) { "ObjectStore insert: empty keys are not allowed." }
 
         var current = objects.get()
         var new = current.plus(key, payload)
@@ -119,40 +119,40 @@ class StyxObjectStore<T> : ObjectStore<T> {
      * @return the previous value
      */
     fun compute(key: String, computation: (T?) -> T): Optional<T> {
-        require(key.isNotEmpty())
+        require(key.isNotEmpty()) { "ObjectStore compute: empty keys are not allowed." }
 
-        var current = objects.get()
-        var result = computation(current.get(key))
+            var current = objects.get()
+            var result = computation(current.get(key))
 
-        var new = if (result != current.get(key)){
-            // Consumer REPLACES an existing value or ADDS a new value
-            current.plus(key, result)
-        } else {
-            // Consumer KEEPS the existing value
-            current
-        }
-
-        while(!objects.compareAndSet(current, new)) {
-            current = objects.get()
-            result = computation(current.get(key))
-
-            new = if (result != current.get(key)){
+            var new = if (result != current.get(key)){
                 // Consumer REPLACES an existing value or ADDS a new value
                 current.plus(key, result)
             } else {
                 // Consumer KEEPS the existing value
                 current
             }
-        }
 
-        if (current != new) {
-            // Notify only if content changed:
-            queue {
-                notifyWatchers(new)
+            while(!objects.compareAndSet(current, new)) {
+                current = objects.get()
+                result = computation(current.get(key))
+
+                new = if (result != current.get(key)){
+                    // Consumer REPLACES an existing value or ADDS a new value
+                    current.plus(key, result)
+                } else {
+                    // Consumer KEEPS the existing value
+                    current
+                }
             }
-        }
 
-        return Optional.ofNullable(current[key])
+            if (current != new) {
+                // Notify only if content changed:
+                queue {
+                    notifyWatchers(new)
+                }
+            }
+
+            return Optional.ofNullable(current[key])
     }
 
 
