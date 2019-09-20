@@ -34,7 +34,7 @@ class FileMonitoringService(
         ) : AbstractStyxService(name) {
     val LOGGER = LoggerFactory.getLogger(FileMonitoringService::class.java)
 
-    // NOTE: FileChangeMonitor will reject any non-existing paths:
+    // NOTE: FileChangeMonitor rejects any non-existing paths:
     val monitor = FileChangeMonitor(path, Duration.ofSeconds(0), pollInterval)
 
     override fun startService() = CompletableFuture.runAsync {
@@ -52,7 +52,6 @@ class FileMonitoringService(
             Files.readAllBytes(Paths.get(path))
         }.mapCatching {
             val string = String(it, UTF_8)
-            LOGGER.debug("reloaded: \n$string")
             action.invoke(string)
         }.onFailure {
             LOGGER.warn("Unable to read file {}. Cause={}", path, it.localizedMessage)
