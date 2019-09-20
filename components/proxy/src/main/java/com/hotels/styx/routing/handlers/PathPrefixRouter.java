@@ -28,6 +28,7 @@ import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
+import com.hotels.styx.routing.config.StyxObjectConfiguration;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.server.NoServiceConfiguredException;
 
@@ -84,8 +85,6 @@ public class PathPrefixRouter {
                 .map(Map.Entry::getValue);
     }
 
-
-
     /**
      * A factory for constructing PathPrefixRouter objects.
      */
@@ -100,7 +99,7 @@ public class PathPrefixRouter {
 
             PathPrefixRouter pathPrefixRouter = new PathPrefixRouter(
                     config.routes.stream()
-                            .map(route -> pair(route.prefix, Builtins.build(ImmutableList.of(""), context, toRoutingConfigNode(route.destination))))
+                            .map(route -> pair(route.prefix, Builtins.build(ImmutableList.of(""), context, route.destination)))
                             .collect(toList())
             );
 
@@ -126,19 +125,19 @@ public class PathPrefixRouter {
      */
     public static class PathPrefixConfig {
         private final String prefix;
-        private final JsonNode destination;
+        private final StyxObjectConfiguration destination;
 
         public PathPrefixConfig(@JsonProperty("prefix") String prefix,
                                 @JsonProperty("destination") JsonNode destination) {
             this.prefix = prefix;
-            this.destination = destination;
+            this.destination = toRoutingConfigNode(destination);
         }
 
         public String prefix() {
             return prefix;
         }
 
-        public JsonNode destination() {
+        public StyxObjectConfiguration destination() {
             return destination;
         }
     }
