@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -26,9 +26,9 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
+import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hotels.styx.common.Files.fileContentMd5;
@@ -38,7 +38,7 @@ import static java.nio.file.Files.getLastModifiedTime;
 import static java.nio.file.Files.isReadable;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Monitors a file system object and notifies the consumer of any changes.
@@ -46,46 +46,43 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class FileChangeMonitor implements FileMonitor {
     private final Path monitoredFile;
     private final ScheduledExecutorService executor = newSingleThreadScheduledExecutor();
-    private final long pollPeriod;
-    private final TimeUnit timeUnit;
+    private final Duration pollPeriod;
 
     private final AtomicReference<FileTime> lastChangedTime = new AtomicReference<>(FileTime.fromMillis(0));
     private final AtomicReference<HashCode> hashCode = new AtomicReference<>();
-    private final long initialDelay;
+    private final Duration initialDelay;
 
     private volatile boolean performHashCheck;
     private ScheduledFuture<?> monitoredTask;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileChangeMonitor.class);
 
-    @VisibleForTesting
-    FileChangeMonitor(String monitoredFile, long pollPeriod, TimeUnit timeUnit) {
-        this(monitoredFile, pollPeriod, pollPeriod, timeUnit);
-    }
-
-    public FileChangeMonitor(String monitoredFile, long initialDelay, long pollPeriod, TimeUnit timeUnit) {
+    public FileChangeMonitor(String monitoredFile, Duration initialDelay, Duration pollPeriod) {
         requireExists(requireNonNull(monitoredFile));
         this.monitoredFile = Paths.get(monitoredFile);
         this.pollPeriod = pollPeriod;
         this.initialDelay = initialDelay;
-        this.timeUnit = requireNonNull(timeUnit);
         this.hashCode.set(HashCode.fromLong(0));
     }
 
     public FileChangeMonitor(String monitoredFile) {
-        this(monitoredFile, 0, 1, SECONDS);
+        this(monitoredFile, Duration.ofMillis(0), Duration.ofSeconds(1));
     }
 
     @Override
     public void start(Listener listener) {
-        LOGGER.debug("start, initialDelay={}, pollPeriod={}, timeUnit={}", new Object[] {initialDelay, pollPeriod, timeUnit});
+        LOGGER.debug("start, initialDelay={}, pollPeriod={}", new Object[] {initialDelay, pollPeriod});
         synchronized (this) {
             if (monitoredTask != null) {
                 String message = format("File monitor for '%s' is already started", monitoredFile);
                 throw new IllegalStateException(message);
             }
 
-            monitoredTask = executor.scheduleAtFixedRate(detectFileChangesTask(listener), initialDelay, pollPeriod, timeUnit);
+            monitoredTask = executor.scheduleAtFixedRate(
+                    detectFileChangesTask(listener),
+                    initialDelay.toMillis(),
+                    pollPeriod.toMillis(),
+                    MILLISECONDS);
         }
     }
 

@@ -30,15 +30,22 @@ import com.hotels.styx.routing.handlers.ProviderObjectRecord
 import com.hotels.styx.serviceproviders.ServiceProviderFactory
 import com.hotels.styx.services.OriginsConfigConverter.Companion.deserialiseOrigins
 import org.slf4j.LoggerFactory
+import java.time.Duration
 import java.util.concurrent.atomic.AtomicReference
 
 internal class YamlFileConfigurationService(
         private val routeDb: StyxObjectStore<RoutingObjectRecord>,
         private val converter: OriginsConfigConverter,
         private val config: YamlFileConfigurationServiceConfig,
-        val serviceDb: StyxObjectStore<ProviderObjectRecord>) : StyxService {
+        private val serviceDb: StyxObjectStore<ProviderObjectRecord>) : StyxService {
 
-    val fileMonitoringService = FileMonitoringService("YamlFileCoinfigurationService", config.originsFile) {
+    val pollInterval = if (config.pollInterval.isNullOrBlank()) {
+        Duration.ofSeconds(1)
+    } else {
+        Duration.parse(config.pollInterval)
+    }
+
+    val fileMonitoringService = FileMonitoringService("YamlFileCoinfigurationService", config.originsFile, pollInterval) {
         reloadAction(it)
     }
 
@@ -49,7 +56,8 @@ internal class YamlFileConfigurationService(
         @JvmField
         val SCHEMA = SchemaDsl.`object`(
                 field("originsFile", string()),
-                optional("monitor", bool()))
+                optional("monitor", bool()),
+                optional("pollInterval", string()))
 
         private val LOGGER = LoggerFactory.getLogger(YamlFileConfigurationService::class.java)
     }
@@ -134,7 +142,7 @@ internal class YamlFileConfigurationService(
     }
 }
 
-internal data class YamlFileConfigurationServiceConfig(val originsFile: String, val monitor: Boolean = true)
+internal data class YamlFileConfigurationServiceConfig(val originsFile: String, val monitor: Boolean = true, val pollInterval: String = "")
 
 internal class YamlFileConfigurationServiceFactory : ServiceProviderFactory {
     override fun create(context: RoutingObjectFactory.Context, jsonConfig: JsonNode, serviceDb: StyxObjectStore<ProviderObjectRecord>): StyxService {

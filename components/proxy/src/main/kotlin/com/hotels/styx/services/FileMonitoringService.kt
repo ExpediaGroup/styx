@@ -21,13 +21,21 @@ import org.slf4j.LoggerFactory
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.time.Duration
 import java.util.concurrent.CompletableFuture
 
-class FileMonitoringService(serviceName: String, val path: String, val action: (String) -> Unit) : AbstractStyxService(serviceName) {
+private val oneSecond = Duration.ofSeconds(1)
+
+class FileMonitoringService(
+        name: String,
+        val path: String,
+        pollInterval: Duration = oneSecond,
+        val action: (String) -> Unit
+        ) : AbstractStyxService(name) {
     val LOGGER = LoggerFactory.getLogger(FileMonitoringService::class.java)
 
     // NOTE: FileChangeMonitor will reject any non-existing paths:
-    val monitor = FileChangeMonitor(path)
+    val monitor = FileChangeMonitor(path, Duration.ofSeconds(0), pollInterval)
 
     override fun startService() = CompletableFuture.runAsync {
         monitor.start {
@@ -40,7 +48,7 @@ class FileMonitoringService(serviceName: String, val path: String, val action: (
     }
 
     private fun reload() {
-        kotlin.runCatching {
+        runCatching {
             Files.readAllBytes(Paths.get(path))
         }.mapCatching {
             val string = String(it, UTF_8)

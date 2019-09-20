@@ -67,7 +67,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     config:
                       originsFile: ${originsFile.absolutePath}
                       monitor: True
-                      
+                      pollInterval: PT0.1S
                 httpPipeline: pathPrefixRouter
                 """.trimIndent(),
             loggingConfig = ResourcePaths.fixturesHome(
@@ -146,7 +146,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                       - { id: "appA-01", host: "localhost:${mockServerA01.port()}" } 
                     """.trimIndent())
 
-                delay(2.seconds.toMillis())
+                delay(1.seconds.toMillis())
 
                 (1..20).forEach {
                     client.send(get("/4")
@@ -381,6 +381,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                             config:
                               originsFile: ${originsFile.absolutePath}
                               monitor: True
+                              pollInterval: PT0.1S
 
                         originRestrictionCookie: ABC
 
@@ -450,7 +451,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                       - { id: "appB-01", host: "localhost:${mockServerB01.port()}" } 
                     """.trimIndent())
 
-                delay(2.seconds.toMillis())
+                delay(1.seconds.toMillis())
 
                 client.send(get("/16")
                         .header(HOST, styxServer().proxyHttpHostHeader())
@@ -470,7 +471,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                       - { id: "appB-01", host: "localhost:${mockServerB01.port()}" } 
                     """.trimIndent())
 
-                delay(2.seconds.toMillis())
+                delay(1.seconds.toMillis())
 
                 eventually(3.seconds, AssertionError::class.java) {
                     client.send(get("/17")
@@ -513,7 +514,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                       .. bl;ah blah" 
                     """.trimIndent())
 
-                delay(2.seconds.toMillis())
+                delay(1.seconds.toMillis())
 
                 client.send(get("/19")
                         .header(HOST, styxServer().proxyHttpHostHeader())

@@ -43,16 +43,19 @@ import io.kotlintest.specs.FunSpec
 import kotlinx.coroutines.delay
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.time.Duration
 import java.util.Optional
 
 class YamlFileConfigurationServiceTest : FunSpec() {
     val tempDir = createTempDir(suffix = "-${this.javaClass.simpleName}")
     val originsConfig = File("${tempDir.absolutePath}/config.yml")
     val LOGGER = LoggerFactory.getLogger(YamlFileConfigurationServiceTest::class.java)
+    val pollInterval = Duration.ofMillis(100).toString()
 
     override fun beforeSpec(spec: Spec) {
         LOGGER.info("Temp directory: " + tempDir.absolutePath)
         LOGGER.info("Origins file: " + originsConfig.absolutePath)
+        LOGGER.info("Duration: '{}'" , Duration.ofMillis(100).toString())
     }
 
     override fun afterSpec(spec: Spec) {
@@ -85,7 +88,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                 with(YamlFileConfigurationService(
                         routeDb,
                         OriginsConfigConverter(serviceDb, RoutingObjectFactoryContext(objectStore = routeDb).get(), "origins-cookie"),
-                        YamlFileConfigurationServiceConfig(originsConfig.absolutePath),
+                        YamlFileConfigurationServiceConfig(originsConfig.absolutePath, pollInterval = pollInterval),
                         serviceDb)) {
                     it.start().join()
 
@@ -104,7 +107,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                 with(YamlFileConfigurationService(
                         routeDb,
                         OriginsConfigConverter(serviceDb, RoutingObjectFactoryContext(objectStore = routeDb).get(), "origins-cookie"),
-                        YamlFileConfigurationServiceConfig("/a/b/c"),
+                        YamlFileConfigurationServiceConfig("/a/b/c", pollInterval = pollInterval),
                         serviceDb)) {
                     it.start().join()
                     eventually(2.seconds, AssertionError::class.java) {
@@ -607,7 +610,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
         val service = YamlFileConfigurationService(
                 routeDb,
                 OriginsConfigConverter(serviceDb, RoutingObjectFactoryContext(objectStore = routeDb).get(), "origins-cookie"),
-                YamlFileConfigurationServiceConfig(originsConfig.absolutePath),
+                YamlFileConfigurationServiceConfig(originsConfig.absolutePath, pollInterval = pollInterval),
                 serviceDb)
 
         service.start().join()
