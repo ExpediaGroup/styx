@@ -496,8 +496,6 @@ class OriginsFileCompatibilitySpec : FunSpec() {
             styxServer.restart()
 
             test("Keeps the original configuration when a one has problems") {
-                println("Object database: " + dumpObjectDatabase())
-
                 eventually(2.seconds, AssertionError::class.java) {
                     client.send(get("/18")
                             .header(HOST, styxServer().proxyHttpHostHeader())

@@ -121,6 +121,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                 val serviceDb = StyxObjectStore<ProviderObjectRecord>()
                 val service = serviceWithInitialConfig(routeDb, serviceDb,
                         initialObjectCount = 0,
+                        wait = false,
                         config = """
                             ---
                             - something's wrong
@@ -602,6 +603,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
             routeDb: StyxObjectStore<RoutingObjectRecord>,
             serviceDb: StyxObjectStore<ProviderObjectRecord>,
             debug: Boolean = false,
+            wait: Boolean = true,
             initialObjectCount: Int = 3,
             config: String = initialConfig): YamlFileConfigurationService {
 
@@ -613,7 +615,11 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                 YamlFileConfigurationServiceConfig(originsConfig.absolutePath, pollInterval = pollInterval),
                 serviceDb)
 
-        service.start().join()
+        val startFuture = service.start()
+        if (wait) {
+            startFuture.join()
+        }
+
         eventually(2.seconds, AssertionError::class.java) {
             routeDb.entrySet().size shouldBe initialObjectCount
         }

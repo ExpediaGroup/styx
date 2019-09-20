@@ -31,6 +31,7 @@ import com.hotels.styx.serviceproviders.ServiceProviderFactory
 import com.hotels.styx.services.OriginsConfigConverter.Companion.deserialiseOrigins
 import org.slf4j.LoggerFactory
 import java.time.Duration
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicReference
 
 internal class YamlFileConfigurationService(
@@ -39,18 +40,20 @@ internal class YamlFileConfigurationService(
         private val config: YamlFileConfigurationServiceConfig,
         private val serviceDb: StyxObjectStore<ProviderObjectRecord>) : StyxService {
 
-    val pollInterval = if (config.pollInterval.isNullOrBlank()) {
+    private val pollInterval = if (config.pollInterval.isNullOrBlank()) {
         Duration.ofSeconds(1)
     } else {
         Duration.parse(config.pollInterval)
     }
 
-    val fileMonitoringService = FileMonitoringService("YamlFileCoinfigurationService", config.originsFile, pollInterval) {
+    private val initialised = CountDownLatch(1)
+
+    private val fileMonitoringService = FileMonitoringService("YamlFileCoinfigurationService", config.originsFile, pollInterval) {
         reloadAction(it)
     }
 
-    val routingObjects = AtomicReference<List<Pair<String, RoutingObjectRecord>>>(listOf())
-    val healthMonitors = AtomicReference<List<Pair<String, ProviderObjectRecord>>>(listOf())
+    private val routingObjects = AtomicReference<List<Pair<String, RoutingObjectRecord>>>(listOf())
+    private val healthMonitors = AtomicReference<List<Pair<String, ProviderObjectRecord>>>(listOf())
 
     companion object {
         @JvmField
@@ -64,7 +67,9 @@ internal class YamlFileConfigurationService(
 
     override fun start() = fileMonitoringService.start()
             .thenAccept {
-                LOGGER.info("service started - {} - {}", config.originsFile)
+                LOGGER.info("service starting - {}", config.originsFile)
+                initialised.await()
+                LOGGER.info("service started - {}", config.originsFile)
             }
 
     override fun stop() = fileMonitoringService.stop()
@@ -85,6 +90,7 @@ internal class YamlFileConfigurationService(
         }.mapCatching { (healthMonitors, routingObjects) ->
             updateRoutingObjects(routingObjects)
             updateHealthCheckServices(serviceDb, healthMonitors)
+            initialised.countDown()
         }.onFailure {
             LOGGER.error("Failed to reload new configuration. cause='{}'", it.message, it)
         }
