@@ -6,6 +6,8 @@
 ---
 - id: "httpd"
   path: "/"
+  healthCheck:
+    uri: /info.txt
   connectionPool:
     maxConnectionsPerHost: 45
     maxPendingConnectionsPerHost: 15

@@ -69,4 +69,4 @@ loadBalancing:
 
 url:
   encoding:
-    unwiseCharactersToEncode:
+    unwiseCharactersToEncode: ""
