@@ -15,18 +15,12 @@
  */
 package com.hotels.styx.services
 
-import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings
 import com.hotels.styx.api.extension.service.StickySessionConfig
 import com.hotels.styx.api.extension.service.spi.AbstractStyxService
 import com.hotels.styx.api.extension.service.spi.StyxServiceStatus.RUNNING
 import com.hotels.styx.api.extension.service.spi.StyxServiceStatus.STOPPED
-import com.hotels.styx.infrastructure.configuration.json.ObjectMappers
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig
 import com.hotels.styx.routing.RoutingObjectFactoryContext
 import com.hotels.styx.routing.RoutingObjectRecord
@@ -610,11 +604,3 @@ class YamlFileConfigurationServiceTest : FunSpec() {
     }
 }
 
-
-internal fun <T> JsonNode.get(child: String, targetType: Class<T>): T = MAPPER.readValue(this.get(child).traverse(), targetType)
-
-internal fun <T> JsonNode.get(child: String, targetType: TypeReference<T>): T = MAPPER.readValue(this.get(child).traverse(), targetType)
-
-private val MAPPER = ObjectMappers.addStyxMixins(ObjectMapper(YAMLFactory()))
-        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-        .configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, true)

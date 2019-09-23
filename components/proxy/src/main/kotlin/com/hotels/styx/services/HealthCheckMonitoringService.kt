@@ -172,7 +172,7 @@ internal fun objectHealthFrom(string: String) = Optional.ofNullable(
             else -> null
         })
 
-internal fun healthStatusTag(tags: Set<String>) = Optional.ofNullable(
+private fun healthStatusTag(tags: Set<String>) = Optional.ofNullable(
         tags.firstOrNull {
             it.startsWith(ACTIVE_TAG) || it.startsWith(INACTIVE_TAG)
         }
@@ -188,7 +188,7 @@ internal fun discoverMonitoredObjects(application: String, objectStore: StyxObje
                 .filterNot { it.value.tags.contains(DISABLED_TAG) }
                 .map { Pair(it.key, it.value) }
 
-internal fun removeTags(db: StyxObjectStore<RoutingObjectRecord>, name: String) {
+private fun removeTags(db: StyxObjectStore<RoutingObjectRecord>, name: String) {
     db.get(name).ifPresent {
         db.insert(name, it.copy(tags = it.tags
                 .filterNot { tag -> tag.matches("($ACTIVE_TAG|$INACTIVE_TAG).*".toRegex()) }
@@ -196,7 +196,7 @@ internal fun removeTags(db: StyxObjectStore<RoutingObjectRecord>, name: String) 
     }
 }
 
-internal fun markObject(db: StyxObjectStore<RoutingObjectRecord>, name: String, newStatus: ObjectHealth) {
+private fun markObject(db: StyxObjectStore<RoutingObjectRecord>, name: String, newStatus: ObjectHealth) {
     db.get(name).ifPresent { db.insert(name, it.copy(tags = reTag(it.tags, newStatus))) }
 }
 

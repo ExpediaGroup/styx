@@ -245,16 +245,16 @@ class OriginsConfigConverterTest : StringSpec({
             - id: "appB"
               path: "/b"
               healthCheck:
-                uri: "/apphealth.txt"
-                unhealthyThreshold: 2
-                healthyThreshold: 3
+                uri: "/app-b-health.txt"
+                timeoutMillis: 1500
+                unhealthyThreshold: 5
+                healthyThreshold: 6
               origins:
               - { id: "appB-1", host: "localhost:9290" }
             - id: "appC"
               path: "/c"
               healthCheck:
                 uri: "/apphealth.txt"
-                intervalMillis: 10000
                 unhealthyThreshold: 2
                 healthyThreshold: 3
               origins:
@@ -269,16 +269,38 @@ class OriginsConfigConverterTest : StringSpec({
         services[0].second.tags.shouldContainAll(OBJECT_CREATOR_TAG)
         services[0].second.type shouldBe "HealthCheckMonitor"
         services[0].second.styxService.shouldNotBeNull()
+        services[0].second.config.get(HealthCheckConfiguration::class.java).let {
+            it.path shouldBe "/apphealth.txt"
+            it.timeoutMillis shouldBe 2000
+            it.intervalMillis shouldBe 10000
+            it.unhealthyThreshold shouldBe 2
+            it.healthyThreshod shouldBe 3
+        }
 
         services[1].first shouldBe "appB"
         services[1].second.tags.shouldContainAll(OBJECT_CREATOR_TAG)
         services[1].second.type shouldBe "HealthCheckMonitor"
         services[1].second.styxService.shouldNotBeNull()
+        services[1].second.config.get(HealthCheckConfiguration::class.java).let {
+            it.path shouldBe "/app-b-health.txt"
+            it.timeoutMillis shouldBe 1500
+            it.intervalMillis shouldBe 5000
+            it.unhealthyThreshold shouldBe 5
+            it.healthyThreshod shouldBe 6
+        }
 
         services[2].first shouldBe "appC"
         services[2].second.tags.shouldContainAll(OBJECT_CREATOR_TAG)
         services[2].second.type shouldBe "HealthCheckMonitor"
         services[2].second.styxService.shouldNotBeNull()
+        services[2].second.config.get(HealthCheckConfiguration::class.java).let {
+            it.path shouldBe "/apphealth.txt"
+            it.timeoutMillis shouldBe 2000
+            it.intervalMillis shouldBe 5000
+            it.unhealthyThreshold shouldBe 2
+            it.healthyThreshod shouldBe 3
+        }
+
     }
 
 })
