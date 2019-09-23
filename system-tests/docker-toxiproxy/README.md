@@ -21,6 +21,7 @@ $ brew install toxiproxy
 First, build a development Docker image for Styx:
 
 ```bash
+$ mvn install -Prelease,linux -Dmaven.test.skip=true
 $ make docker
 ``` 
 
@@ -83,3 +84,7 @@ Removing toxics:
 ```bash
 $ toxiproxy-cli toxic r -n latency_downstream httpd-01
 ```
+
+To enable/disable origins:
+
+$ toxiproxy-cli toggle httpd-01
