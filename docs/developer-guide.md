@@ -39,12 +39,18 @@ Let's unzip this file:
 
 Now, start the styx server:
 
-    $ ./styx-test/bin/startup
+    $ APP_originsFile=`pwd`/styx-test/styx/conf/origins.yml ./styx-test/styx/bin/startup
     Running Styx startup...
     ...
     /plenty of output/
     ...    
-    
+
+Note `APP_originsFile` specifies a Styx origins file path. It substitutes a placeholder
+in the default server configuration file `styx-test/styx/conf/default.yml`. Normally
+you would just specify the path in a server configuration itself, either as an absolute 
+path, or a path relative to the Styx server working directory. But for now we'll just pass 
+it in to start the server from your project working directory. 
+
 Finally you will see:
 
     INFO  2017-10-13 14:56:24 [c.h.s.s.n.NettyServer] [Admin-Boss-0-Thread] - server connector class com.hotels.styx.server.netty.WebServerConnectorFactory$WebServerConnector bound successfully on port 9000
