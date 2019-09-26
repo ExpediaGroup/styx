@@ -137,7 +137,7 @@ public class LiveHttpRequestTest {
                 .cookies(requestCookie("cfoo", "bar"))
                 .build();
 
-        assertThat(request.toString(), is("LiveHttpRequest{version=HTTP/1.0, method=PATCH, uri=https://hotels.com, id=id}"));
+        assertThat(request.toString(), is("{version=HTTP/1.0, method=PATCH, uri=https://hotels.com, id=id}"));
         assertThat(request.headers().toString(), is("[headerName=a, Cookie=cfoo=bar, Host=hotels.com]"));
     }
 

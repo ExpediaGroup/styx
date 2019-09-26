@@ -59,33 +59,25 @@ public class SanitisedHttpMessageFormatterTest {
     @Test
     public void shouldFormatHttpRequest() {
         String formattedRequest = sanitisedHttpMessageFormatter.formatRequest(httpRequest);
-        String expected = "HttpRequest" + HTTP_REQUEST_PATTERN;
-
-        assertMatchesRegex(formattedRequest, expected);
+        assertMatchesRegex(formattedRequest, HTTP_REQUEST_PATTERN);
     }
 
     @Test
     public void shouldFormatLiveHttpRequest() {
         String formattedRequest = sanitisedHttpMessageFormatter.formatRequest(httpRequest.stream());
-        String expected = "LiveHttpRequest" + HTTP_REQUEST_PATTERN;
-
-        assertMatchesRegex(formattedRequest, expected);
+        assertMatchesRegex(formattedRequest, HTTP_REQUEST_PATTERN);
     }
 
     @Test
     public void shouldFormatHttpResponse() {
         String formattedResponse = sanitisedHttpMessageFormatter.formatResponse(httpResponse);
-        String expected = "HttpResponse" + HTTP_RESPONSE_PATTERN;
-
-        assertMatchesRegex(formattedResponse, expected);
+        assertMatchesRegex(formattedResponse, HTTP_RESPONSE_PATTERN);
     }
 
     @Test
     public void shouldFormatLiveHttpResponse() {
         String formattedResponse = sanitisedHttpMessageFormatter.formatResponse(httpResponse.stream());
-        String expected = "LiveHttpResponse" + HTTP_RESPONSE_PATTERN;
-
-        assertMatchesRegex(formattedResponse, expected);
+        assertMatchesRegex(formattedResponse, HTTP_RESPONSE_PATTERN);
     }
 
     private void assertMatchesRegex(String actual, String expected) {

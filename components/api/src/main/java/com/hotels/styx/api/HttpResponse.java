@@ -211,10 +211,8 @@ public class HttpResponse implements HttpMessage {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("version", version)
-                .add("status", status)
-                .toString();
+        return "{version=" + version
+                + ", status=" + status + "}";
     }
 
     @Override

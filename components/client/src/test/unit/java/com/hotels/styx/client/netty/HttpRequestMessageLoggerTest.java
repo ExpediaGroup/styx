@@ -81,8 +81,8 @@ public class HttpRequestMessageLoggerTest {
         new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", false, httpMessageFormatter).logRequest(styxRequest, origin, true);
 
         assertThat(log.lastMessage(), is(loggingEvent(INFO,
-                format("requestId=%s, request=LiveHttpRequest\\{version=HTTP/1.1, method=GET, uri=%s, id=%s}, secure=true, origin=%s",
-                    styxRequest.id(), styxRequest.url(), styxRequest.id(), origin))));
+                format("requestId=%s, secure=true, origin=%s, request=\\{version=HTTP/1.1, method=GET, uri=%s, id=%s}",
+                    styxRequest.id(), origin, styxRequest.url(), styxRequest.id()))));
     }
 
     @Test
@@ -91,7 +91,7 @@ public class HttpRequestMessageLoggerTest {
         new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", true, httpMessageFormatter).logRequest(styxRequest, origin, true);
 
         assertThat(log.lastMessage(), is(loggingEvent(INFO,
-                format("requestId=%s, request=" + FORMATTED_REQUEST + ", secure=true, origin=%s",
+                format("requestId=%s, secure=true, origin=%s, request=" + FORMATTED_REQUEST,
                         styxRequest.id(), origin))));
     }
 
@@ -101,7 +101,7 @@ public class HttpRequestMessageLoggerTest {
         LiveHttpResponse styxResponse = response(OK).build();
         new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", false, httpMessageFormatter).logResponse(styxRequest, styxResponse);
 
-        assertThat(log.lastMessage(), is(loggingEvent(INFO, format("requestId=%s, response=LiveHttpResponse\\{version=HTTP/1.1, status=200 OK\\}", styxRequest.id()))));
+        assertThat(log.lastMessage(), is(loggingEvent(INFO, format("requestId=%s, response=\\{version=HTTP/1.1, status=200 OK\\}", styxRequest.id()))));
     }
 
     @Test
@@ -117,7 +117,7 @@ public class HttpRequestMessageLoggerTest {
     public void requestLoggingDoesNotThrowExceptionWhenReceivingNullArguments() {
         new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", false, httpMessageFormatter).logRequest(null, origin, true);
 
-        assertThat(log.lastMessage(), is(loggingEvent(WARN, "requestId=N/A, request=null, origin=MyApp:h1:hostA:80")));
+        assertThat(log.lastMessage(), is(loggingEvent(WARN, "requestId=N/A, origin=MyApp:h1:hostA:80, request=null")));
     }
 
     @Test(dataProvider = "responseLogUnexpectedArguments")
@@ -134,7 +134,7 @@ public class HttpRequestMessageLoggerTest {
 
         return new Object[][]{
                 {normalRequest, null, WARN, "requestId=.*, response=null"},
-                {null, normalResponse, INFO, "requestId=null, response=LiveHttpResponse\\{version=HTTP/1.1, status=200 OK\\}"},
+                {null, normalResponse, INFO, "requestId=null, response=\\{version=HTTP/1.1, status=200 OK\\}"},
                 {null, null, WARN, "requestId=null, response=null"},
         };
     }

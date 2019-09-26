@@ -87,8 +87,8 @@ public class HttpMessageLoggingInterceptorTest {
         )));
 
         assertThat(responseLogSupport.log(), contains(
-                loggingEvent(INFO, "requestId=" + request.id() + ", request=" + FORMATTED_REQUEST + ", secure=true, origin=null"),
-                loggingEvent(INFO, "requestId=" + request.id() + ", response=" + FORMATTED_RESPONSE +  ", secure=true")));
+                loggingEvent(INFO, "requestId=" + request.id() + ", secure=true, origin=null, request=" + FORMATTED_REQUEST),
+                loggingEvent(INFO, "requestId=" + request.id() + ", secure=true, response=" + FORMATTED_RESPONSE)));
     }
 
     @Test
@@ -105,12 +105,12 @@ public class HttpMessageLoggingInterceptorTest {
                         .cookies(responseCookie("RespCookie", "RespCookieValue").build())
         )));
 
-        String requestPattern = "request=LiveHttpRequest\\{version=HTTP/1.1, method=GET, uri=/, id=" + request.id() + "\\}";
-        String responsePattern = "response=LiveHttpResponse\\{version=HTTP/1.1, status=200 OK\\}";
+        String requestPattern = "request=\\{version=HTTP/1.1, method=GET, uri=/, id=" + request.id() + "\\}";
+        String responsePattern = "response=\\{version=HTTP/1.1, status=200 OK\\}";
 
         assertThat(responseLogSupport.log(), contains(
-                loggingEvent(INFO, "requestId=" + request.id() + ", " + requestPattern + ", secure=true, origin=null"),
-                loggingEvent(INFO, "requestId=" + request.id() + ", " + responsePattern +  ", secure=true")));
+                loggingEvent(INFO, "requestId=" + request.id() + ", secure=true, origin=null, " + requestPattern),
+                loggingEvent(INFO, "requestId=" + request.id() + ", secure=true, " + responsePattern)));
     }
 
     @Test
@@ -123,8 +123,8 @@ public class HttpMessageLoggingInterceptorTest {
         consume(interceptor.intercept(request, chain(response(OK))));
 
         assertThat(responseLogSupport.log(), contains(
-                loggingEvent(INFO, "requestId=" + request.id() + ", request=" + FORMATTED_REQUEST + ", secure=true, origin=null"),
-                loggingEvent(INFO, "requestId=" + request.id() + ", response=" + FORMATTED_RESPONSE +  ", secure=true")));
+                loggingEvent(INFO, "requestId=" + request.id() + ", secure=true, origin=null, request=" + FORMATTED_REQUEST),
+                loggingEvent(INFO, "requestId=" + request.id() + ", secure=true, response=" + FORMATTED_RESPONSE)));
     }
 
 

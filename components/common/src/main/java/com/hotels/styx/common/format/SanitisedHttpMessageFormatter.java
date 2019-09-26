@@ -15,15 +15,7 @@
  */
 package com.hotels.styx.common.format;
 
-import com.hotels.styx.api.HttpHeaders;
-import com.hotels.styx.api.HttpMethod;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.HttpResponseStatus;
-import com.hotels.styx.api.HttpVersion;
-import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.Url;
+import com.hotels.styx.api.*;
 
 import static java.util.Objects.requireNonNull;
 
@@ -32,7 +24,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class SanitisedHttpMessageFormatter implements HttpMessageFormatter {
 
-    private static final String NOT_APPLICABLE = "N/A";
+    private static final String NULL = "null";
     private final SanitisedHttpHeaderFormatter sanitisedHttpHeaderFormatter;
 
     public SanitisedHttpMessageFormatter(SanitisedHttpHeaderFormatter sanitisedHttpHeaderFormatter) {
@@ -41,7 +33,7 @@ public class SanitisedHttpMessageFormatter implements HttpMessageFormatter {
 
     @Override
     public String formatRequest(HttpRequest request) {
-        return request == null ? NOT_APPLICABLE
+        return request == null ? NULL
             : formatRequest(
                 request.version(),
                 request.method(),
@@ -52,7 +44,7 @@ public class SanitisedHttpMessageFormatter implements HttpMessageFormatter {
 
     @Override
     public String formatRequest(LiveHttpRequest request) {
-        return request == null ? NOT_APPLICABLE
+        return request == null ? NULL
             : formatRequest(
                 request.version(),
                 request.method(),
@@ -63,7 +55,7 @@ public class SanitisedHttpMessageFormatter implements HttpMessageFormatter {
 
     @Override
     public String formatResponse(HttpResponse response) {
-        return response == null ? NOT_APPLICABLE
+        return response == null ? NULL
             : formatResponse(
                 response.version(),
                 response.status(),
@@ -72,7 +64,7 @@ public class SanitisedHttpMessageFormatter implements HttpMessageFormatter {
 
     @Override
     public String formatResponse(LiveHttpResponse response) {
-        return response == null ? NOT_APPLICABLE
+        return response == null ? NULL
             : formatResponse(
                 response.version(),
                 response.status(),

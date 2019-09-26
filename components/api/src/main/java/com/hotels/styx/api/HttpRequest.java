@@ -346,12 +346,10 @@ public class HttpRequest implements HttpMessage {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("version", version)
-                .add("method", method)
-                .add("uri", url)
-                .add("id", id)
-                .toString();
+        return "{version=" + version
+                + ", method=" + method
+                + ", uri=" + url
+                + ", id=" + id + "}";
     }
 
     /**
