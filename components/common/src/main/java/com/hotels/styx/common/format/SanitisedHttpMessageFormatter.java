@@ -15,7 +15,15 @@
  */
 package com.hotels.styx.common.format;
 
-import com.hotels.styx.api.*;
+import com.hotels.styx.api.HttpHeaders;
+import com.hotels.styx.api.HttpMethod;
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.HttpResponseStatus;
+import com.hotels.styx.api.HttpVersion;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.Url;
 
 import static java.util.Objects.requireNonNull;
 
