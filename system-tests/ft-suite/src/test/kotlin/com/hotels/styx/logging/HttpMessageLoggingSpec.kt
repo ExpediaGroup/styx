@@ -18,14 +18,15 @@ package com.hotels.styx.logging
 import ch.qos.logback.classic.Level.INFO
 import com.hotels.styx.StyxConfig
 import com.hotels.styx.StyxServer
-import com.hotels.styx.api.HttpHeaderNames
+import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.startup.StyxServerComponents
 import com.hotels.styx.support.matchers.LoggingTestSupport
+import com.hotels.styx.support.proxyHttpHostHeader
+import com.hotels.styx.support.wait
 import io.kotlintest.Spec
 import io.kotlintest.specs.FeatureSpec
-import reactor.core.publisher.toMono
 
 class HttpMessageLoggingSpec : FeatureSpec() {
 
@@ -33,16 +34,14 @@ class HttpMessageLoggingSpec : FeatureSpec() {
         feature("Styx request/response logging") {
 
             scenario("Logger should hide cookies and headers") {
-                val proxyHost = "${styxServer.proxyHttpAddress().hostName}:${styxServer.proxyHttpAddress().port}"
 
                 client.send(HttpRequest.get("/a/path")
-                        .header(HttpHeaderNames.HOST, proxyHost)
+                        .header(HOST, styxServer.proxyHttpHostHeader())
                         .header("header1", "h1")
                         .header("header2", "h2")
                         .header("cookie", "cookie1=c1;cookie2=c2")
                         .build())
-                        .toMono()
-                        .block()!!
+                        .wait()
 
                 val expectedRequest = Regex("requestId=[-a-z0-9]+, secure=false, origin=null, "
                     + "request=\\{version=HTTP/1.1, method=GET, uri=/a/path, headers=\\[Host=localhost:[0-9]+, header1=\\*\\*\\*\\*, header2=h2, cookie=cookie1=\\*\\*\\*\\*;cookie2=c2\\], id=[-a-z0-9]+\\}")
