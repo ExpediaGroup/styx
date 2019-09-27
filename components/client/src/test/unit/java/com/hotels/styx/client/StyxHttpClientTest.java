@@ -54,6 +54,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class StyxHttpClientTest {
+
     private HttpRequest httpRequest;
     private HttpRequest secureRequest;
     private WireMockServer server;

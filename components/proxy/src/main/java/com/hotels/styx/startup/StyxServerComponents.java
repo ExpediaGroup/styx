@@ -31,6 +31,8 @@ import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupFactory;
+import com.hotels.styx.common.format.SanitisedHttpHeaderFormatter;
+import com.hotels.styx.common.format.SanitisedHttpMessageFormatter;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingMetadataDecorator;
@@ -62,6 +64,7 @@ import static com.hotels.styx.routing.config.Builtins.INTERCEPTOR_FACTORIES;
 import static com.hotels.styx.startup.ServicesLoader.SERVICES_FROM_CONFIG;
 import static com.hotels.styx.startup.StyxServerComponents.LoggingSetUp.DO_NOT_MODIFY;
 import static com.hotels.styx.startup.extensions.PluginLoadingForStartup.loadPlugins;
+import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static java.util.stream.Collectors.toList;
@@ -205,12 +208,20 @@ public class StyxServerComponents {
         return startupConfig;
     }
 
-    private static Environment newEnvironment(StyxConfig styxConfig, MetricRegistry metricRegistry) {
+    private static Environment newEnvironment(StyxConfig config, MetricRegistry metricRegistry) {
+
+        SanitisedHttpHeaderFormatter headerFormatter = new SanitisedHttpHeaderFormatter(
+                config.get("request-logging.hideHeaders", List.class).orElse(emptyList()),
+                config.get("request-logging.hideCookies", List.class).orElse(emptyList()));
+
+        SanitisedHttpMessageFormatter sanitisedHttpMessageFormatter = new SanitisedHttpMessageFormatter(headerFormatter);
+
         return new Environment.Builder()
-                .configuration(styxConfig)
+                .configuration(config)
                 .metricRegistry(metricRegistry)
                 .buildInfo(readBuildInfo())
                 .eventBus(new AsyncEventBus("styx", newSingleThreadExecutor()))
+                .httpMessageFormatter(sanitisedHttpMessageFormatter)
                 .build();
     }
 

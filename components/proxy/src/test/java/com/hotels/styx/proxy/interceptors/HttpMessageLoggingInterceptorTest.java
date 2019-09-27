@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,11 +17,16 @@ package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpVersion;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.server.HttpInterceptorContext;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import reactor.core.publisher.Mono;
@@ -35,15 +40,31 @@ import static com.hotels.styx.api.ResponseCookie.responseCookie;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.when;
 
 public class HttpMessageLoggingInterceptorTest {
+
+    private static final String FORMATTED_REQUEST = "request";
+    private static final String FORMATTED_RESPONSE = "response";
+
     private LoggingTestSupport responseLogSupport;
     private HttpMessageLoggingInterceptor interceptor;
+
+    @Mock
+    private HttpMessageFormatter httpMessageFormatter;
+
+    @BeforeClass
+    public void setup() {
+        MockitoAnnotations.initMocks(this);
+        when(httpMessageFormatter.formatRequest(any(LiveHttpRequest.class))).thenReturn(FORMATTED_REQUEST);
+        when(httpMessageFormatter.formatResponse(any(LiveHttpResponse.class))).thenReturn(FORMATTED_RESPONSE);
+    }
 
     @BeforeMethod
     public void before() {
         responseLogSupport = new LoggingTestSupport("com.hotels.styx.http-messages.inbound");
-        interceptor = new HttpMessageLoggingInterceptor(true);
+        interceptor = new HttpMessageLoggingInterceptor(true, httpMessageFormatter);
     }
 
     @AfterMethod
@@ -54,6 +75,7 @@ public class HttpMessageLoggingInterceptorTest {
     @Test
     public void logsRequestsAndResponses() {
         LiveHttpRequest request = get("/")
+                .version(HttpVersion.HTTP_1_1)
                 .header("ReqHeader", "ReqHeaderValue")
                 .cookies(requestCookie("ReqCookie", "ReqCookieValue"))
                 .build();
@@ -64,17 +86,14 @@ public class HttpMessageLoggingInterceptorTest {
                 .cookies(responseCookie("RespCookie", "RespCookieValue").build())
         )));
 
-        String requestPattern = "request=\\{method=GET, uri=/, origin=\"N/A\", headers=\\[ReqHeader=ReqHeaderValue, Cookie=ReqCookie=ReqCookieValue\\]\\}";
-        String responsePattern = "response=\\{status=200 OK, headers=\\[RespHeader=RespHeaderValue\\, Set-Cookie=RespCookie=RespCookieValue]\\}";
-
         assertThat(responseLogSupport.log(), contains(
-                loggingEvent(INFO, "requestId=" + request.id() + ", secure=true, " + requestPattern),
-                loggingEvent(INFO, "requestId=" + request.id() + ", secure=true, " + responsePattern)));
+                loggingEvent(INFO, "requestId=" + request.id() + ", secure=true, origin=null, request=" + FORMATTED_REQUEST),
+                loggingEvent(INFO, "requestId=" + request.id() + ", secure=true, response=" + FORMATTED_RESPONSE)));
     }
 
     @Test
     public void logsRequestsAndResponsesShort() {
-        interceptor = new HttpMessageLoggingInterceptor(false);
+        interceptor = new HttpMessageLoggingInterceptor(false, httpMessageFormatter);
         LiveHttpRequest request = get("/")
                 .header("ReqHeader", "ReqHeaderValue")
                 .cookies(requestCookie("ReqCookie", "ReqCookieValue"))
@@ -86,11 +105,11 @@ public class HttpMessageLoggingInterceptorTest {
                         .cookies(responseCookie("RespCookie", "RespCookieValue").build())
         )));
 
-        String requestPattern = "request=\\{method=GET, uri=/, origin=\"N/A\"}";
-        String responsePattern = "response=\\{status=200 OK}";
+        String requestPattern = "request=\\{version=HTTP/1.1, method=GET, uri=/, id=" + request.id() + "\\}";
+        String responsePattern = "response=\\{version=HTTP/1.1, status=200 OK\\}";
 
         assertThat(responseLogSupport.log(), contains(
-                loggingEvent(INFO, "requestId=" + request.id() + ", secure=true, " + requestPattern),
+                loggingEvent(INFO, "requestId=" + request.id() + ", secure=true, origin=null, " + requestPattern),
                 loggingEvent(INFO, "requestId=" + request.id() + ", secure=true, " + responsePattern)));
     }
 
@@ -103,12 +122,9 @@ public class HttpMessageLoggingInterceptorTest {
 
         consume(interceptor.intercept(request, chain(response(OK))));
 
-        String requestPattern = "request=\\{method=GET, uri=/, origin=\"N/A\", headers=\\[ReqHeader=ReqHeaderValue, Cookie=ReqCookie=ReqCookieValue\\]\\}";
-        String responsePattern = "response=\\{status=200 OK, headers=\\[\\]\\}";
-
         assertThat(responseLogSupport.log(), contains(
-                loggingEvent(INFO, "requestId=" + request.id() + ", secure=true, " + requestPattern),
-                loggingEvent(INFO, "requestId=" + request.id() + ", secure=true, " + responsePattern)));
+                loggingEvent(INFO, "requestId=" + request.id() + ", secure=true, origin=null, request=" + FORMATTED_REQUEST),
+                loggingEvent(INFO, "requestId=" + request.id() + ", secure=true, response=" + FORMATTED_RESPONSE)));
     }
 
 

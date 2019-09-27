@@ -111,7 +111,9 @@ final class ServerConfigSchema {
                             optional("request-logging", object(
                                     optional("inbound", logFormatSchema),
                                     optional("outbound", logFormatSchema),
-                                    atLeastOne("inbound", "outbound")
+                                    atLeastOne("inbound", "outbound"),
+                                    optional("hideHeaders", list(string())),
+                                    optional("hideCookies", list(string()))
                             )),
                             optional("styxHeaders", object(
                                     optional("styxInfo", object(

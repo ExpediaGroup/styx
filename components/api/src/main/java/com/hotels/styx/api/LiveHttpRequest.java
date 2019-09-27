@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
@@ -385,13 +384,10 @@ public class LiveHttpRequest implements LiveHttpMessage {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("version", version)
-                .add("method", method)
-                .add("uri", url)
-                .add("headers", headers)
-                .add("id", id)
-                .toString();
+        return "{version=" + version
+                + ", method=" + method
+                + ", uri=" + url
+                + ", id=" + id + "}";
     }
 
     private interface BuilderTransformer {

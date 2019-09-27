@@ -147,11 +147,11 @@ public final class StyxServer extends AbstractService {
             throw new RuntimeException(e);
         }
     }
-
     private final HttpServer proxyServer;
-    private final HttpServer adminServer;
 
+    private final HttpServer adminServer;
     private final ServiceManager serviceManager;
+
     private final Stopwatch stopwatch;
 
     public StyxServer(StyxServerComponents config) {

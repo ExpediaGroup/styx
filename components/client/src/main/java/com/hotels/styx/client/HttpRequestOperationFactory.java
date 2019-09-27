@@ -19,6 +19,10 @@ import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.OriginStatsFactory.CachingOriginStatsFactory;
 import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
+import com.hotels.styx.common.format.DefaultHttpMessageFormatter;
+import com.hotels.styx.common.format.HttpMessageFormatter;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * A Factory for creating an HttpRequestOperation from an LiveHttpRequest.
@@ -41,6 +45,7 @@ public interface HttpRequestOperationFactory {
         boolean flowControlEnabled;
         boolean requestLoggingEnabled;
         boolean longFormat;
+        HttpMessageFormatter httpMessageFormatter = new DefaultHttpMessageFormatter();
 
         public static Builder httpRequestOperationFactoryBuilder() {
             return new Builder();
@@ -71,13 +76,19 @@ public interface HttpRequestOperationFactory {
             return this;
         }
 
+        public Builder httpMessageFormatter(HttpMessageFormatter httpMessageFormatter) {
+            this.httpMessageFormatter = requireNonNull(httpMessageFormatter);
+            return this;
+        }
+
         public HttpRequestOperationFactory build() {
             return request -> new HttpRequestOperation(
                     request,
                     originStatsFactory,
                     responseTimeoutMillis,
                     requestLoggingEnabled,
-                    longFormat);
+                    longFormat,
+                    httpMessageFormatter);
         }
     }
 

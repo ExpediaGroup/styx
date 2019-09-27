@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.SET_COOKIE;
@@ -211,11 +210,8 @@ public class HttpResponse implements HttpMessage {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("version", version)
-                .add("status", status)
-                .add("headers", headers)
-                .toString();
+        return "{version=" + version
+                + ", status=" + status + "}";
     }
 
     @Override

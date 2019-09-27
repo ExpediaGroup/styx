@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,10 +15,11 @@
  */
 package com.hotels.styx.proxy.interceptors;
 
-import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Eventual;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.common.logging.HttpRequestMessageLogger;
 
 /**
@@ -28,8 +29,8 @@ public class HttpMessageLoggingInterceptor implements HttpInterceptor {
 
     private final HttpRequestMessageLogger logger;
 
-    public HttpMessageLoggingInterceptor(boolean longFormatEnabled) {
-        this.logger = new HttpRequestMessageLogger("com.hotels.styx.http-messages.inbound", longFormatEnabled);
+    public HttpMessageLoggingInterceptor(boolean longFormatEnabled, HttpMessageFormatter httpMessageFormatter) {
+        this.logger = new HttpRequestMessageLogger("com.hotels.styx.http-messages.inbound", longFormatEnabled, httpMessageFormatter);
     }
 
     @Override

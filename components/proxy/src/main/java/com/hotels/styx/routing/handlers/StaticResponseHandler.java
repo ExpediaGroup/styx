@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.Eventual;
+import com.hotels.styx.api.HttpHeaders;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
@@ -29,12 +30,14 @@ import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
 import reactor.core.publisher.Flux;
 
+import java.util.Collections;
 import java.util.List;
 
 import static com.hotels.styx.api.HttpResponseStatus.statusWithCode;
 import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.config.schema.SchemaDsl.field;
 import static com.hotels.styx.config.schema.SchemaDsl.integer;
+import static com.hotels.styx.config.schema.SchemaDsl.list;
 import static com.hotels.styx.config.schema.SchemaDsl.object;
 import static com.hotels.styx.config.schema.SchemaDsl.optional;
 import static com.hotels.styx.config.schema.SchemaDsl.string;
@@ -47,29 +50,52 @@ import static java.util.Objects.requireNonNull;
 public class StaticResponseHandler implements RoutingObject {
     public static final Schema.FieldType SCHEMA = object(
             field("status", integer()),
-            optional("content", string()));
+            optional("content", string()),
+            optional("headers", list(object(
+                    field("name", string()),
+                    field("value", string())
+            ))));
 
     private final int status;
     private final String text;
+    private final HttpHeaders headers;
 
-    public StaticResponseHandler(int status, String text) {
+    public StaticResponseHandler(int status, String text, HttpHeaders headers) {
         this.status = status;
         this.text = text;
+        this.headers = headers;
     }
 
     @Override
     public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
-        return Eventual.of(response(statusWithCode(status)).body(new ByteStream(Flux.just(new Buffer(text, UTF_8)))).build());
+        return Eventual.of(response(statusWithCode(status))
+                .body(new ByteStream(Flux.just(new Buffer(text, UTF_8))))
+                .headers(headers)
+                .build());
     }
 
     private static class StaticResponseConfig {
         private final int status;
         private final String response;
+        private final List<HttpHeaderConfig> headers;
 
         public StaticResponseConfig(@JsonProperty("status") int status,
-                                    @JsonProperty("content") String content) {
+                                    @JsonProperty("content") String content,
+                                    @JsonProperty("headers") List<HttpHeaderConfig> headers) {
             this.status = status;
             this.response = content;
+            this.headers = headers;
+        }
+    }
+
+    private static class HttpHeaderConfig {
+        private String name;
+        private String value;
+
+        public HttpHeaderConfig(@JsonProperty("name") String name,
+                                @JsonProperty("value") String value) {
+            this.name = name;
+            this.value = value;
         }
     }
 
@@ -83,7 +109,20 @@ public class StaticResponseHandler implements RoutingObject {
             StaticResponseConfig config = new JsonNodeConfig(configBlock.config())
                     .as(StaticResponseConfig.class);
 
-            return new StaticResponseHandler(config.status, config.response);
+            HttpHeaders httpHeaders = buildHttpHeaders(config);
+            return new StaticResponseHandler(config.status, config.response, httpHeaders);
+        }
+
+        private HttpHeaders buildHttpHeaders(StaticResponseConfig config) {
+            List<HttpHeaderConfig> headerConfig = config.headers == null
+                    ? Collections.emptyList()
+                    : config.headers;
+
+            HttpHeaders.Builder headersBuilder = new HttpHeaders.Builder();
+            for (HttpHeaderConfig header : headerConfig) {
+                headersBuilder.add(header.name, header.value);
+            }
+            return headersBuilder.build();
         }
     }
 }

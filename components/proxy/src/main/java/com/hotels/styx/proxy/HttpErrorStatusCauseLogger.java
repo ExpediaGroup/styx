@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,21 +15,29 @@
  */
 package com.hotels.styx.proxy;
 
+import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.server.HttpErrorStatusListener;
-import com.hotels.styx.api.HttpResponseStatus;
 import org.slf4j.Logger;
 
 import java.net.InetSocketAddress;
 
+import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Wrapper for {@link HttpErrorStatusListener} that also logs {@link Throwable}s.
  */
 public class HttpErrorStatusCauseLogger implements HttpErrorStatusListener {
+
     private static final Logger LOG = getLogger(HttpErrorStatusCauseLogger.class);
+    private final HttpMessageFormatter formatter;
+
+    public HttpErrorStatusCauseLogger(HttpMessageFormatter formatter) {
+        this.formatter = requireNonNull(formatter);
+    }
 
     @Override
     public void proxyErrorOccurred(HttpResponseStatus status, Throwable cause) {
@@ -44,7 +52,7 @@ public class HttpErrorStatusCauseLogger implements HttpErrorStatusListener {
     @Override
     public void proxyErrorOccurred(LiveHttpRequest request, InetSocketAddress clientAddress, HttpResponseStatus status, Throwable cause) {
         if (status.code() == 500) {
-            LOG.error("Failure status=\"{}\" during request={}, clientAddress={}", new Object[]{status, request, clientAddress, cause});
+            LOG.error("Failure status=\"{}\" during request={}, clientAddress={}", new Object[]{status, formatter.formatRequest(request), clientAddress, cause});
         } else {
             proxyErrorOccurred(status, cause);
         }
@@ -57,12 +65,12 @@ public class HttpErrorStatusCauseLogger implements HttpErrorStatusListener {
 
     @Override
     public void proxyWriteFailure(LiveHttpRequest request, LiveHttpResponse response, Throwable cause) {
-        LOG.error("Error writing response. request={}, response={}, cause={}", new Object[]{request, response, cause});
+        LOG.error("Error writing response. request={}, response={}, cause={}", new Object[]{formatter.formatRequest(request), formatter.formatResponse(response), cause});
     }
 
     @Override
     public void proxyingFailure(LiveHttpRequest request, LiveHttpResponse response, Throwable cause) {
-        LOG.error("Error proxying request. request={} response={} cause={}", new Object[]{request, response, cause});
+        LOG.error("Error proxying request. request={} response={} cause={}", new Object[]{formatter.formatRequest(request), formatter.formatResponse(response), cause});
     }
 
     private static String withoutStackTrace(Throwable cause) {

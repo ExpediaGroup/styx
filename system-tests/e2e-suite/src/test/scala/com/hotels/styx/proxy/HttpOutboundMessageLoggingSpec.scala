@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -100,7 +100,7 @@ class HttpOutboundMessageLoggingSpec extends FunSpec
   }
 
   describe("Styx outbound request/response logging") {
-    it("Should log request and response") {
+    it("Should log outbound request and response") {
       val request = get(styxServer.routerURL("/foobar"))
         .build()
 
@@ -112,10 +112,10 @@ class HttpOutboundMessageLoggingSpec extends FunSpec
         assertThat(logger.log.size(), is(2))
 
         assertThat(logger.log(), hasItem(loggingEvent(INFO,
-          "requestId=[-a-z0-9]+, request=\\{method=GET, uri=http://localhost:[0-9]+/foobar, origin=\"localhost:[0-9]+\", headers=\\[.*\\]}")))
+          "requestId=[-a-z0-9]+, origin=appOne:generic-app-01:localhost:[0-9]+, request=\\{version=HTTP/1.1, method=GET, uri=http://localhost:[0-9]+/foobar, headers=\\[.*\\], id=[-a-z0-9]+\\}")))
 
         assertThat(logger.log(), hasItem(loggingEvent(INFO,
-          "requestId=[-a-z0-9]+, response=\\{status=200 OK, headers=\\[Transfer-Encoding=chunked, Server=Jetty\\(6.1.26\\)\\]\\}")))
+          "requestId=[-a-z0-9]+, response=\\{version=HTTP/1.1, status=200 OK, headers=\\[Transfer-Encoding=chunked, Server=Jetty\\(6.1.26\\)\\]\\}")))
       }
     }
   }

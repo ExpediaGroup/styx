@@ -103,7 +103,7 @@ class LoggingSpec extends FunSpec
         assertThat(logger.log(), hasItem(
           loggingEvent(
             ERROR,
-            """Failure status="500 Internal Server Error" during request=LiveHttpRequest.*""",
+            """Failure status="500 Internal Server Error" during request=.*""",
             classOf[PluginException],
             "bad-plugin: Throw exception at Request")))
       }
@@ -124,7 +124,7 @@ class LoggingSpec extends FunSpec
         assertThat(logger.log(), hasItem(
           loggingEvent(
             ERROR,
-            """Failure status="500 Internal Server Error" during request=LiveHttpRequest.*""",
+            """Failure status="500 Internal Server Error" during request=.*""",
             classOf[PluginException],
             "bad-plugin: Throw exception at Response")))
       }

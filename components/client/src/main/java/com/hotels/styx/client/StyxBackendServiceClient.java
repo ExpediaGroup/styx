@@ -255,9 +255,9 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
         }
     }
 
-    private static void logError(LiveHttpRequest rewrittenRequest, Throwable throwable) {
+    private static void logError(LiveHttpRequest request, Throwable throwable) {
         LOGGER.error("Error Handling request={} exceptionClass={} exceptionMessage=\"{}\"",
-                new Object[]{rewrittenRequest, throwable.getClass().getName(), throwable.getMessage()});
+                new Object[]{request, throwable.getClass().getName(), throwable.getMessage()});
     }
 
     private LiveHttpResponse removeUnexpectedResponseBody(LiveHttpRequest request, LiveHttpResponse response) {

@@ -81,7 +81,7 @@ public final class StyxPipelineFactory implements PipelineFactory {
         boolean requestTracking = environment.configuration().get("requestTracking", Boolean.class).orElse(false);
 
         return new HttpInterceptorPipeline(
-                internalStyxInterceptors(environment.styxConfig()),
+                internalStyxInterceptors(environment.styxConfig(), environment.httpMessageFormatter()),
                 configuredPipeline(builtinRoutingObjects),
                 requestTracking);
     }
