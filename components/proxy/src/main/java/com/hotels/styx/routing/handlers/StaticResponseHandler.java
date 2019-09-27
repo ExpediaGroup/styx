@@ -28,10 +28,8 @@ import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
-import org.jetbrains.annotations.NotNull;
 import reactor.core.publisher.Flux;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -111,11 +109,11 @@ public class StaticResponseHandler implements RoutingObject {
             StaticResponseConfig config = new JsonNodeConfig(configBlock.config())
                     .as(StaticResponseConfig.class);
 
-            HttpHeaders nettyHeaders = buildNettyHeaders(config);
-            return new StaticResponseHandler(config.status, config.response, nettyHeaders);
+            HttpHeaders httpHeaders = buildHttpHeaders(config);
+            return new StaticResponseHandler(config.status, config.response, httpHeaders);
         }
 
-        private HttpHeaders buildNettyHeaders(StaticResponseConfig config) {
+        private HttpHeaders buildHttpHeaders(StaticResponseConfig config) {
             List<HttpHeaderConfig> headerConfig = config.headers == null
                     ? Collections.emptyList()
                     : config.headers;
