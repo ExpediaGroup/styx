@@ -48,14 +48,8 @@ public class StyxConfigTest {
     @Test
     public void initializesFromConfigurationSource() {
         assertThat(serverConfig.httpConnectorConfig().get().port(), is(80));
-        assertThat(serverConfig.tcpNoDelay(), is(false));
-        assertThat(serverConfig.nioReuseAddress(), is(false));
-        assertThat(serverConfig.nioKeepAlive(), is(false));
-
         assertThat(serverConfig.maxHeaderSize(), is(8193));
         assertThat(serverConfig.maxChunkSize(), is(8193));
-        assertThat(serverConfig.maxContentLength(), is(65537));
-
         assertThat(styxConfig.get("metrics.reporting.prefix", String.class).get(), is("STYXHPT"));
     }
 
