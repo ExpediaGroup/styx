@@ -340,6 +340,8 @@ public class LiveHttpRequest implements LiveHttpMessage {
      * value according to your application requirements and heap size. When the content
      * size stream exceeds the {@code maxContentBytes}, a @{link ContentOverflowException}
      * is emitted on the returned observable.
+     * <p>Please note that {@code HttpLiveRequest} will not be valid anymore after aggregation,
+     * and thus the returned {@link HttpRequest} should be used instead.
      *
      * @param maxContentBytes maximum expected content size
      * @return a {@link Eventual}

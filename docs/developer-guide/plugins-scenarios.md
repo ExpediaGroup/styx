@@ -172,7 +172,7 @@ into the response headers.
 ## HTTP Content Transformations	
 
 Styx exposes HTTP messages to interceptors as streaming `LiveHttpRequest` and `LiveHttpResponse` messages.
-In this form, the interceptors can process the content in a streaming fashion. That is, they they
+In this form, the interceptors can process the content in a streaming fashion. That is, they
 can look into, and modify the content as it streams through.
 
 Alternatively, live messages can be aggregated to `HttpRequest` or `HttpResponse` 
@@ -181,6 +181,8 @@ aggregation is always an asynchronous operation. This is because the streaming H
 exposing the content, in byte buffers, as it arrives from the network, and Styx must wait until 
 all content has been received. 
 
+**Note that once the content is aggregated by using the `aggregate()` method, the `LiveHttpRequest`/ `LiveHttpResponse`
+object is not valid anymore and thus the `HttpRequest`/`HttpResponse` returned by `aggregate()` should be used.**  
 
 ### Aggregating Content into Full Messages
 
@@ -195,18 +197,20 @@ public class RequestAggregationPlugin implements Plugin {
 
     @Override
     public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
-        return request.toFullRequest(MAX_CONTENT_LENGTH)
-                .map(fullRequest -> fullRequest.newBuilder()
-                        .body(new byte[0], true)
-                        .build())
-                .flatMap(fullRequest -> chain.proceed(fullRequest.toStreamingRequest()));
+        return request.aggregate(MAX_CONTENT_LENGTH)
+                .map(fullRequest -> {
+                    String body = fullRequest.bodyAs(UTF_8);
+                    return fullRequest.newBuilder()
+                            .body(body + "EXTRA TEXT", UTF_8)
+                            .build().stream();
+                }).flatMap(chain::proceed);
     }
 }
 ```
 
 `maxContentBytes` is a safety valve that prevents Styx from accumulating too much content
 and running out of memory. Styx only accumulates up to `maxContentBytes` of content. 
-`toFullRequest` fails when the content stream exceeds this amount, and  Styx emits a 
+`aggregate()` fails when the content stream exceeds this amount, and  Styx emits a 
 `ContentOverflowException`,  
 
 
