@@ -266,10 +266,10 @@ public final class StyxServer extends AbstractService {
         };
     }
 
-    private static HttpServer createAdminServer(StyxServerComponents config) {
-        Registry<BackendService> registry = (Registry<BackendService>) config.services().get("backendServiceRegistry");
+    private static HttpServer createAdminServer(StyxServerComponents components) {
+        Registry<BackendService> registry = (Registry<BackendService>) components.services().get("backendServiceRegistry");
 
-        return new AdminServerBuilder(config)
+        return new AdminServerBuilder(components)
                 .backendServicesRegistry(registry != null ? registry : new MemoryBackedRegistry<>())
                 .build();
     }

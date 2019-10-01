@@ -45,7 +45,11 @@ import static java.lang.String.join;
 
 /**
  * A HTTP routingObject that proxies requests to backend services based on the path prefix.
+ *
+ * @deprecated  Will be removed in Styx 1.1 release. Use a combination of HostProxy and LoadBalancingGroup,
+ *              and PathPrefixRouter to achieve the same functionality.
  */
+@Deprecated
 public class BackendServiceProxy implements RoutingObject {
 
     private final RouteHandlerAdapter handler;

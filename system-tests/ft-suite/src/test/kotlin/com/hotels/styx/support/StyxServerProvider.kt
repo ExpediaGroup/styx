@@ -20,22 +20,28 @@ import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.hotels.styx.StyxConfig
 import com.hotels.styx.StyxServer
-import com.hotels.styx.api.HttpHeaderNames
+import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpResponse
 import com.hotels.styx.api.HttpResponseStatus
+import com.hotels.styx.api.HttpResponseStatus.CREATED
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.startup.StyxServerComponents
 import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
+import java.nio.file.Path
 import java.util.HashMap
 import java.util.Optional
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicReference
 
-class StyxServerProvider(val defaultConfig: String, val defaultAdditionalRoutingObjects: Map<String, RoutingObjectFactory> = mapOf()) {
+class StyxServerProvider(
+        val defaultConfig: String,
+        val defaultAdditionalRoutingObjects: Map<String, RoutingObjectFactory> = mapOf(),
+        val loggingConfig: Path? = null,
+        val validateConfig: Boolean = true) {
     val serverRef: AtomicReference<StyxServer?> = AtomicReference()
 
     operator fun invoke() = get()
@@ -50,15 +56,21 @@ class StyxServerProvider(val defaultConfig: String, val defaultAdditionalRouting
 
     fun started() = (serverRef.get() == null) || serverRef.get()!!.isRunning
 
-    fun restart(configuration: String = defaultConfig, additionalRoutingObjects: Map<String, RoutingObjectFactory> = defaultAdditionalRoutingObjects): StyxServerProvider {
+    fun restart(
+            configuration: String = this.defaultConfig,
+            additionalRoutingObjects: Map<String, RoutingObjectFactory> = this.defaultAdditionalRoutingObjects,
+            validateConfig: Boolean = this.validateConfig): StyxServerProvider {
         if (started()) {
             stop()
         }
 
-        val newServer = StyxServer(StyxServerComponents.Builder()
-                .styxConfig(StyxConfig.fromYaml(configuration, false))
+        var components = StyxServerComponents.Builder()
+                .styxConfig(StyxConfig.fromYaml(configuration, validateConfig))
                 .additionalRoutingObjects(additionalRoutingObjects)
-                .build())
+
+        components = if (loggingConfig != null) components.loggingSetUp(loggingConfig.toString()) else components
+
+        val newServer = StyxServer(components.build())
         newServer.startAsync()?.awaitRunning()
 
         serverRef.set(newServer)
@@ -73,7 +85,7 @@ class StyxServerProvider(val defaultConfig: String, val defaultAdditionalRouting
     }
 }
 
-fun CompletableFuture<HttpResponse>.wait(debug: Boolean = true) = this.toMono()
+fun CompletableFuture<HttpResponse>.wait(debug: Boolean = false) = this.toMono()
         .doOnNext {
             if (debug) {
                 println("${it.status()} - ${it.headers()} - ${it.bodyAs(UTF_8)}")
@@ -105,7 +117,7 @@ fun flattenMetricsMap(metricsText: String) = decodeToMap(metricsText)
 fun StyxServer.metrics(): Map<String, Map<String, Any>> {
     val metricsText = StyxHttpClient.Builder().build()
             .send(HttpRequest.get("/admin/metrics")
-                    .header(HttpHeaderNames.HOST, this.adminHostHeader())
+                    .header(HOST, this.adminHostHeader())
                     .build())
             .wait()!!
             .bodyAs(UTF_8)
@@ -116,12 +128,12 @@ fun StyxServer.metrics(): Map<String, Map<String, Any>> {
 fun StyxServer.newRoutingObject(name: String, routingObject: String): HttpResponseStatus {
     val response = StyxHttpClient.Builder().build()
             .send(HttpRequest.put("/admin/routing/objects/$name")
-                    .header(HttpHeaderNames.HOST, this.adminHostHeader())
+                    .header(HOST, this.adminHostHeader())
                     .body(routingObject, UTF_8)
                     .build())
             .wait()
 
-    if (response?.status() != HttpResponseStatus.CREATED) {
+    if (response?.status() != CREATED) {
         println("Object $name was not created. Response from server: ${response?.status()} - '${response?.bodyAs(UTF_8)}'")
     }
 
@@ -131,11 +143,11 @@ fun StyxServer.newRoutingObject(name: String, routingObject: String): HttpRespon
 fun StyxServer.removeRoutingObject(name: String): HttpResponseStatus {
     val response = StyxHttpClient.Builder().build()
             .send(HttpRequest.delete("/admin/routing/objects/$name")
-                    .header(HttpHeaderNames.HOST, this.adminHostHeader())
+                    .header(HOST, this.adminHostHeader())
                     .build())
             .wait()
 
-    if (response?.status() != HttpResponseStatus.OK) {
+    if (response?.status() != OK) {
         println("Object $name was not removed. Response from server: ${response?.status()} - '${response?.bodyAs(UTF_8)}'")
     }
 
@@ -144,7 +156,20 @@ fun StyxServer.removeRoutingObject(name: String): HttpResponseStatus {
 
 fun StyxServer.routingObject(name: String, debug: Boolean = false): Optional<String> = StyxHttpClient.Builder().build()
             .send(HttpRequest.get("/admin/routing/objects/$name")
-                    .header(HttpHeaderNames.HOST, this.adminHostHeader())
+                    .header(HOST, this.adminHostHeader())
+                    .build())
+            .wait(debug)!!
+            .let {
+                if (it.status() == OK) {
+                    Optional.of(it.bodyAs(UTF_8))
+                } else {
+                    Optional.empty()
+                }
+            }
+
+fun StyxServer.routingObjects(debug: Boolean = false): Optional<String> = StyxHttpClient.Builder().build()
+            .send(HttpRequest.get("/admin/routing/objects")
+                    .header(HOST, this.adminHostHeader())
                     .build())
             .wait(debug)!!
             .let {

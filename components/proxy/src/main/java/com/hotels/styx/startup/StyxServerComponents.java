@@ -44,8 +44,6 @@ import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.ProviderObjectRecord;
 import com.hotels.styx.routing.handlers.RouteRefLookup.RouteDbRefLookup;
-import com.hotels.styx.serviceproviders.ServiceProviderFactory;
-import com.hotels.styx.services.HealthCheckMonitoringServiceFactory;
 import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
@@ -139,16 +137,14 @@ public class StyxServerComponents {
                             .ifPresent(previous -> previous.getRoutingObject().stop());
                 });
 
-        ImmutableMap<String, ServiceProviderFactory> factories = ImmutableMap.of("HealthCheckMonitor", new HealthCheckMonitoringServiceFactory());
-
         this.environment.configuration().get("providers", JsonNode.class)
                 .map(StyxServerComponents::readComponents)
                 .orElse(ImmutableMap.of())
                 .forEach((name, definition) -> {
-                    LOGGER.warn("definition: " + name + ": " + definition);
+                    LOGGER.warn("Starting provider: " + name + ": " + definition);
 
                     // Build provider object
-                    StyxService provider = Builtins.build(definition, BUILTIN_SERVICE_PROVIDER_FACTORIES, environment, routeObjectStore);
+                    StyxService provider = Builtins.build(definition, providerObjectStore, BUILTIN_SERVICE_PROVIDER_FACTORIES, routingObjectContext);
 
                     // Create a provider object record
                     ProviderObjectRecord record = new ProviderObjectRecord(definition.type(), ImmutableSet.copyOf(definition.tags()), definition.config(), provider);

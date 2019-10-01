@@ -28,6 +28,7 @@ import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
+import com.hotels.styx.routing.config.StyxObjectConfiguration;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.server.NoServiceConfiguredException;
 
@@ -84,8 +85,6 @@ public class PathPrefixRouter {
                 .map(Map.Entry::getValue);
     }
 
-
-
     /**
      * A factory for constructing PathPrefixRouter objects.
      */
@@ -100,7 +99,7 @@ public class PathPrefixRouter {
 
             PathPrefixRouter pathPrefixRouter = new PathPrefixRouter(
                     config.routes.stream()
-                            .map(route -> pair(route.prefix, Builtins.build(ImmutableList.of(""), context, toRoutingConfigNode(route.destination))))
+                            .map(route -> pair(route.prefix, Builtins.build(ImmutableList.of(""), context, route.destination)))
                             .collect(toList())
             );
 
@@ -119,25 +118,42 @@ public class PathPrefixRouter {
                 }
             };
         }
+    }
 
-        private static class PathPrefixConfig {
-            private final String prefix;
-            private final JsonNode destination;
+    /**
+     * PathPrefixRouter configuration.
+     */
+    public static class PathPrefixConfig {
+        private final String prefix;
+        private final StyxObjectConfiguration destination;
 
-            public PathPrefixConfig(@JsonProperty("prefix") String prefix,
-                                    @JsonProperty("destination") JsonNode destination) {
-                this.prefix = prefix;
-                this.destination = destination;
-            }
+        public PathPrefixConfig(@JsonProperty("prefix") String prefix,
+                                @JsonProperty("destination") JsonNode destination) {
+            this.prefix = prefix;
+            this.destination = toRoutingConfigNode(destination);
         }
 
-        private static class PathPrefixRouterConfig {
-            private final List<PathPrefixConfig> routes;
+        public String prefix() {
+            return prefix;
+        }
 
-            public PathPrefixRouterConfig(@JsonProperty("routes") List<PathPrefixConfig> routes) {
-                this.routes = routes;
-            }
+        public StyxObjectConfiguration destination() {
+            return destination;
         }
     }
 
+    /**
+     * PathPrefixRouter configuration.
+     */
+    public static class PathPrefixRouterConfig {
+        private final List<PathPrefixConfig> routes;
+
+        public PathPrefixRouterConfig(@JsonProperty("routes") List<PathPrefixConfig> routes) {
+            this.routes = routes;
+        }
+
+        public List<PathPrefixConfig> routes() {
+            return routes;
+        }
+    }
 }

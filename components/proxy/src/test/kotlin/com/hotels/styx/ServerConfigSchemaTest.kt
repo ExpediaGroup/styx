@@ -77,20 +77,6 @@ class ServerConfigSchemaTest : DescribeSpec({
             """.trimIndent())) shouldBe (Optional.of("Missing a mandatory field 'admin'"))
         }
 
-        it("Detects a missing mandatory 'services` configuration.") {
-            validateServerConfiguration(yamlConfig("""
-                  proxy:
-                    connectors:
-                      http:
-                        port: 8080
-
-                  admin:
-                    connectors:
-                      http:
-                        port: 9000
-        """.trimIndent())) shouldBe (Optional.of("Missing a mandatory field 'services'"))
-        }
-
         it("Accepts 'jvmRouteName' field as a STRING") {
             validateServerConfiguration(yamlConfig(minimalConfig + """
                 jvmRouteName: 'instance-01'

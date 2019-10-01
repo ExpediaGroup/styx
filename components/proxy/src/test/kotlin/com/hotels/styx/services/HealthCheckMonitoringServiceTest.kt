@@ -47,10 +47,16 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
             every { scheduleAtFixedRate(any(), any(), any(), any()) } returns scheduledFuture
         }
 
+        val objectStore = StyxObjectStore<RoutingObjectRecord>()
+                .apply {
+                    record("aaa-01", "X", setOf("aaa", "state:disabled"), mockk(), mockk())
+                    record("aaa-02", "x", setOf("aaa", "state:active"), mockk(), mockk())
+                    record("aaa-03", "x", setOf("aaa", "state:inactive"), mockk(), mockk())
+                    record("aaa-04", "x", setOf("aaa", "state:enabled"), mockk(), mockk())
+                }
+
         val monitor = HealthCheckMonitoringService(
-                objectStore = mockk(relaxed = true) {
-                    every { entrySet() } returns emptyList()
-                },
+                objectStore = objectStore,
                 application = "aaa",
                 urlPath = "/",
                 period = 100.milliseconds,
@@ -64,9 +70,15 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
             verify { executor.scheduleAtFixedRate(any(), 100, 100, MILLISECONDS) }
         }
 
-        scenario("Stops scheduled executor") {
+        scenario("Removes tags when stopped") {
             monitor.stop().get()
+
             verify { scheduledFuture.cancel(false) }
+
+            objectStore["aaa-01"].get().tags.shouldContainExactly("aaa", "state:disabled")
+            objectStore["aaa-02"].get().tags.shouldContainExactly("aaa")
+            objectStore["aaa-03"].get().tags.shouldContainExactly("aaa")
+            objectStore["aaa-04"].get().tags.shouldContainExactly("aaa", "state:enabled")
         }
     }
 

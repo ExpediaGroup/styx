@@ -80,7 +80,7 @@ object StyxServerSupport {
       .set("admin", adminServerConfigBuilder.build()))
   }
 
-  def newCoreConfig(styxConfig: StyxConfig, styxService: StyxService, plugins: Map[String, Plugin] = Map.empty, pluginFactories : List[PluginFactory] = Nil) = {
+  def serverComponents(styxConfig: StyxConfig, styxService: StyxService, plugins: Map[String, Plugin] = Map.empty, pluginFactories : List[PluginFactory] = Nil) = {
     val plugins1 = plugins.asJava
 
     val builder = new StyxServerComponents.Builder()

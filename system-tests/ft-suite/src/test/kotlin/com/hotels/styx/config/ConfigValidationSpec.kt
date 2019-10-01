@@ -17,18 +17,11 @@ package com.hotels.styx.config
 
 import com.hotels.styx.StyxConfig
 import com.hotels.styx.StyxServer
-import com.hotels.styx.api.HttpHeaderNames.HOST
-import com.hotels.styx.api.HttpRequest.get
-import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.config.schema.SchemaValidationException
 import com.hotels.styx.startup.StyxServerComponents
-import com.hotels.styx.support.ResourcePaths.fixturesHome
-import io.kotlintest.Spec
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import io.kotlintest.specs.StringSpec
-import reactor.core.publisher.toMono
-import java.nio.charset.StandardCharsets.UTF_8
 
 class ConfigValidationSpec : StringSpec() {
 
@@ -36,7 +29,9 @@ class ConfigValidationSpec : StringSpec() {
         "Config is validated on startup" {
             val e = shouldThrow<SchemaValidationException> {
                 StyxServer(StyxServerComponents.Builder()
-                        .styxConfig(StyxConfig.fromYaml(yamlText))
+                        .styxConfig(StyxConfig.fromYaml("""
+                            wrong: foo
+                          """.trimIndent()))
                         .build())
             }
 
@@ -44,7 +39,4 @@ class ConfigValidationSpec : StringSpec() {
         }
     }
 
-    val yamlText = """
-        wrong: foo
-      """.trimIndent()
 }
