@@ -79,7 +79,6 @@ final class ServerConfigSchema {
                                     optional("nioReuseAddress", bool()),
                                     // nioKeepAlive is deprecated by PR #464
                                     optional("nioKeepAlive", bool()),
-                                    // maxInitialLength is deprecated by PR #464
                                     optional("maxInitialLength", integer()),
                                     optional("maxHeaderSize", integer()),
                                     optional("maxChunkSize", integer()),
@@ -99,7 +98,6 @@ final class ServerConfigSchema {
                                     optional("nioReuseAddress", bool()),
                                     // nioKeepAlive is deprecated by PR #464
                                     optional("nioKeepAlive", bool()),
-                                    // maxInitialLength is deprecated by PR #464
                                     optional("maxInitialLength", integer()),
                                     optional("maxHeaderSize", integer()),
                                     optional("maxChunkSize", integer()),
