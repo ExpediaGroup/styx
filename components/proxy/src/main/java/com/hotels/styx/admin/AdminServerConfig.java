@@ -99,21 +99,6 @@ public class AdminServerConfig extends NettyServerConfig {
         }
 
         @Override
-        public Builder setTcpNoDelay(Boolean tcpNoDelay) {
-            return super.setTcpNoDelay(tcpNoDelay);
-        }
-
-        @Override
-        public Builder setNioReuseAddress(Boolean nioReuseAddress) {
-            return super.setNioReuseAddress(nioReuseAddress);
-        }
-
-        @Override
-        public Builder setNioKeepAlive(Boolean nioKeepAlive) {
-            return super.setNioKeepAlive(nioKeepAlive);
-        }
-
-        @Override
         public Builder setMaxInitialLineLength(Integer maxInitialLineLength) {
             return super.setMaxInitialLineLength(maxInitialLineLength);
         }
@@ -126,11 +111,6 @@ public class AdminServerConfig extends NettyServerConfig {
         @Override
         public Builder setMaxChunkSize(Integer maxChunkSize) {
             return super.setMaxChunkSize(maxChunkSize);
-        }
-
-        @Override
-        public Builder setMaxContentLength(Integer maxContentLength) {
-            return super.setMaxContentLength(maxContentLength);
         }
 
         @Override

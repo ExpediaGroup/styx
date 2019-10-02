@@ -75,12 +75,16 @@ final class ServerConfigSchema {
                                     optional("bossThreadsCount", integer()),
                                     optional("clientWorkerThreadsCount", integer()),
                                     optional("workerThreadsCount", integer()),
+                                    // tcpNoDelay is deprecated by PR #464
                                     optional("tcpNoDelay", bool()),
+                                    // nioReuseAddress is deprecated by PR #464
                                     optional("nioReuseAddress", bool()),
+                                    // nioKeepAlive is deprecated by PR #464
                                     optional("nioKeepAlive", bool()),
                                     optional("maxInitialLength", integer()),
                                     optional("maxHeaderSize", integer()),
                                     optional("maxChunkSize", integer()),
+                                    // maxContentLength is deprecated by PR #464
                                     optional("maxContentLength", integer()),
                                     optional("requestTimeoutMillis", integer()),
                                     optional("keepAliveTimeoutMillis", integer()),
@@ -90,12 +94,16 @@ final class ServerConfigSchema {
                                     field("connectors", serverConnectorsSchema),
                                     optional("bossThreadsCount", integer()),
                                     optional("workerThreadsCount", integer()),
+                                    // tcpNoDelay is deprecated by PR #464
                                     optional("tcpNoDelay", bool()),
+                                    // nioReuseAddress is deprecated by PR #464
                                     optional("nioReuseAddress", bool()),
+                                    // nioKeepAlive is deprecated by PR #464
                                     optional("nioKeepAlive", bool()),
                                     optional("maxInitialLength", integer()),
                                     optional("maxHeaderSize", integer()),
                                     optional("maxChunkSize", integer()),
+                                    // maxContentLength is deprecated by PR #464
                                     optional("maxContentLength", integer()),
                                     optional("metricsCache", object(
                                             field("enabled", bool()),

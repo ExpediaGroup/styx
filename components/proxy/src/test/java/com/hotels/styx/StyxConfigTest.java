@@ -35,12 +35,8 @@ public class StyxConfigTest {
             "  connectors:\n" +
             "    http:\n" +
             "      port: 80\n" +
-            "  tcpNoDelay: false\n" +
-            "  nioReuseAddress: false\n" +
-            "  nioKeepAlive: false\n" +
             "  maxHeaderSize: 8193\n" +
             "  maxChunkSize: 8193\n" +
-            "  maxContentLength: 65537\n" +
             "metrics:\n" +
             "  reporting:\n" +
             "   prefix: \"STYXHPT\"\n";
@@ -51,14 +47,8 @@ public class StyxConfigTest {
     @Test
     public void initializesFromConfigurationSource() {
         assertThat(serverConfig.httpConnectorConfig().get().port(), is(80));
-        assertThat(serverConfig.tcpNoDelay(), is(false));
-        assertThat(serverConfig.nioReuseAddress(), is(false));
-        assertThat(serverConfig.nioKeepAlive(), is(false));
-
         assertThat(serverConfig.maxHeaderSize(), is(8193));
         assertThat(serverConfig.maxChunkSize(), is(8193));
-        assertThat(serverConfig.maxContentLength(), is(65537));
-
         assertThat(styxConfig.get("metrics.reporting.prefix", String.class).get(), is("STYXHPT"));
     }
 

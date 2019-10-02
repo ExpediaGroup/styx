@@ -43,14 +43,9 @@ public class NettyServerConfig {
     private int workerThreadsCount = HALF_OF_AVAILABLE_PROCESSORS;
 
     private int nioAcceptorBacklog = 1024;
-    private boolean tcpNoDelay = true;
-    private boolean nioReuseAddress = true;
-    private boolean nioKeepAlive = true;
-
     private int maxInitialLineLength = 4096;
     private int maxHeaderSize = 8192;
     private int maxChunkSize = 8192;
-    private int maxContentLength = 65536;
     private int requestTimeoutMs = 12000;
     private int keepAliveTimeoutMillis = 12000;
     private int maxConnectionsCount = 512;
@@ -70,13 +65,9 @@ public class NettyServerConfig {
         this.bossThreadsCount = firstNonNull(builder.bossThreadsCount, HALF_OF_AVAILABLE_PROCESSORS);
         this.workerThreadsCount = firstNonNull(builder.workerThreadsCount, HALF_OF_AVAILABLE_PROCESSORS);
         this.nioAcceptorBacklog = firstNonNull(builder.nioAcceptorBacklog, 1024);
-        this.tcpNoDelay = firstNonNull(builder.tcpNoDelay, true);
-        this.nioReuseAddress = firstNonNull(builder.nioReuseAddress, true);
-        this.nioKeepAlive = firstNonNull(builder.nioKeepAlive, true);
         this.maxInitialLineLength = firstNonNull(builder.maxInitialLineLength, 4096);
         this.maxHeaderSize = firstNonNull(builder.maxHeaderSize, 8192);
         this.maxChunkSize = firstNonNull(builder.maxChunkSize, 8192);
-        this.maxContentLength = firstNonNull(builder.maxContentLength, 65536);
         this.requestTimeoutMs = firstNonNull(builder.requestTimeoutMs, 12000);
         this.keepAliveTimeoutMillis = firstNonNull(builder.keepAliveTimeoutMillis, 12000);
         this.maxConnectionsCount = firstNonNull(builder.maxConnectionsCount, 512);
@@ -132,20 +123,6 @@ public class NettyServerConfig {
         return this.nioAcceptorBacklog;
     }
 
-    /*
-     TODO unused: https://github.com/HotelsDotCom/styx/issues/428
-     */
-    public boolean tcpNoDelay() {
-        return this.tcpNoDelay;
-    }
-
-    /*
-     TODO unused: https://github.com/HotelsDotCom/styx/issues/428
-     */
-    public boolean nioReuseAddress() {
-        return this.nioReuseAddress;
-    }
-
     /**
      * The maximum length in bytes of the initial line of an HTTP message, e.g. {@code GET http://example.org/ HTTP/1.1}.
      *
@@ -171,13 +148,6 @@ public class NettyServerConfig {
      */
     public int maxChunkSize() {
         return this.maxChunkSize;
-    }
-
-    /*
-     TODO unused: https://github.com/HotelsDotCom/styx/issues/428
-     */
-    public int maxContentLength() {
-        return this.maxContentLength;
     }
 
     /**
@@ -209,13 +179,6 @@ public class NettyServerConfig {
         return this.maxConnectionsCount;
     }
 
-    /*
-     TODO unused: https://github.com/HotelsDotCom/styx/issues/428
-     */
-    public boolean nioKeepAlive() {
-        return this.nioKeepAlive;
-    }
-
     /**
      * Builder.
      *
@@ -226,13 +189,9 @@ public class NettyServerConfig {
         protected Integer bossThreadsCount;
         protected Integer workerThreadsCount;
         protected Integer nioAcceptorBacklog;
-        protected Boolean tcpNoDelay;
-        protected Boolean nioReuseAddress;
-        protected Boolean nioKeepAlive;
         protected Integer maxInitialLineLength;
         protected Integer maxHeaderSize;
         protected Integer maxChunkSize;
-        protected Integer maxContentLength;
         protected Integer requestTimeoutMs;
         protected Integer keepAliveTimeoutMillis;
         protected Integer maxConnectionsCount;
@@ -261,24 +220,6 @@ public class NettyServerConfig {
             return (T) this;
         }
 
-        @JsonProperty("tcpNoDelay")
-        public T setTcpNoDelay(Boolean tcpNoDelay) {
-            this.tcpNoDelay = tcpNoDelay;
-            return (T) this;
-        }
-
-        @JsonProperty("nioReuseAddress")
-        public T setNioReuseAddress(Boolean nioReuseAddress) {
-            this.nioReuseAddress = nioReuseAddress;
-            return (T) this;
-        }
-
-        @JsonProperty("nioKeepAlive")
-        public T setNioKeepAlive(Boolean nioKeepAlive) {
-            this.nioKeepAlive = nioKeepAlive;
-            return (T) this;
-        }
-
         @JsonProperty("maxInitialLineLength")
         public T setMaxInitialLineLength(Integer maxInitialLineLength) {
             this.maxInitialLineLength = maxInitialLineLength;
@@ -294,12 +235,6 @@ public class NettyServerConfig {
         @JsonProperty("maxChunkSize")
         public T setMaxChunkSize(Integer maxChunkSize) {
             this.maxChunkSize = maxChunkSize;
-            return (T) this;
-        }
-
-        @JsonProperty("maxContentLength")
-        public T setMaxContentLength(Integer maxContentLength) {
-            this.maxContentLength = maxContentLength;
             return (T) this;
         }
 
