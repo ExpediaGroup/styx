@@ -32,12 +32,8 @@ public class StyxConfigTest {
             "  connectors:\n" +
             "    http:\n" +
             "      port: 80\n" +
-            "  tcpNoDelay: false\n" +
-            "  nioReuseAddress: false\n" +
-            "  nioKeepAlive: false\n" +
             "  maxHeaderSize: 8193\n" +
             "  maxChunkSize: 8193\n" +
-            "  maxContentLength: 65537\n" +
             "metrics:\n" +
             "  reporting:\n" +
             "   prefix: \"STYXHPT\"\n";
