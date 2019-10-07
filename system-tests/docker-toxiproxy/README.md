@@ -13,6 +13,7 @@ management. In that case just install it locally:
 On Mac OSX:
 
 ```bash
+$ brew tap shopify/shopify
 $ brew install toxiproxy
 ```
 
@@ -22,7 +23,7 @@ First, build a development Docker image for Styx:
 
 ```bash
 $ mvn install -Prelease,linux -Dmaven.test.skip=true
-$ make docker
+$ make docker-image
 ``` 
 
 Ensure the image was built:
@@ -86,5 +87,5 @@ $ toxiproxy-cli toxic r -n latency_downstream httpd-01
 ```
 
 To enable/disable origins:
-
+```bash
 $ toxiproxy-cli toggle httpd-01

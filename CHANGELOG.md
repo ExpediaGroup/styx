@@ -1,6 +1,20 @@
 
+<a name="styx-1.0.0.beta5"></a>
+## [styx-1.0.0.beta5](https://github.com/HotelsDotCom/styx/compare/styx-1.0.0.beta4...styx-1.0.0.beta5) (2019-10-03)
+
+### Pull Requests
+
+* GitHub[#454](https://github.com/HotelsDotCom/styx/issues/454) Sanitise HTTP message logs ([#457](https://github.com/HotelsDotCom/styx/issues/457))
+* Fix issue [#461](https://github.com/HotelsDotCom/styx/issues/461), incorrect information in docs/developer-guide.md. ([#462](https://github.com/HotelsDotCom/styx/issues/462))
+* Fix issues in Docker/Toxiproxy environment: ([#460](https://github.com/HotelsDotCom/styx/issues/460))
+* Update config validation for "valueFormat" field ([#459](https://github.com/HotelsDotCom/styx/issues/459))
+* Optimise response event listener ([#455](https://github.com/HotelsDotCom/styx/issues/455))
+* Update jackson-databind versions ([#453](https://github.com/HotelsDotCom/styx/issues/453))
+* Move issue template to ./github dir. ([#450](https://github.com/HotelsDotCom/styx/issues/450))
+
+
 <a name="styx-1.0.0.beta4"></a>
-## [styx-1.0.0.beta4](https://github.com/HotelsDotCom/styx/compare/styx-1.0.0-beta4...styx-1.0.0.beta4) (2019-09-04)
+## [styx-1.0.0.beta4](https://github.com/HotelsDotCom/styx/compare/styx-1.0.0.beta3...styx-1.0.0.beta4) (2019-09-04)
 
 ### Pull Requests
 
