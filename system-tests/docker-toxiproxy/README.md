@@ -89,3 +89,4 @@ $ toxiproxy-cli toxic r -n latency_downstream httpd-01
 To enable/disable origins:
 ```bash
 $ toxiproxy-cli toggle httpd-01
+```
