@@ -90,3 +90,16 @@ To enable/disable origins:
 ```bash
 $ toxiproxy-cli toggle httpd-01
 ```
+
+
+## Debugging
+
+The docker environment exposes `localhost:8000` for remote debugging.
+
+Uncomment the following line in `docker-toxiproxy/styx-config/styx-env.sh` to
+enable Styx core remote debugging:
+
+```bash
+    # Enable remote debugging
+    JAVA_OPTS="$JAVA_OPTS -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8000"
+```

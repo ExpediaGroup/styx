@@ -30,11 +30,17 @@ services:
       - "9000:9000"
       - "8080:8080"
       - "8443:8443"
+      - "8000:8000"
     volumes:
       - ./styx-config:/styx/config
     links:
       - httpd-01
       - toxiproxy
+
+    command:
+     - "-e"
+     - /styx/config/styx-env.sh
+     - /styx/config/styxconf.yml
+
     entrypoint:
       - styx/bin/startup
-      - /styx/config/styxconf.yml
