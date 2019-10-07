@@ -71,9 +71,9 @@ public class ProxyServerConfig extends NettyServerConfig {
             return this;
         }
 
-        @JsonProperty("maxInitialLineLength")
-        public Builder setMaxInitialLineLength(Integer maxInitialLineLength) {
-            builder.setMaxInitialLineLength(maxInitialLineLength);
+        @JsonProperty("maxInitialLength")
+        public Builder setMaxInitialLength(Integer maxInitialLength) {
+            builder.setMaxInitialLength(maxInitialLength);
             return this;
         }
 

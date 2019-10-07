@@ -27,7 +27,7 @@ import static java.util.Collections.emptyList;
  */
 public final class HttpConfig {
     private boolean compress;
-    private final int maxInitialLineLength;
+    private final int maxInitialLength;
     private final int maxHeadersSize;
     private final int maxChunkSize;
     private int maxContentLength = 65536;
@@ -36,15 +36,15 @@ public final class HttpConfig {
     @JsonCreator
     HttpConfig(@JsonProperty("maxChunkSize") Integer maxChunkSize,
                @JsonProperty("maxHeaderSize") Integer maxHeadersSize,
-               @JsonProperty("maxInitialLength") Integer maxInitialLineLength) {
+               @JsonProperty("maxInitialLength") Integer maxInitialLength) {
         this.maxChunkSize = firstNonNull(maxChunkSize, 8192);
         this.maxHeadersSize = firstNonNull(maxHeadersSize, 8192);
-        this.maxInitialLineLength = firstNonNull(maxInitialLineLength, 4096);
+        this.maxInitialLength = firstNonNull(maxInitialLength, 4096);
     }
 
     private HttpConfig(Builder builder) {
         this.compress = builder.compress;
-        this.maxInitialLineLength = builder.maxInitialLineLength;
+        this.maxInitialLength = builder.maxInitialLength;
         this.maxHeadersSize = builder.maxHeadersSize;
         this.maxChunkSize = builder.maxChunkSize;
         this.maxContentLength = builder.maxContentLength;
@@ -65,8 +65,8 @@ public final class HttpConfig {
      *
      * @return maximum length of initial line
      */
-    public int maxInitialLineLength() {
-        return maxInitialLineLength;
+    public int maxInitialLength() {
+        return maxInitialLength;
     }
 
     /**
@@ -128,7 +128,7 @@ public final class HttpConfig {
      */
     public static final class Builder {
         private boolean compress;
-        private int maxInitialLineLength = 4096;
+        private int maxInitialLength = 4096;
         private int maxHeadersSize = 8192;
         private int maxChunkSize = 8192;
         private int maxContentLength = 65536;
@@ -162,11 +162,11 @@ public final class HttpConfig {
         /**
          * Set the maximum length in bytes of the initial line of an HTTP message, e.g. {@code GET http://example.org/ HTTP/1.1}.
          *
-         * @param maxInitialLineLength maximum length in bytes of the initial line
+         * @param maxInitialLength maximum length in bytes of the initial line
          * @return this builder
          */
-        public Builder setMaxInitialLineLength(int maxInitialLineLength) {
-            this.maxInitialLineLength = maxInitialLineLength;
+        public Builder setMaxInitialLength(int maxInitialLength) {
+            this.maxInitialLength = maxInitialLength;
             return this;
         }
 

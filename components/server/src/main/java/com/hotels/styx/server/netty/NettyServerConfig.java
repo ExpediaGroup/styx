@@ -43,7 +43,7 @@ public class NettyServerConfig {
     private int workerThreadsCount = HALF_OF_AVAILABLE_PROCESSORS;
 
     private int nioAcceptorBacklog = 1024;
-    private int maxInitialLineLength = 4096;
+    private int maxInitialLength = 4096;
     private int maxHeaderSize = 8192;
     private int maxChunkSize = 8192;
     private int requestTimeoutMs = 12000;
@@ -65,7 +65,7 @@ public class NettyServerConfig {
         this.bossThreadsCount = firstNonNull(builder.bossThreadsCount, HALF_OF_AVAILABLE_PROCESSORS);
         this.workerThreadsCount = firstNonNull(builder.workerThreadsCount, HALF_OF_AVAILABLE_PROCESSORS);
         this.nioAcceptorBacklog = firstNonNull(builder.nioAcceptorBacklog, 1024);
-        this.maxInitialLineLength = firstNonNull(builder.maxInitialLineLength, 4096);
+        this.maxInitialLength = firstNonNull(builder.maxInitialLength, 4096);
         this.maxHeaderSize = firstNonNull(builder.maxHeaderSize, 8192);
         this.maxChunkSize = firstNonNull(builder.maxChunkSize, 8192);
         this.requestTimeoutMs = firstNonNull(builder.requestTimeoutMs, 12000);
@@ -128,8 +128,8 @@ public class NettyServerConfig {
      *
      * @return maximum length of initial line
      */
-    public int maxInitialLineLength() {
-        return this.maxInitialLineLength;
+    public int maxInitialLength() {
+        return this.maxInitialLength;
     }
 
     /**
@@ -189,7 +189,7 @@ public class NettyServerConfig {
         protected Integer bossThreadsCount;
         protected Integer workerThreadsCount;
         protected Integer nioAcceptorBacklog;
-        protected Integer maxInitialLineLength;
+        protected Integer maxInitialLength;
         protected Integer maxHeaderSize;
         protected Integer maxChunkSize;
         protected Integer requestTimeoutMs;
@@ -220,9 +220,9 @@ public class NettyServerConfig {
             return (T) this;
         }
 
-        @JsonProperty("maxInitialLineLength")
-        public T setMaxInitialLineLength(Integer maxInitialLineLength) {
-            this.maxInitialLineLength = maxInitialLineLength;
+        @JsonProperty("maxInitialLength")
+        public T setMaxInitialLength(Integer maxInitialLength) {
+            this.maxInitialLength = maxInitialLength;
             return (T) this;
         }
 

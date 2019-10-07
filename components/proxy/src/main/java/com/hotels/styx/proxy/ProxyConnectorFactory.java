@@ -153,7 +153,7 @@ class ProxyConnectorFactory implements ServerConnectorFactory {
                     .addLast("channel-stats", channelStatsHandler)
 
                     // Http Server Codec
-                    .addLast("http-server-codec", new HttpServerCodec(serverConfig.maxInitialLineLength(), serverConfig.maxHeaderSize(), serverConfig.maxChunkSize(), true))
+                    .addLast("http-server-codec", new HttpServerCodec(serverConfig.maxInitialLength(), serverConfig.maxHeaderSize(), serverConfig.maxChunkSize(), true))
 
                     // idle-handler and timeout-handler must be before aggregator. Otherwise
                     // timeout handler cannot see the incoming HTTP chunks.
