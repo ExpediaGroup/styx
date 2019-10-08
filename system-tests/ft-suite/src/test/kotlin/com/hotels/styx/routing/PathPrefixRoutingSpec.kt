@@ -15,12 +15,11 @@
  */
 package com.hotels.styx.routing
 
-import com.hotels.styx.StyxConfig
-import com.hotels.styx.StyxServer
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.client.StyxHttpClient
-import com.hotels.styx.startup.StyxServerComponents
+import com.hotels.styx.support.StyxServerProvider
+import com.hotels.styx.support.proxyHttpHostHeader
 import io.kotlintest.Spec
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
@@ -31,7 +30,7 @@ class PathPrefixRoutingSpec : StringSpec() {
 
     init {
         "Routes to the best match" {
-            val proxyHost = "${styxServer.proxyHttpAddress().hostName}:${styxServer.proxyHttpAddress().port}"
+            val proxyHost = styxServer().proxyHttpHostHeader()
 
             client.send(get("/a/path")
                     .header(HOST, proxyHost)
@@ -49,7 +48,9 @@ class PathPrefixRoutingSpec : StringSpec() {
         }
     }
 
-    val yamlText = """
+    val client: StyxHttpClient = StyxHttpClient.Builder().build()
+
+    val styxServer = StyxServerProvider("""
         proxy:
           connectors:
             http:
@@ -89,19 +90,13 @@ class PathPrefixRoutingSpec : StringSpec() {
               content: "I'm database"
 
         httpPipeline: root
-      """.trimIndent()
-
-    val client: StyxHttpClient = StyxHttpClient.Builder().build()
-
-    val styxServer = StyxServer(StyxServerComponents.Builder()
-            .styxConfig(StyxConfig.fromYaml(yamlText))
-            .build())
+      """.trimIndent())
 
     override fun beforeSpec(spec: Spec) {
-        styxServer.startAsync().awaitRunning()
+        styxServer.restart()
     }
 
     override fun afterSpec(spec: Spec) {
-        styxServer.stopAsync().awaitTerminated()
+        styxServer.stop()
     }
 }
