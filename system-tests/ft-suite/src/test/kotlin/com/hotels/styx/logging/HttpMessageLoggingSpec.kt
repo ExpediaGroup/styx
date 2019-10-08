@@ -16,14 +16,13 @@
 package com.hotels.styx.logging
 
 import ch.qos.logback.classic.Level.INFO
-import com.hotels.styx.StyxConfig
-import com.hotels.styx.StyxServer
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.client.StyxHttpClient
-import com.hotels.styx.startup.StyxServerComponents
+import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.matchers.LoggingTestSupport
 import com.hotels.styx.support.proxyHttpHostHeader
+import com.hotels.styx.support.shouldContain
 import com.hotels.styx.support.wait
 import io.kotlintest.Spec
 import io.kotlintest.specs.FeatureSpec
@@ -32,11 +31,12 @@ class HttpMessageLoggingSpec : FeatureSpec() {
 
     init {
         feature("Styx request/response logging") {
+            styxServer.restart()
 
             scenario("Logger should hide cookies and headers") {
 
                 client.send(HttpRequest.get("/a/path")
-                        .header(HOST, styxServer.proxyHttpHostHeader())
+                        .header(HOST, styxServer().proxyHttpHostHeader())
                         .header("header1", "h1")
                         .header("header2", "h2")
                         .header("cookie", "cookie1=c1;cookie2=c2")
@@ -59,7 +59,7 @@ class HttpMessageLoggingSpec : FeatureSpec() {
 
     val client: StyxHttpClient = StyxHttpClient.Builder().build()
 
-    val yamlText = """
+    val styxServer = StyxServerProvider("""
         proxy:
           connectors:
             http:
@@ -100,18 +100,10 @@ class HttpMessageLoggingSpec : FeatureSpec() {
                   value: "cookie1=c1;cookie2=c2"
 
         httpPipeline: root
-      """.trimIndent()
-
-    val styxServer = StyxServer(StyxServerComponents.Builder()
-            .styxConfig(StyxConfig.fromYaml(yamlText))
-            .build())
-
-    override fun beforeSpec(spec: Spec) {
-        styxServer.startAsync().awaitRunning()
-    }
+      """.trimIndent())
 
     override fun afterSpec(spec: Spec) {
-        styxServer.stopAsync().awaitTerminated()
+        styxServer.stop()
     }
 
 }
