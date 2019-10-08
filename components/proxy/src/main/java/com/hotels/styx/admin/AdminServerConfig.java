@@ -99,8 +99,8 @@ public class AdminServerConfig extends NettyServerConfig {
         }
 
         @Override
-        public Builder setMaxInitialLineLength(Integer maxInitialLineLength) {
-            return super.setMaxInitialLineLength(maxInitialLineLength);
+        public Builder setMaxInitialLength(Integer maxInitialLength) {
+            return super.setMaxInitialLength(maxInitialLength);
         }
 
         @Override
