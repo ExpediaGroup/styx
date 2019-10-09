@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package testgrp;
 
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
+import loadtest.plugins.AsyncPluginConfig;
 import org.slf4j.Logger;
 
 import static depend.ExampleDependency.exampleDependencyProperty;
@@ -29,8 +30,10 @@ public class TestPluginModule implements PluginFactory {
     @Override
     public Plugin create(PluginFactory.Environment environment) {
         // If this line executes without error then the dependency-relationship is intact.
+
+        TestPluginConfig config = environment.pluginConfig(TestPluginConfig.class);
         LOGGER.info(exampleDependencyProperty);
 
-        return new TestPlugin(environment);
+        return new TestPlugin(environment, config);
     }
 }

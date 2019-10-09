@@ -17,15 +17,16 @@ package com.hotels.styx.proxy.plugin;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
 import com.hotels.styx.common.Pair;
 import com.hotels.styx.spi.config.SpiExtension;
 
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.common.Pair.pair;
 import static java.util.Objects.requireNonNull;
@@ -38,14 +39,15 @@ public class PluginsMetadata implements Iterable<SpiExtension> {
             .omitEmptyStrings()
             .trimResults();
     private final List<String> activePluginsNames;
+    private final List<String> allPluginNames;
     private final Map<String, SpiExtension> plugins;
 
     PluginsMetadata(@JsonProperty("active") String active,
                     @JsonProperty("all") Map<String, SpiExtension> plugins) {
-        requireNonNull(active, "No active plugin specified");
         requireNonNull(plugins, "No list of all plugins specified");
 
-        this.activePluginsNames = SPLITTER.splitToList(active);
+        this.activePluginsNames = SPLITTER.splitToList(Optional.ofNullable(active).orElse(""));
+        this.allPluginNames = ImmutableList.copyOf(plugins.keySet());
         this.plugins = plugins;
 
         plugins.forEach((name, metadata) -> {
@@ -57,6 +59,12 @@ public class PluginsMetadata implements Iterable<SpiExtension> {
                 checkArgument(plugins.containsKey(name), "No such plugin '%s' in %s", name, plugins));
     }
 
+    public List<Pair<String, SpiExtension>> plugins() {
+        return allPluginNames.stream()
+                .map(name -> pair(name, plugins.get(name)))
+                .collect(Collectors.toList());
+    }
+
     public List<Pair<String, SpiExtension>> activePlugins() {
         return activePluginsNames.stream()
                 .map(name -> pair(name, plugins.get(name)))
@@ -65,10 +73,10 @@ public class PluginsMetadata implements Iterable<SpiExtension> {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("active", activePluginsNames)
-                .add("plugins", plugins)
-                .toString();
+        return "PluginsMetadata{"
+                + "active=" + activePluginsNames
+                + ", plugins=" + plugins
+                + '}';
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -34,11 +34,13 @@ public class TestPlugin implements Plugin {
     private static final String X_HCOM_PLUGINS_CONFIGURATION_PATH = "X-Hcom-Plugin-Configuration-Path";
     private static final String X_HCOM_PLUGINS_LIST = "X-Hcom-Plugins-List";
     private final PluginFactory.Environment environment;
+    private TestPluginConfig config;
     private boolean styxStarted = false;
     private boolean styxStopped = false;
 
-    public TestPlugin(PluginFactory.Environment environment) {
+    public TestPlugin(PluginFactory.Environment environment, TestPluginConfig config) {
         this.environment = environment;
+        this.config = config;
     }
 
 
@@ -46,13 +48,8 @@ public class TestPlugin implements Plugin {
     public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
         String header = xHcomPluginsHeader(request);
 
-        final String configPath = environment.pluginConfig(String.class);
-        String pluginsList = environment.configuration().get("plugins.active").get();
-
         LiveHttpRequest newRequest = request.newBuilder()
                 .header(X_HCOM_PLUGINS_HEADER, header)
-                .header(X_HCOM_PLUGINS_CONFIGURATION_PATH, configPath)
-                .header(X_HCOM_PLUGINS_LIST, pluginsList)
                 .header("X-Hcom-Styx-Started", styxStarted)
                 .header("X-Hcom-Styx-Stopped", styxStopped)
                 .build();
@@ -64,10 +61,9 @@ public class TestPlugin implements Plugin {
                 .map(response ->
                         response.newBuilder()
                                 .header(X_HCOM_PLUGINS_HEADER, header)
-                                .header(X_HCOM_PLUGINS_CONFIGURATION_PATH, configPath)
-                                .header(X_HCOM_PLUGINS_LIST, pluginsList)
                                 .header("X-Hcom-Styx-Started", styxStarted)
                                 .header("X-Hcom-Styx-Stopped", styxStopped)
+                                .addHeader("X-Plugin-Identifier", config.getId())
                                 .build())
                 .map(HttpResponse::stream);
     }
