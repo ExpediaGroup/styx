@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,50 +15,42 @@
  */
 package loadtest.plugins;
 
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
+import com.hotels.styx.common.CompletableFutures;
 
 import java.util.concurrent.CompletableFuture;
 
-import static com.hotels.styx.common.CompletableFutures.fromSingleObservable;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static rx.Observable.timer;
 
-public class AsyncRequestContentDecoderPluginFactory implements PluginFactory {
-
+public class AsyncResponsePluginFactory implements PluginFactory {
     @Override
-    public Plugin create(PluginFactory.Environment environment) {
+    public Plugin create(Environment environment) {
         AsyncPluginConfig config = environment.pluginConfig(AsyncPluginConfig.class);
-        return new AsyncRequestContentDecoder(config);
+        return new AsyncResponseInterceptor(config);
     }
 
-    private static class AsyncRequestContentDecoder extends AbstractTestPlugin {
+    private static class AsyncResponseInterceptor extends AbstractTestPlugin {
         private final AsyncPluginConfig config;
 
-        AsyncRequestContentDecoder(AsyncPluginConfig config) {
+        AsyncResponseInterceptor(AsyncPluginConfig config) {
             this.config = config;
         }
 
         @Override
         public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
-            return request.aggregate(config.maxContentLength())
-                            .flatMap(fullHttpRequest -> Eventual.from(asyncOperation(config.delayMillis())))
-                            .map(outcome -> request.newBuilder().header("X-Outcome", outcome.result()))
-                            .flatMap(x -> chain.proceed(request));
+            return chain.proceed(request)
+                    .flatMap(response -> Eventual.from(processAsynchronously(response, config.delayMillis())));
+        }
+
+        private static CompletableFuture<LiveHttpResponse> processAsynchronously(LiveHttpResponse response, int delayMillis) {
+            return CompletableFutures.fromSingleObservable(timer(delayMillis, MILLISECONDS)
+                    .map(x -> response));
         }
     }
-
-    private static CompletableFuture<Outcome> asyncOperation(long delay) {
-        return fromSingleObservable(timer(delay, MILLISECONDS)).thenApply(x -> new Outcome());
-    }
-
-    private static class Outcome {
-        int result() {
-            return 1;
-        }
-    }
-
 }
+
