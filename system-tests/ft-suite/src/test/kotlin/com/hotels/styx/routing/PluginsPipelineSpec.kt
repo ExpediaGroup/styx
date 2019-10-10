@@ -35,8 +35,8 @@ class PluginsPipelineSpec : FeatureSpec() {
         val tempPluginsDir = createTempDir(suffix = "-${this.javaClass.simpleName}")
         tempPluginsDir.deleteOnExit()
 
-        val plugin = jarLocation("example-styx-plugin")
-        val dependency = jarLocation("example-styx-plugin-dependencies")
+        val plugin = jarLocation("styx-test-plugin")
+        val dependency = jarLocation("styx-test-plugin-dependencies")
 
         Files.copy(plugin, tempPluginsDir.resolve(plugin.fileName.toString()).toPath())
         Files.copy(dependency, tempPluginsDir.resolve(dependency.fileName.toString()).toPath())
