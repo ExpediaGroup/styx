@@ -55,6 +55,12 @@
     </dependency>
 
     <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-all</artifactId>
+      <scope>compile</scope>
+    </dependency>
+
+    <dependency>
       <groupId>com.github.tomakehurst</groupId>
       <artifactId>wiremock</artifactId>
       <scope>compile</scope>

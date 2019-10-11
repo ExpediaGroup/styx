@@ -11,53 +11,65 @@
   <version>1.0-SNAPSHOT</version>
 
   <properties>
-    <main.basedir>${project.parent.basedir}</main.basedir>
+    <main.basedir>${project.basedir}${file.separator}..</main.basedir>
     <java.source>1.8</java.source>
     <java.target>1.8</java.target>
 
     <maven.deploy.skip>true</maven.deploy.skip>
 
     <rxjava.version>1.1.6</rxjava.version>
-    <jackson.version>2.9.10</jackson.version>
     <testng.version>6.14.3</testng.version>
   </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.hotels.styx</groupId>
+        <artifactId>styx-bom</artifactId>
+        <version>1.0-SNAPSHOT</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
     <dependency>
       <groupId>com.hotels.styx</groupId>
       <artifactId>styx-api</artifactId>
-      <version>1.0-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>io.reactivex</groupId>
       <artifactId>rxjava</artifactId>
-      <version>${rxjava.version}</version>
       <scope>provided</scope>
     </dependency>
 
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
-      <version>${jackson.version}</version>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>2.9.9.3</version>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
-      <version>${jackson.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.testng</groupId>
       <artifactId>testng</artifactId>
-      <version>${testng.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-all</artifactId>
     </dependency>
 
   </dependencies>
