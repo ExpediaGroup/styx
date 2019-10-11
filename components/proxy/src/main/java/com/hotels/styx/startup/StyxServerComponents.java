@@ -31,6 +31,8 @@ import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupFactory;
+import com.hotels.styx.common.format.SanitisedHttpHeaderFormatter;
+import com.hotels.styx.common.format.SanitisedHttpMessageFormatter;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingMetadataDecorator;
@@ -42,8 +44,6 @@ import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.ProviderObjectRecord;
 import com.hotels.styx.routing.handlers.RouteRefLookup.RouteDbRefLookup;
-import com.hotels.styx.serviceproviders.ServiceProviderFactory;
-import com.hotels.styx.services.HealthCheckMonitoringServiceFactory;
 import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
@@ -62,6 +62,7 @@ import static com.hotels.styx.routing.config.Builtins.INTERCEPTOR_FACTORIES;
 import static com.hotels.styx.startup.ServicesLoader.SERVICES_FROM_CONFIG;
 import static com.hotels.styx.startup.StyxServerComponents.LoggingSetUp.DO_NOT_MODIFY;
 import static com.hotels.styx.startup.extensions.PluginLoadingForStartup.loadPlugins;
+import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static java.util.stream.Collectors.toList;
@@ -136,16 +137,14 @@ public class StyxServerComponents {
                             .ifPresent(previous -> previous.getRoutingObject().stop());
                 });
 
-        ImmutableMap<String, ServiceProviderFactory> factories = ImmutableMap.of("HealthCheckMonitor", new HealthCheckMonitoringServiceFactory());
-
         this.environment.configuration().get("providers", JsonNode.class)
                 .map(StyxServerComponents::readComponents)
                 .orElse(ImmutableMap.of())
                 .forEach((name, definition) -> {
-                    LOGGER.warn("definition: " + name + ": " + definition);
+                    LOGGER.warn("Starting provider: " + name + ": " + definition);
 
                     // Build provider object
-                    StyxService provider = Builtins.build(definition, BUILTIN_SERVICE_PROVIDER_FACTORIES, environment, routeObjectStore);
+                    StyxService provider = Builtins.build(definition, providerObjectStore, BUILTIN_SERVICE_PROVIDER_FACTORIES, routingObjectContext);
 
                     // Create a provider object record
                     ProviderObjectRecord record = new ProviderObjectRecord(definition.type(), ImmutableSet.copyOf(definition.tags()), definition.config(), provider);
@@ -205,12 +204,20 @@ public class StyxServerComponents {
         return startupConfig;
     }
 
-    private static Environment newEnvironment(StyxConfig styxConfig, MetricRegistry metricRegistry) {
+    private static Environment newEnvironment(StyxConfig config, MetricRegistry metricRegistry) {
+
+        SanitisedHttpHeaderFormatter headerFormatter = new SanitisedHttpHeaderFormatter(
+                config.get("request-logging.hideHeaders", List.class).orElse(emptyList()),
+                config.get("request-logging.hideCookies", List.class).orElse(emptyList()));
+
+        SanitisedHttpMessageFormatter sanitisedHttpMessageFormatter = new SanitisedHttpMessageFormatter(headerFormatter);
+
         return new Environment.Builder()
-                .configuration(styxConfig)
+                .configuration(config)
                 .metricRegistry(metricRegistry)
                 .buildInfo(readBuildInfo())
                 .eventBus(new AsyncEventBus("styx", newSingleThreadExecutor()))
+                .httpMessageFormatter(sanitisedHttpMessageFormatter)
                 .build();
     }
 

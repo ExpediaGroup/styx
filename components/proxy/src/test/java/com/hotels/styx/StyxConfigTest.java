@@ -18,6 +18,9 @@ package com.hotels.styx;
 import com.hotels.styx.proxy.ProxyServerConfig;
 import org.testng.annotations.Test;
 
+import java.util.Collections;
+import java.util.List;
+
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.lang.Runtime.getRuntime;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -32,12 +35,8 @@ public class StyxConfigTest {
             "  connectors:\n" +
             "    http:\n" +
             "      port: 80\n" +
-            "  tcpNoDelay: false\n" +
-            "  nioReuseAddress: false\n" +
-            "  nioKeepAlive: false\n" +
             "  maxHeaderSize: 8193\n" +
             "  maxChunkSize: 8193\n" +
-            "  maxContentLength: 65537\n" +
             "metrics:\n" +
             "  reporting:\n" +
             "   prefix: \"STYXHPT\"\n";
@@ -48,15 +47,30 @@ public class StyxConfigTest {
     @Test
     public void initializesFromConfigurationSource() {
         assertThat(serverConfig.httpConnectorConfig().get().port(), is(80));
-        assertThat(serverConfig.tcpNoDelay(), is(false));
-        assertThat(serverConfig.nioReuseAddress(), is(false));
-        assertThat(serverConfig.nioKeepAlive(), is(false));
-
         assertThat(serverConfig.maxHeaderSize(), is(8193));
         assertThat(serverConfig.maxChunkSize(), is(8193));
-        assertThat(serverConfig.maxContentLength(), is(65537));
-
         assertThat(styxConfig.get("metrics.reporting.prefix", String.class).get(), is("STYXHPT"));
+    }
+
+    @Test
+    public void readsListsOfHeadersAndCookiesToHide() {
+        String yaml =
+                "request-logging:\n" +
+                "  hideHeaders:\n" +
+                "    - header1\n" +
+                "    - header2\n" +
+                "  hideCookies:\n" +
+                "    - cookie1\n" +
+                "    - cookie2\n";
+
+        StyxConfig styxConfig = StyxConfig.fromYaml(yaml, false);
+        List<String> headersToHide = styxConfig.get("request-logging.hideHeaders", List.class).orElse(Collections.emptyList());
+        List<String> cookiesToHide = styxConfig.get("request-logging.hideCookies", List.class).orElse(Collections.emptyList());
+
+        assertThat(headersToHide.get(0), is("header1"));
+        assertThat(headersToHide.get(1), is("header2"));
+        assertThat(cookiesToHide.get(0), is("cookie1"));
+        assertThat(cookiesToHide.get(1), is("cookie2"));
     }
 
     @Test

@@ -36,6 +36,8 @@ import static com.hotels.styx.config.schema.SchemaDsl.string;
 import static com.hotels.styx.config.schema.SchemaDsl.union;
 import static com.hotels.styx.config.validator.DocumentFormat.newDocument;
 import static com.hotels.styx.routing.config.Builtins.BUILTIN_HANDLER_SCHEMAS;
+import static com.hotels.styx.routing.config.Builtins.BUILTIN_SERVICE_PROVIDER_SCHEMAS;
+import static com.hotels.styx.routing.config.Builtins.INTERCEPTOR_SCHEMAS;
 
 final class ServerConfigSchema {
 
@@ -73,12 +75,16 @@ final class ServerConfigSchema {
                                     optional("bossThreadsCount", integer()),
                                     optional("clientWorkerThreadsCount", integer()),
                                     optional("workerThreadsCount", integer()),
+                                    // tcpNoDelay is deprecated by PR #464
                                     optional("tcpNoDelay", bool()),
+                                    // nioReuseAddress is deprecated by PR #464
                                     optional("nioReuseAddress", bool()),
+                                    // nioKeepAlive is deprecated by PR #464
                                     optional("nioKeepAlive", bool()),
                                     optional("maxInitialLength", integer()),
                                     optional("maxHeaderSize", integer()),
                                     optional("maxChunkSize", integer()),
+                                    // maxContentLength is deprecated by PR #464
                                     optional("maxContentLength", integer()),
                                     optional("requestTimeoutMillis", integer()),
                                     optional("keepAliveTimeoutMillis", integer()),
@@ -88,21 +94,26 @@ final class ServerConfigSchema {
                                     field("connectors", serverConnectorsSchema),
                                     optional("bossThreadsCount", integer()),
                                     optional("workerThreadsCount", integer()),
+                                    // tcpNoDelay is deprecated by PR #464
                                     optional("tcpNoDelay", bool()),
+                                    // nioReuseAddress is deprecated by PR #464
                                     optional("nioReuseAddress", bool()),
+                                    // nioKeepAlive is deprecated by PR #464
                                     optional("nioKeepAlive", bool()),
                                     optional("maxInitialLength", integer()),
                                     optional("maxHeaderSize", integer()),
                                     optional("maxChunkSize", integer()),
+                                    // maxContentLength is deprecated by PR #464
                                     optional("maxContentLength", integer()),
                                     optional("metricsCache", object(
                                             field("enabled", bool()),
                                             field("expirationMillis", integer())
                                     ))
                             )),
-                            field("services", object(
+                            optional("services", object(
                                     field("factories", map(object(opaque())))
                             )),
+                            optional("providers", map(routingObject())),
                             optional("url", object(
                                     field("encoding", object(
                                             field("unwiseCharactersToEncode", string())
@@ -111,12 +122,14 @@ final class ServerConfigSchema {
                             optional("request-logging", object(
                                     optional("inbound", logFormatSchema),
                                     optional("outbound", logFormatSchema),
-                                    atLeastOne("inbound", "outbound")
+                                    atLeastOne("inbound", "outbound"),
+                                    optional("hideHeaders", list(string())),
+                                    optional("hideCookies", list(string()))
                             )),
                             optional("styxHeaders", object(
                                     optional("styxInfo", object(
                                             field("name", string()),
-                                            optional("format", string())
+                                            optional("valueFormat", string())
                                     )),
                                     optional("originId", object(
                                             field("name", string())
@@ -148,6 +161,8 @@ final class ServerConfigSchema {
                     ));
 
         BUILTIN_HANDLER_SCHEMAS.forEach(STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER::typeExtension);
+        BUILTIN_SERVICE_PROVIDER_SCHEMAS.forEach(STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER::typeExtension);
+        INTERCEPTOR_SCHEMAS.forEach(STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER::typeExtension);
     }
 
 

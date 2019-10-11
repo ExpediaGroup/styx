@@ -17,6 +17,7 @@ package com.hotels.styx.services
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.hotels.styx.api.Eventual
+import com.hotels.styx.api.HttpHeaders
 import com.hotels.styx.api.HttpInterceptor
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.LiveHttpRequest
@@ -49,8 +50,10 @@ import kotlin.system.measureTimeMillis
 class HealthChecksTest : FeatureSpec({
 
     feature("Probe function") {
+        val headers = HttpHeaders.Builder().build();
+
         scenario("Returns true when object is responsive") {
-            val staticResponse = StaticResponseHandler(200, "Hello")
+            val staticResponse = StaticResponseHandler(200, "Hello", headers)
 
             urlProbe(get("/healthcheck.txt").build(), 1.seconds)
                     .invoke(staticResponse)
@@ -72,7 +75,7 @@ class HealthChecksTest : FeatureSpec({
         }
 
         scenario("Returns false when responds with 4xx error code") {
-            val errorHandler = StaticResponseHandler(400, "Hello")
+            val errorHandler = StaticResponseHandler(400, "Hello", headers)
 
             urlProbe(get("/healthcheck.txt").build(), 100.milliseconds)
                     .invoke(errorHandler)
@@ -81,7 +84,7 @@ class HealthChecksTest : FeatureSpec({
         }
 
         scenario("Returns false when responds with 5xx error code") {
-            val errorHandler = StaticResponseHandler(500, "Hello")
+            val errorHandler = StaticResponseHandler(500, "Hello", headers)
 
             urlProbe(get("/healthcheck.txt").build(), 100.milliseconds)
                     .invoke(errorHandler)

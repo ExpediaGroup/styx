@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,35 +18,40 @@ package com.hotels.styx.common.logging;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.common.format.HttpMessageFormatter;
 import org.slf4j.Logger;
 
+import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Logs client side requests and responses when enabled. Disabled by default.
  */
 public class HttpRequestMessageLogger {
+
     private final Logger logger;
     private final boolean longFormatEnabled;
+    private final HttpMessageFormatter httpMessageFormatter;
 
-    public HttpRequestMessageLogger(String name, boolean longFormatEnabled) {
+    public HttpRequestMessageLogger(String name, boolean longFormatEnabled, HttpMessageFormatter httpMessageFormatter) {
         this.longFormatEnabled = longFormatEnabled;
-        logger = getLogger(name);
+        this.httpMessageFormatter = requireNonNull(httpMessageFormatter);
+        this.logger = getLogger(name);
     }
 
     public void logRequest(LiveHttpRequest request, Origin origin) {
         if (request == null) {
-            logger.warn("requestId=N/A, request=null, origin={}", origin);
+            logger.warn("requestId=N/A, origin={}, request=null", origin);
         } else {
-            logger.info("requestId={}, request={}", new Object[] {request.id(), information(request, origin, longFormatEnabled)});
+            logger.info("requestId={}, origin={}, request={}", new Object[] {request.id(), origin, requestAsString(request)});
         }
     }
 
     public void logRequest(LiveHttpRequest request, Origin origin, boolean secure) {
         if (request == null) {
-            logger.warn("requestId=N/A, request=null, origin={}", origin);
+            logger.warn("requestId=N/A, origin={}, request=null", origin);
         } else {
-            logger.info("requestId={}, secure={}, request={}", new Object[] {request.id(), secure, information(request, origin, longFormatEnabled)});
+            logger.info("requestId={}, secure={}, origin={}, request={}", new Object[] {request.id(), secure, origin, requestAsString(request)});
         }
     }
 
@@ -54,7 +59,7 @@ public class HttpRequestMessageLogger {
         if (response == null) {
             logger.warn("requestId={}, response=null", id(request));
         } else {
-            logger.info("requestId={}, response={}", id(request), information(response, longFormatEnabled));
+            logger.info("requestId={}, response={}", id(request), responseAsString(response));
         }
     }
 
@@ -62,57 +67,20 @@ public class HttpRequestMessageLogger {
         if (response == null) {
             logger.warn("requestId={}, response=null", id(request));
         } else {
-            logger.info("requestId={}, secure={}, response={}", new Object[] {id(request), secure, information(response, longFormatEnabled)});
+            logger.info("requestId={}, secure={}, response={}", new Object[] {id(request), secure, responseAsString(response)});
         }
+    }
+
+    private String requestAsString(LiveHttpRequest request) {
+        return longFormatEnabled ? httpMessageFormatter.formatRequest(request) : request.toString();
+    }
+
+    private String responseAsString(LiveHttpResponse response) {
+        return longFormatEnabled ? httpMessageFormatter.formatResponse(response) : response.toString();
     }
 
     private static Object id(LiveHttpRequest request) {
         return request != null ? request.id() : null;
     }
 
-    private static Info information(LiveHttpResponse response, boolean longFormatEnabled) {
-        Info info = new Info().add("status", response.status());
-
-        if (longFormatEnabled) {
-            info.add("headers", response.headers());
-        }
-        return info;
-    }
-
-    private static Info information(LiveHttpRequest request, Origin origin, boolean longFormatEnabled) {
-        Info info = new Info()
-                .add("method", request.method())
-                .add("uri", request.url())
-                .add("origin", origin != null ? origin.hostAndPortString() : "N/A");
-
-        if (longFormatEnabled) {
-            info.add("headers", request.headers());
-        }
-        return info;
-    }
-
-    private static class Info {
-        private final StringBuilder sb = new StringBuilder();
-
-        public Info add(String variable, Object value) {
-            if (sb.length() > 0) {
-                sb.append(", ");
-            }
-
-            sb.append(variable).append("=");
-
-            if (value instanceof String) {
-                sb.append('"').append(value).append('"');
-            } else {
-                sb.append(value);
-            }
-
-            return this;
-        }
-
-        @Override
-        public String toString() {
-            return "{" + sb + "}";
-        }
-    }
 }

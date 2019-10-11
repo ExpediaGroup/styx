@@ -17,7 +17,6 @@ package com.hotels.styx.services
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.JsonNode
-import com.hotels.styx.api.Environment
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.extension.service.spi.AbstractStyxService
 import com.hotels.styx.api.extension.service.spi.StyxService
@@ -29,7 +28,9 @@ import com.hotels.styx.config.schema.SchemaDsl.string
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.routing.RoutingObjectRecord
+import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.db.StyxObjectStore
+import com.hotels.styx.routing.handlers.ProviderObjectRecord
 import com.hotels.styx.serviceproviders.ServiceProviderFactory
 import com.hotels.styx.services.HealthCheckMonitoringService.Companion.ACTIVE_TAG
 import com.hotels.styx.services.HealthCheckMonitoringService.Companion.DISABLED_TAG
@@ -57,6 +58,7 @@ internal class HealthCheckMonitoringService(
         private val executor: ScheduledExecutorService) : AbstractStyxService("HealthCheckMonitoringService") {
 
     companion object {
+        @JvmField
         val SCHEMA = SchemaDsl.`object`(
                 field("objects", string()),
                 optional("path", string()),
@@ -80,7 +82,7 @@ internal class HealthCheckMonitoringService(
     private val futureRef: AtomicReference<ScheduledFuture<*>> = AtomicReference()
 
     override fun startService() = CompletableFuture.runAsync {
-        LOGGER.info("HealthCheckService - {} - {}", period.toMillis(), period.toMillis())
+        LOGGER.info("started - {} - {}", period.toMillis(), period.toMillis())
         futureRef.set(executor.scheduleAtFixedRate(
                 { runChecks(application, objectStore) },
                 period.toMillis(),
@@ -89,13 +91,19 @@ internal class HealthCheckMonitoringService(
     }
 
     override fun stopService() = CompletableFuture.runAsync {
+        LOGGER.info("stopped")
+
+        objectStore.entrySet().forEach {
+            (name, _) -> removeTags(objectStore, name)
+        }
+
         futureRef.get().cancel(false)
     }
 
     internal fun runChecks(application: String, objectStore: StyxObjectStore<RoutingObjectRecord>) {
         val monitoredObjects = discoverMonitoredObjects(application, objectStore)
                 .map {
-                    val tag = healthStatusTag(it.second.tags).orElse("state:inactive")
+                    val tag = healthStatusTag(it.second.tags).orElse(INACTIVE_TAG)
                     val health = objectHealthFrom(tag).orElse(null)
                     Triple(it.first, it.second, health)
                 }
@@ -135,11 +143,11 @@ internal data class HealthCheckConfiguration(
         @JsonProperty val unhealthyThreshold: Int)
 
 internal class HealthCheckMonitoringServiceFactory : ServiceProviderFactory {
-    override fun create(environment: Environment, configuration: JsonNode, routeDatabase: StyxObjectStore<RoutingObjectRecord>): StyxService {
+    override fun create(context: RoutingObjectFactory.Context, configuration: JsonNode, serviceDb: StyxObjectStore<ProviderObjectRecord>): StyxService {
         val config = JsonNodeConfig(configuration).`as`(HealthCheckConfiguration::class.java)
 
         return HealthCheckMonitoringService(
-                routeDatabase,
+                context.routeDb(),
                 config.objects,
                 config.path,
                 Duration.ofMillis(config.intervalMillis),
@@ -164,7 +172,7 @@ internal fun objectHealthFrom(string: String) = Optional.ofNullable(
             else -> null
         })
 
-internal fun healthStatusTag(tags: Set<String>) = Optional.ofNullable(
+private fun healthStatusTag(tags: Set<String>) = Optional.ofNullable(
         tags.firstOrNull {
             it.startsWith(ACTIVE_TAG) || it.startsWith(INACTIVE_TAG)
         }
@@ -180,12 +188,20 @@ internal fun discoverMonitoredObjects(application: String, objectStore: StyxObje
                 .filterNot { it.value.tags.contains(DISABLED_TAG) }
                 .map { Pair(it.key, it.value) }
 
-internal fun markObject(db: StyxObjectStore<RoutingObjectRecord>, name: String, newStatus: ObjectHealth) {
+private fun removeTags(db: StyxObjectStore<RoutingObjectRecord>, name: String) {
+    db.get(name).ifPresent {
+        db.insert(name, it.copy(tags = it.tags
+                .filterNot { tag -> tag.matches("($ACTIVE_TAG|$INACTIVE_TAG).*".toRegex()) }
+                .toSet()))
+    }
+}
+
+private fun markObject(db: StyxObjectStore<RoutingObjectRecord>, name: String, newStatus: ObjectHealth) {
     db.get(name).ifPresent { db.insert(name, it.copy(tags = reTag(it.tags, newStatus))) }
 }
 
 internal fun reTag(tags: Set<String>, newStatus: ObjectHealth) = tags
-        .filterNot { it.matches("state:(active|inactive).*".toRegex()) }
+        .filterNot { it.matches("($ACTIVE_TAG|$INACTIVE_TAG).*".toRegex()) }
         .plus(statusTag(newStatus))
         .toSet()
 

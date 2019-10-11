@@ -16,6 +16,7 @@
 package com.hotels.styx.routing.handlers
 
 import com.hotels.styx.api.HttpHandler
+import com.hotels.styx.api.HttpHeaders
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.configuration.ObjectStore
@@ -50,13 +51,14 @@ class LoadBalancingGroupTest : FeatureSpec() {
         feature("Load Balancing") {
             val factory = LoadBalancingGroup.Factory()
             val routeDb = StyxObjectStore<RoutingObjectRecord>()
+            val headers = HttpHeaders.Builder().build();
 
-            routeDb.insert("appx-01", RoutingObjectRecord.create("HostProxy", setOf("appX"), mockk(), StaticResponseHandler(200, "appx-01")))
-            routeDb.insert("appx-02", RoutingObjectRecord.create("HostProxy", setOf("appX"), mockk(), StaticResponseHandler(200, "appx-02")))
-            routeDb.insert("appx-03", RoutingObjectRecord.create("HostProxy", setOf("appX"), mockk(), StaticResponseHandler(200, "appx-03")))
+            routeDb.insert("appx-01", RoutingObjectRecord.create("HostProxy", setOf("appX"), mockk(), StaticResponseHandler(200, "appx-01", headers)))
+            routeDb.insert("appx-02", RoutingObjectRecord.create("HostProxy", setOf("appX"), mockk(), StaticResponseHandler(200, "appx-02", headers)))
+            routeDb.insert("appx-03", RoutingObjectRecord.create("HostProxy", setOf("appX"), mockk(), StaticResponseHandler(200, "appx-03", headers)))
 
-            routeDb.insert("appy-01", RoutingObjectRecord.create("HostProxy", setOf("appY"), mockk(), StaticResponseHandler(200, "appy-01")))
-            routeDb.insert("appy-02", RoutingObjectRecord.create("HostProxy", setOf("appY"), mockk(), StaticResponseHandler(200, "appy-02")))
+            routeDb.insert("appy-01", RoutingObjectRecord.create("HostProxy", setOf("appY"), mockk(), StaticResponseHandler(200, "appy-01", headers)))
+            routeDb.insert("appy-02", RoutingObjectRecord.create("HostProxy", setOf("appY"), mockk(), StaticResponseHandler(200, "appy-02", headers)))
 
             routeDb.watch().waitUntil { it.entrySet().size == 5 }
 
@@ -90,9 +92,9 @@ class LoadBalancingGroupTest : FeatureSpec() {
             scenario("... and detects new origins") {
                 val frequencies = mutableMapOf<String, Int>()
 
-                routeDb.insert("appx-04", RoutingObjectRecord.create("HostProxy", setOf("appX"), mockk(), StaticResponseHandler(200, "appx-04")))
-                routeDb.insert("appx-05", RoutingObjectRecord.create("HostProxy", setOf("appX"), mockk(), StaticResponseHandler(200, "appx-05")))
-                routeDb.insert("appx-06", RoutingObjectRecord.create("HostProxy", setOf("appX"), mockk(), StaticResponseHandler(200, "appx-06")))
+                routeDb.insert("appx-04", RoutingObjectRecord.create("HostProxy", setOf("appX"), mockk(), StaticResponseHandler(200, "appx-04", headers)))
+                routeDb.insert("appx-05", RoutingObjectRecord.create("HostProxy", setOf("appX"), mockk(), StaticResponseHandler(200, "appx-05", headers)))
+                routeDb.insert("appx-06", RoutingObjectRecord.create("HostProxy", setOf("appX"), mockk(), StaticResponseHandler(200, "appx-06", headers)))
 
                 routeDb.watch().waitUntil { it.entrySet().size == 8 }
 
@@ -119,9 +121,9 @@ class LoadBalancingGroupTest : FeatureSpec() {
             scenario("... and detects replaced origins") {
                 val frequencies = mutableMapOf<String, Int>()
 
-                routeDb.insert("appx-04", RoutingObjectRecord.create("HostProxy", setOf("appX"), mockk(), StaticResponseHandler(200, "appx-04-a")))
-                routeDb.insert("appx-05", RoutingObjectRecord.create("HostProxy", setOf("appX"), mockk(), StaticResponseHandler(200, "appx-05-b")))
-                routeDb.insert("appx-06", RoutingObjectRecord.create("HostProxy", setOf("appX"), mockk(), StaticResponseHandler(200, "appx-06-c")))
+                routeDb.insert("appx-04", RoutingObjectRecord.create("HostProxy", setOf("appX"), mockk(), StaticResponseHandler(200, "appx-04-a", headers)))
+                routeDb.insert("appx-05", RoutingObjectRecord.create("HostProxy", setOf("appX"), mockk(), StaticResponseHandler(200, "appx-05-b", headers)))
+                routeDb.insert("appx-06", RoutingObjectRecord.create("HostProxy", setOf("appX"), mockk(), StaticResponseHandler(200, "appx-06-c", headers)))
 
                 routeDb.watch().waitUntil { it["appx-06"].isPresent }
 
@@ -156,8 +158,8 @@ class LoadBalancingGroupTest : FeatureSpec() {
             }
 
             scenario("... and exposes load balancing metric") {
-                routeDb.insert("appx-A", RoutingObjectRecord.create("HostProxy", setOf("appX"), mockk(), StaticResponseHandler(200, "appx-A")))
-                routeDb.insert("appx-B", RoutingObjectRecord.create("HostProxy", setOf("appX"), mockk(), StaticResponseHandler(200, "appx-B")))
+                routeDb.insert("appx-A", RoutingObjectRecord.create("HostProxy", setOf("appX"), mockk(), StaticResponseHandler(200, "appx-A", headers)))
+                routeDb.insert("appx-B", RoutingObjectRecord.create("HostProxy", setOf("appX"), mockk(), StaticResponseHandler(200, "appx-B", headers)))
 
                 routeDb.watch().waitUntil { it.entrySet().size == 4 }
 

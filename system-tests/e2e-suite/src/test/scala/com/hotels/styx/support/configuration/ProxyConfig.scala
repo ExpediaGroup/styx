@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,13 +23,9 @@ case class ProxyConfig(connectors: Connectors = Connectors(HttpConnectorConfig()
                        bossThreadCount: Int = 1,
                        workerThreadsCount: Int = 1,
                        nioAcceptorBacklog: Int = proxyServerDefaults.nioAcceptorBacklog(),
-                       tcpNoDelay: Boolean = proxyServerDefaults.tcpNoDelay(),
-                       nioReuseAddress: Boolean = proxyServerDefaults.nioReuseAddress(),
-                       nioKeepAlive: Boolean = proxyServerDefaults.nioKeepAlive(),
-                       maxInitialLineLength: Int = proxyServerDefaults.maxInitialLineLength(),
+                       maxInitialLength: Int = proxyServerDefaults.maxInitialLength(),
                        maxHeaderSize: Int = proxyServerDefaults.maxHeaderSize(),
                        maxChunkSize: Int = proxyServerDefaults.maxChunkSize(),
-                       maxContentLength: Int = proxyServerDefaults.maxContentLength(),
                        requestTimeoutMillis: Int = proxyServerDefaults.requestTimeoutMillis(),
                        keepAliveTimeoutMillis: Int = proxyServerDefaults.keepAliveTimeoutMillis(),
                        maxConnectionsCount: Int = proxyServerDefaults.maxConnectionsCount(),

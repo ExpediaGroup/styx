@@ -122,9 +122,9 @@ class FileBasedOriginsFileChangeMonitorSpec: StringSpec() {
     }
 }
 
-val client: StyxHttpClient = StyxHttpClient.Builder().build()
+private val client: StyxHttpClient = StyxHttpClient.Builder().build()
 
-fun writeConfig(path: Path, text: String): Unit {
+private fun writeConfig(path: Path, text: String): Unit {
     println("Updating origins configuration to $path")
     println(text)
     text.toByteArray(UTF_8)

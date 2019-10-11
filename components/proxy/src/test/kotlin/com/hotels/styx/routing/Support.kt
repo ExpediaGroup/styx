@@ -19,7 +19,6 @@ import com.hotels.styx.Environment
 import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpHandler
 import com.hotels.styx.api.HttpRequest
-import com.hotels.styx.api.HttpResponse
 import com.hotels.styx.api.HttpResponse.response
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
@@ -43,7 +42,7 @@ import java.lang.RuntimeException
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.concurrent.CompletableFuture
 
-fun routingObjectDef(text: String) = YamlConfig(text).`as`((StyxObjectDefinition::class.java))
+fun routingObjectDef(text: String) = YamlConfig(text).`as`(StyxObjectDefinition::class.java)
 
 internal data class RoutingObjectFactoryContext(
         val routeRefLookup: RouteRefLookup = DEFAULT_REFERENCE_LOOKUP,

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -50,6 +50,8 @@ import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.client.netty.connectionpool.NettyToStyxResponsePropagator.toStyxResponse;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static io.netty.buffer.Unpooled.copiedBuffer;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONNECTION;
+import static io.netty.handler.codec.http.HttpHeaderValues.CLOSE;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
@@ -321,6 +323,38 @@ public class NettyToStyxResponsePropagatorTest {
         channel.pipeline().fireChannelInactive();
 
         assertThat(httpContentOne.refCnt(), is(0));
+    }
+
+    @Test
+    public void closesConnectionWhenConnectionCloseHeaderIsPresent() {
+        NettyToStyxResponsePropagator handler = new NettyToStyxResponsePropagator(responseSubscriber, SOME_ORIGIN);
+        EmbeddedChannel channel = new EmbeddedChannel(handler);
+
+        DefaultHttpResponse responseHeaders = new DefaultHttpResponse(HTTP_1_1, OK);
+        responseHeaders.headers().add(CONNECTION, CLOSE);
+
+        channel.writeInbound(responseHeaders);
+        channel.writeInbound(newHttpContent("one"));
+        channel.writeInbound(EMPTY_LAST_CONTENT);
+
+        assertThat(channel.isOpen(), is(false));
+        assertThat(channel.isActive(), is(false));
+    }
+
+    @Test
+    public void ignoresCaseOfConnectionCloseHeader() {
+        NettyToStyxResponsePropagator handler = new NettyToStyxResponsePropagator(responseSubscriber, SOME_ORIGIN);
+        EmbeddedChannel channel = new EmbeddedChannel(handler);
+
+        DefaultHttpResponse responseHeaders = new DefaultHttpResponse(HTTP_1_1, OK);
+        responseHeaders.headers().add("CONNECTION", "CLOSE");
+
+        channel.writeInbound(responseHeaders);
+        channel.writeInbound(newHttpContent("one"));
+        channel.writeInbound(EMPTY_LAST_CONTENT);
+
+        assertThat(channel.isOpen(), is(false));
+        assertThat(channel.isActive(), is(false));
     }
 
     private static io.netty.handler.codec.http.HttpResponse newCorruptedResponse() {

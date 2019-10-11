@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.startup.extensions;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.Configuration;
@@ -65,7 +66,13 @@ public final class PluginLoadingForStartup {
 
     private static List<ConfiguredPluginFactory> loadFactoriesFromConfig(Environment environment) {
         return environment.configuration().get("plugins", PluginsMetadata.class)
-                .map(PluginsMetadata::activePlugins)
+                .map(plugins -> {
+                    if (environment.configuration().get("httpPipeline", JsonNode.class).isPresent()) {
+                        return plugins.plugins();
+                    } else {
+                        return plugins.activePlugins();
+                    }
+                })
                 .map(inputs -> PLUGIN_FACTORY_LOADING_FAILURE_HANDLING_STRATEGY.process(inputs, PluginLoadingForStartup::loadPluginFactory))
                 .orElse(emptyList());
     }

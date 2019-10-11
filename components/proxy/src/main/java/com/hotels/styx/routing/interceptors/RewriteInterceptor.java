@@ -18,19 +18,31 @@ package com.hotels.styx.routing.interceptors;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.extension.service.RewriteConfig;
 import com.hotels.styx.api.extension.service.RewriteRule;
 import com.hotels.styx.client.RewriteRuleset;
+import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.routing.config.HttpInterceptorFactory;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
-import com.hotels.styx.api.LiveHttpRequest;
+
+import static com.hotels.styx.config.schema.SchemaDsl.field;
+import static com.hotels.styx.config.schema.SchemaDsl.list;
+import static com.hotels.styx.config.schema.SchemaDsl.object;
+import static com.hotels.styx.config.schema.SchemaDsl.string;
 
 /**
  * A built-in interceptor for URL rewrite.
  */
 public class RewriteInterceptor implements HttpInterceptor {
+    public static final Schema.FieldType SCHEMA = list(
+            object(
+                    field("urlPattern", string()),
+                    field("replacement", string())
+            ));
+
     private final RewriteRuleset rewriteRuleset;
 
     private RewriteInterceptor(RewriteRuleset rewriteRuleset) {

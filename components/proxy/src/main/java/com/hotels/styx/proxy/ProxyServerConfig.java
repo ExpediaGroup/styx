@@ -71,27 +71,9 @@ public class ProxyServerConfig extends NettyServerConfig {
             return this;
         }
 
-        @JsonProperty("tcpNoDelay")
-        public Builder setTcpNoDelay(Boolean tcpNoDelay) {
-            builder.setTcpNoDelay(tcpNoDelay);
-            return this;
-        }
-
-        @JsonProperty("nioReuseAddress")
-        public Builder setNioReuseAddress(Boolean nioReuseAddress) {
-            builder.setNioReuseAddress(nioReuseAddress);
-            return this;
-        }
-
-        @JsonProperty("nioKeepAlive")
-        public Builder setNioKeepAlive(Boolean nioKeepAlive) {
-            builder.setNioKeepAlive(nioKeepAlive);
-            return this;
-        }
-
-        @JsonProperty("maxInitialLineLength")
-        public Builder setMaxInitialLineLength(Integer maxInitialLineLength) {
-            builder.setMaxInitialLineLength(maxInitialLineLength);
+        @JsonProperty("maxInitialLength")
+        public Builder setMaxInitialLength(Integer maxInitialLength) {
+            builder.setMaxInitialLength(maxInitialLength);
             return this;
         }
 
@@ -104,12 +86,6 @@ public class ProxyServerConfig extends NettyServerConfig {
         @JsonProperty("maxChunkSize")
         public Builder setMaxChunkSize(Integer maxChunkSize) {
             builder.setMaxChunkSize(maxChunkSize);
-            return this;
-        }
-
-        @JsonProperty("maxContentLength")
-        public Builder setMaxContentLength(Integer maxContentLength) {
-            builder.setMaxContentLength(maxContentLength);
             return this;
         }
 

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.statusWithCode;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONNECTION;
 import static io.netty.util.ReferenceCountUtil.retain;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -65,6 +66,10 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
     private final Origin origin;
     private final Long idleTimeoutMillis;
     private Optional<FlowControllingHttpContentProducer> contentProducer = Optional.empty();
+
+    // `toBeClosed` doesn't have to be volatile because all Netty events are guaranteed
+    // to be delivered from the same thread.
+    private boolean toBeClosed;
 
     NettyToStyxResponsePropagator(Subscriber<? super LiveHttpResponse> responseObserver, Origin origin) {
         this(responseObserver, origin, 5L, TimeUnit.SECONDS);
@@ -140,6 +145,10 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
                         eventLoop.submit(() -> this.contentProducer.ifPresent(FlowControllingHttpContentProducer::unsubscribe));
                     });
 
+            if ("close".equalsIgnoreCase(nettyResponse.headers().get(CONNECTION))) {
+                toBeClosed = true;
+            }
+
             LiveHttpResponse response = toStyxResponse(nettyResponse, contentObservable, origin);
             this.responseObserver.onNext(response);
         }
@@ -152,6 +161,9 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
                 // Note: Netty may send a LastHttpContent as a response to TCP connection close.
                 // In this case channelReadComplete event will _not_ follow the LastHttpContent.
                 contentProducer.ifPresent(FlowControllingHttpContentProducer::lastHttpContent);
+                if (toBeClosed) {
+                    ctx.channel().close();
+                }
             }
         }
     }

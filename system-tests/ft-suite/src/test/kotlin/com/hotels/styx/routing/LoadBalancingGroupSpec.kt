@@ -438,7 +438,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                       type: LoadBalancingGroup
                                       config:
                                         origins: appA
-                                        originsRestrictionCookie: orc
+                                        originRestrictionCookie: orc
 
                                 httpPipeline: normalApp
                         """.trimIndent())

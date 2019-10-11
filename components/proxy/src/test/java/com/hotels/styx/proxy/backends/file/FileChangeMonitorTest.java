@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 
 import static ch.qos.logback.classic.Level.INFO;
 import static com.google.common.io.Files.createTempDir;
@@ -32,7 +33,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.copy;
 import static java.nio.file.Files.delete;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
@@ -53,7 +53,7 @@ public class FileChangeMonitorTest {
         monitoredFile = Paths.get(tempDir.toString(), "origins.yml");
         write(monitoredFile, "content-v0");
         listener = mock(FileChangeMonitor.Listener.class);
-        monitor = new FileChangeMonitor(monitoredFile.toString(), 250, MILLISECONDS);
+        monitor = new FileChangeMonitor(monitoredFile.toString(), Duration.ofMillis(0), Duration.ofMillis(50));
         ((ch.qos.logback.classic.Logger) getLogger(FileChangeMonitor.class)).setLevel(INFO);
     }
 

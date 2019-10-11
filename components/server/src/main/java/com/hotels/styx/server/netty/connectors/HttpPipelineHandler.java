@@ -63,6 +63,7 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
+import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
@@ -517,6 +518,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
                         .build()
                         .newBuilder(), request)
                 .header(CONTENT_LENGTH, message.getBytes(UTF_8).length)
+                .header(CONNECTION, "close")
                 .build();
     }
 

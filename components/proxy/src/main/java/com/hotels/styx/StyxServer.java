@@ -147,11 +147,11 @@ public final class StyxServer extends AbstractService {
             throw new RuntimeException(e);
         }
     }
-
     private final HttpServer proxyServer;
-    private final HttpServer adminServer;
 
+    private final HttpServer adminServer;
     private final ServiceManager serviceManager;
+
     private final Stopwatch stopwatch;
 
     public StyxServer(StyxServerComponents config) {
@@ -266,10 +266,10 @@ public final class StyxServer extends AbstractService {
         };
     }
 
-    private static HttpServer createAdminServer(StyxServerComponents config) {
-        Registry<BackendService> registry = (Registry<BackendService>) config.services().get("backendServiceRegistry");
+    private static HttpServer createAdminServer(StyxServerComponents components) {
+        Registry<BackendService> registry = (Registry<BackendService>) components.services().get("backendServiceRegistry");
 
-        return new AdminServerBuilder(config)
+        return new AdminServerBuilder(components)
                 .backendServicesRegistry(registry != null ? registry : new MemoryBackedRegistry<>())
                 .build();
     }

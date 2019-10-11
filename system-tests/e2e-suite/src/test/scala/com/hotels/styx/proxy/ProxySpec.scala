@@ -16,6 +16,7 @@
 package com.hotels.styx.proxy
 
 import java.nio.charset.StandardCharsets.UTF_8
+import java.util.Optional
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.client.{RequestPatternBuilder, WireMock}
@@ -186,6 +187,7 @@ class ProxySpec extends FunSpec
 
         val resp = decodedRequest(req)
         assert(resp.status() == SERVICE_UNAVAILABLE)
+        assert(resp.header(CONNECTION) == Optional.of("close"))
       }
     }
 
@@ -203,6 +205,7 @@ class ProxySpec extends FunSpec
         println("body: " + resp.bodyAs(UTF_8))
 
         assert(resp.status() == BAD_GATEWAY)
+        assert(resp.header(CONNECTION) == Optional.of("close"))
       }
     }
 

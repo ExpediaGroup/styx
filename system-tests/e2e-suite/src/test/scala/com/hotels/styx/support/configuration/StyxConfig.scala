@@ -79,13 +79,9 @@ case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),
       .setKeepAliveTimeoutMillis(proxyConfig.keepAliveTimeoutMillis)
       .setMaxChunkSize(proxyConfig.maxChunkSize)
       .setMaxConnectionsCount(proxyConfig.maxConnectionsCount)
-      .setMaxContentLength(proxyConfig.maxContentLength)
       .setMaxHeaderSize(proxyConfig.maxHeaderSize)
-      .setMaxInitialLineLength(proxyConfig.maxInitialLineLength)
+      .setMaxInitialLength(proxyConfig.maxInitialLength)
       .setNioAcceptorBacklog(proxyConfig.nioAcceptorBacklog)
-      .setNioKeepAlive(proxyConfig.nioKeepAlive)
-      .setNioReuseAddress(proxyConfig.nioReuseAddress)
-      .setTcpNoDelay(proxyConfig.tcpNoDelay)
       .setRequestTimeoutMillis(proxyConfig.requestTimeoutMillis)
       .setClientWorkerThreadsCount(proxyConfig.clientWorkerThreadsCount)
 
@@ -96,11 +92,10 @@ case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),
 
     val java: util.Map[String, StyxService] = services(backendsRegistry).asJava
 
-    val styxServerBuilder = newCoreConfig(styxConfig, backendsRegistry, this.plugins)
-      .additionalServices(java)
-      .loggingSetUp(this.logbackXmlLocation.toString)
-
-    val styxServer = new StyxServer(styxServerBuilder.build())
+    val styxServer = new StyxServer(
+      serverComponents(styxConfig, backendsRegistry, this.plugins)
+        .additionalServices(java)
+        .loggingSetUp(this.logbackXmlLocation.toString).build())
     styxServer.startAsync().awaitRunning()
     styxServer
   }
@@ -116,13 +111,9 @@ case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),
       .setKeepAliveTimeoutMillis(proxyConfig.keepAliveTimeoutMillis)
       .setMaxChunkSize(proxyConfig.maxChunkSize)
       .setMaxConnectionsCount(proxyConfig.maxConnectionsCount)
-      .setMaxContentLength(proxyConfig.maxContentLength)
       .setMaxHeaderSize(proxyConfig.maxHeaderSize)
-      .setMaxInitialLineLength(proxyConfig.maxInitialLineLength)
+      .setMaxInitialLength(proxyConfig.maxInitialLength)
       .setNioAcceptorBacklog(proxyConfig.nioAcceptorBacklog)
-      .setNioKeepAlive(proxyConfig.nioKeepAlive)
-      .setNioReuseAddress(proxyConfig.nioReuseAddress)
-      .setTcpNoDelay(proxyConfig.tcpNoDelay)
       .setRequestTimeoutMillis(proxyConfig.requestTimeoutMillis)
       .setClientWorkerThreadsCount(proxyConfig.clientWorkerThreadsCount)
 

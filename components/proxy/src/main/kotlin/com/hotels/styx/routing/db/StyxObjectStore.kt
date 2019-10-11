@@ -72,7 +72,7 @@ class StyxObjectStore<T> : ObjectStore<T> {
      * @return the previous value
      */
     fun insert(key: String, payload: T): Optional<T> {
-        require(key.isNotEmpty())
+        require(key.isNotEmpty()) { "ObjectStore insert: empty keys are not allowed." }
 
         var current = objects.get()
         var new = current.plus(key, payload)
@@ -87,6 +87,65 @@ class StyxObjectStore<T> : ObjectStore<T> {
         }
 
         return Optional.ofNullable(current[key])
+    }
+
+    /**
+     * Insert an object in the database that is a result of a function call.
+     *
+     * This method can be used to insert a new object, or to conditionally modify
+     * a previously stored object.  This method takes two arguments: `key` and
+     * `computation`.
+     *
+     * The `key` refers to the object name of interest. The `computation` provides
+     * a new or modified object to be stored under `key`.
+     *
+     * `computation` is called with an existing object as its only argument, or
+     * `null` if no objects are stored against `key`. An object returned from
+     * `computation` is stored in the database.
+     *
+     * The operation is considered a no-op when `computation` returns back the
+     * already existing object instance. In this case the existing object remains
+     * in the database, and watchers are not notified.
+     *
+     * When `computation` returns a different instance, the new object replaces
+     * the existing version and the watchers will be notified. This is considered
+     * a modification.
+     *
+     * Note that the `computation` must always return a value. It cannot return
+     * `null`, and therefore cannot be used to remove existing objects.
+     *
+     * @property key object name
+     * @property computation a function that produces the new value
+     * @return the previous value
+     */
+    fun compute(key: String, computation: (T?) -> T): Optional<T> {
+        require(key.isNotEmpty()) { "ObjectStore compute: empty keys are not allowed." }
+
+            var current: PMap<String, T>
+            var result: T
+            var new: PMap<String, T>
+
+            do {
+                current = objects.get()
+                result = computation(current.get(key))
+
+                new = if (result != current.get(key)){
+                    // Consumer REPLACES an existing value or ADDS a new value
+                    current.plus(key, result)
+                } else {
+                    // Consumer KEEPS the existing value
+                    current
+                }
+            } while(!objects.compareAndSet(current, new))
+
+            if (current != new) {
+                // Notify only if content changed:
+                queue {
+                    notifyWatchers(new)
+                }
+            }
+
+            return Optional.ofNullable(current[key])
     }
 
 
@@ -160,7 +219,7 @@ class StyxObjectStore<T> : ObjectStore<T> {
         }
     }
 
-    private fun snapshot(snapshot: PMap<String, T>) = object: ObjectStore<T> {
+    private fun snapshot(snapshot: PMap<String, T>) = object : ObjectStore<T> {
         override fun get(key: String?): Optional<T> {
             return Optional.ofNullable(snapshot[key])
         }

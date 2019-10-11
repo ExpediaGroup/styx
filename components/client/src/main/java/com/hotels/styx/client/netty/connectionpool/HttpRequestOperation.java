@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,14 +18,16 @@ package com.hotels.styx.client.netty.connectionpool;
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Buffers;
 import com.hotels.styx.api.HttpMethod;
+import com.hotels.styx.api.HttpVersion;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.HttpVersion;
 import com.hotels.styx.api.Requests;
 import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.Operation;
 import com.hotels.styx.client.OriginStatsFactory;
+import com.hotels.styx.common.format.HttpMessageFormatter;
+import com.hotels.styx.common.format.SanitisedHttpMessageFormatter;
 import com.hotels.styx.common.logging.HttpRequestMessageLogger;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -79,8 +81,8 @@ public class HttpRequestOperation implements Operation<NettyConnection, LiveHttp
      * @param originStatsFactory OriginStats factory
      */
     @VisibleForTesting
-    public HttpRequestOperation(LiveHttpRequest request, OriginStatsFactory originStatsFactory) {
-        this(request, originStatsFactory, DEFAULT_RESPONSE_TIMEOUT_MILLIS, false, false);
+    public HttpRequestOperation(LiveHttpRequest request, OriginStatsFactory originStatsFactory, SanitisedHttpMessageFormatter sanitisedHttpMessageFormatter) {
+        this(request, originStatsFactory, DEFAULT_RESPONSE_TIMEOUT_MILLIS, false, false, sanitisedHttpMessageFormatter);
     }
 
     /**
@@ -91,12 +93,12 @@ public class HttpRequestOperation implements Operation<NettyConnection, LiveHttp
      * @param requestLoggingEnabled
      */
     public HttpRequestOperation(LiveHttpRequest request, OriginStatsFactory originStatsFactory,
-                                int responseTimeoutMillis, boolean requestLoggingEnabled, boolean longFormat) {
+                                int responseTimeoutMillis, boolean requestLoggingEnabled, boolean longFormat, HttpMessageFormatter httpMessageFormatter) {
         this.request = requireNonNull(request);
         this.originStatsFactory = Optional.ofNullable(originStatsFactory);
         this.responseTimeoutMillis = responseTimeoutMillis;
         this.requestLoggingEnabled = requestLoggingEnabled;
-        this.httpRequestMessageLogger = new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", longFormat);
+        this.httpRequestMessageLogger = new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", longFormat, httpMessageFormatter);
     }
 
     @VisibleForTesting
@@ -134,7 +136,7 @@ public class HttpRequestOperation implements Operation<NettyConnection, LiveHttp
 
         Observable<LiveHttpResponse> observable = Observable.create(subscriber -> {
             if (nettyConnection.isConnected()) {
-                RequestBodyChunkSubscriber bodyChunkSubscriber = new RequestBodyChunkSubscriber(nettyConnection);
+                RequestBodyChunkSubscriber bodyChunkSubscriber = new RequestBodyChunkSubscriber(request, nettyConnection);
                 requestRequestBodyChunkSubscriber.set(bodyChunkSubscriber);
                 addProxyBridgeHandlers(nettyConnection, subscriber);
                 new WriteRequestToOrigin(subscriber, nettyConnection, request, bodyChunkSubscriber)
@@ -156,6 +158,7 @@ public class HttpRequestOperation implements Operation<NettyConnection, LiveHttp
                         Requests.doFinally(response, cause -> {
                             if (nettyConnection.isConnected()) {
                                 removeProxyBridgeHandlers(nettyConnection);
+
                                 if (requestIsOngoing(requestRequestBodyChunkSubscriber.get())) {
                                     LOGGER.warn("Origin responded too quickly to an ongoing request, or it was cancelled. Connection={}, Request={}.",
                                             new Object[]{nettyConnection.channel(), this.request});
@@ -222,7 +225,6 @@ public class HttpRequestOperation implements Operation<NettyConnection, LiveHttp
 
     private static final class WriteRequestToOrigin {
         private final Subscriber<? super LiveHttpResponse> responseFromOriginObserver;
-        private final ReadOrCloseChannelListener readOrCloseChannelListener;
         private final NettyConnection nettyConnection;
         private final LiveHttpRequest request;
         private final RequestBodyChunkSubscriber requestBodyChunkSubscriber;
@@ -233,28 +235,30 @@ public class HttpRequestOperation implements Operation<NettyConnection, LiveHttp
             this.nettyConnection = nettyConnection;
             this.request = request;
             this.requestBodyChunkSubscriber = requestBodyChunkSubscriber;
-            this.readOrCloseChannelListener = new ReadOrCloseChannelListener(nettyConnection, responseFromOriginObserver);
         }
 
         public void write() {
             Channel originChannel = this.nettyConnection.channel();
             if (originChannel.isActive()) {
-                io.netty.handler.codec.http.HttpRequest msg = makeRequest(request);
-                originChannel.writeAndFlush(msg)
-                        .addListener(readOrCloseChannelListener)
-                        .addListener(subscribeToResponseBody());
+                io.netty.handler.codec.http.HttpRequest messageHeaders = makeRequest(request);
+
+                originChannel.writeAndFlush(messageHeaders)
+                        .addListener(subscribeToRequestBody());
             } else {
                 responseFromOriginObserver.onError(new TransportLostException(originChannel.remoteAddress(), nettyConnection.getOrigin()));
             }
         }
 
-        private ChannelFutureListener subscribeToResponseBody() {
-            return future -> {
-                if (future.isSuccess()) {
+        private ChannelFutureListener subscribeToRequestBody() {
+            return headersFuture -> {
+                if (headersFuture.isSuccess()) {
+                    headersFuture.channel().read();
                     Observable<ByteBuf> bufferObservable = toObservable(request.body()).map(Buffers::toByteBuf);
                     bufferObservable.subscribe(requestBodyChunkSubscriber);
                 } else {
-                    LOGGER.error(format("error writing body to origin=%s request=%s", nettyConnection.getOrigin(), request), future.cause());
+                    String channelIdentifier = String.format("%s -> %s", nettyConnection.channel().localAddress(), nettyConnection.channel().remoteAddress());
+                    LOGGER.error(format("Failed to send request headers. origin=%s connection=%s request=%s",
+                            nettyConnection.getOrigin(), channelIdentifier, request), headersFuture.cause());
                     responseFromOriginObserver.onError(new TransportLostException(nettyConnection.channel().remoteAddress(), nettyConnection.getOrigin()));
                 }
             };
@@ -270,35 +274,16 @@ public class HttpRequestOperation implements Operation<NettyConnection, LiveHttp
         }
     }
 
-    private static class ReadOrCloseChannelListener implements ChannelFutureListener {
-        private final NettyConnection nettyConnection;
-        private final Subscriber subscriber;
-
-        public ReadOrCloseChannelListener(NettyConnection nettyConnection, Subscriber subscriber) {
-            this.nettyConnection = nettyConnection;
-            this.subscriber = subscriber;
-        }
-
-        @Override
-        public void operationComplete(ChannelFuture future) throws Exception {
-            if (future.isSuccess()) {
-                future.channel().read();
-            } else {
-                subscriber.onError(new TransportLostException(nettyConnection.channel().remoteAddress(), nettyConnection.getOrigin()));
-            }
-        }
-    }
-
     private static final class RequestBodyChunkSubscriber extends Subscriber<ByteBuf> {
+        private final NettyConnection nettyConnection;
+        private final LiveHttpRequest request;
         private final Channel channel;
-        private final ChannelFutureListener readNext;
-        private final ChannelFutureListener readOrClose;
         private volatile boolean completed;
 
-        private RequestBodyChunkSubscriber(NettyConnection nettyConnection) {
+        private RequestBodyChunkSubscriber(LiveHttpRequest request, NettyConnection nettyConnection) {
+            this.request = request;
             this.channel = nettyConnection.channel();
-            this.readOrClose = new ReadOrCloseChannelListener(nettyConnection, this);
-            this.readNext = future -> request(1);
+            this.nettyConnection = nettyConnection;
         }
 
         @Override
@@ -308,8 +293,8 @@ public class HttpRequestOperation implements Operation<NettyConnection, LiveHttp
 
         @Override
         public void onCompleted() {
-            completed = true;
-            channel.writeAndFlush(EMPTY_LAST_CONTENT);
+            channel.writeAndFlush(EMPTY_LAST_CONTENT)
+                    .addListener(future -> completed = true);
         }
 
         @Override
@@ -321,11 +306,20 @@ public class HttpRequestOperation implements Operation<NettyConnection, LiveHttp
         public void onNext(ByteBuf chunk) {
             HttpObject msg = new DefaultHttpContent(chunk);
             channel.writeAndFlush(msg)
-                    .addListener(readNext)
-                    .addListener(readOrClose);
+                    .addListener((ChannelFuture future) -> {
+                        request(1);
+                        if (future.isSuccess()) {
+                            future.channel().read();
+                        } else {
+                            String channelIdentifier = String.format("%s -> %s", nettyConnection.channel().localAddress(), nettyConnection.channel().remoteAddress());
+                            LOGGER.error(format("Failed to send request body data. origin=%s connection=%s request=%s",
+                                    nettyConnection.getOrigin(), channelIdentifier, request), future.cause());
+                            this.onError(new TransportLostException(nettyConnection.channel().remoteAddress(), nettyConnection.getOrigin()));
+                        }
+                    });
         }
 
-        public boolean requestIsOngoing() {
+        boolean requestIsOngoing() {
             return !completed;
         }
     }

@@ -79,10 +79,10 @@ public class PluginLoadingForStartupTest {
     }
 
     @Test
-    public void providesNamesForAllLoadedPlugins() {
+    public void providesNamesForAllActivatedPlugins() {
         String yaml = "" +
                 "plugins:\n" +
-                "  active: myPlugin0,myPlugin1,myPlugin2\n" +
+                "  active: myPlugin0,myPlugin2\n" +
                 "  all:\n" +
                 "    myPlugin0:\n" +
                 "      factory:\n" +
@@ -102,6 +102,41 @@ public class PluginLoadingForStartupTest {
                 "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
                 "      config:\n" +
                 "        testConfiguration: instance3\n";
+
+        List<NamedPlugin> plugins = PluginLoadingForStartup.loadPlugins(environment(yaml));
+
+        List<String> pluginNames = plugins.stream()
+                .map(NamedPlugin::name)
+                .collect(toList());
+
+        assertThat(pluginNames, contains("myPlugin0", "myPlugin2"));
+    }
+
+    @Test
+    public void providesNamesForAllPluginsWhenHttpPipelineAttributeIsPresent() {
+        String yaml = "" +
+                "plugins:\n" +
+                "  all:\n" +
+                "    myPlugin0:\n" +
+                "      factory:\n" +
+                "        class: com.hotels.styx.startup.extensions.PluginLoadingForStartupTest$MyPluginFactory\n" +
+                "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
+                "      config:\n" +
+                "        testConfiguration: instance1\n" +
+                "    myPlugin1:\n" +
+                "      factory:\n" +
+                "        class: com.hotels.styx.startup.extensions.PluginLoadingForStartupTest$MyPluginFactory\n" +
+                "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
+                "      config:\n" +
+                "        testConfiguration: instance2\n" +
+                "    myPlugin2:\n" +
+                "      factory:\n" +
+                "        class: com.hotels.styx.startup.extensions.PluginLoadingForStartupTest$MyPluginFactory\n" +
+                "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
+                "      config:\n" +
+                "        testConfiguration: instance3\n" +
+                "" +
+                "httpPipeline: root";
 
         List<NamedPlugin> plugins = PluginLoadingForStartup.loadPlugins(environment(yaml));
 
@@ -140,21 +175,6 @@ public class PluginLoadingForStartupTest {
                 "      classPath: " + FIXTURES_CLASS_PATH + "\n" +
                 "    config:\n" +
                 "      testConfiguration: test-foo-bar\n";
-
-        PluginLoadingForStartup.loadPlugins(environment(yaml));
-    }
-
-    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "(?s).*No active plugin specified.*")
-    public void throwsExceptionIfNoActivePluginSpecified() {
-        String yaml = "" +
-                "plugins:\n" +
-                "  all:\n" +
-                "    myPlugin:\n" +
-                "      factory:\n" +
-                "        class: com.hotels.styx.startup.extensions.PluginLoadingForStartupTest$MyPluginFactory\n" +
-                "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
-                "      config:\n" +
-                "        testConfiguration: test-foo-bar\n";
 
         PluginLoadingForStartup.loadPlugins(environment(yaml));
     }

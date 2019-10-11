@@ -17,9 +17,9 @@ package com.hotels.styx.server.netty.codec;
 
 import com.google.common.base.Strings;
 import com.hotels.styx.api.Buffer;
+import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.HttpHeader;
 import com.hotels.styx.api.HttpMethod;
-import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.UniqueIdSupplier;
@@ -309,7 +309,6 @@ public class NettyToStyxRequestDecoderTest {
         channel.writeInbound(httpContentOne);
 
         channel.pipeline().fireExceptionCaught(new RuntimeException("Some Error"));
-
         assertThat(httpContentOne.refCnt(), Matchers.is(0));
     }
 
@@ -332,7 +331,10 @@ public class NettyToStyxRequestDecoderTest {
     }
 
     private void assertThatHttpHeadersAreSame(Iterable<HttpHeader> headers, HttpHeaders headers1) {
-        assertThat(newArrayList(headers).toString(), is(newArrayList(headers1).toString()));
+        assertThat(newArrayList(headers).size(), is(headers1.size()));
+        for (HttpHeader header : headers) {
+            assertThat(header.value(), is(headers1.get(header.name())));
+        }
     }
 
     private static HttpRequest newPostRequest(String path) {

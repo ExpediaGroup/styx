@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
@@ -341,6 +340,8 @@ public class LiveHttpRequest implements LiveHttpMessage {
      * value according to your application requirements and heap size. When the content
      * size stream exceeds the {@code maxContentBytes}, a @{link ContentOverflowException}
      * is emitted on the returned observable.
+     * <p>Please note that {@code HttpLiveRequest} will not be valid anymore after aggregation,
+     * and thus the returned {@link HttpRequest} should be used instead.
      *
      * @param maxContentBytes maximum expected content size
      * @return a {@link Eventual}
@@ -385,13 +386,10 @@ public class LiveHttpRequest implements LiveHttpMessage {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("version", version)
-                .add("method", method)
-                .add("uri", url)
-                .add("headers", headers)
-                .add("id", id)
-                .toString();
+        return "{version=" + version
+                + ", method=" + method
+                + ", uri=" + url
+                + ", id=" + id + "}";
     }
 
     private interface BuilderTransformer {
