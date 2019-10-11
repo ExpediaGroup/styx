@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import io.netty.channel.socket.SocketChannel;
 
 import static com.hotels.styx.common.MorePreconditions.checkArgument;
 import static com.hotels.styx.common.MorePreconditions.checkNotEmpty;
+import static java.lang.String.format;
 
 /**
  * A factory for creating Epoll-based client event loops.
@@ -39,8 +40,10 @@ public class EpollClientEventLoopGroupFactory implements ClientEventLoopFactory 
      * @param clientWorkerThreadsCount number of threads
      */
     public EpollClientEventLoopGroupFactory(String name, int clientWorkerThreadsCount) {
-        this.name = checkNotEmpty(name);
-        this.clientWorkerThreadsCount = checkArgument(clientWorkerThreadsCount, clientWorkerThreadsCount > -1);
+        this.name = checkNotEmpty(name, "Event loop group name is null or empty");
+        this.clientWorkerThreadsCount = checkArgument(clientWorkerThreadsCount,
+                clientWorkerThreadsCount > -1,
+                format("Invalid client worker thread count (%d). It must be > -1.", clientWorkerThreadsCount));
     }
 
     @Override

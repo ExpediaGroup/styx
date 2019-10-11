@@ -30,7 +30,6 @@ import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 import com.hotels.styx.client.origincommands.DisableOrigin;
 import com.hotels.styx.client.origincommands.EnableOrigin;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
-import org.hamcrest.Matcher;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -44,7 +43,6 @@ import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
 import static com.hotels.styx.client.OriginsInventory.OriginState.ACTIVE;
 import static com.hotels.styx.client.OriginsInventory.OriginState.DISABLED;
-import static com.hotels.styx.common.testing.matcher.TransformingMatcher.hasDerivedValue;
 import static com.hotels.styx.support.matchers.ContainsExactlyOneMatcher.containsExactlyOne;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
@@ -93,7 +91,7 @@ public class OriginsInventoryTest {
     public void startsMonitoringNewOrigins() {
         inventory.setOrigins(ORIGIN_1, ORIGIN_2);
 
-        assertThat(inventory, hasActiveOrigins(2));
+        assertThat(inventory.originCount(ACTIVE), is(2));
         verify(monitor).monitor(singleton(ORIGIN_1));
         verify(monitor).monitor(singleton(ORIGIN_2));
 
@@ -110,14 +108,14 @@ public class OriginsInventoryTest {
 
         inventory.setOrigins(originV1);
 
-        assertThat(inventory, hasActiveOrigins(1));
+        assertThat(inventory.originCount(ACTIVE),is(1));
         verify(monitor).monitor(singleton(originV1));
         assertThat(gaugeValue("origins.generic-app.acme-01.status"), isValue(1));
         verify(eventBus).post(any(OriginsSnapshot.class));
 
         inventory.setOrigins(originV2);
 
-        assertThat(inventory, hasActiveOrigins(1));
+        assertThat(inventory.originCount(ACTIVE), is(1));
         verify(monitor).stopMonitoring(singleton(originV1));
         verify(monitor).monitor(singleton(originV2));
         assertThat(gaugeValue("origins.generic-app.acme-01.status"), isValue(1));
@@ -131,14 +129,14 @@ public class OriginsInventoryTest {
 
         inventory.setOrigins(originV1);
 
-        assertThat(inventory, hasActiveOrigins(1));
+        assertThat(inventory.originCount(ACTIVE), is(1));
         verify(monitor).monitor(singleton(originV1));
         assertThat(gaugeValue("origins.generic-app.acme-01.status"), isValue(1));
         verify(eventBus).post(any(OriginsSnapshot.class));
 
         inventory.setOrigins(originV2);
 
-        assertThat(inventory, hasActiveOrigins(1));
+        assertThat(inventory.originCount(ACTIVE), is(1));
         verify(monitor).stopMonitoring(singleton(originV1));
         verify(monitor).monitor(singleton(originV2));
         assertThat(gaugeValue("origins.generic-app.acme-01.status"), isValue(1));
@@ -187,7 +185,7 @@ public class OriginsInventoryTest {
     public void ignoresUnchangedOrigins() throws Exception {
         inventory.setOrigins(ORIGIN_1, ORIGIN_2);
 
-        assertThat(inventory, hasActiveOrigins(2));
+        assertThat(inventory.originCount(ACTIVE), is(2));
         verify(monitor).monitor(singleton(ORIGIN_1));
         verify(monitor).monitor(singleton(ORIGIN_2));
         assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(1));
@@ -196,7 +194,7 @@ public class OriginsInventoryTest {
 
         inventory.setOrigins(ORIGIN_1, ORIGIN_2);
 
-        assertThat(inventory, hasActiveOrigins(2));
+        assertThat(inventory.originCount(ACTIVE), is(2));
         verify(monitor, times(1)).monitor(singleton(ORIGIN_1));
         verify(monitor, times(1)).monitor(singleton(ORIGIN_2));
         verify(eventBus).post(any(OriginsSnapshot.class));
@@ -206,7 +204,7 @@ public class OriginsInventoryTest {
     public void removesOrigin() throws Exception {
         inventory.setOrigins(ORIGIN_1, ORIGIN_2);
 
-        assertThat(inventory, hasActiveOrigins(2));
+        assertThat(inventory.originCount(ACTIVE), is(2));
         verify(monitor).monitor(singleton(ORIGIN_1));
         verify(monitor).monitor(singleton(ORIGIN_2));
         assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(1));
@@ -215,7 +213,7 @@ public class OriginsInventoryTest {
 
         inventory.setOrigins(ORIGIN_2);
 
-        assertThat(inventory, hasActiveOrigins(1));
+        assertThat(inventory.originCount(ACTIVE), is(1));
         verify(monitor).stopMonitoring(singleton(ORIGIN_1));
         assertThat(gaugeValue("origins.generic-app.app-01.status"), isAbsent());
         assertThat(gaugeValue("origins.generic-app.app-02.status"), isValue(1));
@@ -268,7 +266,7 @@ public class OriginsInventoryTest {
 
         inventory.onCommand(new DisableOrigin(id("some-other-app"), ORIGIN_1.id()));
 
-        assertThat(inventory, hasActiveOrigins(1));
+        assertThat(inventory.originCount(ACTIVE), is(1));
         verify(eventBus).post(any(OriginsSnapshot.class));
     }
 
@@ -279,7 +277,7 @@ public class OriginsInventoryTest {
         inventory.onCommand(new DisableOrigin(ORIGIN_1.applicationId(), ORIGIN_1.id()));
         inventory.onCommand(new EnableOrigin(id("some-other-app"), ORIGIN_1.id()));
 
-        assertThat(inventory, hasNoActiveOrigins());
+        assertThat(inventory.originCount(ACTIVE), is(0));
         verify(eventBus, times(2)).post(any(OriginsSnapshot.class));
     }
 
@@ -289,8 +287,8 @@ public class OriginsInventoryTest {
 
         inventory.onCommand(new DisableOrigin(ORIGIN_1.applicationId(), ORIGIN_1.id()));
 
-        assertThat(inventory, hasNoActiveOrigins());
-        assertThat(inventory, hasDisabledOrigins(1));
+        assertThat(inventory.originCount(ACTIVE), is(0));
+        assertThat(inventory.originCount(DISABLED), is(1));
 
         verify(monitor).stopMonitoring(singleton(ORIGIN_1));
         assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(-1));
@@ -304,8 +302,8 @@ public class OriginsInventoryTest {
         inventory.originUnhealthy(ORIGIN_1);
         inventory.onCommand(new DisableOrigin(ORIGIN_1.applicationId(), ORIGIN_1.id()));
 
-        assertThat(inventory, hasNoActiveOrigins());
-        assertThat(inventory, hasDisabledOrigins(1));
+        assertThat(inventory.originCount(ACTIVE), is(0));
+        assertThat(inventory.originCount(DISABLED), is(1));
 
         verify(monitor).stopMonitoring(singleton(ORIGIN_1));
         assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(-1));
@@ -327,11 +325,11 @@ public class OriginsInventoryTest {
     @Test
     public void removesUnhealthyOriginsFromActiveSet() {
         inventory.setOrigins(ORIGIN_1);
-        assertThat(inventory, hasActiveOrigins(1));
+        assertThat(inventory.originCount(ACTIVE), is(1));
 
         inventory.originUnhealthy(ORIGIN_1);
 
-        assertThat(inventory, hasNoActiveOrigins());
+        assertThat(inventory.originCount(ACTIVE), is(0));
         assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(0));
         verify(eventBus, times(2)).post(any(OriginsSnapshot.class));
     }
@@ -339,12 +337,12 @@ public class OriginsInventoryTest {
     @Test
     public void putsHealthyOriginsBackIntoActiveSet() {
         inventory.setOrigins(ORIGIN_1);
-        assertThat(inventory, hasActiveOrigins(1));
+        assertThat(inventory.originCount(ACTIVE), is(1));
 
         inventory.originUnhealthy(ORIGIN_1);
         inventory.originHealthy(ORIGIN_1);
 
-        assertThat(inventory, hasActiveOrigins(1));
+        assertThat(inventory.originCount(ACTIVE), is(1));
         assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(1));
         verify(eventBus, times(3)).post(any(OriginsSnapshot.class));
     }
@@ -352,26 +350,26 @@ public class OriginsInventoryTest {
     @Test
     public void reportingUpRepeatedlyDoesNotAffectCurrentActiveOrigins() {
         inventory.setOrigins(ORIGIN_1);
-        assertThat(inventory, hasActiveOrigins(1));
+        assertThat(inventory.originCount(ACTIVE), is(1));
 
         inventory.originHealthy(ORIGIN_1);
         inventory.originHealthy(ORIGIN_1);
         inventory.originHealthy(ORIGIN_1);
 
-        assertThat(inventory, hasActiveOrigins(1));
+        assertThat(inventory.originCount(ACTIVE), is(1));
         verify(eventBus, times(1)).post(any(OriginsSnapshot.class));
     }
 
     @Test
     public void reportingDownRepeatedlyDoesNotAffectCurrentActiveOrigins() {
         inventory.setOrigins(ORIGIN_1);
-        assertThat(inventory, hasActiveOrigins(1));
+        assertThat(inventory.originCount(ACTIVE), is(1));
 
         inventory.originUnhealthy(ORIGIN_1);
         inventory.originUnhealthy(ORIGIN_1);
         inventory.originUnhealthy(ORIGIN_1);
 
-        assertThat(inventory, hasActiveOrigins(0));
+        assertThat(inventory.originCount(ACTIVE), is(0));
         verify(eventBus, times(2)).post(any(OriginsSnapshot.class));
     }
 
@@ -473,22 +471,6 @@ public class OriginsInventoryTest {
 
         verify(eventBus, times(2)).post(any(OriginsSnapshot.class));
         verify(eventBus).unregister(eq(inventory));
-    }
-
-    private static Matcher<OriginsInventory> hasNoActiveOrigins() {
-        return hasActiveOrigins(0);
-    }
-
-    private static Matcher<OriginsInventory> hasActiveOrigins(int numberOfActiveOrigins) {
-        return hasOrigins(numberOfActiveOrigins, ACTIVE);
-    }
-
-    private static Matcher<OriginsInventory> hasDisabledOrigins(int numberOfDisabledOrigins) {
-        return hasOrigins(numberOfDisabledOrigins, DISABLED);
-    }
-
-    private static Matcher<OriginsInventory> hasOrigins(int numberOfOrigins, OriginsInventory.OriginState state) {
-        return hasDerivedValue(inventory -> inventory.originCount(state), is(numberOfOrigins));
     }
 
     private Optional<Integer> gaugeValue(String name) {

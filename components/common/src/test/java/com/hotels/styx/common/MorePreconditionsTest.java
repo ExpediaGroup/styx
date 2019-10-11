@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,11 +18,8 @@ package com.hotels.styx.common;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.common.MorePreconditions.checkArgument;
-import static com.hotels.styx.common.MorePreconditions.inRange;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.core.StringContains.containsString;
 import static org.testng.Assert.fail;
 
 public class MorePreconditionsTest {
@@ -30,35 +27,26 @@ public class MorePreconditionsTest {
     @Test
     public void checkArgumentSimpleMessageFailure() {
         try {
-            checkArgument(0, greaterThan(0));
+            checkArgument(0, false, "Value should be greater than zero");
             fail("no exception thrown");
         } catch (IllegalArgumentException expected) {
-            assertThat(expected.getMessage(), containsString("argument\n" +
-                    "Expected: a value greater than <0>\n" +
-                    "     but: <0> was equal to <0>"));
+            assertThat(expected.getMessage(), is("Value should be greater than zero"));
         }
     }
 
     @Test
     public void checkArgumentFullMessageFailure() {
         try {
-            checkArgument(0, greaterThan(0), "healthy count threshold");
+            checkArgument(0, false, "Healthy count threshold");
             fail("no exception thrown");
         } catch (IllegalArgumentException expected) {
-            assertThat(expected.getMessage(), containsString("healthy count threshold\n" +
-                    "Expected: a value greater than <0>\n" +
-                    "     but: <0> was equal to <0>"));
+            assertThat(expected.getMessage(), is("Healthy count threshold"));
         }
     }
 
     @Test
-    public void checkArgumentInRange() {
-        assertThat(checkArgument(0, inRange(-3, 3)), is(0));
-    }
-
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void checkArgumentInRangeFailure() {
-        checkArgument(0, inRange(3, 4));
+    public void returnsTheValueUnchanged() {
+        assertThat(checkArgument(0, true, ""), is(0));
     }
 
 }

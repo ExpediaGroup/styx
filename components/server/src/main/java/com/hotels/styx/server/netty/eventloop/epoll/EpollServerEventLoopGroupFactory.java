@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import io.netty.channel.epoll.EpollServerSocketChannel;
 
 import static com.hotels.styx.common.MorePreconditions.checkArgument;
 import static com.hotels.styx.server.netty.eventloop.epoll.EpollEventLoopGroups.newEventLoopGroup;
+import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -34,8 +35,10 @@ public class EpollServerEventLoopGroupFactory implements ServerEventLoopFactory 
 
     public EpollServerEventLoopGroupFactory(String name, int bossThreadsCount, int workerThreadsCount) {
         this.name = requireNonNull(name);
-        this.bossThreadsCount = checkArgument(bossThreadsCount, bossThreadsCount > -1);
-        this.workerThreadsCount = checkArgument(workerThreadsCount, workerThreadsCount > -1);
+        this.bossThreadsCount = checkArgument(bossThreadsCount, bossThreadsCount > -1,
+                format("Invalid boss thread count (%d). It should be > -1.", bossThreadsCount));
+        this.workerThreadsCount = checkArgument(workerThreadsCount, workerThreadsCount > -1,
+                format("Invalid worker thread count (%d). It should be > -1.", workerThreadsCount));
     }
 
     @Override
