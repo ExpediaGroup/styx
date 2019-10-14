@@ -48,25 +48,25 @@ class OriginsConfigConverterTest : StringSpec({
                 .let {
                     it.size shouldBe 4
 
-                    it[0].first shouldBe "app.app1"
-                    it[0].second.tags.shouldContainAll("app", "source=OriginsFileConverter")
-                    it[0].second.type.shouldBe("HostProxy")
-                    it[0].second.routingObject.shouldNotBeNull()
+                    it[0].name() shouldBe "app.app1"
+                    it[0].tags().shouldContainAll("app", "source=OriginsFileConverter")
+                    it[0].type().shouldBe("HostProxy")
+                    it[0].config().shouldNotBeNull()
 
-                    it[1].first shouldBe "app.app2"
-                    it[1].second.tags.shouldContainAll("app", "source=OriginsFileConverter")
-                    it[1].second.type.shouldBe("HostProxy")
-                    it[1].second.routingObject.shouldNotBeNull()
+                    it[1].name() shouldBe "app.app2"
+                    it[1].tags().shouldContainAll("app", "source=OriginsFileConverter")
+                    it[1].type().shouldBe("HostProxy")
+                    it[1].config().shouldNotBeNull()
 
-                    it[2].first shouldBe "app"
-                    it[2].second.tags.shouldContainAll("source=OriginsFileConverter")
-                    it[2].second.type.shouldBe("LoadBalancingGroup")
-                    it[2].second.routingObject.shouldNotBeNull()
+                    it[2].name() shouldBe "app"
+                    it[2].tags().shouldContainAll("source=OriginsFileConverter")
+                    it[2].type().shouldBe("LoadBalancingGroup")
+                    it[2].config().shouldNotBeNull()
 
-                    it[3].first shouldBe ROOT_OBJECT_NAME
-                    it[3].second.tags.shouldContainAll("source=OriginsFileConverter")
-                    it[3].second.type.shouldBe("PathPrefixRouter")
-                    it[3].second.routingObject.shouldNotBeNull()
+                    it[3].name() shouldBe ROOT_OBJECT_NAME
+                    it[3].tags().shouldContainAll("source=OriginsFileConverter")
+                    it[3].type().shouldBe("PathPrefixRouter")
+                    it[3].config().shouldNotBeNull()
                 }
     }
 
@@ -134,25 +134,25 @@ class OriginsConfigConverterTest : StringSpec({
                 .let {
                     it.size shouldBe 4
 
-                    it[0].first shouldBe "app.app1"
-                    it[0].second.tags.shouldContainAll("app", "source=OriginsFileConverter")
-                    it[0].second.type.shouldBe("HostProxy")
-                    it[0].second.routingObject.shouldNotBeNull()
+                    it[0].name() shouldBe "app.app1"
+                    it[0].tags().shouldContainAll("app", "source=OriginsFileConverter")
+                    it[0].type().shouldBe("HostProxy")
+                    it[0].config().shouldNotBeNull()
 
-                    it[1].first shouldBe "app.app2"
-                    it[1].second.tags.shouldContainAll("app", "source=OriginsFileConverter")
-                    it[1].second.type.shouldBe("HostProxy")
-                    it[1].second.routingObject.shouldNotBeNull()
+                    it[1].name() shouldBe "app.app2"
+                    it[1].tags().shouldContainAll("app", "source=OriginsFileConverter")
+                    it[1].type().shouldBe("HostProxy")
+                    it[1].config().shouldNotBeNull()
 
-                    it[2].first shouldBe "app"
-                    it[2].second.tags.shouldContainAll("source=OriginsFileConverter")
-                    it[2].second.type.shouldBe("LoadBalancingGroup")
-                    it[2].second.routingObject.shouldNotBeNull()
+                    it[2].name() shouldBe "app"
+                    it[2].tags().shouldContainAll("source=OriginsFileConverter")
+                    it[2].type().shouldBe("LoadBalancingGroup")
+                    it[2].config().shouldNotBeNull()
 
-                    it[3].first shouldBe ROOT_OBJECT_NAME
-                    it[3].second.tags.shouldContainAll("source=OriginsFileConverter")
-                    it[3].second.type.shouldBe("PathPrefixRouter")
-                    it[3].second.routingObject.shouldNotBeNull()
+                    it[3].name() shouldBe ROOT_OBJECT_NAME
+                    it[3].tags().shouldContainAll("source=OriginsFileConverter")
+                    it[3].type().shouldBe("PathPrefixRouter")
+                    it[3].config().shouldNotBeNull()
                 }
     }
 
@@ -180,50 +180,50 @@ class OriginsConfigConverterTest : StringSpec({
                 .let {
                     it.size shouldBe 9
 
-                    it[0].first shouldBe "appA.appA-1"
-                    it[0].second.tags.shouldContainAll("appA", "source=OriginsFileConverter")
-                    it[0].second.type.shouldBe("HostProxy")
-                    it[0].second.routingObject.shouldNotBeNull()
+                    it[0].name() shouldBe "appA.appA-1"
+                    it[0].tags().shouldContainAll("appA", "source=OriginsFileConverter")
+                    it[0].type().shouldBe("HostProxy")
+                    it[0].config().shouldNotBeNull()
 
-                    it[1].first shouldBe "appA.appA-2"
-                    it[1].second.tags.shouldContainAll("appA", "source=OriginsFileConverter")
-                    it[1].second.type.shouldBe("HostProxy")
-                    it[1].second.routingObject.shouldNotBeNull()
+                    it[1].name() shouldBe "appA.appA-2"
+                    it[1].tags().shouldContainAll("appA", "source=OriginsFileConverter")
+                    it[1].type().shouldBe("HostProxy")
+                    it[1].config().shouldNotBeNull()
 
-                    it[2].first shouldBe "appA"
-                    it[2].second.tags.shouldContainAll("source=OriginsFileConverter")
-                    it[2].second.type.shouldBe("LoadBalancingGroup")
-                    it[2].second.routingObject.shouldNotBeNull()
+                    it[2].name() shouldBe "appA"
+                    it[2].tags().shouldContainAll("source=OriginsFileConverter")
+                    it[2].type().shouldBe("LoadBalancingGroup")
+                    it[2].config().shouldNotBeNull()
 
-                    it[3].first shouldBe "appB.appB-1"
-                    it[3].second.tags.shouldContainAll("appB", "source=OriginsFileConverter")
-                    it[3].second.type.shouldBe("HostProxy")
-                    it[3].second.routingObject.shouldNotBeNull()
+                    it[3].name() shouldBe "appB.appB-1"
+                    it[3].tags().shouldContainAll("appB", "source=OriginsFileConverter")
+                    it[3].type().shouldBe("HostProxy")
+                    it[3].config().shouldNotBeNull()
 
-                    it[4].first shouldBe "appB"
-                    it[4].second.tags.shouldContainAll("source=OriginsFileConverter")
-                    it[4].second.type.shouldBe("LoadBalancingGroup")
-                    it[4].second.routingObject.shouldNotBeNull()
+                    it[4].name() shouldBe "appB"
+                    it[4].tags().shouldContainAll("source=OriginsFileConverter")
+                    it[4].type().shouldBe("LoadBalancingGroup")
+                    it[4].config().shouldNotBeNull()
 
-                    it[5].first shouldBe "appC.appC-1"
-                    it[5].second.tags.shouldContainAll("appC", "source=OriginsFileConverter")
-                    it[5].second.type.shouldBe("HostProxy")
-                    it[5].second.routingObject.shouldNotBeNull()
+                    it[5].name() shouldBe "appC.appC-1"
+                    it[5].tags().shouldContainAll("appC", "source=OriginsFileConverter")
+                    it[5].type().shouldBe("HostProxy")
+                    it[5].config().shouldNotBeNull()
 
-                    it[6].first shouldBe "appC.appC-2"
-                    it[6].second.tags.shouldContainAll("appC", "source=OriginsFileConverter")
-                    it[6].second.type.shouldBe("HostProxy")
-                    it[6].second.routingObject.shouldNotBeNull()
+                    it[6].name() shouldBe "appC.appC-2"
+                    it[6].tags().shouldContainAll("appC", "source=OriginsFileConverter")
+                    it[6].type().shouldBe("HostProxy")
+                    it[6].config().shouldNotBeNull()
 
-                    it[7].first shouldBe "appC"
-                    it[7].second.tags.shouldContainAll("source=OriginsFileConverter")
-                    it[7].second.type.shouldBe("LoadBalancingGroup")
-                    it[7].second.routingObject.shouldNotBeNull()
+                    it[7].name() shouldBe "appC"
+                    it[7].tags().shouldContainAll("source=OriginsFileConverter")
+                    it[7].type().shouldBe("LoadBalancingGroup")
+                    it[7].config().shouldNotBeNull()
 
-                    it[8].first shouldBe "pathPrefixRouter"
-                    it[8].second.tags.shouldContainAll("source=OriginsFileConverter")
-                    it[8].second.type.shouldBe("PathPrefixRouter")
-                    it[8].second.routingObject.shouldNotBeNull()
+                    it[8].name() shouldBe "pathPrefixRouter"
+                    it[8].tags().shouldContainAll("source=OriginsFileConverter")
+                    it[8].type().shouldBe("PathPrefixRouter")
+                    it[8].config().shouldNotBeNull()
                 }
     }
 

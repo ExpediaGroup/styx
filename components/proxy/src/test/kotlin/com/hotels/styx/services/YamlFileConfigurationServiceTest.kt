@@ -28,10 +28,12 @@ import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.PathPrefixRouter
 import com.hotels.styx.routing.handlers.ProviderObjectRecord
 import com.hotels.styx.services.OriginsConfigConverter.Companion.OBJECT_CREATOR_TAG
+import io.kotlintest.Matcher
+import io.kotlintest.Result
 import io.kotlintest.Spec
 import io.kotlintest.eventually
-import io.kotlintest.matchers.collections.shouldContainAll
 import io.kotlintest.seconds
+import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FunSpec
 import kotlinx.coroutines.delay
@@ -49,7 +51,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
     override fun beforeSpec(spec: Spec) {
         LOGGER.info("Temp directory: " + tempDir.absolutePath)
         LOGGER.info("Origins file: " + originsConfig.absolutePath)
-        LOGGER.info("Duration: '{}'" , Duration.ofMillis(100).toString())
+        LOGGER.info("Duration: '{}'", Duration.ofMillis(100).toString())
     }
 
     override fun afterSpec(spec: Spec) {
@@ -136,14 +138,13 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                          """.trimIndent())
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    objectStore.entrySet().size shouldBe 4
-                    val metadata = objectStore.entrySet().map { (key, record) -> Triple(key, record.type, record.tags) }
+                    val objects = objectStore.toMap()
+                    objects.size shouldBe 4
 
-                    metadata.shouldContainAll(
-                            Triple("app.app-01", "HostProxy", setOf("app", OBJECT_CREATOR_TAG)),
-                            Triple("app.app-02", "HostProxy", setOf("app", OBJECT_CREATOR_TAG)),
-                            Triple("app", "LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)),
-                            Triple("pathPrefixRouter", "PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
+                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf("app", OBJECT_CREATOR_TAG)))
+                    objects["app.app-02"]!!.should(beRoutingObject("HostProxy", setOf("app", OBJECT_CREATOR_TAG)))
+                    objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
+                    objects["pathPrefixRouter"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
                 }
             }
 
@@ -157,14 +158,13 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                          """.trimIndent())
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    objectStore.entrySet().size shouldBe 3
+                    val objects = objectStore.toMap()
 
-                    objectStore.entrySet()
-                            .map { (key, record) -> Triple(key, record.type, record.tags) }
-                            .shouldContainAll(
-                                    Triple("app.app-01", "HostProxy", setOf("app", OBJECT_CREATOR_TAG)),
-                                    Triple("app", "LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)),
-                                    Triple("pathPrefixRouter", "PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
+                    objects.size shouldBe 3
+
+                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf("app", OBJECT_CREATOR_TAG)))
+                    objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
+                    objects["pathPrefixRouter"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
                 }
             }
 
@@ -178,14 +178,13 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                          """.trimIndent())
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    objectStore.entrySet().size shouldBe 3
+                    val objects = objectStore.toMap()
 
-                    objectStore.entrySet()
-                            .map { (key, record) -> Triple(key, record.type, record.tags) }
-                            .shouldContainAll(
-                                    Triple("app.app-01", "HostProxy", setOf("app", OBJECT_CREATOR_TAG)),
-                                    Triple("app", "LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)),
-                                    Triple("pathPrefixRouter", "PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
+                    objects.size shouldBe 3
+
+                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf("app", OBJECT_CREATOR_TAG)))
+                    objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
+                    objects["pathPrefixRouter"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
 
                     JsonNodeConfig(objectStore["app.app-01"].get().config).get("host") shouldBe Optional.of("localhost:9999")
                 }
@@ -205,16 +204,15 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                          """.trimIndent())
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    objectStore.entrySet().size shouldBe 5
+                    val objects = objectStore.toMap()
 
-                    objectStore.entrySet()
-                            .map { (key, record) -> Triple(key, record.type, record.tags) }
-                            .shouldContainAll(
-                                    Triple("app.app-01", "HostProxy", setOf("app", OBJECT_CREATOR_TAG)),
-                                    Triple("app", "LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)),
-                                    Triple("appB.appB-01", "HostProxy", setOf("appB", OBJECT_CREATOR_TAG)),
-                                    Triple("appB", "LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)),
-                                    Triple("pathPrefixRouter", "PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
+                    objects.size shouldBe 5
+
+                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf("app", OBJECT_CREATOR_TAG)))
+                    objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
+                    objects["appB.appB-01"]!!.should(beRoutingObject("HostProxy", setOf("appB", OBJECT_CREATOR_TAG)))
+                    objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
+                    objects["pathPrefixRouter"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
                 }
             }
 
@@ -228,14 +226,13 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                          """.trimIndent())
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    objectStore.entrySet().size shouldBe 3
+                    val objects = objectStore.toMap()
 
-                    objectStore.entrySet()
-                            .map { (key, record) -> Triple(key, record.type, record.tags) }
-                            .shouldContainAll(
-                                    Triple("appB.appB-01", "HostProxy", setOf("appB", OBJECT_CREATOR_TAG)),
-                                    Triple("appB", "LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)),
-                                    Triple("pathPrefixRouter", "PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
+                    objects.size shouldBe 3
+
+                    objects["appB.appB-01"]!!.should(beRoutingObject("HostProxy", setOf("appB", OBJECT_CREATOR_TAG)))
+                    objects["appB"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
+                    objects["pathPrefixRouter"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
                 }
 
             }
@@ -250,22 +247,50 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                          """.trimIndent())
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    objectStore.entrySet().size shouldBe 3
+                    val objects = objectStore.toMap()
 
-                    objectStore.entrySet()
-                            .map { (key, record) -> Triple(key, record.type, record.tags) }
-                            .shouldContainAll(
-                                    Triple("appB.appB-01", "HostProxy", setOf("appB", OBJECT_CREATOR_TAG)),
-                                    Triple("appB", "LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)),
-                                    Triple("pathPrefixRouter", "PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
+                    objects.size shouldBe 3
+                    objects["appB.appB-01"]!!.should(beRoutingObject("HostProxy", setOf("appB", OBJECT_CREATOR_TAG)))
+                    objects["appB"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
+                    objects["pathPrefixRouter"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
                 }
+            }
+
+            test("Does not re-create unchanged objects") {
+                val creationTimes = objectStore.entrySet()
+                        .map { (key, record) -> Pair(key, record.creationTime()) }
+                        .toMap()
+
+                writeOrigins("""
+                        ---
+                        - id: "appB"
+                          path: "/b"
+                          origins:
+                          - { id: "appB-01", host: "localhost:8081" }
+                          - { id: "appB-02", host: "localhost:8082" }
+                         """.trimIndent())
+
+                eventually(2.seconds, AssertionError::class.java) {
+                    objectStore.entrySet().size shouldBe 4
+                }
+
+                val objects = objectStore.toMap()
+
+                objects["appB.appB-01"]!!.should(beRoutingObject("HostProxy",
+                        setOf(creationTimes["appB.appB-01"]!!, "appB", OBJECT_CREATOR_TAG)))
+
+                objects["appB"]!!.should(beRoutingObject("LoadBalancingGroup",
+                        setOf(creationTimes["appB"]!!, OBJECT_CREATOR_TAG)))
+
+                objects["pathPrefixRouter"]!!.should(beRoutingObject("PathPrefixRouter",
+                        setOf(creationTimes["pathPrefixRouter"]!!, OBJECT_CREATOR_TAG)))
             }
 
             LOGGER.info("configuration changes - Stopping service [$service]")
             service.stop()
         }
 
-        context("Load balancing group changes") {
+        context("!Load balancing group changes") {
             val objectStore = StyxObjectStore<RoutingObjectRecord>()
             val serviceDb = StyxObjectStore<ProviderObjectRecord>()
             val service = serviceWithInitialConfig(objectStore, serviceDb)
@@ -365,7 +390,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
             service.stop()
         }
 
-        context("Host proxy changes") {
+        context("!Host proxy changes") {
             val objectStore = StyxObjectStore<RoutingObjectRecord>()
             val serviceDb = StyxObjectStore<ProviderObjectRecord>()
             val service = serviceWithInitialConfig(objectStore, serviceDb)
@@ -450,7 +475,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
             service.stop()
         }
 
-        context("Path mapping changes") {
+        context("!Path mapping changes") {
             val objectStore = StyxObjectStore<RoutingObjectRecord>()
             val serviceDb = StyxObjectStore<ProviderObjectRecord>()
             val service = serviceWithInitialConfig(objectStore, serviceDb,
@@ -495,7 +520,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
             service.stop()
         }
 
-        context("Error handling") {
+        context("!Error handling") {
             val objectStore = StyxObjectStore<RoutingObjectRecord>()
             val serviceDb = StyxObjectStore<ProviderObjectRecord>()
             val path = originsConfig.absolutePath
@@ -508,14 +533,13 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                     """.trimIndent())
 
                 delay(2.seconds.toMillis())
-                objectStore.entrySet().size shouldBe 3
 
-                objectStore.entrySet()
-                        .map { (key, record) -> Triple(key, record.type, record.tags) }
-                        .shouldContainAll(
-                                Triple("app.app-01", "HostProxy", setOf("app", OBJECT_CREATOR_TAG)),
-                                Triple("app", "LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)),
-                                Triple("pathPrefixRouter", "PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
+                val objects = objectStore.toMap()
+
+                objects.size shouldBe 3
+                objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf("app", OBJECT_CREATOR_TAG)))
+                objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
+                objects["pathPrefixRouter"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
             }
 
             test("Keeps the original configuration when origins file is removed") {
@@ -523,14 +547,12 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                 originsConfig.exists() shouldBe false
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    objectStore.entrySet().size shouldBe 3
+                    val objects = objectStore.toMap()
 
-                    objectStore.entrySet()
-                            .map { (key, record) -> Triple(key, record.type, record.tags) }
-                            .shouldContainAll(
-                                    Triple("app.app-01", "HostProxy", setOf("app", OBJECT_CREATOR_TAG)),
-                                    Triple("app", "LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)),
-                                    Triple("pathPrefixRouter", "PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
+                    objects.size shouldBe 3
+                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf("app", OBJECT_CREATOR_TAG)))
+                    objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
+                    objects["pathPrefixRouter"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
                 }
             }
 
@@ -545,18 +567,39 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                     """.trimIndent())
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    objectStore.entrySet().size shouldBe 3
+                    val objects = objectStore.toMap()
 
-                    objectStore.entrySet()
-                            .map { (key, record) -> Triple(key, record.type, record.tags) }
-                            .shouldContainAll(
-                                    Triple("appB.appB-01", "HostProxy", setOf("appB", OBJECT_CREATOR_TAG)),
-                                    Triple("appB", "LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)),
-                                    Triple("pathPrefixRouter", "PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
+                    objects.size shouldBe 3
+                    objects["appB.appB-01"]!!.should(beRoutingObject("HostProxy", setOf("appB", OBJECT_CREATOR_TAG)))
+                    objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
+                    objects["pathPrefixRouter"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
                 }
             }
 
             service.stop()
+        }
+    }
+
+    internal fun StyxObjectStore<RoutingObjectRecord>.toMap() = this.entrySet()
+            .map { (k, v) -> Pair(k, v) }
+            .toMap()
+
+    internal fun beRoutingObject(type: String, mandatoryTags: Collection<String>) = object : Matcher<RoutingObjectRecord> {
+        override fun test(value: RoutingObjectRecord): Result {
+            val message = "Error matching ${value}"
+
+            if (value.type != type) {
+                return Result(false,
+                        "{$message}.\nExcpected ${type} but was ${value.type}",
+                        "${message}.\nObject type should not be LoadBalancingGroup")
+            }
+            if (!value.tags.containsAll(mandatoryTags)) {
+                return Result(false,
+                        "${message}.\nShould contain all tags ${mandatoryTags}, but contains ${value.tags}",
+                        "${message}.\nShould not contain tags ${value.tags}")
+            }
+
+            return Result(true, "test passed", "test passed")
         }
     }
 

@@ -56,14 +56,12 @@ internal class OriginsConfigConverter(
 
     internal fun routingObjects(apps: List<BackendService>) =
             routingObjectConfigs(apps)
-                    .map { styxObjectDef ->
-                        Pair(styxObjectDef.name(), RoutingObjectRecord.create(
-                                styxObjectDef.type(),
-                                styxObjectDef.tags().toSet(),
-                                styxObjectDef.config(),
-                                Builtins.build(listOf(styxObjectDef.name()), context, styxObjectDef)
-                        ))
-                    }
+
+    internal fun routingObjectRecord(objectDef: StyxObjectDefinition) = RoutingObjectRecord.create(
+            objectDef.type(),
+            objectDef.tags().toSet(),
+            objectDef.config(),
+            Builtins.build(listOf(objectDef.name()), context, objectDef))
 
     internal fun routingObjectConfigs(apps: List<BackendService>): List<StyxObjectDefinition> =
             apps.flatMap { toBackendServiceObjects(it, originRestrictionCookie) } + pathPrefixRouter(apps)

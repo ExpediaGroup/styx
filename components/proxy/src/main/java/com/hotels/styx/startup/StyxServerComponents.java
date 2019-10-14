@@ -35,8 +35,6 @@ import com.hotels.styx.common.format.SanitisedHttpHeaderFormatter;
 import com.hotels.styx.common.format.SanitisedHttpMessageFormatter;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
-import com.hotels.styx.routing.RoutingMetadataDecorator;
-import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
@@ -130,11 +128,12 @@ public class StyxServerComponents {
                 .map(StyxServerComponents::readComponents)
                 .orElse(ImmutableMap.of())
                 .forEach((name, definition) -> {
-                    RoutingObject routingObject = Builtins.build(ImmutableList.of(name), routingObjectContext, definition);
-                    RoutingMetadataDecorator adapter = new RoutingMetadataDecorator(routingObject);
-
-                    routeObjectStore.insert(name, new RoutingObjectRecord(definition.type(), ImmutableSet.copyOf(definition.tags()), definition.config(), adapter))
-                            .ifPresent(previous -> previous.getRoutingObject().stop());
+                    routeObjectStore.insert(name, RoutingObjectRecord.Companion.create(
+                            definition.type(),
+                            ImmutableSet.copyOf(definition.tags()),
+                            definition.config(),
+                            Builtins.build(ImmutableList.of(name), routingObjectContext, definition))
+                    ).ifPresent(previous -> previous.getRoutingObject().stop());
                 });
 
         this.environment.configuration().get("providers", JsonNode.class)
