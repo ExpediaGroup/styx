@@ -34,6 +34,10 @@ internal data class RoutingObjectRecord(
                 config,
                 RoutingMetadataDecorator(routingObject))
     }
+
+    fun creationTime() = tags
+            .filter { it.startsWith("created:") }
+            .first()
 }
 
 private fun timestamp(): String {
