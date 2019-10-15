@@ -163,7 +163,8 @@ internal class OriginsConfigConverter(
                         app.connectionPoolConfig(),
                         app.tlsSettings().orElse(null),
                         app.responseTimeoutMillis(),
-                        origin))
+                        origin,
+                        "origins.${app.id()}.${origin.id()}"))
 
         private fun loadBalancingGroupConfig(origins: String,
                                              originRestrictionCookie: String?,
@@ -221,12 +222,13 @@ internal class OriginsConfigConverter(
         private fun hostProxyConfig(poolSettings: ConnectionPoolSettings,
                                     tlsSettings: TlsSettings?,
                                     responseTimeout: Int,
-                                    origin: Origin): JsonNode = MAPPER.valueToTree(
+                                    origin: Origin,
+                                    metricsPrefix: String): JsonNode = MAPPER.valueToTree(
                 HostProxyConfiguration(
                         "${origin.host()}:${origin.port()}",
                         poolSettings,
                         tlsSettings,
                         responseTimeout,
-                        "origins.${origin.id()}.${origin.id()}"))
+                        metricsPrefix))
     }
 }
