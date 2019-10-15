@@ -68,13 +68,13 @@ public class OriginMetrics implements OriginStats {
         this.registry = this.applicationMetrics.metricRegistry();
         this.requestMetricPrefix = requestMetricPrefix(requireNonNull(origin));
 
-        this.requestSuccessMeter = this.registry.meter(name(this.requestMetricPrefix, "success-rate"));
-        this.requestErrorMeter = this.registry.meter(name(this.requestMetricPrefix, "error-rate"));
-        this.requestLatency = this.registry.timer(name(this.requestMetricPrefix, "latency"));
-        this.status200OkMeter = this.registry.meter(name(this.requestMetricPrefix, "response", statusCodeName(200)));
-        this.errorsCatchAll = this.registry.meter(name(this.requestMetricPrefix, "response.status.5xx"));
+        this.requestSuccessMeter = this.registry.meter(this.requestMetricPrefix + "success-rate");
+        this.requestErrorMeter = this.registry.meter(this.requestMetricPrefix + "error-rate");
+        this.requestLatency = this.registry.timer(this.requestMetricPrefix + "latency");
+        this.status200OkMeter = this.registry.meter(this.requestMetricPrefix + "response." + statusCodeName(200));
+        this.errorsCatchAll = this.registry.meter(this.requestMetricPrefix + "response.status.5xx");
 
-        this.requestCancellations = this.registry.counter(name(this.requestMetricPrefix, "cancelled"));
+        this.requestCancellations = this.registry.counter(this.requestMetricPrefix + "cancelled");
     }
 
     /**
@@ -146,6 +146,6 @@ public class OriginMetrics implements OriginStats {
     }
 
     private String requestMetricPrefix(Origin origin) {
-        return originName(origin) + ".requests";
+        return originName(origin) + "requests.";
     }
 }

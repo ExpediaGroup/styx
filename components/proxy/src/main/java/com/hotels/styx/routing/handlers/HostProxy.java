@@ -252,7 +252,7 @@ public class HostProxy implements RoutingObject {
 
             Origin origin = newOriginBuilder(host, port)
                     .applicationId(metricPrefix)
-                    .id(format("%s:%s", host, port))
+                    .id("")
                     .build();
 
             OriginMetrics originMetrics = OriginMetrics.create(
