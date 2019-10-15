@@ -101,8 +101,8 @@
     <jackson-module-kotlin.version>2.9.10</jackson-module-kotlin.version>
     <metrics.version>4.0.5</metrics.version>
     <antlr.version>4.5.1-1</antlr.version>
-    <netty.version>4.1.15.Final</netty.version>
-    <netty-tcnative.version>2.0.6.Final</netty-tcnative.version>
+    <netty.version>4.1.42.Final</netty.version>
+    <netty-tcnative.version>2.0.26.Final</netty-tcnative.version>
     <rxjava.version>1.1.6</rxjava.version>
     <reactive-streams.version>1.0.2</reactive-streams.version>
     <reactor.version>3.2.0.RELEASE</reactor.version>
