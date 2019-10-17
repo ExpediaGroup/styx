@@ -331,7 +331,6 @@ public class StyxBackendServiceClientTest {
                 .loadBalancer(
                         mockLoadBalancer(Optional.of(remoteHost(SOME_ORIGIN, toHandler(hostClient), hostClient)))
                 )
-                .enableContentValidation()
                 .build();
 
         LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ)).block();
