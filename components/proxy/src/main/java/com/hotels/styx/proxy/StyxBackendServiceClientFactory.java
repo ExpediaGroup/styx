@@ -77,7 +77,6 @@ public class StyxBackendServiceClientFactory implements BackendServiceClientFact
                 .stickySessionConfig(backendService.stickySessionConfig())
                 .metricsRegistry(environment.metricRegistry())
                 .retryPolicy(retryPolicy)
-                .enableContentValidation()
                 .rewriteRules(backendService.rewrites())
                 .originStatsFactory(originStatsFactory)
                 .originsRestrictionCookieName(originRestrictionCookie)
