@@ -23,6 +23,7 @@ import com.hotels.styx.client.applications.metrics.OriginMetrics;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 
@@ -58,7 +59,7 @@ public interface OriginStatsFactory {
          * @return the {@link OriginStats}
          */
         public OriginStats originStats(Origin origin) {
-            return metricsByOrigin.computeIfAbsent(origin, theOrigin -> OriginMetrics.create(theOrigin, metricRegistry));
+            return metricsByOrigin.computeIfAbsent(origin, theOrigin -> OriginMetrics.create(theOrigin.applicationId(), theOrigin.id().toString(), metricRegistry));
         }
     }
 }

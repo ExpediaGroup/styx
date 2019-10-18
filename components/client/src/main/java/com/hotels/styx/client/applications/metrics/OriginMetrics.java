@@ -18,7 +18,7 @@ package com.hotels.styx.client.applications.metrics;
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
-import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.Id;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.client.applications.AggregateTimer;
 import com.hotels.styx.client.applications.OriginStats;
@@ -62,19 +62,20 @@ public class OriginMetrics implements OriginStats {
      * @param applicationMetrics application metrics
      * @param origin             an origin
      */
-    public OriginMetrics(ApplicationMetrics applicationMetrics, Origin origin) {
+    public OriginMetrics(ApplicationMetrics applicationMetrics, String originId) {
         this.applicationMetrics = requireNonNull(applicationMetrics);
+        requireNonNull(originId);
 
         this.registry = this.applicationMetrics.metricRegistry();
-        this.requestMetricPrefix = requestMetricPrefix(requireNonNull(origin));
+        this.requestMetricPrefix = name(originId, "requests");
 
-        this.requestSuccessMeter = this.registry.meter(this.requestMetricPrefix + "success-rate");
-        this.requestErrorMeter = this.registry.meter(this.requestMetricPrefix + "error-rate");
-        this.requestLatency = this.registry.timer(this.requestMetricPrefix + "latency");
-        this.status200OkMeter = this.registry.meter(this.requestMetricPrefix + "response." + statusCodeName(200));
-        this.errorsCatchAll = this.registry.meter(this.requestMetricPrefix + "response.status.5xx");
+        this.requestSuccessMeter = this.registry.meter(name(this.requestMetricPrefix, "success-rate"));
+        this.requestErrorMeter = this.registry.meter(name(this.requestMetricPrefix, "error-rate"));
+        this.requestLatency = this.registry.timer(name(this.requestMetricPrefix, "latency"));
+        this.status200OkMeter = this.registry.meter(name(this.requestMetricPrefix, "response", statusCodeName(200)));
+        this.errorsCatchAll = this.registry.meter(name(this.requestMetricPrefix, "response.status.5xx"));
 
-        this.requestCancellations = this.registry.counter(this.requestMetricPrefix + "cancelled");
+        this.requestCancellations = this.registry.counter(name(this.requestMetricPrefix, "cancelled"));
     }
 
     /**
@@ -84,9 +85,9 @@ public class OriginMetrics implements OriginStats {
      * @param metricRegistry a metrics registry
      * @return a new OriginMetrics
      */
-    public static OriginMetrics create(Origin origin, MetricRegistry metricRegistry) {
-        ApplicationMetrics appMetrics = new ApplicationMetrics(origin.applicationId(), metricRegistry);
-        return new OriginMetrics(appMetrics, origin);
+    public static OriginMetrics create(Id appId, String originId, MetricRegistry metricRegistry) {
+        ApplicationMetrics appMetrics = new ApplicationMetrics(appId, metricRegistry);
+        return new OriginMetrics(appMetrics, originId);
     }
 
     @Override
@@ -141,11 +142,4 @@ public class OriginMetrics implements OriginStats {
         return code / 100;
     }
 
-    private static String originName(Origin origin) {
-        return name(origin.id().toString());
-    }
-
-    private String requestMetricPrefix(Origin origin) {
-        return originName(origin) + "requests.";
-    }
 }
