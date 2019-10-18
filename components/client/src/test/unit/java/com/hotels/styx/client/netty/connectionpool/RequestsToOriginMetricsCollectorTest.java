@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -56,6 +56,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERR
 import static io.netty.handler.codec.http.HttpResponseStatus.MOVED_PERMANENTLY;
 import static io.netty.handler.codec.http.HttpResponseStatus.NOT_IMPLEMENTED;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.is;
@@ -97,7 +98,7 @@ public class RequestsToOriginMetricsCollectorTest {
     private void setUp() {
         this.metricRegistry = new CodaHaleMetricRegistry();
         ApplicationMetrics appMetrics = new ApplicationMetrics(this.appId, this.metricRegistry);
-        this.originMetrics = new OriginMetrics(appMetrics, this.origin);
+        this.originMetrics = new OriginMetrics(appMetrics, originPrefix(this.origin));
     }
 
     @AfterMethod
@@ -113,7 +114,7 @@ public class RequestsToOriginMetricsCollectorTest {
 
     private EmbeddedChannel buildEmbeddedChannel() {
         ApplicationMetrics appMetrics = new ApplicationMetrics(this.origin.applicationId(), this.metricRegistry);
-        OriginMetrics originMetrics = new OriginMetrics(appMetrics, this.origin);
+        OriginMetrics originMetrics = new OriginMetrics(appMetrics, originPrefix(this.origin));
 
         return new EmbeddedChannel(
                 new HttpClientCodec(),
@@ -497,6 +498,10 @@ public class RequestsToOriginMetricsCollectorTest {
         when(status.code()).thenReturn(code);
         when(msg.getStatus()).thenReturn(status);
         return msg;
+    }
+
+    private static String originPrefix(Origin origin) {
+        return origin.id().toString();
     }
 
 }

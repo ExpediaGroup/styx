@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
 import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
@@ -211,12 +212,14 @@ public class HostProxy implements RoutingObject {
                     .orElse(DEFAULT_REQUEST_TIMEOUT);
 
             String metricPrefix = config.get("metricPrefix", String.class)
-                    .orElse("routing.objects.hostProxy");
+                    .orElse("routing.objects");
 
             HostAndPort hostAndPort = config.get("host")
                     .map(HostAndPort::fromString)
                     .map(it -> addDefaultPort(it, tlsSettings))
                     .orElseThrow(() -> missingAttributeError(configBlock, join(".", fullName), "host"));
+
+            String objectName = fullName.get(fullName.size() - 1);
 
             return createHostProxyHandler(
                     context.environment().metricRegistry(),
@@ -225,7 +228,8 @@ public class HostProxy implements RoutingObject {
                     poolSettings,
                     tlsSettings,
                     responseTimeoutMillis,
-                    metricPrefix);
+                    metricPrefix,
+                    objectName);
         }
 
         private static HostAndPort addDefaultPort(HostAndPort hostAndPort, TlsSettings tlsSettings) {
@@ -248,16 +252,15 @@ public class HostProxy implements RoutingObject {
                 ConnectionPoolSettings poolSettings,
                 TlsSettings tlsSettings,
                 int responseTimeoutMillis,
-                String metricPrefix) {
+                String metricPrefix,
+                String objectName) {
 
             Origin origin = newOriginBuilder(host, port)
                     .applicationId(metricPrefix)
-                    .id("")
+                    .id(objectName)
                     .build();
 
-            OriginMetrics originMetrics = OriginMetrics.create(
-                    origin,
-                    metricRegistry);
+            OriginMetrics originMetrics = OriginMetrics.create(id(metricPrefix), objectName, metricRegistry);
 
             ConnectionPool.Factory connectionPoolFactory = new SimpleConnectionPoolFactory.Builder()
                     .connectionFactory(
