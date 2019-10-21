@@ -33,6 +33,7 @@ services:
       - "8000:8000"
     volumes:
       - ./styx-config:/styx/config
+      - ./styx-logs:/styx/logs
     links:
       - httpd-01
       - toxiproxy
