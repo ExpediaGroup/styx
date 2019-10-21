@@ -38,12 +38,6 @@ admin:
 
 services:
   factories:
-    backendServiceRegistry:
-      class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry$Factory"
-      config:
-        originsFile: "/styx/default-config/origins.yml"
-        monitor:
-          enabled: true
     jmx:
       class: "com.hotels.styx.metrics.reporting.jmx.JmxReporterServiceFactory"
       config:
