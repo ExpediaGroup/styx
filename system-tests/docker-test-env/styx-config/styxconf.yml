@@ -6,6 +6,6 @@ services:
     backendServiceRegistry:
       class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry$Factory"
       config:
-        originsFile: "/styx/default-config/origins.yml"
+        originsFile: "/styx/config/origins.yml"
         monitor:
           enabled: true
