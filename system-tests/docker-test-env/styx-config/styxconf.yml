@@ -4,5 +4,8 @@ include: /styx/default-config/default.yml
 services:
   factories:
     backendServiceRegistry:
+      class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry$Factory"
       config:
         originsFile: "/styx/config/origins.yml"
+        monitor:
+          enabled: true
