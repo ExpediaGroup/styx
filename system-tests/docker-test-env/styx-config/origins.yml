@@ -17,6 +17,24 @@
   origins:
     - { id: "origin-01", host: "origin:8080" }
 
+- id: "secure-origin"
+  path: "/secure"
+  healthCheck:
+    uri: /hello.txt
+  tlsSettings:
+    trustAllCerts: true
+  connectionPool:
+    maxConnectionsPerHost: 45
+    maxPendingConnectionsPerHost: 15
+    connectTimeoutMillis: 1000
+    pendingConnectionTimeoutMillis: 8000
+  responseTimeoutMillis: 60000
+  rewrites:
+      - urlPattern: "/secure/(.*)"
+        replacement: "/$1"
+  origins:
+    - { id: "secure-origin", host: "origin:8443" }
+
 - id: "toxiproxy"
   path: "/toxi"
   healthCheck:
