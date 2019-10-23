@@ -219,7 +219,12 @@ public class AdminServerBuilder {
         Map<String, HttpHandler> adminInterfaceHandlers = namedPlugin.adminInterfaceHandlers();
 
         return mapToList(adminInterfaceHandlers, (relativePath, handler) ->
-                new PluginAdminEndpointRoute(namedPlugin, relativePath, new HttpStreamer(MEGABYTE, handler)));
+                createPluginAdminEndpointRoute(namedPlugin, relativePath, handler));
+    }
+
+    private static PluginAdminEndpointRoute createPluginAdminEndpointRoute(NamedPlugin namedPlugin, String relativePath, HttpHandler handler) {
+        HttpStreamer httpStreamer = new HttpStreamer(MEGABYTE, handler);
+        return new PluginAdminEndpointRoute(namedPlugin, relativePath, httpStreamer);
     }
 
     // allows key and value to be labelled in lambda instead of having to use Entry.getKey, Entry.getValue
