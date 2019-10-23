@@ -23,7 +23,6 @@ import com.hotels.styx.client.applications.metrics.OriginMetrics;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 
