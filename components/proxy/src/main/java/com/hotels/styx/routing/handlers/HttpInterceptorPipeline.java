@@ -43,6 +43,7 @@ import java.util.stream.Collectors;
 import static com.hotels.styx.config.schema.SchemaDsl.field;
 import static com.hotels.styx.config.schema.SchemaDsl.list;
 import static com.hotels.styx.config.schema.SchemaDsl.object;
+import static com.hotels.styx.config.schema.SchemaDsl.optional;
 import static com.hotels.styx.config.schema.SchemaDsl.routingObject;
 import static com.hotels.styx.config.schema.SchemaDsl.string;
 import static com.hotels.styx.routing.config.RoutingConfigParser.toRoutingConfigNode;
@@ -58,7 +59,7 @@ import static java.util.stream.StreamSupport.stream;
  */
 public class HttpInterceptorPipeline implements RoutingObject {
     public static final Schema.FieldType SCHEMA = object(
-            field("pipeline", list(string())),
+            optional("pipeline", list(string())),
             field("handler", routingObject())
     );
 

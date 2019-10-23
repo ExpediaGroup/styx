@@ -84,7 +84,7 @@ public class NettyConnection implements Connection, TimeToFirstByteListener {
             pipeline.addLast("ssl", sslHandler);
         }
 
-        pipeline.addLast("http-codec", new HttpClientCodec(httpConfig.maxInitialLineLength(), httpConfig.maxHeadersSize(), httpConfig.maxChunkSize()));
+        pipeline.addLast("http-codec", new HttpClientCodec(httpConfig.maxInitialLength(), httpConfig.maxHeadersSize(), httpConfig.maxChunkSize()));
         if (httpConfig.compress()) {
             pipeline.addLast("decompressor", new HttpContentDecompressor());
         }

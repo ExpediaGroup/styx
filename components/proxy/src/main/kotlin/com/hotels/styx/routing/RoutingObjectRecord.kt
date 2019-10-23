@@ -16,6 +16,8 @@
 package com.hotels.styx.routing
 
 import com.fasterxml.jackson.databind.JsonNode
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter.ISO_DATE_TIME
 
 /**
  * A routing object and its associated configuration metadata.
@@ -28,8 +30,16 @@ internal data class RoutingObjectRecord(
     companion object {
         fun create(type: String, tags: Set<String>, config: JsonNode, routingObject: RoutingObject) = RoutingObjectRecord(
                 type,
-                tags,
+                tags + "created:${timestamp()}",
                 config,
                 RoutingMetadataDecorator(routingObject))
     }
+
+    fun creationTime() = tags
+            .filter { it.startsWith("created:") }
+            .first()
+}
+
+private fun timestamp(): String {
+    return LocalDateTime.now().format(ISO_DATE_TIME)
 }

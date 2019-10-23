@@ -84,7 +84,7 @@ class HostProxySpec : FeatureSpec() {
                     styxServer().removeRoutingObject("hostProxy")
                 }
 
-                threadCount("Styx-Client-Global") shouldBe 2 * Runtime.getRuntime().availableProcessors();
+                threadCount("Styx-Client-Global") shouldBe 2
             }
         }
 
@@ -384,7 +384,7 @@ class HostProxySpec : FeatureSpec() {
                                         content: "Hello - HTTP"
                               """.trimIndent())
 
-    val client: StyxHttpClient = StyxHttpClient.Builder().build()
+    val client: StyxHttpClient = System.setProperty("io.netty.eventLoopThreads", "2").let {StyxHttpClient.Builder().build()}
 
     val mockServer = MockOriginServer.create("", "", 0, HttpConnectorConfig(0))
             .start()

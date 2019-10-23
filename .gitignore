@@ -25,6 +25,7 @@ dependency-reduced-pom.xml
 .vagrant/
 result/
 logs/
+styx-logs/
 **/*.pyc
 load-test-latest
 wrk2/

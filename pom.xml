@@ -95,14 +95,14 @@
     <!-- General Versions -->
     <guava.version>18.0</guava.version>
     <guice.version>3.0</guice.version>
-    <jackson.version>2.9.9</jackson.version>
-    <jackson.dataformat.version>2.9.9</jackson.dataformat.version>
-    <jackson.module.scala.version>2.9.9</jackson.module.scala.version>
-    <jackson-module-kotlin.version>2.9.9</jackson-module-kotlin.version>
+    <jackson.version>2.9.10</jackson.version>
+    <jackson.dataformat.version>2.9.10</jackson.dataformat.version>
+    <jackson.module.scala.version>2.9.10</jackson.module.scala.version>
+    <jackson-module-kotlin.version>2.9.10</jackson-module-kotlin.version>
     <metrics.version>4.0.5</metrics.version>
     <antlr.version>4.5.1-1</antlr.version>
-    <netty.version>4.1.15.Final</netty.version>
-    <netty-tcnative.version>2.0.6.Final</netty-tcnative.version>
+    <netty.version>4.1.42.Final</netty.version>
+    <netty-tcnative.version>2.0.26.Final</netty-tcnative.version>
     <rxjava.version>1.1.6</rxjava.version>
     <reactive-streams.version>1.0.2</reactive-streams.version>
     <reactor.version>3.2.0.RELEASE</reactor.version>
@@ -300,7 +300,7 @@
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-databind</artifactId>
-        <version>2.9.9.3</version>
+        <version>${jackson.version}</version>
       </dependency>
 
       <dependency>
@@ -326,18 +326,36 @@
         <groupId>io.dropwizard.metrics</groupId>
         <artifactId>metrics-core</artifactId>
         <version>${metrics.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
 
       <dependency>
         <groupId>io.dropwizard.metrics</groupId>
         <artifactId>metrics-jvm</artifactId>
         <version>${metrics.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
 
       <dependency>
         <groupId>io.dropwizard.metrics</groupId>
         <artifactId>metrics-json</artifactId>
         <version>${metrics.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
 
       <dependency>
@@ -457,6 +475,7 @@
         <groupId>org.hamcrest</groupId>
         <artifactId>hamcrest-all</artifactId>
         <version>${hamcrest.all.version}</version>
+        <scope>test</scope>
         <exclusions>
           <exclusion>
             <groupId>org.slf4j</groupId>

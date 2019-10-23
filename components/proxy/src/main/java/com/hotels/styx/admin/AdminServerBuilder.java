@@ -53,8 +53,8 @@ import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.db.StyxObjectStore;
+import com.hotels.styx.server.AdminHttpRouter;
 import com.hotels.styx.server.HttpServer;
-import com.hotels.styx.server.StandardHttpRouter;
 import com.hotels.styx.server.handlers.ClassPathResourceHandler;
 import com.hotels.styx.server.netty.NettyServerBuilderSpec;
 import com.hotels.styx.server.netty.WebServerConnectorFactory;
@@ -114,42 +114,42 @@ public class AdminServerBuilder {
 
         return new NettyServerBuilderSpec("Admin", environment.serverEnvironment(), new WebServerConnectorFactory())
                 .toNettyServerBuilder(adminServerConfig)
-                .handlerFactory(() -> new HttpAggregator(adminEndpoints(styxConfig, startupConfig)))
+                .handlerFactory(() -> adminEndpoints(styxConfig, startupConfig))
                 .build();
     }
 
-    private WebServiceHandler adminEndpoints(StyxConfig styxConfig, StartupConfig startupConfig) {
+    private HttpHandler adminEndpoints(StyxConfig styxConfig, StartupConfig startupConfig) {
         Optional<Duration> metricsCacheExpiration = styxConfig.adminServerConfig().metricsCacheExpiration();
 
-        StandardHttpRouter httpRouter = new StandardHttpRouter();
-        httpRouter.add("/", new IndexHandler(indexLinkPaths()));
-        httpRouter.add("/version.txt", new VersionTextHandler(styxConfig.versionFiles(startupConfig)));
-        httpRouter.add("/admin", new IndexHandler(indexLinkPaths()));
-        httpRouter.add("/admin/ping", new PingHandler());
-        httpRouter.add("/admin/threads", new ThreadsHandler());
-        httpRouter.add("/admin/current_requests", new CurrentRequestsHandler(CurrentRequestTracker.INSTANCE));
+        AdminHttpRouter httpRouter = new AdminHttpRouter();
+        httpRouter.aggregate("/", new IndexHandler(indexLinkPaths()));
+        httpRouter.aggregate("/version.txt", new VersionTextHandler(styxConfig.versionFiles(startupConfig)));
+        httpRouter.aggregate("/admin", new IndexHandler(indexLinkPaths()));
+        httpRouter.aggregate("/admin/ping", new PingHandler());
+        httpRouter.aggregate("/admin/threads", new ThreadsHandler());
+        httpRouter.aggregate("/admin/current_requests", new CurrentRequestsHandler(CurrentRequestTracker.INSTANCE));
         MetricsHandler metricsHandler = new MetricsHandler(environment.metricRegistry(), metricsCacheExpiration);
-        httpRouter.add("/admin/metrics", metricsHandler);
-        httpRouter.add("/admin/metrics/", metricsHandler);
-        httpRouter.add("/admin/configuration", new StyxConfigurationHandler(configuration));
-        httpRouter.add("/admin/configuration/origins", new OriginsHandler(backendServicesRegistry));
-        httpRouter.add("/admin/jvm", new JVMMetricsHandler(environment.metricRegistry(), metricsCacheExpiration));
-        httpRouter.add("/admin/origins/status", new OriginsInventoryHandler(environment.eventBus()));
-        httpRouter.add("/admin/configuration/logging", new LoggingConfigurationHandler(startupConfig.logConfigLocation()));
-        httpRouter.add("/admin/configuration/startup", new StartupConfigHandler(startupConfig));
+        httpRouter.aggregate("/admin/metrics", metricsHandler);
+        httpRouter.aggregate("/admin/metrics/", metricsHandler);
+        httpRouter.aggregate("/admin/configuration", new StyxConfigurationHandler(configuration));
+        httpRouter.aggregate("/admin/configuration/origins", new OriginsHandler(backendServicesRegistry));
+        httpRouter.aggregate("/admin/jvm", new JVMMetricsHandler(environment.metricRegistry(), metricsCacheExpiration));
+        httpRouter.aggregate("/admin/origins/status", new OriginsInventoryHandler(environment.eventBus()));
+        httpRouter.aggregate("/admin/configuration/logging", new LoggingConfigurationHandler(startupConfig.logConfigLocation()));
+        httpRouter.aggregate("/admin/configuration/startup", new StartupConfigHandler(startupConfig));
 
         RoutingObjectHandler routingObjectHandler = new RoutingObjectHandler(routeDatabase, routingObjectFactoryContext);
-        httpRouter.add("/admin/routing", routingObjectHandler);
-        httpRouter.add("/admin/routing/", routingObjectHandler);
+        httpRouter.aggregate("/admin/routing", routingObjectHandler);
+        httpRouter.aggregate("/admin/routing/", routingObjectHandler);
 
         // Dashboard
-        httpRouter.add("/admin/dashboard/data.json", dashboardDataHandler(styxConfig));
-        httpRouter.add("/admin/dashboard/", new ClassPathResourceHandler("/admin/dashboard/"));
+        httpRouter.aggregate("/admin/dashboard/data.json", dashboardDataHandler(styxConfig));
+        httpRouter.aggregate("/admin/dashboard/", new ClassPathResourceHandler("/admin/dashboard/"));
 
         // Tasks
-        httpRouter.add("/admin/tasks/origins/reload", new HttpMethodFilteringHandler(POST, new OriginsReloadCommandHandler(backendServicesRegistry)));
-        httpRouter.add("/admin/tasks/origins", new HttpMethodFilteringHandler(POST, new OriginsCommandHandler(environment.eventBus())));
-        httpRouter.add("/admin/tasks/plugin/", new PluginToggleHandler(environment.configStore()));
+        httpRouter.aggregate("/admin/tasks/origins/reload", new HttpMethodFilteringHandler(POST, new OriginsReloadCommandHandler(backendServicesRegistry)));
+        httpRouter.aggregate("/admin/tasks/origins", new HttpMethodFilteringHandler(POST, new OriginsCommandHandler(environment.eventBus())));
+        httpRouter.aggregate("/admin/tasks/plugin/", new PluginToggleHandler(environment.configStore()));
 
         // Plugins Handler
 
@@ -158,10 +158,10 @@ public class AdminServerBuilder {
                     NamedPlugin namedPlugin = entry.value();
 
                     routesForPlugin(namedPlugin).forEach(route ->
-                            httpRouter.add(route.path(), route.handler()));
+                            httpRouter.stream(route.path(), route.handler()));
                 });
 
-        httpRouter.add("/admin/plugins", new PluginListHandler(environment.configStore()));
+        httpRouter.aggregate("/admin/plugins", new PluginListHandler(environment.configStore()));
         return httpRouter;
     }
 
@@ -199,7 +199,7 @@ public class AdminServerBuilder {
                 ? new StaticBodyHttpHandler(HTML_UTF_8, format("This plugin (%s) does not expose any admin interfaces", namedPlugin.name()))
                 : new IndexHandler(endpointLinks);
 
-        Route indexRoute = new Route(pluginPath(namedPlugin), handler);
+        Route indexRoute = new Route(pluginPath(namedPlugin), new HttpAggregator(MEGABYTE, handler));
 
         return concatenate(indexRoute, routes);
     }
@@ -219,12 +219,7 @@ public class AdminServerBuilder {
         Map<String, HttpHandler> adminInterfaceHandlers = namedPlugin.adminInterfaceHandlers();
 
         return mapToList(adminInterfaceHandlers, (relativePath, handler) ->
-                createPluginAdminEndpointRoute(namedPlugin, relativePath, handler));
-    }
-
-    private static PluginAdminEndpointRoute createPluginAdminEndpointRoute(NamedPlugin namedPlugin, String relativePath, HttpHandler handler) {
-        HttpStreamer httpStreamer = new HttpStreamer(MEGABYTE, handler);
-        return new PluginAdminEndpointRoute(namedPlugin, relativePath, httpStreamer);
+                new PluginAdminEndpointRoute(namedPlugin, relativePath, handler));
     }
 
     // allows key and value to be labelled in lambda instead of having to use Entry.getKey, Entry.getValue
@@ -236,9 +231,9 @@ public class AdminServerBuilder {
 
     private static class Route {
         private final String path;
-        private final WebServiceHandler handler;
+        private final HttpHandler handler;
 
-        Route(String path, WebServiceHandler handler) {
+        Route(String path, HttpHandler handler) {
             this.path = path;
             this.handler = handler;
         }
@@ -247,7 +242,7 @@ public class AdminServerBuilder {
             return path;
         }
 
-        WebServiceHandler handler() {
+        HttpHandler handler() {
             return handler;
         }
     }
@@ -255,7 +250,7 @@ public class AdminServerBuilder {
     private static class PluginAdminEndpointRoute extends Route {
         private final NamedPlugin namedPlugin;
 
-        PluginAdminEndpointRoute(NamedPlugin namedPlugin, String relativePath, WebServiceHandler handler) {
+        PluginAdminEndpointRoute(NamedPlugin namedPlugin, String relativePath, HttpHandler handler) {
             super(pluginAdminEndpointPath(namedPlugin, relativePath), handler);
 
             this.namedPlugin = namedPlugin;

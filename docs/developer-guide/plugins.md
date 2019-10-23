@@ -56,7 +56,7 @@ A plugin project can be started by using one of examples in `examples` submodule
 * main/java/com/hotels/styx/ExamplePluginFactory.java - A class that implements 
   PluginFactory interface, responsible for instantiating the plugin.
 
-Some additional examples can be found in `system-tests/example-styx-plugin` directory in a project repository. 
+Some additional examples can be found in `system-tests/styx-test-plugin` directory in a project repository. 
 There are examples of plugins providing simple examples of how to:
 * perform a before action on a request - `loadtest.plugins.AsyncRequestContentDecoderPluginFactory`,
 * perform an action response object  - `loadtest.plugins.AsyncResponseContentDecoderPluginFactory`

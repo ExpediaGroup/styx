@@ -25,9 +25,11 @@ import com.hotels.styx.config.schema.SchemaDsl.string
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.RoutingObjectFactory
+import com.hotels.styx.routing.config.StyxObjectDefinition
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.ProviderObjectRecord
 import com.hotels.styx.serviceproviders.ServiceProviderFactory
+import com.hotels.styx.services.OriginsConfigConverter.Companion.OBJECT_CREATOR_TAG
 import com.hotels.styx.services.OriginsConfigConverter.Companion.deserialiseOrigins
 import org.slf4j.LoggerFactory
 import java.time.Duration
@@ -52,7 +54,6 @@ internal class YamlFileConfigurationService(
         reloadAction(it)
     }
 
-    private val routingObjects = AtomicReference<List<Pair<String, RoutingObjectRecord>>>(listOf())
     private val healthMonitors = AtomicReference<List<Pair<String, ProviderObjectRecord>>>(listOf())
 
     companion object {
@@ -83,12 +84,12 @@ internal class YamlFileConfigurationService(
         kotlin.runCatching {
             val deserialised = deserialiseOrigins(content)
 
-            val routingObjects = converter.routingObjects(deserialised)
+            val routingObjectDefs = converter.routingObjects(deserialised)
             val healthMonitors = converter.healthCheckServices(deserialised)
 
-            Pair(healthMonitors, routingObjects)
-        }.mapCatching { (healthMonitors, routingObjects) ->
-            updateRoutingObjects(routingObjects)
+            Pair(healthMonitors, routingObjectDefs)
+        }.mapCatching { (healthMonitors, routingObjectDefs) ->
+            updateRoutingObjects(routingObjectDefs)
             updateHealthCheckServices(serviceDb, healthMonitors)
             initialised.countDown()
         }.onFailure {
@@ -98,20 +99,20 @@ internal class YamlFileConfigurationService(
 
     private fun changed(one: JsonNode, another: JsonNode) = !one.equals(another)
 
-    internal fun updateRoutingObjects(objects: List<Pair<String, RoutingObjectRecord>>) {
-        val oldObjectNames = routingObjects.get().map { it.first }
-        routingObjects.set(objects)
+    internal fun updateRoutingObjects(objectDefs: List<StyxObjectDefinition>) {
+        val previousObjectNames = routeDb.entrySet()
+                .filter { it.value.tags.contains(OBJECT_CREATOR_TAG) }
+                .map { it.key }
 
-        val newObjectNames = objects.map { it.first }
-        val removedObjects = oldObjectNames.minus(newObjectNames)
+        val newObjectNames = objectDefs.map { it.name() }
+        val removedObjects = previousObjectNames.minus(newObjectNames)
 
-        objects.forEach { (name, new) ->
-            routeDb.compute(name) { previous ->
-                if (previous == null || changed(new.config, previous.config)) {
+        objectDefs.forEach { objectDef ->
+            routeDb.compute(objectDef.name()) { previous ->
+                if (previous == null || changed(objectDef.config(), previous.config)) {
                     previous?.routingObject?.stop()
-                    new
+                    converter.routingObjectRecord(objectDef)
                 } else {
-                    new.routingObject.stop()
                     previous
                 }
             }

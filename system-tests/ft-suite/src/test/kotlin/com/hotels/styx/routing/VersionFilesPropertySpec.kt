@@ -15,14 +15,13 @@
  */
 package com.hotels.styx.routing
 
-import com.hotels.styx.StyxConfig
-import com.hotels.styx.StyxServer
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.client.StyxHttpClient
-import com.hotels.styx.startup.StyxServerComponents
 import com.hotels.styx.support.ResourcePaths.fixturesHome
+import com.hotels.styx.support.StyxServerProvider
+import com.hotels.styx.support.adminHostHeader
 import io.kotlintest.Spec
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
@@ -30,26 +29,11 @@ import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
 
 class VersionFilesPropertySpec : StringSpec() {
-    val fileLocation = fixturesHome(VersionFilesPropertySpec::class.java,"/version.txt")
-    val yamlText = """
-        proxy:
-          connectors:
-            http:
-              port: 0
-
-        admin:
-          connectors:
-            http:
-              port: 0
-
-        userDefined:
-          versionFiles: $fileLocation
-      """.trimIndent()
 
     init {
         "Gets the version text property" {
             val request = get("/version.txt")
-                    .header(HOST, "${styxServer.adminHttpAddress().hostName}:${styxServer.adminHttpAddress().port}")
+                    .header(HOST, styxServer().adminHostHeader())
                     .build();
 
             client.send(request)
@@ -65,15 +49,28 @@ class VersionFilesPropertySpec : StringSpec() {
 
     val client: StyxHttpClient = StyxHttpClient.Builder().build()
 
-    val styxServer = StyxServer(StyxServerComponents.Builder()
-            .styxConfig(StyxConfig.fromYaml(yamlText))
-            .build())
+    val fileLocation = fixturesHome(VersionFilesPropertySpec::class.java,"/version.txt")
+
+    val styxServer = StyxServerProvider("""
+        proxy:
+          connectors:
+            http:
+              port: 0
+
+        admin:
+          connectors:
+            http:
+              port: 0
+
+        userDefined:
+          versionFiles: $fileLocation
+      """.trimIndent())
 
     override fun beforeSpec(spec: Spec) {
-        styxServer.startAsync().awaitRunning()
+        styxServer.restart()
     }
 
     override fun afterSpec(spec: Spec) {
-        styxServer.stopAsync().awaitTerminated()
+        styxServer.stop()
     }
 }

@@ -168,8 +168,11 @@ class OriginResourcesSpec : StringSpec() {
                             - { id: "$prefix", host: "localhost:${mockServer.port()}" }
                         """.trimIndent()
 
-    fun configurationApplied(prefix: String) = client.send(get(prefix).header(HOST, styxServer().proxyHttpHostHeader()).build())
-            .wait(debug = false)
+    fun configurationApplied(prefix: String) = client.send(
+            get(prefix)
+                    .header(HOST, styxServer().proxyHttpHostHeader())
+                    .build())!!
+            .wait(debug = false)!!
             .status() == OK
 }
 

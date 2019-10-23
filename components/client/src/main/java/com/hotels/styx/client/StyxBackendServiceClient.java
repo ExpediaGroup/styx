@@ -73,7 +73,6 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
     private final RetryPolicy retryPolicy;
     private final OriginStatsFactory originStatsFactory;
     private final MetricRegistry metricsRegistry;
-    private final boolean contentValidation;
     private final String originsRestrictionCookieName;
     private final StickySessionConfig stickySessionConfig;
     private final CharSequence originIdHeader;
@@ -94,7 +93,6 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
         this.rewriteRuleset = new RewriteRuleset(builder.rewriteRules);
 
         this.metricsRegistry = builder.metricsRegistry;
-        this.contentValidation = builder.contentValidation;
         this.originsRestrictionCookieName = builder.originsRestrictionCookieName;
         this.originIdHeader = builder.originIdHeader;
     }
@@ -156,7 +154,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
                     .apply()
                     .doOnNext(this::recordErrorStatusMetrics)
                     .map(response -> removeUnexpectedResponseBody(request, response))
-                    .map(this::removeRedundantContentLengthHeader)
+                    .map(StyxBackendServiceClient::removeRedundantContentLengthHeader)
                     .onErrorResume(cause -> {
                         RetryPolicyContext retryContext = new RetryPolicyContext(this.id, attempt + 1, cause, request, previousOrigins);
                         return retry(request, retryContext, newPreviousOrigins, attempt + 1, cause);
@@ -260,16 +258,16 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
                 new Object[]{request, throwable.getClass().getName(), throwable.getMessage()});
     }
 
-    private LiveHttpResponse removeUnexpectedResponseBody(LiveHttpRequest request, LiveHttpResponse response) {
-        if (contentValidation && bodyNeedsToBeRemoved(request, response)) {
+    private static LiveHttpResponse removeUnexpectedResponseBody(LiveHttpRequest request, LiveHttpResponse response) {
+        if (bodyNeedsToBeRemoved(request, response)) {
             return responseWithoutBody(response);
         } else {
             return response;
         }
     }
 
-    private LiveHttpResponse removeRedundantContentLengthHeader(LiveHttpResponse response) {
-        if (contentValidation && response.contentLength().isPresent() && response.chunked()) {
+    private static LiveHttpResponse removeRedundantContentLengthHeader(LiveHttpResponse response) {
+        if (response.contentLength().isPresent() && response.chunked()) {
             return response.newBuilder()
                     .removeHeader(CONTENT_LENGTH)
                     .build();
@@ -341,7 +339,6 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
         private List<RewriteRule> rewriteRules = emptyList();
         private RetryPolicy retryPolicy = new RetryNTimes(3);
         private LoadBalancer loadBalancer;
-        private boolean contentValidation;
         private OriginStatsFactory originStatsFactory;
         private String originsRestrictionCookieName;
         private StickySessionConfig stickySessionConfig = stickySessionDisabled();
@@ -374,11 +371,6 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
 
         public Builder loadBalancer(LoadBalancer loadBalancer) {
             this.loadBalancer = requireNonNull(loadBalancer);
-            return this;
-        }
-
-        public Builder enableContentValidation() {
-            contentValidation = true;
             return this;
         }
 

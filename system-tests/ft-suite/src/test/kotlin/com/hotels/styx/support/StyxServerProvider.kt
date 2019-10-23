@@ -37,8 +37,25 @@ import java.util.Optional
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicReference
 
+val defaultServerConfig = """                    
+    proxy:
+      connectors:
+        http:
+          port: 0
+
+        https:
+          port: 0
+          sslProvider: JDK
+          sessionTimeoutMillis: 300000
+          sessionCacheSize: 20000
+
+    admin:
+      connectors:
+        http:
+          port: 0""".trimIndent()
+
 class StyxServerProvider(
-        val defaultConfig: String,
+        val defaultConfig: String = defaultServerConfig,
         val defaultAdditionalRoutingObjects: Map<String, RoutingObjectFactory> = mapOf(),
         val loggingConfig: Path? = null,
         val validateConfig: Boolean = true) {

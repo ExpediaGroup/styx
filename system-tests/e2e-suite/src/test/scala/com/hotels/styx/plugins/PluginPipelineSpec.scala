@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.{ExamplePluginJarLocation, StyxProxySpec}
 import org.scalatest.FunSpec
+import scala.collection.JavaConverters._
 
 class PluginPipelineSpec extends FunSpec with StyxProxySpec {
   val normalBackend = FakeHttpServer.HttpStartupConfig().start()
@@ -30,13 +31,26 @@ class PluginPipelineSpec extends FunSpec with StyxProxySpec {
   override val styxConfig = StyxConfig(
     yamlText = s"""
         |plugins:
-        |  active: PluginA
+        |  active: PluginA, PluginC
         |  all:
         |     PluginA:
         |       factory:
         |          class: testgrp.TestPluginModule
         |          classPath: "$pluginsFolder"
-        |       config: /my/plugin/config/directory
+        |       config:
+        |         id: PluginA
+        |     PluginB:
+        |       factory:
+        |          class: testgrp.TestPluginModule
+        |          classPath: "$pluginsFolder"
+        |       config:
+        |         id: PluginB
+        |     PluginC:
+        |       factory:
+        |          class: testgrp.TestPluginModule
+        |          classPath: "$pluginsFolder"
+        |       config:
+        |         id: PluginC
         """.stripMargin('|')
   )
 
@@ -50,19 +64,12 @@ class PluginPipelineSpec extends FunSpec with StyxProxySpec {
     super.afterAll()
   }
 
-  describe("plugins ") {
-
-    it("Styx loads the plugins during startup.") {
+  describe("Plugins from configuration") {
+    it("Activates active plugins only") {
       val response = decodedRequest(anHttpRequest)
 
-      response.header("X-Hcom-Plugins").get() should be("test-plugin-a")
-      response.header("X-Hcom-Plugins-List").get() should be("PluginA")
-    }
-
-    it("Styx exposes the plugin configuration directory") {
-      val response = decodedRequest(anHttpRequest)
-      response.header("X-Hcom-Plugin-Configuration-Path").get() should be("/my/plugin/config/directory")
-      response.header("X-Hcom-Plugins-List").get() should be("PluginA")
+      response.headers("X-Plugin-Identifier").asScala should contain allOf("PluginA", "PluginC")
+      response.headers("X-Plugin-Identifier").asScala should not contain "PluginB"
     }
   }
 

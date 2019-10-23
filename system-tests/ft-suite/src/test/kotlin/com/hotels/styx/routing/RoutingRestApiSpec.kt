@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.routing
 
-import com.hotels.styx.StyxConfig
-import com.hotels.styx.StyxServer
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest.delete
 import com.hotels.styx.api.HttpRequest.get
@@ -25,7 +23,9 @@ import com.hotels.styx.api.HttpResponseStatus.CREATED
 import com.hotels.styx.api.HttpResponseStatus.NOT_FOUND
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.client.StyxHttpClient
-import com.hotels.styx.startup.StyxServerComponents
+import com.hotels.styx.support.StyxServerProvider
+import com.hotels.styx.support.adminHostHeader
+import com.hotels.styx.support.proxyHttpHostHeader
 import io.kotlintest.Spec
 import io.kotlintest.TestCase
 import io.kotlintest.shouldBe
@@ -35,31 +35,11 @@ import java.nio.charset.StandardCharsets.UTF_8
 
 class RoutingRestApiSpec : StringSpec() {
 
-    val yamlText = """
-        proxy:
-          connectors:
-            http:
-              port: 0
-
-            https:
-              port: 0
-              sslProvider: JDK
-              sessionTimeoutMillis: 300000
-              sessionCacheSize: 20000
-
-        admin:
-          connectors:
-            http:
-              port: 0
-
-        httpPipeline: root
-      """.trimIndent()
-
     init {
         "Creates and updates new routing object" {
             client.send(
                     put("/admin/routing/objects/responder")
-                            .header(HOST, "${styxServer.adminHttpAddress().hostName}:${styxServer.adminHttpAddress().port}")
+                            .header(HOST, styxServer().adminHostHeader())
                             .body("""
                                 type: StaticResponseHandler
                                 config:
@@ -73,7 +53,7 @@ class RoutingRestApiSpec : StringSpec() {
 
             client.send(
                     put("/admin/routing/objects/root")
-                            .header(HOST, "${styxServer.adminHttpAddress().hostName}:${styxServer.adminHttpAddress().port}")
+                            .header(HOST, styxServer().adminHostHeader())
                             .body("""
                                 type: InterceptorPipeline
                                 config:
@@ -86,7 +66,7 @@ class RoutingRestApiSpec : StringSpec() {
 
             client.send(
                     get("/11")
-                            .header(HOST, "${styxServer.proxyHttpAddress().hostName}:${styxServer.proxyHttpAddress().port}")
+                            .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                     .toMono()
                     .block()
@@ -100,7 +80,7 @@ class RoutingRestApiSpec : StringSpec() {
         "Removes routing objects" {
             client.send(
                     delete("/admin/routing/objects/root")
-                            .header(HOST, "${styxServer.adminHttpAddress().hostName}:${styxServer.adminHttpAddress().port}")
+                            .header(HOST, styxServer().adminHostHeader())
                             .build())
                     .toMono()
                     .block()!!
@@ -108,7 +88,7 @@ class RoutingRestApiSpec : StringSpec() {
 
             client.send(
                     get("/11")
-                            .header(HOST, "${styxServer.proxyHttpAddress().hostName}:${styxServer.proxyHttpAddress().port}")
+                            .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                     .toMono()
                     .block()!!
@@ -118,7 +98,7 @@ class RoutingRestApiSpec : StringSpec() {
         "Lists routing objects" {
             client.send(
                     put("/admin/routing/objects/responder")
-                            .header(HOST, "${styxServer.adminHttpAddress().hostName}:${styxServer.adminHttpAddress().port}")
+                            .header(HOST, styxServer().adminHostHeader())
                             .body("""
                                 type: StaticResponseHandler
                                 config:
@@ -132,7 +112,7 @@ class RoutingRestApiSpec : StringSpec() {
 
             client.send(
                     get("/admin/routing/objects")
-                            .header(HOST, "${styxServer.adminHttpAddress().hostName}:${styxServer.adminHttpAddress().port}")
+                            .header(HOST, styxServer().adminHostHeader())
                             .build())
                     .toMono()
                     .block()
@@ -161,15 +141,31 @@ class RoutingRestApiSpec : StringSpec() {
 
     val client: StyxHttpClient = StyxHttpClient.Builder().build()
 
-    val styxServer = StyxServer(StyxServerComponents.Builder()
-            .styxConfig(StyxConfig.fromYaml(yamlText))
-            .build())
+    val styxServer = StyxServerProvider("""
+        proxy:
+          connectors:
+            http:
+              port: 0
+
+            https:
+              port: 0
+              sslProvider: JDK
+              sessionTimeoutMillis: 300000
+              sessionCacheSize: 20000
+
+        admin:
+          connectors:
+            http:
+              port: 0
+
+        httpPipeline: root
+      """.trimIndent())
 
     override fun beforeTest(testCase: TestCase) {
         super.beforeTest(testCase)
         client.send(
                 put("/admin/routing/objects/root")
-                        .header(HOST, "${styxServer.adminHttpAddress().hostName}:${styxServer.adminHttpAddress().port}")
+                        .header(HOST, styxServer().adminHostHeader())
                         .body("""
                                 type: StaticResponseHandler
                                 config:
@@ -183,10 +179,10 @@ class RoutingRestApiSpec : StringSpec() {
     }
 
     override fun beforeSpec(spec: Spec) {
-        styxServer.startAsync().awaitRunning()
+        styxServer.restart()
     }
 
     override fun afterSpec(spec: Spec) {
-        styxServer.stopAsync().awaitTerminated()
+        styxServer.stop()
     }
 }
