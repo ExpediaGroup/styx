@@ -30,7 +30,7 @@ e2e:
 # Note: Pre-integration test phase is necessary to produce styx.properties file
 # needed by AdminSpec.scala tests.
 e2e-compile:
-	mvn clean pre-in tegration-test -P$(PLATFORM)
+	mvn clean pre-integration-test -P$(PLATFORM)
 
 ## Run system tests
 e2e-test:
