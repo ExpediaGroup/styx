@@ -15,6 +15,7 @@ set-version:
 clean:
 	mvn clean -P$(ALL_PROFILES)
 	mvn -f distribution/pom.xml clean
+	rm -rf ${DOCKER_CONTEXT}
 
 ## Run unit tests and checkstyle
 unit-test:
@@ -91,15 +92,13 @@ quality: clean
 quality-no-tests:
 	mvn -Dmaven.test.skip=true clean install -Pquality -Dmaven.test.skip=true
 
-STYX_BUILD_ARTIFACT = $(shell find  distribution/target -maxdepth 1 -name "styx*.zip")
-STYX_LINUX_ARTIFACT = $(shell find  distribution/target -maxdepth 1 -name "styx*linux-x86_64.zip")
 STYX_HOME = $(CURRENT_DIR)/distribution/target/styx/styx
 DOCKER_CONTEXT = $(CURRENT_DIR)/distribution/target/styx/docker
 CONFIG_ROOT := $(STYX_HOME)/conf/env-$(STACK)
 
 ## Compile and create styx.zip then unzip into a directory defined by STYX_HOME
 release-styx: release-no-tests
-	unzip -oq ${STYX_BUILD_ARTIFACT} -d $(dir ${STYX_HOME})
+	unzip -oq `find  distribution/target -maxdepth 1 -name "styx*.zip"` -d $(dir ${STYX_HOME})
 
 ## Stops running netty-based origins (i.e. the origins started by start-origins)
 stop-origins:
@@ -155,12 +154,9 @@ changelog:
 # Assuming that styxconf.yml exists in "./docker-config/" directory.
 # Default configuration file: /styx/default-config/default.yml
 #
-distribution/target/styx-1.0-SNAPSHOT-linux-x86_64.zip:
+docker-image: clean
 	mvn install -Prelease,linux -Dmaven.test.skip=true
-
-docker-image: ${STYX_LINUX_ARTIFACT}
-	rm -rf ${DOCKER_CONTEXT}
 	mkdir -p ${DOCKER_CONTEXT}
-	cp ${STYX_LINUX_ARTIFACT} ${DOCKER_CONTEXT}/styx.zip
+	cp `find  distribution/target -maxdepth 1 -name "styx*linux-x86_64.zip"` ${DOCKER_CONTEXT}/styx.zip
 	cp docker/* ${DOCKER_CONTEXT}
-	docker build -t styxcore:latest --build-arg STYX_IMAGE=styx.zip -f docker/Dockerfile ${DOCKER_CONTEXT}/.
+	docker build -t styxcore:latest --build-arg STYX_IMAGE=styx.zip ${DOCKER_CONTEXT}/.
