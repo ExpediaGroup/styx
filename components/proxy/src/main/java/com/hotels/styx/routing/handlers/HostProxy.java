@@ -223,8 +223,7 @@ public class HostProxy implements RoutingObject {
 
             return createHostProxyHandler(
                     context.environment().metricRegistry(),
-                    hostAndPort.getHostText(),
-                    hostAndPort.getPort(),
+                    hostAndPort,
                     poolSettings,
                     tlsSettings,
                     responseTimeoutMillis,
@@ -247,13 +246,15 @@ public class HostProxy implements RoutingObject {
         @NotNull
         public static HostProxy createHostProxyHandler(
                 MetricRegistry metricRegistry,
-                String host,
-                int port,
+                HostAndPort hostAndPort,
                 ConnectionPoolSettings poolSettings,
                 TlsSettings tlsSettings,
                 int responseTimeoutMillis,
                 String metricPrefix,
                 String objectName) {
+
+            String host = hostAndPort.getHostText();
+            int port = hostAndPort.getPort();
 
             Origin origin = newOriginBuilder(host, port)
                     .applicationId(metricPrefix)

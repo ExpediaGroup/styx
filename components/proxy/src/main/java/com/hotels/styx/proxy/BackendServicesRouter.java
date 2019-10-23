@@ -26,7 +26,6 @@ import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.api.extension.service.HealthCheckConfig;
-import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.client.Connection;
@@ -43,7 +42,6 @@ import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitorFactory;
 import com.hotels.styx.client.healthcheck.UrlRequestHealthCheck;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
-import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.server.HttpRouter;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
@@ -124,15 +122,11 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
             ConnectionPoolSettings poolSettings = backendService.connectionPoolConfig();
 
             Connection.Factory connectionFactory = connectionFactory(
-                    nettyEventLoopGroup,
-                    socketChannelClass,
-                    backendService.responseTimeoutMillis(),
-                    backendService.tlsSettings().orElse(null),
+                    backendService,
                     requestLoggingEnabled,
                     longFormat,
                     originStatsFactory,
-                    poolSettings.connectionExpirationSeconds(),
-                    environment.httpMessageFormatter());
+                    poolSettings.connectionExpirationSeconds());
 
             ConnectionPool.Factory connectionPoolFactory = new SimpleConnectionPoolFactory.Builder()
                     .connectionFactory(connectionFactory)
@@ -183,15 +177,11 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
     }
 
     private Connection.Factory connectionFactory(
-            EventLoopGroup nettyEventLoopGroup,
-            Class<? extends SocketChannel> socketChannelClass,
-            int responseTimeoutMillis,
-            TlsSettings tlsSettings,
+            BackendService backendService,
             boolean requestLoggingEnabled,
             boolean longFormat,
             OriginStatsFactory originStatsFactory,
-            long connectionExpiration,
-            HttpMessageFormatter httpMessageFormatter) {
+            long connectionExpiration) {
 
         Connection.Factory factory = new NettyConnectionFactory.Builder()
                 .nettyEventLoop(nettyEventLoopGroup, socketChannelClass)
@@ -199,13 +189,13 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                         httpRequestOperationFactoryBuilder()
                                 .flowControlEnabled(true)
                                 .originStatsFactory(originStatsFactory)
-                                .responseTimeoutMillis(responseTimeoutMillis)
+                                .responseTimeoutMillis(backendService.responseTimeoutMillis())
                                 .requestLoggingEnabled(requestLoggingEnabled)
                                 .longFormat(longFormat)
-                                .httpMessageFormatter(httpMessageFormatter)
+                                .httpMessageFormatter(environment.httpMessageFormatter())
                                 .build()
                 )
-                .tlsSettings(tlsSettings)
+                .tlsSettings(backendService.tlsSettings().orElse(null))
                 .build();
 
         if (connectionExpiration > 0) {
