@@ -1,17 +1,18 @@
 version: '3'
 services:
-
-  httpd-01:
-    image: httpd:2.4
+  origin:
+    image: nginx:stable-alpine
     ports:
-      - "8081:80"
+      - "9091:8080"
+      - "9443:8443"
     volumes:
-      - ./apache-config:/usr/local/apache2/htdocs/
+      - ./nginx:/etc/nginx/
+      - ./origin-data:/data/stub-01
 
   toxiproxy:
     image: shopify/toxiproxy:latest
     depends_on:
-      - httpd-01
+      - origin
     ports:
       - "8474:8474"
     volumes:
@@ -24,7 +25,7 @@ services:
   styx:
     image: styxcore:latest
     depends_on:
-      - httpd-01
+      - origin
       - toxiproxy
     ports:
       - "9000:9000"
@@ -34,9 +35,6 @@ services:
     volumes:
       - ./styx-config:/styx/config
       - ./styx-logs:/styx/logs
-    links:
-      - httpd-01
-      - toxiproxy
 
     environment:
       - JVM_DEBUG=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0.0.0.0:8000

@@ -4,10 +4,10 @@
 # and applies any changes straight away.
 #
 ---
-- id: "httpd"
+- id: "origin"
   path: "/"
   healthCheck:
-    uri: /info.txt
+    uri: /hello.txt
   connectionPool:
     maxConnectionsPerHost: 45
     maxPendingConnectionsPerHost: 15
@@ -15,4 +15,17 @@
     pendingConnectionTimeoutMillis: 8000
   responseTimeoutMillis: 60000
   origins:
-    - { id: "httpd-01", host: "toxiproxy:80" }
+    - { id: "origin-01", host: "origin:8080" }
+
+- id: "toxiproxy"
+  path: "/toxi"
+  healthCheck:
+    uri: /hello.txt
+  connectionPool:
+    maxConnectionsPerHost: 45
+    maxPendingConnectionsPerHost: 15
+    connectTimeoutMillis: 1000
+    pendingConnectionTimeoutMillis: 8000
+  responseTimeoutMillis: 60000
+  origins:
+    - { id: "toxiproxy-01", host: "toxiproxy:8080" }
