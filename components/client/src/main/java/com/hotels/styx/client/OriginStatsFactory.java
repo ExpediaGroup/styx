@@ -58,7 +58,7 @@ public interface OriginStatsFactory {
          * @return the {@link OriginStats}
          */
         public OriginStats originStats(Origin origin) {
-            return metricsByOrigin.computeIfAbsent(origin, theOrigin -> OriginMetrics.create(theOrigin, metricRegistry));
+            return metricsByOrigin.computeIfAbsent(origin, theOrigin -> OriginMetrics.create(theOrigin.applicationId(), theOrigin.id().toString(), metricRegistry));
         }
     }
 }

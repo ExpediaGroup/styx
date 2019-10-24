@@ -91,6 +91,9 @@ public class StyxHeaderConfig {
                 .toString();
     }
 
+    /**
+     * Pojo used to parse header from config file.
+     */
     public static final class StyxHeader {
         private final String name;
         private final String valueFormat;

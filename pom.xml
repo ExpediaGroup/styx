@@ -176,7 +176,7 @@
     <jacoco.excludes />
 
     <!-- Checkstyle -->
-    <checkstyle.maxAllowedViolations>2</checkstyle.maxAllowedViolations>
+    <checkstyle.maxAllowedViolations>0</checkstyle.maxAllowedViolations>
     <checkstyle.basedir>codequality</checkstyle.basedir>
     <checkstyle.violationSeverity>error</checkstyle.violationSeverity>
     <checkstyle.skip>false</checkstyle.skip>

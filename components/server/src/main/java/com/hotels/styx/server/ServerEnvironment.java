@@ -18,6 +18,9 @@ package com.hotels.styx.server;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.MetricRegistry;
 
+/**
+ * ServerEnvironment providing a default metric registry of CodaHaleMetricRegistry.
+ */
 public final class ServerEnvironment {
     private final MetricRegistry metricRegistry;
 

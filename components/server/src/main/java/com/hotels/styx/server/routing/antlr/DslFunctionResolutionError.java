@@ -15,6 +15,9 @@
  */
 package com.hotels.styx.server.routing.antlr;
 
+/**
+ * RuntimeException indicating an error in Dsl Function Resolution.
+ */
 public class DslFunctionResolutionError extends RuntimeException {
 
     public DslFunctionResolutionError(String message) {

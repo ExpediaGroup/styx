@@ -20,7 +20,6 @@ import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.urlMatching
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest.get
-import com.hotels.styx.api.HttpResponseStatus
 import com.hotels.styx.api.HttpResponseStatus.CREATED
 import com.hotels.styx.api.HttpResponseStatus.GATEWAY_TIMEOUT
 import com.hotels.styx.api.HttpResponseStatus.OK
@@ -150,7 +149,7 @@ class HostProxySpec : FeatureSpec() {
                 requestFutures
                         .forEach {
                             val clientResponse = it.wait()
-                            clientResponse!!.status() shouldBe HttpResponseStatus.OK
+                            clientResponse!!.status() shouldBe OK
                             clientResponse.bodyAs(UTF_8) shouldBe "Hello - HTTP"
                         }
 
@@ -159,7 +158,7 @@ class HostProxySpec : FeatureSpec() {
                 }
 
                 styxServer().metrics().let {
-                    (it["routing.objects.hostProxy.localhost:${testServer().proxyHttpAddress().port}.connectionspool.connection-attempts"]!!.get("value") as Int) shouldBeInRange 1..2
+                    (it["routing.objects.hostProxy.connectionspool.connection-attempts"]!!.get("value") as Int) shouldBeInRange 1..2
                 }
 
             }
@@ -187,8 +186,8 @@ class HostProxySpec : FeatureSpec() {
 
                 eventually(1.seconds, AssertionError::class.java) {
                     styxServer().metrics().let {
-                        it["routing.objects.hostProxy.localhost:${testServer().proxyHttpAddress().port}.connectionspool.available-connections"]!!.get("value") shouldBe 1
-                        it["routing.objects.hostProxy.localhost:${testServer().proxyHttpAddress().port}.connectionspool.connections-closed"]!!.get("value") shouldBe 0
+                        it["routing.objects.hostProxy.connectionspool.available-connections"]!!.get("value") shouldBe 1
+                        it["routing.objects.hostProxy.connectionspool.connections-closed"]!!.get("value") shouldBe 0
                     }
                 }
 
@@ -203,8 +202,8 @@ class HostProxySpec : FeatureSpec() {
 
                 eventually(1.seconds, AssertionError::class.java) {
                     styxServer().metrics().let {
-                        it["routing.objects.hostProxy.localhost:${testServer().proxyHttpAddress().port}.connectionspool.available-connections"]!!.get("value") shouldBe 1
-                        it["routing.objects.hostProxy.localhost:${testServer().proxyHttpAddress().port}.connectionspool.connections-terminated"]!!.get("value") shouldBe 1
+                        it["routing.objects.hostProxy.connectionspool.available-connections"]!!.get("value") shouldBe 1
+                        it["routing.objects.hostProxy.connectionspool.connections-terminated"]!!.get("value") shouldBe 1
                     }
                 }
 
@@ -231,21 +230,21 @@ class HostProxySpec : FeatureSpec() {
                         .build())
                         .wait()
                         .let {
-                            it!!.status() shouldBe HttpResponseStatus.OK
+                            it!!.status() shouldBe OK
                             it.bodyAs(UTF_8) shouldBe "mock-server-01"
                         }
             }
 
             scenario("... and provides connection pool metrics") {
                 styxServer().metrics().let {
-                    it["routing.objects.hostProxy.localhost:${mockServer.port()}.connectionspool.connection-attempts"]!!.get("value") shouldBe 1
+                    it["routing.objects.hostProxy.connectionspool.connection-attempts"]!!.get("value") shouldBe 1
                 }
             }
 
             scenario("... and provides origin and application metrics") {
                 styxServer().metrics().let {
-                    it["routing.objects.hostProxy.localhost:${mockServer.port()}.requests.response.status.200"]!!.get("count") shouldBe 1
-                    it["routing.objects.hostProxy.localhost:${mockServer.port()}.connectionspool.connection-attempts"]!!.get("value") shouldBe 1
+                    it["routing.objects.hostProxy.requests.response.status.200"]!!.get("count") shouldBe 1
+                    it["routing.objects.hostProxy.connectionspool.connection-attempts"]!!.get("value") shouldBe 1
                 }
             }
 
@@ -254,7 +253,7 @@ class HostProxySpec : FeatureSpec() {
 
                 eventually(2.seconds, AssertionError::class.java) {
                     styxServer().metrics().let {
-                        it["routing.objects.hostProxy.localhost:${mockServer.port()}.connectionspool.connection-attempts"].shouldBeNull()
+                        it["routing.objects.hostproxy.connectionspool.connection-attempts"].shouldBeNull()
                     }
                 }
             }
@@ -293,20 +292,20 @@ class HostProxySpec : FeatureSpec() {
                         .build())
                         .wait()
                         .let {
-                            it!!.status() shouldBe HttpResponseStatus.OK
+                            it!!.status() shouldBe OK
                             it.bodyAs(UTF_8) shouldBe "mock-server-01"
                         }
             }
 
             scenario("... and provides connection pool metrics with metric prefix") {
                 styxServer().metrics().let {
-                    it["origins.myApp.localhost:${mockServer.port()}.connectionspool.connection-attempts"]!!.get("value") shouldBe 1
+                    it["origins.myApp.hostProxy.connectionspool.connection-attempts"]!!.get("value") shouldBe 1
                 }
             }
 
             scenario("... and provides origin/application metrics with metric prefix") {
                 styxServer().metrics().let {
-                    it["origins.myApp.localhost:${mockServer.port()}.requests.response.status.200"]!!.get("count") shouldBe 1
+                    it["origins.myApp.hostProxy.requests.response.status.200"]!!.get("count") shouldBe 1
                     it["origins.myApp.requests.response.status.200"]!!.get("count") shouldBe 1
                 }
             }

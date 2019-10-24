@@ -533,6 +533,9 @@ public class LiveHttpRequest implements LiveHttpMessage {
         LiveHttpRequest build();
     }
 
+    /**
+     * Transforms a LiveHttpRequest.
+     */
     public static final class Transformer implements BuilderTransformer {
         private final Builder builder;
 

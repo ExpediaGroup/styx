@@ -423,6 +423,9 @@ public class LiveHttpResponse implements LiveHttpMessage {
 
     }
 
+    /**
+     * Transforms a LiveHttpResponse.
+     */
     public static final class Transformer implements BuilderTransformer {
         private final Builder builder;
 
