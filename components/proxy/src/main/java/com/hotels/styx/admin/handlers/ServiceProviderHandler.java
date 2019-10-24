@@ -27,7 +27,6 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.WebServiceHandler;
-import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.ProviderObjectRecord;
@@ -40,6 +39,7 @@ import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKN
 import static com.hotels.styx.admin.handlers.UrlPatternRouter.placeholders;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
+import static com.hotels.styx.api.HttpResponseStatus.NO_CONTENT;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -65,8 +65,7 @@ public class ServiceProviderHandler implements WebServiceHandler {
                             .map(entry -> serialise(entry.getKey(), entry.getValue()))
                             .collect(joining("\n"));
 
-                    LOGGER.info("*** Service providers before returning ***\n{}", output);
-                    return Eventual.of(response(OK)
+                    return Eventual.of(response(output.length() == 0 ? NO_CONTENT : OK)
                             .body(output, UTF_8)
                             .build());
 
@@ -90,6 +89,10 @@ public class ServiceProviderHandler implements WebServiceHandler {
     @Override
     public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         return urlRouter.handle(request, context);
+    }
+
+    public static ObjectMapper yamlMapper() {
+        return YAML_MAPPER.copy();
     }
 
     private static String serialise(String name, ProviderObjectRecord record) {
@@ -117,9 +120,5 @@ public class ServiceProviderHandler implements WebServiceHandler {
 
         @JsonProperty("tags")
         public abstract List<String> tags();
-    }
-
-    public static ObjectMapper yamlMapper() {
-        return YAML_MAPPER.copy();
     }
 }
