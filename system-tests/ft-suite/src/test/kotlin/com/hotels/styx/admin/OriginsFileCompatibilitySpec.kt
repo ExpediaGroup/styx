@@ -257,7 +257,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 }
             }
 
-            test("TLS Settins modifications") {
+            test("!TLS Settins modifications") {
                 writeOrigins("""
                     - id: appTls
                       path: "/"
