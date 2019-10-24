@@ -34,6 +34,7 @@ import com.hotels.styx.admin.handlers.PingHandler;
 import com.hotels.styx.admin.handlers.PluginListHandler;
 import com.hotels.styx.admin.handlers.PluginToggleHandler;
 import com.hotels.styx.admin.handlers.RoutingObjectHandler;
+import com.hotels.styx.admin.handlers.ServiceProviderHandler;
 import com.hotels.styx.admin.handlers.StartupConfigHandler;
 import com.hotels.styx.admin.handlers.StyxConfigurationHandler;
 import com.hotels.styx.admin.handlers.ThreadsHandler;
@@ -53,6 +54,7 @@ import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.db.StyxObjectStore;
+import com.hotels.styx.routing.handlers.ProviderObjectRecord;
 import com.hotels.styx.server.AdminHttpRouter;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.handlers.ClassPathResourceHandler;
@@ -90,6 +92,7 @@ public class AdminServerBuilder {
     private final Configuration configuration;
     private final RoutingObjectFactory.Context routingObjectFactoryContext;
     private final StyxObjectStore<RoutingObjectRecord> routeDatabase;
+    private final StyxObjectStore<ProviderObjectRecord> providerDatabase;
     private final StartupConfig startupConfig;
 
     private Registry<BackendService> backendServicesRegistry;
@@ -98,6 +101,7 @@ public class AdminServerBuilder {
         this.environment = requireNonNull(serverComponents.environment());
         this.routeDatabase = requireNonNull(serverComponents.routeDatabase());
         this.routingObjectFactoryContext = requireNonNull(serverComponents.routingObjectFactoryContext());
+        this.providerDatabase = requireNonNull(serverComponents.servicesDatabase());
         this.configuration = this.environment.configuration();
         this.startupConfig = serverComponents.startupConfig();
     }
@@ -141,6 +145,10 @@ public class AdminServerBuilder {
         RoutingObjectHandler routingObjectHandler = new RoutingObjectHandler(routeDatabase, routingObjectFactoryContext);
         httpRouter.aggregate("/admin/routing", routingObjectHandler);
         httpRouter.aggregate("/admin/routing/", routingObjectHandler);
+
+        ServiceProviderHandler serviceProvideHandler = new ServiceProviderHandler(providerDatabase);
+        httpRouter.aggregate("/admin/service/providers", serviceProvideHandler);
+        httpRouter.aggregate("/admin/service/provider/", serviceProvideHandler);
 
         // Dashboard
         httpRouter.aggregate("/admin/dashboard/data.json", dashboardDataHandler(styxConfig));
