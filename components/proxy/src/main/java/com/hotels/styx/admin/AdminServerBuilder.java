@@ -138,15 +138,14 @@ public class AdminServerBuilder {
         httpRouter.aggregate("/admin/metrics", metricsHandler);
         httpRouter.aggregate("/admin/metrics/", metricsHandler);
         httpRouter.aggregate("/admin/configuration", new StyxConfigurationHandler(configuration));
-        httpRouter.aggregate("/admin/configuration/origins", new OriginsHandler(backendServicesRegistry));
         httpRouter.aggregate("/admin/jvm", new JVMMetricsHandler(environment.metricRegistry(), metricsCacheExpiration));
-        httpRouter.aggregate("/admin/origins/status", new OriginsInventoryHandler(environment.eventBus()));
         httpRouter.aggregate("/admin/configuration/logging", new LoggingConfigurationHandler(startupConfig.logConfigLocation()));
         httpRouter.aggregate("/admin/configuration/startup", new StartupConfigHandler(startupConfig));
 
         RoutingObjectHandler routingObjectHandler = new RoutingObjectHandler(routeDatabase, routingObjectFactoryContext);
         httpRouter.aggregate("/admin/routing", routingObjectHandler);
         httpRouter.aggregate("/admin/routing/", routingObjectHandler);
+        httpRouter.aggregate("/admin/kotlin/test", new KotlinHtmlHandler(routeDatabase));
 
         ServiceProviderHandler serviceProvideHandler = new ServiceProviderHandler(providerDatabase);
         httpRouter.aggregate("/admin/service/providers", serviceProvideHandler);
@@ -157,9 +156,13 @@ public class AdminServerBuilder {
             httpRouter.aggregate("/admin/dashboard/", new ClassPathResourceHandler("/admin/dashboard/"));
         }
 
-        // Tasks
+        // Replace them in the backwards compatibility mode only.
+        // Remove altogether when Routing Engine is enabled:
+        httpRouter.aggregate("/admin/origins/status", new OriginsInventoryHandler(environment.eventBus()));
+        httpRouter.aggregate("/admin/configuration/origins", new OriginsHandler(backendServicesRegistry));
         httpRouter.aggregate("/admin/tasks/origins/reload", new HttpMethodFilteringHandler(POST, new OriginsReloadCommandHandler(backendServicesRegistry)));
         httpRouter.aggregate("/admin/tasks/origins", new HttpMethodFilteringHandler(POST, new OriginsCommandHandler(environment.eventBus())));
+
         httpRouter.aggregate("/admin/tasks/plugin/", new PluginToggleHandler(environment.configStore()));
 
         // Plugins Handler
@@ -190,7 +193,6 @@ public class AdminServerBuilder {
 
     private static Iterable<IndexHandler.Link> indexLinkPaths(StyxConfig styxConfig) {
         ImmutableList.Builder<IndexHandler.Link> builder = ImmutableList.builder();
-        builder.add(link("Kotlin/Test page", "/admin/kotlin/test"));
         builder.add(link("version.txt", "/version.txt"));
         builder.add(link("Ping", "/admin/ping"));
         builder.add(link("Threads", "/admin/threads"));
