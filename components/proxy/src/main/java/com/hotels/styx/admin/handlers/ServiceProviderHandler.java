@@ -32,7 +32,6 @@ import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.ProviderObjectRecord;
 import org.slf4j.Logger;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -72,9 +71,9 @@ public class ServiceProviderHandler implements WebServiceHandler {
                                 .map(entry -> serialise(entry.getKey(), entry.getValue()))
                                 .collect(joining("\n"));
 
-                        HttpResponse response = output.length() > 0 ?
-                                response(OK).body(output, UTF_8).build() :
-                                response(NO_CONTENT).build();
+                        HttpResponse response = output.length() > 0
+                                ? response(OK).body(output, UTF_8).build()
+                                : response(NO_CONTENT).build();
                         return Eventual.of(response);
                     } catch (RuntimeException cause) {
                         LOGGER.error("Unable to construct response for list of service providers", cause);
@@ -88,9 +87,9 @@ public class ServiceProviderHandler implements WebServiceHandler {
                         Optional<String> object = providerDatabase.get(name)
                                 .map(record -> serialise(name, record));
 
-                        HttpResponse response = object.isPresent() ?
-                                response(OK).body(object.get(), UTF_8).build() :
-                                response(NOT_FOUND).build();
+                        HttpResponse response = object.isPresent()
+                                ? response(OK).body(object.get(), UTF_8).build()
+                                : response(NOT_FOUND).build();
                         return Eventual.of(response);
                     } catch (RuntimeException cause) {
                         LOGGER.error("Unable to construct response for service provider [" + name + "]", cause);
