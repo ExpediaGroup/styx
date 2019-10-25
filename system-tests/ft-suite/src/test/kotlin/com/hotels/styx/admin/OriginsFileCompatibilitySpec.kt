@@ -424,7 +424,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
             fun extractHealthCheckMonitors(responseBody: String) =
                     responseBody.split("---\n")
                             .filter(String::isNotBlank)
-                            .map {deserialiseHealthCheckMonitor(it)}
+                            .map(::deserialiseHealthCheckMonitor)
                             .filter { it.type() == "HealthCheckMonitor" }
 
             fun validateHealthCheckMonitor(monitor: StyxObjectDefinition) {

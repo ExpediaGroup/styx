@@ -46,6 +46,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.joining;
 import static org.slf4j.LoggerFactory.getLogger;
 
+/**
+ * Admin interface access to service provider information, esp. Health Check monitors.
+ */
 public class ServiceProviderHandler implements WebServiceHandler {
 
     private static final Logger LOGGER = getLogger(ServiceProviderHandler.class);
