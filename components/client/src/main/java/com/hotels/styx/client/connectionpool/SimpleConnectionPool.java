@@ -77,10 +77,12 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
             Connection connection = dequeue();
             if (connection != null) {
                 borrowedCount.incrementAndGet();
+                sink.onCancel(() -> availableConnections.add(connection));
                 sink.success(connection);
             } else {
                 if (waitingSubscribers.size() < poolSettings.maxPendingConnectionsPerHost()) {
-                    this.waitingSubscribers.add(sink.onDispose(() -> waitingSubscribers.remove(sink)));
+                    this.waitingSubscribers.add(sink);
+                    sink.onDispose(() -> waitingSubscribers.remove(sink));
                     newConnection();
                 } else {
                     sink.error(new MaxPendingConnectionsExceededException(
@@ -143,6 +145,7 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
             availableConnections.add(connection);
         } else {
             borrowedCount.incrementAndGet();
+            subscriber.onCancel(() -> availableConnections.add(connection));
             subscriber.success(connection);
         }
     }
