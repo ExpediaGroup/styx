@@ -489,7 +489,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                         }
             }
 
-            test("Health checking service appears in the /admin/service/providers endpoint with the correct configuration") {
+            test("Health checking service appears in the service providers list on the admin endpoint") {
                 client.send(get("/admin/service/providers")
                         .header(HOST, styxServer().adminHostHeader())
                         .build())
@@ -501,7 +501,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                         }
             }
 
-            test("Health checking service returned from the /admin/service/provider/appB endpoint with the correct configuration") {
+            test("Health checking service returned from the admin endpoint") {
                 client.send(get("/admin/service/provider/appB")
                         .header(HOST, styxServer().adminHostHeader())
                         .build())
@@ -535,7 +535,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 }
             }
 
-            test("Health checking service no longer appears in the /admin/service/providers endpoint") {
+            test("Health checking service does not appear in the service providers list on the admin endpoint") {
                 client.send(get("/admin/service/providers")
                         .header(HOST, styxServer().adminHostHeader())
                         .build())
@@ -546,7 +546,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                         }
             }
 
-            test("No health checking service returned from the /admin/service/provider/appB endpoint") {
+            test("No health checking service found on the admin endpoint") {
                 client.send(get("/admin/service/provider/appB")
                         .header(HOST, styxServer().adminHostHeader())
                         .build())

@@ -32,12 +32,15 @@ import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.ProviderObjectRecord;
 import org.slf4j.Logger;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 import static com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.hotels.styx.admin.handlers.UrlPatternRouter.placeholders;
 import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.HttpResponseStatus.NO_CONTENT;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
@@ -63,27 +66,35 @@ public class ServiceProviderHandler implements WebServiceHandler {
     public ServiceProviderHandler(StyxObjectStore<ProviderObjectRecord> providerDatabase) {
         urlRouter = new UrlPatternRouter.Builder()
                 .get("/admin/service/providers", (request, context) -> {
-                    String output = providerDatabase.entrySet()
-                            .stream()
-                            .map(entry -> serialise(entry.getKey(), entry.getValue()))
-                            .collect(joining("\n"));
+                    try {
+                        String output = providerDatabase.entrySet()
+                                .stream()
+                                .map(entry -> serialise(entry.getKey(), entry.getValue()))
+                                .collect(joining("\n"));
 
-                    return Eventual.of(response(output.length() == 0 ? NO_CONTENT : OK)
-                            .body(output, UTF_8)
-                            .build());
-
+                        HttpResponse response = output.length() > 0 ?
+                                response(OK).body(output, UTF_8).build() :
+                                response(NO_CONTENT).build();
+                        return Eventual.of(response);
+                    } catch (RuntimeException cause) {
+                        LOGGER.error("Unable to construct response for list of service providers", cause);
+                        return Eventual.of(response(BAD_REQUEST).body(cause.toString(), UTF_8).build());
+                    }
                 })
                 .get("/admin/service/provider/:providerName", (request, context) -> {
                     String name = placeholders(context).get("providerName");
 
                     try {
-                        String object = providerDatabase.get(name)
-                                .map(record -> serialise(name, record))
-                                .orElseThrow(ResourceNotFoundException::new);
+                        Optional<String> object = providerDatabase.get(name)
+                                .map(record -> serialise(name, record));
 
-                        return Eventual.of(response(OK).body(object, UTF_8).build());
-                    } catch (ResourceNotFoundException e) {
-                        return Eventual.of(response(NOT_FOUND).build());
+                        HttpResponse response = object.isPresent() ?
+                                response(OK).body(object.get(), UTF_8).build() :
+                                response(NOT_FOUND).build();
+                        return Eventual.of(response);
+                    } catch (RuntimeException cause) {
+                        LOGGER.error("Unable to construct response for service provider [" + name + "]", cause);
+                        return Eventual.of(response(BAD_REQUEST).body(cause.toString(), UTF_8).build());
                     }
                 })
                 .build();
@@ -99,9 +110,11 @@ public class ServiceProviderHandler implements WebServiceHandler {
     }
 
     private static String serialise(String name, ProviderObjectRecord record) {
-        JsonNode node = YAML_MAPPER
-                .valueToTree(new StyxObjectDefinition(name, record.getType(), ImmutableList.copyOf(record.getTags()), record.getConfig()));
+        List<String> tags = ImmutableList.copyOf(record.getTags());
+        StyxObjectDefinition objectDef =
+                new StyxObjectDefinition(name, record.getType(), tags, record.getConfig());
 
+        JsonNode node = YAML_MAPPER.valueToTree(objectDef);
         ((ObjectNode) node).set("config", record.getConfig());
 
         try {
@@ -109,9 +122,6 @@ public class ServiceProviderHandler implements WebServiceHandler {
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private static class ResourceNotFoundException extends RuntimeException {
     }
 
     private abstract static class ServiceProviderDefMixin {

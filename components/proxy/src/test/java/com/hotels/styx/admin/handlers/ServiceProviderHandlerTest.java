@@ -26,7 +26,6 @@ import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.ProviderObjectRecord;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.apache.commons.lang.StringUtils;
-import org.mockito.Mockito;
 import org.testng.annotations.Test;
 import reactor.core.publisher.Mono;
 
@@ -43,6 +42,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.mockito.Mockito.mock;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
 public class ServiceProviderHandlerTest {
@@ -74,7 +75,7 @@ public class ServiceProviderHandlerTest {
         HttpResponse response = Mono.from(handler.handle(request, HttpInterceptorContext.create())).block();
 
         assertThat(response.status(), equalTo(HttpResponseStatus.NO_CONTENT));
-        assertThat(response.contentLength().get(), equalTo(0L));
+        assertFalse(response.contentLength().isPresent());
     }
 
     @Test
@@ -87,8 +88,8 @@ public class ServiceProviderHandlerTest {
         assertThat(response.status(), equalTo(HttpResponseStatus.OK));
 
         StyxObjectDefinition actualProvider = deserialiseProvider(response.bodyAs(StandardCharsets.UTF_8));
-        assertThat(actualProvider.name(), equalTo("object2"));
         assertThat(actualProvider, notNullValue());
+        assertThat(actualProvider.name(), equalTo("object2"));
         validateProvider(actualProvider, store.get("object2").get());
     }
 
@@ -113,8 +114,8 @@ public class ServiceProviderHandlerTest {
     }
 
     private StyxObjectStore<ProviderObjectRecord> createTestStore() throws IOException {
-        ObjectMapper mapper =new ObjectMapper();
-        StyxService mockService = Mockito.mock(StyxService.class);
+        ObjectMapper mapper = new ObjectMapper();
+        StyxService mockService = mock(StyxService.class);
         StyxObjectStore<ProviderObjectRecord> store = new StyxObjectStore<>();
 
         JsonNode config1 = mapper.readTree("{\"setting1\" : \"A\", \"setting2\" : \"A\"}");
