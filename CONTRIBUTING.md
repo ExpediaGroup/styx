@@ -23,7 +23,6 @@ Styx-Support:
 
  - Styx-Api-Testsupport
  - Styx-origins-starter
- - Styx-Test-Api
  - Styx-testsupport
 
 System Tests:
@@ -54,11 +53,6 @@ they are kept in their own **styx-common** module. This helps to keep the 3rd pa
 extension API as small and lean (and therefore stable) as possible.
 
 ### Styx-Support
-
-**styx-test-api** - A test API for Styx plugin and extension developers.
-Allows a Styx server to be started in desired configurations for testing
-extensions. This API is intended for external consumption and therefore
-should be stable, with an emphasis on ensuring backwards compatibility.
 
 **Styx-api-testsupport** - Test helper classes for testing styx components.
 It depends on **styx-api** so the test helpers have the full Styx API at

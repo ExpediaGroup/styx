@@ -107,12 +107,6 @@
     </dependency>
 
     <dependency>
-      <groupId>com.hotels.styx</groupId>
-      <artifactId>styx-test-api</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-
-    <dependency>
       <groupId>com.github.tomakehurst</groupId>
       <artifactId>wiremock</artifactId>
     </dependency>
