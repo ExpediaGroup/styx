@@ -76,9 +76,7 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
         return Mono.<Connection>create(sink -> {
             Connection connection = dequeue();
             if (connection != null) {
-                borrowedCount.incrementAndGet();
-                sink.onCancel(() -> availableConnections.add(connection));
-                sink.success(connection);
+                attemptBorrowConnection(sink, connection);
             } else {
                 if (waitingSubscribers.size() < poolSettings.maxPendingConnectionsPerHost()) {
                     this.waitingSubscribers.add(sink);
@@ -144,10 +142,21 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
         if (subscriber == null) {
             availableConnections.add(connection);
         } else {
-            borrowedCount.incrementAndGet();
-            subscriber.onCancel(() -> availableConnections.add(connection));
-            subscriber.success(connection);
+            attemptBorrowConnection(subscriber, connection);
         }
+    }
+
+    private void attemptBorrowConnection(MonoSink<Connection> sink, Connection connection) {
+        borrowedCount.incrementAndGet();
+        sink.onCancel(() -> {
+            cancelBorrowConnection(connection);
+        });
+        sink.success(connection);
+    }
+
+    private void cancelBorrowConnection(Connection connection) {
+        borrowedCount.decrementAndGet();
+        availableConnections.add(connection);
     }
 
     public boolean returnConnection(Connection connection) {
