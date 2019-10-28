@@ -15,6 +15,9 @@
  */
 package com.hotels.styx.common;
 
+/**
+ * Double escapes \n.
+ */
 public final class Logging {
 
     private Logging() {

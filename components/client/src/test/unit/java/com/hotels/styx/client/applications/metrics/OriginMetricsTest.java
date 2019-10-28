@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import static com.hotels.styx.client.applications.OriginStats.REQUEST_FAILURE;
 import static com.hotels.styx.client.applications.OriginStats.REQUEST_SUCCESS;
 import static com.hotels.styx.client.netty.MetricsSupport.IsNotUpdated.hasNotReceivedUpdatesExcept;
 import static com.hotels.styx.client.netty.MetricsSupport.name;
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -66,7 +67,7 @@ public class OriginMetricsTest {
     private void setUp() {
         rootMetricRegistry = new StubClockMeterMetricRegistry(clock);
         appMetrics = new ApplicationMetrics(appId, rootMetricRegistry);
-        originMetrics = new OriginMetrics(appMetrics, origin);
+        originMetrics = new OriginMetrics(appMetrics, originPrefix(origin));
     }
 
     @AfterMethod
@@ -82,7 +83,7 @@ public class OriginMetricsTest {
 
     @Test(expectedExceptions = NullPointerException.class)
     public void failsIfCreatedWithNullApplicationMetrics() {
-        new OriginMetrics(null, origin);
+        new OriginMetrics(null, originPrefix(origin));
     }
 
     @Test(expectedExceptions = NullPointerException.class)
@@ -92,7 +93,7 @@ public class OriginMetricsTest {
 
     @Test
     public void successfullyCreated() {
-        assertThat(new OriginMetrics(appMetrics, origin), is(notNullValue()));
+        assertThat(new OriginMetrics(appMetrics, originPrefix(origin)), is(notNullValue()));
     }
 
     @Test
@@ -120,8 +121,8 @@ public class OriginMetricsTest {
                 .id("h2")
                 .build();
 
-        OriginMetrics originMetricsA = new OriginMetrics(appMetrics, originA);
-        OriginMetrics originMetricsB = new OriginMetrics(appMetrics, originB);
+        OriginMetrics originMetricsA = new OriginMetrics(appMetrics, originPrefix(originA));
+        OriginMetrics originMetricsB = new OriginMetrics(appMetrics, originPrefix(originB));
 
         originMetricsA.requestSuccess();
         originMetricsA.requestSuccess();
@@ -164,8 +165,8 @@ public class OriginMetricsTest {
                 .applicationId(this.appId)
                 .build();
 
-        OriginMetrics originMetricsA = new OriginMetrics(appMetrics, originA);
-        OriginMetrics originMetricsB = new OriginMetrics(appMetrics, originB);
+        OriginMetrics originMetricsA = new OriginMetrics(appMetrics, originPrefix(originA));
+        OriginMetrics originMetricsB = new OriginMetrics(appMetrics, originPrefix(originB));
 
         originMetricsA.requestError();
         originMetricsA.requestError();
@@ -489,4 +490,9 @@ public class OriginMetricsTest {
             return new Meter(clock);
         }
     }
+
+    private static String originPrefix(Origin origin) {
+        return origin.id().toString();
+    }
+
 }

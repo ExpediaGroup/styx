@@ -25,6 +25,9 @@ import java.nio.file.Path;
 import static com.google.common.hash.Hashing.md5;
 import static com.google.common.io.ByteStreams.toByteArray;
 
+/**
+ * Reads in a file and performs and Md5 hash on it.
+ */
 public final class Files {
     private Files() {
     }

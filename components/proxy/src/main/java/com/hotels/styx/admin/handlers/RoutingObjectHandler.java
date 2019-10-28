@@ -49,7 +49,6 @@ import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -97,7 +96,7 @@ public class RoutingObjectHandler implements WebServiceHandler {
 
                     try {
                         StyxObjectDefinition payload = YAML_MAPPER.readValue(body, StyxObjectDefinition.class);
-                        RoutingMetadataDecorator decorator = new RoutingMetadataDecorator(Builtins.build(emptyList(), routingObjectFactoryContext, payload));
+                        RoutingMetadataDecorator decorator = new RoutingMetadataDecorator(Builtins.build(ImmutableList.of(name), routingObjectFactoryContext, payload));
 
                         routeDatabase.insert(name, new RoutingObjectRecord(payload.type(), ImmutableSet.copyOf(payload.tags()), payload.config(), decorator))
                                 .ifPresent(previous -> previous.getRoutingObject().stop());
