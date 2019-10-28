@@ -149,14 +149,9 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
     private void attemptBorrowConnection(MonoSink<Connection> sink, Connection connection) {
         borrowedCount.incrementAndGet();
         sink.onCancel(() -> {
-            cancelBorrowConnection(connection);
+            returnConnection(connection);
         });
         sink.success(connection);
-    }
-
-    private void cancelBorrowConnection(Connection connection) {
-        borrowedCount.decrementAndGet();
-        availableConnections.add(connection);
     }
 
     public boolean returnConnection(Connection connection) {
