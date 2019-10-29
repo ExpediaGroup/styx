@@ -127,7 +127,8 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
         }
     }
 
-    private Connection dequeue() {
+    @VisibleForTesting
+    Connection dequeue() {
         Connection connection = availableConnections.poll();
 
         while (nonNull(connection) && !connection.isConnected()) {

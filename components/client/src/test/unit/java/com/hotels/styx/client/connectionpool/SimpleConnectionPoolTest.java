@@ -21,6 +21,9 @@ import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
 import org.mockito.Mockito;
+import org.mockito.internal.stubbing.answers.AnswersWithDelay;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.reactivestreams.Publisher;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -39,6 +42,7 @@ import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defau
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
@@ -712,10 +716,94 @@ public class SimpleConnectionPoolTest {
         // And then ensure connection is placed in the active queue:
         processor.onNext(mock(Connection.class));
 
+        // Could do with a thread.sleep here
+
         assertEquals(pool.stats().availableConnectionCount(), 1);
         assertEquals(pool.stats().pendingConnectionCount(), 0);
         assertEquals(pool.stats().busyConnectionCount(), 0);
         assertEquals(pool.stats().connectionAttempts(), 1);
+    }
+
+    @Test
+    public void shouldNotHandoutConnectionToCancelledSubscriberWhenCreatingNewConnection() throws Exception {
+        when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
+                .thenReturn(Mono.just(connection1));
+
+        ConnectionPoolSettings poolSettings = new ConnectionPoolSettings.Builder()
+                .pendingConnectionTimeout(100, MILLISECONDS)
+                .build();
+
+        SimpleConnectionPool simpleConnectionPool = new SimpleConnectionPool(origin, poolSettings, connectionFactory);
+        SimpleConnectionPool pool = spy(simpleConnectionPool);
+        when(pool.dequeue())
+                .thenAnswer(new AnswersWithDelay(200, new Answer<Object>() {
+                    @Override
+                    public Object answer(InvocationOnMock invocation) throws Throwable {
+                        return invocation.callRealMethod();
+                    }
+                }));
+        StepVerifier.create(pool.borrowConnection())
+                .expectError(MaxPendingConnectionTimeoutException.class)
+                .verify();
+
+        assertEquals(pool.stats().availableConnectionCount(), 1);
+        assertEquals(pool.stats().pendingConnectionCount(), 0); // Waiting subscribers
+        assertEquals(pool.stats().busyConnectionCount(), 0);    // Borrowed count
+   }
+
+    @Test
+    public void shouldNotHandoutConnectionToCancelledSubscriberWhenConnectionIsReturned() throws Exception {
+        EmitterProcessor<Connection> processor = EmitterProcessor.create();
+        when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
+                .thenReturn(Mono.from(processor));
+        ConnectionPoolSettings poolSettings = new ConnectionPoolSettings.Builder()
+                .pendingConnectionTimeout(100, MILLISECONDS)
+                .build();
+
+        SimpleConnectionPool simpleConnectionPool = new SimpleConnectionPool(origin, poolSettings, connectionFactory);
+        SimpleConnectionPool pool = spy(simpleConnectionPool);
+        when(pool.dequeue())
+                .thenAnswer(new AnswersWithDelay(200, new Answer<Object>() {
+                    @Override
+                    public Object answer(InvocationOnMock invocation) throws Throwable {
+                        return invocation.callRealMethod();
+                    }
+                }));
+
+        StepVerifier.create(pool.borrowConnection())
+                .expectError(MaxPendingConnectionTimeoutException.class)
+                .verify();
+
+        pool.returnConnection(connection1);
+
+        assertEquals(pool.stats().availableConnectionCount(), 1);
+        assertEquals(pool.stats().pendingConnectionCount(), 0); // Waiting subscribers
+        assertEquals(pool.stats().busyConnectionCount(), -1);    // Borrowed count
+    }
+
+    @Test
+    public void shouldNotHandoutConnectionToCancelledSubscriberWhenConnectionAlreadyInPool() throws Exception {
+        ConnectionPoolSettings poolSettings = new ConnectionPoolSettings.Builder()
+                .pendingConnectionTimeout(100, MILLISECONDS)
+                .build();
+
+        SimpleConnectionPool simpleConnectionPool = new SimpleConnectionPool(origin, poolSettings, connectionFactory);
+        SimpleConnectionPool pool = spy(simpleConnectionPool);
+        when(pool.dequeue())
+                .thenAnswer(new AnswersWithDelay(200, new Answer<Object>() {
+                    @Override
+                    public Object answer(InvocationOnMock invocation) throws Throwable {
+                        return connection1;
+                    }
+                }));
+
+        StepVerifier.create(pool.borrowConnection())
+                .expectError(MaxPendingConnectionTimeoutException.class)
+                .verify();
+
+        assertEquals(pool.stats().availableConnectionCount(), 1);
+        assertEquals(pool.stats().pendingConnectionCount(), 0); // Waiting subscribers
+        assertEquals(pool.stats().busyConnectionCount(), 0);    // Borrowed count
     }
 
     @Test
