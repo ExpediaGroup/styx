@@ -124,7 +124,7 @@
 
     <!-- Testing Versions -->
     <hamcrest.all.version>1.3</hamcrest.all.version>
-    <mockito.version>1.9.5</mockito.version>
+    <mockito.version>3.1.0</mockito.version>
     <testng.version>6.14.3</testng.version>
 
 
@@ -486,7 +486,7 @@
 
       <dependency>
         <groupId>org.mockito</groupId>
-        <artifactId>mockito-all</artifactId>
+        <artifactId>mockito-core</artifactId>
         <version>${mockito.version}</version>
         <scope>test</scope>
         <exclusions>
@@ -967,11 +967,6 @@
                     -->
                     <exclude>junit:junit:(,4.10]</exclude>
                     <exclude>junit:junit-dep</exclude>
-
-                    <!--
-                    Ban uber mockito.
-                    -->
-                    <!--<exclude>org.mockito:mockito-all</exclude>-->
 
                     <!--
                     Ban hamcrest so we can require compatible version (see includes).

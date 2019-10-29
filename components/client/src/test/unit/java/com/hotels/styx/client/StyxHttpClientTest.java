@@ -48,6 +48,7 @@ import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -385,7 +386,7 @@ public class StyxHttpClientTest {
                         .stream(),
                 new StyxHttpClient.Builder());
 
-        verify(factory).createConnection(originCaptor.capture(), any(ConnectionSettings.class), any(SslContext.class));
+        verify(factory).createConnection(originCaptor.capture(), any(ConnectionSettings.class), nullable(SslContext.class));
         assertThat(originCaptor.getValue().port(), is(80));
     }
 
@@ -410,7 +411,7 @@ public class StyxHttpClientTest {
 
     private static NettyConnectionFactory mockConnectionFactory() {
         NettyConnectionFactory factory = mock(NettyConnectionFactory.class);
-        when(factory.createConnection(any(Origin.class), any(ConnectionSettings.class), any(SslContext.class)))
+        when(factory.createConnection(any(Origin.class), any(ConnectionSettings.class), nullable(SslContext.class)))
                 .thenReturn(Mono.just(mock(Connection.class)));
         return factory;
     }

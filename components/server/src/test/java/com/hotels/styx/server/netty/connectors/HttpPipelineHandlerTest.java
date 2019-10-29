@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.server.netty.connectors;
 
-import com.google.common.collect.ObjectArrays;
 import com.hotels.styx.api.ContentOverflowException;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
@@ -89,6 +88,7 @@ import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.eq;
@@ -151,20 +151,21 @@ public class HttpPipelineHandlerTest {
         writerFuture = new CompletableFuture<>();
 
         responseWriter = mock(HttpResponseWriter.class);
-        when(responseWriter.write(any(LiveHttpResponse.class))).thenReturn(writerFuture);
+        when(responseWriter.write(nullable(LiveHttpResponse.class))).thenReturn(writerFuture);
 
         responseWriterFactory = mock(HttpResponseWriterFactory.class);
-        when(responseWriterFactory.create(anyObject()))
+        when(responseWriterFactory.create(nullable(ChannelHandlerContext.class)))
                 .thenReturn(responseWriter);
 
         pipeline = mock(HttpHandler.class);
-        when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class))).thenReturn(new Eventual<>(toPublisher(responseObservable.doOnUnsubscribe(() -> responseUnsubscribed.set(true)))));
+        when(pipeline.handle(nullable(LiveHttpRequest.class), nullable(HttpInterceptor.Context.class))).thenReturn(new Eventual<>(toPublisher(responseObservable.doOnUnsubscribe(() -> responseUnsubscribed.set(true)))));
 
         request = get("/foo").id("REQUEST-1-ID").build();
         response = response().build();
 
         responseEnhancer = mock(ResponseEnhancer.class);
-        when(responseEnhancer.enhance(any(LiveHttpResponse.Transformer.class), any(LiveHttpRequest.class))).thenAnswer(invocationOnMock -> invocationOnMock.getArguments()[0]);
+        when(responseEnhancer.enhance(nullable(LiveHttpResponse.Transformer.class), nullable(LiveHttpRequest.class))).thenAnswer(invocationOnMock -> invocationOnMock.getArguments()[0]);
+        when(responseEnhancer.enhance(nullable(LiveHttpResponse.class), nullable(LiveHttpRequest.class))).thenAnswer(invocationOnMock -> invocationOnMock.getArguments()[0]);
 
         setupHandlerTo(ACCEPTING_REQUESTS);
     }
@@ -234,8 +235,8 @@ public class HttpPipelineHandlerTest {
         DefaultHttpResponse response = (DefaultHttpResponse) channel.readOutbound();
 
         assertThat(response.getStatus(), is(io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST));
-        verify(responseEnhancer).enhance(any(LiveHttpResponse.Transformer.class), eq(null));
-        verify(errorListener, only()).proxyErrorOccurred(eq(BAD_REQUEST), any(BadRequestException.class));
+        verify(responseEnhancer).enhance(nullable(LiveHttpResponse.Transformer.class), eq(null));
+        verify(errorListener, only()).proxyErrorOccurred(eq(BAD_REQUEST), nullable(DecoderException.class));
     }
 
     @Test
@@ -494,7 +495,7 @@ public class HttpPipelineHandlerTest {
         responseObservable.onNext(response);
         responseObservable.onCompleted();
         assertThat(handler.state(), is(SENDING_RESPONSE));
-        verify(responseWriter).write(any(LiveHttpResponse.class));
+        verify(responseWriter).write(nullable(LiveHttpResponse.class));
 
         // Receive second request, while still responding to the previous request.
         // This request will be queued.
@@ -857,9 +858,9 @@ public class HttpPipelineHandlerTest {
     }
 
     @Test
-    public void anotherxceptionInSendingResponseState() throws Exception {
+    public void anotherExceptionInSendingResponseState() throws Exception {
         // In Sending Response state,
-        // An non-IO exception bubbles up the Netty pipeline
+        // A non-IO exception bubbles up the Netty pipeline
         setupHandlerTo(SENDING_RESPONSE);
 
         handler.exceptionCaught(ctx, new RuntimeException("something went wrong"));
@@ -1011,8 +1012,8 @@ public class HttpPipelineHandlerTest {
         ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
         ChannelFuture future = channelFutureOk();
         Channel channel = channel();
-        when(channel.writeAndFlush(any(ObjectArrays.class))).thenReturn(future);
-        when(ctx.writeAndFlush(any(Object.class))).thenReturn(future);
+        when(channel.writeAndFlush(nullable(Object.class))).thenReturn(future);
+        when(ctx.writeAndFlush(nullable(Object.class))).thenReturn(future);
         when(ctx.channel()).thenReturn(channel);
 
         when(ctx.channel().localAddress()).thenReturn(InetSocketAddress.createUnresolved("localhost", 1));
