@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -86,7 +87,7 @@ public class RetryNTimesTest {
     @Test
     public void returnsPreviouslyNonAttemptedOrigin() {
         when(retryPolicyContext.previousOrigins()).thenReturn(Collections.emptyList());
-        when(loadBalancer.choose(any(LoadBalancer.Preferences.class))).thenReturn(of(remoteHost));
+        when(loadBalancer.choose(nullable(LoadBalancer.Preferences.class))).thenReturn(of(remoteHost));
 
         RetryPolicy.Outcome retryOutcome = new RetryNTimes(1).evaluate(
                 retryPolicyContext, loadBalancer, null);
