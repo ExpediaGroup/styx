@@ -716,8 +716,6 @@ public class SimpleConnectionPoolTest {
         // And then ensure connection is placed in the active queue:
         processor.onNext(mock(Connection.class));
 
-        // Could do with a thread.sleep here
-
         assertEquals(pool.stats().availableConnectionCount(), 1);
         assertEquals(pool.stats().pendingConnectionCount(), 0);
         assertEquals(pool.stats().busyConnectionCount(), 0);
