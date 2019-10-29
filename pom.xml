@@ -105,7 +105,7 @@
     <netty-tcnative.version>2.0.26.Final</netty-tcnative.version>
     <rxjava.version>1.1.6</rxjava.version>
     <reactive-streams.version>1.0.2</reactive-streams.version>
-    <reactor.version>3.2.0.RELEASE</reactor.version>
+    <reactor.version>3.3.0.RELEASE</reactor.version>
     <pcollections.version>3.0.3</pcollections.version>
 
     <!--Kotlin -->
