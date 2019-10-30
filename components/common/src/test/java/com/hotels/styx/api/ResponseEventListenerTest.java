@@ -29,7 +29,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpResponse.response;
 import static java.nio.charset.StandardCharsets.UTF_8;
+
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 
@@ -37,7 +40,7 @@ public class ResponseEventListenerTest {
     private AtomicBoolean cancelled;
     private AtomicReference<Throwable> responseError;
     private AtomicReference<Throwable> contentError;
-    private AtomicBoolean completed;
+    private AtomicReference<LiveHttpResponse> completed;
     private AtomicBoolean finished;
 
     @BeforeMethod
@@ -45,19 +48,20 @@ public class ResponseEventListenerTest {
         cancelled = new AtomicBoolean();
         responseError = new AtomicReference<>();
         contentError = new AtomicReference<>();
-        completed = new AtomicBoolean();
+        completed = new AtomicReference<>();
         finished = new AtomicBoolean();
     }
 
     @Test
     public void doesntFireEventsThatNeverOccurred() {
-        Mono<LiveHttpResponse> publisher = Mono.just(response(OK).body(new ByteStream(Flux.just(new Buffer("hey", UTF_8)))).build());
+        LiveHttpResponse theResponse = response(OK).body(new ByteStream(Flux.just(new Buffer("hey", UTF_8)))).build();
+        Mono<LiveHttpResponse> publisher = Mono.just(theResponse);
 
         Flux<LiveHttpResponse> listener = ResponseEventListener.from(publisher)
                 .whenCancelled(() -> cancelled.set(true))
                 .whenResponseError(cause -> responseError.set(cause))
                 .whenContentError(cause -> contentError.set(cause))
-                .whenCompleted(() -> completed.set(true))
+                .whenCompleted(response -> completed.set(response))
                 .whenFinished(() -> finished.set(true))
                 .apply();
 
@@ -67,7 +71,7 @@ public class ResponseEventListenerTest {
                     assertFalse(cancelled.get());
                     assertNull(responseError.get());
                     assertNull(contentError.get());
-                    assertTrue(completed.get());
+                    assertEquals(theResponse,  completed.get());
                     assertTrue(finished.get());
                 })
                 .verifyComplete();
