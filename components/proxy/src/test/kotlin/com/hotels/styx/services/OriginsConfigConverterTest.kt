@@ -302,14 +302,41 @@ class OriginsConfigConverterTest : StringSpec({
             it.healthyThreshod shouldBe 3
         }
 
-        translator.routingObjects(apps)
+    }
+
+    "Sets inactive tag on an app if there is a valid healthCheck configured" {
+
+        val config = """
+            ---
+            - id: "appWithHealthCheck"
+              path: "/a"
+              healthCheck:
+                uri: "/apphealth.txt"
+                intervalMillis: 10000
+                unhealthyThreshold: 2
+                healthyThreshold: 3
+              origins:
+              - { id: "appA-1", host: "localhost:9190" }
+            - id: "appMissingHealthCheckUri"
+              path: "/b"
+              healthCheck:
+                intervalMillis: 10000
+                unhealthyThreshold: 2
+                healthyThreshold: 3
+              origins:
+              - { id: "appB-1", host: "localhost:9290" }
+            - id: "appWithNoHealthCheck"
+              path: "/c"
+              origins:
+              - { id: "appC-1", host: "localhost:9290" }
+            """.trimIndent()
+
+        OriginsConfigConverter(serviceDb, RoutingObjectFactoryContext().get(), "")
+                .routingObjects(deserialiseOrigins(config))
                 .let {
-                    it.size shouldBe 9
-                    it[0].tags().shouldContainAll("appA", "source=OriginsFileConverter", "state:inactive")
-                    it[1].tags().shouldContainAll("appA", "source=OriginsFileConverter", "state:inactive")
-                    it[3].tags().shouldContainAll("appB", "source=OriginsFileConverter", "state:inactive")
-                    it[5].tags().shouldContainAll("appC", "source=OriginsFileConverter", "state:inactive")
-                    it[6].tags().shouldContainAll("appC", "source=OriginsFileConverter", "state:inactive")
+                    it[0].tags().shouldContainAll("appWithHealthCheck", "source=OriginsFileConverter", "state:inactive")
+                    it[2].tags().shouldContainAll("appMissingHealthCheckUri", "source=OriginsFileConverter", "state:active")
+                    it[4].tags().shouldContainAll("appWithNoHealthCheck", "source=OriginsFileConverter", "state:active")
                 }
     }
 

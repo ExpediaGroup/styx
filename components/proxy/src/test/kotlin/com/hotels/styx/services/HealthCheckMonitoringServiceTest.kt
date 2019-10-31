@@ -72,7 +72,7 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
             verify { executor.scheduleAtFixedRate(any(), 100, 100, MILLISECONDS) }
         }
 
-        scenario("Changes inactive tags to active when health check is stopped") {
+        scenario("Changes inactive tag to active when health check is stopped") {
             monitor.stop().get()
 
             verify { scheduledFuture.cancel(false) }

@@ -154,7 +154,7 @@ internal class OriginsConfigConverter(
 
         internal fun hostProxy(app: BackendService, origin: Origin) : StyxObjectDefinition {
 
-            var healthCheckTag :String = if (isHealthCheckConfigured(app)) INACTIVE_TAG else ACTIVE_TAG;
+            val healthCheckTag :String = if (isHealthCheckConfigured(app)) INACTIVE_TAG else ACTIVE_TAG;
 
             return StyxObjectDefinition(
                 "${app.id()}.${origin.id()}",
