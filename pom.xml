@@ -95,7 +95,7 @@
     <!-- General Versions -->
     <guava.version>18.0</guava.version>
     <guice.version>3.0</guice.version>
-    <jackson.version>2.9.10</jackson.version>
+    <jackson.version>2.10.0</jackson.version>
     <jackson.dataformat.version>2.9.10</jackson.dataformat.version>
     <jackson.module.scala.version>2.9.10</jackson.module.scala.version>
     <jackson-module-kotlin.version>2.9.10</jackson-module-kotlin.version>
