@@ -49,12 +49,12 @@ class OriginsConfigConverterTest : StringSpec({
                     it.size shouldBe 4
 
                     it[0].name() shouldBe "app.app1"
-                    it[0].tags().shouldContainAll("app", "source=OriginsFileConverter")
+                    it[0].tags().shouldContainAll("app", "source=OriginsFileConverter", "state:active")
                     it[0].type().shouldBe("HostProxy")
                     it[0].config().shouldNotBeNull()
 
                     it[1].name() shouldBe "app.app2"
-                    it[1].tags().shouldContainAll("app", "source=OriginsFileConverter")
+                    it[1].tags().shouldContainAll("app", "source=OriginsFileConverter", "state:active")
                     it[1].type().shouldBe("HostProxy")
                     it[1].config().shouldNotBeNull()
 
@@ -135,12 +135,12 @@ class OriginsConfigConverterTest : StringSpec({
                     it.size shouldBe 4
 
                     it[0].name() shouldBe "app.app1"
-                    it[0].tags().shouldContainAll("app", "source=OriginsFileConverter")
+                    it[0].tags().shouldContainAll("app", "source=OriginsFileConverter", "state:active")
                     it[0].type().shouldBe("HostProxy")
                     it[0].config().shouldNotBeNull()
 
                     it[1].name() shouldBe "app.app2"
-                    it[1].tags().shouldContainAll("app", "source=OriginsFileConverter")
+                    it[1].tags().shouldContainAll("app", "source=OriginsFileConverter", "state:active")
                     it[1].type().shouldBe("HostProxy")
                     it[1].config().shouldNotBeNull()
 
@@ -181,12 +181,12 @@ class OriginsConfigConverterTest : StringSpec({
                     it.size shouldBe 9
 
                     it[0].name() shouldBe "appA.appA-1"
-                    it[0].tags().shouldContainAll("appA", "source=OriginsFileConverter")
+                    it[0].tags().shouldContainAll("appA", "source=OriginsFileConverter", "state:active")
                     it[0].type().shouldBe("HostProxy")
                     it[0].config().shouldNotBeNull()
 
                     it[1].name() shouldBe "appA.appA-2"
-                    it[1].tags().shouldContainAll("appA", "source=OriginsFileConverter")
+                    it[1].tags().shouldContainAll("appA", "source=OriginsFileConverter", "state:active")
                     it[1].type().shouldBe("HostProxy")
                     it[1].config().shouldNotBeNull()
 
@@ -196,7 +196,7 @@ class OriginsConfigConverterTest : StringSpec({
                     it[2].config().shouldNotBeNull()
 
                     it[3].name() shouldBe "appB.appB-1"
-                    it[3].tags().shouldContainAll("appB", "source=OriginsFileConverter")
+                    it[3].tags().shouldContainAll("appB", "source=OriginsFileConverter", "state:active")
                     it[3].type().shouldBe("HostProxy")
                     it[3].config().shouldNotBeNull()
 
@@ -206,12 +206,12 @@ class OriginsConfigConverterTest : StringSpec({
                     it[4].config().shouldNotBeNull()
 
                     it[5].name() shouldBe "appC.appC-1"
-                    it[5].tags().shouldContainAll("appC", "source=OriginsFileConverter")
+                    it[5].tags().shouldContainAll("appC", "source=OriginsFileConverter", "state:active")
                     it[5].type().shouldBe("HostProxy")
                     it[5].config().shouldNotBeNull()
 
                     it[6].name() shouldBe "appC.appC-2"
-                    it[6].tags().shouldContainAll("appC", "source=OriginsFileConverter")
+                    it[6].tags().shouldContainAll("appC", "source=OriginsFileConverter", "state:active")
                     it[6].type().shouldBe("HostProxy")
                     it[6].config().shouldNotBeNull()
 
@@ -262,7 +262,8 @@ class OriginsConfigConverterTest : StringSpec({
               - { id: "appC-2", host: "localhost:9291" }
             """.trimIndent()
 
-        val services = translator.healthCheckServices(deserialiseOrigins(config))
+        val apps = deserialiseOrigins(config)
+        val services = translator.healthCheckServices(apps)
 
         services.size shouldBe 3
         services[0].first shouldBe "appA"
@@ -301,6 +302,15 @@ class OriginsConfigConverterTest : StringSpec({
             it.healthyThreshod shouldBe 3
         }
 
+        translator.routingObjects(apps)
+                .let {
+                    it.size shouldBe 9
+                    it[0].tags().shouldContainAll("appA", "source=OriginsFileConverter", "state:inactive")
+                    it[1].tags().shouldContainAll("appA", "source=OriginsFileConverter", "state:inactive")
+                    it[3].tags().shouldContainAll("appB", "source=OriginsFileConverter", "state:inactive")
+                    it[5].tags().shouldContainAll("appC", "source=OriginsFileConverter", "state:inactive")
+                    it[6].tags().shouldContainAll("appC", "source=OriginsFileConverter", "state:inactive")
+                }
     }
 
 })

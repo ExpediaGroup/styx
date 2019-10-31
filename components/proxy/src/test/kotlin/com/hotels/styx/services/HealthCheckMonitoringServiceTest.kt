@@ -40,6 +40,8 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 
 class HealthCheckMonitoringServiceTest : FeatureSpec({
 
+    fun createdTag(tag: String) = tag.matches("created:.*".toRegex())
+
     feature("Lifecycle management") {
         val scheduledFuture = mockk<ScheduledFuture<Void>>(relaxed = true)
 
@@ -49,10 +51,10 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
 
         val objectStore = StyxObjectStore<RoutingObjectRecord>()
                 .apply {
-                    record("aaa-01", "X", setOf("aaa", "state:disabled"), mockk(), mockk())
+                    record("aaa-01", "X", setOf("aaa"), mockk(), mockk())
                     record("aaa-02", "x", setOf("aaa", "state:active"), mockk(), mockk())
                     record("aaa-03", "x", setOf("aaa", "state:inactive"), mockk(), mockk())
-                    record("aaa-04", "x", setOf("aaa", "state:enabled"), mockk(), mockk())
+                    record("aaa-04", "x", setOf("aaa", "state:inactive"), mockk(), mockk())
                 }
 
         val monitor = HealthCheckMonitoringService(
@@ -70,15 +72,15 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
             verify { executor.scheduleAtFixedRate(any(), 100, 100, MILLISECONDS) }
         }
 
-        scenario("Removes tags when stopped") {
+        scenario("Changes inactive tags to active when health check is stopped") {
             monitor.stop().get()
 
             verify { scheduledFuture.cancel(false) }
 
-            objectStore["aaa-01"].get().tags.shouldContainExactly("aaa", "state:disabled")
-            objectStore["aaa-02"].get().tags.shouldContainExactly("aaa")
-            objectStore["aaa-03"].get().tags.shouldContainExactly("aaa")
-            objectStore["aaa-04"].get().tags.shouldContainExactly("aaa", "state:enabled")
+            objectStore["aaa-01"].get().tags.filterNot{ createdTag(it) }.shouldContainExactly("aaa")
+            objectStore["aaa-02"].get().tags.filterNot{ createdTag(it) }.shouldContainExactly("aaa", "state:active")
+            objectStore["aaa-03"].get().tags.filterNot{ createdTag(it) }.shouldContainExactly("aaa", "state:active:0")
+            objectStore["aaa-04"].get().tags.filterNot{ createdTag(it) }.shouldContainExactly("aaa", "state:active:0")
         }
     }
 
@@ -92,17 +94,6 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
                     }).let {
                 it.size shouldBe 2
                 it.map { it.first }.shouldContainAll("aaa-01", "aaa-02")
-            }
-        }
-
-        scenario("Ignores disabled origins") {
-            discoverMonitoredObjects("aaa", StyxObjectStore<RoutingObjectRecord>()
-                    .apply {
-                        record("aaa-01", "X", setOf("aaa"), mockk(), mockk())
-                        record("aaa-02", "x", setOf("aaa", "state:disabled"), mockk(), mockk())
-                    }).let {
-                it.size shouldBe 1
-                it.map { it.first }.shouldContainAll("aaa-01")
             }
         }
 

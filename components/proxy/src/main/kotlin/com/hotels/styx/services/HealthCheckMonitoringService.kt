@@ -33,7 +33,6 @@ import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.ProviderObjectRecord
 import com.hotels.styx.serviceproviders.ServiceProviderFactory
 import com.hotels.styx.services.HealthCheckMonitoringService.Companion.ACTIVE_TAG
-import com.hotels.styx.services.HealthCheckMonitoringService.Companion.DISABLED_TAG
 import com.hotels.styx.services.HealthCheckMonitoringService.Companion.EXECUTOR
 import com.hotels.styx.services.HealthCheckMonitoringService.Companion.INACTIVE_TAG
 import org.slf4j.LoggerFactory
@@ -68,7 +67,6 @@ internal class HealthCheckMonitoringService(
                 optional("unhealthyThreshold", integer())
         )
 
-        val DISABLED_TAG = "state:disabled"
         val ACTIVE_TAG = "state:active"
         val INACTIVE_TAG = "state:inactive"
 
@@ -93,9 +91,11 @@ internal class HealthCheckMonitoringService(
     override fun stopService() = CompletableFuture.runAsync {
         LOGGER.info("stopped")
 
-        objectStore.entrySet().forEach {
-            (name, _) -> removeTags(objectStore, name)
-        }
+        objectStore.entrySet()
+                .filter(::containsInactiveTag)
+                .forEach {
+                    (name, _) -> markObject(objectStore, name, ObjectActive(0))
+                }
 
         futureRef.get().cancel(false)
     }
@@ -185,7 +185,6 @@ internal fun tagIsIncomplete(tag: Set<String>) = !healthStatusTag(tag)
 internal fun discoverMonitoredObjects(application: String, objectStore: StyxObjectStore<RoutingObjectRecord>) =
         objectStore.entrySet()
                 .filter { it.value.tags.contains(application) }
-                .filterNot { it.value.tags.contains(DISABLED_TAG) }
                 .map { Pair(it.key, it.value) }
 
 private fun removeTags(db: StyxObjectStore<RoutingObjectRecord>, name: String) {
@@ -209,3 +208,6 @@ private fun statusTag(status: ObjectHealth) = when (status) {
     is ObjectActive -> "$ACTIVE_TAG:${status.failedProbes}"
     is ObjectInactive -> "$INACTIVE_TAG:${status.successfulProbes}"
 }
+
+private fun containsInactiveTag(entry: Map.Entry<String, RoutingObjectRecord>) =
+        entry.value.tags.any { it.matches("($INACTIVE_TAG).*".toRegex()) }
