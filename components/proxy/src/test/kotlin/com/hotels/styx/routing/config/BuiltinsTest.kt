@@ -48,7 +48,7 @@ class BuiltinsTest : StringSpec({
     }
 
     val routeObjectStore = mockk<StyxObjectStore<RoutingObjectRecord>>()
-    every { routeObjectStore.get("aHandler") } returns Optional.of(RoutingObjectRecord.create("type", mockk(), mockk(), mockHandler))
+    every { routeObjectStore.get("aHandler") } returns Optional.of(RoutingObjectRecord.create("type", setOf(), mockk(), mockHandler))
 
     "Builds a new handler as per StyxObjectDefinition" {
         val routeDef = StyxObjectDefinition("handler-def", "SomeRoutingObject", mockk())

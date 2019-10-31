@@ -26,6 +26,7 @@ import io.kotlintest.matchers.boolean.shouldBeTrue
 import io.kotlintest.matchers.collections.shouldContain
 import io.kotlintest.matchers.collections.shouldContainAll
 import io.kotlintest.matchers.collections.shouldContainExactly
+import io.kotlintest.matchers.string.shouldNotStartWith
 import io.kotlintest.matchers.withClue
 import io.kotlintest.milliseconds
 import io.kotlintest.shouldBe
@@ -75,10 +76,12 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
 
             verify { scheduledFuture.cancel(false) }
 
-            objectStore["aaa-01"].get().tags.shouldContainExactly("aaa", "state:disabled")
-            objectStore["aaa-02"].get().tags.shouldContainExactly("aaa")
-            objectStore["aaa-03"].get().tags.shouldContainExactly("aaa")
-            objectStore["aaa-04"].get().tags.shouldContainExactly("aaa", "state:enabled")
+            objectStore["aaa-01"].get().tags.shouldContainAll("aaa", "state:disabled")
+            objectStore["aaa-02"].get().tags.shouldContain("aaa")
+            objectStore["aaa-02"].get().tags.forEach{ it shouldNotStartWith "state" }
+            objectStore["aaa-03"].get().tags.shouldContain("aaa")
+            objectStore["aaa-03"].get().tags.forEach{ it shouldNotStartWith "state" }
+            objectStore["aaa-04"].get().tags.shouldContainAll("aaa", "state:enabled")
         }
     }
 
