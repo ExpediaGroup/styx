@@ -32,7 +32,7 @@ import static java.util.Objects.requireNonNull;
  */
 public final class ProxyServerBuilder {
     private final Environment environment;
-    private final ResponseInfoFormat responseInfoFormat;
+    private final StyxInfoFormat styxInfoFormat;
     private final CharSequence styxInfoHeaderName;
 
     private Supplier<HttpHandler> handlerFactory;
@@ -41,8 +41,8 @@ public final class ProxyServerBuilder {
 
     public ProxyServerBuilder(Environment environment) {
         this.environment = requireNonNull(environment);
-        this.responseInfoFormat = new ResponseInfoFormat(environment);
-        this.styxInfoHeaderName = environment.styxConfig().styxHeaderConfig().styxInfoHeaderName();
+        this.styxInfoFormat = new StyxInfoFormat(environment);
+        this.styxInfoHeaderName = environment.configuration().styxHeaderConfig().styxInfoHeaderName();
     }
 
     public HttpServer build() {
@@ -60,7 +60,7 @@ public final class ProxyServerBuilder {
     }
 
     private LiveHttpResponse.Transformer addInfoHeader(LiveHttpResponse.Transformer responseBuilder, LiveHttpRequest request) {
-        return responseBuilder.header(styxInfoHeaderName, responseInfoFormat.format(request));
+        return responseBuilder.header(styxInfoHeaderName, styxInfoFormat.format(request));
     }
 
     public ProxyServerBuilder handlerFactory(Supplier<HttpHandler> handlerFactory) {

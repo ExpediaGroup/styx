@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.client.StyxHeaderConfig;
+import com.hotels.styx.proxy.StyxInfoFormat;
 import org.slf4j.Logger;
 
 import java.net.InetSocketAddress;
@@ -37,9 +38,13 @@ public class RequestEnrichingInterceptor implements HttpInterceptor {
     private static final Logger LOGGER = getLogger(RequestEnrichingInterceptor.class);
 
     private final CharSequence requestIdHeaderName;
+    private final CharSequence styxInfoHeaderName;
+    private final StyxInfoFormat styxInfoFormat;
 
-    public RequestEnrichingInterceptor(StyxHeaderConfig styxHeaderConfig) {
+    public RequestEnrichingInterceptor(StyxHeaderConfig styxHeaderConfig, StyxInfoFormat styxInfoFormat) {
         this.requestIdHeaderName = styxHeaderConfig.requestIdHeaderName();
+        this.styxInfoHeaderName = styxHeaderConfig.styxInfoHeaderName();
+        this.styxInfoFormat = styxInfoFormat;
     }
 
     @Override
@@ -51,7 +56,9 @@ public class RequestEnrichingInterceptor implements HttpInterceptor {
         LiveHttpRequest.Transformer builder = request.newBuilder();
 
         xForwardedFor(request, context)
-                .ifPresent(headerValue -> builder.header(X_FORWARDED_FOR, headerValue));
+                .ifPresent(headerValue -> builder.addHeader(X_FORWARDED_FOR, headerValue));
+
+        builder.header(styxInfoHeaderName, styxInfoFormat.format(request));
 
         return builder
                 .header(requestIdHeaderName, request.id())

@@ -18,6 +18,7 @@ package com.hotels.styx;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.common.format.HttpMessageFormatter;
+import com.hotels.styx.proxy.StyxInfoFormat;
 import com.hotels.styx.proxy.interceptors.ConfigurationContextResolverInterceptor;
 import com.hotels.styx.proxy.interceptors.HopByHopHeadersRemovingInterceptor;
 import com.hotels.styx.proxy.interceptors.HttpMessageLoggingInterceptor;
@@ -37,7 +38,9 @@ final class BuiltInInterceptors {
     private BuiltInInterceptors() {
     }
 
-    static List<HttpInterceptor> internalStyxInterceptors(StyxConfig config, HttpMessageFormatter httpMessageFormatter) {
+    static List<HttpInterceptor> internalStyxInterceptors(StyxConfig config,
+                                                          HttpMessageFormatter httpMessageFormatter,
+                                                          StyxInfoFormat styxInfoFormat) {
         ImmutableList.Builder<HttpInterceptor> builder = ImmutableList.builder();
 
         boolean loggingEnabled = config.get("request-logging.inbound.enabled", Boolean.class)
@@ -55,7 +58,7 @@ final class BuiltInInterceptors {
                 .add(new UnexpectedRequestContentLengthRemover())
                 .add(new ViaHeaderAppendingInterceptor())
                 .add(new HopByHopHeadersRemovingInterceptor())
-                .add(new RequestEnrichingInterceptor(config.styxHeaderConfig()));
+                .add(new RequestEnrichingInterceptor(config.styxHeaderConfig(), styxInfoFormat));
 
         return builder.build();
     }

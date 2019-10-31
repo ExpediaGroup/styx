@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import static com.hotels.styx.api.LiveHttpRequest.get;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class ResponseInfoFormatTest {
+public class StyxInfoFormatTest {
     private LiveHttpRequest request;
 
     @BeforeMethod
@@ -38,7 +38,7 @@ public class ResponseInfoFormatTest {
 
     @Test
     public void defaultFormatDoesNotIncludeVersion() {
-        String info = new ResponseInfoFormat(defaultEnvironment()).format(request);
+        String info = new StyxInfoFormat(defaultEnvironment()).format(request);
 
         assertThat(info, is("noJvmRouteSet;" + request.id()));
     }
@@ -55,7 +55,7 @@ public class ResponseInfoFormatTest {
         Environment environment = environment(new MapBackedConfiguration()
                 .set("styxHeaders", styxHeaderConfig));
 
-        String info = new ResponseInfoFormat(environment).format(request);
+        String info = new StyxInfoFormat(environment).format(request);
 
         assertThat(info, is("STYX-dev.0.0;" + request.id() + ";noJvmRouteSet"));
     }

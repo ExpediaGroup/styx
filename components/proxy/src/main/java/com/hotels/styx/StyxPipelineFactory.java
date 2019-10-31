@@ -22,6 +22,7 @@ import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
+import com.hotels.styx.proxy.StyxInfoFormat;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.HttpPipelineFactory;
 import com.hotels.styx.routing.RoutingObject;
@@ -81,7 +82,9 @@ public final class StyxPipelineFactory implements PipelineFactory {
         boolean requestTracking = environment.configuration().get("requestTracking", Boolean.class).orElse(false);
 
         return new HttpInterceptorPipeline(
-                internalStyxInterceptors(environment.styxConfig(), environment.httpMessageFormatter()),
+                internalStyxInterceptors(environment.configuration(),
+                        environment.httpMessageFormatter(),
+                        new StyxInfoFormat(environment)),
                 configuredPipeline(builtinRoutingObjects),
                 requestTracking);
     }
