@@ -217,16 +217,18 @@
             </goals>
             <configuration>
               <junitArtifactName>none:none</junitArtifactName>
+              <junitPlatformArtifactName>none:none</junitPlatformArtifactName>
             </configuration>
           </execution>
-          <!-- Define a JUnit execution (runs JUnit and KotlinTest tests) -->
+          <!-- Define a JUnit5 execution (runs JUnit5 and KotlinTest tests) -->
           <execution>
-            <id>junit-tests</id>
+            <id>junit5-tests</id>
             <phase>test</phase>
             <goals>
               <goal>test</goal>
             </goals>
             <configuration>
+              <junitArtifactName>none:none</junitArtifactName>
               <testNGArtifactName>none:none</testNGArtifactName>
             </configuration>
           </execution>
