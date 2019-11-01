@@ -18,8 +18,6 @@ package com.hotels.styx.routing
 import io.kotlintest.matchers.string.shouldContain
 import io.kotlintest.specs.StringSpec
 import io.mockk.mockk
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 class RoutingObjectRecordTest : StringSpec({
     "Creates with timestamp" {
