@@ -122,7 +122,7 @@ class HostProxyTest : FeatureSpec() {
             scenario("Uses configured host and port number") {
                 val factory = HostProxy.Factory()
 
-                val hostProxy = factory.build(listOf(), context.get(), routingObjectDef("""
+                val hostProxy = factory.build(listOf("hostproxyname"), context.get(), routingObjectDef("""
                           type: HostProxy
                           config:
                             host: ahost.server.com:1234
@@ -135,7 +135,7 @@ class HostProxyTest : FeatureSpec() {
             scenario("Port defaults to 80") {
                 val factory = HostProxy.Factory()
 
-                val hostProxy = factory.build(listOf(), context.get(), routingObjectDef("""
+                val hostProxy = factory.build(listOf("hostproxyname"), context.get(), routingObjectDef("""
                           type: HostProxy
                           config:
                             host: localhost
@@ -148,7 +148,7 @@ class HostProxyTest : FeatureSpec() {
             scenario("Port defaults to 443 when TLS settings are present") {
                 val factory = HostProxy.Factory()
 
-                val hostProxy = factory.build(listOf(), context.get(), routingObjectDef("""
+                val hostProxy = factory.build(listOf("hostproxyname"), context.get(), routingObjectDef("""
                           type: HostProxy
                           config:
                             host: localhost

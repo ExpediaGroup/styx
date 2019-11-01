@@ -26,6 +26,11 @@ class RoutingObjectRecordTest : StringSpec({
                 .filter { it.startsWith("created") }
                 .first()
 
-        createdTag.shouldContain("created:20[0-9]{2}-[0-9]{1,2}-[0-9]{1,2}T[0-9]{1,2}:[0-9]{1,2}:[0-9]{1,2}.[0-9]{3}".toRegex())
+        if (createdTag.contains(".")) { // just to keep the regexes clear
+            createdTag.shouldContain("created:20[0-9]{2}-[0-9]{1,2}-[0-9]{1,2}T[0-9]{1,2}:[0-9]{1,2}:[0-9]{1,2}.[0-9]{1,3}$".toRegex())
+        } else {
+            createdTag.shouldContain("created:20[0-9]{2}-[0-9]{1,2}-[0-9]{1,2}T[0-9]{1,2}:[0-9]{1,2}:[0-9]{1,2}$".toRegex())
+
+        }
     }
 })

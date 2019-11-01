@@ -29,7 +29,7 @@ import com.hotels.styx.routing.handlers.PathPrefixRouter
 import com.hotels.styx.routing.handlers.ProviderObjectRecord
 import com.hotels.styx.services.OriginsConfigConverter.Companion.OBJECT_CREATOR_TAG
 import io.kotlintest.Matcher
-import io.kotlintest.Result
+import io.kotlintest.MatcherResult
 import io.kotlintest.Spec
 import io.kotlintest.eventually
 import io.kotlintest.seconds
@@ -585,21 +585,21 @@ class YamlFileConfigurationServiceTest : FunSpec() {
             .toMap()
 
     internal fun beRoutingObject(type: String, mandatoryTags: Collection<String>) = object : Matcher<RoutingObjectRecord> {
-        override fun test(value: RoutingObjectRecord): Result {
+        override fun test(value: RoutingObjectRecord): MatcherResult {
             val message = "Error matching ${value}"
 
             if (value.type != type) {
-                return Result(false,
+                return MatcherResult(false,
                         "{$message}.\nExcpected ${type} but was ${value.type}",
                         "${message}.\nObject type should not be LoadBalancingGroup")
             }
             if (!value.tags.containsAll(mandatoryTags)) {
-                return Result(false,
+                return MatcherResult(false,
                         "${message}.\nShould contain all tags ${mandatoryTags}, but contains ${value.tags}",
                         "${message}.\nShould not contain tags ${value.tags}")
             }
 
-            return Result(true, "test passed", "test passed")
+            return MatcherResult(true, "test passed", "test passed")
         }
     }
 
