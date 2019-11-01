@@ -46,8 +46,9 @@ import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.HostProxy.HostProxyConfiguration
 import com.hotels.styx.routing.handlers.LoadBalancingGroup
 import com.hotels.styx.routing.handlers.ProviderObjectRecord
+import com.hotels.styx.services.HealthCheckMonitoringService.Companion.ACTIVE_TAG
+import com.hotels.styx.services.HealthCheckMonitoringService.Companion.INACTIVE_TAG
 import org.slf4j.LoggerFactory
-
 
 internal class OriginsConfigConverter(
         val serviceDb: StyxObjectStore<ProviderObjectRecord>,
@@ -87,9 +88,7 @@ internal class OriginsConfigConverter(
     }
 
     internal fun healthCheckServices(apps: List<BackendService>) = apps
-            .filterNot { it.healthCheckConfig() == null }
-            .filter { it.healthCheckConfig().uri().isPresent }
-            .filter { it.healthCheckConfig().isEnabled }
+            .filter(::isHealthCheckConfigured)
             .map {
                 val appId = it.id().toString()
                 val healthCheckConfig = it.healthCheckConfig()
@@ -153,16 +152,27 @@ internal class OriginsConfigConverter(
             interceptorPipelineConfig(app, originRestrictionCookie)
         }
 
-        internal fun hostProxy(app: BackendService, origin: Origin) = StyxObjectDefinition(
+        internal fun hostProxy(app: BackendService, origin: Origin) : StyxObjectDefinition {
+
+            val healthCheckTag :String = if (isHealthCheckConfigured(app)) INACTIVE_TAG else ACTIVE_TAG;
+
+            return StyxObjectDefinition(
                 "${app.id()}.${origin.id()}",
                 HOST_PROXY,
-                listOf(OBJECT_CREATOR_TAG, app.id().toString()),
+                listOf(OBJECT_CREATOR_TAG, app.id().toString(), healthCheckTag),
                 hostProxyConfig(
                         app.connectionPoolConfig(),
                         app.tlsSettings().orElse(null),
                         app.responseTimeoutMillis(),
                         origin,
-                        "origins.${app.id()}.${origin.id()}"))
+                        "origins.${app.id()}.${origin.id()}"));
+        }
+
+        private fun isHealthCheckConfigured(app: BackendService): Boolean {
+            return (app.healthCheckConfig() != null
+                    && app.healthCheckConfig().uri().isPresent
+                    && app.healthCheckConfig().isEnabled)
+        }
 
         private fun loadBalancingGroupConfig(origins: String,
                                              originRestrictionCookie: String?,

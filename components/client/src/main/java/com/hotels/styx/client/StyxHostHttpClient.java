@@ -50,7 +50,7 @@ public class StyxHostHttpClient implements LoadBalancingMetricSupplier {
                             .whenCancelled(() -> pool.closeConnection(connection))
                             .whenResponseError(cause -> pool.closeConnection(connection))
                             .whenContentError(cause -> pool.closeConnection(connection))
-                            .whenCompleted(() -> pool.returnConnection(connection))
+                            .whenCompleted(response -> pool.returnConnection(connection))
                             .apply();
                 });
     }

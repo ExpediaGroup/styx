@@ -61,8 +61,10 @@
       <!-- Netty -->
       <dependency>
         <groupId>io.netty</groupId>
-        <artifactId>netty-all</artifactId>
+        <artifactId>netty-bom</artifactId>
         <version>${netty.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
 
     </dependencies>

@@ -36,7 +36,7 @@ public class ResponseEventListener {
     private final Flux<LiveHttpResponse> publisher;
     private Consumer<Throwable> responseErrorAction = cause -> { };
     private Consumer<Throwable> contentErrorAction = cause -> { };
-    private Runnable onCompletedAction = () -> { };
+    private Consumer<LiveHttpResponse> onCompletedAction = r -> { };
     private Runnable cancelAction = () -> { };
     private Runnable whenFinishedAction = () -> { };
 
@@ -65,8 +65,8 @@ public class ResponseEventListener {
         return this;
     }
 
-    public ResponseEventListener whenCompleted(Runnable action) {
-        this.onCompletedAction = requireNonNull(action);
+    public ResponseEventListener whenCompleted(Consumer<LiveHttpResponse> completeAction) {
+        this.onCompletedAction = requireNonNull(completeAction);
         return this;
     }
 
@@ -108,7 +108,7 @@ public class ResponseEventListener {
                             break;
                         case STREAMING:
                             if (event instanceof ContentEnd) {
-                                onCompletedAction.run();
+                                onCompletedAction.accept(((ContentEnd) event).response);
                                 whenFinishedAction.run();
                                 state = COMPLETED;
                             } else if (event instanceof ContentError) {
@@ -133,7 +133,7 @@ public class ResponseEventListener {
                 .map(response ->
                     response.newBuilder()
                             .body(it -> it.doOnEnd(ifError(cause -> eventProcessor.submit(new ContentError(cause)))))
-                            .body(it -> it.doOnEnd(ifSuccessful(() -> eventProcessor.submit(new ContentEnd()))))
+                            .body(it -> it.doOnEnd(ifSuccessful(() -> eventProcessor.submit(new ContentEnd(response)))))
                             .body(it -> it.doOnCancel(() -> eventProcessor.submit(new ContentCancelled())))
                             .build());
     }
@@ -183,7 +183,10 @@ public class ResponseEventListener {
     }
 
     private static class ContentEnd {
-
+        private final LiveHttpResponse response;
+        public ContentEnd(LiveHttpResponse response) {
+            this.response = response;
+        }
     }
 
     private static class ContentError {

@@ -18,12 +18,13 @@ package com.hotels.styx.admin
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
+import com.hotels.styx.admin.handlers.ServiceProviderHandler
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest.get
-import com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY
-import com.hotels.styx.api.HttpResponseStatus.OK
+import com.hotels.styx.api.HttpResponseStatus.*
 import com.hotels.styx.api.RequestCookie.requestCookie
 import com.hotels.styx.client.StyxHttpClient
+import com.hotels.styx.routing.config.StyxObjectDefinition
 import com.hotels.styx.server.HttpConnectorConfig
 import com.hotels.styx.server.HttpsConnectorConfig
 import com.hotels.styx.servers.MockOriginServer
@@ -34,6 +35,8 @@ import com.hotels.styx.support.proxyHttpHostHeader
 import com.hotels.styx.support.wait
 import io.kotlintest.Spec
 import io.kotlintest.eventually
+import io.kotlintest.matchers.collections.shouldContainAll
+import io.kotlintest.matchers.collections.shouldHaveSize
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FunSpec
@@ -414,6 +417,30 @@ class OriginsFileCompatibilitySpec : FunSpec() {
         }
 
         context("Creates a health checking service") {
+
+            fun deserialiseHealthCheckMonitor(yaml: String) =
+                    ServiceProviderHandler.yamlMapper().readValue(yaml, StyxObjectDefinition::class.java)
+
+            fun extractHealthCheckMonitors(responseBody: String) =
+                    responseBody.split("---\n")
+                            .filter(String::isNotBlank)
+                            .map(::deserialiseHealthCheckMonitor)
+                            .filter { it.type() == "HealthCheckMonitor" }
+
+            fun validateHealthCheckMonitor(monitor: StyxObjectDefinition) {
+                monitor.name() shouldBe "appB"
+                monitor.type() shouldBe "HealthCheckMonitor"
+                monitor.tags().shouldContainAll("source=OriginsFileConverter", "target=appB")
+                val config = monitor.config()
+
+                config.get("objects").asText() shouldBe "appB"
+                config.get("path").asText() shouldBe "/healthcheck.txt"
+                config.get("timeoutMillis").asLong() shouldBe 2000L
+                config.get("intervalMillis").asLong() shouldBe 200L
+                config.get("healthyThreshod").asInt() shouldBe 2
+                config.get("unhealthyThreshold").asInt() shouldBe 2
+            }
+
             mockServerB01.stub(WireMock.get(WireMock.urlMatching("/healthcheck.txt")), WireMock.aResponse()
                     .withStatus(500)
                     .withBody("origin unhealthy"))
@@ -462,6 +489,29 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                         }
             }
 
+            test("Health checking service appears in the service providers list on the admin endpoint") {
+                client.send(get("/admin/service/providers")
+                        .header(HOST, styxServer().adminHostHeader())
+                        .build())
+                        .wait().let {
+                            it!!.status() shouldBe OK
+                            val monitors = extractHealthCheckMonitors(it.bodyAs(UTF_8))
+                            monitors shouldHaveSize 1
+                            validateHealthCheckMonitor(monitors[0])
+                        }
+            }
+
+            test("Health checking service returned from the admin endpoint") {
+                client.send(get("/admin/service/provider/appB")
+                        .header(HOST, styxServer().adminHostHeader())
+                        .build())
+                        .wait().let {
+                            it!!.status() shouldBe OK
+                            val monitor = deserialiseHealthCheckMonitor(it.bodyAs(UTF_8))
+                            validateHealthCheckMonitor(monitor)
+                        }
+            }
+
             test("Starts sending traffic to an unhealthy origin again when health checks are disabled") {
                 writeOrigins("""
                     # 3. Turn off the health checks again
@@ -484,7 +534,29 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                             }
                 }
             }
+
+            test("Health checking service does not appear in the service providers list on the admin endpoint") {
+                client.send(get("/admin/service/providers")
+                        .header(HOST, styxServer().adminHostHeader())
+                        .build())
+                        .wait().let {
+                            it!!.status() shouldBe OK
+                            val monitors = extractHealthCheckMonitors(it.bodyAs(UTF_8))
+                            monitors shouldHaveSize 0
+                        }
+            }
+
+            test("No health checking service found on the admin endpoint") {
+                client.send(get("/admin/service/provider/appB")
+                        .header(HOST, styxServer().adminHostHeader())
+                        .build())
+                        .wait().let {
+                            it!!.status() shouldBe NOT_FOUND
+                        }
+            }
         }
+
+
 
         context("Error scenarios") {
             writeOrigins("""
