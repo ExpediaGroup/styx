@@ -56,13 +56,12 @@ public class RequestEnrichingInterceptor implements HttpInterceptor {
         LiveHttpRequest.Transformer builder = request.newBuilder();
 
         xForwardedFor(request, context)
-                .ifPresent(headerValue -> builder.addHeader(X_FORWARDED_FOR, headerValue));
-
-        builder.header(styxInfoHeaderName, styxInfoFormat.format(request));
+                .ifPresent(headerValue -> builder.header(X_FORWARDED_FOR, headerValue));
 
         return builder
                 .header(requestIdHeaderName, request.id())
                 .header(X_FORWARDED_PROTO, xForwardedProto(request, context.isSecure()))
+                .header(styxInfoHeaderName, styxInfoFormat.format(request))
                 .build();
     }
 
