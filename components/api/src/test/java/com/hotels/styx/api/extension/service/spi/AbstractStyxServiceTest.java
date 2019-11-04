@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,12 +15,10 @@
  */
 package com.hotels.styx.api.extension.service.spi;
 
-import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
-import reactor.test.StepVerifier;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -35,6 +33,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class AbstractStyxServiceTest {
 
@@ -76,8 +76,7 @@ public class AbstractStyxServiceTest {
         assertThat(started.isDone(), is(true));
     }
 
-    @Test(expectedExceptions = IllegalStateException.class,
-            expectedExceptionsMessageRegExp = "Start called in STARTING state")
+    @Test
     public void throwsExceptionFor2ndCallToStart() {
         CompletableFuture<Void> subclassStarted = new CompletableFuture<>();
         DerivedStyxService service = new DerivedStyxService("derived-service", subclassStarted);
@@ -87,13 +86,10 @@ public class AbstractStyxServiceTest {
         assertThat(service.status(), is(STARTING));
         assertThat(started1st.isDone(), is(false));
 
-        try {
-            service.start();
-        } catch (Exception e) {
-            assertThat(service.status(), is(STARTING));
-            assertThat(started1st.isDone(), is(false));
-            throw e;
-        }
+        Exception e = assertThrows(IllegalStateException.class, () -> service.start());
+        assertThat(service.status(), is(STARTING));
+        assertThat(started1st.isDone(), is(false));
+        assertEquals("Start called in STARTING state", e.getMessage());
     }
 
     @Test
@@ -161,8 +157,7 @@ public class AbstractStyxServiceTest {
         assertThat(stopped.isCompletedExceptionally(), is(true));
     }
 
-    @Test(expectedExceptions = IllegalStateException.class,
-            expectedExceptionsMessageRegExp = "Stop called in FAILED state")
+    @Test
     public void throwsExceptionWhenStopIsCalledInFailedState() {
         CompletableFuture<Void> subclassStopped = new CompletableFuture<>();
         DerivedStyxService service = new DerivedStyxService("derived-service", completedFuture(null), subclassStopped);
@@ -179,7 +174,8 @@ public class AbstractStyxServiceTest {
         assertThat(service.status(), is(FAILED));
         assertThat(stopped.isCompletedExceptionally(), is(true));
 
-        service.stop();
+        Exception e = assertThrows(IllegalStateException.class, () -> service.stop());
+        assertEquals("Stop called in FAILED state", e.getMessage());
     }
 
 

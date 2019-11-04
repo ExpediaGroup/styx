@@ -18,7 +18,7 @@ package com.hotels.styx.common.http.handler;
 
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;

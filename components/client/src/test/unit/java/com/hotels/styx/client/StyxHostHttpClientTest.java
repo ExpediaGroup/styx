@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,9 +22,9 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.reactivestreams.Subscription;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 import reactor.core.publisher.BaseSubscriber;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
@@ -49,7 +49,7 @@ public class StyxHostHttpClientTest {
     private LiveHttpResponse response;
     private PublishSubject<LiveHttpResponse> responseProvider;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         request =  HttpRequest.get("/").build().stream();
         response = HttpResponse.response(OK)

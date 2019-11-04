@@ -24,14 +24,14 @@ import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.PluginException;
 import com.hotels.styx.server.HttpErrorStatusListener;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.net.InetSocketAddress;
 import java.util.Collection;
-import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import static com.hotels.styx.CustomHttpResponseStatus.ORIGIN_CONNECTION_REFUSED;
@@ -63,7 +63,6 @@ import static com.hotels.styx.api.HttpResponseStatus.UNAUTHORIZED;
 import static com.hotels.styx.api.HttpResponseStatus.UNSUPPORTED_MEDIA_TYPE;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.proxy.HttpErrorStatusMetrics.formattedExceptionName;
-import static com.hotels.styx.support.matchers.IsOptional.isPresent;
 import static java.lang.System.arraycopy;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -78,7 +77,7 @@ public class HttpErrorStatusMetricsTest {
     private MetricRegistry registry;
     private HttpErrorStatusListener errorListener;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         registry = new CodaHaleMetricRegistry();
         errorListener = new HttpErrorStatusMetrics(registry);
@@ -96,7 +95,8 @@ public class HttpErrorStatusMetricsTest {
         assertThat(registry.getCounters().get("styx.exception.java_lang_Exception").getCount(), is(0L));
     }
 
-    @Test(dataProvider = "non500ServerErrors")
+    @ParameterizedTest
+    @MethodSource("non500ServerErrors")
     public void exceptionsReportedWithNon500CodesAreNotRecordedAsUnexpectedErrors(HttpResponseStatus status) {
         errorListener.proxyErrorOccurred(status, new CustomException());
 
@@ -159,16 +159,13 @@ public class HttpErrorStatusMetricsTest {
         return (int) registry.counter(counterName).getCount();
     }
 
-    @DataProvider(name = "non500ServerErrors")
-    private Object[][] non500ServerErrors() {
-        return Stream.of(serverErrors())
-                .filter(array -> !INTERNAL_SERVER_ERROR.equals(array[0]))
-                .toArray(Object[][]::new);
+    private static Stream<Arguments> non500ServerErrors() {
+        return serverErrors()
+                .filter(args -> !INTERNAL_SERVER_ERROR.equals(args.get()[0]));
     }
 
-    @DataProvider(name = "allErrors")
-    private Object[][] allErrors() {
-        return concatenateArrays(clientErrors(), serverErrors());
+    private static Stream<Arguments> allErrors() {
+        return Stream.concat(clientErrors(), serverErrors());
     }
 
     private static Object[][] concatenateArrays(Object[][] array1, Object[][] array2) {
@@ -180,42 +177,40 @@ public class HttpErrorStatusMetricsTest {
         return concatenated;
     }
 
-    @DataProvider(name = "serverErrors")
-    private Object[][] serverErrors() {
-        return new Object[][]{
-                {INTERNAL_SERVER_ERROR},
-                {NOT_IMPLEMENTED},
-                {BAD_GATEWAY},
-                {GATEWAY_TIMEOUT},
-                {HTTP_VERSION_NOT_SUPPORTED},
-                {ORIGIN_SERVER_TIMED_OUT},
-                {ORIGIN_CONNECTION_REFUSED},
-                {ORIGIN_CONNECTION_TIMED_OUT}
-        };
+    private static Stream<Arguments> serverErrors() {
+        return Stream.of(
+                Arguments.of(INTERNAL_SERVER_ERROR),
+                Arguments.of(NOT_IMPLEMENTED),
+                Arguments.of(BAD_GATEWAY),
+                Arguments.of(GATEWAY_TIMEOUT),
+                Arguments.of(HTTP_VERSION_NOT_SUPPORTED),
+                Arguments.of(ORIGIN_SERVER_TIMED_OUT),
+                Arguments.of(ORIGIN_CONNECTION_REFUSED),
+                Arguments.of(ORIGIN_CONNECTION_TIMED_OUT)
+        );
     }
 
-    @DataProvider(name = "clientErrors")
-    private Object[][] clientErrors() {
-        return new Object[][]{
-                {BAD_REQUEST},
-                {UNAUTHORIZED},
-                {PAYMENT_REQUIRED},
-                {FORBIDDEN},
-                {NOT_FOUND},
-                {METHOD_NOT_ALLOWED},
-                {NOT_ACCEPTABLE},
-                {PROXY_AUTHENTICATION_REQUIRED},
-                {REQUEST_TIMEOUT},
-                {CONFLICT},
-                {GONE},
-                {LENGTH_REQUIRED},
-                {PRECONDITION_FAILED},
-                {REQUEST_ENTITY_TOO_LARGE},
-                {REQUEST_URI_TOO_LONG},
-                {UNSUPPORTED_MEDIA_TYPE},
-                {REQUESTED_RANGE_NOT_SATISFIABLE},
-                {EXPECTATION_FAILED},
-        };
+    private static Stream<Arguments> clientErrors() {
+        return Stream.of(
+                Arguments.of(BAD_REQUEST),
+                Arguments.of(UNAUTHORIZED),
+                Arguments.of(PAYMENT_REQUIRED),
+                Arguments.of(FORBIDDEN),
+                Arguments.of(NOT_FOUND),
+                Arguments.of(METHOD_NOT_ALLOWED),
+                Arguments.of(NOT_ACCEPTABLE),
+                Arguments.of(PROXY_AUTHENTICATION_REQUIRED),
+                Arguments.of(REQUEST_TIMEOUT),
+                Arguments.of(CONFLICT),
+                Arguments.of(GONE),
+                Arguments.of(LENGTH_REQUIRED),
+                Arguments.of(PRECONDITION_FAILED),
+                Arguments.of(REQUEST_ENTITY_TOO_LARGE),
+                Arguments.of(REQUEST_URI_TOO_LONG),
+                Arguments.of(UNSUPPORTED_MEDIA_TYPE),
+                Arguments.of(REQUESTED_RANGE_NOT_SATISFIABLE),
+                Arguments.of(EXPECTATION_FAILED)
+        );
     }
 
     private Collection<Integer> statusCountsExcluding(String excluded) {

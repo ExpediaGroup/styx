@@ -27,7 +27,7 @@ import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicyFactory;
 import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.support.api.SimpleEnvironment;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
 import java.util.Map;
@@ -42,6 +42,8 @@ import static java.util.Collections.emptyMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.matchesPattern;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ServiceProvisionTest {
     Path FIXTURES_CLASS_PATH = fixturesHome(ServiceProvisionTest.class, "/plugins");
@@ -219,13 +221,13 @@ public class ServiceProvisionTest {
         assertThat(services, isMap(emptyMap()));
     }
 
-    @Test(expectedExceptions = Exception.class, expectedExceptionsMessageRegExp = "(?s).*No such class 'my.FakeClass'.*")
+    @Test
     public void throwsExceptionWhenClassDoesNotExist() {
-        loadRetryPolicy(environment.configuration(), environment, "not.real", RetryPolicy.class);
+        Exception e = assertThrows(Exception.class, () -> loadRetryPolicy(environment.configuration(), environment, "not.real", RetryPolicy.class));
+        assertThat(e.getMessage(), matchesPattern("(?s).*No such class 'my.FakeClass'.*"));
     }
 
-    @Test(expectedExceptions = ConfigurationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected configuration object 'services.factories.backendProvider', Configuration.*'")
+    @Test
     public void throwsExceptionForInvalidServiceFactoryConfig() {
         String config = "" +
                 "multi:\n" +
@@ -236,11 +238,12 @@ public class ServiceProvisionTest {
                 "        stringValue: valueNumber1\n";
 
         Environment env = environmentWithConfig(config);
-        loadServices(env.configuration(), env, "multi", StyxService.class);
+        Exception e = assertThrows(ConfigurationException.class,
+                () -> loadServices(env.configuration(), env, "multi", StyxService.class));
+        assertThat(e.getMessage(), matchesPattern("Unexpected configuration object 'services.factories.backendProvider', Configuration.*'"));
     }
 
-    @Test(expectedExceptions = ConfigurationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected configuration object 'services.factories.backendProvider', Configuration.*'")
+    @Test
     public void throwsExceptionForInvalidSpiExtensionFactory() {
         String config = "" +
                 "multi:\n" +
@@ -253,7 +256,9 @@ public class ServiceProvisionTest {
                 "         attribute: x\n";
 
         Environment env = environmentWithConfig(config);
-        loadServices(env.configuration(), env, "multi", StyxService.class);
+        Exception e = assertThrows(ConfigurationException.class,
+                () -> loadServices(env.configuration(), env, "multi", StyxService.class));
+        assertThat(e.getMessage(), matchesPattern("Unexpected configuration object 'services.factories.backendProvider', Configuration.*'"));
     }
 
     public static class MyRetryFactory implements RetryPolicyFactory {

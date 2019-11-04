@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.spi.config.SpiExtension;
 import com.hotels.styx.spi.config.SpiExtensionFactory;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -37,7 +37,7 @@ public class PluginEnvironmentTest {
     private Environment styxEnvironment;
     private JsonNode config = new IntNode(5);
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() throws Exception {
         styxMetrics = new CodaHaleMetricRegistry();
         styxEnvironment = mock(PluginFactory.Environment.class);

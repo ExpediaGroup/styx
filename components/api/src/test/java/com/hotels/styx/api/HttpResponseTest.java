@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,14 +16,17 @@
 package com.hotels.styx.api;
 
 import io.netty.buffer.Unpooled;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Stream;
 
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
@@ -52,6 +55,8 @@ import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class HttpResponseTest {
     @Test
@@ -217,65 +222,65 @@ public class HttpResponseTest {
         assertThat(response.headers(), hasItem(header("name", "value2")));
     }
 
-    @Test(dataProvider = "responses")
+    @ParameterizedTest
+    @MethodSource("responses")
     public void shouldCheckIfCurrentResponseIsARedirectToOtherResource(HttpResponseStatus status, boolean isRedirect) {
         assertThat(response(status).build().isRedirect(), is(isRedirect));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void rejectsNullCookie() {
-        HttpResponse.response().cookies((ResponseCookie) null).build();
+        assertThrows(NullPointerException.class, () -> HttpResponse.response().cookies((ResponseCookie) null).build());
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void rejectsNullCookieName() {
-        HttpResponse.response().cookies(responseCookie(null, "value").build()).build();
+        assertThrows(NullPointerException.class, () -> HttpResponse.response().cookies(responseCookie(null, "value").build()).build());
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void rejectsNullCookieValue() {
-        HttpResponse.response().cookies(responseCookie("name", null).build()).build();
+        assertThrows(NullPointerException.class, () -> HttpResponse.response().cookies(responseCookie("name", null).build()).build());
     }
 
-    @DataProvider(name = "responses")
-    public static Object[][] responses() {
+    private static Stream<Arguments> responses() {
         // format: {status, true if redirect}
-        return new Object[][]{
-                {SEE_OTHER, true},
-                {TEMPORARY_REDIRECT, true},
-                {MULTIPLE_CHOICES, true},
-                {MOVED_PERMANENTLY, true},
-                {TEMPORARY_REDIRECT, true},
-                {OK, false},
-                {BAD_REQUEST, false},
-                {GATEWAY_TIMEOUT, false},
-                {CREATED, false},
-        };
+        return Stream.of(
+                Arguments.of(SEE_OTHER, true),
+                Arguments.of(TEMPORARY_REDIRECT, true),
+                Arguments.of(MULTIPLE_CHOICES, true),
+                Arguments.of(MOVED_PERMANENTLY, true),
+                Arguments.of(TEMPORARY_REDIRECT, true),
+                Arguments.of(OK, false),
+                Arguments.of(BAD_REQUEST, false),
+                Arguments.of(GATEWAY_TIMEOUT, false),
+                Arguments.of(CREATED, false)
+        );
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void rejectsMultipleContentLengthInSingleHeader() {
-        HttpResponse.response()
+        assertThrows(IllegalArgumentException.class, () -> HttpResponse.response()
                 .addHeader(CONTENT_LENGTH, "15, 16")
                 .ensureContentLengthIsValid()
-                .build();
+                .build());
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void rejectsMultipleContentLength() {
-        HttpResponse.response()
+        assertThrows(IllegalArgumentException.class, () -> HttpResponse.response()
                 .addHeader(CONTENT_LENGTH, "15")
                 .addHeader(CONTENT_LENGTH, "16")
                 .ensureContentLengthIsValid()
-                .build();
+                .build());
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void rejectsInvalidContentLength() {
-        HttpResponse.response()
+        assertThrows(IllegalArgumentException.class, () -> HttpResponse.response()
                 .addHeader(CONTENT_LENGTH, "foo")
                 .ensureContentLengthIsValid()
-                .build();
+                .build());
     }
 
     @Test
@@ -318,7 +323,8 @@ public class HttpResponseTest {
         assertThat(response.bodyAs(UTF_8), is("Extra content"));
     }
 
-    @Test(dataProvider = "emptyBodyResponses")
+    @ParameterizedTest
+    @MethodSource("emptyBodyResponses")
     public void convertsToStreamingHttpResponseWithEmptyBody(HttpResponse response) throws ExecutionException, InterruptedException {
         LiveHttpResponse streaming = response.stream();
 
@@ -330,30 +336,29 @@ public class HttpResponseTest {
     }
 
     // We want to ensure that these are all considered equivalent
-    @DataProvider(name = "emptyBodyResponses")
-    private Object[][] emptyBodyResponses() {
-        return new Object[][]{
-                {HttpResponse.response()
-                        .build()},
-                {HttpResponse.response()
+    private static Stream<Arguments> emptyBodyResponses() {
+        return Stream.of(
+                Arguments.of(HttpResponse.response()
+                        .build()),
+                Arguments.of(HttpResponse.response()
                         .body(null, UTF_8)
-                        .build()},
-                {HttpResponse.response()
+                        .build()),
+                Arguments.of(HttpResponse.response()
                         .body("", UTF_8)
-                        .build()},
-                {HttpResponse.response()
+                        .build()),
+                Arguments.of(HttpResponse.response()
                         .body(null, UTF_8, true)
-                        .build()},
-                {HttpResponse.response()
+                        .build()),
+                Arguments.of(HttpResponse.response()
                         .body("", UTF_8, true)
-                        .build()},
-                {HttpResponse.response()
+                        .build()),
+                Arguments.of(HttpResponse.response()
                         .body(null, true)
-                        .build()},
-                {HttpResponse.response()
+                        .build()),
+                Arguments.of(HttpResponse.response()
                         .body(new byte[0], true)
-                        .build()},
-        };
+                        .build())
+        );
     }
 
     @Test
@@ -365,11 +370,12 @@ public class HttpResponseTest {
         assertThat(response.body().length, is(36));
     }
 
-    @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "Charset is not provided.")
+    @Test
     public void contentFromStringOnlyThrowsNPEWhenCharsetIsNull() {
-        HttpResponse.response()
+        Exception e = assertThrows(NullPointerException.class, () -> HttpResponse.response()
                 .body("Response content.", null)
-                .build();
+                .build());
+        assertEquals("Charset is not provided.", e.getMessage());
     }
 
     @Test
@@ -387,11 +393,12 @@ public class HttpResponseTest {
         assertThat(response2.header("Content-Length"), is(Optional.empty()));
     }
 
-    @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "Charset is not provided.")
+    @Test
     public void contentFromStringThrowsNPEWhenCharsetIsNull() {
-        HttpResponse.response()
+        Exception e = assertThrows(NullPointerException.class, () -> HttpResponse.response()
                 .body("Response content.", null, false)
-                .build();
+                .build());
+        assertEquals("Charset is not provided.", e.getMessage());
     }
 
     @Test
@@ -522,10 +529,11 @@ public class HttpResponseTest {
         assertThat(r1.cookie("x"), isAbsent());
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "Invalid Content-Length found. -3")
+    @Test
     public void ensuresContentLengthIsPositive() {
-        response()
+        Exception e = assertThrows(IllegalArgumentException.class, () -> response()
                 .header("Content-Length", -3)
-                .build();
+                .build());
+        assertEquals("Invalid Content-Length found. -3", e.getMessage());
     }
 }

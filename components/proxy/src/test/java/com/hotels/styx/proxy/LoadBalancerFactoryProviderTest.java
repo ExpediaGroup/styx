@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,15 +16,15 @@
 package com.hotels.styx.proxy;
 
 import com.hotels.styx.api.Environment;
+import com.hotels.styx.api.configuration.Configuration;
+import com.hotels.styx.api.configuration.MissingConfigurationException;
 import com.hotels.styx.api.extension.ActiveOrigins;
 import com.hotels.styx.api.extension.RemoteHost;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancerFactory;
-import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.api.configuration.MissingConfigurationException;
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
@@ -33,6 +33,7 @@ import static com.hotels.styx.proxy.LoadBalancingStrategyFactoryProvider.newProv
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class LoadBalancerFactoryProviderTest {
 
@@ -51,7 +52,7 @@ public class LoadBalancerFactoryProviderTest {
         assertThat(factoryProvider.get(), is(instanceOf(NewAwesomeStrategy.class)));
     }
 
-    @Test(expectedExceptions = RuntimeException.class)
+    @Test
     public void errorsIfCannotFindTheFactoryClass() {
         String yaml = "" +
                 "loadBalancing:\n" +
@@ -62,11 +63,11 @@ public class LoadBalancerFactoryProviderTest {
 
         Configuration configurations = new YamlConfig(yaml);
 
-        LoadBalancingStrategyFactoryProvider factoryProvider = newProvider(configurations);
-        assertThat(factoryProvider.get(), is(instanceOf(NewAwesomeStrategy.class)));
+        assertThrows(RuntimeException.class,
+                () -> newProvider(configurations));
     }
 
-    @Test(expectedExceptions = MissingConfigurationException.class)
+    @Test
     public void errorsIfTheSpecifiedStrategyFactoryKeyClassIsMissing() {
         String yaml = "" +
                 "loadBalancing:\n" +
@@ -74,8 +75,8 @@ public class LoadBalancerFactoryProviderTest {
 
         Configuration configurations = new YamlConfig(yaml);
 
-        LoadBalancingStrategyFactoryProvider factoryProvider = newProvider(configurations);
-        assertThat(factoryProvider.get(), is(instanceOf(NewAwesomeStrategy.class)));
+        assertThrows(MissingConfigurationException.class,
+                () -> newProvider(configurations));
     }
 
     @Test

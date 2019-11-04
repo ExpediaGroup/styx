@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import com.hotels.styx.server.track.RequestTracker;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.provider.Arguments;
 import reactor.core.publisher.Mono;
 
 import java.net.InetSocketAddress;
@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
@@ -40,6 +41,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static rx.RxReactiveStreams.toObservable;
 
 public class StandardHttpPipelineTest {
@@ -151,7 +154,7 @@ public class StandardHttpPipelineTest {
         assertThat(sendRequestTo(pipeline).status(), is(OK));
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test
     public void sendsExceptionUponMultipleSubscription() {
         HttpHandler handler = (request, context) -> Eventual.of(response(OK).build());
 
@@ -161,10 +164,11 @@ public class StandardHttpPipelineTest {
         LiveHttpResponse response = Mono.from(responseObservable).block();
         assertThat(response.status(), is(OK));
 
-        toObservable(responseObservable).toBlocking().first();
+        assertThrows(IllegalStateException.class,
+                () -> toObservable(responseObservable).toBlocking().first());
     }
 
-    @Test(expectedExceptions = IllegalStateException.class, dataProvider = "multipleSubscriptionInterceptors")
+    @Test
     public void sendsExceptionUponExtraSubscriptionInsideInterceptor(HttpInterceptor interceptor) throws Exception {
         HttpHandler handler = (request, context) -> Eventual.of(response(OK).build());
 
@@ -172,19 +176,18 @@ public class StandardHttpPipelineTest {
         StandardHttpPipeline pipeline = new StandardHttpPipeline(interceptors, handler, RequestTracker.NO_OP);
 
         Eventual<LiveHttpResponse> responseObservable = pipeline.handle(get("/").build(), HttpInterceptorContext.create());
-        toObservable(responseObservable).toBlocking().first();
+        Exception e = assertThrows(IllegalStateException.class,
+                () -> toObservable(responseObservable).toBlocking().first());
+        assertEquals("multipleSubscriptionInterceptors", e.getMessage());
     }
 
-    @DataProvider(name = "multipleSubscriptionInterceptors")
-    private Object[][] multipleSubscriptionInterceptors() {
-        return new Object[][]{
-                {subscribeInPluginBeforeSubscription()}
-//                , {reSubscribeDuringSubscription()}
-//                , {reSubscribeDuringSubscriptionOriginalErrorCause()},
-        };
+    private static Stream<Arguments> multipleSubscriptionInterceptors() {
+        return Stream.of(
+                Arguments.of(subscribeInPluginBeforeSubscription())
+        );
     }
 
-    private HttpInterceptor subscribeInPluginBeforeSubscription() {
+    private static HttpInterceptor subscribeInPluginBeforeSubscription() {
         return (request, chain) -> {
             Eventual<LiveHttpResponse> responseObservable = chain.proceed(request);
 

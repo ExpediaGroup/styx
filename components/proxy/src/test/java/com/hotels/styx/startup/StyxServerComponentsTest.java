@@ -26,7 +26,7 @@ import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.startup.StyxServerComponents.LoggingSetUp;
 import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;

@@ -23,9 +23,9 @@ import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.backends.file.FileChangeMonitor.FileMonitorSettings;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -41,6 +41,8 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -51,7 +53,7 @@ public class FileBackedBackendServicesRegistryFactoryTest {
     private Path monitoredFile;
     private Environment environment;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() throws Exception {
         tempDir = createTempDir();
         monitoredFile = Paths.get(tempDir.toString(), "origins.yml");
@@ -59,7 +61,7 @@ public class FileBackedBackendServicesRegistryFactoryTest {
         environment = new com.hotels.styx.Environment.Builder().build();
     }
 
-    @AfterMethod
+    @AfterEach
     public void tearDown() throws Exception {
         delete(monitoredFile);
         delete(tempDir.toPath());
@@ -80,18 +82,24 @@ public class FileBackedBackendServicesRegistryFactoryTest {
         assertThat(registry != null, is(true));
     }
 
-    @Test(expectedExceptions = ConfigurationException.class, expectedExceptionsMessageRegExp = "empty .services.registry.factory.config.originsFile. config value for factory class FileBackedBackendServicesRegistry.Factory")
+    @Test
     public void requiresOriginsFileToBeSet() {
         Configuration configuration = mockConfiguration(Optional.of(""));
 
-        new FileBackedBackendServicesRegistry.Factory().create(environment, configuration);
+        Exception e = assertThrows(ConfigurationException.class,
+                () -> new FileBackedBackendServicesRegistry.Factory().create(environment, configuration));
+        assertTrue(e.getMessage()
+                .matches("empty .services.registry.factory.config.originsFile. config value for factory class FileBackedBackendServicesRegistry.Factory"));
     }
 
-    @Test(expectedExceptions = ConfigurationException.class, expectedExceptionsMessageRegExp = "missing .services.registry.factory.config.originsFile. config value for factory class FileBackedBackendServicesRegistry.Factory")
+    @Test
     public void requiresOriginsFileToBeNonEmpty() {
         Configuration configuration = mockConfiguration(Optional.empty());
 
-        new FileBackedBackendServicesRegistry.Factory().create(environment, configuration);
+        Exception e = assertThrows(ConfigurationException.class,
+                () -> new FileBackedBackendServicesRegistry.Factory().create(environment, configuration));
+        assertTrue(e.getMessage()
+                .matches("missing .services.registry.factory.config.originsFile. config value for factory class FileBackedBackendServicesRegistry.Factory"));
     }
 
     @Test

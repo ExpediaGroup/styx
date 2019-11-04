@@ -19,12 +19,12 @@ import com.codahale.metrics.Clock;
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Meter;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
@@ -34,13 +34,13 @@ import static com.hotels.styx.client.applications.OriginStats.REQUEST_FAILURE;
 import static com.hotels.styx.client.applications.OriginStats.REQUEST_SUCCESS;
 import static com.hotels.styx.client.netty.MetricsSupport.IsNotUpdated.hasNotReceivedUpdatesExcept;
 import static com.hotels.styx.client.netty.MetricsSupport.name;
-import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class OriginMetricsTest {
     private final Id appId;
@@ -63,14 +63,14 @@ public class OriginMetricsTest {
         clock = new StubClock();
     }
 
-    @BeforeMethod
+    @BeforeEach
     private void setUp() {
         rootMetricRegistry = new StubClockMeterMetricRegistry(clock);
         appMetrics = new ApplicationMetrics(appId, rootMetricRegistry);
         originMetrics = new OriginMetrics(appMetrics, originPrefix(origin));
     }
 
-    @AfterMethod
+    @AfterEach
     private void tearDown() {
         clearMetricsRegistry();
     }
@@ -81,14 +81,16 @@ public class OriginMetricsTest {
         }
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void failsIfCreatedWithNullApplicationMetrics() {
-        new OriginMetrics(null, originPrefix(origin));
+        assertThrows(NullPointerException.class,
+                () -> new OriginMetrics(null, originPrefix(origin)));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void failsIfCreatedWithNullOrigin() {
-        new OriginMetrics(appMetrics, null);
+        assertThrows(NullPointerException.class,
+                () -> new OriginMetrics(appMetrics, null));
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package com.hotels.styx.api.matchers;
 
 import com.hotels.styx.api.HttpHeader;
 import org.hamcrest.Description;
-import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 import org.hamcrest.core.IsCollectionContaining;
@@ -35,7 +34,6 @@ public class HttpHeadersMatcher extends TypeSafeMatcher<Iterable<HttpHeader>> {
     private static final String END = lineSeparator();
     private final List<Matcher<HttpHeader>> matchers;
 
-    @Factory
     public static Matcher<Iterable<HttpHeader>> isNotCacheable() {
         return new HttpHeadersMatcher(asList(
                 header("Pragma", "no-cache"),
@@ -43,7 +41,6 @@ public class HttpHeadersMatcher extends TypeSafeMatcher<Iterable<HttpHeader>> {
                 header("Cache-Control", "no-cache,must-revalidate,no-store")));
     }
 
-    @Factory
     @SuppressWarnings ("unchecked")
     public static Matcher<Iterable<HttpHeader>> hasHeaders(Matcher<HttpHeader>... matchers) {
         return new HttpHeadersMatcher(asList(matchers));

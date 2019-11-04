@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.DefaultLastHttpContent;
 import io.netty.handler.timeout.IdleStateEvent;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static io.netty.handler.codec.http.HttpMethod.GET;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
@@ -33,6 +33,7 @@ import static io.netty.handler.timeout.IdleStateEvent.READER_IDLE_STATE_EVENT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class RequestTimeoutHandlerTest {
 
@@ -40,17 +41,18 @@ public class RequestTimeoutHandlerTest {
     private final DefaultHttpRequest first = new DefaultHttpRequest(HTTP_1_1, GET, "/don't/care");
     private final DefaultLastHttpContent last = new DefaultLastHttpContent();
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         channel = new EmbeddedChannel(
                 new MockIdleStateHandler(),
                 new RequestTimeoutHandler());
     }
 
-    @Test(expectedExceptions = RequestTimeoutException.class)
+    @Test
     public void throwsRequestTimeoutExceptionAfterReadTimesOutDuringIncompleteHttpRequest() {
         channel.writeInbound(first);
-        channel.writeInbound(READER_IDLE_STATE_EVENT);
+        assertThrows(RequestTimeoutException.class,
+                () -> channel.writeInbound(READER_IDLE_STATE_EVENT));
     }
 
     @Test

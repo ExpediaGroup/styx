@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,17 +19,17 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.Eventual;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.client.HttpClient;
-import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
+import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.client.StyxHttpClient;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.Optional;
@@ -67,7 +67,7 @@ public class StyxServerTest {
     private WireMockServer originServer2;
     private WireMockServer secureOriginServer;
 
-    @BeforeMethod
+    @BeforeEach
     public void startOrigins() {
         originServer1 = new WireMockServer(wireMockConfig()
                 .dynamicPort());
@@ -100,12 +100,14 @@ public class StyxServerTest {
                 .withStatus(OK.code())));
     }
 
-    @AfterMethod
+    @AfterEach
     public void stopStyx() {
-        styxServer.stop();
+        if (styxServer != null) {
+            styxServer.stop();
+        }
     }
 
-    @AfterMethod
+    @AfterEach
     public void stopOrigins() {
         originServer1.stop();
         originServer2.stop();

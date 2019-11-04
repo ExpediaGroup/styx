@@ -26,8 +26,8 @@ import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.server.HttpInterceptorContext;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import static com.hotels.styx.api.HttpResponseStatus.OK;
@@ -46,7 +46,7 @@ public class InterceptorPipelineBuilderTest {
     private Iterable<NamedPlugin> plugins;
     private RoutingObject handler;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         environment = new Environment.Builder()
                 .configuration(StyxConfig.defaultConfig())

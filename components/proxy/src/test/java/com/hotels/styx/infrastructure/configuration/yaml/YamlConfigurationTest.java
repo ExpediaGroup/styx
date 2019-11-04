@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,7 +20,8 @@ import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
 import com.hotels.styx.support.matchers.IsOptional;
 import com.hotels.styx.support.matchers.MapMatcher;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,6 +45,8 @@ import static java.util.Collections.singletonMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.matchesPattern;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class YamlConfigurationTest {
     private final String yaml = "" +
@@ -341,13 +344,15 @@ public class YamlConfigurationTest {
         assertThat(yamlConfig.get("array[3]"), isValue("delta"));
     }
 
-    @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = "Unresolved placeholders: \\[\\$\\{cannotResolveMe\\} in bar=abc \\$\\{cannotResolveMe\\} xyz\\]", enabled = false)
+    @Disabled
+    @Test
     public void throwsExceptionIfPlaceholdersCannotBeResolved() {
         String yaml = "" +
                 "foo: ok\n" +
                 "bar: abc ${cannotResolveMe} xyz\n";
 
-        config(yaml);
+        Exception e = assertThrows(IllegalStateException.class, () -> config(yaml));
+        assertThat(e.getMessage(), matchesPattern("Unresolved placeholders: \\[\\$\\{cannotResolveMe\\} in bar=abc \\$\\{cannotResolveMe\\} xyz\\]"));
     }
 
     @Test
@@ -482,7 +487,7 @@ public class YamlConfigurationTest {
         }
     }
 
-    @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = "Unresolved placeholders: \\[\\$\\{baz\\} in unresolve0=\\$\\{baz\\}, \\$\\{bar\\} in unresolve1=\\$\\{bar\\}, \\$\\{foo\\} in unresolve2=\\$\\{foo\\}\\]")
+    @Test
     public void listsUnresolvedPlaceholdersFromMultipleIncludes() throws Exception {
         String yaml2 = "" +
                 "include: %s\n" +
@@ -498,17 +503,21 @@ public class YamlConfigurationTest {
         File[] testFiles = createTestFiles(2);
 
         yaml1 = format(yaml1, testFiles[0]);
-        yaml2 = format(yaml2, testFiles[1]);
+
+        final String yaml3 = format(yaml2, testFiles[1]);
 
         try {
             writeFile(testFiles[0], yaml0);
             writeFile(testFiles[1], yaml1);
 
-            new ConfigurationParser.Builder<YamlConfiguration>()
-                    .format(YAML)
-                    .overrides(emptyMap())
-                    .build()
-                    .parse(configSource(yaml2));
+            Exception e = assertThrows(IllegalStateException.class,
+                    () -> new ConfigurationParser.Builder<YamlConfiguration>()
+                        .format(YAML)
+                        .overrides(emptyMap())
+                        .build()
+                        .parse(configSource(yaml3)));
+            assertThat(e.getMessage(),
+                    matchesPattern("Unresolved placeholders: \\[\\$\\{baz\\} in unresolve0=\\$\\{baz\\}, \\$\\{bar\\} in unresolve1=\\$\\{bar\\}, \\$\\{foo\\} in unresolve2=\\$\\{foo\\}\\]"));
         } finally {
             deleteFiles(testFiles);
         }

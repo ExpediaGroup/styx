@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,14 +17,17 @@ package com.hotels.styx.admin.dashboard;
 
 import com.hotels.styx.admin.CachingSupplier;
 import com.hotels.styx.api.Clock;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.time.Duration;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.HOURS;
@@ -48,7 +51,8 @@ public class CachingSupplierTest {
         assertThat(supplier.get(), is(nullValue()));
     }
 
-    @Test(dataProvider = "lessThanTenSeconds")
+    @ParameterizedTest
+    @MethodSource("lessThanTenSeconds")
     public void dataDoesNotUpdateWhenLessThanExpirationTimePasses(long time, TimeUnit timeUnit) {
         Supplier<Integer> dataSupplier = sequence(1, 2, 3, 4, 5);
         SettableClock clock = new SettableClock();
@@ -61,7 +65,8 @@ public class CachingSupplierTest {
         assertThat(supplier.get(), is(1));
     }
 
-    @Test(dataProvider = "atLeastTenSeconds")
+    @ParameterizedTest
+    @MethodSource("atLeastTenSeconds")
     public void dataUpdatesWhenAtLeastExpirationTimePasses(long time, TimeUnit timeUnit) {
         Supplier<Integer> dataSupplier = sequence(1, 2, 3, 4, 5);
         SettableClock clock = new SettableClock();
@@ -74,27 +79,25 @@ public class CachingSupplierTest {
         assertThat(supplier.get(), is(2));
     }
 
-    @DataProvider()
-    private Object[][] lessThanTenSeconds() {
-        return new Object[][]{
-                {0, SECONDS},
-                {500, MILLISECONDS},
-                {1, SECONDS},
-                {2347, MILLISECONDS},
-                {5038, MILLISECONDS},
-                {9999, MILLISECONDS}
-        };
+    private static Stream<Arguments> lessThanTenSeconds() {
+        return Stream.of(
+                Arguments.of(0, SECONDS),
+                Arguments.of(500, MILLISECONDS),
+                Arguments.of(1, SECONDS),
+                Arguments.of(2347, MILLISECONDS),
+                Arguments.of(5038, MILLISECONDS),
+                Arguments.of(9999, MILLISECONDS)
+        );
     }
 
-    @DataProvider()
-    private Object[][] atLeastTenSeconds() {
-        return new Object[][]{
-                {10, SECONDS},
-                {10500, MILLISECONDS},
-                {17, SECONDS},
-                {3, MINUTES},
-                {12, HOURS}
-        };
+    private static Stream<Arguments> atLeastTenSeconds() {
+        return Stream.of(
+                Arguments.of(10, SECONDS),
+                Arguments.of(10500, MILLISECONDS),
+                Arguments.of(17, SECONDS),
+                Arguments.of(3, MINUTES),
+                Arguments.of(12, HOURS)
+        );
     }
 
     private static <T> Supplier<T> sequence(T... items) {

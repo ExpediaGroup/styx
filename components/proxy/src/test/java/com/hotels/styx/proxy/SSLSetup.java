@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.proxy;
 
-import org.testng.annotations.BeforeClass;
+import org.junit.jupiter.api.BeforeAll;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -29,7 +29,7 @@ import static javax.net.ssl.HttpsURLConnection.setDefaultHostnameVerifier;
 import static javax.net.ssl.HttpsURLConnection.setDefaultSSLSocketFactory;
 
 public class SSLSetup {
-    @BeforeClass
+    @BeforeAll
     public static void disableCertValidationSetUp() throws NoSuchAlgorithmException, KeyManagementException {
         setDefaultHostnameVerifier((hostname, sslSession) -> hostname.equals("localhost"));
         // Create a trust manager that does not validate certificate chains

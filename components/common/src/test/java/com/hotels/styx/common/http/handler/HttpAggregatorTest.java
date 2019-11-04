@@ -21,7 +21,7 @@ import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.WebServiceHandler;
 import com.hotels.styx.server.HttpInterceptorContext;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import java.util.concurrent.atomic.AtomicReference;

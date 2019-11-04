@@ -15,12 +15,16 @@
  */
 package com.hotels.styx.server.handlers;
 
-import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import reactor.core.publisher.Mono;
+
+import java.util.stream.Stream;
 
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.FORBIDDEN;
@@ -55,17 +59,17 @@ public class ClassPathResourceHandlerTest {
         assertThat(response.status(), is(NOT_FOUND));
     }
 
-    @DataProvider(name = "forbiddenPaths")
-    private static Object[][] illegalPrefixes() {
-        return new Object[][]{
-                {"/admin/forbidden.txt"},
-                {"/admin/dashboard/../forbidden.txt"},
-                {"/admin/dashboard.txt"},
-        };
+    private static Stream<Arguments> forbiddenPaths() {
+        return Stream.of(
+                Arguments.of("/admin/forbidden.txt"),
+                Arguments.of("/admin/dashboard/../forbidden.txt"),
+                Arguments.of("/admin/dashboard.txt")
+        );
     }
 
 
-    @Test(dataProvider = "forbiddenPaths")
+    @ParameterizedTest
+    @MethodSource("forbiddenPaths")
     public void returns403IfTryingToAccessResourcesOutsidePermittedRoot(String path) {
         HttpRequest request = get(path).build();
         HttpResponse response = Mono.from(handler.handle(request, HttpInterceptorContext.create())).block();

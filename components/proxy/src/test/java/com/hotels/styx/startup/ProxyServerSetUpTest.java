@@ -25,9 +25,9 @@ import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.HttpsConnectorConfig;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
@@ -39,11 +39,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.testng.Assert.fail;
 
 public class ProxyServerSetUpTest {
 
@@ -60,17 +60,17 @@ public class ProxyServerSetUpTest {
     private HttpServer server;
     private LoggingTestSupport log;
 
-    @BeforeMethod
+    @BeforeEach
     public void startRecordingLogs() {
         log = new LoggingTestSupport(ProxyServerSetUp.class);
     }
 
-    @AfterMethod
+    @AfterEach
     public void stopRecordingLogs() {
         log.stop();
     }
 
-    @AfterMethod
+    @AfterEach
     public void stopServer() throws TimeoutException {
         if (server != null) {
             try {

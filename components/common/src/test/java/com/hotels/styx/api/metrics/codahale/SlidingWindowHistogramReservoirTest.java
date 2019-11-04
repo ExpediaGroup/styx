@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import com.google.common.collect.Range;
 import com.google.common.primitives.Longs;
 import com.hotels.styx.api.Clock;
 import com.hotels.styx.api.metrics.SlidingWindowHistogram;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.CoreMatchers.not;

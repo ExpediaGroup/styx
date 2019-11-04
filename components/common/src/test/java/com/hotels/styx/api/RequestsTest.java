@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,16 +15,16 @@
  */
 package com.hotels.styx.api;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import reactor.test.publisher.TestPublisher;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
-import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -37,7 +37,7 @@ public class RequestsTest {
     private AtomicReference<Optional<Throwable>> completed;
     private LiveHttpResponse response;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         publisher = TestPublisher.create();
         request = get("/").body(new ByteStream(publisher)).build();

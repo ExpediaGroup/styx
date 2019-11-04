@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import ch.qos.logback.core.ContextBase;
 import ch.qos.logback.core.status.ErrorStatus;
 import ch.qos.logback.core.status.StatusManager;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.infrastructure.logging.ExceptionConverter.TARGET_CLASSES_PROPERTY_NAME;

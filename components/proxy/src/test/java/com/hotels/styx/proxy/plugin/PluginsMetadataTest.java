@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.common.Pair;
-import com.hotels.styx.spi.config.SpiExtensionFactory;
 import com.hotels.styx.spi.config.SpiExtension;
-import org.testng.annotations.Test;
+import com.hotels.styx.spi.config.SpiExtensionFactory;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
@@ -35,6 +35,7 @@ import static com.google.common.base.Throwables.propagate;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class PluginsMetadataTest {
     private int fakeClassNumber;
@@ -56,14 +57,15 @@ public class PluginsMetadataTest {
         assertThat(activePlugins, contains("one", "two", "three", "four"));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void throwsExceptionIfActivePluginDoesNotExist() throws IOException {
         Map<String, SpiExtension> plugins = ImmutableMap.of(
                 "one", pluginMetadata(),
                 "two", pluginMetadata()
         );
 
-        new PluginsMetadata("one,monkey,two", plugins);
+        assertThrows(IllegalArgumentException.class,
+                () -> new PluginsMetadata("one,monkey,two", plugins));
     }
 
     private SpiExtension pluginMetadata() {

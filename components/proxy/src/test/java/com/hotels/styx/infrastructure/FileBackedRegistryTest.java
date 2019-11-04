@@ -20,8 +20,8 @@ import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.extension.service.spi.Registry.ReloadResult;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -47,7 +47,7 @@ public class FileBackedRegistryTest {
     private FileBackedRegistry<BackendService> registry;
     private Registry.ChangeListener<BackendService> listener;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         originalContent = "... origins file ...".getBytes(UTF_8);
         newContent = "... new file ...".getBytes(UTF_8);

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package com.hotels.styx;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -31,14 +31,15 @@ import static java.lang.ClassLoader.getSystemClassLoader;
 import static java.nio.file.Files.list;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 // This test is primarily ensuring that our supporting classes and modules are fit-for-purpose
 // i.e. that our example plugin and its dependency are only accessible by legitimately loading their
 // jar files and not just included in the e2e-suite module
 public class BuildVsRuntimeJarAccessTest {
-    @Test(expectedExceptions = ClassNotFoundException.class)
-    public void pluginClassesAreNotAvailableViaSystemClassLoader() throws ClassNotFoundException {
-        getSystemClassLoader().loadClass("testgrp.TestPlugin");
+    @Test
+    public void pluginClassesAreNotAvailableViaSystemClassLoader() {
+        assertThrows(ClassNotFoundException.class, () -> getSystemClassLoader().loadClass("testgrp.TestPlugin"));
     }
 
     @Test

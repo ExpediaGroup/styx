@@ -21,16 +21,16 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.server.HttpInterceptorContext;
 import com.hotels.styx.server.track.CurrentRequestTracker;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.testng.Assert.assertTrue;
-import static org.testng.AssertJUnit.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CurrentRequestsHandlerTest {
 
@@ -41,7 +41,7 @@ public class CurrentRequestsHandlerTest {
     private CurrentRequestsHandler handler;
     private HttpRequest adminRequest = HttpRequest.get("/admin/x").build();
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         tracker = new CurrentRequestTracker();
         handler = new CurrentRequestsHandler(tracker);
@@ -81,7 +81,7 @@ public class CurrentRequestsHandlerTest {
 
         String body = response.bodyAs(UTF_8);
 
-        assertFalse(format("This is received response body: ```%s```", body),
-                body.contains(format("id=%d state", Thread.currentThread().getId())));
+        assertFalse(body.contains(format("id=%d state", Thread.currentThread().getId())),
+                format("This is received response body: ```%s```", body));
     }
 }

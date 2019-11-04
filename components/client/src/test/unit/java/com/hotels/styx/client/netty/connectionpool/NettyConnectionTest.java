@@ -20,8 +20,8 @@ import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.HttpConfig;
 import io.netty.channel.Channel;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
@@ -37,7 +37,7 @@ public class NettyConnectionTest {
     private Origin origin;
     private HttpConfig httpConfig = HttpConfig.defaultHttpConfig();
 
-    @BeforeMethod
+    @BeforeEach
     public void startOriginServer() {
         channel = new EmbeddedChannel();
         origin = newOriginBuilder("localhost", 0).build();

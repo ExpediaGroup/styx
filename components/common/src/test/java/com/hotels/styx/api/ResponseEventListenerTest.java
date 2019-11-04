@@ -15,9 +15,9 @@
  */
 package com.hotels.styx.api;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.reactivestreams.Publisher;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -29,12 +29,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpResponse.response;
 import static java.nio.charset.StandardCharsets.UTF_8;
-
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ResponseEventListenerTest {
     private AtomicBoolean cancelled;
@@ -43,7 +41,7 @@ public class ResponseEventListenerTest {
     private AtomicReference<LiveHttpResponse> completed;
     private AtomicBoolean finished;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         cancelled = new AtomicBoolean();
         responseError = new AtomicReference<>();

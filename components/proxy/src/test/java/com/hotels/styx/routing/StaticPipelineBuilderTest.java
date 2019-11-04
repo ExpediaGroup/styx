@@ -29,8 +29,8 @@ import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpInterceptorContext;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletableFuture;
@@ -58,7 +58,7 @@ public class StaticPipelineBuilderTest {
     private final Class<? extends SocketChannel> socketChannelClass = factory.clientSocketChannelClass();
 
 
-    @BeforeMethod
+    @BeforeEach
     public void staticPipelineBuilderTest() {
         environment = new Environment.Builder().build();
         clientFactory = (backendService, originsInventory, originStatsFactory) -> request -> Mono.just(response(OK).build());

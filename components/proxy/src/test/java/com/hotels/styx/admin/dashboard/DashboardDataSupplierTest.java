@@ -20,14 +20,14 @@ import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.OriginsSnapshot;
 import com.hotels.styx.api.extension.RemoteHost;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetricSupplier;
 import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;

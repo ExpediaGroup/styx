@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,15 +20,18 @@ import com.google.common.net.MediaType;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import reactor.core.publisher.Mono;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.stream.Stream;
 
 import static com.google.common.net.MediaType.CSS_UTF_8;
 import static com.google.common.net.MediaType.GIF;
@@ -57,7 +60,7 @@ public class StaticFileHandlerTest {
     private File dir;
     private StaticFileHandler handler;
 
-    @BeforeMethod
+    @BeforeEach
     public void createWorkingDir() {
         dir = Files.createTempDir();
         handler = new StaticFileHandler(dir);
@@ -66,7 +69,7 @@ public class StaticFileHandlerTest {
     /**
      * Clean up working dir at end of test.
      */
-    @AfterMethod
+    @AfterEach
     public void cleanUpWorkingDir() {
         dir.delete();
     }
@@ -132,7 +135,8 @@ public class StaticFileHandlerTest {
         assertThat(handle(get("/%2e%2e%2fprivate/index.html").build()), hasStatus(NOT_FOUND));
     }
 
-    @Test(dataProvider = "fileTypesProvider")
+    @ParameterizedTest
+    @MethodSource("fileTypesProvider")
     public void setsTheContentTypeBasedOnFileExtension(String path, MediaType mediaType) throws Exception {
         writeFile(path, mediaType.toString());
 
@@ -143,28 +147,27 @@ public class StaticFileHandlerTest {
         assertThat(response.contentType(), isValue(mediaType.toString()));
     }
 
-    @DataProvider(name = "fileTypesProvider")
-    public Object[][] fileTypesProvider() {
-        return new Object[][]{
-                {"foo.html", HTML_UTF_8},
-                {"foo.gif", GIF},
-                {"foo.jpg", JPEG},
-                {"foo.png", PNG},
-                {"foo.css", CSS_UTF_8},
-                {"foo.ico", ICON},
-                {"foo.js", JAVASCRIPT_UTF_8},
-                {"foo.xls", MICROSOFT_EXCEL},
-                {"foo.txt", PLAIN_TEXT_UTF_8},
-                {"foo.pgp", OCTET_STREAM},
-                {"foo.pdf", PDF},
+    private static Stream<Arguments> fileTypesProvider() {
+        return Stream.of(
+                Arguments.of("foo.html", HTML_UTF_8),
+                Arguments.of("foo.gif", GIF),
+                Arguments.of("foo.jpg", JPEG),
+                Arguments.of("foo.png", PNG),
+                Arguments.of("foo.css", CSS_UTF_8),
+                Arguments.of("foo.ico", ICON),
+                Arguments.of("foo.js", JAVASCRIPT_UTF_8),
+                Arguments.of("foo.xls", MICROSOFT_EXCEL),
+                Arguments.of("foo.txt", PLAIN_TEXT_UTF_8),
+                Arguments.of("foo.pgp", OCTET_STREAM),
+                Arguments.of("foo.pdf", PDF),
 
-                {"foo.mp3", MPEG_AUDIO},
-                {"foo.wav", WAV_AUDIO},
+                Arguments.of("foo.mp3", MPEG_AUDIO),
+                Arguments.of("foo.wav", WAV_AUDIO),
 
-                {"foo.asf", MICROSOFT_ASF_VIDEO},
-                {"foo.avi", MICROSOFT_MS_VIDEO},
-                {"foo.mpg", MPEG_VIDEO}
-        };
+                Arguments.of("foo.asf", MICROSOFT_ASF_VIDEO),
+                Arguments.of("foo.avi", MICROSOFT_MS_VIDEO),
+                Arguments.of("foo.mpg", MPEG_VIDEO)
+        );
     }
 
     private void mkdir(String path) {

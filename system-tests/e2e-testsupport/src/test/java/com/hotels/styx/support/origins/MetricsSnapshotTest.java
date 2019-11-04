@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ import com.codahale.metrics.json.MetricsModule;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.admin.dashboard.JsonSupplier;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 import com.hotels.styx.utils.MetricsSnapshot;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -36,7 +36,7 @@ public class MetricsSnapshotTest {
     private CodaHaleMetricRegistry registry;
     private Supplier<String> jsonSupplier;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() throws Exception {
         registry = new CodaHaleMetricRegistry();
         jsonSupplier = JsonSupplier.create(() -> registry, new MetricsModule(SECONDS, MILLISECONDS, false));

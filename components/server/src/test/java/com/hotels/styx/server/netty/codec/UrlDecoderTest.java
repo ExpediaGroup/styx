@@ -17,7 +17,7 @@ package com.hotels.styx.server.netty.codec;
 
 import com.hotels.styx.api.Url;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 

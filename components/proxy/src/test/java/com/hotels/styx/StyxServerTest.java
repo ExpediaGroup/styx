@@ -36,11 +36,12 @@ import com.hotels.styx.startup.ProxyServerSetUp;
 import com.hotels.styx.startup.StyxServerComponents;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import io.netty.util.ResourceLeakDetector;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 import java.lang.reflect.Field;
 import java.nio.file.Paths;
@@ -62,33 +63,35 @@ import static java.util.Collections.emptyList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@TestInstance(PER_CLASS)
 public class StyxServerTest {
     private LoggingTestSupport log;
     private LoggingTestSupport pssLog;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         log = new LoggingTestSupport(StyxServer.class);
         pssLog = new LoggingTestSupport(ProxyServerSetUp.class);
     }
 
-    @AfterMethod
+    @AfterEach
     public void removeAppender() {
         log.stop();
         pssLog.stop();
     }
 
-    @BeforeClass
+    @BeforeAll
     public void bypassLogbackConfigurer() {
         // Only affects running StyxServer from main method
         setProperty("UNIT_TESTING_MODE", "true");
     }
 
-    @AfterClass
+    @AfterAll
     public void doneBypassingLogbackConfigurer() {
         // Only affects running StyxServer from main method
         clearProperty("UNIT_TESTING_MODE");

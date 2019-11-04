@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.RequestCookie;
 import com.hotels.styx.server.HttpInterceptorContext;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
@@ -30,6 +30,8 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.matchesPattern;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class FunctionResolverTest {
     private final Map<String, Function0> zeroArgumentFunctions = ImmutableMap.of(
@@ -52,12 +54,13 @@ public class FunctionResolverTest {
         assertThat(functionResolver.resolveFunction("method", emptyList()).call(request, context), is("GET"));
     }
 
-    @Test(expectedExceptions = DslFunctionResolutionError.class,
-            expectedExceptionsMessageRegExp = "No such function=\\[foobar\\], with n=\\[0\\] arguments=\\[\\]")
+    @Test
     public void throwsExceptionIfZeroArgumentFunctionDoesNotExist() {
         LiveHttpRequest request = get("/foo").build();
 
-        functionResolver.resolveFunction("foobar", emptyList()).call(request, context);
+        Exception e = assertThrows(DslFunctionResolutionError.class,
+                () -> functionResolver.resolveFunction("foobar", emptyList()).call(request, context));
+        assertThat(e.getMessage(), matchesPattern("No such function=\\[foobar\\], with n=\\[0\\] arguments=\\[\\]"));
     }
 
     @Test
@@ -71,14 +74,15 @@ public class FunctionResolverTest {
         assertThat(functionResolver.resolveFunction("cookie", singletonList("lang")).call(request, context), is("en_US|en-us_hotels_com"));
     }
 
-    @Test(expectedExceptions = DslFunctionResolutionError.class,
-            expectedExceptionsMessageRegExp = "No such function=\\[foobar\\], with n=\\[1\\] arguments=\\[barfoo\\]")
+    @Test
     public void throwsExceptionIfOneArgumentFunctionDoesNotExist() {
         LiveHttpRequest request = get("/foo")
                 .header("Host", "www.hotels.com")
                 .cookies(requestCookie("lang", "en_US|en-us_hotels_com"))
                 .build();
 
-        functionResolver.resolveFunction("foobar", singletonList("barfoo")).call(request, context);
+        Exception e = assertThrows(DslFunctionResolutionError.class,
+                () -> functionResolver.resolveFunction("foobar", singletonList("barfoo")).call(request, context));
+        assertThat(e.getMessage(), matchesPattern("No such function=\\[foobar\\], with n=\\[1\\] arguments=\\[barfoo\\]"));
     }
 }

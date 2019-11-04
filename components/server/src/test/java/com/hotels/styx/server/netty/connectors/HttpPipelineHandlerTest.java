@@ -42,10 +42,10 @@ import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpRequestDecoder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 import reactor.core.publisher.Mono;
 import rx.Observable;
 import rx.subjects.PublishSubject;
@@ -88,6 +88,7 @@ import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
@@ -100,7 +101,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
-import static org.testng.Assert.assertTrue;
 import static rx.RxReactiveStreams.toPublisher;
 
 public class HttpPipelineHandlerTest {
@@ -138,7 +138,7 @@ public class HttpPipelineHandlerTest {
 
     private LoggingTestSupport logger;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() throws Exception {
         logger = new LoggingTestSupport(HttpPipelineHandler.class);
 
@@ -195,7 +195,7 @@ public class HttpPipelineHandlerTest {
         setupHandlerTo(ACCEPTING_REQUESTS);
     }
 
-    @AfterMethod
+    @AfterEach
     public void tearDown() {
         logger.stop();
     }

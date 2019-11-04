@@ -23,7 +23,7 @@ import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry;
 import com.hotels.styx.server.HttpInterceptorContext;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;

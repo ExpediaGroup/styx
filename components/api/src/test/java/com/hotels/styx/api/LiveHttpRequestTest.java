@@ -17,8 +17,10 @@ package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -53,7 +55,8 @@ import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class LiveHttpRequestTest {
     @Test
@@ -93,19 +96,19 @@ public class LiveHttpRequestTest {
         assertThat(fullRequest.bodyAs(UTF_8), is("original"));
     }
 
-    @Test(dataProvider = "emptyBodyRequests")
+    @ParameterizedTest
+    @MethodSource("emptyBodyRequests")
     public void encodesToStreamingHttpRequestWithEmptyBody(LiveHttpRequest streamingRequest) throws Exception {
         HttpRequest full = Mono.from(streamingRequest.aggregate(0x1000)).block();
         assertThat(full.body(), is(new byte[0]));
     }
 
     // We want to ensure that these are all considered equivalent
-    @DataProvider(name = "emptyBodyRequests")
-    private Object[][] emptyBodyRequests() {
-        return new Object[][]{
-                {get("/foo/bar").build()},
-                {post("/foo/bar", new ByteStream(Flux.empty())).build()},
-        };
+    private static Stream<Arguments> emptyBodyRequests() {
+        return Stream.of(
+                Arguments.of(get("/foo/bar").build()),
+                Arguments.of(post("/foo/bar", new ByteStream(Flux.empty())).build())
+        );
     }
 
     @Test
@@ -305,41 +308,41 @@ public class LiveHttpRequestTest {
         assertThat(bytesToString(request.body()), is("Foo bar"));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void rejectsNullCookie() {
-        get("/").cookies((RequestCookie) null);
+        assertThrows(NullPointerException.class, () -> get("/").cookies((RequestCookie) null));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void rejectsNullCookieName() {
-        get("/").cookies(requestCookie(null, "value")).build();
+        assertThrows(IllegalArgumentException.class, () -> get("/").cookies(requestCookie(null, "value")).build());
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void rejectsNullCookieValue() {
-        get("/").cookies(requestCookie("name", null)).build();
+        assertThrows(NullPointerException.class, () -> get("/").cookies(requestCookie("name", null)).build());
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void rejectsMultipleContentLengthInSingleHeader() {
-        get("/foo")
+        assertThrows(IllegalArgumentException.class, () -> get("/foo")
                 .addHeader(CONTENT_LENGTH, "15, 16")
-                .build();
+                .build());
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void rejectsMultipleContentLengthHeaders() {
-        get("/foo")
+        assertThrows(IllegalArgumentException.class, () -> get("/foo")
                 .addHeader(CONTENT_LENGTH, "15")
                 .addHeader(CONTENT_LENGTH, "16")
-                .build();
+                .build());
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void rejectsInvalidContentLength() {
-        get("/foo")
+        assertThrows(IllegalArgumentException.class, () -> get("/foo")
                 .addHeader(CONTENT_LENGTH, "foo")
-                .build();
+                .build());
     }
 
     @Test
@@ -559,11 +562,12 @@ public class LiveHttpRequestTest {
         assertEquals(request.cookie("cookie"), Optional.empty());
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "Invalid Content-Length found. -3")
+    @Test
     public void ensuresContentLengthIsPositive() {
-        LiveHttpRequest.post("/y")
+        Exception e = assertThrows(IllegalArgumentException.class, () -> LiveHttpRequest.post("/y")
                 .header("Content-Length", -3)
-                .build();
+                .build());
+        assertEquals("Invalid Content-Length found. -3", e.getMessage());
     }
 
     private static ByteStream body(String... contents) {

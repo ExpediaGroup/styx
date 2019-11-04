@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hotels.styx.api.matchers;
 import com.hotels.styx.api.HttpHeader;
 import com.hotels.styx.api.HttpHeaderNames;
 import org.hamcrest.Description;
-import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 
@@ -29,27 +28,22 @@ public class HeaderMatcher extends TypeSafeMatcher<HttpHeader> {
     private final CharSequence name;
     private final Matcher<String> value;
 
-    @Factory
     public static Matcher<HttpHeader> header(CharSequence name, Matcher<String> matcher) {
         return new HeaderMatcher(name, matcher);
     }
 
-    @Factory
     public static Matcher<HttpHeader> header(CharSequence name, String value) {
         return new HeaderMatcher(name, is(value));
     }
 
-    @Factory
     public static Matcher<HttpHeader> contentType(String value) {
         return new HeaderMatcher(HttpHeaderNames.CONTENT_TYPE, is(value));
     }
 
-    @Factory
     public static Matcher<HttpHeader> cacheControl(String value) {
         return new HeaderMatcher(CACHE_CONTROL, is(value));
     }
 
-    @Factory
     public static Matcher<HttpHeader> header(HttpHeader header) {
         return new HeaderMatcher(header.name(), is(header.value()));
     }

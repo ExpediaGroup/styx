@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableList;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -54,7 +56,8 @@ import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class LiveHttpResponseTest {
 
@@ -77,19 +80,19 @@ public class LiveHttpResponseTest {
         assertThat(full.body(), is(bytes("foobar")));
     }
 
-    @Test(dataProvider = "emptyBodyResponses")
+    @ParameterizedTest
+    @MethodSource("emptyBodyResponses")
     public void encodesToFullHttpResponseWithEmptyBody(LiveHttpResponse response) throws Exception {
         HttpResponse full = Mono.from(response.aggregate(0x1000)).block();
         assertThat(full.body(), is(new byte[0]));
     }
 
     // We want to ensure that these are all considered equivalent
-    @DataProvider(name = "emptyBodyResponses")
-    private Object[][] emptyBodyResponses() {
-        return new Object[][]{
-                {response().build()},
-                {response().body(new ByteStream(Flux.empty())).build()},
-        };
+    private static Stream<Arguments> emptyBodyResponses() {
+        return Stream.of(
+                Arguments.of(response().build()),
+                Arguments.of(response().body(new ByteStream(Flux.empty())).build())
+        );
     }
 
     @Test
@@ -216,65 +219,65 @@ public class LiveHttpResponseTest {
         assertThat(response.headers(), hasItem(header("name", "value2")));
     }
 
-    @Test(dataProvider = "responses")
+    @ParameterizedTest
+    @MethodSource("responses")
     public void shouldCheckIfCurrentResponseIsARedirectToOtherResource(HttpResponseStatus status, boolean isRedirect) {
         assertThat(response(status).build().isRedirect(), is(isRedirect));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void rejectsNullCookie() {
-        response().cookies((ResponseCookie) null).build();
+        assertThrows(NullPointerException.class, () -> response().cookies((ResponseCookie) null).build());
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void rejectsNullCookieName() {
-        response().cookies(responseCookie(null, "value").build()).build();
+        assertThrows(NullPointerException.class, () -> response().cookies(responseCookie(null, "value").build()).build());
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void rejectsNullCookieValue() {
-        response().cookies(responseCookie("name", null).build()).build();
+        assertThrows(NullPointerException.class, () -> response().cookies(responseCookie("name", null).build()).build());
     }
 
-    @DataProvider(name = "responses")
-    public static Object[][] responses() {
+    private static Stream<Arguments> responses() {
         // format: {status, true if redirect}
-        return new Object[][]{
-                {SEE_OTHER, true},
-                {TEMPORARY_REDIRECT, true},
-                {MULTIPLE_CHOICES, true},
-                {MOVED_PERMANENTLY, true},
-                {TEMPORARY_REDIRECT, true},
-                {OK, false},
-                {BAD_REQUEST, false},
-                {GATEWAY_TIMEOUT, false},
-                {CREATED, false},
-        };
+        return Stream.of(
+                Arguments.of(SEE_OTHER, true),
+                Arguments.of(TEMPORARY_REDIRECT, true),
+                Arguments.of(MULTIPLE_CHOICES, true),
+                Arguments.of(MOVED_PERMANENTLY, true),
+                Arguments.of(TEMPORARY_REDIRECT, true),
+                Arguments.of(OK, false),
+                Arguments.of(BAD_REQUEST, false),
+                Arguments.of(GATEWAY_TIMEOUT, false),
+                Arguments.of(CREATED, false)
+        );
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void rejectsMultipleContentLengthInSingleHeader() {
-        response()
+        assertThrows(IllegalArgumentException.class, () -> response()
                 .addHeader(CONTENT_LENGTH, "15, 16")
                 .ensureContentLengthIsValid()
-                .build();
+                .build());
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void rejectsMultipleContentLength() {
-        response()
+        assertThrows(IllegalArgumentException.class, () -> response()
                 .addHeader(CONTENT_LENGTH, "15")
                 .addHeader(CONTENT_LENGTH, "16")
                 .ensureContentLengthIsValid()
-                .build();
+                .build());
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void rejectsInvalidContentLength() {
-        response()
+        assertThrows(IllegalArgumentException.class, () -> response()
                 .addHeader(CONTENT_LENGTH, "foo")
                 .ensureContentLengthIsValid()
-                .build();
+                .build());
     }
 
     @Test
@@ -488,11 +491,12 @@ public class LiveHttpResponseTest {
         assertEquals(buf2.delegate().refCnt(), 0);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "Invalid Content-Length found. -3")
+    @Test
     public void ensuresContentLengthIsPositive() {
-        response(OK)
+        Exception e = assertThrows(IllegalArgumentException.class, () -> response(OK)
                 .header("Content-Length", -3)
-                .build();
+                .build());
+        assertEquals("Invalid Content-Length found. -3", e.getMessage());
     }
 
     private static LiveHttpResponse.Builder response() {

@@ -20,8 +20,8 @@ import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.hotels.styx.support.netty.HttpMessageSupport.httpRequestAsBuf;
 import static com.hotels.styx.support.netty.HttpMessageSupport.httpResponseAsBuf;
@@ -35,7 +35,7 @@ public class ChannelStatisticsHandlerTest {
     private ChannelStatisticsHandler handler;
     private MetricRegistry metricRegistry;
 
-    @BeforeMethod
+    @BeforeEach
     public void createHandler() {
         this.metricRegistry = new CodaHaleMetricRegistry();
         this.handler = new ChannelStatisticsHandler(this.metricRegistry);

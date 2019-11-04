@@ -15,17 +15,18 @@
  */
 package com.hotels.styx.api;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.hotels.styx.api.HttpHeader.header;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class HttpHeaderTest {
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void rejectsEmptyValuesList() {
-        header("name", new String[0]);
+        assertThrows(IllegalArgumentException.class, () -> header("name", new String[0]));
     }
 
     @Test
@@ -56,8 +57,8 @@ public class HttpHeaderTest {
         assertThat(base.equals(different), is(false));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void valuesCannotBeNull() {
-        header("name", "value1", null, "value2");
+        assertThrows(NullPointerException.class, () -> header("name", "value1", null, "value2"));
     }
 }

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,24 +17,28 @@ package com.hotels.styx.spi;
 
 import com.hotels.styx.spi.config.SpiExtensionFactory;
 import com.hotels.styx.support.CannotInstantiate;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.hotels.styx.spi.ClassSource.fromClassLoader;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class ExtensionObjectFactoryTest {
     private static final ClassSource DEFAULT_CLASS_LOADER = fromClassLoader(ExtensionObjectFactoryTest.class.getClassLoader());
 
-    @Test(expectedExceptions = ExtensionLoadingException.class, expectedExceptionsMessageRegExp = "no class=some.FakeClass is found in the specified classpath=/fake/class/path")
+    @Test
     public void throwsAppropriateExceptionIfClassNotFound() {
         ExtensionObjectFactory factory = new ExtensionObjectFactory(extensionFactory -> name -> {
             throw new ClassNotFoundException();
         });
 
-        factory.newInstance(new SpiExtensionFactory("some.FakeClass", "/fake/class/path"), Object.class);
+        Exception e = assertThrows(ExtensionLoadingException.class,
+                () -> factory.newInstance(new SpiExtensionFactory("some.FakeClass", "/fake/class/path"), Object.class));
+        assertEquals("no class=some.FakeClass is found in the specified classpath=/fake/class/path", e.getMessage());
     }
 
     @Test

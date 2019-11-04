@@ -20,8 +20,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.extension.service.Certificate;
 import com.hotels.styx.api.extension.service.TlsSettings;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -36,12 +36,13 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class TlsSettingsTest {
 
     private final ObjectMapper mapper = addStyxMixins(new ObjectMapper());
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() throws Exception {
         System.clearProperty("javax.net.ssl.trustStore");
         System.clearProperty("javax.net.ssl.trustStorePassword");
@@ -92,11 +93,12 @@ public class TlsSettingsTest {
         assertThat(tlsSettings.sniHost(), is(Optional.empty()));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void trustStorePasswordMustBeSuppliedWhenRemoteAuthenticationIsEnabled() throws Exception {
-        TlsSettings tlsSettings = new TlsSettings.Builder()
+        assertThrows(IllegalArgumentException.class,
+                () -> new TlsSettings.Builder()
                 .trustAllCerts(false)
-                .build();
+                .build());
     }
 
     @Test

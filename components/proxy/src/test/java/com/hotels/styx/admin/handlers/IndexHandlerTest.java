@@ -17,7 +17,7 @@ package com.hotels.styx.admin.handlers;
 
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import static com.hotels.styx.admin.handlers.IndexHandler.Link.link;

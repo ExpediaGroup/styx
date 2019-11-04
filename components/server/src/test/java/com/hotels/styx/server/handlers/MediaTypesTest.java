@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,8 +16,11 @@
 package com.hotels.styx.server.handlers;
 
 import com.google.common.net.MediaType;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.util.stream.Stream;
 
 import static com.google.common.net.MediaType.CSS_UTF_8;
 import static com.google.common.net.MediaType.GIF;
@@ -41,35 +44,34 @@ import static org.hamcrest.core.Is.is;
 
 public class MediaTypesTest {
 
-    @Test(dataProvider = "mediaTypesByFileExtensions")
+    @ParameterizedTest
+    @MethodSource("mediaTypesByFileExtensions")
     public void returnsMediaTypesByFileExtensions(String extension, MediaType mediaType) {
         assertThat(mediaTypeForExtension(extension), is(mediaType));
     }
 
 
-    @DataProvider(name = "mediaTypesByFileExtensions")
-    protected Object[][] mediaTypesByFileExtensions() {
-        return new Object[][]{
-                {"htm", HTML_UTF_8},
-                {"txt", PLAIN_TEXT_UTF_8},
-                {"unknown", OCTET_STREAM},
-                {"css", CSS_UTF_8},
-                {"js", JAVASCRIPT_UTF_8},
+    private static Stream<Arguments> mediaTypesByFileExtensions() {
+        return Stream.of(
+                Arguments.of("htm", HTML_UTF_8),
+                Arguments.of("txt", PLAIN_TEXT_UTF_8),
+                Arguments.of("unknown", OCTET_STREAM),
+                Arguments.of("css", CSS_UTF_8),
+                Arguments.of("js", JAVASCRIPT_UTF_8),
+                Arguments.of("ico", ICON),
+                Arguments.of("gif", GIF),
+                Arguments.of("jpg", JPEG),
+                Arguments.of("jpeg", JPEG),
+                Arguments.of("png", PNG),
+                Arguments.of("xls", MICROSOFT_EXCEL),
+                Arguments.of("pdf", PDF),
 
-                {"ico", ICON},
-                {"gif", GIF},
-                {"jpg", JPEG},
-                {"jpeg", JPEG},
-                {"png", PNG},
-                {"xls", MICROSOFT_EXCEL},
-                {"pdf", PDF},
+                Arguments.of("mp3", MPEG_AUDIO),
+                Arguments.of("wav", WAV_AUDIO),
 
-                {"mp3", MPEG_AUDIO},
-                {"wav", WAV_AUDIO},
-
-                {"asf", MICROSOFT_ASF_VIDEO},
-                {"avi", MICROSOFT_MS_VIDEO},
-                {"mpg", MPEG_VIDEO}
-        };
+                Arguments.of("asf", MICROSOFT_ASF_VIDEO),
+                Arguments.of("avi", MICROSOFT_MS_VIDEO),
+                Arguments.of("mpg", MPEG_VIDEO)
+        );
     }
 }

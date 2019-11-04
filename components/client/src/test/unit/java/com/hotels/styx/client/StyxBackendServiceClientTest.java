@@ -32,12 +32,12 @@ import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.StickySessionConfig;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -90,7 +90,7 @@ public class StyxBackendServiceClientTest {
             .stickySessionConfig(stickySessionConfig)
             .build();
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         metricRegistry = new CodaHaleMetricRegistry()
                 .scope("origins");

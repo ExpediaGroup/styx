@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 package com.hotels.styx.server;
 
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
 
@@ -34,7 +34,7 @@ public class RequestStatsCollectorTest {
     TestClock clock = new TestClock();
     RequestStatsCollector sink;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         metrics = new CodaHaleMetricRegistry();
         clock.setNanoTime(0);

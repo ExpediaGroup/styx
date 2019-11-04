@@ -34,7 +34,8 @@ import com.hotels.styx.server.netty.NettyServerBuilderSpec;
 import com.hotels.styx.server.netty.NettyServerConfig;
 import com.hotels.styx.server.netty.ServerConnector;
 import com.hotels.styx.server.netty.WebServerConnectorFactory;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
@@ -110,7 +111,8 @@ public class StyxProxyTest extends SSLSetup {
         return new WebServerConnectorFactory().create(config);
     }
 
-    @Test(enabled = false)
+    @Disabled
+    @Test
     public void startsServerWithBothHttpAndHttpsConnectors() throws IOException {
         HttpServer server = NettyServerBuilder.newBuilder()
                 .setHttpConnector(connector(0))

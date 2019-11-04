@@ -21,15 +21,17 @@ import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.spi.config.SpiExtension;
 import com.hotels.styx.spi.config.SpiExtensionFactory;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
 
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class FileSystemPluginFactoryLoaderTest {
     final Path pluginsPath = fixturesHome(FileSystemPluginFactoryLoader.class, "/plugins");
@@ -46,18 +48,18 @@ public class FileSystemPluginFactoryLoaderTest {
         assertThat(plugin.getClass().getName(), is("testgrp.TestPluginModule"));
     }
 
-    @Test(expectedExceptions = ConfigurationException.class, expectedExceptionsMessageRegExp =
-            "Could not load a plugin factory for configuration=SpiExtension\\{" +
-                    "factory=SpiExtensionFactory\\{" +
-                    "class=incorrect.plugin.class.name.TestPluginModule, " +
-                            "classPath=.*[\\\\/]components[\\\\/]proxy[\\\\/]target[\\\\/]test-classes[\\\\/]plugins[\\\\/]oneplugin[\\\\/]testPluginA-1.0-SNAPSHOT.jar" +
-                    "\\}\\}")
+    @Test
     public void providesMeaningfulErrorMessageWhenConfiguredFactoryClassCannotBeLoaded() {
         String jarFile = "/plugins/oneplugin/testPluginA-1.0-SNAPSHOT.jar";
         Path pluginsPath = fixturesHome(FileSystemPluginFactoryLoader.class, jarFile);
 
         SpiExtensionFactory factory = new SpiExtensionFactory("incorrect.plugin.class.name.TestPluginModule", pluginsPath.toString());
         SpiExtension spiExtension = new SpiExtension(factory, config, null);
-        new FileSystemPluginFactoryLoader().load(spiExtension);
+        Exception e = assertThrows(ConfigurationException.class, () -> new FileSystemPluginFactoryLoader().load(spiExtension));
+        assertThat(e.getMessage(), matchesPattern("Could not load a plugin factory for configuration=SpiExtension\\{" +
+                "factory=SpiExtensionFactory\\{" +
+                "class=incorrect.plugin.class.name.TestPluginModule, " +
+                "classPath=.*[\\\\/]components[\\\\/]proxy[\\\\/]target[\\\\/]test-classes[\\\\/]plugins[\\\\/]oneplugin[\\\\/]testPluginA-1.0-SNAPSHOT.jar" +
+                "\\}\\}"));
     }
 }

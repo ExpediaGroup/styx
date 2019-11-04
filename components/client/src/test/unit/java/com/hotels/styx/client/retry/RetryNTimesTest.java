@@ -16,14 +16,14 @@
 package com.hotels.styx.client.retry;
 
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.exceptions.IsRetryableException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.RemoteHost;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetricSupplier;
 import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy;
-import com.hotels.styx.api.exceptions.IsRetryableException;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
@@ -42,7 +42,7 @@ public class RetryNTimesTest {
     private RemoteHost remoteHost;
     private LoadBalancer loadBalancer;
 
-    @BeforeMethod
+    @BeforeEach
     public void setupMocks() {
         this.retryPolicyContext = mock(RetryPolicy.Context.class);
         when(retryPolicyContext.currentRetryCount()).thenReturn(0);

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.graphite.GraphiteSender;
 import com.hotels.styx.common.StyxFutures;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -48,7 +48,7 @@ public class GraphiteReporterServiceTest {
 
     private LoggingTestSupport log;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         log = new LoggingTestSupport(GraphiteReporterService.class);
         sender = new StubGraphiteSender();
@@ -62,7 +62,7 @@ public class GraphiteReporterServiceTest {
                 .build();
     }
 
-    @AfterMethod
+    @AfterEach
     public void stop() {
         log.stop();
     }

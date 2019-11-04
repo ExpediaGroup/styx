@@ -30,9 +30,9 @@ import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.util.internal.OutOfDirectMemoryError;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 import rx.Subscriber;
 import rx.observers.TestSubscriber;
 
@@ -78,7 +78,7 @@ public class NettyToStyxResponsePropagatorTest {
     static final Origin SOME_ORIGIN = newOriginBuilder("localhost", 12345).applicationId(GENERIC_APP).build();
 
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         responseSubscriber = new TestSubscriber<>();
     }

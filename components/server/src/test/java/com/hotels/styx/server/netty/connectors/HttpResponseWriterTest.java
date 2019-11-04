@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -30,9 +30,10 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.logging.LoggingHandler;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import rx.subjects.PublishSubject;
 
 import java.net.InetSocketAddress;
@@ -46,8 +47,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static com.hotels.styx.api.Buffers.toByteBuf;
-import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.ResponseCookie.responseCookie;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
@@ -57,6 +58,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static rx.RxReactiveStreams.toPublisher;
 
 public class HttpResponseWriterTest {
@@ -66,7 +68,7 @@ public class HttpResponseWriterTest {
     private Queue<ChannelWriteArguments> channelArgs;
     private AtomicBoolean channelRead;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         LOGGER = new LoggingTestSupport(HttpResponseWriter.class);
         contentObservable = PublishSubject.create();
@@ -74,7 +76,7 @@ public class HttpResponseWriterTest {
         channelRead = new AtomicBoolean(false);
     }
 
-    @AfterMethod
+    @AfterEach
     public void tearDown() {
         LOGGER.stop();
     }
@@ -191,7 +193,7 @@ public class HttpResponseWriterTest {
         assertThat(channelRead.get(), is(true));
     }
 
-    @Test(expectedExceptions = ExecutionException.class)
+    @Test
     public void failsTheResultWhenResponseWriteFails() throws Exception {
         EmbeddedChannel ch = new EmbeddedChannel(
                 new CaptureChannelArgumentsHandler(channelArgs),
@@ -209,11 +211,12 @@ public class HttpResponseWriterTest {
                 }
         );
 
-        ch.writeInbound(response(OK).body(new ByteStream(toPublisher(contentObservable))).build());
+        assertThrows(ExecutionException.class,
+                () -> ch.writeInbound(response(OK).body(new ByteStream(toPublisher(contentObservable))).build()));
     }
 
 
-    @Test(expectedExceptions = ExecutionException.class)
+    @Test
     public void failsTheResultWhenContentWriteFails() throws Exception {
         EmbeddedChannel ch = new EmbeddedChannel(
                 new CaptureChannelArgumentsHandler(channelArgs),
@@ -240,7 +243,8 @@ public class HttpResponseWriterTest {
                 }
         );
 
-        ch.writeInbound(response(OK).body(new ByteStream(toPublisher(contentObservable))).build());
+        assertThrows(ExecutionException.class,
+                () -> ch.writeInbound(response(OK).body(new ByteStream(toPublisher(contentObservable))).build()));
     }
 
     @Test
@@ -384,7 +388,8 @@ public class HttpResponseWriterTest {
                         "Connection to origin lost. origin=\"generic-app:anonymous-origin:localhost:5050\", remoteAddress=\"localhost/127.0.0.1:5050.*")));
     }
 
-    @Test(enabled = false)
+    @Disabled
+    @Test
     public void releasesUnsentContentBuffersAfterHeaderWriteFailure() throws Exception {
         /*
          * Note: The previous OldHttpResponseWriter did not release content buffers either.
@@ -393,7 +398,8 @@ public class HttpResponseWriterTest {
          */
     }
 
-    @Test(enabled = false)
+    @Disabled
+    @Test
     public void releasesUnsentContentBuffersAfterContentObservableFailure() throws Exception {
         /*
          * Note: The previous OldHttpResponseWriter did not release content buffers either.
@@ -402,7 +408,8 @@ public class HttpResponseWriterTest {
          */
     }
 
-    @Test(enabled = false)
+    @Disabled
+    @Test
     public void releasesUnsentContentBuffersAfterContentWriteFailure() throws Exception {
         /*
          * Note: The previous OldHttpResponseWriter did not release content buffers either.

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,9 +22,9 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.testapi.StyxServer;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
@@ -46,7 +46,7 @@ public class ProtocolMetricsTest {
 
     private WireMockServer origin;
 
-    @BeforeMethod
+    @BeforeEach
     public void startOrigins() {
         origin = new WireMockServer(wireMockConfig().dynamicPort());
         origin.start();
@@ -58,12 +58,12 @@ public class ProtocolMetricsTest {
                 .withStatus(OK.code())));
     }
 
-    @AfterMethod
+    @AfterEach
     public void stopStyx() {
         styxServer.stop();
     }
 
-    @AfterMethod
+    @AfterEach
     public void stopOrigins() {
         origin.stop();
     }

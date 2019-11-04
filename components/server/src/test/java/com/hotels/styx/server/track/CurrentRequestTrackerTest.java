@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,14 +15,13 @@
  */
 package com.hotels.styx.server.track;
 
+import com.hotels.styx.api.LiveHttpRequest;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
-import com.hotels.styx.api.LiveHttpRequest;
 
 public class CurrentRequestTrackerTest {
 
@@ -31,7 +30,7 @@ public class CurrentRequestTrackerTest {
 
     CurrentRequestTracker tracker = new CurrentRequestTracker();
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         tracker = new CurrentRequestTracker();
     }

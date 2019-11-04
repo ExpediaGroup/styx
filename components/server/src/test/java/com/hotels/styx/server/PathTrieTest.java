@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,11 +15,12 @@
  */
 package com.hotels.styx.server;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class PathTrieTest {
     @Test
@@ -135,18 +136,20 @@ public class PathTrieTest {
         assertThat(pathTrie.get("/a/b/c/foo/bar"), isValue(4));
     }
 
-    @Test(expectedExceptions = DuplicatePathException.class)
+    @Test
     public void failWhenIdenticalPathsConfigured() {
         PathTrie<Integer> pathTrie = new PathTrie<>();
         pathTrie.put("/a/b/c", 1);
-        pathTrie.put("/a/b/c", 2);
+        assertThrows(DuplicatePathException.class,
+                () -> pathTrie.put("/a/b/c", 2));
     }
 
-    @Test(expectedExceptions = DuplicatePathException.class)
+    @Test
     public void failWhenIdenticalPathsConfiguredWithStar() {
         PathTrie<Integer> pathTrie = new PathTrie<>();
         pathTrie.put("/a/b/c/", 1);
-        pathTrie.put("/a/b/c/*", 2);
+        assertThrows(DuplicatePathException.class,
+                () -> pathTrie.put("/a/b/c/*", 2));
     }
 
     @Test
@@ -160,36 +163,41 @@ public class PathTrieTest {
         assertThat(pathTrie.get("/a/b/c/d"), isValue(2));
     }
 
-    @Test(expectedExceptions = DuplicatePathException.class)
+    @Test
     public void failWhenIdenticalPathsConfiguredInRoot() {
         PathTrie<Integer> pathTrie = new PathTrie<>();
         pathTrie.put("/", 1);
-        pathTrie.put("/", 2);
+        assertThrows(DuplicatePathException.class,
+                () -> pathTrie.put("/", 2));
     }
 
-    @Test(expectedExceptions = DuplicatePathException.class)
+    @Test
     public void failWhenIdenticalPathsConfiguredInRootWithStar() {
         PathTrie<Integer> pathTrie = new PathTrie<>();
         pathTrie.put("/", 1);
-        pathTrie.put("/*", 2);
+        assertThrows(DuplicatePathException.class,
+                () -> pathTrie.put("/*", 2));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void failWhenPathIsNull() {
         PathTrie<Integer> pathTrie = new PathTrie<>();
-        pathTrie.put(null, 1);
+        assertThrows(IllegalArgumentException.class,
+                () -> pathTrie.put(null, 1));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void failWhenPathIsEmpty() {
         PathTrie<Integer> pathTrie = new PathTrie<>();
-        pathTrie.put("", 1);
+        assertThrows(IllegalArgumentException.class,
+                () -> pathTrie.put("", 1));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void failWhenValueIsNull() {
         PathTrie<Integer> pathTrie = new PathTrie<>();
-        pathTrie.put("/", null);
+        assertThrows(NullPointerException.class,
+                () -> pathTrie.put("/", null));
     }
 
     @Test

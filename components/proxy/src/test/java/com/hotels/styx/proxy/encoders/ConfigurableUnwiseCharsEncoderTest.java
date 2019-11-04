@@ -16,8 +16,8 @@
 package com.hotels.styx.proxy.encoders;
 
 import com.hotels.styx.StyxConfig;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
-import org.testng.annotations.Test;
 
 import static java.lang.String.format;
 import static org.hamcrest.MatcherAssert.assertThat;

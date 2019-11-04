@@ -15,10 +15,10 @@
  */
 package com.hotels.styx.proxy.backends.file;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -33,6 +33,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.copy;
 import static java.nio.file.Files.delete;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.matchesPattern;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
@@ -47,7 +50,7 @@ public class FileChangeMonitorTest {
     private FileMonitor.Listener listener;
     private FileChangeMonitor monitor;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() throws Exception {
         tempDir = createTempDir();
         monitoredFile = Paths.get(tempDir.toString(), "origins.yml");
@@ -57,7 +60,7 @@ public class FileChangeMonitorTest {
         ((ch.qos.logback.classic.Logger) getLogger(FileChangeMonitor.class)).setLevel(INFO);
     }
 
-    @AfterMethod
+    @AfterEach
     public void tearDown() throws Exception {
         monitor.stop();
         try {
@@ -69,18 +72,21 @@ public class FileChangeMonitorTest {
         delete(tempDir.toPath());
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void throwExceptionIfFileDoesNotExist() {
-        new FileChangeMonitor("/nonexistant/file");
+        assertThrows(IllegalArgumentException.class,
+                () -> new FileChangeMonitor("/nonexistant/file"));
     }
 
-    @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = "File monitor for '.*' is already started")
+    @Test
     public void canBeStartedOnlyOnce() {
         FileChangeMonitor.Listener listener = mock(FileChangeMonitor.Listener.class);
         FileChangeMonitor monitor = new FileChangeMonitor(monitoredFile.toString());
 
         monitor.start(listener);
-        monitor.start(listener);
+        Exception e = assertThrows(IllegalStateException.class,
+                () -> monitor.start(listener));
+        assertThat(e.getMessage(), matchesPattern("File monitor for '.*' is already started"));
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 package com.hotels.styx.configstore;
 
 import com.hotels.styx.configstore.ConfigStore.ConfigEntry;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import rx.Observable;
 
 import java.util.List;
@@ -36,7 +36,7 @@ import static org.hamcrest.Matchers.is;
 public class ConfigStoreTest {
     private ConfigStore configStore;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         configStore = new ConfigStore();
     }
