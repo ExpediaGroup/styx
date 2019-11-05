@@ -17,6 +17,7 @@ package com.hotels.styx.routing.config;
 
 import com.hotels.styx.StyxConfig
 import com.hotels.styx.routing.config.ConfigVersionResolver.Version.ROUTING_CONFIG_V2
+import com.hotels.styx.routing.config.ConfigVersionResolver.configVersion
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 
@@ -35,7 +36,7 @@ class ConfigVersionResolverTest : StringSpec({
                   bar: 1
         """.trimIndent(), false)
 
-        ConfigVersionResolver(config).version().shouldBe(ROUTING_CONFIG_V2)
+        configVersion(config).shouldBe(ROUTING_CONFIG_V2)
     }
 
 })
