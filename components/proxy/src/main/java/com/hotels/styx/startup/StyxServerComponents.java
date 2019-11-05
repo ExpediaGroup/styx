@@ -104,7 +104,7 @@ public class StyxServerComponents {
 
         // TODO In further refactoring, we will probably want this loading to happen outside of this constructor call,
         //  so that it doesn't delay the admin server from starting up
-        this.plugins = builder.configuredPluginFactories == null
+        this.plugins = builder.configuredPluginFactories.isEmpty()
                 ? loadPlugins(environment)
                 : loadPlugins(environment, builder.configuredPluginFactories);
 
@@ -241,7 +241,7 @@ public class StyxServerComponents {
     public static final class Builder {
         private StyxConfig styxConfig;
         private LoggingSetUp loggingSetUp = DO_NOT_MODIFY;
-        private List<ConfiguredPluginFactory> configuredPluginFactories;
+        private List<ConfiguredPluginFactory> configuredPluginFactories = ImmutableList.of();
         private ServicesLoader servicesLoader = SERVICES_FROM_CONFIG;
         private MetricRegistry metricRegistry = new CodaHaleMetricRegistry();
         private StartupConfig startupConfig;
