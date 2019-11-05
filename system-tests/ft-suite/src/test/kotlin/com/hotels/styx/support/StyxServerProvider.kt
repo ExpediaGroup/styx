@@ -26,6 +26,7 @@ import com.hotels.styx.api.HttpResponse
 import com.hotels.styx.api.HttpResponseStatus
 import com.hotels.styx.api.HttpResponseStatus.CREATED
 import com.hotels.styx.api.HttpResponseStatus.OK
+import com.hotels.styx.api.plugins.spi.Plugin
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.startup.StyxServerComponents
@@ -57,6 +58,7 @@ val defaultServerConfig = """
 class StyxServerProvider(
         val defaultConfig: String = defaultServerConfig,
         val defaultAdditionalRoutingObjects: Map<String, RoutingObjectFactory> = mapOf(),
+        val defaultAdditionalPlugins: Map<String, Plugin> = mapOf(),
         val loggingConfig: Path? = null,
         val validateConfig: Boolean = true) {
     val serverRef: AtomicReference<StyxServer?> = AtomicReference()
@@ -76,6 +78,7 @@ class StyxServerProvider(
     fun restart(
             configuration: String = this.defaultConfig,
             additionalRoutingObjects: Map<String, RoutingObjectFactory> = this.defaultAdditionalRoutingObjects,
+            additionalPlugins: Map<String, Plugin> = this.defaultAdditionalPlugins,
             validateConfig: Boolean = this.validateConfig): StyxServerProvider {
         if (started()) {
             stop()
@@ -84,6 +87,7 @@ class StyxServerProvider(
         var components = StyxServerComponents.Builder()
                 .styxConfig(StyxConfig.fromYaml(configuration, validateConfig))
                 .additionalRoutingObjects(additionalRoutingObjects)
+                .plugins(additionalPlugins)
 
         components = if (loggingConfig != null) components.loggingSetUp(loggingConfig.toString()) else components
 

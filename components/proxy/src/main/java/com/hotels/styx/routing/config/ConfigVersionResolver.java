@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,13 +20,11 @@ import com.hotels.styx.StyxConfig;
 
 import static com.hotels.styx.routing.config.ConfigVersionResolver.Version.ROUTING_CONFIG_V1;
 import static com.hotels.styx.routing.config.ConfigVersionResolver.Version.ROUTING_CONFIG_V2;
-import static java.util.Objects.requireNonNull;
 
 /**
  * Works out the Styx configuration version for backwards compatibility purposes.
  */
-public class ConfigVersionResolver {
-    private final StyxConfig config;
+public final class ConfigVersionResolver {
 
     /**
      * Routing configuration version.
@@ -36,11 +34,10 @@ public class ConfigVersionResolver {
         ROUTING_CONFIG_V2
     };
 
-    public ConfigVersionResolver(StyxConfig config) {
-        this.config = requireNonNull(config);
+    private ConfigVersionResolver() {
     }
 
-    public Version version() {
+    public static Version configVersion(StyxConfig config) {
         if (config.get("httpPipeline", JsonNode.class).isPresent()) {
             return ROUTING_CONFIG_V2;
         } else {

@@ -37,6 +37,8 @@ import io.kotlintest.Spec
 import io.kotlintest.eventually
 import io.kotlintest.matchers.collections.shouldContainAll
 import io.kotlintest.matchers.collections.shouldHaveSize
+import io.kotlintest.matchers.string.shouldContain
+import io.kotlintest.matchers.string.shouldNotContain
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FunSpec
@@ -413,6 +415,37 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                                 it.bodyAs(UTF_8) shouldBe "appA-02"
                             }
                 }
+            }
+        }
+
+        context("Admin interface") {
+            test("Styx dashboard is disabled") {
+                client.send(get("/")
+                        .header(HOST, styxServer().adminHostHeader())
+                        .build())
+                        .wait()!!
+                        .let {
+                            it.status() shouldBe OK
+                            it.bodyAs(UTF_8) shouldNotContain ("/admin/dashboard/")
+                        }
+
+                client.send(get("/admin/dashboard/index.html")
+                        .header(HOST, styxServer().adminHostHeader())
+                        .build())
+                        .wait()!!
+                        .let {
+                            // Admin index page (with links)
+                            it.bodyAs(UTF_8) shouldContain """<li><a href='/admin/configuration?pretty'>Configuration</a></li>"""
+                        }
+
+                client.send(get("/admin/dashboard/data.json")
+                        .header(HOST, styxServer().adminHostHeader())
+                        .build())
+                        .wait()!!
+                        .let {
+                            // Admin index page (with links)
+                            it.bodyAs(UTF_8) shouldContain """<li><a href='/admin/configuration?pretty'>Configuration</a></li>"""
+                        }
             }
         }
 

@@ -16,7 +16,7 @@
 package com.hotels.styx.admin;
 
 import com.codahale.metrics.json.MetricsModule;
-import com.google.common.collect.ImmutableSortedSet;
+import com.google.common.collect.ImmutableList;
 import com.hotels.styx.Environment;
 import com.hotels.styx.StartupConfig;
 import com.hotels.styx.StyxConfig;
@@ -46,6 +46,7 @@ import com.hotels.styx.api.WebServiceHandler;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
+import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.common.http.handler.HttpAggregator;
 import com.hotels.styx.common.http.handler.HttpMethodFilteringHandler;
 import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
@@ -73,6 +74,8 @@ import java.util.function.BiFunction;
 import static com.google.common.net.MediaType.HTML_UTF_8;
 import static com.hotels.styx.admin.handlers.IndexHandler.Link.link;
 import static com.hotels.styx.api.HttpMethod.POST;
+import static com.hotels.styx.routing.config.ConfigVersionResolver.Version.ROUTING_CONFIG_V1;
+import static com.hotels.styx.routing.config.ConfigVersionResolver.configVersion;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -125,9 +128,9 @@ public class AdminServerBuilder {
         Optional<Duration> metricsCacheExpiration = styxConfig.adminServerConfig().metricsCacheExpiration();
 
         AdminHttpRouter httpRouter = new AdminHttpRouter();
-        httpRouter.aggregate("/", new IndexHandler(indexLinkPaths()));
+        httpRouter.aggregate("/", new IndexHandler(indexLinkPaths(styxConfig)));
         httpRouter.aggregate("/version.txt", new VersionTextHandler(styxConfig.versionFiles(startupConfig)));
-        httpRouter.aggregate("/admin", new IndexHandler(indexLinkPaths()));
+        httpRouter.aggregate("/admin", new IndexHandler(indexLinkPaths(styxConfig)));
         httpRouter.aggregate("/admin/ping", new PingHandler());
         httpRouter.aggregate("/admin/threads", new ThreadsHandler());
         httpRouter.aggregate("/admin/current_requests", new CurrentRequestsHandler(CurrentRequestTracker.INSTANCE));
@@ -149,9 +152,10 @@ public class AdminServerBuilder {
         httpRouter.aggregate("/admin/service/providers", serviceProvideHandler);
         httpRouter.aggregate("/admin/service/provider/", serviceProvideHandler);
 
-        // Dashboard
-        httpRouter.aggregate("/admin/dashboard/data.json", dashboardDataHandler(styxConfig));
-        httpRouter.aggregate("/admin/dashboard/", new ClassPathResourceHandler("/admin/dashboard/"));
+        if (configVersion(styxConfig) == ROUTING_CONFIG_V1) {
+            httpRouter.aggregate("/admin/dashboard/data.json", dashboardDataHandler(styxConfig));
+            httpRouter.aggregate("/admin/dashboard/", new ClassPathResourceHandler("/admin/dashboard/"));
+        }
 
         // Tasks
         httpRouter.aggregate("/admin/tasks/origins/reload", new HttpMethodFilteringHandler(POST, new OriginsReloadCommandHandler(backendServicesRegistry)));
@@ -159,14 +163,20 @@ public class AdminServerBuilder {
         httpRouter.aggregate("/admin/tasks/plugin/", new PluginToggleHandler(environment.configStore()));
 
         // Plugins Handler
-
         environment.configStore().watchAll("plugins", NamedPlugin.class)
                 .forEach(entry -> {
                     NamedPlugin namedPlugin = entry.value();
-
-                    routesForPlugin(namedPlugin).forEach(route ->
-                            httpRouter.stream(route.path(), route.handler()));
+                    extensionEndpoints("plugins", namedPlugin.name(), namedPlugin.adminInterfaceHandlers())
+                            .forEach(route -> httpRouter.stream(route.path(), route.handler()));
                 });
+
+        providerDatabase.entrySet().forEach(record -> {
+            String extensionName = record.getKey();
+            StyxService styxService = record.getValue().component4();
+
+            extensionEndpoints("providers", extensionName, styxService.adminInterfaceHandlers())
+                    .forEach(route -> httpRouter.stream(route.path, route.handler()));
+        });
 
         httpRouter.aggregate("/admin/plugins", new PluginListHandler(environment.configStore()));
         return httpRouter;
@@ -178,35 +188,43 @@ public class AdminServerBuilder {
                 new MetricsModule(SECONDS, MILLISECONDS, false));
     }
 
-    private static Iterable<IndexHandler.Link> indexLinkPaths() {
-        return ImmutableSortedSet.of(
-                link("version.txt", "/version.txt"),
-                link("Ping", "/admin/ping"),
-                link("Threads", "/admin/threads"),
-                link("Current Requests", "/admin/current_requests?withStackTrace=true"),
-                link("Metrics", "/admin/metrics?pretty"),
-                link("Configuration", "/admin/configuration?pretty"),
-                link("Log Configuration", "/admin/configuration/logging"),
-                link("Origins Configuration", "/admin/configuration/origins?pretty"),
-                link("Startup Configuration", "/admin/configuration/startup"),
-                link("JVM", "/admin/jvm?pretty"),
-                link("Origins Status", "/admin/origins/status?pretty"),
-                link("Dashboard", "/admin/dashboard/index.html"),
-                link("Plugins", "/admin/plugins"));
+    private static Iterable<IndexHandler.Link> indexLinkPaths(StyxConfig styxConfig) {
+        ImmutableList.Builder<IndexHandler.Link> builder = ImmutableList.builder();
+        builder.add(link("Kotlin/Test page", "/admin/kotlin/test"));
+        builder.add(link("version.txt", "/version.txt"));
+        builder.add(link("Ping", "/admin/ping"));
+        builder.add(link("Threads", "/admin/threads"));
+        builder.add(link("Current Requests", "/admin/current_requests?withStackTrace=true"));
+        builder.add(link("Metrics", "/admin/metrics?pretty"));
+        builder.add(link("Configuration", "/admin/configuration?pretty"));
+        builder.add(link("Log Configuration", "/admin/configuration/logging"));
+        builder.add(link("Startup Configuration", "/admin/configuration/startup"));
+        builder.add(link("JVM", "/admin/jvm?pretty"));
+        builder.add(link("Plugins", "/admin/plugins"));
+
+        if (configVersion(styxConfig) == ROUTING_CONFIG_V1) {
+            builder.add(link("Dashboard", "/admin/dashboard/index.html"))
+                    .add(link("Origins Status", "/admin/origins/status?pretty"))
+                    .add(link("Origins Configuration", "/admin/configuration/origins?pretty"));
+        }
+        return builder.build()
+                .stream()
+                .sorted()
+                .collect(toList());
     }
 
-    private static List<Route> routesForPlugin(NamedPlugin namedPlugin) {
-        List<PluginAdminEndpointRoute> routes = pluginAdminEndpointRoutes(namedPlugin);
+    private static List<Route> extensionEndpoints(String root, String name, Map<String, HttpHandler> endpoints) {
+        List<AdminEndpointRoute> routes = extensionAdminEndpointRoutes(root, name, endpoints);
 
         List<IndexHandler.Link> endpointLinks = routes.stream()
-                .map(PluginAdminEndpointRoute::link)
+                .map(AdminEndpointRoute::link)
                 .collect(toList());
 
         WebServiceHandler handler = endpointLinks.isEmpty()
-                ? new StaticBodyHttpHandler(HTML_UTF_8, format("This plugin (%s) does not expose any admin interfaces", namedPlugin.name()))
+                ? new StaticBodyHttpHandler(HTML_UTF_8, format("This plugin (%s) does not expose any admin interfaces", name))
                 : new IndexHandler(endpointLinks);
 
-        Route indexRoute = new Route(pluginPath(namedPlugin), new HttpAggregator(MEGABYTE, handler));
+        Route indexRoute = new Route(adminPath(root, name), new HttpAggregator(MEGABYTE, handler));
 
         return concatenate(indexRoute, routes);
     }
@@ -218,15 +236,13 @@ public class AdminServerBuilder {
         return list;
     }
 
-    private static String pluginPath(NamedPlugin namedPlugin) {
-        return "/admin/plugins/" + namedPlugin.name();
+    private static String adminPath(String root, String name) {
+        return String.format("/admin/%s/%s", root, name);
     }
 
-    private static List<PluginAdminEndpointRoute> pluginAdminEndpointRoutes(NamedPlugin namedPlugin) {
-        Map<String, HttpHandler> adminInterfaceHandlers = namedPlugin.adminInterfaceHandlers();
-
-        return mapToList(adminInterfaceHandlers, (relativePath, handler) ->
-                new PluginAdminEndpointRoute(namedPlugin, relativePath, handler));
+    private static List<AdminEndpointRoute> extensionAdminEndpointRoutes(String root, String name, Map<String, HttpHandler> endpoints) {
+        return mapToList(endpoints, (relativePath, handler) ->
+                new AdminEndpointRoute(root, name, relativePath, handler));
     }
 
     // allows key and value to be labelled in lambda instead of having to use Entry.getKey, Entry.getValue
@@ -254,17 +270,18 @@ public class AdminServerBuilder {
         }
     }
 
-    private static class PluginAdminEndpointRoute extends Route {
-        private final NamedPlugin namedPlugin;
+    private static class AdminEndpointRoute extends Route {
+        private final String root;
+        private final String name;
 
-        PluginAdminEndpointRoute(NamedPlugin namedPlugin, String relativePath, HttpHandler handler) {
-            super(pluginAdminEndpointPath(namedPlugin, relativePath), handler);
-
-            this.namedPlugin = namedPlugin;
+        AdminEndpointRoute(String root, String name, String relativePath, HttpHandler handler) {
+            super(adminEndpointPath(root, name, relativePath), handler);
+            this.root = root;
+            this.name = name;
         }
 
-        static String pluginAdminEndpointPath(NamedPlugin namedPlugin, String relativePath) {
-            return pluginPath(namedPlugin) + "/" + dropFirstForwardSlash(relativePath);
+        static String adminEndpointPath(String root, String name, String relativePath) {
+            return adminPath(root, name) + "/" + dropFirstForwardSlash(relativePath);
         }
 
         static String dropFirstForwardSlash(String key) {
@@ -272,9 +289,8 @@ public class AdminServerBuilder {
         }
 
         String linkLabel() {
-            String relativePath = path().substring(pluginPath(namedPlugin).length() + 1);
-
-            return namedPlugin.name() + ": " + dropFirstForwardSlash(relativePath);
+            String relativePath = path().substring(adminPath(root, name).length() + 1);
+            return name + ": " + dropFirstForwardSlash(relativePath);
         }
 
         IndexHandler.Link link() {
