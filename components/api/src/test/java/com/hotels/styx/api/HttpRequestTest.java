@@ -386,15 +386,6 @@ public class HttpRequestTest {
         assertThat(shouldRemoveHeader.headers(), contains(header("a", "b")));
     }
 
-    private static Stream<Arguments> cookieHeaderName() {
-        return Stream.of(
-                Arguments.of(COOKIE),
-                Arguments.of("Cookie"),
-                Arguments.of("cookie"),
-                Arguments.of("COOKIE")
-        );
-    }
-
     @Test
     public void shouldSetsContentLengthForNonStreamingBodyMessage() {
         assertThat(put("/home").body("", UTF_8).build().header(CONTENT_LENGTH), isValue("0"));
