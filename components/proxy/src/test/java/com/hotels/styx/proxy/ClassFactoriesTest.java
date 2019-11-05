@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,11 +15,13 @@
  */
 package com.hotels.styx.proxy;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ClassFactoriesTest {
     @Test
@@ -29,19 +31,25 @@ public class ClassFactoriesTest {
         assertThat(instance, is(instanceOf(MyClass.class)));
     }
 
-    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "java.lang.InstantiationException: com.hotels.styx.proxy.ClassFactoriesTest\\$MyInvalidClass")
+    @Test
     public void throwsExceptionIfThereIsNoZeroArgumentConstructor() {
-        ClassFactories.newInstance(MyInvalidClass.class.getName(), MyInterface.class);
+        Exception e = assertThrows(RuntimeException.class,
+                () -> ClassFactories.newInstance(MyInvalidClass.class.getName(), MyInterface.class));
+        assertEquals("java.lang.InstantiationException: com.hotels.styx.proxy.ClassFactoriesTest$MyInvalidClass", e.getMessage());
     }
 
-    @Test(expectedExceptions = ClassCastException.class, expectedExceptionsMessageRegExp = "Cannot cast com.hotels.styx.proxy.ClassFactoriesTest\\$MyClass to java.lang.Runnable")
+    @Test
     public void throwsExceptionIfClassDoesNotExtendType() {
-        ClassFactories.newInstance(MyClass.class.getName(), Runnable.class);
+        Exception e = assertThrows(ClassCastException.class,
+                () -> ClassFactories.newInstance(MyClass.class.getName(), Runnable.class));
+        assertEquals("Cannot cast com.hotels.styx.proxy.ClassFactoriesTest$MyClass to java.lang.Runnable", e.getMessage());
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "No such class 'com.hotels.styx.proxy.ClassFactoriesTest\\$MyClassNonExistent'")
+    @Test
     public void throwsExceptionIfClassDoesNotExist() {
-        ClassFactories.newInstance(MyClass.class.getName() + "NonExistent", Runnable.class);
+        Exception e = assertThrows(IllegalArgumentException.class,
+                () -> ClassFactories.newInstance(MyClass.class.getName() + "NonExistent", Runnable.class));
+        assertEquals("No such class 'com.hotels.styx.proxy.ClassFactoriesTest$MyClassNonExistent'", e.getMessage());
     }
 
     public interface MyInterface {

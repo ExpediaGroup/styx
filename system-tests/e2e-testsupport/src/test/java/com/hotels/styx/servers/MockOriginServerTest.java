@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,14 +18,14 @@ package com.hotels.styx.servers;
 import com.github.tomakehurst.wiremock.client.ValueMatchingStrategy;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.api.extension.service.TlsSettings;
+import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpsConnectorConfig;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.HostnameVerifier;
 import java.util.Optional;
@@ -51,14 +51,14 @@ public class MockOriginServerTest {
     private HostnameVerifier oldHostNameVerifier;
     private StyxHttpClient tlsClient;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() throws Exception {
         client = new StyxHttpClient.Builder().build();
         tlsClient = new StyxHttpClient.Builder().tlsSettings(new TlsSettings.Builder().build()).build();
         oldHostNameVerifier = disableHostNameVerification();
     }
 
-    @AfterMethod
+    @AfterEach
     public void tearDown() throws Exception {
         server.stop();
         setDefaultHostnameVerifier(oldHostNameVerifier);

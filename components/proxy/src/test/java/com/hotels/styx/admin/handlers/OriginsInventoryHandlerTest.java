@@ -28,7 +28,7 @@ import com.hotels.styx.api.extension.OriginsSnapshot;
 import com.hotels.styx.api.extension.RemoteHost;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetricSupplier;
 import com.hotels.styx.server.HttpInterceptorContext;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;

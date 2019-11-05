@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Map;
@@ -41,6 +41,10 @@ import static com.hotels.styx.config.schema.SchemaDsl.schema;
 import static com.hotels.styx.config.schema.SchemaDsl.string;
 import static com.hotels.styx.config.schema.SchemaDsl.union;
 import static java.util.Collections.emptyList;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.matchesPattern;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SchemaTest {
     private final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory())
@@ -49,26 +53,28 @@ public class SchemaTest {
     private final Function<String, Schema.FieldType> NO_EXTENSIONS = key -> null;
 
 
-    @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'myNokValue' should be INTEGER, but it is BOOLEAN")
+    @Test
     public void integer_validatesIntegerValues() throws Exception {
         JsonNode root = YAML_MAPPER.readTree(""
                 + "  myOkValue: 5 \n"
                 + "  myNokValue: true \n");
 
         integer().validate(ImmutableList.of("myOkValue"), root, root.get("myOkValue"), NO_EXTENSIONS);
-        integer().validate(ImmutableList.of("myNokValue"), root, root.get("myNokValue"), NO_EXTENSIONS);
+        Exception e = assertThrows(SchemaValidationException.class,
+                () -> integer().validate(ImmutableList.of("myNokValue"), root, root.get("myNokValue"), NO_EXTENSIONS));
+        assertEquals("Unexpected field type. Field 'myNokValue' should be INTEGER, but it is BOOLEAN", e.getMessage());
     }
 
-    @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'myNokValue' should be STRING, but it is NUMBER")
+    @Test
     public void string_validatesStringValues() throws Exception {
         JsonNode root = YAML_MAPPER.readTree(""
                 + "  myOkValue: abc \n"
                 + "  myNokValue: 34 \n");
 
         string().validate(ImmutableList.of("myOkValue"), root, root.get("myOkValue"), NO_EXTENSIONS);
-        string().validate(ImmutableList.of("myNokValue"), root, root.get("myNokValue"), NO_EXTENSIONS);
+        Exception e = assertThrows(SchemaValidationException.class,
+                () -> string().validate(ImmutableList.of("myNokValue"), root, root.get("myNokValue"), NO_EXTENSIONS));
+        assertEquals("Unexpected field type. Field 'myNokValue' should be STRING, but it is NUMBER", e.getMessage());
     }
 
     @Test
@@ -80,8 +86,7 @@ public class SchemaTest {
     }
 
 
-    @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'myNokValue' should be BOOLEAN, but it is STRING")
+    @Test
     public void bool_validatesBooleanValues() throws Exception {
         JsonNode root = YAML_MAPPER.readTree(""
                 + "  myOkValue1: true \n"
@@ -90,7 +95,9 @@ public class SchemaTest {
 
         bool().validate(ImmutableList.of("myOkValue1"), root, root.get("myOkValue1"), NO_EXTENSIONS);
         bool().validate(ImmutableList.of("myOkValue2"), root, root.get("myOkValue2"), NO_EXTENSIONS);
-        bool().validate(ImmutableList.of("myNokValue"), root, root.get("myNokValue"), NO_EXTENSIONS);
+        Exception e = assertThrows(SchemaValidationException.class,
+                () -> bool().validate(ImmutableList.of("myNokValue"), root, root.get("myNokValue"), NO_EXTENSIONS));
+        assertEquals("Unexpected field type. Field 'myNokValue' should be BOOLEAN, but it is STRING", e.getMessage());
     }
 
 
@@ -114,21 +121,22 @@ public class SchemaTest {
     }
 
 
-    @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Missing a mandatory field 'root.surname'")
+    @Test
     public void object_AllMandatoryFieldsShouldBePresent() throws Exception {
         JsonNode rootObject = YAML_MAPPER.readTree(""
                 + "root: \n"
                 + "  name: John \n"
                 + "  age: 5\n");
 
-        object(
-                field("root", object(
-                        field("name", string()),
-                        field("surname", string()),
-                        field("age", integer())
-                ))
-        ).validate(ImmutableList.of(), rootObject, rootObject, x -> null);
+        Exception e = assertThrows(SchemaValidationException.class,
+                () -> object(
+                        field("root", object(
+                                field("name", string()),
+                                field("surname", string()),
+                                field("age", integer())
+                        ))
+                ).validate(ImmutableList.of(), rootObject, rootObject, x -> null));
+        assertEquals("Missing a mandatory field 'root.surname'", e.getMessage());
     }
 
     @Test
@@ -148,8 +156,7 @@ public class SchemaTest {
     }
 
 
-    @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'root.favouriteFood' should be STRING, but it is NUMBER")
+    @Test
     public void object_verifiesOptionalFields() throws Exception {
         JsonNode rootObject = YAML_MAPPER.readTree(""
                 + "root: \n"
@@ -157,17 +164,18 @@ public class SchemaTest {
                 + "  favouriteFood: 43 \n"
                 + "  age: 5\n");
 
-        object(
-                field("root", object(
-                        field("name", string()),
-                        optional("favouriteFood", string()),
-                        field("age", integer())
-                ))
-        ).validate(ImmutableList.of(), rootObject, rootObject, NO_EXTENSIONS);
+        Exception e = assertThrows(SchemaValidationException.class,
+                () -> object(
+                        field("root", object(
+                                field("name", string()),
+                                optional("favouriteFood", string()),
+                                field("age", integer())
+                        ))
+                ).validate(ImmutableList.of(), rootObject, rootObject, NO_EXTENSIONS));
+        assertEquals("Unexpected field type. Field 'root.favouriteFood' should be STRING, but it is NUMBER", e.getMessage());
     }
 
-    @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field: 'root.xyxz'")
+    @Test
     public void object_ensuresNoExtraFieldsPresent() throws Exception {
         JsonNode rootObject = YAML_MAPPER.readTree(""
                 + "root: \n"
@@ -176,72 +184,78 @@ public class SchemaTest {
                 + "  age: 5\n"
                 + "  xyxz: 'not supposed to be here'\n");
 
-        object(
-                field("root", object(
-                        field("name", string()),
-                        field("surname", string()),
-                        field("age", integer())
-                ))
-        ).validate(ImmutableList.of(), rootObject, rootObject, NO_EXTENSIONS);
+        Exception e = assertThrows(SchemaValidationException.class,
+                () -> object(
+                        field("root", object(
+                                field("name", string()),
+                                field("surname", string()),
+                                field("age", integer())
+                        ))
+                ).validate(ImmutableList.of(), rootObject, rootObject, NO_EXTENSIONS));
+        assertEquals("Unexpected field: 'root.xyxz'", e.getMessage());
     }
 
 
-    @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'root.myInt' should be INTEGER, but it is STRING")
+    @Test
     public void object_checksIntegerFieldTypes() throws Exception {
         JsonNode rootObject = YAML_MAPPER.readTree(""
                 + "root: \n"
                 + "  myInt: 'y' \n");
 
-        object(
-                field("root", object(
-                        field("myInt", integer())
-                ))
-        ).validate(ImmutableList.of(), rootObject, rootObject, NO_EXTENSIONS);
+        Exception e = assertThrows(SchemaValidationException.class,
+                () -> object(
+                        field("root", object(
+                                field("myInt", integer())
+                        ))
+                ).validate(ImmutableList.of(), rootObject, rootObject, NO_EXTENSIONS));
+        assertEquals("Unexpected field type. Field 'root.myInt' should be INTEGER, but it is STRING", e.getMessage());
     }
 
 
-    @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'root.myString' should be STRING, but it is NUMBER")
+    @Test
     public void object_checksStringFieldTypes() throws Exception {
         JsonNode rootObject = YAML_MAPPER.readTree(""
                 + "root: \n"
                 + "  myString: 5.0 \n");
 
-        object(
-                field("root", object(
-                        field("myString", string())
-                ))
-        ).validate(ImmutableList.of(), rootObject, rootObject, NO_EXTENSIONS);
+        Exception e = assertThrows(SchemaValidationException.class,
+                () -> object(
+                        field("root", object(
+                                field("myString", string())
+                        ))
+                ).validate(ImmutableList.of(), rootObject, rootObject, NO_EXTENSIONS));
+        assertEquals("Unexpected field type. Field 'root.myString' should be STRING, but it is NUMBER", e.getMessage());
     }
 
 
-    @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'root.myBool' should be BOOLEAN, but it is NUMBER")
+    @Test
     public void object_checksBoolFieldTypes() throws Exception {
         JsonNode rootObject = YAML_MAPPER.readTree(""
                 + "root: \n"
                 + "  myBool: 5.0 \n");
 
-        object(
-                field("root", object(
-                        field("myBool", bool())
-                ))
-        ).validate(ImmutableList.of(), rootObject, rootObject, NO_EXTENSIONS);
+        Exception e = assertThrows(SchemaValidationException.class,
+                () -> object(
+                        field("root", object(
+                                field("myBool", bool())
+                        ))
+                ).validate(ImmutableList.of(), rootObject, rootObject, NO_EXTENSIONS));
+        assertEquals("Unexpected field type. Field 'root.myBool' should be BOOLEAN, but it is NUMBER", e.getMessage());
     }
 
 
-    @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'myChild' should be OBJECT\\(age\\), but it is NUMBER")
+    @Test
     public void object_checksSubObjectFieldTypes() throws Exception {
         JsonNode rootObject = YAML_MAPPER.readTree(""
                 + "  myChild: 5.0 \n");
 
-        object(
-                field("myChild", object(
-                        field("age", integer())
-                ))
-        ).validate(emptyList(), rootObject, rootObject, NO_EXTENSIONS);
+        Exception e = assertThrows(SchemaValidationException.class,
+                () -> object(
+                        field("myChild", object(
+                                field("age", integer())
+                        ))
+                ).validate(emptyList(), rootObject, rootObject, NO_EXTENSIONS));
+        assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'myChild' should be OBJECT\\(age\\), but it is NUMBER"));
     }
 
     @Test
@@ -275,17 +289,18 @@ public class SchemaTest {
         object(opaque()).validate(emptyList(), root, root.get("opaque"), NO_EXTENSIONS);
     }
 
-    @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent' should be OBJECT\\(parent\\), but it is STRING")
+    @Test
     public void object_rejectsInvalidObjects() throws Exception {
         JsonNode root = YAML_MAPPER.readTree(
                 "parent: x\n"
         );
 
-        object(
-                field("parent", object(
-                        field("child", string())))
-        ).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS);
+        Exception e = assertThrows(SchemaValidationException.class,
+                () -> object(
+                        field("parent", object(
+                                field("child", string())))
+                ).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS));
+        assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'parent' should be OBJECT\\(parent\\), but it is STRING"));
     }
 
 
@@ -297,8 +312,7 @@ public class SchemaTest {
      *  3) Both required fields are present
      *  4) Neither of the required fields are present.
      */
-    @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Schema constraint failed. At least one of \\('http', 'https'\\) must be present.")
+    @Test
     public void object_validatesAtLeastOneConstraintCorrectly() throws Exception {
         JsonNode first = YAML_MAPPER.readTree(""
                 + "connectors: \n"
@@ -332,11 +346,12 @@ public class SchemaTest {
         objectType.validate(ImmutableList.of(), first, first, NO_EXTENSIONS);
         objectType.validate(ImmutableList.of(), second, second, NO_EXTENSIONS);
         objectType.validate(ImmutableList.of(), both, both, NO_EXTENSIONS);
-        objectType.validate(ImmutableList.of(), neither, neither, NO_EXTENSIONS);
+        Exception e = assertThrows(SchemaValidationException.class,
+                () -> objectType.validate(ImmutableList.of(), neither, neither, NO_EXTENSIONS));
+        assertThat(e.getMessage(), matchesPattern("Schema constraint failed. At least one of \\('http', 'https'\\) must be present."));
     }
 
-    @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'myList\\[1\\]' should be STRING, but it is NUMBER")
+    @Test
     public void list_checksListsOfElementaryTypes() throws Exception {
         JsonNode rootObject = YAML_MAPPER.readTree(""
                 + "  myList: \n"
@@ -344,11 +359,12 @@ public class SchemaTest {
                 + "   - 5 \n"
         );
 
-        list(string()).validate(ImmutableList.of("myList"), rootObject, rootObject.get("myList"), NO_EXTENSIONS);
+        Exception e = assertThrows(SchemaValidationException.class,
+                () -> list(string()).validate(ImmutableList.of("myList"), rootObject, rootObject.get("myList"), NO_EXTENSIONS));
+        assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'myList\\[1\\]' should be STRING, but it is NUMBER"));
     }
 
-    @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'myList\\[0\\]' should be INTEGER, but it is STRING")
+    @Test
     public void list_checksListsOfElementaryTypes_wrongIntegerType() throws Exception {
         JsonNode rootObject = YAML_MAPPER.readTree(""
                 + "  myList: \n"
@@ -356,11 +372,12 @@ public class SchemaTest {
                 + "   - 5 \n"
         );
 
-        list(integer()).validate(ImmutableList.of("myList"), rootObject, rootObject.get("myList"), NO_EXTENSIONS);
+        Exception e = assertThrows(SchemaValidationException.class,
+                () -> list(integer()).validate(ImmutableList.of("myList"), rootObject, rootObject.get("myList"), NO_EXTENSIONS));
+        assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'myList\\[0\\]' should be INTEGER, but it is STRING"));
     }
 
-    @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'myList\\[1\\].x' should be INTEGER, but it is STRING")
+    @Test
     public void list_checksListsOfSubObjects() throws Exception {
         JsonNode rootObject = YAML_MAPPER.readTree(""
                 + "  myList: \n"
@@ -370,14 +387,15 @@ public class SchemaTest {
                 + "     y: 2 \n"
         );
 
-        list(object(
-                field("x", integer()),
-                field("y", integer())
-        )).validate(ImmutableList.of("myList"), rootObject, rootObject.get("myList"), NO_EXTENSIONS);
+        Exception e = assertThrows(SchemaValidationException.class,
+                () -> list(object(
+                        field("x", integer()),
+                        field("y", integer())
+                )).validate(ImmutableList.of("myList"), rootObject, rootObject.get("myList"), NO_EXTENSIONS));
+        assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'myList\\[1\\].x' should be INTEGER, but it is STRING"));
     }
 
-    @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'myList\\[1\\]' should be OBJECT\\(x, y\\), but it is STRING")
+    @Test
     public void list_checksListsOfSubObjects_shouldBeSubobjectButIsString() throws Exception {
         JsonNode rootObject = YAML_MAPPER.readTree(""
                 + "  myList: \n"
@@ -391,22 +409,23 @@ public class SchemaTest {
                 field("y", integer())
         );
 
-        list(subObject).validate(ImmutableList.of("myList"), rootObject, rootObject.get("myList"), NO_EXTENSIONS);
+        Exception e = assertThrows(SchemaValidationException.class,
+                () -> list(subObject).validate(ImmutableList.of("myList"), rootObject, rootObject.get("myList"), NO_EXTENSIONS));
+        assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'myList\\[1\\]' should be OBJECT\\(x, y\\), but it is STRING"));
     }
 
-    @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'myList' should be LIST\\(INTEGER\\), but it is STRING")
+    @Test
     public void list_expectingListButIsString() throws Exception {
         JsonNode root = YAML_MAPPER.readTree(
                 "myList: 'or not'\n"
         );
 
-        list(integer()).validate(ImmutableList.of("myList"), root, root.get("myList"), NO_EXTENSIONS);
-
+        Exception e = assertThrows(SchemaValidationException.class,
+                () -> list(integer()).validate(ImmutableList.of("myList"), root, root.get("myList"), NO_EXTENSIONS));
+        assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'myList' should be LIST\\(INTEGER\\), but it is STRING"));
     }
 
-    @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'myList' should be LIST\\(INTEGER\\), but it is OBJECT")
+    @Test
     public void list_expectingListButIsObject() throws Exception {
         JsonNode root = YAML_MAPPER.readTree(
                 "myList: \n"
@@ -414,11 +433,12 @@ public class SchemaTest {
                         + "  y: 0\n"
         );
 
-        list(integer()).validate(ImmutableList.of("myList"), root, root.get("myList"), NO_EXTENSIONS);
+        Exception e = assertThrows(SchemaValidationException.class,
+                () -> list(integer()).validate(ImmutableList.of("myList"), root, root.get("myList"), NO_EXTENSIONS));
+        assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'myList' should be LIST\\(INTEGER\\), but it is OBJECT"));
     }
 
-    @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'myList' should be LIST\\(OBJECT\\(a, b\\)\\), but it is OBJECT")
+    @Test
     public void list_expectingListOfObjectButIsString() throws Exception {
         JsonNode root = YAML_MAPPER.readTree(
                 "myList: \n"
@@ -426,8 +446,10 @@ public class SchemaTest {
                         + "  y: 2\n"
         );
 
-        list(object(field("a", integer()), field("b", integer())))
-                .validate(ImmutableList.of("myList"), root, root.get("myList"), NO_EXTENSIONS);
+        Exception e = assertThrows(SchemaValidationException.class,
+                () -> list(object(field("a", integer()), field("b", integer())))
+                    .validate(ImmutableList.of("myList"), root, root.get("myList"), NO_EXTENSIONS));
+        assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'myList' should be LIST\\(OBJECT\\(a, b\\)\\), but it is OBJECT"));
     }
 
 
@@ -462,8 +484,7 @@ public class SchemaTest {
         new Schema.RoutingObjectSpec().validate(emptyList(), root, root.get("object2"), extensions::get);
     }
 
-    @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Union discriminator 'httpPipeline.config.type': Unexpected field type. Field 'httpPipeline.config.type' should be STRING, but it is NUMBER")
+    @Test
     public void union_errorsWhenUnionDiscriminatorIsNotStringValue() throws IOException {
         JsonNode root = YAML_MAPPER.readTree(""
                 + "httpPipeline: \n"
@@ -473,15 +494,16 @@ public class SchemaTest {
                 + "  type: 123\n"
         );
 
-        object(
-                field("config", union("type")),
-                field("type", string())
-        ).validate(ImmutableList.of("httpPipeline"), root, root.get("httpPipeline"), NO_EXTENSIONS);
+        Exception e = assertThrows(SchemaValidationException.class,
+                () -> object(
+                        field("config", union("type")),
+                        field("type", string())
+                ).validate(ImmutableList.of("httpPipeline"), root, root.get("httpPipeline"), NO_EXTENSIONS));
+        assertEquals("Union discriminator 'httpPipeline.config.type': Unexpected field type. Field 'httpPipeline.config.type' should be STRING, but it is NUMBER", e.getMessage());
     }
 
 
-    @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unknown union discriminator type 'Foo' for union 'httpPipeline.config'. Union type is UNION\\(type\\)")
+    @Test
     public void union_errorsWhenUnionSchemaNotFound() throws IOException {
         JsonNode root = YAML_MAPPER.readTree(""
                 + "httpPipeline: \n"
@@ -491,10 +513,12 @@ public class SchemaTest {
                 + "    destination: 'localhost:8080'\n"
         );
 
-        object(
-                field("type", string()),
-                field("config", union("type"))
-        ).validate(ImmutableList.of("httpPipeline"), root, root.get("httpPipeline"), NO_EXTENSIONS);
+        Exception e = assertThrows(SchemaValidationException.class,
+                () -> object(
+                        field("type", string()),
+                        field("config", union("type"))
+                ).validate(ImmutableList.of("httpPipeline"), root, root.get("httpPipeline"), NO_EXTENSIONS));
+        assertThat(e.getMessage(), matchesPattern("Unknown union discriminator type 'Foo' for union 'httpPipeline.config'. Union type is UNION\\(type\\)"));
     }
 
 
@@ -535,14 +559,15 @@ public class SchemaTest {
     }
 
 
-    @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent' should be MAP\\(STRING\\), but it is STRING")
+    @Test
     public void map_rejectsInvalidMaps() throws Exception {
         JsonNode root = YAML_MAPPER.readTree(
                 "parent: x\n"
         );
 
-        map(string()).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS);
+        Exception e = assertThrows(SchemaValidationException.class,
+                () -> map(string()).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS));
+        assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'parent' should be MAP\\(STRING\\), but it is STRING"));
     }
 
     @Test
@@ -564,8 +589,7 @@ public class SchemaTest {
 
     }
 
-    @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent\\[key.\\]' should be OBJECT\\(x, y\\), but it is NUMBER")
+    @Test
     public void map_validatesMapOfObjects() throws Exception {
         JsonNode root = YAML_MAPPER.readTree(
                 "parent: \n"
@@ -573,10 +597,12 @@ public class SchemaTest {
                         + "  key2: 5\n"
         );
 
-        map(object(
-                field("x", integer()),
-                field("y", integer())
-        )).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS);
+        Exception e = assertThrows(SchemaValidationException.class,
+                () -> map(object(
+                        field("x", integer()),
+                        field("y", integer())
+                )).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS));
+        assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'parent\\[key.\\]' should be OBJECT\\(x, y\\), but it is NUMBER"));
     }
 
     @Test
@@ -590,8 +616,7 @@ public class SchemaTest {
         map(integer()).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS);
     }
 
-    @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent\\[key1\\]' should be INTEGER, but it is STRING")
+    @Test
     public void map_validatesMapOfIntegers() throws Exception {
         JsonNode root = YAML_MAPPER.readTree(
                 "parent: \n"
@@ -599,7 +624,9 @@ public class SchemaTest {
                         + "  key2: 24\n"
         );
 
-        map(integer()).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS);
+        Exception e = assertThrows(SchemaValidationException.class,
+                () -> map(integer()).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS));
+        assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'parent\\[key1\\]' should be INTEGER, but it is STRING"));
     }
 
     @Test
@@ -613,8 +640,7 @@ public class SchemaTest {
         map(string()).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS);
     }
 
-    @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent\\[key1\\]' should be STRING, but it is NUMBER")
+    @Test
     public void map_validatesMapOfStrings() throws Exception {
         JsonNode root = YAML_MAPPER.readTree(
                 "parent: \n"
@@ -622,7 +648,9 @@ public class SchemaTest {
                         + "  key2: 'two'\n"
         );
 
-        map(string()).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS);
+        Exception e = assertThrows(SchemaValidationException.class,
+                () -> map(string()).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS));
+        assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'parent\\[key1\\]' should be STRING, but it is NUMBER"));
     }
 
     @Test
@@ -636,8 +664,7 @@ public class SchemaTest {
         map(bool()).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS);
     }
 
-    @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent\\[ok\\]' should be BOOLEAN, but it is STRING")
+    @Test
     public void map_validatesMapOfBooleans() throws Exception {
         JsonNode root = YAML_MAPPER.readTree(
                 "parent: \n"
@@ -645,7 +672,9 @@ public class SchemaTest {
                         + "  nok: False\n"
         );
 
-        map(bool()).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS);
+        Exception e = assertThrows(SchemaValidationException.class,
+                () -> map(bool()).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS));
+        assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'parent\\[ok\\]' should be BOOLEAN, but it is STRING"));
     }
 
     @Test
@@ -663,8 +692,7 @@ public class SchemaTest {
         map(list(integer())).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS);
     }
 
-    @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent\\[key1\\]' should be LIST\\(INTEGER\\), but it is OBJECT")
+    @Test
     public void map_validatesMapOfListOfInts() throws Exception {
         JsonNode root = YAML_MAPPER.readTree(
                 "parent: \n"
@@ -676,7 +704,9 @@ public class SchemaTest {
                         + "    - 4\n"
         );
 
-        map(list(integer())).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS);
+        Exception e = assertThrows(SchemaValidationException.class,
+                () -> map(list(integer())).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS));
+        assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'parent\\[key1\\]' should be LIST\\(INTEGER\\), but it is OBJECT"));
     }
 
     @Test
@@ -699,8 +729,7 @@ public class SchemaTest {
         )).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS);
     }
 
-    @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent\\[mapKey\\]\\[0\\]' should be OBJECT\\(x, y\\), but it is STRING")
+    @Test
     public void map_validatesMapOfListOfObjects() throws Exception {
         JsonNode root = YAML_MAPPER.readTree(
                 "parent: \n"
@@ -710,30 +739,34 @@ public class SchemaTest {
                         + "      y: 4\n"
         );
 
-        map(list(
-                object(
-                        field("x", integer()),
-                        field("y", integer()
+        Exception e = assertThrows(SchemaValidationException.class,
+                () -> map(list(
+                        object(
+                                field("x", integer()),
+                                field("y", integer()
+                                )
                         )
-                )
-        )).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS);
+                )).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS));
+        assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'parent\\[mapKey\\]\\[0\\]' should be OBJECT\\(x, y\\), but it is STRING"));
     }
 
-    @Test(expectedExceptions = InvalidSchemaException.class,
-            expectedExceptionsMessageRegExp = "Discriminator attribute 'type' not present.")
+    @Test
     public void list_checksThatSubobjectUnionDiscriminatorAttributeExists() throws Exception {
-        schema(field("name", string()),
-                field("config", union("type"))
-        );
+        Exception e = assertThrows(InvalidSchemaException.class,
+                () -> schema(field("name", string()),
+                        field("config", union("type"))
+                ));
+        assertEquals("Discriminator attribute 'type' not present.", e.getMessage());
     }
 
-    @Test(expectedExceptions = InvalidSchemaException.class,
-            expectedExceptionsMessageRegExp = "Discriminator attribute 'type' must be a string \\(but it is not\\)")
+    @Test
     public void checksThatSubobjectUnionDiscriminatorAttributeIsString() throws Exception {
-        schema(field("name", string()),
-                field("type", integer()),
-                field("config", union("type"))
-        );
+        Exception e = assertThrows(InvalidSchemaException.class,
+                () -> schema(field("name", string()),
+                        field("type", integer()),
+                        field("config", union("type"))
+                ));
+        assertThat(e.getMessage(), matchesPattern("Discriminator attribute 'type' must be a string \\(but it is not\\)"));
     }
 
 }

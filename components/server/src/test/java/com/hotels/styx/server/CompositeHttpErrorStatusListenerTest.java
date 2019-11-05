@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@ package com.hotels.styx.server;
 
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -37,7 +37,7 @@ public class CompositeHttpErrorStatusListenerTest {
     LiveHttpRequest request = LiveHttpRequest.get("/foo").build();
     LiveHttpResponse response = LiveHttpResponse.response(OK).build();
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         delegate1 = mock(HttpErrorStatusListener.class);
         delegate2 = mock(HttpErrorStatusListener.class);

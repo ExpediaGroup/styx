@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,13 +16,18 @@
 package com.hotels.styx.api.metrics;
 
 import com.hotels.styx.api.Clock;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.util.stream.Stream;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.closeTo;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SlidingWindowHistogramTest {
     private static final int INTERVAL_SIZE_MS = 1000;
@@ -36,7 +41,8 @@ public class SlidingWindowHistogramTest {
         assertThat(histogram.getMean(), is(closeTo(10.0, 1.0)));
     }
 
-    @Test(dataProvider = "getWindowSizeAndInterval")
+    @ParameterizedTest
+    @MethodSource("getWindowSizeAndInterval")
     public void aggregatesHistogramsOverTwoSeconds(int windowSize, int intervalSize) {
         SlidingWindowHistogram histogram = newHistogram(windowSize, intervalSize);
         histogram.recordValue(10);
@@ -46,7 +52,8 @@ public class SlidingWindowHistogramTest {
         assertThat(histogram.getMean(), is(closeTo(15.0, 1.0)));
     }
 
-    @Test(dataProvider = "getWindowSizeAndInterval")
+    @ParameterizedTest
+    @MethodSource("getWindowSizeAndInterval")
     public void expiresSampleAfterSlidingWindowWidth(int windowSize, int intervalSize) {
         SlidingWindowHistogram histogram = newHistogram(windowSize, intervalSize);
         histogram.recordValue(10);
@@ -56,7 +63,8 @@ public class SlidingWindowHistogramTest {
         assertThat(histogram.getMean(), is(Double.NaN));
     }
 
-    @Test(dataProvider = "getIntervalSize")
+    @ParameterizedTest
+    @MethodSource("getIntervalSize")
     public void expiresAnOldHistogramIntervalAndKeepsTheCurrentIntervalIntact(int intervalSize) {
         SlidingWindowHistogram histogram = newHistogram(2, intervalSize);
 
@@ -74,7 +82,8 @@ public class SlidingWindowHistogramTest {
     }
 
 
-    @Test(dataProvider = "getIntervalSize")
+    @ParameterizedTest
+    @MethodSource("getIntervalSize")
     public void expiresTheCurrentIntervalIfWindowSizeWrapsAround(int intervalSize) {
         SlidingWindowHistogram histogram = newHistogram(2, intervalSize);
 
@@ -86,7 +95,8 @@ public class SlidingWindowHistogramTest {
         assertThat(histogram.getMean(), is(closeTo(20.0, 1.0)));
     }
 
-    @Test(dataProvider = "getIntervalSize")
+    @ParameterizedTest
+    @MethodSource("getIntervalSize")
     public void doesNotExpireOldValuesOnUpdate(int intervalSize) {
         SlidingWindowHistogram histogram = newHistogram(2, intervalSize);
 
@@ -109,7 +119,8 @@ public class SlidingWindowHistogramTest {
     }
 
 
-    @Test(dataProvider = "getIntervalSize")
+    @ParameterizedTest
+    @MethodSource("getIntervalSize")
     public void doesNotExpireOldValuesOnConsecutiveReads(int intervalSize) {
         SlidingWindowHistogram histogram = newHistogram(2, intervalSize);
 
@@ -148,9 +159,10 @@ public class SlidingWindowHistogramTest {
         assertThat(histogram.getMean(), is(closeTo(25.0, 1.0)));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void doesNotAcceptNegativeValues() {
-        newHistogram(2, 2).recordValue(-1);
+        assertThrows(IllegalArgumentException.class,
+                () -> newHistogram(2, 2).recordValue(-1));
     }
 
     @Test
@@ -225,14 +237,24 @@ public class SlidingWindowHistogramTest {
         assertThat(histogram.getMean(), is(closeTo(20, 1.0)));
     }
 
-    @DataProvider
-    public Object[][] getWindowSizeAndInterval() {
-        return new Object[][]{{10, 1000}, {10, 500}, {5, 50}};
+    private static Stream<Arguments> getWindowSizeAndInterval() {
+        return Stream.of(
+            Arguments.of(10, 1000),
+            Arguments.of(10, 500),
+            Arguments.of(5, 50)
+        );
     }
 
-    @DataProvider
-    public Object[][] getIntervalSize() {
-        return new Object[][]{{10}, {11}, {15}, {100}, {101}, {999}, {1000}};
+    private static Stream<Arguments> getIntervalSize() {
+        return Stream.of(
+            Arguments.of(10),
+            Arguments.of(11),
+            Arguments.of(15),
+            Arguments.of(100),
+            Arguments.of(101),
+            Arguments.of(999),
+            Arguments.of(1000)
+        );
     }
 
     class TestClock implements Clock {

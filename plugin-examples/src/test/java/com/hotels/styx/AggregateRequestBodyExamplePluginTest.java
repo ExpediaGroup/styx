@@ -21,7 +21,7 @@ import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import static java.nio.charset.StandardCharsets.UTF_8;

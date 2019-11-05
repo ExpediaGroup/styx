@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,10 +21,10 @@ import com.hotels.styx.client.netty.ConsumerDisconnectedException;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 import rx.observers.TestSubscriber;
 
 import java.net.InetSocketAddress;
@@ -50,12 +50,12 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.testng.Assert.assertEquals;
 
 
 public class FlowControllingHttpContentProducerTest {
@@ -91,14 +91,14 @@ public class FlowControllingHttpContentProducerTest {
         producer.request(initialCount);
     }
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() throws Exception {
         contentChunk1 = copiedBuffer("aaa", UTF_8);
         contentChunk2 = copiedBuffer("bbb", UTF_8);
         logger = new LoggingTestSupport(FlowControllingHttpContentProducer.class);
     }
 
-    @AfterMethod
+    @AfterEach
     public void tearDown() throws Exception {
         logger.stop();
     }

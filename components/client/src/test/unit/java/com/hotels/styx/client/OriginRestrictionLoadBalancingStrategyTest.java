@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ import com.hotels.styx.api.extension.RemoteHost;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetricSupplier;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Optional;
@@ -58,7 +58,7 @@ public class OriginRestrictionLoadBalancingStrategyTest {
     private OriginRestrictionLoadBalancingStrategy strategy;
     private LoggingTestSupport log;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         delegate = mock(LoadBalancer.class);
         when(delegate.choose(any(LoadBalancer.Preferences.class))).thenReturn(Optional.of(origins.get(0)));
@@ -68,7 +68,7 @@ public class OriginRestrictionLoadBalancingStrategyTest {
         log = new LoggingTestSupport(OriginRestrictionLoadBalancingStrategy.class);
     }
 
-    @AfterMethod
+    @AfterEach
     public void tearDown() {
         log.stop();
     }

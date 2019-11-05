@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistryListener;
 import com.hotels.styx.api.MetricRegistry;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.hotels.styx.api.metrics.ScopedMetricRegistry.scope;
 import static org.hamcrest.MatcherAssert.assertThat;

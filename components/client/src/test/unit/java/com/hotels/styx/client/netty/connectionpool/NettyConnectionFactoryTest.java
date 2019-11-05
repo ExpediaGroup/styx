@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -28,10 +28,11 @@ import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import rx.Observable;
@@ -54,7 +55,9 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
+@TestInstance(PER_CLASS)
 public class NettyConnectionFactoryTest {
     private final ConnectionSettings connectionSettings = new ConnectionSettings(100);
     private final FakeHttpServer server = new FakeHttpServer(0);
@@ -66,17 +69,17 @@ public class NettyConnectionFactoryTest {
     private Origin healthyOrigin;
     private Origin deadOrigin;
 
-    @BeforeClass
+    @BeforeAll
     public void startServer() {
         server.start();
     }
 
-    @AfterClass
+    @AfterAll
     public void stopServer() {
         server.stop();
     }
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         healthyOrigin = newOriginBuilder("localhost", server.port()).build();
         deadOrigin = newOriginBuilder("localhost", freePort()).build();

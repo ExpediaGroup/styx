@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -29,12 +29,14 @@ import com.codahale.metrics.Timer;
 import com.codahale.metrics.graphite.Graphite;
 import com.google.common.collect.ImmutableSortedMap;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InOrder;
 import org.mockito.invocation.InvocationOnMock;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -55,6 +57,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -66,7 +69,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static org.testng.Assert.fail;
 
 public class GraphiteReporterTest {
     private static final long TIMESTAMP = 1000198;
@@ -75,7 +77,7 @@ public class GraphiteReporterTest {
     private GraphiteReporter reporter;
     private LoggingTestSupport logging;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         Clock clock = mock(Clock.class);
         graphite = mock(Graphite.class);
@@ -94,7 +96,7 @@ public class GraphiteReporterTest {
         logging = new LoggingTestSupport(GraphiteReporter.class);
     }
 
-    @AfterMethod
+    @AfterEach
     public void stop() {
         logging.stop();
     }
@@ -189,7 +191,8 @@ public class GraphiteReporterTest {
         verify(graphite, times(MAX_RETRIES + 1)).connect();
     }
 
-    @Test(dataProvider = "metricTypes")
+    @ParameterizedTest
+    @MethodSource("metricTypes")
     public void ioExceptionsCauseGraphiteToBeClosedAndReconnected(MetricType metricType) throws IOException {
         doThrow(IOException.class).when(graphite).send(any(String.class), any(String.class), eq(TIMESTAMP));
 
@@ -497,11 +500,9 @@ public class GraphiteReporterTest {
         return timer;
     }
 
-    @DataProvider(name = "metricTypes")
-    private static Object[][] metricTypes() {
+    private static Stream<Arguments> metricTypes() {
         return Stream.of(MetricType.values())
-                .map(value -> new Object[]{value})
-                .toArray(Object[][]::new);
+                .map(Arguments::of);
     }
 
     private static class ReportCollector {

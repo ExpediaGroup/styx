@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,9 +15,9 @@
  */
 package com.hotels.styx.api;
 
+import org.junit.jupiter.api.Test;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscription;
-import org.testng.annotations.Test;
 import reactor.core.publisher.Flux;
 import reactor.test.publisher.TestPublisher;
 
@@ -29,19 +29,20 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.testng.Assert.assertTrue;
 
 public class ByteStreamAggregatorTest {
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test
     public void allowsOnlyOneAggregation() {
         Publisher<Buffer> upstream = Flux.just(new Buffer("x", UTF_8));
         ByteStreamAggregator aggregator = new ByteStreamAggregator(upstream, 100);
 
         aggregator.apply();
-        aggregator.apply();
+        assertThrows(IllegalStateException.class, () -> aggregator.apply());
     }
 
     @Test
@@ -102,15 +103,15 @@ public class ByteStreamAggregatorTest {
         assertThat(b.delegate().refCnt(), is(0));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void checkForNullSubscription() {
         Publisher<Buffer> upstream = mock(Publisher.class);
         ByteStreamAggregator aggregator = new ByteStreamAggregator(upstream, 100);
 
-        aggregator.onSubscribe(null);
+        assertThrows(NullPointerException.class, () -> aggregator.onSubscribe(null));
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test
     public void allowsOnlyOneSubscription() {
         Publisher<Buffer> upstream = mock(Publisher.class);
         Subscription subscription1 = mock(Subscription.class);
@@ -119,12 +120,8 @@ public class ByteStreamAggregatorTest {
         ByteStreamAggregator aggregator = new ByteStreamAggregator(upstream, 100);
         aggregator.onSubscribe(subscription1);
 
-        try {
-            aggregator.onSubscribe(subscription2);
-        } catch (IllegalStateException cause) {
-            verify(subscription2).cancel();
-            throw cause;
-        }
+        assertThrows(IllegalStateException.class, () -> aggregator.onSubscribe(subscription2));
+        verify(subscription2).cancel();
     }
 
     @Test

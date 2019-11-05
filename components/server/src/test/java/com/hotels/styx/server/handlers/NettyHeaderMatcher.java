@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hotels.styx.server.handlers;
 import com.hotels.styx.api.HttpHeader;
 import io.netty.handler.codec.http.HttpMessage;
 import org.hamcrest.Description;
-import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 
@@ -31,12 +30,10 @@ import static java.util.Objects.requireNonNull;
 public final class NettyHeaderMatcher<T extends HttpMessage> extends TypeSafeMatcher<T> {
     private final HttpHeader expected;
 
-    @Factory
     public static <T extends HttpMessage> Matcher<T> has(HttpHeader expected) {
         return new NettyHeaderMatcher<>(expected);
     }
 
-    @Factory
     public static <T extends HttpMessage> Matcher<T> hasContentType(String contentType) {
         return new NettyHeaderMatcher<>(header(CONTENT_TYPE, contentType.toLowerCase()));
     }

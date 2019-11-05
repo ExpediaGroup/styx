@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,9 +15,10 @@
  */
 package com.hotels.styx.infrastructure.logging;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 public class LOGBackConfigurerTest {
@@ -40,8 +41,9 @@ public class LOGBackConfigurerTest {
         initLogging("${CONFIG_LOCATION}conf/logback.xml", false);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void failsForInvalidLogbackPath() {
-        initLogging(NON_EXISTENT_LOGBACK, false);
+        assertThrows(IllegalArgumentException.class,
+                () -> initLogging(NON_EXISTENT_LOGBACK, false));
     }
 }

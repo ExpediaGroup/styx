@@ -21,8 +21,8 @@ import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.configstore.ConfigStore;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpInterceptorContext;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -43,7 +43,7 @@ public class PluginToggleHandlerTest {
     private NamedPlugin initiallyDisabled;
     private PluginToggleHandler handler;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         initiallyEnabled = namedPlugin("on", mock(Plugin.class));
         initiallyDisabled = namedPlugin("off", mock(Plugin.class));

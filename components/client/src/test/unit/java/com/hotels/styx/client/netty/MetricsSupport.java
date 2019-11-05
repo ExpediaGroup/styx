@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.codahale.metrics.Meter;
 import com.google.common.base.Joiner;
 import com.hotels.styx.api.MetricRegistry;
 import org.hamcrest.Description;
-import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 
@@ -51,7 +50,6 @@ public class MetricsSupport {
             this.excludedNames = excludedNames;
         }
 
-        @Factory
         public static <T> Matcher<MetricRegistry> hasNotReceivedUpdatesExcept(String... updatedMetrics) {
             return new IsNotUpdated(newHashSet(updatedMetrics));
         }

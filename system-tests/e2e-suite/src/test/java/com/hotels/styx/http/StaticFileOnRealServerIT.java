@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,13 +18,14 @@ package com.hotels.styx.http;
 import com.google.common.io.Files;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.handlers.StaticFileHandler;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-import com.hotels.styx.client.HttpClient;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -37,7 +38,9 @@ import static com.hotels.styx.server.HttpServers.createHttpServer;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
+@TestInstance(PER_CLASS)
 public class StaticFileOnRealServerIT {
     private final HttpClient client = new StyxHttpClient.Builder().build();
 
@@ -49,7 +52,7 @@ public class StaticFileOnRealServerIT {
         return address.getHostName() + ":" + address.getPort();
     }
 
-    @BeforeClass
+    @BeforeAll
     public void startServer() {
         dir = Files.createTempDir();
         webServer = createHttpServer(0, new StaticFileHandler(dir));
@@ -58,7 +61,7 @@ public class StaticFileOnRealServerIT {
     }
 
 
-    @AfterClass
+    @AfterAll
     public void stopServer() {
         dir.delete();
         webServer.stopAsync().awaitTerminated();

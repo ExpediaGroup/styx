@@ -15,11 +15,11 @@
  */
 package com.hotels.styx.client.connectionpool;
 
-import com.hotels.styx.client.Connection;
-import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import org.testng.annotations.Test;
+import com.hotels.styx.client.Connection;
+import org.junit.jupiter.api.Test;
 
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;

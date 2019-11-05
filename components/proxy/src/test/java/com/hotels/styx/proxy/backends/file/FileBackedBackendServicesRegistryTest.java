@@ -25,9 +25,9 @@ import com.hotels.styx.infrastructure.FileBackedRegistry;
 import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry.RejectDuplicatePaths;
 import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry.YAMLBackendServicesReader;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -43,12 +43,12 @@ import static ch.qos.logback.classic.Level.ERROR;
 import static ch.qos.logback.classic.Level.INFO;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.io.ByteStreams.toByteArray;
-import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static com.hotels.styx.api.extension.service.spi.Registry.Outcome.FAILED;
 import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.failed;
 import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded;
 import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.unchanged;
 import static com.hotels.styx.common.StyxFutures.await;
+import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -57,6 +57,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -68,13 +70,13 @@ public class FileBackedBackendServicesRegistryTest {
     LoggingTestSupport log;
     LoggingTestSupport fileBackedLog;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         log = new LoggingTestSupport(FileBackedBackendServicesRegistry.class);
         fileBackedLog = new LoggingTestSupport(FileBackedRegistry.class);
     }
 
-    @AfterMethod
+    @AfterEach
     public void tearDown() {
         log.stop();
         fileBackedLog.stop();
@@ -163,11 +165,12 @@ public class FileBackedBackendServicesRegistryTest {
         assertThat(newArrayList(backendServices).size(), is(3));
     }
 
-    @Test(expectedExceptions = RuntimeException.class)
+    @Test
     public void yamlBackendReaderPropagatesExceptionWhenFailsToReadFromByteStream() throws IOException {
         Resource resource = newResource("classpath:/backends/origins-with-invalid-path.yml");
 
-        new YAMLBackendServicesReader().read(toByteArray(resource.inputStream()));
+        assertThrows(RuntimeException.class,
+                () -> new YAMLBackendServicesReader().read(toByteArray(resource.inputStream())));
     }
 
     @Test
@@ -205,8 +208,7 @@ public class FileBackedBackendServicesRegistryTest {
         ));
     }
 
-    @Test(expectedExceptions = ExecutionException.class,
-            expectedExceptionsMessageRegExp = "java.lang.RuntimeException: java.lang.RuntimeException: something went wrong")
+    @Test
     public void serviceStarts_failsToStartWhenReloadFails() throws Exception {
         FileBackedRegistry<BackendService> delegate = mock(FileBackedRegistry.class);
         when(delegate.fileName()).thenReturn("/monitored/origins.yml");
@@ -216,7 +218,8 @@ public class FileBackedBackendServicesRegistryTest {
                         new RuntimeException("something went wrong"))));
 
         registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
-        registry.startService().get();
+        Exception e = assertThrows(ExecutionException.class, () -> registry.startService().get());
+        assertEquals("java.lang.RuntimeException: java.lang.RuntimeException: something went wrong", e.getMessage());
     }
 
     @Test

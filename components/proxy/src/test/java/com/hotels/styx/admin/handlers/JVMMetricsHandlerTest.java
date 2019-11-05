@@ -21,11 +21,10 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.hamcrest.Description;
-import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import java.util.Optional;
@@ -45,7 +44,7 @@ import static org.hamcrest.Matchers.not;
 public class JVMMetricsHandlerTest {
     JVMMetricsHandler handler;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         CodaHaleMetricRegistry metricRegistry = new CodaHaleMetricRegistry();
         metricRegistry.register("irrelevant.gauge", (Gauge<Object>) () -> null);
@@ -100,7 +99,6 @@ public class JVMMetricsHandlerTest {
             this.substrings = asList(substrings);
         }
 
-        @Factory
         public static Matcher<String> containsStrings(String... substrings) {
             return new StringsContains(substrings);
         }

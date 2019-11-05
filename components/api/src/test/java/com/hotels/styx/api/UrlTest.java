@@ -16,12 +16,15 @@
 package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableMap;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.net.URL;
 import java.nio.charset.CharacterCodingException;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static com.hotels.styx.api.Url.Authority.authority;
 import static com.hotels.styx.api.Url.Builder.url;
@@ -33,6 +36,7 @@ import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class UrlTest {
     @Test
@@ -219,10 +223,10 @@ public class UrlTest {
 
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void unwiseCharsAreNotAccepted() throws Exception {
         String urlWithUnwiseChars = "/search.do?foo={&srsReport=Landing|AutoS|HOTEL|Hotel%20Il%20Duca%20D%27Este|0|0|0|2|1|2|284128&srsr=Landing|AutoS|HOTEL|Hotel%20Il%20Duca%20D%27Este|0|0|0|2|1|2|284128";
-        url(urlWithUnwiseChars).build();
+        assertThrows(IllegalArgumentException.class, () -> url(urlWithUnwiseChars).build());
     }
 
     @Test
@@ -243,7 +247,8 @@ public class UrlTest {
         assertThat(url("/landing/foo/bar/").build().encodedUri(), is("/landing/foo/bar/"));
     }
 
-    @Test(dataProvider = "pathSegmentAllowedChars")
+    @ParameterizedTest
+    @MethodSource("pathSegmentAllowedChars")
     public void shouldNotEncodeAllowedCharactersInPath(String character) {
         String path = "/customercare/subscribe.html" + character + "sessid=nXF5jQ8rTW3bAbh6djb2hYJE3D.web-app-02";
         assertThat(url(path).build().encodedUri(), is(path));
@@ -288,26 +293,25 @@ public class UrlTest {
         assertThat(url.toURI().getRawPath(), is("/foo%20bar"));
     }
 
-    @DataProvider(name = "pathSegmentAllowedChars")
-    public static Object[][] pathSegmentAllowedChars() {
-        return new Object[][]{
-                {":"},
-                {"@"},
-                {"-"},
-                {"."},
-                {"_"},
-                {"~"},
-                {"!"},
-                {"$"},
-                {"&"},
-                {"'"},
-                {"("},
-                {")"},
-                {"*"},
-                {"+"},
-                {","},
-                {";"},
-                {"="}
-        };
+    private static Stream<Arguments> pathSegmentAllowedChars() {
+        return Stream.of(
+                Arguments.of(":"),
+                Arguments.of("@"),
+                Arguments.of("-"),
+                Arguments.of("."),
+                Arguments.of("_"),
+                Arguments.of("~"),
+                Arguments.of("!"),
+                Arguments.of("$"),
+                Arguments.of("&"),
+                Arguments.of("'"),
+                Arguments.of("("),
+                Arguments.of(")"),
+                Arguments.of("*"),
+                Arguments.of("+"),
+                Arguments.of(","),
+                Arguments.of(";"),
+                Arguments.of("=")
+        );
     }
 }

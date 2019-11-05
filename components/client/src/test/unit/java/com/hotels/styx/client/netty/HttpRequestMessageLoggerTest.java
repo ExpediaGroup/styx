@@ -22,13 +22,18 @@ import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.common.logging.HttpRequestMessageLogger;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+
+import java.util.stream.Stream;
 
 import static ch.qos.logback.classic.Level.INFO;
 import static ch.qos.logback.classic.Level.WARN;
@@ -41,9 +46,11 @@ import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static java.lang.String.format;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
+@TestInstance(PER_CLASS)
 public class HttpRequestMessageLoggerTest {
 
     private static final String FORMATTED_REQUEST = "request";
@@ -54,7 +61,7 @@ public class HttpRequestMessageLoggerTest {
     @Mock
     private HttpMessageFormatter httpMessageFormatter;
 
-    @BeforeClass
+    @BeforeAll
     public void setup() {
         MockitoAnnotations.initMocks(this);
         this.origin = newOriginBuilder("hostA", 80)
@@ -65,12 +72,12 @@ public class HttpRequestMessageLoggerTest {
         when(httpMessageFormatter.formatResponse(any(LiveHttpResponse.class))).thenReturn(FORMATTED_RESPONSE);
     }
 
-    @BeforeMethod
+    @BeforeEach
     public void before() {
         log = new LoggingTestSupport("com.hotels.styx.http-messages.outbound");
     }
 
-    @AfterMethod
+    @AfterEach
     public void after() {
         log.stop();
     }
@@ -120,22 +127,22 @@ public class HttpRequestMessageLoggerTest {
         assertThat(log.lastMessage(), is(loggingEvent(WARN, "requestId=N/A, origin=MyApp:h1:hostA:80, request=null")));
     }
 
-    @Test(dataProvider = "responseLogUnexpectedArguments")
+    @ParameterizedTest
+    @MethodSource("responseLogUnexpectedArguments")
     public void responseLoggingDoesNotThrowExceptionWhenReceivingNullArguments(LiveHttpRequest request, LiveHttpResponse response, Level expectedLogLevel, String expectedLogMessage) {
         new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", false, httpMessageFormatter).logResponse(request, response);
 
         assertThat(log.lastMessage(), is(loggingEvent(expectedLogLevel, expectedLogMessage)));
     }
 
-    @DataProvider(name = "responseLogUnexpectedArguments")
-    private Object[][] responseLogUnexpectedArguments() {
+    private static Stream<Arguments> responseLogUnexpectedArguments() {
         LiveHttpRequest normalRequest = get("http://www.hotels.com/foo/bar/request").build();
         LiveHttpResponse normalResponse = response(OK).build();
 
-        return new Object[][]{
-                {normalRequest, null, WARN, "requestId=.*, response=null"},
-                {null, normalResponse, INFO, "requestId=null, response=\\{version=HTTP/1.1, status=200 OK\\}"},
-                {null, null, WARN, "requestId=null, response=null"},
-        };
+        return Stream.of(
+                Arguments.of(normalRequest, null, WARN, "requestId=.*, response=null"),
+                Arguments.of(null, normalResponse, INFO, "requestId=null, response=\\{version=HTTP/1.1, status=200 OK\\}"),
+                Arguments.of(null, null, WARN, "requestId=null, response=null")
+        );
     }
 }

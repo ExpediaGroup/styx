@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,10 +15,9 @@
  */
 package com.hotels.styx.support.api.matchers;
 
-import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
+import com.hotels.styx.api.LiveHttpResponse;
 import org.hamcrest.Description;
-import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 
@@ -27,7 +26,6 @@ import java.util.Objects;
 public class HttpResponseStatusMatcher extends TypeSafeMatcher<LiveHttpResponse> {
     private final HttpResponseStatus status;
 
-    @Factory
     public static Matcher<LiveHttpResponse> hasStatus(HttpResponseStatus status) {
         return new HttpResponseStatusMatcher(status);
     }

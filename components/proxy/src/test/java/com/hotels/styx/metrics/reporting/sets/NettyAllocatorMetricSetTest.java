@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@ package com.hotels.styx.metrics.reporting.sets;
 
 import com.codahale.metrics.Gauge;
 import io.netty.buffer.ByteBufAllocatorMetric;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -29,7 +29,7 @@ public class NettyAllocatorMetricSetTest {
 
     private ByteBufAllocatorMetric metricUnderTest;
 
-    @BeforeMethod
+    @BeforeEach
     public void before() {
         metricUnderTest = Mockito.mock(ByteBufAllocatorMetric.class);
     }

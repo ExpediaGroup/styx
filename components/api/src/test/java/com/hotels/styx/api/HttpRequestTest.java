@@ -16,12 +16,15 @@
 package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableMap;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
@@ -52,6 +55,8 @@ import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 public class HttpRequestTest {
@@ -79,7 +84,8 @@ public class HttpRequestTest {
                 .verifyComplete();
     }
 
-    @Test(dataProvider = "emptyBodyRequests")
+    @ParameterizedTest
+    @MethodSource("emptyBodyRequests")
     public void convertsToStreamingHttpRequestWithEmptyBody(HttpRequest fullRequest) {
         LiveHttpRequest streaming = fullRequest.stream();
 
@@ -89,17 +95,16 @@ public class HttpRequestTest {
     }
 
     // We want to ensure that these are all considered equivalent
-    @DataProvider(name = "emptyBodyRequests")
-    private Object[][] emptyBodyRequests() {
-        return new Object[][]{
-                {get("/foo/bar").build()},
-                {new HttpRequest.Builder(POST, "/foo/bar").body(null, UTF_8).build()},
-                {new HttpRequest.Builder(POST, "/foo/bar").body("", UTF_8).build()},
-                {new HttpRequest.Builder(POST, "/foo/bar").body(null, UTF_8, true).build()},
-                {new HttpRequest.Builder(POST, "/foo/bar").body("", UTF_8, true).build()},
-                {new HttpRequest.Builder(POST, "/foo/bar").body(null, true).build()},
-                {new HttpRequest.Builder(POST, "/foo/bar").body(new byte[0], true).build()},
-        };
+    private static Stream<Arguments> emptyBodyRequests() {
+        return Stream.of(
+                Arguments.of(get("/foo/bar").build()),
+                Arguments.of(new HttpRequest.Builder(POST, "/foo/bar").body(null, UTF_8).build()),
+                Arguments.of(new HttpRequest.Builder(POST, "/foo/bar").body("", UTF_8).build()),
+                Arguments.of(new HttpRequest.Builder(POST, "/foo/bar").body(null, UTF_8, true).build()),
+                Arguments.of(new HttpRequest.Builder(POST, "/foo/bar").body("", UTF_8, true).build()),
+                Arguments.of(new HttpRequest.Builder(POST, "/foo/bar").body(null, true).build()),
+                Arguments.of(new HttpRequest.Builder(POST, "/foo/bar").body(new byte[0], true).build())
+        );
     }
 
     @Test
@@ -162,11 +167,12 @@ public class HttpRequestTest {
         assertThat(request.header("Content-Length"), is(Optional.of("36")));
     }
 
-    @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "Charset is not provided.")
+    @Test
     public void contentFromStringOnlyThrowsNPEWhenCharsetIsNull() {
-        HttpRequest.get("/")
+        Exception e = assertThrows(NullPointerException.class, () -> get("/")
                 .body("Response content.", null)
-                .build();
+                .build());
+        assertEquals("Charset is not provided.", e.getMessage());
     }
 
     @Test
@@ -184,11 +190,12 @@ public class HttpRequestTest {
         assertThat(request2.header("Content-Length"), is(Optional.empty()));
     }
 
-    @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "Charset is not provided.")
+    @Test
     public void contentFromStringThrowsNPEWhenCharsetIsNull() {
-        HttpRequest.get("/")
+        Exception e = assertThrows(NullPointerException.class, () -> HttpRequest.get("/")
                 .body("Response content.", null, false)
-                .build();
+                .build());
+        assertEquals("Charset is not provided.", e.getMessage());
     }
 
     @Test
@@ -379,16 +386,6 @@ public class HttpRequestTest {
         assertThat(shouldRemoveHeader.headers(), contains(header("a", "b")));
     }
 
-    @DataProvider(name = "cookieHeaderName")
-    private Object[][] cookieHeaderName() {
-        return new Object[][]{
-                {COOKIE},
-                {"Cookie"},
-                {"cookie"},
-                {"COOKIE"}
-        };
-    }
-
     @Test
     public void shouldSetsContentLengthForNonStreamingBodyMessage() {
         assertThat(put("/home").body("", UTF_8).build().header(CONTENT_LENGTH), isValue("0"));
@@ -406,41 +403,41 @@ public class HttpRequestTest {
         return content.getBytes(UTF_8);
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void rejectsNullCookie() {
-        get("/").cookies((RequestCookie) null);
+        assertThrows(NullPointerException.class, () -> get("/").cookies((RequestCookie) null));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void rejectsNullCookieName() {
-        get("/").cookies(requestCookie(null, "value")).build();
+        assertThrows(IllegalArgumentException.class, () -> get("/").cookies(requestCookie(null, "value")).build());
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void rejectsNullCookieValue() {
-        get("/").cookies(requestCookie("name", null)).build();
+        assertThrows(NullPointerException.class, () -> get("/").cookies(requestCookie("name", null)).build());
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void rejectsMultipleContentLengthInSingleHeader() {
-        get("/foo")
+        assertThrows(IllegalArgumentException.class, () -> get("/foo")
                 .addHeader(CONTENT_LENGTH, "15, 16")
-                .build();
+                .build());
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void rejectsMultipleContentLengthHeaders() {
-        get("/foo")
+        assertThrows(IllegalArgumentException.class, () -> get("/foo")
                 .addHeader(CONTENT_LENGTH, "15")
                 .addHeader(CONTENT_LENGTH, "16")
-                .build();
+                .build());
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void rejectsInvalidContentLength() {
-        get("/foo")
+        assertThrows(IllegalArgumentException.class, () -> get("/foo")
                 .addHeader(CONTENT_LENGTH, "foo")
-                .build();
+                .build());
     }
 
     @Test
@@ -522,10 +519,11 @@ public class HttpRequestTest {
         assertThat(r1.cookie("x"), isAbsent());
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "Invalid Content-Length found. -3")
+    @Test
     public void ensuresContentLengthIsPositive() {
-        HttpRequest.post("/y")
+        Exception e = assertThrows(IllegalArgumentException.class, () -> HttpRequest.post("/y")
                 .header("Content-Length", -3)
-                .build();
+                .build());
+        assertEquals("Invalid Content-Length found. -3", e.getMessage());
     }
 }

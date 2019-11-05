@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,8 +19,9 @@ import com.github.tomakehurst.wiremock.http.ContentTypeHeader;
 import com.github.tomakehurst.wiremock.http.QueryParameter;
 import com.google.common.base.Optional;
 import com.hotels.styx.api.HttpRequest;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import static com.github.tomakehurst.wiremock.http.RequestMethod.POST;
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
@@ -33,7 +34,8 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 public class WiremockStyxRequestAdapterTest {
@@ -41,7 +43,7 @@ public class WiremockStyxRequestAdapterTest {
     private String content;
     private HttpRequest.Builder styxRequestBuilder;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         content = "{\n" +
                 "    \"request\" : {\n" +
@@ -74,12 +76,12 @@ public class WiremockStyxRequestAdapterTest {
         assertThat(adapter.containsHeader("host"), is(true));
     }
 
-
     // Disabled due to a failing test.
     // Looks like it is an underlying problem with Netty, which doesn't convert
     // HTTP header names from AsciiString to String when toArray() is called on
     // CharSequenceDelegatingStringSet.
-    @Test(enabled = false)
+    @Disabled
+    @Test
     public void adaptsGetAllHeaderKeys() {
         assertEquals(adapter.getAllHeaderKeys(), contains("Connection", "user-agent", "Content-Type", "Content-Length", "host"));
     }
@@ -152,12 +154,12 @@ public class WiremockStyxRequestAdapterTest {
         assertThat(msg.values(), is(contains("6198.1")));
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test
     public void adaptsNonExistantQueryParameterToNull() {
         QueryParameter msg = adapter.queryParameter("foobar");
 
         assertThat(msg.key(), is("foobar"));
-        msg.values();
+        assertThrows(IllegalStateException.class, () -> msg.values());
     }
 
     @Test

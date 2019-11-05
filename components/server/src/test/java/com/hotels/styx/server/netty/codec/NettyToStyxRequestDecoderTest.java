@@ -39,8 +39,8 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import org.hamcrest.Matchers;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import rx.Observable;
 import rx.Subscriber;
 import rx.observers.TestSubscriber;
@@ -68,7 +68,10 @@ import static io.netty.handler.codec.http.HttpMethod.POST;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -84,7 +87,7 @@ public class NettyToStyxRequestDecoderTest {
     private DefaultHttpRequest chunkedRequestHeaders;
     private CountDownLatch bodyCompletedLatch;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         channel = createEmbeddedChannel(newHttpRequestDecoderWithFlowControl());
         chunkedRequestHeaders = new DefaultHttpRequest(HTTP_1_1, POST, "/foo/bar");
@@ -93,23 +96,18 @@ public class NettyToStyxRequestDecoderTest {
         bodyCompletedLatch = new CountDownLatch(1);
     }
 
-    @Test(expectedExceptions = BadRequestException.class, expectedExceptionsMessageRegExp = "Error while decoding request.*\\R.*")
+    @Test
     public void throwsBadRequestExceptionOnInvalidRequests() throws Throwable {
-        try {
-            channel.writeInbound(perturb(httpRequestAsBuf(GET, "http://foo.com/")));
-        } catch (DecoderException e) {
-            throw e.getCause();
-        }
+        Exception e = assertThrows(DecoderException.class, () -> channel.writeInbound(perturb(httpRequestAsBuf(GET, "http://foo.com/"))));
+        assertThat(e.getCause().getMessage(), matchesPattern("Error while decoding request.*\\R.*"));
+        assertEquals(BadRequestException.class, e.getCause().getClass());
     }
 
-    @Test(expectedExceptions = BadRequestException.class)
+    @Test
     public void rejectsRequestsWithBadURL() throws Throwable {
-        try {
-            String badUri = "/no5_such3_file7.pl?\"><script>alert(73541);</script>56519<script>alert(1)</script>0e134";
-            send(httpRequest(GET, badUri));
-        } catch (DecoderException e) {
-            throw e.getCause();
-        }
+        String badUri = "/no5_such3_file7.pl?\"><script>alert(73541);</script>56519<script>alert(1)</script>0e134";
+        Exception e = assertThrows(DecoderException.class, () -> send(httpRequest(GET, badUri)));
+        assertEquals(BadRequestException.class, e.getCause().getClass());
     }
 
     @Test
@@ -197,27 +195,20 @@ public class NettyToStyxRequestDecoderTest {
         assertThat(request.headers().get(HOST), is("www.example.com:8000"));
     }
 
-    @Test(expectedExceptions = BadRequestException.class)
+    @Test
     public void throwsBadRequestExceptionWhenHttp11RequestMessageLacksAHostHeader() throws Throwable {
-        try {
-            HttpRequest request = newHttpRequest("/foo");
-            handle(request, newHttpRequestDecoderWithFlowControl());
-        } catch (DecoderException e) {
-            throw e.getCause();
-        }
+        HttpRequest request = newHttpRequest("/foo");
+        Exception e = assertThrows(DecoderException.class, () -> handle(request, newHttpRequestDecoderWithFlowControl()));
+        assertEquals(BadRequestException.class, e.getCause().getClass());
     }
 
-    @Test(expectedExceptions = BadRequestException.class)
+    @Test
     public void throwsBadRequestExceptionWhenRequestMessageContainsMoreThanOneHostHeader() throws Throwable {
         HttpRequest request = newHttpRequest("/foo");
         request.headers().add(HOST, "example.com");
         request.headers().add(HOST, "example.it");
-
-        try {
-            handle(request, newHttpRequestDecoderWithFlowControl());
-        } catch (DecoderException e) {
-            throw e.getCause();
-        }
+        Exception e = assertThrows(DecoderException.class, () -> handle(request, newHttpRequestDecoderWithFlowControl()));
+        assertEquals(BadRequestException.class, e.getCause().getClass());
     }
 
     @Test
@@ -235,19 +226,15 @@ public class NettyToStyxRequestDecoderTest {
         verify(encoder).encode("/foo");
     }
 
-    @Test(expectedExceptions = BadRequestException.class)
+    @Test
     public void throwsBadRequestForTooLongFrames() throws Throwable {
         HttpRequest request = new DefaultFullHttpRequest(HTTP_1_1, GET, "http://foo.com/");
         request.headers().set(HOST, "http://foo.com/");
         request.headers().set("foo", Strings.repeat("x", 10000));
-
         ByteBuf byteBuf = httpMessageToBytes(request);
 
-        try {
-            channel.writeInbound(byteBuf);
-        } catch (DecoderException e) {
-            throw e.getCause();
-        }
+        Exception e = assertThrows(DecoderException.class, () -> channel.writeInbound(byteBuf));
+        assertEquals(BadRequestException.class, e.getCause().getClass());
     }
 
     @Test

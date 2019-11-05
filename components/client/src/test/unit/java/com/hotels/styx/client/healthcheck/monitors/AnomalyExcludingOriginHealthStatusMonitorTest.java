@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,34 +17,42 @@ package com.hotels.styx.client.healthcheck.monitors;
 
 import com.hotels.styx.client.healthcheck.AnomalyExcludingOriginHealthEventListener;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 public class AnomalyExcludingOriginHealthStatusMonitorTest {
 
-    @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "invalidThresholdValues")
+    @ParameterizedTest
+    @MethodSource("invalidThresholdValues")
     public void forHealthyThresholdAcceptsOnlyValuesGreaterThanZero(int healthyThreshold) {
         ScheduledOriginHealthStatusMonitor healthStatusMonitory = mock(ScheduledOriginHealthStatusMonitor.class);
-        new AnomalyExcludingOriginHealthStatusMonitor(healthStatusMonitory, healthyThreshold, 1);
+        assertThrows(IllegalArgumentException.class,
+                () -> new AnomalyExcludingOriginHealthStatusMonitor(healthStatusMonitory, healthyThreshold, 1));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "invalidThresholdValues")
+    @ParameterizedTest
+    @MethodSource("invalidThresholdValues")
     public void forUnhealthyThresholdAcceptsOnlyValuesGreaterThanZero(int unHealthyThreshold) {
         ScheduledOriginHealthStatusMonitor healthStatusMonitory = mock(ScheduledOriginHealthStatusMonitor.class);
-        new AnomalyExcludingOriginHealthStatusMonitor(healthStatusMonitory, 1, unHealthyThreshold);
+        assertThrows(IllegalArgumentException.class,
+                () -> new AnomalyExcludingOriginHealthStatusMonitor(healthStatusMonitory, 1, unHealthyThreshold));
     }
 
-    @DataProvider(name = "invalidThresholdValues")
-    private static Object[][] invalidThresholdValues() {
-        return new Object[][]{
-                {-1},
-                {0},
-                {-2}
-        };
+    private static Stream<Arguments> invalidThresholdValues() {
+        return Stream.of(
+                Arguments.of(-1),
+                Arguments.of(0),
+                Arguments.of(-2)
+        );
     }
 
     @Test

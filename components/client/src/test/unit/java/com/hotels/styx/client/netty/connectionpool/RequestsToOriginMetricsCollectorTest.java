@@ -16,11 +16,10 @@
 package com.hotels.styx.client.netty.connectionpool;
 
 import com.codahale.metrics.Timer;
-import java.util.Optional;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.MetricRegistry;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.applications.metrics.ApplicationMetrics;
 import com.hotels.styx.client.applications.metrics.OriginMetrics;
 import io.netty.buffer.ByteBuf;
@@ -34,21 +33,22 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.LastHttpContent;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import rx.Subscriber;
 
 import java.util.List;
+import java.util.Optional;
 
 import static com.hotels.styx.api.Id.id;
-import static com.hotels.styx.support.netty.HttpMessageSupport.httpRequest;
-import static com.hotels.styx.support.netty.HttpMessageSupport.httpResponseAsBuf;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.client.applications.OriginStats.REQUEST_FAILURE;
 import static com.hotels.styx.client.applications.OriginStats.REQUEST_SUCCESS;
 import static com.hotels.styx.client.netty.MetricsSupport.IsNotUpdated.hasNotReceivedUpdatesExcept;
 import static com.hotels.styx.client.netty.MetricsSupport.name;
+import static com.hotels.styx.support.netty.HttpMessageSupport.httpRequest;
+import static com.hotels.styx.support.netty.HttpMessageSupport.httpResponseAsBuf;
 import static io.netty.handler.codec.http.HttpMethod.GET;
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
@@ -56,11 +56,11 @@ import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERR
 import static io.netty.handler.codec.http.HttpResponseStatus.MOVED_PERMANENTLY;
 import static io.netty.handler.codec.http.HttpResponseStatus.NOT_IMPLEMENTED;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -94,14 +94,14 @@ public class RequestsToOriginMetricsCollectorTest {
         this.ctx = mock(ChannelHandlerContext.class);
     }
 
-    @BeforeMethod
+    @BeforeEach
     private void setUp() {
         this.metricRegistry = new CodaHaleMetricRegistry();
         ApplicationMetrics appMetrics = new ApplicationMetrics(this.appId, this.metricRegistry);
         this.originMetrics = new OriginMetrics(appMetrics, originPrefix(this.origin));
     }
 
-    @AfterMethod
+    @AfterEach
     private void tearDown() {
         clearMetricsRegistry();
     }
@@ -144,9 +144,10 @@ public class RequestsToOriginMetricsCollectorTest {
         return Optional.empty();
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void failIfCreatedWithoutOriginMetrics() {
-        new RequestsToOriginMetricsCollector(null);
+        assertThrows(NullPointerException.class,
+                () -> new RequestsToOriginMetricsCollector(null));
     }
 
     @Test

@@ -18,12 +18,13 @@ package com.hotels.styx.proxy;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 
 import java.net.InetSocketAddress;
 
@@ -33,9 +34,11 @@ import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
+import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
+@TestInstance(PER_CLASS)
 public class HttpErrorStatusCauseLoggerTest {
 
     private static final String FORMATTED_REQUEST = "request";
@@ -46,19 +49,19 @@ public class HttpErrorStatusCauseLoggerTest {
     @Mock
     private HttpMessageFormatter httpMessageFormatter;
 
-    @BeforeClass
+    @BeforeAll
     public void setup() {
         MockitoAnnotations.initMocks(this);
         when(httpMessageFormatter.formatRequest(any(LiveHttpRequest.class))).thenReturn(FORMATTED_REQUEST);
     }
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         loggingTestSupport = new LoggingTestSupport(HttpErrorStatusCauseLogger.class);
         httpErrorStatusCauseLogger = new HttpErrorStatusCauseLogger(httpMessageFormatter);
     }
 
-    @AfterMethod
+    @AfterEach
     public void removeAppender() {
         loggingTestSupport.stop();
     }

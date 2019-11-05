@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
  */
 package com.hotels.styx.support.matchers;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 
 import static ch.qos.logback.classic.Level.ERROR;
 import static ch.qos.logback.classic.Level.INFO;
@@ -27,6 +27,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.slf4j.LoggerFactory.getLogger;
 
 public class LoggingTestSupportTest {
@@ -34,12 +35,12 @@ public class LoggingTestSupportTest {
 
     private LoggingTestSupport support;
 
-    @BeforeMethod
+    @BeforeEach
     public void startRecordingLogs() {
         support = new LoggingTestSupport(LoggingTestSupportTest.class);
     }
 
-    @AfterMethod
+    @AfterEach
     public void stopRecordingLogs() {
         support.stop();
     }
@@ -75,14 +76,14 @@ public class LoggingTestSupportTest {
         assertThat(support.log(), is(empty()));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void cannotAcceptNullClass() {
-        new LoggingTestSupport((Class) null);
+        assertThrows(NullPointerException.class, () -> new LoggingTestSupport((Class) null));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void cannotAcceptNullName() {
-        new LoggingTestSupport((String) null);
+        assertThrows(NullPointerException.class, () -> new LoggingTestSupport((String) null));
     }
 
     @Test

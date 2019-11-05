@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 package com.hotels.styx.common;
 
 import com.hotels.styx.support.matchers.LoggingTestSupport;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.function.BiConsumer;
 
@@ -26,6 +26,7 @@ import static ch.qos.logback.classic.Level.ERROR;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -36,7 +37,7 @@ public class FsmEventProcessorTest {
     private StateMachine<String> stateMachine;
     private LoggingTestSupport logger;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         stateMachine = new StateMachine.Builder<String>()
                 .initialState("start")
@@ -52,16 +53,17 @@ public class FsmEventProcessorTest {
     }
 
 
-    @AfterMethod
+    @AfterEach
     public void tearDown() {
         logger.stop();
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void throwsNullPointerExceptionForNullEvents() {
         FsmEventProcessor<String> processor = new FsmEventProcessor<>(stateMachine, errorHandler, "prefix");
 
-        processor.submit(null);
+        assertThrows(NullPointerException.class,
+                () -> processor.submit(null));
     }
 
     @Test

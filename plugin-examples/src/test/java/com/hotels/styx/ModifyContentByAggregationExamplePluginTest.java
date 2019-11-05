@@ -16,8 +16,11 @@
 package com.hotels.styx;
 
 import com.hotels.styx.ModifyContentByAggregationExamplePlugin.Config;
-import com.hotels.styx.api.*;
-import org.testng.annotations.Test;
+import com.hotels.styx.api.Eventual;
+import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import static com.hotels.styx.api.HttpResponse.response;

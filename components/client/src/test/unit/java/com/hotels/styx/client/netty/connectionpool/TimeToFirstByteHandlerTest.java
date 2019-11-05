@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ import com.hotels.styx.api.Clock;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.http.HttpClientCodec;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.hotels.styx.support.netty.HttpMessageSupport.httpRequest;
 import static com.hotels.styx.support.netty.HttpMessageSupport.httpResponseAsBuf;
@@ -38,7 +38,7 @@ public class TimeToFirstByteHandlerTest {
     EmbeddedChannel channel;
     TestClock clock;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         timeToFirstByteListener = mock(TimeToFirstByteListener.class);
         clock = new TestClock();

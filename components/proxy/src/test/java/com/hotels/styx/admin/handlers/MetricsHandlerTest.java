@@ -18,8 +18,8 @@ package com.hotels.styx.admin.handlers;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.server.HttpInterceptorContext;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import java.util.Optional;
@@ -38,7 +38,7 @@ public class MetricsHandlerTest {
     private CodaHaleMetricRegistry metricRegistry;
     private MetricsHandler handler;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         metricRegistry = new CodaHaleMetricRegistry();
         handler = new MetricsHandler(metricRegistry, Optional.empty());

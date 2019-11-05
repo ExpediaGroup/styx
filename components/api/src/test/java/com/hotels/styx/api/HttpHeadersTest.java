@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 package com.hotels.styx.api;
 
 import com.hotels.styx.api.HttpHeaders.Builder;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -32,11 +32,12 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class HttpHeadersTest {
     HttpHeaders headers;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         headers = new HttpHeaders.Builder()
                 .add("header1", "val1")
@@ -109,11 +110,11 @@ public class HttpHeadersTest {
         assertThat(headers, contains(header("foo", "bar")));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void doesNotAllowNullValue() {
-        new HttpHeaders.Builder()
+        assertThrows(NullPointerException.class, () -> new HttpHeaders.Builder()
                 .add("header1", (String) null)
-                .build();
+                .build());
     }
 
     @Test
@@ -125,11 +126,11 @@ public class HttpHeadersTest {
         assertThat(headers, contains(header("header1", "val1"), header("header1", "val2")));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void doesNotAllowNullName() {
-        new HttpHeaders.Builder()
+        assertThrows(NullPointerException.class, () -> new HttpHeaders.Builder()
                 .add(null, "value")
-                .build();
+                .build());
     }
 
     @Test

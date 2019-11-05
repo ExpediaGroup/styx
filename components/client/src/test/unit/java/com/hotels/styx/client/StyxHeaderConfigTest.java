@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.client;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.hotels.styx.client.StyxHeaderConfig.ORIGIN_ID_DEFAULT;
 import static com.hotels.styx.client.StyxHeaderConfig.REQUEST_ID_DEFAULT;
@@ -33,7 +33,7 @@ public class StyxHeaderConfigTest {
     private StyxHeaderConfig.StyxHeader originIdHeader;
     private StyxHeaderConfig.StyxHeader requestIdHeader;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         styxInfoHeader = new StyxHeaderConfig.StyxHeader("styxInfoFoo", "blah {INSTANCE} etc");
         originIdHeader = new StyxHeaderConfig.StyxHeader("originIdBar", null);

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 package com.hotels.styx.infrastructure;
 
 import com.hotels.styx.api.Identifiable;
-import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.extension.service.BackendService;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import com.hotels.styx.api.extension.service.spi.Registry;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
@@ -33,7 +33,7 @@ import static org.mockito.Mockito.verify;
 public class MemoryBackedRegistryTest {
     Registry.ChangeListener<BackendService> listener;
 
-    @BeforeMethod
+    @BeforeEach
     public void createMockListener() {
         listener = mock(Registry.ChangeListener.class);
     }

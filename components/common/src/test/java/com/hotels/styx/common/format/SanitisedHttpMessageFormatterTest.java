@@ -17,17 +17,20 @@ package com.hotels.styx.common.format;
 
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
-import static org.testng.Assert.assertTrue;
 
+@TestInstance(PER_CLASS)
 public class SanitisedHttpMessageFormatterTest {
 
     private static final HttpRequest httpRequest = get("/")
@@ -49,7 +52,7 @@ public class SanitisedHttpMessageFormatterTest {
 
     private SanitisedHttpMessageFormatter sanitisedHttpMessageFormatter;
 
-    @BeforeClass
+    @BeforeAll
     public void setup() {
         MockitoAnnotations.initMocks(this);
         sanitisedHttpMessageFormatter = new SanitisedHttpMessageFormatter(sanitisedHttpHeaderFormatter);

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package com.hotels.styx.client.applications;
 
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.BackendService;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
@@ -26,6 +26,8 @@ import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.service.BackendService.DEFAULT_RESPONSE_TIMEOUT_MILLIS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class BackendServiceTest {
     Set<Origin> originSet = newHashSet(newOriginBuilder("localhost", 123).build());
@@ -40,18 +42,20 @@ public class BackendServiceTest {
         assertThat(backendService.responseTimeoutMillis(), is(DEFAULT_RESPONSE_TIMEOUT_MILLIS));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void rejectsNullPaths() throws Exception {
-        BackendService.newBackendServiceBuilder()
+        assertThrows(NullPointerException.class,
+                () -> BackendService.newBackendServiceBuilder()
                 .path(null)
-                .build();
+                .build());
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class,
-            expectedExceptionsMessageRegExp = "Invalid path. Path='/    # not set default used'")
+    @Test
     public void rejectsInvalidPaths() throws Exception {
-        BackendService.newBackendServiceBuilder()
+        Exception e = assertThrows(IllegalArgumentException.class,
+            () -> BackendService.newBackendServiceBuilder()
                 .path("/    # not set default used")
-                .build();
+                .build());
+        assertEquals("Invalid path. Path='/    # not set default used'", e.getMessage());
     }
 }

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,26 +15,33 @@
  */
 package com.hotels.styx.common.io;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.stream.Stream;
 
 import static com.hotels.styx.common.io.ResourceContentMatcher.contains;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ClasspathResourceTest {
-    @Test(dataProvider = "validPaths")
+    @ParameterizedTest
+    @MethodSource("validPaths")
     public void readsValidResourceFromClassLoader(String path) throws MalformedURLException {
         ClasspathResource resource = new ClasspathResource(path, ClasspathResourceTest.class.getClassLoader());
 
         assertThatResourceIsLoadedCorrectly(resource);
     }
 
-    @Test(dataProvider = "validPaths")
+    @ParameterizedTest
+    @MethodSource("validPaths")
     public void readsValidResourceFromClass(String path) throws MalformedURLException {
         ClasspathResource resource = new ClasspathResource(path, ClasspathResourceTest.class);
 
@@ -48,29 +55,32 @@ public class ClasspathResourceTest {
         assertThat(resource, contains("This is an example resource.\nIt has content to use in automated tests."));
     }
 
-    @DataProvider(name = "validPaths")
-    private static Object[][] validPaths() {
-        return new Object[][]{
-                {"classpath:com/hotels/styx/common/io/resource.txt"},
-                {"classpath:/com/hotels/styx/common/io/resource.txt"},
-        };
+    private static Stream<Arguments> validPaths() {
+        return Stream.of(
+                Arguments.of("classpath:com/hotels/styx/common/io/resource.txt"),
+                Arguments.of("classpath:/com/hotels/styx/common/io/resource.txt")
+        );
     }
 
     private static String absolutePath(String path) {
         return ClasspathResourceTest.class.getResource(path).getPath();
     }
 
-    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "java.io.FileNotFoundException: foobar")
+    @Test
     public void nonExistentResourceThrowsExceptionWhenTryingToGetURL() {
         ClasspathResource resource = new ClasspathResource("foobar", ClasspathResourceTest.class);
 
-        resource.url();
+        Exception e = assertThrows(RuntimeException.class,
+                () -> resource.url());
+        assertEquals("java.io.FileNotFoundException: foobar", e.getMessage());
     }
 
-    @Test(expectedExceptions = FileNotFoundException.class, expectedExceptionsMessageRegExp = "classpath:foobar")
-    public void nonExistentResourceThrowsExceptionWhenTryingToGetInputStream() throws FileNotFoundException {
+    @Test
+    public void nonExistentResourceThrowsExceptionWhenTryingToGetInputStream() {
         ClasspathResource resource = new ClasspathResource("foobar", ClasspathResourceTest.class);
 
-        resource.inputStream();
+        Exception e = assertThrows(FileNotFoundException.class,
+                () -> resource.inputStream());
+        assertEquals("classpath:foobar", e.getMessage());
     }
 }

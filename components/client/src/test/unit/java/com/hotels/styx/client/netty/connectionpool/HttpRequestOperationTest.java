@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,10 +19,10 @@ import com.hotels.styx.api.LiveHttpRequest;
 import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-import static com.hotels.styx.api.RequestCookie.requestCookie;
 import static com.hotels.styx.api.HttpMethod.GET;
+import static com.hotels.styx.api.RequestCookie.requestCookie;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;

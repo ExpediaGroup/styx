@@ -113,8 +113,13 @@
     </dependency>
 
     <dependency>
-      <groupId>org.testng</groupId>
-      <artifactId>testng</artifactId>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest</artifactId>
     </dependency>
 
     <dependency>
@@ -192,47 +197,15 @@
     </testResources>
 
     <plugins>
+
       <plugin>
         <groupId>org.jetbrains.kotlin</groupId>
         <artifactId>kotlin-maven-plugin</artifactId>
       </plugin>
 
-      <!-- This project has both TestNG tests, and JUnit5-executed KotlinTest tests. So
-           Surefire needs some fancy config to handle this. -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <executions>
-          <!-- Turn off default surefire execution -->
-          <execution>
-            <id>default-test</id>
-            <phase>none</phase>
-          </execution>
-          <!-- Define a TestNG execution (runs the TestNG tests) -->
-          <execution>
-            <id>testng-tests</id>
-            <phase>test</phase>
-            <goals>
-              <goal>test</goal>
-            </goals>
-            <configuration>
-              <junitArtifactName>none:none</junitArtifactName>
-              <junitPlatformArtifactName>none:none</junitPlatformArtifactName>
-            </configuration>
-          </execution>
-          <!-- Define a JUnit5 execution (runs JUnit5 and KotlinTest tests) -->
-          <execution>
-            <id>junit5-tests</id>
-            <phase>test</phase>
-            <goals>
-              <goal>test</goal>
-            </goals>
-            <configuration>
-              <junitArtifactName>none:none</junitArtifactName>
-              <testNGArtifactName>none:none</testNGArtifactName>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
 
       <plugin>

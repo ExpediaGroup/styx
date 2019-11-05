@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,14 +21,18 @@ import com.hotels.styx.api.extension.service.RewriteConfig;
 import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.applications.ApplicationsProvider;
 import com.hotels.styx.applications.BackendServices;
+import com.hotels.styx.server.routing.antlr.DslFunctionResolutionError;
 import org.hamcrest.CoreMatchers;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static com.hotels.styx.api.Id.id;
@@ -48,6 +52,9 @@ import static java.util.stream.StreamSupport.stream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.matchesPattern;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class YamlApplicationsProviderTest {
 
@@ -107,7 +114,8 @@ public class YamlApplicationsProviderTest {
     }
 
     @SuppressWarnings("unchecked")
-    @Test(dataProvider = "validPaths")
+    @ParameterizedTest
+    @MethodSource("validPaths")
     public void canGetApplications(String path) {
         ApplicationsProvider config = loadFromPath(path);
 
@@ -171,13 +179,12 @@ public class YamlApplicationsProviderTest {
         ));
     }
 
-    @DataProvider(name = "validPaths")
-    private static Object[][] validPaths() {
-        return new Object[][]{
-                {"classpath:conf/origins/origins-for-configtest.yml"},
-                {"classpath:/conf/origins/origins-for-configtest.yml"},
-                {filePath("/conf/origins/origins-for-configtest.yml")}
-        };
+    private static Stream<Arguments> validPaths() {
+        return Stream.of(
+                Arguments.of("classpath:conf/origins/origins-for-configtest.yml"),
+                Arguments.of("classpath:/conf/origins/origins-for-configtest.yml"),
+                Arguments.of(filePath("/conf/origins/origins-for-configtest.yml"))
+        );
     }
 
     private static String filePath(String path) {
@@ -200,19 +207,25 @@ public class YamlApplicationsProviderTest {
         assertThat(app.stickySessionConfig().stickySessionEnabled(), CoreMatchers.is(true));
     }
 
-    @Test(expectedExceptions = Exception.class, expectedExceptionsMessageRegExp = "Invalid YAML from classpath:conf/origins/empty-origins-for-configtest.yml: No content to map due to end-of-input\n at \\[Source: .*\\]")
+    @Test
     public void cannotLoadWithNoApplications() throws IOException {
-        loadFromPath("classpath:/conf/origins/empty-origins-for-configtest.yml");
+        Exception e = assertThrows(Exception.class,
+                () -> loadFromPath("classpath:/conf/origins/empty-origins-for-configtest.yml"));
+        assertEquals("Invalid YAML from classpath:conf/origins/empty-origins-for-configtest.yml: No content to map due to end-of-input\n at \\[Source: .*\\]", e.getMessage());
     }
 
-    @Test(expectedExceptions = Exception.class, expectedExceptionsMessageRegExp = "Unable to load YAML from.*")
+    @Test
     public void doesNotLoadIfFileDoesNotExist() {
-        loadFromPath("/sadiusadasd");
+        Exception e = assertThrows(DslFunctionResolutionError.class,
+                () -> loadFromPath("/sadiusadasd"));
+        assertThat(e.getMessage(), matchesPattern("Unable to load YAML from.*"));
     }
 
-    @Test(expectedExceptions = Exception.class, expectedExceptionsMessageRegExp = "Invalid YAML from classpath:conf/origins/origins-with-syntax-error-for-configtest.yml: Cannot deserialize instance of `java.util.ArrayList` out of VALUE_STRING token\n at \\[Source: .*\\]")
+    @Test
     public void cannotLoadWithSyntaxErrors() throws IOException {
-        loadFromPath("classpath:/conf/origins/origins-with-syntax-error-for-configtest.yml");
+        Exception e = assertThrows(DslFunctionResolutionError.class,
+                () -> loadFromPath("classpath:/conf/origins/origins-with-syntax-error-for-configtest.yml"));
+        assertEquals("Invalid YAML from classpath:conf/origins/origins-with-syntax-error-for-configtest.yml: Cannot deserialize instance of `java.util.ArrayList` out of VALUE_STRING token\n at \\[Source: .*\\]", e.getMessage());
     }
 
     private static BackendService applicationFor(ApplicationsProvider provider, String appName) {

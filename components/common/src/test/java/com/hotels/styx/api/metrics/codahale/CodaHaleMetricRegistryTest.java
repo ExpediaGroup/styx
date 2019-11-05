@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,14 +22,15 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistryListener;
 import com.codahale.metrics.Timer;
 import com.hotels.styx.api.MetricRegistry;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -40,7 +41,7 @@ public class CodaHaleMetricRegistryTest {
     private MetricRegistry metricRegistry;
     private MetricRegistryListener listener;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         this.metricRegistry = new CodaHaleMetricRegistry(new com.codahale.metrics.MetricRegistry());
         this.listener = mock(MetricRegistryListener.class);
@@ -54,10 +55,11 @@ public class CodaHaleMetricRegistryTest {
         assertThat(metricRegistry.timer("newTimer"), is(sameInstance(timer)));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void throwsExceptionIfTryingToCreateTimerWhenOtherMetricExistsWithSameName() {
         metricRegistry.counter("foo");
-        metricRegistry.timer("foo");
+        assertThrows(IllegalArgumentException.class,
+                () -> metricRegistry.timer("foo"));
     }
 
     @Test

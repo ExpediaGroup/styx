@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,10 +17,13 @@ package com.hotels.styx.server.netty.connectors;
 
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static ch.qos.logback.classic.Level.ERROR;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
@@ -29,7 +32,6 @@ import static com.hotels.styx.api.HttpResponseStatus.REQUEST_TIMEOUT;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
-import static java.lang.String.format;
 import static java.util.regex.Pattern.quote;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -50,7 +52,8 @@ public class ExceptionStatusMapperTest {
         assertThat(mapper.statusFor(new Exception1()), isValue(REQUEST_TIMEOUT));
     }
 
-    @Test(dataProvider = "badGatewayExceptions")
+    @ParameterizedTest
+    @MethodSource("badGatewayExceptions")
     public void multipleExceptionsCanMapToTheSameStatus(Exception e) {
         assertThat(mapper.statusFor(e), isValue(BAD_GATEWAY));
     }
@@ -79,13 +82,12 @@ public class ExceptionStatusMapperTest {
         assertThat(status, isAbsent());
     }
 
-    @DataProvider(name = "badGatewayExceptions")
-    private Object[][] badGatewayExceptions() {
-        return new Object[][]{
-                {new Exception2()},
-                {new Exception3()},
-                {new Exception4()},
-        };
+    private static Stream<Arguments> badGatewayExceptions() {
+        return Stream.of(
+            Arguments.of(new Exception2()),
+            Arguments.of(new Exception3()),
+            Arguments.of(new Exception4())
+        );
     }
 
     private static class Exception1 extends Exception {

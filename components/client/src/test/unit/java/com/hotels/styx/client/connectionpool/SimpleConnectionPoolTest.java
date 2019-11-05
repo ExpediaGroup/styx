@@ -20,13 +20,13 @@ import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.mockito.internal.stubbing.answers.AnswersWithDelay;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.reactivestreams.Publisher;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -40,14 +40,14 @@ import java.util.concurrent.TimeoutException;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
 
 public class SimpleConnectionPoolTest {
     private final Origin origin = newOriginBuilder("localhost", 9090).build();
@@ -57,7 +57,7 @@ public class SimpleConnectionPoolTest {
     private Connection connection3;
     private Connection connection4;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         connectionFactory = mock(Connection.Factory.class);
 

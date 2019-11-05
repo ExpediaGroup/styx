@@ -19,7 +19,7 @@ import com.codahale.metrics.Gauge;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.json.MetricsModule;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;

@@ -19,7 +19,7 @@ import com.hotels.styx.StartupConfig;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.common.io.ClasspathResource;
 import com.hotels.styx.server.HttpInterceptorContext;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;

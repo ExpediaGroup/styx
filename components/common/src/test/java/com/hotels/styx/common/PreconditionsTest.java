@@ -15,12 +15,13 @@
  */
 package com.hotels.styx.common;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.hotels.styx.common.Preconditions.checkArgument;
 import static com.hotels.styx.common.Preconditions.checkNotEmpty;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class PreconditionsTest {
 
@@ -29,15 +30,16 @@ public class PreconditionsTest {
         assertThat(checkNotEmpty(" "), is(" ") );
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void isEmptyString() {
-        checkNotEmpty(null);
+        assertThrows(IllegalArgumentException.class,
+                () -> checkNotEmpty(null));
     }
 
-
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void checkArgumentFailure() {
-        checkArgument(0, false);
+        assertThrows(IllegalArgumentException.class,
+                () -> checkArgument(0, false));
     }
 
     @Test

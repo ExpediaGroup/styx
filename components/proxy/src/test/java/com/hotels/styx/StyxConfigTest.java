@@ -16,7 +16,7 @@
 package com.hotels.styx;
 
 import com.hotels.styx.proxy.ProxyServerConfig;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.List;

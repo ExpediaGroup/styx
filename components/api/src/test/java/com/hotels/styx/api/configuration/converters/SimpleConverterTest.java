@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,12 +16,13 @@
 package com.hotels.styx.api.configuration.converters;
 
 import com.hotels.styx.api.configuration.ConversionException;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SimpleConverterTest {
     final SimpleConverter converter = new SimpleConverter();
@@ -54,14 +55,14 @@ public class SimpleConverterTest {
         assertThat(asList(locales), contains("UK", "US", "IT"));
     }
 
-    @Test(expectedExceptions = ConversionException.class)
+    @Test
     public void failsForUndefinedEnumValue() {
-        assertThat(converter.convert("UDEFINED", Status.class), is(Status.OPEN));
+        assertThrows(ConversionException.class, () -> converter.convert("UDEFINED", Status.class));
     }
 
-    @Test(expectedExceptions = ConversionException.class)
+    @Test
     public void failsForUndefinedObject() {
-        assertThat(converter.convert("UDEFINED", ConfigurationValue.class), is(new ConfigurationValue()));
+        assertThrows(ConversionException.class, () -> converter.convert("UDEFINED", ConfigurationValue.class));
     }
 
     static class ConfigurationValue {

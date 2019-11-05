@@ -25,10 +25,11 @@ import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import io.netty.handler.ssl.SslContext;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 import reactor.core.publisher.Mono;
 
 import java.util.concurrent.ExecutionException;
@@ -48,6 +49,8 @@ import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -60,7 +63,7 @@ public class StyxHttpClientTest {
     private HttpRequest secureRequest;
     private WireMockServer server;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         server = new WireMockServer(wireMockConfig().dynamicPort().dynamicHttpsPort());
         server.start();
@@ -76,7 +79,7 @@ public class StyxHttpClientTest {
     }
 
 
-    @AfterMethod
+    @AfterEach
     public void tearDown() {
         server.stop();
     }
@@ -103,11 +106,12 @@ public class StyxHttpClientTest {
     /*
      * StyxHttpClient.Builder
      */
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void requiresValidTlsSettins() {
-        new StyxHttpClient.Builder()
+        assertThrows(NullPointerException.class,
+            () -> new StyxHttpClient.Builder()
                 .tlsSettings(null)
-                .build();
+                .build());
     }
 
 
@@ -311,7 +315,7 @@ public class StyxHttpClientTest {
      * StyxHttpClient
      * - Applies response timeout
      */
-    @Test(expectedExceptions = ResponseTimeoutException.class)
+    @Test
     public void defaultResponseTimeout() throws Throwable {
         StyxHttpClient client = new StyxHttpClient.Builder()
                 .responseTimeout(1, SECONDS)
@@ -323,18 +327,17 @@ public class StyxHttpClientTest {
                         .withFixedDelay(3000)
                 ));
 
-        try {
-            client.send(
+        Exception e = assertThrows(ExecutionException.class,
+                () -> client.send(
                     get("/slowResponse")
                             .header(HOST, hostString(server.port()))
                             .build())
-                    .get(2, SECONDS);
-        } catch (ExecutionException e) {
-            throw e.getCause();
-        }
+                    .get(2, SECONDS));
+        assertEquals(ResponseTimeoutException.class, e.getCause().getClass());
     }
 
-    @Test(enabled = false)
+    @Disabled
+    @Test
     /*
      * Wiremock (or Jetty server) origin converts an absolute URL to an origin
      * form. Therefore we are unable to use an origin to verify that client used
@@ -362,13 +365,13 @@ public class StyxHttpClientTest {
      * StyxHttpClient
      * - Rejects requests without URL authority or host header
      */
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void requestWithNoHostOrUrlAuthorityCausesException() {
         HttpRequest request = get("/foo.txt").build();
 
         StyxHttpClient client = new StyxHttpClient.Builder().build();
 
-        await(client.send(request));
+        assertThrows(IllegalArgumentException.class, () -> await(client.send(request)));
     }
 
     /*

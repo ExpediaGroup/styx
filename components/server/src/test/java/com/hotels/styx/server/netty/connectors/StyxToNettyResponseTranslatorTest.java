@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,16 +19,16 @@ import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.ResponseCookie;
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.Cookie;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.hotels.styx.api.HttpHeaderNames.SET_COOKIE;
-import static com.hotels.styx.api.ResponseCookie.responseCookie;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
+import static com.hotels.styx.api.ResponseCookie.responseCookie;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class StyxToNettyResponseTranslatorTest {
     private StyxToNettyResponseTranslator translator = new StyxToNettyResponseTranslator();

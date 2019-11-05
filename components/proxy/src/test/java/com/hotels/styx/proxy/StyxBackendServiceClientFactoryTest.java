@@ -19,31 +19,31 @@ import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetric;
+import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
-import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetric;
-import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginStatsFactory.CachingOriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
-import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.StyxBackendServiceClient;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import com.hotels.styx.client.StyxHostHttpClient;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import static com.hotels.styx.api.LiveHttpRequest.get;
-import static com.hotels.styx.api.LiveHttpResponse.response;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.Id.id;
-import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
+import static com.hotels.styx.api.LiveHttpRequest.get;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.RequestCookie.requestCookie;
-import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.service.BackendService.newBackendServiceBuilder;
 import static com.hotels.styx.api.extension.service.StickySessionConfig.newStickySessionConfigBuilder;
 import static com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder;
@@ -62,7 +62,7 @@ public class StyxBackendServiceClientFactoryTest {
     private String STICKY_COOKIE = "styx_origin_" + GENERIC_APP;
     private String ORIGINS_RESTRICTION_COOKIE = "styx-origins-restriction";
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         connectionFactory = mock(Connection.Factory.class);
         environment = new Environment.Builder().build();

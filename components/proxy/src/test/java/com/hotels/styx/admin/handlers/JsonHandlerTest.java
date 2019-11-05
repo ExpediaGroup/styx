@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hotels.styx.api.Clock;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.server.HttpInterceptorContext;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,12 +15,13 @@
  */
 package com.hotels.styx.api.extension.service;
 
-import com.hotels.styx.api.extension.service.HealthCheckConfig;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.hotels.styx.api.extension.service.HealthCheckConfig.newHealthCheckConfigBuilder;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class HealthCheckConfigTest {
 
@@ -33,12 +34,12 @@ public class HealthCheckConfigTest {
         assertThat(healthCheckConfig.getUri(), is("/someuri"));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class,
-            expectedExceptionsMessageRegExp = "Invalid health check URI. URI='/version.txt   # default used'")
+    @Test
     public void rejectsInvalidURIs() throws Exception {
-        newHealthCheckConfigBuilder()
+        Exception e = assertThrows(IllegalArgumentException.class, () -> newHealthCheckConfigBuilder()
                 .uri("/version.txt   # default used")
-                .build();
+                .build());
+        assertEquals("Invalid health check URI. URI='/version.txt   # default used'", e.getMessage());
     }
 
     @Test

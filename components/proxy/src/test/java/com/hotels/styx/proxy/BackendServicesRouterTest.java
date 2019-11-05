@@ -31,10 +31,10 @@ import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupF
 import com.hotels.styx.server.HttpInterceptorContext;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -72,12 +72,12 @@ public class BackendServicesRouterTest {
     private EventLoopGroup eventLoopGroup = this.factory.newClientWorkerEventLoopGroup();
     private Class<? extends SocketChannel> channelClass = this.factory.clientSocketChannelClass();
 
-    @AfterClass
+    @AfterAll
     public void tearDown() {
         eventLoopGroup.shutdown();
     }
 
-    @BeforeMethod
+    @BeforeEach
     public void before() {
         environment = new Environment.Builder().build();
     }

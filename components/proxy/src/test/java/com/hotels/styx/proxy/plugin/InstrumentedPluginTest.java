@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@ import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginException;
 import com.hotels.styx.support.api.SimpleEnvironment;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 import rx.observers.TestSubscriber;
 
@@ -57,7 +57,7 @@ public class InstrumentedPluginTest {
     private LiveHttpRequest someRequest;
     private Chain chain;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         metricRegistry = new CodaHaleMetricRegistry();
 
