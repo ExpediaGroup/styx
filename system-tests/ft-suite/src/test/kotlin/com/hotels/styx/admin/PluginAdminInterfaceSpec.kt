@@ -29,6 +29,7 @@ import com.hotels.styx.common.http.handler.StaticBodyHttpHandler
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.adminHostHeader
 import com.hotels.styx.support.wait
+import io.kotlintest.Spec
 import io.kotlintest.matchers.string.shouldInclude
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
@@ -56,15 +57,6 @@ class PluginAdminInterfaceSpec : FeatureSpec() {
                     "plugz" to PluginZ(),
                     "plugw" to PluginWithNoAdminFeatures()
             ))
-
-    val client: StyxHttpClient = StyxHttpClient.Builder().build()
-
-    fun StyxServerProvider.adminRequest(endpoint: String): HttpResponse = client
-            .send(get(endpoint)
-                    .header(HOST, this().adminHostHeader())
-                    .build())
-            .wait()
-
 
     init {
         styxServer.restart()
@@ -123,6 +115,18 @@ class PluginAdminInterfaceSpec : FeatureSpec() {
                 response.bodyAs(UTF_8).shouldInclude("This plugin (plugw) does not expose any admin interfaces")
             }
         }
+    }
+
+    val client: StyxHttpClient = StyxHttpClient.Builder().build()
+
+    fun StyxServerProvider.adminRequest(endpoint: String): HttpResponse = client
+            .send(get(endpoint)
+                    .header(HOST, this().adminHostHeader())
+                    .build())
+            .wait()
+
+    override fun afterSpec(spec: Spec) {
+        styxServer.stop()
     }
 }
 

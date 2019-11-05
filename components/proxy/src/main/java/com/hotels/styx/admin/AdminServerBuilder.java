@@ -46,6 +46,7 @@ import com.hotels.styx.api.WebServiceHandler;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
+import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.common.http.handler.HttpAggregator;
 import com.hotels.styx.common.http.handler.HttpMethodFilteringHandler;
 import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
@@ -162,14 +163,20 @@ public class AdminServerBuilder {
         httpRouter.aggregate("/admin/tasks/plugin/", new PluginToggleHandler(environment.configStore()));
 
         // Plugins Handler
-
         environment.configStore().watchAll("plugins", NamedPlugin.class)
                 .forEach(entry -> {
                     NamedPlugin namedPlugin = entry.value();
-
-                    routesForPlugin(namedPlugin).forEach(route ->
-                            httpRouter.stream(route.path(), route.handler()));
+                    extensionEndpoints("plugins", namedPlugin.name(), namedPlugin.adminInterfaceHandlers())
+                            .forEach(route -> httpRouter.stream(route.path(), route.handler()));
                 });
+
+        providerDatabase.entrySet().forEach(record -> {
+            String extensionName = record.getKey();
+            StyxService styxService = record.getValue().component4();
+
+            extensionEndpoints("providers", extensionName, styxService.adminInterfaceHandlers())
+                    .forEach(route -> httpRouter.stream(route.path, route.handler()));
+        });
 
         httpRouter.aggregate("/admin/plugins", new PluginListHandler(environment.configStore()));
         return httpRouter;
@@ -206,18 +213,18 @@ public class AdminServerBuilder {
                 .collect(toList());
     }
 
-    private static List<Route> routesForPlugin(NamedPlugin namedPlugin) {
-        List<PluginAdminEndpointRoute> routes = pluginAdminEndpointRoutes(namedPlugin);
+    private static List<Route> extensionEndpoints(String root, String name, Map<String, HttpHandler> endpoints) {
+        List<AdminEndpointRoute> routes = extensionAdminEndpointRoutes(root, name, endpoints);
 
         List<IndexHandler.Link> endpointLinks = routes.stream()
-                .map(PluginAdminEndpointRoute::link)
+                .map(AdminEndpointRoute::link)
                 .collect(toList());
 
         WebServiceHandler handler = endpointLinks.isEmpty()
-                ? new StaticBodyHttpHandler(HTML_UTF_8, format("This plugin (%s) does not expose any admin interfaces", namedPlugin.name()))
+                ? new StaticBodyHttpHandler(HTML_UTF_8, format("This plugin (%s) does not expose any admin interfaces", name))
                 : new IndexHandler(endpointLinks);
 
-        Route indexRoute = new Route(pluginPath(namedPlugin), new HttpAggregator(MEGABYTE, handler));
+        Route indexRoute = new Route(adminPath(root, name), new HttpAggregator(MEGABYTE, handler));
 
         return concatenate(indexRoute, routes);
     }
@@ -229,15 +236,13 @@ public class AdminServerBuilder {
         return list;
     }
 
-    private static String pluginPath(NamedPlugin namedPlugin) {
-        return "/admin/plugins/" + namedPlugin.name();
+    private static String adminPath(String root, String name) {
+        return String.format("/admin/%s/%s", root, name);
     }
 
-    private static List<PluginAdminEndpointRoute> pluginAdminEndpointRoutes(NamedPlugin namedPlugin) {
-        Map<String, HttpHandler> adminInterfaceHandlers = namedPlugin.adminInterfaceHandlers();
-
-        return mapToList(adminInterfaceHandlers, (relativePath, handler) ->
-                new PluginAdminEndpointRoute(namedPlugin, relativePath, handler));
+    private static List<AdminEndpointRoute> extensionAdminEndpointRoutes(String root, String name, Map<String, HttpHandler> endpoints) {
+        return mapToList(endpoints, (relativePath, handler) ->
+                new AdminEndpointRoute(root, name, relativePath, handler));
     }
 
     // allows key and value to be labelled in lambda instead of having to use Entry.getKey, Entry.getValue
@@ -265,17 +270,18 @@ public class AdminServerBuilder {
         }
     }
 
-    private static class PluginAdminEndpointRoute extends Route {
-        private final NamedPlugin namedPlugin;
+    private static class AdminEndpointRoute extends Route {
+        private final String root;
+        private final String name;
 
-        PluginAdminEndpointRoute(NamedPlugin namedPlugin, String relativePath, HttpHandler handler) {
-            super(pluginAdminEndpointPath(namedPlugin, relativePath), handler);
-
-            this.namedPlugin = namedPlugin;
+        AdminEndpointRoute(String root, String name, String relativePath, HttpHandler handler) {
+            super(adminEndpointPath(root, name, relativePath), handler);
+            this.root = root;
+            this.name = name;
         }
 
-        static String pluginAdminEndpointPath(NamedPlugin namedPlugin, String relativePath) {
-            return pluginPath(namedPlugin) + "/" + dropFirstForwardSlash(relativePath);
+        static String adminEndpointPath(String root, String name, String relativePath) {
+            return adminPath(root, name) + "/" + dropFirstForwardSlash(relativePath);
         }
 
         static String dropFirstForwardSlash(String key) {
@@ -283,9 +289,8 @@ public class AdminServerBuilder {
         }
 
         String linkLabel() {
-            String relativePath = path().substring(pluginPath(namedPlugin).length() + 1);
-
-            return namedPlugin.name() + ": " + dropFirstForwardSlash(relativePath);
+            String relativePath = path().substring(adminPath(root, name).length() + 1);
+            return name + ": " + dropFirstForwardSlash(relativePath);
         }
 
         IndexHandler.Link link() {
