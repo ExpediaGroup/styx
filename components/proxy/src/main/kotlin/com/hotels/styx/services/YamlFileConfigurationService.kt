@@ -16,6 +16,7 @@
 package com.hotels.styx.services
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.hotels.styx.admin.handlers.TextHttpHandler
 import com.hotels.styx.api.extension.service.spi.StyxService
 import com.hotels.styx.config.schema.SchemaDsl
 import com.hotels.styx.config.schema.SchemaDsl.bool
@@ -56,6 +57,9 @@ internal class YamlFileConfigurationService(
 
     private val healthMonitors = AtomicReference<List<Pair<String, ProviderObjectRecord>>>(listOf())
 
+    @Volatile
+    private var originsConfig = ""
+
     companion object {
         @JvmField
         val SCHEMA = SchemaDsl.`object`(
@@ -78,6 +82,10 @@ internal class YamlFileConfigurationService(
                 LOGGER.info("service stopped")
             }
 
+    override fun adminInterfaceHandlers() =
+        mutableMapOf(Pair("origins", TextHttpHandler { originsConfig }))
+
+
     fun reloadAction(content: String): Unit {
         LOGGER.info("New origins configuration: \n$content")
 
@@ -91,6 +99,7 @@ internal class YamlFileConfigurationService(
         }.mapCatching { (healthMonitors, routingObjectDefs) ->
             updateRoutingObjects(routingObjectDefs)
             updateHealthCheckServices(serviceDb, healthMonitors)
+            originsConfig = content
             initialised.countDown()
         }.onFailure {
             LOGGER.error("Failed to reload new configuration. cause='{}'", it.message, it)
