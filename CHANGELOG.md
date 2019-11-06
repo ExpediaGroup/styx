@@ -1,4 +1,42 @@
 
+<a name="styx-1.0.0.beta6"></a>
+## [styx-1.0.0.beta6](https://github.com/HotelsDotCom/styx/compare/styx-1.0.0.beta5...styx-1.0.0.beta6) (2019-11-06)
+
+### Pull Requests
+
+* Provide httpResponse to the whenCompleted event ([#507](https://github.com/HotelsDotCom/styx/issues/507))
+* Use the smaller jar netty to reduce both size and conflicts with other netty projects ([#508](https://github.com/HotelsDotCom/styx/issues/508))
+* Expose styx service providers in admin interface ([#505](https://github.com/HotelsDotCom/styx/issues/505))
+* GitHub[#486](https://github.com/HotelsDotCom/styx/issues/486) - Fix connection pool leaks ([#504](https://github.com/HotelsDotCom/styx/issues/504))
+* Upgrade to Mockito 3 ([#509](https://github.com/HotelsDotCom/styx/issues/509))
+* Docker image to build Styx project ([#500](https://github.com/HotelsDotCom/styx/issues/500))
+* Styx docker environment: add NGINX origins ([#499](https://github.com/HotelsDotCom/styx/issues/499))
+* Disable "TLS Settings modifications" functional test ([#502](https://github.com/HotelsDotCom/styx/issues/502))
+* Fix metrics in new routing model ([#489](https://github.com/HotelsDotCom/styx/issues/489))
+* Improve make docker-image ([#493](https://github.com/HotelsDotCom/styx/issues/493))
+* Expose styx logs in system test env as docker volme ([#491](https://github.com/HotelsDotCom/styx/issues/491))
+* Always enable a check for empty HTTP content. ([#488](https://github.com/HotelsDotCom/styx/issues/488))
+* Update to Netty 4.1.42.Final. ([#484](https://github.com/HotelsDotCom/styx/issues/484))
+* Avoid creating transient objects when origin file is reloaded ([#483](https://github.com/HotelsDotCom/styx/issues/483))
+* Improve test result reporting in Styx functional test suite. ([#485](https://github.com/HotelsDotCom/styx/issues/485))
+* Set the number of threads for the GlobalHttpClient to 2 in HostProxySpec. ([#482](https://github.com/HotelsDotCom/styx/issues/482))
+* Remove use of hamcrest in production (non-test) code. ([#480](https://github.com/HotelsDotCom/styx/issues/480))
+* Update fasterxml to 2.9.10. ([#477](https://github.com/HotelsDotCom/styx/issues/477))
+* Rename test plugins & docker environment ([#476](https://github.com/HotelsDotCom/styx/issues/476))
+* Resolve tech debt in functional tests. ([#473](https://github.com/HotelsDotCom/styx/issues/473))
+* Issue 466: Expose plugins for HttpInterceptorPipeline ([#475](https://github.com/HotelsDotCom/styx/issues/475))
+* Make admin interfaces streamable ([#474](https://github.com/HotelsDotCom/styx/issues/474))
+* Support remote debugging in Styx docker environment. ([#470](https://github.com/HotelsDotCom/styx/issues/470))
+* Fix ineffective HTTP initial line length attribute. ([#472](https://github.com/HotelsDotCom/styx/issues/472))
+* Update metrics documentation. ([#469](https://github.com/HotelsDotCom/styx/issues/469))
+* Updated changelog and fixed toxiproxy docs ([#468](https://github.com/HotelsDotCom/styx/issues/468))
+* Update changelog as per 1.0.0.beta4 release. ([#467](https://github.com/HotelsDotCom/styx/issues/467))
+* Remove test code dependent on the Sun NameService SPI (removed in Java 9) ([#463](https://github.com/HotelsDotCom/styx/issues/463))
+* Plugin developer documentation updated to show how to use `aggregate()` to read the whole body into memory. ([#465](https://github.com/HotelsDotCom/styx/issues/465))
+* Fix issue [#428](https://github.com/HotelsDotCom/styx/issues/428): Removing Unused properties in Server config ([#464](https://github.com/HotelsDotCom/styx/issues/464))
+* Backwards compatibility mode for Styx origins configuration file ([#458](https://github.com/HotelsDotCom/styx/issues/458))
+
+
 <a name="styx-1.0.0.beta5"></a>
 ## [styx-1.0.0.beta5](https://github.com/HotelsDotCom/styx/compare/styx-1.0.0.beta4...styx-1.0.0.beta5) (2019-10-03)
 
