@@ -83,7 +83,7 @@ internal class YamlFileConfigurationService(
             }
 
     override fun adminInterfaceHandlers() =
-        mutableMapOf(Pair("origins", TextHttpHandler { originsConfig }))
+        mapOf("origins" to TextHttpHandler { originsConfig })
 
 
     fun reloadAction(content: String): Unit {
@@ -99,6 +99,7 @@ internal class YamlFileConfigurationService(
         }.mapCatching { (healthMonitors, routingObjectDefs) ->
             updateRoutingObjects(routingObjectDefs)
             updateHealthCheckServices(serviceDb, healthMonitors)
+        }.onSuccess {
             originsConfig = content
             initialised.countDown()
         }.onFailure {
