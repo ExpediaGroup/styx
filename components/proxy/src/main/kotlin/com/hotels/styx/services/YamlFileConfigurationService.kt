@@ -30,7 +30,6 @@ import com.hotels.styx.routing.config.StyxObjectDefinition
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.ProviderObjectRecord
 import com.hotels.styx.serviceproviders.ServiceProviderFactory
-import com.hotels.styx.services.OriginsConfigConverter.Companion.OBJECT_CREATOR_TAG
 import com.hotels.styx.services.OriginsConfigConverter.Companion.deserialiseOrigins
 import org.slf4j.LoggerFactory
 import java.time.Duration
@@ -44,7 +43,7 @@ internal class YamlFileConfigurationService(
         private val config: YamlFileConfigurationServiceConfig,
         private val serviceDb: StyxObjectStore<ProviderObjectRecord>) : StyxService {
 
-    private val pollInterval = if (config.pollInterval.isNullOrBlank()) {
+    private val pollInterval = if (config.pollInterval.isBlank()) {
         Duration.ofSeconds(1)
     } else {
         Duration.parse(config.pollInterval)
@@ -52,7 +51,9 @@ internal class YamlFileConfigurationService(
 
     private val initialised = CountDownLatch(1)
 
-    private val routerName = if (config.ingressObject.isNotBlank()) config.ingressObject else "$name-router"
+    private val ingressObjectName = if (config.ingressObject.isNotBlank()) config.ingressObject else "$name-router"
+
+    private val objectSourceTag = "source=$name"
 
     private val fileMonitoringService = FileMonitoringService("YamlFileCoinfigurationService", config.originsFile, pollInterval) {
         reloadAction(it)
@@ -88,14 +89,14 @@ internal class YamlFileConfigurationService(
     override fun adminInterfaceHandlers() =
             mapOf("origins" to TextHttpHandler { originsConfig })
 
-
     fun reloadAction(content: String): Unit {
         LOGGER.info("New origins configuration: \n$content")
 
         kotlin.runCatching {
             val deserialised = deserialiseOrigins(content)
 
-            val routingObjectDefs = converter.routingObjects(deserialised) + converter.pathPrefixRouter(routerName, deserialised)
+            val routingObjectDefs = (converter.routingObjects(deserialised) + converter.pathPrefixRouter(ingressObjectName, deserialised))
+                    .map { it -> StyxObjectDefinition(it.name(), it.type(), it.tags() + objectSourceTag, it.config()) }
             val healthMonitors = converter.healthCheckServices(deserialised)
 
             Pair(healthMonitors, routingObjectDefs)
@@ -114,7 +115,7 @@ internal class YamlFileConfigurationService(
 
     internal fun updateRoutingObjects(objectDefs: List<StyxObjectDefinition>) {
         val previousObjectNames = routeDb.entrySet()
-                .filter { it.value.tags.contains(OBJECT_CREATOR_TAG) }
+                .filter { it.value.tags.contains(objectSourceTag) }
                 .map { it.key }
 
         val newObjectNames = objectDefs.map { it.name() }

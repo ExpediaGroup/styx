@@ -28,7 +28,6 @@ import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.PathPrefixRouter
 import com.hotels.styx.routing.handlers.ProviderObjectRecord
-import com.hotels.styx.services.OriginsConfigConverter.Companion.OBJECT_CREATOR_TAG
 import io.kotlintest.Matcher
 import io.kotlintest.MatcherResult
 import io.kotlintest.Spec
@@ -134,7 +133,6 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                     .createService(name = "zone1")
                     .start()
                     .waitForObjects(count = 3)
-                    .service
 
             test("add origins") {
                 writeOrigins("""
@@ -150,10 +148,10 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                     val objects = objectStore.toMap()
                     objects.size shouldBe 4
 
-                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf("app", OBJECT_CREATOR_TAG)))
-                    objects["app.app-02"]!!.should(beRoutingObject("HostProxy", setOf("app", OBJECT_CREATOR_TAG)))
-                    objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
-                    objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
+                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf("app", "source=zone1")))
+                    objects["app.app-02"]!!.should(beRoutingObject("HostProxy", setOf("app", "source=zone1")))
+                    objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf("source=zone1")))
+                    objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf("source=zone1")))
                 }
             }
 
@@ -171,9 +169,9 @@ class YamlFileConfigurationServiceTest : FunSpec() {
 
                     objects.size shouldBe 3
 
-                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf("app", OBJECT_CREATOR_TAG)))
-                    objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
-                    objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
+                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf("app", "source=zone1")))
+                    objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf("source=zone1")))
+                    objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf("source=zone1")))
                 }
             }
 
@@ -191,9 +189,9 @@ class YamlFileConfigurationServiceTest : FunSpec() {
 
                     objects.size shouldBe 3
 
-                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf("app", OBJECT_CREATOR_TAG)))
-                    objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
-                    objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
+                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf("app", "source=zone1")))
+                    objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf("source=zone1")))
+                    objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf("source=zone1")))
 
                     JsonNodeConfig(objectStore["app.app-01"].get().config).get("host") shouldBe Optional.of("localhost:9999")
                 }
@@ -217,11 +215,11 @@ class YamlFileConfigurationServiceTest : FunSpec() {
 
                     objects.size shouldBe 5
 
-                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf("app", OBJECT_CREATOR_TAG)))
-                    objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
-                    objects["appB.appB-01"]!!.should(beRoutingObject("HostProxy", setOf("appB", OBJECT_CREATOR_TAG)))
-                    objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
-                    objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
+                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf("app", "source=zone1")))
+                    objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf("source=zone1")))
+                    objects["appB.appB-01"]!!.should(beRoutingObject("HostProxy", setOf("appB", "source=zone1")))
+                    objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf("source=zone1")))
+                    objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf("source=zone1")))
                 }
             }
 
@@ -239,9 +237,9 @@ class YamlFileConfigurationServiceTest : FunSpec() {
 
                     objects.size shouldBe 3
 
-                    objects["appB.appB-01"]!!.should(beRoutingObject("HostProxy", setOf("appB", OBJECT_CREATOR_TAG)))
-                    objects["appB"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
-                    objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
+                    objects["appB.appB-01"]!!.should(beRoutingObject("HostProxy", setOf("appB", "source=zone1")))
+                    objects["appB"]!!.should(beRoutingObject("LoadBalancingGroup", setOf("source=zone1")))
+                    objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf("source=zone1")))
                 }
 
             }
@@ -259,9 +257,9 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                     val objects = objectStore.toMap()
 
                     objects.size shouldBe 3
-                    objects["appB.appB-01"]!!.should(beRoutingObject("HostProxy", setOf("appB", OBJECT_CREATOR_TAG)))
-                    objects["appB"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
-                    objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
+                    objects["appB.appB-01"]!!.should(beRoutingObject("HostProxy", setOf("appB", "source=zone1")))
+                    objects["appB"]!!.should(beRoutingObject("LoadBalancingGroup", setOf("source=zone1")))
+                    objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf("source=zone1")))
                 }
             }
 
@@ -286,13 +284,13 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                 val objects = objectStore.toMap()
 
                 objects["appB.appB-01"]!!.should(beRoutingObject("HostProxy",
-                        setOf(creationTimes["appB.appB-01"]!!, "appB", OBJECT_CREATOR_TAG)))
+                        setOf(creationTimes["appB.appB-01"]!!, "appB", "source=zone1")))
 
                 objects["appB"]!!.should(beRoutingObject("LoadBalancingGroup",
-                        setOf(creationTimes["appB"]!!, OBJECT_CREATOR_TAG)))
+                        setOf(creationTimes["appB"]!!, "source=zone1")))
 
                 objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter",
-                        setOf(creationTimes["zone1-router"]!!, OBJECT_CREATOR_TAG)))
+                        setOf(creationTimes["zone1-router"]!!, "source=zone1")))
             }
 
             LOGGER.info("configuration changes - Stopping service [$service]")
@@ -306,7 +304,6 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                     .createService(name = "zone1")
                     .start()
                     .waitForObjects(count = 3)
-                    .service
 
             test("Sticky session config changes") {
                 writeOrigins("""
@@ -410,7 +407,6 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                     .createService(name = "zone1")
                     .start()
                     .waitForObjects(count = 3)
-                    .service
 
             test("Connection pool settings changes") {
                 writeOrigins("""
@@ -510,7 +506,6 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                     .createService(name = "cloud")
                     .start()
                     .waitForObjects(count = 5)
-                    .service
 
             test("Updates path prefix router when path mapping changes") {
                 writeOrigins("""
@@ -545,7 +540,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
             val serviceDb = StyxObjectStore<ProviderObjectRecord>()
 
             test("name is derived from the provider name when the ingressObject is unspecified") {
-                val service = ServiceConfiguration(objectStore, serviceDb, "cloud",
+                val service = ServiceConfiguration(objectStore, serviceDb, "cloud-origins-provider",
                         YamlFileConfigurationServiceConfig(originsConfig.absolutePath, pollInterval = pollInterval))
                         .createService()
                         .start()
@@ -566,14 +561,14 @@ class YamlFileConfigurationServiceTest : FunSpec() {
 
                 val objects = objectStore.toMap()
 
-                objects.containsKey("cloud-router")
-                objects["cloud-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
+                objects.containsKey("cloud-origins-provider-router")
+                objects["cloud-origins-provider-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf("source=cloud-origins-provider")))
 
                 service.service.stop()
             }
 
                test("name is set by ingressObject attribute") {
-                val service = ServiceConfiguration(objectStore, serviceDb, "cloud",
+                val service = ServiceConfiguration(objectStore, serviceDb, "cloud-origins-provider",
                         YamlFileConfigurationServiceConfig(
                                 originsConfig.absolutePath,
                                 ingressObject = "myCloudZone",
@@ -598,7 +593,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                 val objects = objectStore.toMap()
 
                 objects.containsKey("myCloudZone").shouldBeTrue()
-                objects["myCloudZone"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
+                objects["myCloudZone"]!!.should(beRoutingObject("PathPrefixRouter", setOf("source=cloud-origins-provider")))
 
                 service.service.stop()
             }
@@ -609,10 +604,9 @@ class YamlFileConfigurationServiceTest : FunSpec() {
             val serviceDb = StyxObjectStore<ProviderObjectRecord>()
             val path = originsConfig.absolutePath
             val service = OriginsServiceConfiguration(objectStore, serviceDb, originsConfig)
-                    .createService(name = "cloud")
+                    .createService()
                     .start()
                     .waitForObjects(count = 3)
-                    .service
 
             test("Keeps the original configuration when a syntax error occurs") {
                 writeOrigins("""
@@ -625,9 +619,9 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                 val objects = objectStore.toMap()
 
                 objects.size shouldBe 3
-                objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf("app", OBJECT_CREATOR_TAG)))
-                objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
-                objects["cloud-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
+                objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf("app", "source=origins-provider")))
+                objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf("source=origins-provider")))
+                objects["origins-provider-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf("source=origins-provider")))
             }
 
             // TODO: Fix these tests:
@@ -739,8 +733,8 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                   path: "/"
                   origins:
                   - { id: "app-01", host: "localhost:9090" }
-                 """.trimIndent()
-    ) {
+                 """.trimIndent()) {
+
         fun createService(name: String = "origins-provider", debug: Boolean = true): CreatedService {
             writeOrigins(originsFile, config, debug)
 
@@ -799,6 +793,10 @@ internal data class CreatedService(val config: YamlFileConfigurationServiceTest.
         }
 
         return this
+    }
+
+    fun stop() {
+        service.stop().join()
     }
 }
 

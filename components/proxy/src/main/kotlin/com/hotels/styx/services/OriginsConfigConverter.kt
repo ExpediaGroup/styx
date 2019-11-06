@@ -72,8 +72,6 @@ internal class OriginsConfigConverter(
             ---
             type: $PATH_PREFIX_ROUTER
             name: $name
-            tags: 
-              - $OBJECT_CREATOR_TAG
             config:
               routes:
             """.trimIndent()
@@ -114,14 +112,13 @@ internal class OriginsConfigConverter(
                 serviceDb, Builtins.BUILTIN_SERVICE_PROVIDER_FACTORIES, context)
 
         return ProviderObjectRecord(HEALTH_CHECK_MONITOR,
-                setOf(OBJECT_CREATOR_TAG, "target=$appId"),
+                setOf(),
                 serviceConfig,
                 providerObject)
     }
 
     companion object {
         val LOGGER = LoggerFactory.getLogger(this::class.java)
-        val OBJECT_CREATOR_TAG = "source=OriginsFileConverter"
         val ROOT_OBJECT_NAME = "pathPrefixRouter"
 
         internal fun deserialiseOrigins(text: String): List<BackendService> {
@@ -146,7 +143,6 @@ internal class OriginsConfigConverter(
             StyxObjectDefinition(
                     "${app.id()}",
                     LOAD_BALANCING_GROUP,
-                    listOf(OBJECT_CREATOR_TAG),
                     loadBalancingGroupConfig(app.id().toString(), originRestrictionCookie, app.stickySessionConfig()))
         } else {
             interceptorPipelineConfig(app, originRestrictionCookie)
@@ -159,7 +155,7 @@ internal class OriginsConfigConverter(
             return StyxObjectDefinition(
                 "${app.id()}.${origin.id()}",
                 HOST_PROXY,
-                listOf(OBJECT_CREATOR_TAG, app.id().toString(), healthCheckTag),
+                listOf(app.id().toString(), healthCheckTag),
                 hostProxyConfig(
                         app.connectionPoolConfig(),
                         app.tlsSettings().orElse(null),
@@ -199,8 +195,6 @@ internal class OriginsConfigConverter(
             val handler = """
                 type: $LOAD_BALANCING_GROUP
                 name: "${app.id()}-lb"
-                tags: 
-                  - $OBJECT_CREATOR_TAG
                 config:
                 __config__
             """.trimIndent()
@@ -210,8 +204,6 @@ internal class OriginsConfigConverter(
                 ---
                 type: $INTERCEPTOR_PIPELINE
                 name: ${app.id()}
-                tags: 
-                  - $OBJECT_CREATOR_TAG
                 config:
                   pipeline:
                 __rewriteInterceptor__

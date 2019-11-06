@@ -19,7 +19,6 @@ import com.hotels.styx.routing.RoutingObjectFactoryContext
 import com.hotels.styx.routing.config.Builtins.INTERCEPTOR_PIPELINE
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.ProviderObjectRecord
-import com.hotels.styx.services.OriginsConfigConverter.Companion.OBJECT_CREATOR_TAG
 import com.hotels.styx.services.OriginsConfigConverter.Companion.ROOT_OBJECT_NAME
 import com.hotels.styx.services.OriginsConfigConverter.Companion.deserialiseOrigins
 import com.hotels.styx.services.OriginsConfigConverter.Companion.loadBalancingGroup
@@ -267,7 +266,6 @@ class OriginsConfigConverterTest : StringSpec({
 
         services.size shouldBe 3
         services[0].first shouldBe "appA"
-        services[0].second.tags.shouldContainAll(OBJECT_CREATOR_TAG)
         services[0].second.type shouldBe "HealthCheckMonitor"
         services[0].second.styxService.shouldNotBeNull()
         services[0].second.config.get(HealthCheckConfiguration::class.java).let {
@@ -279,7 +277,6 @@ class OriginsConfigConverterTest : StringSpec({
         }
 
         services[1].first shouldBe "appB"
-        services[1].second.tags.shouldContainAll(OBJECT_CREATOR_TAG)
         services[1].second.type shouldBe "HealthCheckMonitor"
         services[1].second.styxService.shouldNotBeNull()
         services[1].second.config.get(HealthCheckConfiguration::class.java).let {
@@ -291,7 +288,6 @@ class OriginsConfigConverterTest : StringSpec({
         }
 
         services[2].first shouldBe "appC"
-        services[2].second.tags.shouldContainAll(OBJECT_CREATOR_TAG)
         services[2].second.type shouldBe "HealthCheckMonitor"
         services[2].second.styxService.shouldNotBeNull()
         services[2].second.config.get(HealthCheckConfiguration::class.java).let {
