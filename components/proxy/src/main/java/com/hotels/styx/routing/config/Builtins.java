@@ -166,6 +166,7 @@ public final class Builtins {
     /**
      * Builds a Styx service.
      *
+     * @param name Styx service name
      * @param providerDef Styx service object configuration
      * @param factories Service provider factories by name
      * @param context Routing object factory context
@@ -173,6 +174,7 @@ public final class Builtins {
      * @return a Styx service
      */
     public static StyxService build(
+            String name,
             StyxObjectDefinition providerDef,
             StyxObjectStore<ProviderObjectRecord> serviceDb,
             Map<String, ServiceProviderFactory> factories,
@@ -180,6 +182,6 @@ public final class Builtins {
         ServiceProviderFactory constructor = factories.get(providerDef.type());
         checkArgument(constructor != null, format("Unknown service provider type '%s' for '%s' provider", providerDef.type(), providerDef.name()));
 
-        return constructor.create(context, providerDef.config(), serviceDb);
+        return constructor.create(name, context, providerDef.config(), serviceDb);
     }
 }

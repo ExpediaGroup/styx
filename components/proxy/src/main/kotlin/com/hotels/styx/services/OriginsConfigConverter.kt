@@ -65,13 +65,13 @@ internal class OriginsConfigConverter(
             Builtins.build(listOf(objectDef.name()), context, objectDef))
 
     internal fun routingObjectConfigs(apps: List<BackendService>): List<StyxObjectDefinition> =
-            apps.flatMap { toBackendServiceObjects(it, originRestrictionCookie) } + pathPrefixRouter(apps)
+            apps.flatMap { toBackendServiceObjects(it, originRestrictionCookie) }
 
-    internal fun pathPrefixRouter(apps: List<BackendService>): StyxObjectDefinition {
+    internal fun pathPrefixRouter(name: String, apps: List<BackendService>): StyxObjectDefinition {
         val configuration = """
             ---
             type: $PATH_PREFIX_ROUTER
-            name: $ROOT_OBJECT_NAME
+            name: $name
             tags: 
               - $OBJECT_CREATOR_TAG
             config:
@@ -110,7 +110,7 @@ internal class OriginsConfigConverter(
 
         val serviceConfig = MAPPER.readTree(str)
 
-        val providerObject = Builtins.build(StyxObjectDefinition(appId, HEALTH_CHECK_MONITOR, serviceConfig),
+        val providerObject = Builtins.build("providerName", StyxObjectDefinition(appId, HEALTH_CHECK_MONITOR, serviceConfig),
                 serviceDb, Builtins.BUILTIN_SERVICE_PROVIDER_FACTORIES, context)
 
         return ProviderObjectRecord(HEALTH_CHECK_MONITOR,

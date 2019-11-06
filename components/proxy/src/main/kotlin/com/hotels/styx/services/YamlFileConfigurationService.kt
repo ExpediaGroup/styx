@@ -38,6 +38,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicReference
 
 internal class YamlFileConfigurationService(
+        private val name: String,
         private val routeDb: StyxObjectStore<RoutingObjectRecord>,
         private val converter: OriginsConfigConverter,
         private val config: YamlFileConfigurationServiceConfig,
@@ -50,6 +51,8 @@ internal class YamlFileConfigurationService(
     }
 
     private val initialised = CountDownLatch(1)
+
+    private val routerName = if (config.ingressObject.isNotBlank()) config.ingressObject else "$name-router"
 
     private val fileMonitoringService = FileMonitoringService("YamlFileCoinfigurationService", config.originsFile, pollInterval) {
         reloadAction(it)
@@ -83,7 +86,7 @@ internal class YamlFileConfigurationService(
             }
 
     override fun adminInterfaceHandlers() =
-        mapOf("origins" to TextHttpHandler { originsConfig })
+            mapOf("origins" to TextHttpHandler { originsConfig })
 
 
     fun reloadAction(content: String): Unit {
@@ -92,7 +95,7 @@ internal class YamlFileConfigurationService(
         kotlin.runCatching {
             val deserialised = deserialiseOrigins(content)
 
-            val routingObjectDefs = converter.routingObjects(deserialised)
+            val routingObjectDefs = converter.routingObjects(deserialised) + converter.pathPrefixRouter(routerName, deserialised)
             val healthMonitors = converter.healthCheckServices(deserialised)
 
             Pair(healthMonitors, routingObjectDefs)
@@ -128,9 +131,11 @@ internal class YamlFileConfigurationService(
             }
         }
 
-        removedObjects.forEach { routeDb.remove(it).ifPresent {
-            it.routingObject.stop()
-        } }
+        removedObjects.forEach {
+            routeDb.remove(it).ifPresent {
+                it.routingObject.stop()
+            }
+        }
     }
 
     private fun updateHealthCheckServices(objectDb: StyxObjectStore<ProviderObjectRecord>, objects: List<Pair<String, ProviderObjectRecord>>): Unit {
@@ -153,19 +158,21 @@ internal class YamlFileConfigurationService(
             }
         }
 
-        removedObjects.forEach { objectDb.remove(it).ifPresent {
-            it.styxService.stop()
-        } }
+        removedObjects.forEach {
+            objectDb.remove(it).ifPresent {
+                it.styxService.stop()
+            }
+        }
     }
 }
 
-internal data class YamlFileConfigurationServiceConfig(val originsFile: String, val monitor: Boolean = true, val pollInterval: String = "")
+internal data class YamlFileConfigurationServiceConfig(val originsFile: String, val ingressObject: String = "", val monitor: Boolean = true, val pollInterval: String = "")
 
 internal class YamlFileConfigurationServiceFactory : ServiceProviderFactory {
-    override fun create(context: RoutingObjectFactory.Context, jsonConfig: JsonNode, serviceDb: StyxObjectStore<ProviderObjectRecord>): StyxService {
+    override fun create(name: String, context: RoutingObjectFactory.Context, jsonConfig: JsonNode, serviceDb: StyxObjectStore<ProviderObjectRecord>): StyxService {
         val serviceConfig = JsonNodeConfig(jsonConfig).`as`(YamlFileConfigurationServiceConfig::class.java)!!
         val originRestrictionCookie = context.environment().configuration().get("originRestrictionCookie").orElse(null)
 
-        return YamlFileConfigurationService(context.routeDb(), OriginsConfigConverter(serviceDb, context, originRestrictionCookie), serviceConfig, serviceDb)
+        return YamlFileConfigurationService(name, context.routeDb(), OriginsConfigConverter(serviceDb, context, originRestrictionCookie), serviceConfig, serviceDb)
     }
 }

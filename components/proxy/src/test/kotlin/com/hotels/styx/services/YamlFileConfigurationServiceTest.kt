@@ -19,6 +19,7 @@ import com.fasterxml.jackson.core.type.TypeReference
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings
 import com.hotels.styx.api.extension.service.StickySessionConfig
 import com.hotels.styx.api.extension.service.spi.AbstractStyxService
+import com.hotels.styx.api.extension.service.spi.StyxService
 import com.hotels.styx.api.extension.service.spi.StyxServiceStatus.RUNNING
 import com.hotels.styx.api.extension.service.spi.StyxServiceStatus.STOPPED
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig
@@ -32,6 +33,7 @@ import io.kotlintest.Matcher
 import io.kotlintest.MatcherResult
 import io.kotlintest.Spec
 import io.kotlintest.eventually
+import io.kotlintest.matchers.boolean.shouldBeTrue
 import io.kotlintest.seconds
 import io.kotlintest.should
 import io.kotlintest.shouldBe
@@ -42,10 +44,11 @@ import java.io.File
 import java.time.Duration
 import java.util.Optional
 
+private val LOGGER = LoggerFactory.getLogger(YamlFileConfigurationServiceTest::class.java)
+
 class YamlFileConfigurationServiceTest : FunSpec() {
     val tempDir = createTempDir(suffix = "-${this.javaClass.simpleName}")
     val originsConfig = File("${tempDir.absolutePath}/config.yml")
-    val LOGGER = LoggerFactory.getLogger(YamlFileConfigurationServiceTest::class.java)
     val pollInterval = Duration.ofMillis(100).toString()
 
     override fun beforeSpec(spec: Spec) {
@@ -82,6 +85,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                     """.trimIndent())
 
                 with(YamlFileConfigurationService(
+                        "dc-us-west",
                         routeDb,
                         OriginsConfigConverter(serviceDb, RoutingObjectFactoryContext(objectStore = routeDb).get(), "origins-cookie"),
                         YamlFileConfigurationServiceConfig(originsConfig.absolutePath, pollInterval = pollInterval),
@@ -97,13 +101,14 @@ class YamlFileConfigurationServiceTest : FunSpec() {
             test("It recovers from syntax errors") {
                 val routeDb = StyxObjectStore<RoutingObjectRecord>()
                 val serviceDb = StyxObjectStore<ProviderObjectRecord>()
-                val service = serviceWithInitialConfig(routeDb, serviceDb,
-                        initialObjectCount = 0,
-                        wait = false,
+                val service = OriginsServiceConfiguration(routeDb, serviceDb, originsConfig,
                         config = """
                             ---
                             - something's wrong
                             """.trimIndent())
+                        .createService()
+                        .start(wait = false)
+                        .service
 
                 with(service) {
                     writeOrigins("""
@@ -125,7 +130,11 @@ class YamlFileConfigurationServiceTest : FunSpec() {
         context("Service detects configuration changes") {
             val objectStore = StyxObjectStore<RoutingObjectRecord>()
             val serviceDb = StyxObjectStore<ProviderObjectRecord>()
-            val service = serviceWithInitialConfig(objectStore, serviceDb)
+            val service = OriginsServiceConfiguration(objectStore, serviceDb, originsConfig)
+                    .createService(name = "zone1")
+                    .start()
+                    .waitForObjects(count = 3)
+                    .service
 
             test("add origins") {
                 writeOrigins("""
@@ -144,7 +153,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                     objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf("app", OBJECT_CREATOR_TAG)))
                     objects["app.app-02"]!!.should(beRoutingObject("HostProxy", setOf("app", OBJECT_CREATOR_TAG)))
                     objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
-                    objects["pathPrefixRouter"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
+                    objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
                 }
             }
 
@@ -164,7 +173,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
 
                     objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf("app", OBJECT_CREATOR_TAG)))
                     objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
-                    objects["pathPrefixRouter"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
+                    objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
                 }
             }
 
@@ -184,7 +193,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
 
                     objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf("app", OBJECT_CREATOR_TAG)))
                     objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
-                    objects["pathPrefixRouter"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
+                    objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
 
                     JsonNodeConfig(objectStore["app.app-01"].get().config).get("host") shouldBe Optional.of("localhost:9999")
                 }
@@ -212,7 +221,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                     objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
                     objects["appB.appB-01"]!!.should(beRoutingObject("HostProxy", setOf("appB", OBJECT_CREATOR_TAG)))
                     objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
-                    objects["pathPrefixRouter"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
+                    objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
                 }
             }
 
@@ -232,7 +241,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
 
                     objects["appB.appB-01"]!!.should(beRoutingObject("HostProxy", setOf("appB", OBJECT_CREATOR_TAG)))
                     objects["appB"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
-                    objects["pathPrefixRouter"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
+                    objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
                 }
 
             }
@@ -252,7 +261,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                     objects.size shouldBe 3
                     objects["appB.appB-01"]!!.should(beRoutingObject("HostProxy", setOf("appB", OBJECT_CREATOR_TAG)))
                     objects["appB"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
-                    objects["pathPrefixRouter"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
+                    objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
                 }
             }
 
@@ -282,18 +291,22 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                 objects["appB"]!!.should(beRoutingObject("LoadBalancingGroup",
                         setOf(creationTimes["appB"]!!, OBJECT_CREATOR_TAG)))
 
-                objects["pathPrefixRouter"]!!.should(beRoutingObject("PathPrefixRouter",
-                        setOf(creationTimes["pathPrefixRouter"]!!, OBJECT_CREATOR_TAG)))
+                objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter",
+                        setOf(creationTimes["zone1-router"]!!, OBJECT_CREATOR_TAG)))
             }
 
             LOGGER.info("configuration changes - Stopping service [$service]")
             service.stop()
         }
 
-        context("!Load balancing group changes") {
+        context("Load balancing group changes") {
             val objectStore = StyxObjectStore<RoutingObjectRecord>()
             val serviceDb = StyxObjectStore<ProviderObjectRecord>()
-            val service = serviceWithInitialConfig(objectStore, serviceDb)
+            val service = OriginsServiceConfiguration(objectStore, serviceDb, originsConfig)
+                    .createService(name = "zone1")
+                    .start()
+                    .waitForObjects(count = 3)
+                    .service
 
             test("Sticky session config changes") {
                 writeOrigins("""
@@ -390,10 +403,14 @@ class YamlFileConfigurationServiceTest : FunSpec() {
             service.stop()
         }
 
-        context("!Host proxy changes") {
+        context("Host proxy changes") {
             val objectStore = StyxObjectStore<RoutingObjectRecord>()
             val serviceDb = StyxObjectStore<ProviderObjectRecord>()
-            val service = serviceWithInitialConfig(objectStore, serviceDb)
+            val service = OriginsServiceConfiguration(objectStore, serviceDb, originsConfig)
+                    .createService(name = "zone1")
+                    .start()
+                    .waitForObjects(count = 3)
+                    .service
 
             test("Connection pool settings changes") {
                 writeOrigins("""
@@ -475,11 +492,10 @@ class YamlFileConfigurationServiceTest : FunSpec() {
             service.stop()
         }
 
-        context("!Path mapping changes") {
+        context("Path mapping changes") {
             val objectStore = StyxObjectStore<RoutingObjectRecord>()
             val serviceDb = StyxObjectStore<ProviderObjectRecord>()
-            val service = serviceWithInitialConfig(objectStore, serviceDb,
-                    initialObjectCount = 5,
+            val service = OriginsServiceConfiguration(objectStore, serviceDb, originsConfig,
                     config = """
                         ---
                         - id: "appA"
@@ -491,6 +507,10 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                           origins:
                           - { id: "appB-01", host: "localhost:9190" }
                          """.trimIndent())
+                    .createService(name = "cloud")
+                    .start()
+                    .waitForObjects(count = 5)
+                    .service
 
             test("Updates path prefix router when path mapping changes") {
                 writeOrigins("""
@@ -507,7 +527,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                     """.trimIndent())
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    objectStore.get("pathPrefixRouter").get().let {
+                    objectStore.get("cloud-router").get().let {
                         it.config.get("routes", object : TypeReference<List<PathPrefixRouter.PathPrefixConfig>>() {})
                                 .let {
                                     it[0].prefix() shouldBe "/new-path-appA/"
@@ -520,11 +540,79 @@ class YamlFileConfigurationServiceTest : FunSpec() {
             service.stop()
         }
 
-        context("!Error handling") {
+        context("Path Prefix Router") {
+            val objectStore = StyxObjectStore<RoutingObjectRecord>()
+            val serviceDb = StyxObjectStore<ProviderObjectRecord>()
+
+            test("name is derived from the provider name when the ingressObject is unspecified") {
+                val service = ServiceConfiguration(objectStore, serviceDb, "cloud",
+                        YamlFileConfigurationServiceConfig(originsConfig.absolutePath, pollInterval = pollInterval))
+                        .createService()
+                        .start()
+
+                writeOrigins("""
+                    ---
+                    - id: "appA"
+                      path: "/appA/"
+                      origins:
+                      - { id: "appA-01", host: "localhost:9090" }
+                    - id: "appB"
+                      path: "/appB/"
+                      origins:
+                      - { id: "appB-01", host: "localhost:9190" }
+                     """.trimIndent())
+
+                service.waitForObjects(count = 5)
+
+                val objects = objectStore.toMap()
+
+                objects.containsKey("cloud-router")
+                objects["cloud-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
+
+                service.service.stop()
+            }
+
+               test("name is set by ingressObject attribute") {
+                val service = ServiceConfiguration(objectStore, serviceDb, "cloud",
+                        YamlFileConfigurationServiceConfig(
+                                originsConfig.absolutePath,
+                                ingressObject = "myCloudZone",
+                                pollInterval = pollInterval))
+                        .createService()
+                        .start()
+
+                writeOrigins("""
+                    ---
+                    - id: "appA"
+                      path: "/appA/"
+                      origins:
+                      - { id: "appA-01", host: "localhost:9090" }
+                    - id: "appB"
+                      path: "/appB/"
+                      origins:
+                      - { id: "appB-01", host: "localhost:9190" }
+                     """.trimIndent())
+
+                service.waitForObjects(count = 5)
+
+                val objects = objectStore.toMap()
+
+                objects.containsKey("myCloudZone").shouldBeTrue()
+                objects["myCloudZone"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
+
+                service.service.stop()
+            }
+        }
+
+        context("Error handling") {
             val objectStore = StyxObjectStore<RoutingObjectRecord>()
             val serviceDb = StyxObjectStore<ProviderObjectRecord>()
             val path = originsConfig.absolutePath
-            val service = serviceWithInitialConfig(objectStore, serviceDb)
+            val service = OriginsServiceConfiguration(objectStore, serviceDb, originsConfig)
+                    .createService(name = "cloud")
+                    .start()
+                    .waitForObjects(count = 3)
+                    .service
 
             test("Keeps the original configuration when a syntax error occurs") {
                 writeOrigins("""
@@ -539,42 +627,50 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                 objects.size shouldBe 3
                 objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf("app", OBJECT_CREATOR_TAG)))
                 objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
-                objects["pathPrefixRouter"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
+                objects["cloud-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
             }
 
-            test("Keeps the original configuration when origins file is removed") {
-                originsConfig.delete()
-                originsConfig.exists() shouldBe false
-
-                eventually(2.seconds, AssertionError::class.java) {
-                    val objects = objectStore.toMap()
-
-                    objects.size shouldBe 3
-                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf("app", OBJECT_CREATOR_TAG)))
-                    objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
-                    objects["pathPrefixRouter"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
-                }
-            }
-
-            test("Recovers when the file becomes availabe again") {
-
-                writeOrigins("""
-                    ---
-                    - id: "appB"
-                      path: "/"
-                      origins:
-                        - { id: "appB-01", host: "localhost:9999" }
-                    """.trimIndent())
-
-                eventually(2.seconds, AssertionError::class.java) {
-                    val objects = objectStore.toMap()
-
-                    objects.size shouldBe 3
-                    objects["appB.appB-01"]!!.should(beRoutingObject("HostProxy", setOf("appB", OBJECT_CREATOR_TAG)))
-                    objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
-                    objects["pathPrefixRouter"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
-                }
-            }
+            // TODO: Fix these tests:
+//            test("Keeps the original configuration when origins file is removed") {
+//                originsConfig.delete()
+//                originsConfig.exists() shouldBe false
+//
+//                eventually(2.seconds, AssertionError::class.java) {
+//                    val objects = objectStore.toMap()
+//
+//                    objects.size shouldBe 3
+//                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf("app", OBJECT_CREATOR_TAG)))
+//                    objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
+//                    objects["cloud-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
+//                }
+//            }
+//
+//            test("Recovers when the file becomes availabe again") {
+//
+//                println("Writing origins file now")
+//                writeOrigins("""
+//                    ---
+//                    - id: "appC"
+//                      path: "/"
+//                      origins:
+//                        - { id: "appC-01", host: "localhost:9999" }
+//                        - { id: "appC-02", host: "localhost:9999" }
+//                    """.trimIndent())
+//
+//                eventually(2.seconds, AssertionError::class.java) {
+//                    val objects = objectStore.toMap()
+//
+//                    objects.size shouldBe 4
+//
+//                    objects.entries.forEach {
+//                        println("entry key: ${it.key}")
+//                    }
+//
+//                    objects["appC.appC-01"]!!.should(beRoutingObject("HostProxy", setOf("appC", OBJECT_CREATOR_TAG)))
+//                    objects["appC"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
+//                    objects["cloud-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
+//                }
+//            }
 
             service.stop()
         }
@@ -603,12 +699,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
         }
     }
 
-    internal fun writeOrigins(text: String, debug: Boolean = false) {
-        originsConfig.writeText(text)
-        if (debug) {
-            LOGGER.info("new origins file: \n${originsConfig.readText()}")
-        }
-    }
+    internal fun writeOrigins(text: String, debug: Boolean = false) = writeOrigins(originsConfig, text, debug)
 
     private val initialConfig = """
             ---
@@ -622,28 +713,92 @@ class YamlFileConfigurationServiceTest : FunSpec() {
             routeDb: StyxObjectStore<RoutingObjectRecord>,
             serviceDb: StyxObjectStore<ProviderObjectRecord>,
             debug: Boolean = false,
-            wait: Boolean = true,
-            initialObjectCount: Int = 3,
-            config: String = initialConfig): YamlFileConfigurationService {
+            config: String = initialConfig,
+            name: String = "originsProvider"): YamlFileConfigurationService {
 
         writeOrigins(config, debug)
 
         val service = YamlFileConfigurationService(
+                name,
                 routeDb,
                 OriginsConfigConverter(serviceDb, RoutingObjectFactoryContext(objectStore = routeDb).get(), "origins-cookie"),
                 YamlFileConfigurationServiceConfig(originsConfig.absolutePath, pollInterval = pollInterval),
                 serviceDb)
 
-        val startFuture = service.start()
+        return service
+    }
+
+    internal data class OriginsServiceConfiguration(
+            val routeDb: StyxObjectStore<RoutingObjectRecord>,
+            val serviceDb: StyxObjectStore<ProviderObjectRecord>,
+            val originsFile: File,
+            val pollInterval: String = Duration.ofMillis(100).toString(),
+            val config: String = """
+                ---
+                - id: "app"
+                  path: "/"
+                  origins:
+                  - { id: "app-01", host: "localhost:9090" }
+                 """.trimIndent()
+    ) {
+        fun createService(name: String = "origins-provider", debug: Boolean = true): CreatedService {
+            writeOrigins(originsFile, config, debug)
+
+            return ServiceConfiguration(
+                    routeDb,
+                    serviceDb,
+                    name,
+                    YamlFileConfigurationServiceConfig(originsFile.absolutePath, pollInterval = pollInterval))
+                    .createService()
+        }
+    }
+
+    internal data class ServiceConfiguration(
+            val routeDb: StyxObjectStore<RoutingObjectRecord>,
+            val serviceDb: StyxObjectStore<ProviderObjectRecord>,
+            val providerName: String,
+            val serviceConfig: YamlFileConfigurationServiceConfig) {
+
+        fun createService(): CreatedService {
+            val service = YamlFileConfigurationService(
+                    this.providerName,
+                    this.routeDb,
+                    OriginsConfigConverter(this.serviceDb, RoutingObjectFactoryContext(objectStore = this.routeDb).get(), "origins-cookie"),
+                    serviceConfig,
+                    this.serviceDb)
+
+            return CreatedService(ServiceConfiguration(routeDb, serviceDb, providerName, serviceConfig), service)
+        }
+    }
+
+}
+
+internal fun writeOrigins(originsConfig: File, text: String, debug: Boolean = false) {
+    originsConfig.writeText(text)
+    if (debug) {
+        LOGGER.info("new origins file: \n${originsConfig.readText()}")
+    }
+}
+
+internal sealed class ServiceContext
+
+internal data class CreatedService(val config: YamlFileConfigurationServiceTest.ServiceConfiguration, val service: StyxService) : ServiceContext() {
+    internal fun start(wait: Boolean = true): CreatedService {
+        val startFuture = this.service.start()
+
         if (wait) {
             startFuture.join()
         }
 
+        return this
+    }
+
+    internal fun waitForObjects(count: Int): CreatedService {
         eventually(2.seconds, AssertionError::class.java) {
-            routeDb.entrySet().size shouldBe initialObjectCount
+            this.config.routeDb.entrySet().size shouldBe count
         }
 
-        return service
+        return this
     }
 }
 
