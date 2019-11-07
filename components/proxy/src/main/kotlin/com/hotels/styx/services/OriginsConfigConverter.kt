@@ -89,12 +89,13 @@ internal class OriginsConfigConverter(
             .filter(::isHealthCheckConfigured)
             .map {
                 val appId = it.id().toString()
+                val serviceName = "$appId-monitor"
                 val healthCheckConfig = it.healthCheckConfig()
 
-                Pair("$appId-monitor", healthCheckService(appId, healthCheckConfig))
+                Pair(serviceName, healthCheckService(serviceName, appId, healthCheckConfig))
             }
 
-    internal fun healthCheckService(appId: String, healthCheckConfig: HealthCheckConfig): ProviderObjectRecord {
+    internal fun healthCheckService(serviceName: String, appId: String, healthCheckConfig: HealthCheckConfig): ProviderObjectRecord {
         assert(healthCheckConfig.isEnabled)
         assert(healthCheckConfig.uri().isPresent)
 
@@ -108,7 +109,7 @@ internal class OriginsConfigConverter(
 
         val serviceConfig = MAPPER.readTree(str)
 
-        val providerObject = Builtins.build("providerName", StyxObjectDefinition(appId, HEALTH_CHECK_MONITOR, serviceConfig),
+        val providerObject = Builtins.build(serviceName, StyxObjectDefinition(appId, HEALTH_CHECK_MONITOR, serviceConfig),
                 serviceDb, Builtins.BUILTIN_SERVICE_PROVIDER_FACTORIES, context)
 
         return ProviderObjectRecord(HEALTH_CHECK_MONITOR,
