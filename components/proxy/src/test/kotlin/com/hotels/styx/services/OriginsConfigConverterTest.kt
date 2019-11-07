@@ -248,7 +248,7 @@ class OriginsConfigConverterTest : StringSpec({
         val services = translator.healthCheckServices(apps)
 
         services.size shouldBe 3
-        services[0].first shouldBe "appA"
+        services[0].first shouldBe "appA-monitor"
         services[0].second.type shouldBe "HealthCheckMonitor"
         services[0].second.styxService.shouldNotBeNull()
         services[0].second.config.get(HealthCheckConfiguration::class.java).let {
@@ -259,7 +259,7 @@ class OriginsConfigConverterTest : StringSpec({
             it.healthyThreshod shouldBe 3
         }
 
-        services[1].first shouldBe "appB"
+        services[1].first shouldBe "appB-monitor"
         services[1].second.type shouldBe "HealthCheckMonitor"
         services[1].second.styxService.shouldNotBeNull()
         services[1].second.config.get(HealthCheckConfiguration::class.java).let {
@@ -270,7 +270,7 @@ class OriginsConfigConverterTest : StringSpec({
             it.healthyThreshod shouldBe 6
         }
 
-        services[2].first shouldBe "appC"
+        services[2].first shouldBe "appC-monitor"
         services[2].second.type shouldBe "HealthCheckMonitor"
         services[2].second.styxService.shouldNotBeNull()
         services[2].second.config.get(HealthCheckConfiguration::class.java).let {

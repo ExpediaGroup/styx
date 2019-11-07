@@ -341,8 +341,8 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                          """.trimIndent(), debug = true)
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    serviceDb.get("app").isPresent shouldBe true
-                    serviceDb.get("app").get().let {
+                    serviceDb.get("app-monitor").isPresent shouldBe true
+                    serviceDb.get("app-monitor").get().let {
                         it.config.get("objects", String::class.java) shouldBe "app"
                         it.config.get("path", String::class.java) shouldBe "http://www/check/me"
                         (it.styxService as AbstractStyxService).status() shouldBe RUNNING
@@ -352,7 +352,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
 
             test("Health check configuration is modified") {
                 // From previous test:
-                val oldMonitor = serviceDb.get("app").get().styxService as AbstractStyxService
+                val oldMonitor = serviceDb.get("app-monitor").get().styxService as AbstractStyxService
 
                 writeOrigins("""
                         ---
@@ -365,8 +365,8 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                          """.trimIndent(), debug = true)
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    serviceDb.get("app").isPresent shouldBe true
-                    serviceDb.get("app").get().let {
+                    serviceDb.get("app-monitor").isPresent shouldBe true
+                    serviceDb.get("app-monitor").get().let {
                         it.config.get("objects", String::class.java) shouldBe "app"
                         it.config.get("path", String::class.java) shouldBe "http://new/url"
                         (it.styxService as AbstractStyxService).status() shouldBe RUNNING
@@ -380,7 +380,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
 
             test("Health check configuration is removed") {
                 // From previous test:
-                val oldMonitor = serviceDb.get("app").get().styxService as AbstractStyxService
+                val oldMonitor = serviceDb.get("app-monitor").get().styxService as AbstractStyxService
 
                 writeOrigins("""
                         # test: removing health check configuration
@@ -392,7 +392,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                          """.trimIndent(), debug = true)
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    serviceDb.get("app").isPresent shouldBe false
+                    serviceDb.get("app-monitor").isPresent shouldBe false
                     oldMonitor.status() shouldBe STOPPED
                 }
             }

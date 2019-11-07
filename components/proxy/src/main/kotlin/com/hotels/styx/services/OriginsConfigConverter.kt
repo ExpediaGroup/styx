@@ -91,7 +91,7 @@ internal class OriginsConfigConverter(
                 val appId = it.id().toString()
                 val healthCheckConfig = it.healthCheckConfig()
 
-                Pair(appId, healthCheckService(appId, healthCheckConfig))
+                Pair("$appId-monitor", healthCheckService(appId, healthCheckConfig))
             }
 
     internal fun healthCheckService(appId: String, healthCheckConfig: HealthCheckConfig): ProviderObjectRecord {

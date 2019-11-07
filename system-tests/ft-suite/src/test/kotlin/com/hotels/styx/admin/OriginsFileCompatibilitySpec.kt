@@ -519,11 +519,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                             .filter { it.type() == "HealthCheckMonitor" }
 
             fun validateHealthCheckMonitor(monitor: StyxObjectDefinition) {
-                println("validating monitor: " + monitor.name())
-                println("validating monitor: " + monitor.type())
-                println("validating monitor: " + monitor.tags())
-
-                monitor.name() shouldBe "appB"
+                monitor.name() shouldBe "appB-monitor"
                 monitor.type() shouldBe "HealthCheckMonitor"
                 monitor.tags().shouldContainAll("source=originsFileLoader", "target=appB")
 
@@ -598,7 +594,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
             }
 
             test("Health checking service returned from the admin endpoint") {
-                client.send(get("/admin/service/provider/appB")
+                client.send(get("/admin/service/provider/appB-monitor")
                         .header(HOST, styxServer().adminHostHeader())
                         .build())
                         .wait().let {
