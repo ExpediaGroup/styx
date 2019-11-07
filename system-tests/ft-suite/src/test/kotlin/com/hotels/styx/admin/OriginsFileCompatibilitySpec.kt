@@ -71,8 +71,10 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     type: YamlFileConfigurationService
                     config:
                       originsFile: ${originsFile.absolutePath}
+                      ingressObject: pathPrefixRouter
                       monitor: True
                       pollInterval: PT0.1S 
+
                 httpPipeline: pathPrefixRouter
                 """.trimIndent(),
             loggingConfig = ResourcePaths.fixturesHome(
@@ -402,7 +404,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
 
                         originRestrictionCookie: ABC
 
-                        httpPipeline: pathPrefixRouter
+                        httpPipeline: originsFileLoader-router
                         """.trimIndent())
 
             test("Routes to origin indicated by origins restriction cookie") {
@@ -517,9 +519,14 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                             .filter { it.type() == "HealthCheckMonitor" }
 
             fun validateHealthCheckMonitor(monitor: StyxObjectDefinition) {
+                println("validating monitor: " + monitor.name())
+                println("validating monitor: " + monitor.type())
+                println("validating monitor: " + monitor.tags())
+
                 monitor.name() shouldBe "appB"
                 monitor.type() shouldBe "HealthCheckMonitor"
-                monitor.tags().shouldContainAll("source=OriginsFileConverter", "target=appB")
+                monitor.tags().shouldContainAll("source=originsFileLoader", "target=appB")
+
                 val config = monitor.config()
 
                 config.get("objects").asText() shouldBe "appB"

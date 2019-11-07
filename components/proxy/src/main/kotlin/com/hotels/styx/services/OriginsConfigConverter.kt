@@ -112,7 +112,7 @@ internal class OriginsConfigConverter(
                 serviceDb, Builtins.BUILTIN_SERVICE_PROVIDER_FACTORIES, context)
 
         return ProviderObjectRecord(HEALTH_CHECK_MONITOR,
-                setOf(),
+                setOf("target=$appId"),
                 serviceConfig,
                 providerObject)
     }

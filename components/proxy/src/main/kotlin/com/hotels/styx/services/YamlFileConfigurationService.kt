@@ -37,7 +37,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicReference
 
 internal class YamlFileConfigurationService(
-        private val name: String,
+        name: String,
         private val routeDb: StyxObjectStore<RoutingObjectRecord>,
         private val converter: OriginsConfigConverter,
         private val config: YamlFileConfigurationServiceConfig,
@@ -69,6 +69,7 @@ internal class YamlFileConfigurationService(
         val SCHEMA = SchemaDsl.`object`(
                 field("originsFile", string()),
                 optional("monitor", bool()),
+                optional("ingressObject", string()),
                 optional("pollInterval", string()))
 
         private val LOGGER = LoggerFactory.getLogger(YamlFileConfigurationService::class.java)
@@ -96,8 +97,10 @@ internal class YamlFileConfigurationService(
             val deserialised = deserialiseOrigins(content)
 
             val routingObjectDefs = (converter.routingObjects(deserialised) + converter.pathPrefixRouter(ingressObjectName, deserialised))
-                    .map { it -> StyxObjectDefinition(it.name(), it.type(), it.tags() + objectSourceTag, it.config()) }
+                    .map { StyxObjectDefinition(it.name(), it.type(), it.tags() + objectSourceTag, it.config()) }
+
             val healthMonitors = converter.healthCheckServices(deserialised)
+                    .map { (name, record) -> Pair(name, record.copy(tags = record.tags + objectSourceTag)) }
 
             Pair(healthMonitors, routingObjectDefs)
         }.mapCatching { (healthMonitors, routingObjectDefs) ->
