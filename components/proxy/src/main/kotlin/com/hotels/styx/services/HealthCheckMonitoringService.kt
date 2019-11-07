@@ -143,7 +143,7 @@ internal data class HealthCheckConfiguration(
         @JsonProperty val unhealthyThreshold: Int)
 
 internal class HealthCheckMonitoringServiceFactory : ServiceProviderFactory {
-    override fun create(context: RoutingObjectFactory.Context, configuration: JsonNode, serviceDb: StyxObjectStore<ProviderObjectRecord>): StyxService {
+    override fun create(name: String, context: RoutingObjectFactory.Context, configuration: JsonNode, serviceDb: StyxObjectStore<ProviderObjectRecord>): StyxService {
         val config = JsonNodeConfig(configuration).`as`(HealthCheckConfiguration::class.java)
 
         return HealthCheckMonitoringService(

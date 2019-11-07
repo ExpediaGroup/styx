@@ -110,7 +110,7 @@ class BuiltinsTest : StringSpec({
 
     "ServiceProvider factory delegates to appropriate service provider factory method" {
         val factory = mockk<ServiceProviderFactory> {
-            every { create(any(), any(), any()) } returns mockk()
+            every { create(any(), any(), any(), any()) } returns mockk()
         }
 
         val context = RoutingObjectFactoryContext().get()
@@ -118,18 +118,20 @@ class BuiltinsTest : StringSpec({
         val serviceDb = mockk<StyxObjectStore<ProviderObjectRecord>>()
 
         Builtins.build(
+                "healthCheckMonitor",
                 StyxObjectDefinition("healthCheckMonitor", "HealthCheckMonitor", serviceConfig),
                 serviceDb,
                 mapOf("HealthCheckMonitor" to factory),
                 context
         )
 
-        verify { factory.create(context, serviceConfig, serviceDb) }
+        verify { factory.create("healthCheckMonitor", context, serviceConfig, serviceDb) }
     }
 
     "ServiceProvider factory throws an exception for unknown service provider factory name" {
         shouldThrow<java.lang.IllegalArgumentException> {
             Builtins.build(
+                    "healthCheckMonitor",
                     StyxObjectDefinition("healthMonitor", "ABC", mockk()),
                     mockk(),
                     mapOf(),

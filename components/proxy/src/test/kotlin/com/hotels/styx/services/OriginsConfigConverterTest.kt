@@ -19,10 +19,9 @@ import com.hotels.styx.routing.RoutingObjectFactoryContext
 import com.hotels.styx.routing.config.Builtins.INTERCEPTOR_PIPELINE
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.ProviderObjectRecord
-import com.hotels.styx.services.OriginsConfigConverter.Companion.OBJECT_CREATOR_TAG
-import com.hotels.styx.services.OriginsConfigConverter.Companion.ROOT_OBJECT_NAME
 import com.hotels.styx.services.OriginsConfigConverter.Companion.deserialiseOrigins
 import com.hotels.styx.services.OriginsConfigConverter.Companion.loadBalancingGroup
+import io.kotlintest.matchers.collections.shouldBeEmpty
 import io.kotlintest.matchers.collections.shouldContainAll
 import io.kotlintest.matchers.types.shouldNotBeNull
 import io.kotlintest.shouldBe
@@ -46,27 +45,22 @@ class OriginsConfigConverterTest : StringSpec({
         OriginsConfigConverter(serviceDb, ctx, "")
                 .routingObjects(deserialiseOrigins(config))
                 .let {
-                    it.size shouldBe 4
+                    it.size shouldBe 3
 
                     it[0].name() shouldBe "app.app1"
-                    it[0].tags().shouldContainAll("app", "source=OriginsFileConverter", "state:active")
+                    it[0].tags().shouldContainAll("app", "state:active")
                     it[0].type().shouldBe("HostProxy")
                     it[0].config().shouldNotBeNull()
 
                     it[1].name() shouldBe "app.app2"
-                    it[1].tags().shouldContainAll("app", "source=OriginsFileConverter", "state:active")
+                    it[1].tags().shouldContainAll("app", "state:active")
                     it[1].type().shouldBe("HostProxy")
                     it[1].config().shouldNotBeNull()
 
                     it[2].name() shouldBe "app"
-                    it[2].tags().shouldContainAll("source=OriginsFileConverter")
+                    it[2].tags().shouldBeEmpty()
                     it[2].type().shouldBe("LoadBalancingGroup")
                     it[2].config().shouldNotBeNull()
-
-                    it[3].name() shouldBe ROOT_OBJECT_NAME
-                    it[3].tags().shouldContainAll("source=OriginsFileConverter")
-                    it[3].type().shouldBe("PathPrefixRouter")
-                    it[3].config().shouldNotBeNull()
                 }
     }
 
@@ -88,7 +82,6 @@ class OriginsConfigConverterTest : StringSpec({
                 .let {
                     it.name() shouldBe "app"
                     it.type() shouldBe INTERCEPTOR_PIPELINE
-                    it.tags().shouldContainAll("source=OriginsFileConverter")
                 }
     }
 
@@ -112,7 +105,6 @@ class OriginsConfigConverterTest : StringSpec({
                 .let {
                     it.name() shouldBe "app"
                     it.type() shouldBe INTERCEPTOR_PIPELINE
-                    it.tags().shouldContainAll("source=OriginsFileConverter")
                 }
     }
 
@@ -132,27 +124,22 @@ class OriginsConfigConverterTest : StringSpec({
         OriginsConfigConverter(serviceDb, ctx, "")
                 .routingObjects(deserialiseOrigins(config))
                 .let {
-                    it.size shouldBe 4
+                    it.size shouldBe 3
 
                     it[0].name() shouldBe "app.app1"
-                    it[0].tags().shouldContainAll("app", "source=OriginsFileConverter", "state:active")
+                    it[0].tags().shouldContainAll("app", "state:active")
                     it[0].type().shouldBe("HostProxy")
                     it[0].config().shouldNotBeNull()
 
                     it[1].name() shouldBe "app.app2"
-                    it[1].tags().shouldContainAll("app", "source=OriginsFileConverter", "state:active")
+                    it[1].tags().shouldContainAll("app", "state:active")
                     it[1].type().shouldBe("HostProxy")
                     it[1].config().shouldNotBeNull()
 
                     it[2].name() shouldBe "app"
-                    it[2].tags().shouldContainAll("source=OriginsFileConverter")
+                    it[2].tags().shouldBeEmpty()
                     it[2].type().shouldBe("LoadBalancingGroup")
                     it[2].config().shouldNotBeNull()
-
-                    it[3].name() shouldBe ROOT_OBJECT_NAME
-                    it[3].tags().shouldContainAll("source=OriginsFileConverter")
-                    it[3].type().shouldBe("PathPrefixRouter")
-                    it[3].config().shouldNotBeNull()
                 }
     }
 
@@ -178,52 +165,47 @@ class OriginsConfigConverterTest : StringSpec({
         OriginsConfigConverter(serviceDb, ctx, "")
                 .routingObjects(deserialiseOrigins(config))
                 .let {
-                    it.size shouldBe 9
+                    it.size shouldBe 8
 
                     it[0].name() shouldBe "appA.appA-1"
-                    it[0].tags().shouldContainAll("appA", "source=OriginsFileConverter", "state:active")
+                    it[0].tags().shouldContainAll("appA", "state:active")
                     it[0].type().shouldBe("HostProxy")
                     it[0].config().shouldNotBeNull()
 
                     it[1].name() shouldBe "appA.appA-2"
-                    it[1].tags().shouldContainAll("appA", "source=OriginsFileConverter", "state:active")
+                    it[1].tags().shouldContainAll("appA", "state:active")
                     it[1].type().shouldBe("HostProxy")
                     it[1].config().shouldNotBeNull()
 
                     it[2].name() shouldBe "appA"
-                    it[2].tags().shouldContainAll("source=OriginsFileConverter")
+                    it[2].tags().shouldBeEmpty()
                     it[2].type().shouldBe("LoadBalancingGroup")
                     it[2].config().shouldNotBeNull()
 
                     it[3].name() shouldBe "appB.appB-1"
-                    it[3].tags().shouldContainAll("appB", "source=OriginsFileConverter", "state:active")
+                    it[3].tags().shouldContainAll("appB", "state:active")
                     it[3].type().shouldBe("HostProxy")
                     it[3].config().shouldNotBeNull()
 
                     it[4].name() shouldBe "appB"
-                    it[4].tags().shouldContainAll("source=OriginsFileConverter")
+                    it[4].tags().shouldBeEmpty()
                     it[4].type().shouldBe("LoadBalancingGroup")
                     it[4].config().shouldNotBeNull()
 
                     it[5].name() shouldBe "appC.appC-1"
-                    it[5].tags().shouldContainAll("appC", "source=OriginsFileConverter", "state:active")
+                    it[5].tags().shouldContainAll("appC", "state:active")
                     it[5].type().shouldBe("HostProxy")
                     it[5].config().shouldNotBeNull()
 
                     it[6].name() shouldBe "appC.appC-2"
-                    it[6].tags().shouldContainAll("appC", "source=OriginsFileConverter", "state:active")
+                    it[6].tags().shouldContainAll("appC", "state:active")
                     it[6].type().shouldBe("HostProxy")
                     it[6].config().shouldNotBeNull()
 
                     it[7].name() shouldBe "appC"
-                    it[7].tags().shouldContainAll("source=OriginsFileConverter")
+                    it[7].tags().shouldBeEmpty()
                     it[7].type().shouldBe("LoadBalancingGroup")
                     it[7].config().shouldNotBeNull()
-
-                    it[8].name() shouldBe "pathPrefixRouter"
-                    it[8].tags().shouldContainAll("source=OriginsFileConverter")
-                    it[8].type().shouldBe("PathPrefixRouter")
-                    it[8].config().shouldNotBeNull()
                 }
     }
 
@@ -266,8 +248,7 @@ class OriginsConfigConverterTest : StringSpec({
         val services = translator.healthCheckServices(apps)
 
         services.size shouldBe 3
-        services[0].first shouldBe "appA"
-        services[0].second.tags.shouldContainAll(OBJECT_CREATOR_TAG)
+        services[0].first shouldBe "appA-monitor"
         services[0].second.type shouldBe "HealthCheckMonitor"
         services[0].second.styxService.shouldNotBeNull()
         services[0].second.config.get(HealthCheckConfiguration::class.java).let {
@@ -278,8 +259,7 @@ class OriginsConfigConverterTest : StringSpec({
             it.healthyThreshod shouldBe 3
         }
 
-        services[1].first shouldBe "appB"
-        services[1].second.tags.shouldContainAll(OBJECT_CREATOR_TAG)
+        services[1].first shouldBe "appB-monitor"
         services[1].second.type shouldBe "HealthCheckMonitor"
         services[1].second.styxService.shouldNotBeNull()
         services[1].second.config.get(HealthCheckConfiguration::class.java).let {
@@ -290,8 +270,7 @@ class OriginsConfigConverterTest : StringSpec({
             it.healthyThreshod shouldBe 6
         }
 
-        services[2].first shouldBe "appC"
-        services[2].second.tags.shouldContainAll(OBJECT_CREATOR_TAG)
+        services[2].first shouldBe "appC-monitor"
         services[2].second.type shouldBe "HealthCheckMonitor"
         services[2].second.styxService.shouldNotBeNull()
         services[2].second.config.get(HealthCheckConfiguration::class.java).let {
@@ -334,9 +313,9 @@ class OriginsConfigConverterTest : StringSpec({
         OriginsConfigConverter(serviceDb, RoutingObjectFactoryContext().get(), "")
                 .routingObjects(deserialiseOrigins(config))
                 .let {
-                    it[0].tags().shouldContainAll("appWithHealthCheck", "source=OriginsFileConverter", "state:inactive")
-                    it[2].tags().shouldContainAll("appMissingHealthCheckUri", "source=OriginsFileConverter", "state:active")
-                    it[4].tags().shouldContainAll("appWithNoHealthCheck", "source=OriginsFileConverter", "state:active")
+                    it[0].tags().shouldContainAll("appWithHealthCheck", "state:inactive")
+                    it[2].tags().shouldContainAll("appMissingHealthCheckUri", "state:active")
+                    it[4].tags().shouldContainAll("appWithNoHealthCheck", "state:active")
                 }
     }
 

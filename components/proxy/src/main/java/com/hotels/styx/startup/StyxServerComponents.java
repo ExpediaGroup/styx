@@ -143,7 +143,7 @@ public class StyxServerComponents {
                     LOGGER.warn("Starting provider: " + name + ": " + definition);
 
                     // Build provider object
-                    StyxService provider = Builtins.build(definition, providerObjectStore, BUILTIN_SERVICE_PROVIDER_FACTORIES, routingObjectContext);
+                    StyxService provider = Builtins.build(name, definition, providerObjectStore, BUILTIN_SERVICE_PROVIDER_FACTORIES, routingObjectContext);
 
                     // Create a provider object record
                     ProviderObjectRecord record = new ProviderObjectRecord(definition.type(), ImmutableSet.copyOf(definition.tags()), definition.config(), provider);
