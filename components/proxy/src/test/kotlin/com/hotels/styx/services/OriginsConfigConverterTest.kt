@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.services
 
+import com.hotels.styx.lbGroupTag
 import com.hotels.styx.routing.RoutingObjectFactoryContext
 import com.hotels.styx.routing.config.Builtins.INTERCEPTOR_PIPELINE
 import com.hotels.styx.routing.db.StyxObjectStore
@@ -48,12 +49,12 @@ class OriginsConfigConverterTest : StringSpec({
                     it.size shouldBe 3
 
                     it[0].name() shouldBe "app.app1"
-                    it[0].tags().shouldContainAll("app", "state:active")
+                    it[0].tags().shouldContainAll(lbGroupTag("app"), "state:active")
                     it[0].type().shouldBe("HostProxy")
                     it[0].config().shouldNotBeNull()
 
                     it[1].name() shouldBe "app.app2"
-                    it[1].tags().shouldContainAll("app", "state:active")
+                    it[1].tags().shouldContainAll(lbGroupTag("app"), "state:active")
                     it[1].type().shouldBe("HostProxy")
                     it[1].config().shouldNotBeNull()
 
@@ -127,12 +128,12 @@ class OriginsConfigConverterTest : StringSpec({
                     it.size shouldBe 3
 
                     it[0].name() shouldBe "app.app1"
-                    it[0].tags().shouldContainAll("app", "state:active")
+                    it[0].tags().shouldContainAll(lbGroupTag("app"), "state:active")
                     it[0].type().shouldBe("HostProxy")
                     it[0].config().shouldNotBeNull()
 
                     it[1].name() shouldBe "app.app2"
-                    it[1].tags().shouldContainAll("app", "state:active")
+                    it[1].tags().shouldContainAll(lbGroupTag("app"), "state:active")
                     it[1].type().shouldBe("HostProxy")
                     it[1].config().shouldNotBeNull()
 
@@ -168,12 +169,12 @@ class OriginsConfigConverterTest : StringSpec({
                     it.size shouldBe 8
 
                     it[0].name() shouldBe "appA.appA-1"
-                    it[0].tags().shouldContainAll("appA", "state:active")
+                    it[0].tags().shouldContainAll(lbGroupTag("appA"), "state:active")
                     it[0].type().shouldBe("HostProxy")
                     it[0].config().shouldNotBeNull()
 
                     it[1].name() shouldBe "appA.appA-2"
-                    it[1].tags().shouldContainAll("appA", "state:active")
+                    it[1].tags().shouldContainAll(lbGroupTag("appA"), "state:active")
                     it[1].type().shouldBe("HostProxy")
                     it[1].config().shouldNotBeNull()
 
@@ -183,7 +184,7 @@ class OriginsConfigConverterTest : StringSpec({
                     it[2].config().shouldNotBeNull()
 
                     it[3].name() shouldBe "appB.appB-1"
-                    it[3].tags().shouldContainAll("appB", "state:active")
+                    it[3].tags().shouldContainAll(lbGroupTag("appB"), "state:active")
                     it[3].type().shouldBe("HostProxy")
                     it[3].config().shouldNotBeNull()
 
@@ -193,12 +194,12 @@ class OriginsConfigConverterTest : StringSpec({
                     it[4].config().shouldNotBeNull()
 
                     it[5].name() shouldBe "appC.appC-1"
-                    it[5].tags().shouldContainAll("appC", "state:active")
+                    it[5].tags().shouldContainAll(lbGroupTag("appC"), "state:active")
                     it[5].type().shouldBe("HostProxy")
                     it[5].config().shouldNotBeNull()
 
                     it[6].name() shouldBe "appC.appC-2"
-                    it[6].tags().shouldContainAll("appC", "state:active")
+                    it[6].tags().shouldContainAll(lbGroupTag("appC"), "state:active")
                     it[6].type().shouldBe("HostProxy")
                     it[6].config().shouldNotBeNull()
 
@@ -313,9 +314,9 @@ class OriginsConfigConverterTest : StringSpec({
         OriginsConfigConverter(serviceDb, RoutingObjectFactoryContext().get(), "")
                 .routingObjects(deserialiseOrigins(config))
                 .let {
-                    it[0].tags().shouldContainAll("appWithHealthCheck", "state:inactive")
-                    it[2].tags().shouldContainAll("appMissingHealthCheckUri", "state:active")
-                    it[4].tags().shouldContainAll("appWithNoHealthCheck", "state:active")
+                    it[0].tags().shouldContainAll(lbGroupTag("appWithHealthCheck"), "state:inactive")
+                    it[2].tags().shouldContainAll(lbGroupTag("appMissingHealthCheckUri"), "state:active")
+                    it[4].tags().shouldContainAll(lbGroupTag("appWithNoHealthCheck"), "state:active")
                 }
     }
 

@@ -26,6 +26,7 @@ import com.hotels.styx.config.schema.SchemaDsl.integer
 import com.hotels.styx.config.schema.SchemaDsl.optional
 import com.hotels.styx.config.schema.SchemaDsl.string
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig
+import com.hotels.styx.lbGroupTag
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.RoutingObjectFactory
@@ -184,16 +185,8 @@ internal fun tagIsIncomplete(tag: Set<String>) = !healthStatusTag(tag)
 
 internal fun discoverMonitoredObjects(application: String, objectStore: StyxObjectStore<RoutingObjectRecord>) =
         objectStore.entrySet()
-                .filter { it.value.tags.contains(application) }
+                .filter { it.value.tags.contains(lbGroupTag(application)) }
                 .map { Pair(it.key, it.value) }
-
-private fun removeTags(db: StyxObjectStore<RoutingObjectRecord>, name: String) {
-    db.get(name).ifPresent {
-        db.insert(name, it.copy(tags = it.tags
-                .filterNot { tag -> tag.matches("($ACTIVE_TAG|$INACTIVE_TAG).*".toRegex()) }
-                .toSet()))
-    }
-}
 
 private fun markObject(db: StyxObjectStore<RoutingObjectRecord>, name: String, newStatus: ObjectHealth) {
     db.get(name).ifPresent { db.insert(name, it.copy(tags = reTag(it.tags, newStatus))) }

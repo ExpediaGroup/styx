@@ -32,6 +32,7 @@ import com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSo
 import com.hotels.styx.infrastructure.configuration.json.ObjectMappers
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML
+import com.hotels.styx.lbGroupTag
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.Builtins
 import com.hotels.styx.routing.config.Builtins.HEALTH_CHECK_MONITOR
@@ -55,8 +56,7 @@ internal class OriginsConfigConverter(
         val context: RoutingObjectFactory.Context,
         val originRestrictionCookie: String?) {
 
-    internal fun routingObjects(apps: List<BackendService>) =
-            routingObjectConfigs(apps)
+    internal fun routingObjects(apps: List<BackendService>) = routingObjectConfigs(apps)
 
     internal fun routingObjectRecord(objectDef: StyxObjectDefinition) = RoutingObjectRecord.create(
             objectDef.type(),
@@ -64,8 +64,8 @@ internal class OriginsConfigConverter(
             objectDef.config(),
             Builtins.build(listOf(objectDef.name()), context, objectDef))
 
-    internal fun routingObjectConfigs(apps: List<BackendService>): List<StyxObjectDefinition> =
-            apps.flatMap { toBackendServiceObjects(it, originRestrictionCookie) }
+    internal fun routingObjectConfigs(apps: List<BackendService>) = apps
+            .flatMap { toBackendServiceObjects(it, originRestrictionCookie) }
 
     internal fun pathPrefixRouter(name: String, apps: List<BackendService>): StyxObjectDefinition {
         val configuration = """
@@ -150,13 +150,12 @@ internal class OriginsConfigConverter(
         }
 
         internal fun hostProxy(app: BackendService, origin: Origin) : StyxObjectDefinition {
-
             val healthCheckTag :String = if (isHealthCheckConfigured(app)) INACTIVE_TAG else ACTIVE_TAG;
 
             return StyxObjectDefinition(
                 "${app.id()}.${origin.id()}",
                 HOST_PROXY,
-                listOf(app.id().toString(), healthCheckTag),
+                listOf(lbGroupTag(app.id().toString()), healthCheckTag),
                 hostProxyConfig(
                         app.connectionPoolConfig(),
                         app.tlsSettings().orElse(null),
