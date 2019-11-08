@@ -16,6 +16,7 @@
 package com.hotels.styx.services
 
 import com.hotels.styx.api.LiveHttpRequest
+import com.hotels.styx.lbGroupTag
 import com.hotels.styx.routing.CaptureList
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
@@ -26,7 +27,6 @@ import io.kotlintest.matchers.boolean.shouldBeTrue
 import io.kotlintest.matchers.collections.shouldContain
 import io.kotlintest.matchers.collections.shouldContainAll
 import io.kotlintest.matchers.collections.shouldContainExactly
-import io.kotlintest.matchers.string.shouldNotStartWith
 import io.kotlintest.matchers.withClue
 import io.kotlintest.milliseconds
 import io.kotlintest.shouldBe
@@ -52,10 +52,10 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
 
         val objectStore = StyxObjectStore<RoutingObjectRecord>()
                 .apply {
-                    record("aaa-01", "X", setOf("aaa"), mockk(), mockk())
-                    record("aaa-02", "x", setOf("aaa", "state:active"), mockk(), mockk())
-                    record("aaa-03", "x", setOf("aaa", "state:inactive"), mockk(), mockk())
-                    record("aaa-04", "x", setOf("aaa", "state:inactive"), mockk(), mockk())
+                    record("aaa-01", "X", setOf(lbGroupTag("aaa")), mockk(), mockk())
+                    record("aaa-02", "x", setOf(lbGroupTag("aaa"), "state:active"), mockk(), mockk())
+                    record("aaa-03", "x", setOf(lbGroupTag("aaa"), "state:inactive"), mockk(), mockk())
+                    record("aaa-04", "x", setOf(lbGroupTag("aaa"), "state:inactive"), mockk(), mockk())
                 }
 
         val monitor = HealthCheckMonitoringService(
@@ -78,10 +78,10 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
 
             verify { scheduledFuture.cancel(false) }
 
-            objectStore["aaa-01"].get().tags.filterNot{ createdTag(it) }.shouldContainExactly("aaa")
-            objectStore["aaa-02"].get().tags.filterNot{ createdTag(it) }.shouldContainExactly("aaa", "state:active")
-            objectStore["aaa-03"].get().tags.filterNot{ createdTag(it) }.shouldContainExactly("aaa", "state:active:0")
-            objectStore["aaa-04"].get().tags.filterNot{ createdTag(it) }.shouldContainExactly("aaa", "state:active:0")
+            objectStore["aaa-01"].get().tags.filterNot{ createdTag(it) }.shouldContainExactly(lbGroupTag("aaa"))
+            objectStore["aaa-02"].get().tags.filterNot{ createdTag(it) }.shouldContainExactly(lbGroupTag("aaa"), "state:active")
+            objectStore["aaa-03"].get().tags.filterNot{ createdTag(it) }.shouldContainExactly(lbGroupTag("aaa"), "state:active:0")
+            objectStore["aaa-04"].get().tags.filterNot{ createdTag(it) }.shouldContainExactly(lbGroupTag("aaa"), "state:active:0")
         }
     }
 
@@ -90,8 +90,8 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
         scenario("Obtains objects tagged with application name") {
             discoverMonitoredObjects("aaa", StyxObjectStore<RoutingObjectRecord>()
                     .apply {
-                        record("aaa-01", "X", setOf("aaa"), mockk(), mockk())
-                        record("aaa-02", "x", setOf("aaa"), mockk(), mockk())
+                        record("aaa-01", "X", setOf(lbGroupTag("aaa")), mockk(), mockk())
+                        record("aaa-02", "x", setOf(lbGroupTag("aaa")), mockk(), mockk())
                     }).let {
                 it.size shouldBe 2
                 it.map { it.first }.shouldContainAll("aaa-01", "aaa-02")
@@ -105,8 +105,8 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
         scenario("Returns nothing when tagged applications are not found") {
             discoverMonitoredObjects("aaa", StyxObjectStore<RoutingObjectRecord>()
                     .apply {
-                        record("bbb-01", "X", setOf("bbb"), mockk(), mockk())
-                        record("ccc-02", "x", setOf("ccc", "state:disabled"), mockk(), mockk())
+                        record("bbb-01", "X", setOf(lbGroupTag("bbb")), mockk(), mockk())
+                        record("ccc-02", "x", setOf(lbGroupTag("ccc"), "state:disabled"), mockk(), mockk())
                     }).size shouldBe 0
         }
     }
@@ -152,8 +152,8 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
 
         val objectStore = StyxObjectStore<RoutingObjectRecord>()
                 .apply {
-                    record("aaa-01", "X", setOf("aaa"), mockk(), handler01)
-                    record("aaa-02", "x", setOf("aaa"), mockk(), handler02)
+                    record("aaa-01", "X", setOf(lbGroupTag("aaa")), mockk(), handler01)
+                    record("aaa-02", "x", setOf(lbGroupTag("aaa")), mockk(), handler02)
                 }
 
         val monitor = HealthCheckMonitoringService(objectStore, "aaa", "/healthCheck.txt", 100.milliseconds, 3, 3, executor)
@@ -193,8 +193,8 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
 
         scenario("... failed health check increments failure count for reachable origins") {
             objectStore.apply {
-                record("aaa-03", "X", setOf("aaa", "state:active"), mockk(), failingMockObject())
-                record("aaa-04", "X", setOf("aaa", "state:inactive"), mockk(), failingMockObject())
+                record("aaa-03", "X", setOf(lbGroupTag("aaa"), "state:active"), mockk(), failingMockObject())
+                record("aaa-04", "X", setOf(lbGroupTag("aaa"), "state:inactive"), mockk(), failingMockObject())
             }
 
             monitor.runChecks("aaa", objectStore)
@@ -220,33 +220,33 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
 
     feature("retagging") {
         scenario("Re-tag an active object") {
-            reTag(setOf("aaa", "state:active:0"), ObjectActive(1))
+            reTag(setOf(lbGroupTag("aaa"), "state:active:0"), ObjectActive(1))
                     .let {
                         println("new tags: " + it)
 
                         it.shouldContainExactly(
-                                "aaa",
+                                lbGroupTag("aaa"),
                                 "state:active:1")
                     }
         }
 
         scenario("Re-tag an inactive object") {
-            reTag(setOf("aaa", "state:inactive:0"), ObjectActive(1))
+            reTag(setOf(lbGroupTag("aaa"), "state:inactive:0"), ObjectActive(1))
                     .let {
                         println("new tags: " + it)
 
                         it.shouldContainExactly(
-                                "aaa",
+                                lbGroupTag("aaa"),
                                 "state:active:1")
                     }
         }
 
         scenario("Check for incomplete tag") {
-            tagIsIncomplete(setOf("aaa", "state:active", "bbb")).shouldBeTrue()
-            tagIsIncomplete(setOf("aaa", "state:inactive", "bbb")).shouldBeTrue()
+            tagIsIncomplete(setOf(lbGroupTag("aaa"), "state:active", "bbb")).shouldBeTrue()
+            tagIsIncomplete(setOf(lbGroupTag("aaa"), "state:inactive", "bbb")).shouldBeTrue()
 
-            tagIsIncomplete(setOf("aaa", "state:active:0", "bbb")).shouldBeFalse()
-            tagIsIncomplete(setOf("aaa", "state:inactive:1", "bbb")).shouldBeFalse()
+            tagIsIncomplete(setOf(lbGroupTag("aaa"), "state:active:0", "bbb")).shouldBeFalse()
+            tagIsIncomplete(setOf(lbGroupTag("aaa"), "state:inactive:1", "bbb")).shouldBeFalse()
         }
     }
 })

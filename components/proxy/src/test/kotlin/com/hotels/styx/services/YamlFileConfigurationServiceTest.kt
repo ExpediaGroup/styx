@@ -23,6 +23,7 @@ import com.hotels.styx.api.extension.service.spi.StyxService
 import com.hotels.styx.api.extension.service.spi.StyxServiceStatus.RUNNING
 import com.hotels.styx.api.extension.service.spi.StyxServiceStatus.STOPPED
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig
+import com.hotels.styx.lbGroupTag
 import com.hotels.styx.routing.RoutingObjectFactoryContext
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
@@ -148,8 +149,8 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                     val objects = objectStore.toMap()
                     objects.size shouldBe 4
 
-                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf("app", "source=zone1")))
-                    objects["app.app-02"]!!.should(beRoutingObject("HostProxy", setOf("app", "source=zone1")))
+                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf(lbGroupTag("app"), "source=zone1")))
+                    objects["app.app-02"]!!.should(beRoutingObject("HostProxy", setOf(lbGroupTag("app"), "source=zone1")))
                     objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf("source=zone1")))
                     objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf("source=zone1")))
                 }
@@ -169,7 +170,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
 
                     objects.size shouldBe 3
 
-                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf("app", "source=zone1")))
+                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf(lbGroupTag("app"), "source=zone1")))
                     objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf("source=zone1")))
                     objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf("source=zone1")))
                 }
@@ -189,7 +190,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
 
                     objects.size shouldBe 3
 
-                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf("app", "source=zone1")))
+                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf(lbGroupTag("app"), "source=zone1")))
                     objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf("source=zone1")))
                     objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf("source=zone1")))
 
@@ -215,9 +216,9 @@ class YamlFileConfigurationServiceTest : FunSpec() {
 
                     objects.size shouldBe 5
 
-                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf("app", "source=zone1")))
+                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf(lbGroupTag("app"), "source=zone1")))
                     objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf("source=zone1")))
-                    objects["appB.appB-01"]!!.should(beRoutingObject("HostProxy", setOf("appB", "source=zone1")))
+                    objects["appB.appB-01"]!!.should(beRoutingObject("HostProxy", setOf(lbGroupTag("appB"), "source=zone1")))
                     objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf("source=zone1")))
                     objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf("source=zone1")))
                 }
@@ -237,7 +238,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
 
                     objects.size shouldBe 3
 
-                    objects["appB.appB-01"]!!.should(beRoutingObject("HostProxy", setOf("appB", "source=zone1")))
+                    objects["appB.appB-01"]!!.should(beRoutingObject("HostProxy", setOf(lbGroupTag("appB"), "source=zone1")))
                     objects["appB"]!!.should(beRoutingObject("LoadBalancingGroup", setOf("source=zone1")))
                     objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf("source=zone1")))
                 }
@@ -257,7 +258,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                     val objects = objectStore.toMap()
 
                     objects.size shouldBe 3
-                    objects["appB.appB-01"]!!.should(beRoutingObject("HostProxy", setOf("appB", "source=zone1")))
+                    objects["appB.appB-01"]!!.should(beRoutingObject("HostProxy", setOf(lbGroupTag("appB"), "source=zone1")))
                     objects["appB"]!!.should(beRoutingObject("LoadBalancingGroup", setOf("source=zone1")))
                     objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf("source=zone1")))
                 }
@@ -284,7 +285,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                 val objects = objectStore.toMap()
 
                 objects["appB.appB-01"]!!.should(beRoutingObject("HostProxy",
-                        setOf(creationTimes["appB.appB-01"]!!, "appB", "source=zone1")))
+                        setOf(creationTimes["appB.appB-01"]!!, lbGroupTag("appB"), "source=zone1")))
 
                 objects["appB"]!!.should(beRoutingObject("LoadBalancingGroup",
                         setOf(creationTimes["appB"]!!, "source=zone1")))
@@ -619,7 +620,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                 val objects = objectStore.toMap()
 
                 objects.size shouldBe 3
-                objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf("app", "source=origins-provider")))
+                objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf(lbGroupTag("app"), "source=origins-provider")))
                 objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf("source=origins-provider")))
                 objects["origins-provider-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf("source=origins-provider")))
             }
@@ -633,7 +634,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
 //                    val objects = objectStore.toMap()
 //
 //                    objects.size shouldBe 3
-//                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf("app", OBJECT_CREATOR_TAG)))
+//                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf(lbGroupTag("app"), OBJECT_CREATOR_TAG)))
 //                    objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
 //                    objects["cloud-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
 //                }
@@ -660,7 +661,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
 //                        println("entry key: ${it.key}")
 //                    }
 //
-//                    objects["appC.appC-01"]!!.should(beRoutingObject("HostProxy", setOf("appC", OBJECT_CREATOR_TAG)))
+//                    objects["appC.appC-01"]!!.should(beRoutingObject("HostProxy", setOf(lbGroupTag("appC"), OBJECT_CREATOR_TAG)))
 //                    objects["appC"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
 //                    objects["cloud-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
 //                }
