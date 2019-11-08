@@ -145,7 +145,6 @@ public class AdminServerBuilder {
         RoutingObjectHandler routingObjectHandler = new RoutingObjectHandler(routeDatabase, routingObjectFactoryContext);
         httpRouter.aggregate("/admin/routing", routingObjectHandler);
         httpRouter.aggregate("/admin/routing/", routingObjectHandler);
-        httpRouter.aggregate("/admin/kotlin/test", new KotlinHtmlHandler(routeDatabase));
 
         ServiceProviderHandler serviceProvideHandler = new ServiceProviderHandler(providerDatabase);
         httpRouter.aggregate("/admin/service/providers", serviceProvideHandler);

@@ -16,7 +16,9 @@
 package com.hotels.styx.services
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.hotels.styx.admin.handlers.TextHttpHandler
+import com.google.common.net.MediaType.HTML_UTF_8
+import com.google.common.net.MediaType.PLAIN_TEXT_UTF_8
+import com.hotels.styx.common.http.handler.HttpContentHandler
 import com.hotels.styx.api.extension.service.spi.StyxService
 import com.hotels.styx.config.schema.SchemaDsl
 import com.hotels.styx.config.schema.SchemaDsl.bool
@@ -31,13 +33,15 @@ import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.ProviderObjectRecord
 import com.hotels.styx.serviceproviders.ServiceProviderFactory
 import com.hotels.styx.services.OriginsConfigConverter.Companion.deserialiseOrigins
+import com.hotels.styx.sourceTag
 import org.slf4j.LoggerFactory
+import java.nio.charset.StandardCharsets.UTF_8
 import java.time.Duration
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicReference
 
 internal class YamlFileConfigurationService(
-        name: String,
+        private val name: String,
         private val routeDb: StyxObjectStore<RoutingObjectRecord>,
         private val converter: OriginsConfigConverter,
         private val config: YamlFileConfigurationServiceConfig,
@@ -53,7 +57,7 @@ internal class YamlFileConfigurationService(
 
     private val ingressObjectName = if (config.ingressObject.isNotBlank()) config.ingressObject else "$name-router"
 
-    private val objectSourceTag = "source=$name"
+    private val objectSourceTag = sourceTag(name)
 
     private val fileMonitoringService = FileMonitoringService("YamlFileCoinfigurationService", config.originsFile, pollInterval) {
         reloadAction(it)
@@ -87,8 +91,11 @@ internal class YamlFileConfigurationService(
                 LOGGER.info("service stopped")
             }
 
-    override fun adminInterfaceHandlers() =
-            mapOf("origins" to TextHttpHandler { originsConfig })
+    override fun adminInterfaceHandlers() = mapOf(
+            "configuration" to HttpContentHandler(PLAIN_TEXT_UTF_8.toString(), UTF_8) { originsConfig },
+            "origins" to HttpContentHandler(HTML_UTF_8.toString(), UTF_8) {
+                OriginsPageRenderer(name, routeDb).render()
+            })
 
     fun reloadAction(content: String): Unit {
         LOGGER.info("New origins configuration: \n$content")
@@ -96,7 +103,9 @@ internal class YamlFileConfigurationService(
         kotlin.runCatching {
             val deserialised = deserialiseOrigins(content)
 
-            val routingObjectDefs = (converter.routingObjects(deserialised) + converter.pathPrefixRouter(ingressObjectName, deserialised))
+            val routingObjectDefs = (
+                    converter.routingObjects(deserialised) +
+                            converter.pathPrefixRouter(ingressObjectName, deserialised))
                     .map { StyxObjectDefinition(it.name(), it.type(), it.tags() + objectSourceTag, it.config()) }
 
             val healthMonitors = converter.healthCheckServices(deserialised)
