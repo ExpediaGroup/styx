@@ -46,8 +46,10 @@ fun httpsConfig(host: String) = jsonNodeDef("""
               trustAllCerts: true
             """)!!
 
+private val assetsRoot = ""
+
 class OriginsPageRendererTest : FunSpec({
-    context("Origins Dashboard Page") {
+    context("!Origins Dashboard Page") {
         val routeDb = StyxObjectStore<RoutingObjectRecord>()
 
         routeDb.insert("router", RoutingObjectRecord.create(
@@ -80,7 +82,8 @@ class OriginsPageRendererTest : FunSpec({
         routeDb.insert("landing-02", RoutingObjectRecord.create(
                 "HostProxy",
                 setOf(lbGroupTag("landing"),
-                        sourceTag("dcProvider")),
+                        sourceTag("dcProvider"),
+                        "state:inactive"),
                 httpConfig("lahost2:80"),
                 mockk()))
 
@@ -124,18 +127,19 @@ class OriginsPageRendererTest : FunSpec({
                 httpsConfig("cloudhost:80"),
                 mockk()))
 
-        val page = OriginsPageRenderer("dcProvider", routeDb).render()
+        val page = OriginsPageRenderer(assetsRoot, "dcProvider", routeDb).render()
 
         println("page: ")
         println(page)
 
         test("Provider name appears in title") {
-            page.shouldContain("Application Dashboard: dcProvider</h2>")
+            page.shouldContain("<h3 class=\"title grey-text text-darken-3 left-align\">Configured Services</h3>")
+            page.shouldContain("<h6 class=\"title grey-text text-darken-3 left-align\">Provider: dcProvider</h6>")
         }
 
         test("Application title shows path prefix and application name") {
-            page.shouldContain("<h5>/ -&gt; landingApp</h5>")
-            page.shouldContain("<h5>/shopping -&gt; shoppingApp</h5>")
+            page.shouldContain("<h6>/ -&gt; landingApp</h6>")
+            page.shouldContain("<h6>/shopping -&gt; shoppingApp</h6>")
         }
 
         test("Ignores objects that were created by other providers") {
@@ -143,17 +147,70 @@ class OriginsPageRendererTest : FunSpec({
         }
 
         test("Indicates active origins") {
-            page.shouldContain("")
+            val lines = page.split("\n")
+
+            lines.find { it.contains("landing-01") }
+                    .shouldContain(">active</span>")
+
+            lines.find { it.contains("shopping-01") }
+                    .shouldContain(">active</span>")
         }
 
         test("Indicates inactive origins") {
-            page.shouldContain("")
+            val lines = page.split("\n")
+
+            lines.find { it.contains("landing-02") }
+                    .shouldContain(">inactive</span>")
         }
     }
 
+    context("LoadBalancingGroup objects wrapped inside InterceptorPipeline") {
+        val routeDb = StyxObjectStore<RoutingObjectRecord>()
 
+        routeDb.insert("router", RoutingObjectRecord.create(
+                "PathPrefixRouter",
+                setOf(sourceTag("dcProvider")),
+                jsonNodeDef("""
+                    routes:
+                    - prefix: /rewrites/
+                      destination: appWithRewrites
+                """.trimIndent()),
+                mockk()))
 
-    context("Show the page in browser") {
+        routeDb.insert("appWithRewrites", RoutingObjectRecord.create(
+                "InterceptorPipeline",
+                setOf(sourceTag("dcProvider")),
+                jsonNodeDef("""
+                  pipeline:
+                  - type: "Rewrite"
+                    config:
+                    - urlPattern: "/abc/(.*)"
+                      replacement: "/${'$'}1"
+                  handler:
+                    type: "LoadBalancingGroup"
+                    config:
+                      origins: "rwsApplied"
+                """.trimIndent()),
+                mockk()))
+
+        routeDb.insert("rwsApplied-01", RoutingObjectRecord.create(
+                "HostProxy",
+                setOf(lbGroupTag("rwsApplied"),
+                        sourceTag("dcProvider")),
+                httpConfig("rwshost:80"),
+                mockk()))
+
+        val page = OriginsPageRenderer(assetsRoot, "dcProvider", routeDb).render()
+
+        println("page: ")
+        println(page)
+
+        test("It detects them wrapped LoadBalancingGroup objects as configured applications") {
+            page.shouldContain("<h6>/rewrites/ -&gt; appWithRewrites</h6>")
+        }
+    }
+
+    context("!Show the page in browser") {
         test("Show page in browser") {
             val routeDb = StyxObjectStore<RoutingObjectRecord>()
 
@@ -206,7 +263,7 @@ class OriginsPageRendererTest : FunSpec({
                     .handlerFactory {
                         AdminHttpRouter().stream("/",
                                 HttpContentHandler(HTML_UTF_8.toString(), UTF_8) {
-                                    OriginsPageRenderer("provider", routeDb).render()
+                                    OriginsPageRenderer(assetsRoot, "provider", routeDb).render()
                                 })
                     }
                     .build()

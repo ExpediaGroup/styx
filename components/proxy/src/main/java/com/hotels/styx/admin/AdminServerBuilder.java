@@ -173,10 +173,11 @@ public class AdminServerBuilder {
                 });
 
         providerDatabase.entrySet().forEach(record -> {
+            String root = "providers";
             String extensionName = record.getKey();
             StyxService styxService = record.getValue().component4();
 
-            extensionEndpoints("providers", extensionName, styxService.adminInterfaceHandlers())
+            extensionEndpoints(root, extensionName, styxService.adminInterfaceHandlers(adminPath(root, extensionName)))
                     .forEach(route -> httpRouter.stream(route.path, route.handler()));
         });
 

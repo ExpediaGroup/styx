@@ -20,6 +20,7 @@ import com.google.common.net.MediaType.HTML_UTF_8
 import com.google.common.net.MediaType.PLAIN_TEXT_UTF_8
 import com.hotels.styx.common.http.handler.HttpContentHandler
 import com.hotels.styx.api.extension.service.spi.StyxService
+import com.hotels.styx.common.http.handler.HttpAggregator
 import com.hotels.styx.config.schema.SchemaDsl
 import com.hotels.styx.config.schema.SchemaDsl.bool
 import com.hotels.styx.config.schema.SchemaDsl.field
@@ -31,6 +32,7 @@ import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.config.StyxObjectDefinition
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.ProviderObjectRecord
+import com.hotels.styx.server.handlers.ClassPathResourceHandler
 import com.hotels.styx.serviceproviders.ServiceProviderFactory
 import com.hotels.styx.services.OriginsConfigConverter.Companion.deserialiseOrigins
 import com.hotels.styx.sourceTag
@@ -91,10 +93,11 @@ internal class YamlFileConfigurationService(
                 LOGGER.info("service stopped")
             }
 
-    override fun adminInterfaceHandlers() = mapOf(
+    override fun adminInterfaceHandlers(prefix: String) = mapOf(
+            "assets/" to HttpAggregator(ClassPathResourceHandler("$prefix/assets/", "/admin/assets/YamlConfigurationService")),
             "configuration" to HttpContentHandler(PLAIN_TEXT_UTF_8.toString(), UTF_8) { originsConfig },
             "origins" to HttpContentHandler(HTML_UTF_8.toString(), UTF_8) {
-                OriginsPageRenderer(name, routeDb).render()
+                OriginsPageRenderer("$prefix/assets", name, routeDb).render()
             })
 
     fun reloadAction(content: String): Unit {

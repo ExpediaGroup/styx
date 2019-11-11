@@ -1,3 +1,18 @@
+/*
+  Copyright (C) 2013-2019 Expedia Inc.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
 package com.hotels.styx.services
 
 import com.fasterxml.jackson.databind.JsonNode
@@ -5,6 +20,8 @@ import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig
 import com.hotels.styx.lbGroupTag
 import com.hotels.styx.matchLbGroupTag
 import com.hotels.styx.routing.RoutingObjectRecord
+import com.hotels.styx.routing.config.RoutingConfigParser.toRoutingConfigNode
+import com.hotels.styx.routing.config.StyxObjectDefinition
 import com.hotels.styx.routing.config.StyxObjectReference
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.PathPrefixRouter
@@ -19,7 +36,9 @@ import kotlinx.html.dom.append
 import kotlinx.html.dom.document
 import kotlinx.html.dom.serialize
 import kotlinx.html.h2
+import kotlinx.html.h3
 import kotlinx.html.h5
+import kotlinx.html.h6
 import kotlinx.html.head
 import kotlinx.html.html
 import kotlinx.html.i
@@ -34,32 +53,36 @@ import kotlinx.html.td
 import kotlinx.html.title
 import kotlinx.html.tr
 
-internal class OriginsPageRenderer(val provider: String, val routeDatabase: StyxObjectStore<RoutingObjectRecord>) {
+internal class OriginsPageRenderer(val assetsRoot: String, val provider: String, val routeDatabase: StyxObjectStore<RoutingObjectRecord>) {
 
     fun render() = document {
         append.html {
             head {
                 meta { name = "viewport"; content = "width=device-width, initial-scale=1" }
                 title("Styx admin interface")
-                link { rel = "stylesheet"; type = "text/css"; href = "https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" }
-                link { rel = "stylesheet"; href = "https://fonts.googleapis.com/icon?family=Material+Icons" }
-                script { src = "https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" }
+                link { rel = "stylesheet"; type = "text/css"; href = "$assetsRoot/materialize/css/materialize.min.css" }
+                script { src = "$assetsRoot/materialize/js/materialize.min.js" }
             }
             body {
                 div {
                     classes = setOf("container")
-                    h2 {
-                        classes = setOf("title grey-text text-darken-3 center-align")
-                        +"Application Dashboard: $provider"
+                    h3 {
+                        classes = setOf("title grey-text text-darken-3 left-align")
+                        +"Configured Services"
                     }
-                    p {
-                        classes = setOf("grey-text text-darken-3 center-align")
-                        +"(application router compatibility mode)"
+
+                    h6 {
+                        classes = setOf("title grey-text text-darken-3 left-align")
+                        +"Provider: $provider"
+                    }
+
+                    div {
+                        classes = setOf("divider")
                     }
 
                     val objects = routeDatabase.entrySet()
                             .map { it.key to it.value }
-                            .filter { (_, record) -> record.tags.contains(sourceTag(provider))}
+                            .filter { (_, record) -> record.tags.contains(sourceTag(provider)) }
                             .toList()
 
                     val appNames = applications(objects).sorted()
@@ -71,7 +94,8 @@ internal class OriginsPageRenderer(val provider: String, val routeDatabase: Styx
                             tbody {
                                 appNames.forEach {
                                     val prefix = pathPrefixMap(router).getOrDefault(it, "")
-                                    val origins = originRecords(objects, it)
+                                    val originsTag = originsTag(it, objects)
+                                    val origins = originRecords(objects, originsTag)
 
                                     appTitle(prefix, it)
                                     origins.forEach {
@@ -90,7 +114,7 @@ internal class OriginsPageRenderer(val provider: String, val routeDatabase: Styx
         tr {
             td {
                 colSpan = "4"
-                h5 {
+                h6 {
                     +"$prefix -> $appName"
                 }
             }
@@ -119,14 +143,10 @@ internal class OriginsPageRenderer(val provider: String, val routeDatabase: Styx
 
             attributes.put("width", "5%")
 
-            i {
-                classes = setOf("valign-wrapper left small material-icons pulse", textColor)
-
-                +when (originState(tags)) {
-                    "active" -> "cloud_done"
-                    "inactive" -> "cloud_off"
-                    else -> "cloud_done"
-                }
+            span {
+                classes = setOf("badge", textColor)
+                // TODO: Test `isBlank()` case:
+                +if (originState(tags).isBlank()) "active" else originState(tags)
             }
         }
     }
@@ -135,9 +155,9 @@ internal class OriginsPageRenderer(val provider: String, val routeDatabase: Styx
         td {
             attributes.put("width", "5%")
 
-            i {
-                classes = setOf("valign-wrapper left small material-icons blue-text")
-                +if (isSecureHost(config)) "lock" else "lock_open"
+            span {
+                classes = setOf("badge blue-text")
+                +if (isSecureHost(config)) "https" else "http"
             }
         }
     }
@@ -155,7 +175,6 @@ internal class OriginsPageRenderer(val provider: String, val routeDatabase: Styx
         td {
             div { tagsExceptStatusAndAppname(tags).forEach { routingObjectTag(it) } }
         }
-
     }
 
     fun DIV.routingObjectTag(tag: String) {
@@ -176,16 +195,48 @@ internal class OriginsPageRenderer(val provider: String, val routeDatabase: Styx
             }
             .toMap()
 
-    private fun String?.isNotNull() = this != null
-
-    private fun originRecords(objects: List<Pair<String, RoutingObjectRecord>>, appName: String) = objects
+    private fun originRecords(objects: List<Pair<String, RoutingObjectRecord>>, originsTag: String) = objects
             .filter { (_, record) -> record.type == "HostProxy" }
-            .filter { (_, record) -> record.tags.contains(lbGroupTag(appName)) }
+            .filter { (_, record) -> record.tags.contains(lbGroupTag(originsTag)) }
             .toList()
 
     private fun applications(objects: List<Pair<String, RoutingObjectRecord>>) = objects
-            .filter { it.second.type == "LoadBalancingGroup" }
+            .filter { (_, record) -> isApplicationObject(record) }
             .map { it.first }
+
+    private fun isApplicationObject(record: RoutingObjectRecord) = record.type == "LoadBalancingGroup" ||
+            (record.type == "InterceptorPipeline" && embeddedLoadBalancingGroup(record))
+
+    private fun embeddedLoadBalancingGroup(record: RoutingObjectRecord) = if (record.type == "InterceptorPipeline") {
+        JsonNodeConfig(record.config)
+                .get("handler", JsonNode::class.java)
+                .get()
+                .let { toRoutingConfigNode(it) }
+                .let { it is StyxObjectDefinition && it.type() == "LoadBalancingGroup" }
+    } else {
+        false
+    }
+
+    private fun originsTag(appName: String, objects: List<Pair<String, RoutingObjectRecord>>): String = objects
+            .find { (name, _) -> name == appName }
+            .let {
+                checkNotNull(it) { "Application '$appName' is not found in routing database." }
+
+                val (_, record) = it
+
+                if (record.type == "LoadBalancingGroup") {
+                    record.config.get("origins").textValue()
+                } else {
+                    JsonNodeConfig(record.config)
+                            .get("handler", JsonNode::class.java)
+                            .get()
+                            .let { toRoutingConfigNode(it) }
+                            .let {
+                                check(it is StyxObjectDefinition) { "Object is not an embedded LoadBalancingGroup" }
+                                it.config().get("origins").textValue()
+                            }
+                }
+            }
 
     private fun pathPrefixRouter(objects: List<Pair<String, RoutingObjectRecord>>) = objects
             .find { (_, record) -> record.type == "PathPrefixRouter" }!!

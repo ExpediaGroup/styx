@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -66,11 +66,30 @@ public interface StyxService extends StyxLifecycleListener {
     CompletableFuture<Void> stop();
 
     /**
-     * An admin interface hook for the service implementation.
+     * An admin interface hook.
+     *
+     * A call to this method should return a map of admin endpoint paths
+     * their corresponding HTTP handlers.
+     *
+     * Styx core calls this method when the service is provisioned.
+     * The actual URL endpoint depends on server configuration.
+     * Styx prefixes the returned endpoint paths with `
      *
      * @return Returns a list of named admin interface handlers.
      */
     default Map<String, HttpHandler> adminInterfaceHandlers() {
         return emptyMap();
+    }
+
+    /**
+     * An admin interface hook for the service implementation.
+     * The HTTP handler endpoints are prefixed with {@code baseUrlPath}.
+     *
+     * @param baseUrlPath A base path for the admin interface handlers.
+     *
+     * @return Returns a list of named admin interface handlers.
+     */
+    default Map<String, HttpHandler> adminInterfaceHandlers(String baseUrlPath) {
+        return adminInterfaceHandlers();
     }
 }
