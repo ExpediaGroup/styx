@@ -16,6 +16,7 @@
 package com.hotels.styx.routing.handlers
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.hotels.styx.STATE_INACTIVE
 import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpInterceptor
 import com.hotels.styx.api.Id
@@ -44,7 +45,7 @@ import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.config.StyxObjectDefinition
-import com.hotels.styx.services.HealthCheckMonitoringService.Companion.INACTIVE_TAG
+import com.hotels.styx.stateTag
 import org.slf4j.LoggerFactory
 import reactor.core.Disposable
 import reactor.core.publisher.toFlux
@@ -123,7 +124,7 @@ internal class LoadBalancingGroup(val client: StyxBackendServiceClient, val chan
         private fun routeDatabaseChanged(appId: String, snapshot: ObjectStore<RoutingObjectRecord>, remoteHosts: AtomicReference<Set<RemoteHost>>) {
             val newSet = snapshot.entrySet()
                     .filter { isTaggedWith(it, lbGroupTag(appId)) }
-                    .filterNot { isTaggedWith(it, "$INACTIVE_TAG.*".toRegex()) }
+                    .filterNot { isTaggedWith(it, stateTag(STATE_INACTIVE)) }
                     .map { toRemoteHost(appId, it) }
                     .toSet()
 

@@ -15,6 +15,8 @@
  */
 package com.hotels.styx.providers
 
+import com.hotels.styx.STATE_ACTIVE
+import com.hotels.styx.STATE_INACTIVE
 import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpInterceptor
@@ -31,6 +33,7 @@ import com.hotels.styx.lbGroupTag
 import com.hotels.styx.routing.ConditionRoutingSpec
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.routing.config.RoutingObjectFactory
+import com.hotels.styx.stateTag
 import com.hotels.styx.support.ResourcePaths
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.newRoutingObject
@@ -114,7 +117,7 @@ class HealthCheckProviderSpec : FeatureSpec() {
                 origin02Active.set(false)
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    styxServer().routingObject("aaa-02").get().shouldContain("state:inactive")
+                    styxServer().routingObject("aaa-02").get().shouldContain(stateTag(STATE_INACTIVE))
                 }
 
                 pollOrigins(styxServer, "origin-01", times = 50).let {
@@ -128,7 +131,7 @@ class HealthCheckProviderSpec : FeatureSpec() {
                 origin02Active.set(true)
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    styxServer().routingObject("aaa-02").get().shouldContain("state:active")
+                    styxServer().routingObject("aaa-02").get().shouldContain(stateTag(STATE_ACTIVE))
                 }
 
                 pollOrigins(styxServer, "origin-0[12]").let {
@@ -144,7 +147,7 @@ class HealthCheckProviderSpec : FeatureSpec() {
                 styxServer().newRoutingObject("aaa-03", hostProxy(lbGroupTag("aaa"), testServer03)).shouldBe(CREATED)
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    styxServer().routingObject("aaa-03").get().shouldContain("state:active")
+                    styxServer().routingObject("aaa-03").get().shouldContain(stateTag(STATE_ACTIVE))
                 }
 
                 pollOrigins(styxServer, "origin-0[123]").let {

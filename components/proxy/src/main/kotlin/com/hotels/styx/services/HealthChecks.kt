@@ -15,6 +15,10 @@
  */
 package com.hotels.styx.services
 
+import com.hotels.styx.HEALTH_FAIL
+import com.hotels.styx.HEALTH_SUCCESS
+import com.hotels.styx.STATE_ACTIVE
+import com.hotels.styx.STATE_INACTIVE
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.server.HttpInterceptorContext
@@ -23,9 +27,19 @@ import reactor.core.publisher.Mono
 import reactor.core.publisher.toMono
 import java.time.Duration
 
-sealed class ObjectHealth
-data class ObjectActive(val failedProbes: Int) : ObjectHealth()
-data class ObjectInactive(val successfulProbes: Int) : ObjectHealth()
+sealed class ObjectHealth {
+    abstract fun state(): String
+    abstract fun health(): String?
+}
+data class ObjectActive(val failedProbes: Int) : ObjectHealth() {
+    override fun state() = STATE_ACTIVE
+    override fun health() = if (failedProbes > 0) "$HEALTH_FAIL:$failedProbes" else null
+}
+data class ObjectInactive(val successfulProbes: Int) : ObjectHealth() {
+    override fun state() = STATE_INACTIVE
+    override fun health() = if (successfulProbes > 0) "$HEALTH_SUCCESS:$successfulProbes" else null
+}
+
 
 
 typealias Probe = (RoutingObject) -> Publisher<Boolean>

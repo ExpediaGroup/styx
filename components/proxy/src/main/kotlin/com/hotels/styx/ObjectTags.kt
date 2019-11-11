@@ -16,3 +16,19 @@
 package com.hotels.styx
 
 fun lbGroupTag(name: String) = "lbGroup=$name"
+
+private const val STATE = "state"
+const val STATE_ACTIVE = "active"
+const val STATE_INACTIVE = "inactive"
+fun stateTag(value: String) = "$STATE=$value"
+fun stateTag(tags: Set<String>) = tags.firstOrNull { it.startsWith("$STATE=") }
+fun isStateTag(tag: String) = tag.startsWith("$STATE=")
+fun stateTagValue(tags: Set<String>) = stateTag(tags)?.substring(STATE.length + 1)
+
+private const val HEALTH = "health"
+const val HEALTH_SUCCESS = "success"
+const val HEALTH_FAIL = "fail"
+fun healthTag(value: String?) = if (value != null) "$HEALTH=$value" else null
+fun healthTag(tags: Set<String>) = tags.firstOrNull { it.startsWith("$HEALTH=") }
+fun isHealthTag(tag: String) = tag.startsWith("$HEALTH=")
+fun healthTagValue(tags: Set<String>) = healthTag(tags)?.substring(HEALTH.length + 1)

@@ -17,6 +17,7 @@ package com.hotels.styx.services
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.JsonNode
+import com.hotels.styx.*
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.extension.service.spi.AbstractStyxService
 import com.hotels.styx.api.extension.service.spi.StyxService
@@ -26,21 +27,17 @@ import com.hotels.styx.config.schema.SchemaDsl.integer
 import com.hotels.styx.config.schema.SchemaDsl.optional
 import com.hotels.styx.config.schema.SchemaDsl.string
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig
-import com.hotels.styx.lbGroupTag
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.ProviderObjectRecord
 import com.hotels.styx.serviceproviders.ServiceProviderFactory
-import com.hotels.styx.services.HealthCheckMonitoringService.Companion.ACTIVE_TAG
 import com.hotels.styx.services.HealthCheckMonitoringService.Companion.EXECUTOR
-import com.hotels.styx.services.HealthCheckMonitoringService.Companion.INACTIVE_TAG
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Flux
 import reactor.core.publisher.toMono
 import java.time.Duration
-import java.util.Optional
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
@@ -68,9 +65,6 @@ internal class HealthCheckMonitoringService(
                 optional("unhealthyThreshold", integer())
         )
 
-        val ACTIVE_TAG = "state:active"
-        val INACTIVE_TAG = "state:inactive"
-
         internal val EXECUTOR = ScheduledThreadPoolExecutor(2)
 
         private val LOGGER = LoggerFactory.getLogger(HealthCheckMonitoringService::class.java)
@@ -93,9 +87,9 @@ internal class HealthCheckMonitoringService(
         LOGGER.info("stopped")
 
         objectStore.entrySet()
-                .filter(::containsInactiveTag)
-                .forEach {
-                    (name, _) -> markObject(objectStore, name, ObjectActive(0))
+                .filter(::containsStateTag)
+                .forEach { (name, _) ->
+                    markObject(objectStore, name, ObjectActive(0))
                 }
 
         futureRef.get().cancel(false)
@@ -104,18 +98,18 @@ internal class HealthCheckMonitoringService(
     internal fun runChecks(application: String, objectStore: StyxObjectStore<RoutingObjectRecord>) {
         val monitoredObjects = discoverMonitoredObjects(application, objectStore)
                 .map {
-                    val tag = healthStatusTag(it.second.tags).orElse(INACTIVE_TAG)
-                    val health = objectHealthFrom(tag).orElse(null)
-                    Triple(it.first, it.second, health)
+                    val tags = it.second.tags
+                    val objectHealth = objectHealthFrom(stateTagValue(tags), healthTagValue(tags))
+                    Triple(it.first, it.second, objectHealth)
                 }
                 .filter { (_, _, objectHealth) -> objectHealth != null }
 
         val pendingHealthChecks = monitoredObjects
                 .map { (name, record, objectHealth) ->
-                    healthCheck(probe, record.routingObject, objectHealth)
+                    healthCheck(probe, record.routingObject, objectHealth!!)
                             .map { newHealth -> Triple(name, objectHealth, newHealth) }
                             .doOnNext { (name, currentHealth, newHealth) ->
-                                if (currentHealth != newHealth || tagIsIncomplete(record.tags)) {
+                                if (currentHealth != newHealth) {
                                     markObject(objectStore, name, newHealth)
                                 }
                             }
@@ -158,30 +152,24 @@ internal class HealthCheckMonitoringServiceFactory : ServiceProviderFactory {
     }
 }
 
-internal fun objectHealthFrom(string: String) = Optional.ofNullable(
+internal fun objectHealthFrom(state: String?, health: String?) =
         when {
-            string.equals(ACTIVE_TAG) -> ObjectActive(0)
-            string.equals(INACTIVE_TAG) -> ObjectInactive(0)
-            string.matches("$ACTIVE_TAG:[0-9]+".toRegex()) -> {
-                val count = string.removePrefix("$ACTIVE_TAG:").toInt()
+            state == STATE_ACTIVE && (health?.matches("$HEALTH_FAIL:[0-9]+".toRegex()) ?: false) -> {
+                val count = health!!.removePrefix("$HEALTH_FAIL:").toInt()
                 ObjectActive(count)
             }
-            string.matches("$INACTIVE_TAG:[0-9]+".toRegex()) -> {
-                val count = string.removePrefix("$INACTIVE_TAG:").toInt()
+
+            state == STATE_INACTIVE && (health?.matches("$HEALTH_SUCCESS:[0-9]+".toRegex()) ?: false) -> {
+                val count = health!!.removePrefix("$HEALTH_SUCCESS:").toInt()
                 ObjectInactive(count)
             }
+
+            state == STATE_ACTIVE -> ObjectActive(0)
+            state == STATE_INACTIVE -> ObjectInactive(0)
+            state == null -> ObjectInactive(0)
+
             else -> null
-        })
-
-private fun healthStatusTag(tags: Set<String>) = Optional.ofNullable(
-        tags.firstOrNull {
-            it.startsWith(ACTIVE_TAG) || it.startsWith(INACTIVE_TAG)
         }
-)
-
-internal fun tagIsIncomplete(tag: Set<String>) = !healthStatusTag(tag)
-        .filter { it.matches(".+:([0-9]+)$".toRegex()) }
-        .isPresent
 
 internal fun discoverMonitoredObjects(application: String, objectStore: StyxObjectStore<RoutingObjectRecord>) =
         objectStore.entrySet()
@@ -189,18 +177,29 @@ internal fun discoverMonitoredObjects(application: String, objectStore: StyxObje
                 .map { Pair(it.key, it.value) }
 
 private fun markObject(db: StyxObjectStore<RoutingObjectRecord>, name: String, newStatus: ObjectHealth) {
-    db.get(name).ifPresent { db.insert(name, it.copy(tags = reTag(it.tags, newStatus))) }
+    // The ifPresent is not ideal, but compute() does not allow the computation to return null. So we can't preserve
+    // a state where the object does not exist using compute alone. But even with ifPresent, as we are open to
+    // the object disappearing between the ifPresent and the compute, which would again lead to the compute creating
+    // a new object when we don't want it to. But at least this will happen much less frequently.
+    db.get(name).ifPresent {
+        db.compute(name) { previous ->
+            val prevTags = previous!!.tags // TODO: Handle the !! failure
+            val newTags = reTag(prevTags, newStatus)
+            if (prevTags != newTags)
+                it.copy(tags = newTags)
+            else
+                previous
+        }
+    }
 }
 
-internal fun reTag(tags: Set<String>, newStatus: ObjectHealth) = tags
-        .filterNot { it.matches("($ACTIVE_TAG|$INACTIVE_TAG).*".toRegex()) }
-        .plus(statusTag(newStatus))
-        .toSet()
+internal fun reTag(tags: Set<String>, newStatus: ObjectHealth) =
+    tags.asSequence()
+            .filterNot { isStateTag(it) || isHealthTag(it) }
+            .plus(stateTag(newStatus.state()))
+            .plus(healthTag(newStatus.health()))
+            .filterNotNull()
+            .toSet()
 
-private fun statusTag(status: ObjectHealth) = when (status) {
-    is ObjectActive -> "$ACTIVE_TAG:${status.failedProbes}"
-    is ObjectInactive -> "$INACTIVE_TAG:${status.successfulProbes}"
-}
-
-private fun containsInactiveTag(entry: Map.Entry<String, RoutingObjectRecord>) =
-        entry.value.tags.any { it.matches("($INACTIVE_TAG).*".toRegex()) }
+private fun containsStateTag(entry: Map.Entry<String, RoutingObjectRecord>) =
+        stateTagValue(entry.value.tags) != null

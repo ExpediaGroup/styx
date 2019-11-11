@@ -150,7 +150,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                     type: HostProxy
                                     tags:
                                       - lbGroup=App-A
-                                      - state:inactive
+                                      - state=inactive
                                     config:
                                       host: localhost:${appA01.port()}
 
@@ -158,7 +158,8 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                     type: HostProxy
                                     tags:
                                       - lbGroup=App-A
-                                      - state:inactive:3
+                                      - state=inactive
+                                      - health=success:3
                                     config:
                                       host: localhost:${appA02.port()}
 
