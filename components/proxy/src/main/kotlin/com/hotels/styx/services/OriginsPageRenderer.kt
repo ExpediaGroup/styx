@@ -128,7 +128,7 @@ internal class OriginsPageRenderer(val assetsRoot: String, val provider: String,
         tr {
             originStatusField(record.tags)
             originSecurityField(record.config)
-            originNameField(originName)
+            originNameField(originName, record)
             originTagsField(record.tags)
         }
     }
@@ -162,14 +162,20 @@ internal class OriginsPageRenderer(val assetsRoot: String, val provider: String,
         }
     }
 
-    fun TR.originNameField(name: String) {
+    fun TR.originNameField(name: String, record: RoutingObjectRecord) {
         td {
             span {
                 classes = setOf("valign-wrapper title grey-text text-darken-3")
                 +name
             }
+            span {
+                classes = setOf("valign-wrapper title grey-text")
+                +originHost(record.config)
+            }
         }
     }
+
+    private fun originHost(config: JsonNode) = config.get("host").textValue()
 
     fun TR.originTagsField(tags: Set<String>) {
         td {

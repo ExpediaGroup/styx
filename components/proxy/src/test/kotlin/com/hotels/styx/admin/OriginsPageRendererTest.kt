@@ -16,23 +16,16 @@
 package com.hotels.styx.admin
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.google.common.net.MediaType.HTML_UTF_8
-import com.hotels.styx.common.http.handler.HttpContentHandler
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.lbGroupTag
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
-import com.hotels.styx.server.AdminHttpRouter
-import com.hotels.styx.server.HttpConnectorConfig
-import com.hotels.styx.server.netty.NettyServerBuilder
-import com.hotels.styx.server.netty.WebServerConnectorFactory
 import com.hotels.styx.services.OriginsPageRenderer
 import com.hotels.styx.sourceTag
 import io.kotlintest.matchers.string.shouldContain
 import io.kotlintest.matchers.string.shouldNotContain
 import io.kotlintest.specs.FunSpec
 import io.mockk.mockk
-import java.nio.charset.StandardCharsets.UTF_8
 
 fun jsonNodeDef(text: String) = YamlConfig(text).`as`(JsonNode::class.java)
 
@@ -49,7 +42,7 @@ fun httpsConfig(host: String) = jsonNodeDef("""
 private val assetsRoot = ""
 
 class OriginsPageRendererTest : FunSpec({
-    context("!Origins Dashboard Page") {
+    context("Origins Dashboard Page") {
         val routeDb = StyxObjectStore<RoutingObjectRecord>()
 
         routeDb.insert("router", RoutingObjectRecord.create(
@@ -150,17 +143,26 @@ class OriginsPageRendererTest : FunSpec({
             val lines = page.split("\n")
 
             lines.find { it.contains("landing-01") }
-                    .shouldContain(">active</span>")
+                    .let {
+                        it.shouldContain(">active</span>")
+                        it.shouldContain(">lahost:80</span>")
+                    }
 
             lines.find { it.contains("shopping-01") }
-                    .shouldContain(">active</span>")
+                    .let {
+                        it.shouldContain(">active</span>")
+                        it.shouldContain("shhost2:80")
+                    }
         }
 
         test("Indicates inactive origins") {
             val lines = page.split("\n")
 
             lines.find { it.contains("landing-02") }
-                    .shouldContain(">inactive</span>")
+                    .let {
+                        it.shouldContain(">inactive</span>")
+                        it.shouldContain("lahost2:80")
+                    }
         }
     }
 
@@ -207,70 +209,6 @@ class OriginsPageRendererTest : FunSpec({
 
         test("It detects them wrapped LoadBalancingGroup objects as configured applications") {
             page.shouldContain("<h6>/rewrites/ -&gt; appWithRewrites</h6>")
-        }
-    }
-
-    context("!Show the page in browser") {
-        test("Show page in browser") {
-            val routeDb = StyxObjectStore<RoutingObjectRecord>()
-
-            val routingDef = jsonNodeDef("""
-              routes:
-                - prefix: /
-                  destination: landing
-                - prefix: /b
-                  destination: landingB
-                - prefix: /search/
-                  destination: search
-                - prefix: /searchC/
-                  destination: searchC
-            """.trimIndent())
-
-            val httpConfig = jsonNodeDef("""
-                host: abc
-                """)
-
-            val httpsConfig = jsonNodeDef("""
-                host: abc
-                tlsSettings:
-                  trustAllCerts: true
-                """)
-
-            routeDb.insert("pathPrefixRouter", RoutingObjectRecord.create("PathPrefixRouter", setOf(sourceTag("provider")), routingDef, mockk()))
-
-            routeDb.insert("landing", RoutingObjectRecord.create("LoadBalancingGroup", setOf(sourceTag("provider")), mockk(), mockk()))
-            routeDb.insert("landing-01", RoutingObjectRecord.create("HostProxy", setOf(lbGroupTag("landing"), sourceTag("provider"), "state:active:0"), httpConfig, mockk()))
-            routeDb.insert("landing-02", RoutingObjectRecord.create("HostProxy", setOf(lbGroupTag("landing"), sourceTag("provider"), "state:inactive:0"), httpConfig, mockk()))
-
-            routeDb.insert("landingB", RoutingObjectRecord.create("LoadBalancingGroup", setOf(sourceTag("provider")), mockk(), mockk()))
-            routeDb.insert("landingB-01", RoutingObjectRecord.create("HostProxy", setOf(lbGroupTag("landingB"), sourceTag("provider"), "state:active"), httpsConfig, mockk()))
-            routeDb.insert("landingB-02", RoutingObjectRecord.create("HostProxy", setOf(lbGroupTag("landingB"), sourceTag("provider"), "state:active"), httpsConfig, mockk()))
-
-            routeDb.insert("search", RoutingObjectRecord.create("LoadBalancingGroup", setOf("search", sourceTag("provider")), mockk(), mockk()))
-            routeDb.insert("search-01", RoutingObjectRecord.create("HostProxy", setOf(lbGroupTag("search"), sourceTag("provider"), "state:active"), httpConfig, mockk()))
-            routeDb.insert("search-02", RoutingObjectRecord.create("HostProxy", setOf(lbGroupTag("search"), sourceTag("provider"), "state:active"), httpConfig, mockk()))
-            routeDb.insert("search-03", RoutingObjectRecord.create("HostProxy", setOf(lbGroupTag("search"), sourceTag("provider"), "state:active"), httpConfig, mockk()))
-
-            routeDb.insert("searchC", RoutingObjectRecord.create("LoadBalancingGroup", setOf(lbGroupTag("searchC"), sourceTag("provider")), mockk(), mockk()))
-            routeDb.insert("searchC-01", RoutingObjectRecord.create("HostProxy", setOf(lbGroupTag("searchC"), sourceTag("provider"), "state:active"), httpsConfig, mockk()))
-
-
-            NettyServerBuilder.newBuilder()
-                    .host("localhost")
-                    .setHttpConnector(
-                            WebServerConnectorFactory()
-                                    .create(HttpConnectorConfig(9090)))
-                    .handlerFactory {
-                        AdminHttpRouter().stream("/",
-                                HttpContentHandler(HTML_UTF_8.toString(), UTF_8) {
-                                    OriginsPageRenderer(assetsRoot, "provider", routeDb).render()
-                                })
-                    }
-                    .build()
-                    .startAsync()
-                    .awaitRunning()
-
-            Thread.sleep(100000)
         }
     }
 })
