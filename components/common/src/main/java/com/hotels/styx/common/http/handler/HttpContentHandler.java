@@ -13,33 +13,35 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.admin.handlers;
+package com.hotels.styx.common.http.handler;
 
-import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 
+import java.nio.charset.Charset;
 import java.util.function.Supplier;
 
-import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
-import static com.hotels.styx.api.LiveHttpResponse.response;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
 /**
  * Responds with UTF8 text stream.
  */
-public class TextHttpHandler implements HttpHandler {
+public class HttpContentHandler implements HttpHandler {
 
-    private final Supplier<String> text;
+    private final Supplier<String> content;
+    private final String contentType;
+    private final Charset encoding;
 
-    public TextHttpHandler(Supplier<String> text) {
-        this.text = requireNonNull(text, "text supplier cannot be null");
+    public HttpContentHandler(String contentType, Charset encoding, Supplier<String> content) {
+        this.content = requireNonNull(content, "content supplier cannot be null");
+        this.contentType = requireNonNull(contentType, "contentType cannot be null");
+        this.encoding = requireNonNull(encoding, "encoding cannot be null");
     }
 
     @Override
@@ -47,11 +49,12 @@ public class TextHttpHandler implements HttpHandler {
         return Eventual.of(createResponse());
     }
 
-    protected LiveHttpResponse createResponse() {
+    private LiveHttpResponse createResponse() {
         return response(OK)
                 .disableCaching()
-                .addHeader(CONTENT_TYPE, PLAIN_TEXT_UTF_8)
-                .body(ByteStream.from(text.get(), UTF_8))
-                .build();
+                .addHeader(CONTENT_TYPE, contentType)
+                .body(content.get(), encoding)
+                .build()
+                .stream();
     }
 }
