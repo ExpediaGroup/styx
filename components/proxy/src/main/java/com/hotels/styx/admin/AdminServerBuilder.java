@@ -190,7 +190,6 @@ public class AdminServerBuilder {
 
     private static Iterable<IndexHandler.Link> indexLinkPaths(StyxConfig styxConfig) {
         ImmutableList.Builder<IndexHandler.Link> builder = ImmutableList.builder();
-        builder.add(link("Kotlin/Test page", "/admin/kotlin/test"));
         builder.add(link("version.txt", "/version.txt"));
         builder.add(link("Ping", "/admin/ping"));
         builder.add(link("Threads", "/admin/threads"));

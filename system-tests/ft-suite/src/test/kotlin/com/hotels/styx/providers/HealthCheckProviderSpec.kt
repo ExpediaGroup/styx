@@ -117,9 +117,11 @@ class HealthCheckProviderSpec : FeatureSpec() {
                     styxServer().routingObject("aaa-02").get().shouldContain("state:inactive")
                 }
 
-                pollOrigins(styxServer, "origin-01", times = 50).let {
-                    withClue("Only the active origin (origin-01) should be taking traffic. Origins distribution: $it") {
-                        it["origin-01"]?:0.shouldBe(50)
+                eventually(2.seconds, AssertionError::class.java) {
+                    pollOrigins(styxServer, times = 50).let {
+                        withClue("Only the active origin (origin-01) should be taking traffic. Origins distribution: $it") {
+                            it["origin-01"] ?: 0.shouldBe(50)
+                        }
                     }
                 }
             }
@@ -131,10 +133,12 @@ class HealthCheckProviderSpec : FeatureSpec() {
                     styxServer().routingObject("aaa-02").get().shouldContain("state:active")
                 }
 
-                pollOrigins(styxServer, "origin-0[12]").let {
-                    withClue("Both origins should be taking traffic. Origins distribution: $it") {
-                        it["origin-01"]?:0.shouldBeGreaterThan(20)
-                        it["origin-02"]?:0.shouldBeGreaterThan(20)
+                eventually(2.seconds, AssertionError::class.java) {
+                    pollOrigins(styxServer, "origin-0[12]").let {
+                        withClue("Both origins should be taking traffic. Origins distribution: $it") {
+                            it["origin-01"] ?: 0.shouldBeGreaterThan(20)
+                            it["origin-02"] ?: 0.shouldBeGreaterThan(20)
+                        }
                     }
                 }
 
@@ -147,11 +151,13 @@ class HealthCheckProviderSpec : FeatureSpec() {
                     styxServer().routingObject("aaa-03").get().shouldContain("state:active")
                 }
 
-                pollOrigins(styxServer, "origin-0[123]").let {
-                    withClue("Both origins should be taking traffic. Origins distribution: $it") {
-                        it["origin-01"]?:0.shouldBeGreaterThan(15)
-                        it["origin-02"]?:0.shouldBeGreaterThan(15)
-                        it["origin-03"]?:0.shouldBeGreaterThan(15)
+                eventually(2.seconds, AssertionError::class.java) {
+                    pollOrigins(styxServer, "origin-0[123]").let {
+                        withClue("Both origins should be taking traffic. Origins distribution: $it") {
+                            it["origin-01"] ?: 0.shouldBeGreaterThan(15)
+                            it["origin-02"] ?: 0.shouldBeGreaterThan(15)
+                            it["origin-03"] ?: 0.shouldBeGreaterThan(15)
+                        }
                     }
                 }
             }
