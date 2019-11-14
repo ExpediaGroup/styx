@@ -68,28 +68,57 @@ public interface StyxService extends StyxLifecycleListener {
     /**
      * An admin interface hook.
      *
-     * A call to this method should return a map of admin endpoint paths
-     * their corresponding HTTP handlers.
+     * @deprecated use {@link #adminInterfaceHandlers(String)} instead.
      *
-     * Styx core calls this method when the service is provisioned.
-     * The actual URL endpoint depends on server configuration.
-     * Styx prefixes the returned endpoint paths with `
+     * Styx Core calls this method to publish Service admin interface extensions
+     * on its admin HTTP server. This method should return a map of endpoint
+     * paths with corresponding HTTP handlers.
+     * <br>
+     * Styx Core maintains a namespace for admin interface extensions. Therefore, a
+     * {@code /admin/providers/<PROVIDER-NAME>/} prefix is applied to the returned
+     * endpoint paths.
+     * <br>
+     * Suppose this method returns a map with single entry:
+     * <br>
+     *    {@code "/abc" -> HttpHandler(...)}
+     * <br>
+     * Then the actual admin endpoint will be {@code /admin/providers/<PROVIDER-NAME>/abc}.
+     * <br>
      *
      * @return Returns a list of named admin interface handlers.
      */
+    @Deprecated
     default Map<String, HttpHandler> adminInterfaceHandlers() {
         return emptyMap();
     }
 
+
     /**
-     * An admin interface hook for the service implementation.
-     * The HTTP handler endpoints are prefixed with {@code baseUrlPath}.
+     * An admin interface hook.
      *
-     * @param baseUrlPath A base path for the admin interface handlers.
+     * Styx Core calls this method to publish Service admin interface extensions
+     * on its admin HTTP server. This method should return a map of endpoint
+     * paths with corresponding HTTP handlers.
+     * <br>
+     * Styx Core maintains a namespace for admin interface extensions. Therefore, a
+     * {@code /admin/providers/<PROVIDER-NAME>/} prefix is applied to the returned
+     * endpoint paths.
+     * <br>
+     * Suppose this method returns a map with single entry:
+     * <br>
+     *    {@code "/abc" -> HttpHandler(...)}
+     * <br>
+     * Then the actual admin endpoint will be {@code /admin/providers/<PROVIDER-NAME>/abc}.
+     * <br>
+     * A {@code namespace} parameter can be used to infer the endpoint URL that
+     * will be visible to the end-users. This can be used for example to generate an
+     * HTTP hyperlink to an admin interface extension.
+     *
+     * @param namespace A base path for the admin interface handlers.
      *
      * @return Returns a list of named admin interface handlers.
      */
-    default Map<String, HttpHandler> adminInterfaceHandlers(String baseUrlPath) {
+    default Map<String, HttpHandler> adminInterfaceHandlers(String namespace) {
         return adminInterfaceHandlers();
     }
 }

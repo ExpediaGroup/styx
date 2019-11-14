@@ -17,7 +17,7 @@ package com.hotels.styx
 
 fun lbGroupTag(name: String) = "lbGroup=$name"
 
-fun matchLbGroupTag(tag: String): String? = "lbGroup=(.+)".toRegex()
+fun lbGroupTagValue(tag: String): String? = "lbGroup=(.+)".toRegex()
         .matchEntire(tag)
         ?.groupValues
         ?.get(1)

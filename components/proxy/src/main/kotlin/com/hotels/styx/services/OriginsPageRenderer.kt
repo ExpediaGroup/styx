@@ -18,7 +18,7 @@ package com.hotels.styx.services
 import com.fasterxml.jackson.databind.JsonNode
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig
 import com.hotels.styx.lbGroupTag
-import com.hotels.styx.matchLbGroupTag
+import com.hotels.styx.lbGroupTagValue
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.RoutingConfigParser.toRoutingConfigNode
 import com.hotels.styx.routing.config.StyxObjectDefinition
@@ -35,16 +35,12 @@ import kotlinx.html.div
 import kotlinx.html.dom.append
 import kotlinx.html.dom.document
 import kotlinx.html.dom.serialize
-import kotlinx.html.h2
 import kotlinx.html.h3
-import kotlinx.html.h5
 import kotlinx.html.h6
 import kotlinx.html.head
 import kotlinx.html.html
-import kotlinx.html.i
 import kotlinx.html.link
 import kotlinx.html.meta
-import kotlinx.html.p
 import kotlinx.html.script
 import kotlinx.html.span
 import kotlinx.html.table
@@ -256,7 +252,7 @@ internal class OriginsPageRenderer(val assetsRoot: String, val provider: String,
     private fun tagsExceptStatusAndAppname(tags: Set<String>) = tags
             .filterNot { it.startsWith("state:active") }
             .filterNot { it.startsWith("state:inactive") }
-            .filter { matchLbGroupTag(it) == null }
+            .filter { lbGroupTagValue(it) == null }
 
     private fun isSecureHost(config: JsonNode) = config.get("tlsSettings") != null
 }

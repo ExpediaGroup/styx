@@ -42,16 +42,16 @@ import static java.util.regex.Matcher.quoteReplacement;
  */
 public class ClassPathResourceHandler extends BaseHttpHandler {
     private static final Pattern DOUBLE_SEPARATOR = Pattern.compile("//", Pattern.LITERAL);
-    private final String allowedPrefix;
-    private final String root;
+    private final String requestPrefix;
+    private final String resourceRoot;
 
-    public ClassPathResourceHandler(String root) {
-        this(root, root);
+    public ClassPathResourceHandler(String resourceRoot) {
+        this(resourceRoot, resourceRoot);
     }
 
-    public ClassPathResourceHandler(String allowedPrefix, String root) {
-        this.allowedPrefix = checkPrefix(allowedPrefix);
-        this.root = ensureHasTrailingSlash(root);
+    public ClassPathResourceHandler(String requestPrefix, String resourceRoot) {
+        this.requestPrefix = checkPrefix(requestPrefix);
+        this.resourceRoot = ensureHasTrailingSlash(resourceRoot);
     }
 
     private static String checkPrefix(String requestPrefix) {
@@ -73,11 +73,11 @@ public class ClassPathResourceHandler extends BaseHttpHandler {
         try {
             String path = request.path();
 
-            if (!path.startsWith(allowedPrefix) || path.contains("..")) {
+            if (!path.startsWith(requestPrefix) || path.contains("..")) {
                 return error(FORBIDDEN);
             }
 
-            String resourcePath = DOUBLE_SEPARATOR.matcher(root + ensureHasPreceedingSlash(request.path().replace(allowedPrefix, "")))
+            String resourcePath = DOUBLE_SEPARATOR.matcher(resourceRoot + ensureHasPreceedingSlash(request.path().replace(requestPrefix, "")))
                     .replaceAll(quoteReplacement("/"));
 
             return new HttpResponse.Builder(OK)

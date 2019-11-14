@@ -23,14 +23,14 @@ class ObjectTagsKtTest : BehaviorSpec({
     given("An lbGroup tag matcher") {
         `when`("tag matches") {
             then("returns tag value") {
-                matchLbGroupTag("lbGroup=abc").shouldBe("abc")
+                lbGroupTagValue("lbGroup=abc").shouldBe("abc")
             }
         }
         `when`("tag doesn't match") {
             then("returns null") {
-                matchLbGroupTag("abc").shouldBeNull()
-                matchLbGroupTag("lbGroup=").shouldBeNull()
-                matchLbGroupTag("").shouldBeNull()
+                lbGroupTagValue("abc").shouldBeNull()
+                lbGroupTagValue("lbGroup=").shouldBeNull()
+                lbGroupTagValue("").shouldBeNull()
             }
         }
     }

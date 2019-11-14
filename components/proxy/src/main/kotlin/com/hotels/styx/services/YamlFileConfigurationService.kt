@@ -93,11 +93,11 @@ internal class YamlFileConfigurationService(
                 LOGGER.info("service stopped")
             }
 
-    override fun adminInterfaceHandlers(prefix: String) = mapOf(
-            "assets/" to HttpAggregator(ClassPathResourceHandler("$prefix/assets/", "/admin/assets/YamlConfigurationService")),
+    override fun adminInterfaceHandlers(namespace: String) = mapOf(
+            "assets/" to HttpAggregator(ClassPathResourceHandler("$namespace/assets/", "/admin/assets/YamlConfigurationService")),
             "configuration" to HttpContentHandler(PLAIN_TEXT_UTF_8.toString(), UTF_8) { originsConfig },
             "origins" to HttpContentHandler(HTML_UTF_8.toString(), UTF_8) {
-                OriginsPageRenderer("$prefix/assets", name, routeDb).render()
+                OriginsPageRenderer("$namespace/assets", name, routeDb).render()
             })
 
     fun reloadAction(content: String): Unit {
