@@ -75,7 +75,7 @@ public interface StyxService extends StyxLifecycleListener {
      * paths with corresponding HTTP handlers.
      * <br>
      * Styx Core maintains a namespace for admin interface extensions. Therefore, a
-     * {@code /admin/providers/<PROVIDER-NAME>/} prefix is applied to the returned
+     * prefix e.g. {@code /admin/providers/<PROVIDER-NAME>/} is applied to the returned
      * endpoint paths.
      * <br>
      * Suppose this method returns a map with single entry:
@@ -110,9 +110,10 @@ public interface StyxService extends StyxLifecycleListener {
      * <br>
      * Then the actual admin endpoint will be {@code /admin/providers/<PROVIDER-NAME>/abc}.
      * <br>
-     * A {@code namespace} parameter can be used to infer the endpoint URL that
+     * A {@code namespace} parameter can be used to infer an endpoint URL that
      * will be visible to the end-users. This can be used for example to generate an
-     * HTTP hyperlink to an admin interface extension.
+     * HTTP hyperlink to an admin interface extension. In the previous example, the
+     * namespace would be {@code /admin/providers/<PROVIDER-NAME>}
      *
      * @param namespace A base path for the admin interface handlers.
      *
