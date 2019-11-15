@@ -19,11 +19,15 @@ fun lbGroupTag(name: String) = "lbGroup=$name"
 
 private const val STATE = "state"
 const val STATE_ACTIVE = "active"
-const val STATE_INACTIVE = "inactive"
+const val STATE_UNREACHABLE = "unreachable"
+const val STATE_CLOSED = "closed"
+private val STATE_REGEX = "$STATE=(.+)".toRegex()
 fun stateTag(value: String) = "$STATE=$value"
-fun stateTag(tags: Set<String>) = tags.firstOrNull { it.startsWith("$STATE=") }
-fun isStateTag(tag: String) = tag.startsWith("$STATE=")
-fun stateTagValue(tags: Set<String>) = stateTag(tags)?.substring(STATE.length + 1)
+fun stateTag(tags: Set<String>) = tags.firstOrNull { isStateTag(it) }
+fun isStateTag(tag: String) = STATE_REGEX.matches(tag)
+fun stateTagValue(tags: Set<String>) = STATE_REGEX.matchEntire(stateTag(tags)?:"")
+        ?.groupValues
+        ?.get(1)
 
 private const val HEALTH = "health"
 const val HEALTH_SUCCESS = "success"

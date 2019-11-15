@@ -15,10 +15,7 @@
  */
 package com.hotels.styx.services
 
-import com.hotels.styx.HEALTH_FAIL
-import com.hotels.styx.HEALTH_SUCCESS
-import com.hotels.styx.STATE_ACTIVE
-import com.hotels.styx.STATE_INACTIVE
+import com.hotels.styx.*
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.server.HttpInterceptorContext
@@ -35,12 +32,14 @@ data class ObjectActive(val failedProbes: Int) : ObjectHealth() {
     override fun state() = STATE_ACTIVE
     override fun health() = if (failedProbes > 0) "$HEALTH_FAIL:$failedProbes" else null
 }
-data class ObjectInactive(val successfulProbes: Int) : ObjectHealth() {
-    override fun state() = STATE_INACTIVE
+data class ObjectUnreachable(val successfulProbes: Int) : ObjectHealth() {
+    override fun state() = STATE_UNREACHABLE
     override fun health() = if (successfulProbes > 0) "$HEALTH_SUCCESS:$successfulProbes" else null
 }
-
-
+data class ObjectOther(val state: String) : ObjectHealth() {
+    override fun state() = state
+    override fun health(): String? = null
+}
 
 typealias Probe = (RoutingObject) -> Publisher<Boolean>
 typealias CheckState = (currentState: ObjectHealth, reachable: Boolean) -> ObjectHealth
@@ -66,14 +65,15 @@ fun healthCheckFunction(activeThreshold: Int, inactiveThreshold: Int): CheckStat
                 } else if (state.failedProbes + 1 < inactiveThreshold) {
                     state.copy(state.failedProbes + 1)
                 } else {
-                    ObjectInactive(0)
+                    ObjectUnreachable(0)
                 }
-                is ObjectInactive -> if (!reachable) {
-                    ObjectInactive(0)
+                is ObjectUnreachable -> if (!reachable) {
+                    ObjectUnreachable(0)
                 } else if (state.successfulProbes + 1 < activeThreshold) {
                     state.copy(state.successfulProbes + 1)
                 } else {
                     ObjectActive(0)
                 }
+                is ObjectOther -> state
             }
         }

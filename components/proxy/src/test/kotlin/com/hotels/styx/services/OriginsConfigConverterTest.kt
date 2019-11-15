@@ -16,7 +16,7 @@
 package com.hotels.styx.services
 
 import com.hotels.styx.STATE_ACTIVE
-import com.hotels.styx.STATE_INACTIVE
+import com.hotels.styx.STATE_UNREACHABLE
 import com.hotels.styx.lbGroupTag
 import com.hotels.styx.routing.RoutingObjectFactoryContext
 import com.hotels.styx.routing.config.Builtins.INTERCEPTOR_PIPELINE
@@ -317,7 +317,7 @@ class OriginsConfigConverterTest : StringSpec({
         OriginsConfigConverter(serviceDb, RoutingObjectFactoryContext().get(), "")
                 .routingObjects(deserialiseOrigins(config))
                 .let {
-                    it[0].tags().shouldContainExactlyInAnyOrder(lbGroupTag("appWithHealthCheck"), stateTag(STATE_INACTIVE))
+                    it[0].tags().shouldContainExactlyInAnyOrder(lbGroupTag("appWithHealthCheck"), stateTag(STATE_UNREACHABLE))
                     it[2].tags().shouldContainExactlyInAnyOrder(lbGroupTag("appMissingHealthCheckUri"), stateTag(STATE_ACTIVE))
                     it[4].tags().shouldContainExactlyInAnyOrder(lbGroupTag("appWithNoHealthCheck"), stateTag(STATE_ACTIVE))
                 }

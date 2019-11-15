@@ -34,6 +34,7 @@ import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.ProviderObjectRecord
 import com.hotels.styx.serviceproviders.ServiceProviderFactory
 import com.hotels.styx.services.HealthCheckMonitoringService.Companion.EXECUTOR
+import com.sun.org.apache.regexp.internal.RE
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Flux
 import reactor.core.publisher.toMono
@@ -87,7 +88,7 @@ internal class HealthCheckMonitoringService(
         LOGGER.info("stopped")
 
         objectStore.entrySet()
-                .filter(::containsStateTag)
+                .filter(::containsRelevantStateTag)
                 .forEach { (name, _) ->
                     markObject(objectStore, name, ObjectActive(0))
                 }
@@ -159,16 +160,16 @@ internal fun objectHealthFrom(state: String?, health: String?) =
                 ObjectActive(count)
             }
 
-            state == STATE_INACTIVE && (health?.matches("$HEALTH_SUCCESS:[0-9]+".toRegex()) ?: false) -> {
+            state == STATE_UNREACHABLE && (health?.matches("$HEALTH_SUCCESS:[0-9]+".toRegex()) ?: false) -> {
                 val count = health!!.removePrefix("$HEALTH_SUCCESS:").toInt()
-                ObjectInactive(count)
+                ObjectUnreachable(count)
             }
 
             state == STATE_ACTIVE -> ObjectActive(0)
-            state == STATE_INACTIVE -> ObjectInactive(0)
-            state == null -> ObjectInactive(0)
+            state == STATE_UNREACHABLE -> ObjectUnreachable(0)
+            state == null -> ObjectUnreachable(0)
 
-            else -> null
+            else -> ObjectOther(state)
         }
 
 internal fun discoverMonitoredObjects(application: String, objectStore: StyxObjectStore<RoutingObjectRecord>) =
@@ -201,5 +202,7 @@ internal fun reTag(tags: Set<String>, newStatus: ObjectHealth) =
             .filterNotNull()
             .toSet()
 
-private fun containsStateTag(entry: Map.Entry<String, RoutingObjectRecord>) =
-        stateTagValue(entry.value.tags) != null
+val RELEVANT_STATES = setOf(STATE_ACTIVE, STATE_UNREACHABLE)
+private fun containsRelevantStateTag(entry: Map.Entry<String, RoutingObjectRecord>) =
+        stateTagValue(entry.value.tags) in RELEVANT_STATES
+

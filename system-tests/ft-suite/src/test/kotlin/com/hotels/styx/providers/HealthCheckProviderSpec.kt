@@ -16,7 +16,7 @@
 package com.hotels.styx.providers
 
 import com.hotels.styx.STATE_ACTIVE
-import com.hotels.styx.STATE_INACTIVE
+import com.hotels.styx.STATE_UNREACHABLE
 import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpInterceptor
@@ -106,7 +106,7 @@ class HealthCheckProviderSpec : FeatureSpec() {
             styxServer().newRoutingObject("aaa-01", hostProxy(lbGroupTag("aaa"), testServer01)).shouldBe(CREATED)
             styxServer().newRoutingObject("aaa-02", hostProxy(lbGroupTag("aaa"), testServer02)).shouldBe(CREATED)
 
-            scenario("Tags unresponsive origins with state:inactive tag") {
+            scenario("Tags unresponsive origins with state=unreachable tag") {
                 pollOrigins(styxServer, "origin-0[12]").let {
                     withClue("Both origins should be taking traffic. Origins distribution: $it") {
                         it["origin-01"]?:0.shouldBeGreaterThan(20)
@@ -117,10 +117,10 @@ class HealthCheckProviderSpec : FeatureSpec() {
                 origin02Active.set(false)
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    styxServer().routingObject("aaa-02").get().shouldContain(stateTag(STATE_INACTIVE))
+                    styxServer().routingObject("aaa-02").get().shouldContain(stateTag(STATE_UNREACHABLE))
                 }
 
-                pollOrigins(styxServer, "origin-01", times = 50).let {
+                pollOrigins(styxServer, "origin-0[12]", times = 50).let {
                     withClue("Only the active origin (origin-01) should be taking traffic. Origins distribution: $it") {
                         it["origin-01"]?:0.shouldBe(50)
                     }
@@ -140,7 +140,10 @@ class HealthCheckProviderSpec : FeatureSpec() {
                         it["origin-02"]?:0.shouldBeGreaterThan(20)
                     }
                 }
+            }
 
+            scenario("Ignores closed origins") {
+                // TODO: Do this
             }
 
             scenario("Detects up new origins") {

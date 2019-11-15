@@ -22,7 +22,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.hotels.styx.STATE_ACTIVE
-import com.hotels.styx.STATE_INACTIVE
+import com.hotels.styx.STATE_UNREACHABLE
 import com.hotels.styx.api.extension.Origin
 import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings
@@ -151,7 +151,7 @@ internal class OriginsConfigConverter(
         }
 
         internal fun hostProxy(app: BackendService, origin: Origin) : StyxObjectDefinition {
-            val healthCheckTag :String = if (isHealthCheckConfigured(app)) stateTag(STATE_INACTIVE) else stateTag(STATE_ACTIVE);
+            val healthCheckTag :String = if (isHealthCheckConfigured(app)) stateTag(STATE_UNREACHABLE) else stateTag(STATE_ACTIVE);
 
             return StyxObjectDefinition(
                 "${app.id()}.${origin.id()}",

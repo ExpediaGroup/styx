@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.services
 
+import com.hotels.styx.STATE_CLOSED
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.lbGroupTag
 import com.hotels.styx.routing.CaptureList
@@ -51,8 +52,9 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
                     record("aaa-01", "X", setOf(lbGroupTag("aaa")), mockk(), mockk())
                     record("aaa-02", "x", setOf(lbGroupTag("aaa"), "state=active"), mockk(), mockk())
                     record("aaa-03", "x", setOf(lbGroupTag("aaa"), "state=active", "health=fail:1"), mockk(), mockk())
-                    record("aaa-04", "x", setOf(lbGroupTag("aaa"), "state=inactive"), mockk(), mockk())
-                    record("aaa-05", "x", setOf(lbGroupTag("aaa"), "state=inactive", "health=success:1"), mockk(), mockk())
+                    record("aaa-04", "x", setOf(lbGroupTag("aaa"), "state=unreachable"), mockk(), mockk())
+                    record("aaa-05", "x", setOf(lbGroupTag("aaa"), "state=unreachable", "health=success:1"), mockk(), mockk())
+                    record("aaa-06", "x", setOf(lbGroupTag("aaa"), "state=closed"), mockk(), mockk())
                 }
 
         val monitor = HealthCheckMonitoringService(
@@ -70,7 +72,7 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
             verify { executor.scheduleAtFixedRate(any(), 100, 100, MILLISECONDS) }
         }
 
-        scenario("Changes inactive tag to active, and removes any health tags, when health check is stopped") {
+        scenario("Changes unreachable tag to active, and removes any health tags, when health check is stopped") {
             monitor.stop().get()
 
             verify { scheduledFuture.cancel(false) }
@@ -80,6 +82,7 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
             objectStore["aaa-03"].get().tags.filterNot{ createdTag(it) }.shouldContainExactly(lbGroupTag("aaa"), "state=active")
             objectStore["aaa-04"].get().tags.filterNot{ createdTag(it) }.shouldContainExactly(lbGroupTag("aaa"), "state=active")
             objectStore["aaa-05"].get().tags.filterNot{ createdTag(it) }.shouldContainExactly(lbGroupTag("aaa"), "state=active")
+            objectStore["aaa-06"].get().tags.filterNot{ createdTag(it) }.shouldContainExactly(lbGroupTag("aaa"), "state=closed")
         }
     }
 
@@ -110,10 +113,14 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
     }
 
     feature("Extracting health check state from tags") {
-        objectHealthFrom(null, null) shouldBe ObjectInactive(0)
-        objectHealthFrom("", null) shouldBe null
-        objectHealthFrom("abc", null) shouldBe null
-        objectHealthFrom("abc", "fail:0") shouldBe null
+        objectHealthFrom(null, null) shouldBe ObjectUnreachable(0)
+        objectHealthFrom("", null) shouldBe ObjectOther("")
+        objectHealthFrom("abc", null) shouldBe ObjectOther("abc")
+        objectHealthFrom("abc", "fail:0") shouldBe ObjectOther("abc")
+
+        objectHealthFrom("closed", null) shouldBe ObjectOther(STATE_CLOSED)
+        objectHealthFrom("closed", "fail:3") shouldBe ObjectOther(STATE_CLOSED)
+        objectHealthFrom("closed", "success:7") shouldBe ObjectOther(STATE_CLOSED)
 
         objectHealthFrom("active", "fail:") shouldBe ObjectActive(0)
         objectHealthFrom("active", "fail:ab") shouldBe ObjectActive(0)
@@ -123,13 +130,13 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
         objectHealthFrom("active", "fail:124") shouldBe ObjectActive(124)
         objectHealthFrom("active", "fail:124x") shouldBe ObjectActive(0)
 
-        objectHealthFrom("inactive", "success:") shouldBe ObjectInactive(0)
-        objectHealthFrom("inactive", "success:ab") shouldBe ObjectInactive(0)
-        objectHealthFrom("inactive", "success:-1") shouldBe ObjectInactive(0)
-        objectHealthFrom("inactive", null) shouldBe ObjectInactive(0)
-        objectHealthFrom("inactive", "success:2") shouldBe ObjectInactive(2)
-        objectHealthFrom("inactive", "success:124") shouldBe ObjectInactive(124)
-        objectHealthFrom("inactive", "success:124x") shouldBe ObjectInactive(0)
+        objectHealthFrom("unreachable", "success:") shouldBe ObjectUnreachable(0)
+        objectHealthFrom("unreachable", "success:ab") shouldBe ObjectUnreachable(0)
+        objectHealthFrom("unreachable", "success:-1") shouldBe ObjectUnreachable(0)
+        objectHealthFrom("unreachable", null) shouldBe ObjectUnreachable(0)
+        objectHealthFrom("unreachable", "success:2") shouldBe ObjectUnreachable(2)
+        objectHealthFrom("unreachable", "success:124") shouldBe ObjectUnreachable(124)
+        objectHealthFrom("unreachable", "success:124x") shouldBe ObjectUnreachable(0)
     }
 
     fun StyxObjectStore<RoutingObjectRecord>.tagsOf(key: String) = this.get(key).get().tags
@@ -169,11 +176,11 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
 
         scenario("... and re-tags after each probe") {
             withClue(tagClue(objectStore, "aaa-01")) {
-                objectStore.get("aaa-01").get().tags.shouldContainAll("state=inactive", "health=success:1")
+                objectStore.get("aaa-01").get().tags.shouldContainAll("state=unreachable", "health=success:1")
             }
 
             withClue(tagClue(objectStore, "aaa-02")) {
-                objectStore.get("aaa-02").get().tags.shouldContainAll("state=inactive", "health=success:1")
+                objectStore.get("aaa-02").get().tags.shouldContainAll("state=unreachable", "health=success:1")
             }
         }
 
@@ -198,7 +205,7 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
         scenario("... failed health check increments failure count for reachable origins") {
             objectStore.apply {
                 record("aaa-03", "X", setOf(lbGroupTag("aaa"), "state=active"), mockk(), failingMockObject())
-                record("aaa-04", "X", setOf(lbGroupTag("aaa"), "state=inactive"), mockk(), failingMockObject())
+                record("aaa-04", "X", setOf(lbGroupTag("aaa"), "state=unreachable"), mockk(), failingMockObject())
             }
 
             monitor.runChecks("aaa", objectStore)
@@ -209,7 +216,7 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
             withClue(tagClue(objectStore, "aaa-04")) {
                 objectStore.get("aaa-04").get().tags
                         .filter { isStateOrHealthTag(it) }
-                        .shouldContainExactly("state=inactive")
+                        .shouldContainExactly("state=unreachable")
             }
 
             monitor.runChecks("aaa", objectStore)
@@ -221,7 +228,7 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
             withClue(tagClue(objectStore, "aaa-04")) {
                 objectStore.get("aaa-04").get().tags
                         .filter { isStateOrHealthTag(it) }
-                        .shouldContainExactly("state=inactive")
+                        .shouldContainExactly("state=unreachable")
             }
         }
     }
@@ -239,8 +246,8 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
                     }
         }
 
-        scenario("Re-tag an inactive object") {
-            reTag(setOf(lbGroupTag("aaa"), "state=inactive", "health=success:0"), ObjectActive(1))
+        scenario("Re-tag an unreachable object") {
+            reTag(setOf(lbGroupTag("aaa"), "state=unreachable", "health=success:0"), ObjectActive(1))
                     .let {
                         println("new tags: " + it)
 
@@ -251,19 +258,19 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
                     }
         }
 
-        scenario("Re-tag a failed active object as inactive") {
-            reTag(setOf(lbGroupTag("aaa"), "state=active", "health=fail:1"), ObjectInactive(0))
+        scenario("Re-tag a failed active object as unreachable") {
+            reTag(setOf(lbGroupTag("aaa"), "state=active", "health=fail:1"), ObjectUnreachable(0))
                     .let {
                         println("new tags: " + it)
 
                         it.shouldContainExactly(
                                 lbGroupTag("aaa"),
-                                "state=inactive")
+                                "state=unreachable")
                     }
         }
 
-        scenario("Re-tag a successful inactive object as active") {
-            reTag(setOf(lbGroupTag("aaa"), "state=inactive", "health=success:1"), ObjectActive(0))
+        scenario("Re-tag a successful unreachable object as active") {
+            reTag(setOf(lbGroupTag("aaa"), "state=unreachable", "health=success:1"), ObjectActive(0))
                     .let {
                         println("new tags: " + it)
 
