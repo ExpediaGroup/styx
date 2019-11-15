@@ -149,10 +149,10 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                     val objects = objectStore.toMap()
                     objects.size shouldBe 4
 
-                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf(lbGroupTag("app"), "source=zone1")))
-                    objects["app.app-02"]!!.should(beRoutingObject("HostProxy", setOf(lbGroupTag("app"), "source=zone1")))
-                    objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf("source=zone1")))
-                    objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf("source=zone1")))
+                    objects["app.app-01"].should(beRoutingObject("HostProxy", setOf(lbGroupTag("app"), "source=zone1")))
+                    objects["app.app-02"].should(beRoutingObject("HostProxy", setOf(lbGroupTag("app"), "source=zone1")))
+                    objects["app"].should(beRoutingObject("LoadBalancingGroup", setOf("source=zone1")))
+                    objects["zone1-router"].should(beRoutingObject("PathPrefixRouter", setOf("source=zone1")))
                 }
             }
 
@@ -170,9 +170,9 @@ class YamlFileConfigurationServiceTest : FunSpec() {
 
                     objects.size shouldBe 3
 
-                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf(lbGroupTag("app"), "source=zone1")))
-                    objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf("source=zone1")))
-                    objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf("source=zone1")))
+                    objects["app.app-01"].should(beRoutingObject("HostProxy", setOf(lbGroupTag("app"), "source=zone1")))
+                    objects["app"].should(beRoutingObject("LoadBalancingGroup", setOf("source=zone1")))
+                    objects["zone1-router"].should(beRoutingObject("PathPrefixRouter", setOf("source=zone1")))
                 }
             }
 
@@ -190,9 +190,9 @@ class YamlFileConfigurationServiceTest : FunSpec() {
 
                     objects.size shouldBe 3
 
-                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf(lbGroupTag("app"), "source=zone1")))
-                    objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf("source=zone1")))
-                    objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf("source=zone1")))
+                    objects["app.app-01"].should(beRoutingObject("HostProxy", setOf(lbGroupTag("app"), "source=zone1")))
+                    objects["app"].should(beRoutingObject("LoadBalancingGroup", setOf("source=zone1")))
+                    objects["zone1-router"].should(beRoutingObject("PathPrefixRouter", setOf("source=zone1")))
 
                     JsonNodeConfig(objectStore["app.app-01"].get().config).get("host") shouldBe Optional.of("localhost:9999")
                 }
@@ -216,11 +216,11 @@ class YamlFileConfigurationServiceTest : FunSpec() {
 
                     objects.size shouldBe 5
 
-                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf(lbGroupTag("app"), "source=zone1")))
-                    objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf("source=zone1")))
-                    objects["appB.appB-01"]!!.should(beRoutingObject("HostProxy", setOf(lbGroupTag("appB"), "source=zone1")))
-                    objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf("source=zone1")))
-                    objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf("source=zone1")))
+                    objects["app.app-01"].should(beRoutingObject("HostProxy", setOf(lbGroupTag("app"), "source=zone1")))
+                    objects["app"].should(beRoutingObject("LoadBalancingGroup", setOf("source=zone1")))
+                    objects["appB.appB-01"].should(beRoutingObject("HostProxy", setOf(lbGroupTag("appB"), "source=zone1")))
+                    objects["app"].should(beRoutingObject("LoadBalancingGroup", setOf("source=zone1")))
+                    objects["zone1-router"].should(beRoutingObject("PathPrefixRouter", setOf("source=zone1")))
                 }
             }
 
@@ -238,9 +238,9 @@ class YamlFileConfigurationServiceTest : FunSpec() {
 
                     objects.size shouldBe 3
 
-                    objects["appB.appB-01"]!!.should(beRoutingObject("HostProxy", setOf(lbGroupTag("appB"), "source=zone1")))
-                    objects["appB"]!!.should(beRoutingObject("LoadBalancingGroup", setOf("source=zone1")))
-                    objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf("source=zone1")))
+                    objects["appB.appB-01"].should(beRoutingObject("HostProxy", setOf(lbGroupTag("appB"), "source=zone1")))
+                    objects["appB"].should(beRoutingObject("LoadBalancingGroup", setOf("source=zone1")))
+                    objects["zone1-router"].should(beRoutingObject("PathPrefixRouter", setOf("source=zone1")))
                 }
 
             }
@@ -258,9 +258,9 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                     val objects = objectStore.toMap()
 
                     objects.size shouldBe 3
-                    objects["appB.appB-01"]!!.should(beRoutingObject("HostProxy", setOf(lbGroupTag("appB"), "source=zone1")))
-                    objects["appB"]!!.should(beRoutingObject("LoadBalancingGroup", setOf("source=zone1")))
-                    objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf("source=zone1")))
+                    objects["appB.appB-01"].should(beRoutingObject("HostProxy", setOf(lbGroupTag("appB"), "source=zone1")))
+                    objects["appB"].should(beRoutingObject("LoadBalancingGroup", setOf("source=zone1")))
+                    objects["zone1-router"].should(beRoutingObject("PathPrefixRouter", setOf("source=zone1")))
                 }
             }
 
@@ -284,13 +284,13 @@ class YamlFileConfigurationServiceTest : FunSpec() {
 
                 val objects = objectStore.toMap()
 
-                objects["appB.appB-01"]!!.should(beRoutingObject("HostProxy",
+                objects["appB.appB-01"].should(beRoutingObject("HostProxy",
                         setOf(creationTimes["appB.appB-01"]!!, lbGroupTag("appB"), "source=zone1")))
 
-                objects["appB"]!!.should(beRoutingObject("LoadBalancingGroup",
+                objects["appB"].should(beRoutingObject("LoadBalancingGroup",
                         setOf(creationTimes["appB"]!!, "source=zone1")))
 
-                objects["zone1-router"]!!.should(beRoutingObject("PathPrefixRouter",
+                objects["zone1-router"].should(beRoutingObject("PathPrefixRouter",
                         setOf(creationTimes["zone1-router"]!!, "source=zone1")))
             }
 
@@ -620,52 +620,51 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                 val objects = objectStore.toMap()
 
                 objects.size shouldBe 3
-                objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf(lbGroupTag("app"), "source=origins-provider")))
-                objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf("source=origins-provider")))
-                objects["origins-provider-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf("source=origins-provider")))
+                objects["app.app-01"].should(beRoutingObject("HostProxy", setOf(lbGroupTag("app"), "source=origins-provider")))
+                objects["app"].should(beRoutingObject("LoadBalancingGroup", setOf("source=origins-provider")))
+                objects["origins-provider-router"].should(beRoutingObject("PathPrefixRouter", setOf("source=origins-provider")))
             }
 
-            // TODO: Fix these tests:
-//            test("Keeps the original configuration when origins file is removed") {
-//                originsConfig.delete()
-//                originsConfig.exists() shouldBe false
-//
-//                eventually(2.seconds, AssertionError::class.java) {
-//                    val objects = objectStore.toMap()
-//
-//                    objects.size shouldBe 3
-//                    objects["app.app-01"]!!.should(beRoutingObject("HostProxy", setOf(lbGroupTag("app"), OBJECT_CREATOR_TAG)))
-//                    objects["app"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
-//                    objects["cloud-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
-//                }
-//            }
-//
-//            test("Recovers when the file becomes availabe again") {
-//
-//                println("Writing origins file now")
-//                writeOrigins("""
-//                    ---
-//                    - id: "appC"
-//                      path: "/"
-//                      origins:
-//                        - { id: "appC-01", host: "localhost:9999" }
-//                        - { id: "appC-02", host: "localhost:9999" }
-//                    """.trimIndent())
-//
-//                eventually(2.seconds, AssertionError::class.java) {
-//                    val objects = objectStore.toMap()
-//
-//                    objects.size shouldBe 4
-//
-//                    objects.entries.forEach {
-//                        println("entry key: ${it.key}")
-//                    }
-//
-//                    objects["appC.appC-01"]!!.should(beRoutingObject("HostProxy", setOf(lbGroupTag("appC"), OBJECT_CREATOR_TAG)))
-//                    objects["appC"]!!.should(beRoutingObject("LoadBalancingGroup", setOf(OBJECT_CREATOR_TAG)))
-//                    objects["cloud-router"]!!.should(beRoutingObject("PathPrefixRouter", setOf(OBJECT_CREATOR_TAG)))
-//                }
-//            }
+            test("Keeps the original configuration when origins file is removed") {
+                originsConfig.delete()
+                originsConfig.exists() shouldBe false
+
+                eventually(2.seconds, AssertionError::class.java) {
+                    val objects = objectStore.toMap()
+
+                    objects.size shouldBe 3
+                    objects["app.app-01"].should(beRoutingObject("HostProxy", setOf(lbGroupTag("app"), "source=origins-provider")))
+                    objects["app"].should(beRoutingObject("LoadBalancingGroup", setOf("source=origins-provider")))
+                    objects["origins-provider-router"].should(beRoutingObject("PathPrefixRouter", setOf("source=origins-provider")))
+                }
+            }
+
+            test("Recovers when the file becomes availabe again") {
+
+                println("Writing origins file now")
+                writeOrigins("""
+                    ---
+                    - id: "appC"
+                      path: "/"
+                      origins:
+                        - { id: "appC-01", host: "localhost:9001" }
+                        - { id: "appC-02", host: "localhost:9002" }
+                    """.trimIndent())
+
+                eventually(2.seconds, AssertionError::class.java) {
+                    val objects = objectStore.toMap()
+
+                    objects.size shouldBe 4
+
+                    objects.entries.forEach {
+                        println("entry key: ${it.key}")
+                    }
+
+                    objects["appC.appC-01"].should(beRoutingObject("HostProxy", setOf(lbGroupTag("appC"), "source=origins-provider")))
+                    objects["appC"].should(beRoutingObject("LoadBalancingGroup", setOf("source=origins-provider")))
+                    objects["origins-provider-router"].should(beRoutingObject("PathPrefixRouter", setOf("source=origins-provider")))
+                }
+            }
 
             service.stop()
         }
@@ -675,14 +674,19 @@ class YamlFileConfigurationServiceTest : FunSpec() {
             .map { (k, v) -> Pair(k, v) }
             .toMap()
 
-    internal fun beRoutingObject(type: String, mandatoryTags: Collection<String>) = object : Matcher<RoutingObjectRecord> {
-        override fun test(value: RoutingObjectRecord): MatcherResult {
-            val message = "Error matching ${value}"
+    internal fun beRoutingObject(type: String, mandatoryTags: Collection<String>) = object : Matcher<RoutingObjectRecord?> {
+        override fun test(value: RoutingObjectRecord?): MatcherResult {
+            val message = "Object mismatch"
+
+            if (value == null) {
+                return MatcherResult(false, "{$message}.\nExcpected ${type} but was null",
+                        "${message}.\nObject is null")
+            }
 
             if (value.type != type) {
                 return MatcherResult(false,
                         "{$message}.\nExcpected ${type} but was ${value.type}",
-                        "${message}.\nObject type should not be LoadBalancingGroup")
+                        "${message}.\nObject type should not be ${type}")
             }
             if (!value.tags.containsAll(mandatoryTags)) {
                 return MatcherResult(false,
