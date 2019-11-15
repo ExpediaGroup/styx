@@ -19,7 +19,6 @@ import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.RewriteConfig;
 import com.hotels.styx.api.extension.service.TlsSettings;
-import com.hotels.styx.applications.ApplicationsProvider;
 import com.hotels.styx.applications.BackendServices;
 import com.hotels.styx.server.routing.antlr.DslFunctionResolutionError;
 import org.hamcrest.CoreMatchers;
@@ -117,7 +116,7 @@ public class YamlApplicationsProviderTest {
     @ParameterizedTest
     @MethodSource("validPaths")
     public void canGetApplications(String path) {
-        ApplicationsProvider config = loadFromPath(path);
+        YamlApplicationsProvider config = loadFromPath(path);
 
         StreamSupport.stream(config.get().spliterator(), false)
                 .forEach(service -> System.out.println(service.id() + " - " + service.healthCheckConfig()));
@@ -193,7 +192,7 @@ public class YamlApplicationsProviderTest {
 
     @Test
     public void stickySessionIsDisabledByDefault() {
-        ApplicationsProvider config = loadFromPath("classpath:conf/origins/origins-for-configtest.yml");
+        YamlApplicationsProvider config = loadFromPath("classpath:conf/origins/origins-for-configtest.yml");
 
         BackendService app = applicationFor(config, "shopping");
         assertThat(app.stickySessionConfig().stickySessionEnabled(), CoreMatchers.is(false));
@@ -201,7 +200,7 @@ public class YamlApplicationsProviderTest {
 
     @Test
     public void stickySessionEnabledWhenYamlStickySessionEnabledIsTrue() {
-        ApplicationsProvider config = loadFromPath("classpath:conf/origins/origins-for-configtest.yml");
+        YamlApplicationsProvider config = loadFromPath("classpath:conf/origins/origins-for-configtest.yml");
 
         BackendService app = applicationFor(config, "webapp");
         assertThat(app.stickySessionConfig().stickySessionEnabled(), CoreMatchers.is(true));
@@ -228,7 +227,7 @@ public class YamlApplicationsProviderTest {
         assertEquals("Invalid YAML from classpath:conf/origins/origins-with-syntax-error-for-configtest.yml: Cannot deserialize instance of `java.util.ArrayList` out of VALUE_STRING token\n at \\[Source: .*\\]", e.getMessage());
     }
 
-    private static BackendService applicationFor(ApplicationsProvider provider, String appName) {
+    private static BackendService applicationFor(YamlApplicationsProvider provider, String appName) {
         return stream(provider.get().spliterator(), false)
                 .filter(app -> app.id().equals(id(appName)))
                 .findFirst()

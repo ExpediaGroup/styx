@@ -100,28 +100,6 @@ CONFIG_ROOT := $(STYX_HOME)/conf/env-$(STACK)
 release-styx: release-no-tests
 	unzip -oq `find  distribution/target -maxdepth 1 -name "styx*.zip"` -d $(dir ${STYX_HOME})
 
-## Stops running netty-based origins (i.e. the origins started by start-origins)
-stop-origins:
-	(support/origins-starter-app/bin/styx-originsstopper.sh 2>&1)
-
-## Starts netty-based origins (release-styx needs to have been run first)
-start-origins: release-styx stop-origins
-	(support/origins-starter-app/bin/styx-originsstarter.sh $(STYX_HOME) $(CONFIG_ROOT)/styx-config.yml &)
-
-## Start with netty-based origins running on the ports Styx expects to find them
-start-with-origins: release-styx start-origins
-	$(STYX_HOME)/bin/startup \
-	-e $(CONFIG_ROOT)/styx-env.sh \
-	-l $(CONFIG_ROOT)/logback.xml \
-	$(CONFIG_ROOT)/styx-config.yml
-
-## Start with no origins (they can be launched separately if desired)
-start: release-styx
-	$(STYX_HOME)/bin/startup \
-	-e $(CONFIG_ROOT)/styx-env.sh \
-	-l $(CONFIG_ROOT)/logback.xml \
-	$(CONFIG_ROOT)/styx-config.yml
-
 ## Build site-docs
 docs:
 	mvn clean site:site

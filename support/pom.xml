@@ -15,7 +15,6 @@
     <module>test-api</module>
     <module>testsupport</module>
     <module>api-testsupport</module>
-    <module>origins-starter-app</module>
   </modules>
 
   <properties>

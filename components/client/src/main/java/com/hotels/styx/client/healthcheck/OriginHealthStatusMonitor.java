@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,35 +15,16 @@
  */
 package com.hotels.styx.client.healthcheck;
 
-import com.hotels.styx.api.Id;
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.api.extension.service.HealthCheckConfig;
 import com.hotels.styx.api.extension.service.spi.StyxService;
-import com.hotels.styx.client.HttpClient;
 
 import java.util.EventListener;
 import java.util.Set;
-import java.util.function.Supplier;
 
 /**
  * Monitors the health of origins.
  */
 public interface OriginHealthStatusMonitor extends StyxService {
-    /**
-     * Factory for creating a health monitor of an origin.
-     */
-    interface Factory {
-        /**
-         * Create health monitor of an origin with the given config and health checking function.
-         *
-         * @param id                  the backend service id
-         * @param healthCheckConfig   configuration of the health check
-         * @param healthCheckFunction a function that decides if the origin is healthy or not
-         * @param client              client that will perform the health-check
-         * @return the monitor of the origin
-         */
-        OriginHealthStatusMonitor create(Id id, HealthCheckConfig healthCheckConfig, Supplier<OriginHealthCheckFunction> healthCheckFunction, HttpClient client);
-    }
 
     /**
      * An event listener that receives notifications of origin healthiness, unhealthiness and when monitoring for an origin stops.
