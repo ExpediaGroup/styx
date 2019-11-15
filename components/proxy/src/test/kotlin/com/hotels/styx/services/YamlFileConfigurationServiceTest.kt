@@ -765,8 +765,8 @@ class YamlFileConfigurationServiceTest : FunSpec() {
             return CreatedService(ServiceConfiguration(routeDb, serviceDb, providerName, serviceConfig), service)
         }
     }
-
 }
+
 
 internal fun writeOrigins(originsConfig: File, text: String, debug: Boolean = false) {
     originsConfig.writeText(text)
