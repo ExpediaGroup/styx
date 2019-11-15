@@ -16,6 +16,12 @@
 package com.hotels.styx
 
 fun lbGroupTag(name: String) = "lbGroup=$name"
+fun lbGroupTagValue(tag: String): String? = "lbGroup=(.+)".toRegex()
+        .matchEntire(tag)
+        ?.groupValues
+        ?.get(1)
+
+fun sourceTag(creator: String) = "source=$creator"
 
 private const val STATE = "state"
 const val STATE_ACTIVE = "active"

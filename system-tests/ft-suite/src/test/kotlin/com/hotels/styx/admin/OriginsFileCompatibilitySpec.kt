@@ -107,7 +107,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
             }
 
             test("The origins config file is returned from the admin service") {
-                client.send(get("/admin/providers/originsFileLoader/origins")
+                client.send(get("/admin/providers/originsFileLoader/configuration")
                         .header(HOST, styxServer().adminHostHeader())
                         .build())
                         .wait()!!
@@ -475,7 +475,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 writeOrigins(validOriginsFile)
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    client.send(get("/admin/providers/originsFileLoader/origins")
+                    client.send(get("/admin/providers/originsFileLoader/configuration")
                             .header(HOST, styxServer().adminHostHeader())
                             .build())
                             .wait()!!
@@ -495,7 +495,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     """.trimIndent())
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    client.send(get("/admin/providers/originsFileLoader/origins")
+                    client.send(get("/admin/providers/originsFileLoader/configuration")
                             .header(HOST, styxServer().adminHostHeader())
                             .build())
                             .wait()!!
