@@ -153,16 +153,14 @@ internal class HealthCheckMonitoringServiceFactory : ServiceProviderFactory {
     }
 }
 
-internal fun objectHealthFrom(state: String?, health: String?) =
+internal fun objectHealthFrom(state: String?, health: Pair<String, Int>?) =
         when {
-            state == STATE_ACTIVE && (health?.matches("$HEALTH_FAIL:[0-9]+".toRegex()) ?: false) -> {
-                val count = health!!.removePrefix("$HEALTH_FAIL:").toInt()
-                ObjectActive(count)
+            state == STATE_ACTIVE && (health?.first == HEALTH_FAIL && health.second >= 0) -> {
+                ObjectActive(health.second)
             }
 
-            state == STATE_UNREACHABLE && (health?.matches("$HEALTH_SUCCESS:[0-9]+".toRegex()) ?: false) -> {
-                val count = health!!.removePrefix("$HEALTH_SUCCESS:").toInt()
-                ObjectUnreachable(count)
+            state == STATE_UNREACHABLE && (health?.first == HEALTH_SUCCESS && health.second >= 0) -> {
+                ObjectUnreachable(health.second)
             }
 
             state == STATE_ACTIVE -> ObjectActive(0)

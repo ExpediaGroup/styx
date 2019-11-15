@@ -15,9 +15,13 @@
  */
 package com.hotels.styx
 
+private const val LBGROUP = "lbGroup"
+private val LBGROUP_REGEX = "$LBGROUP=(.+)".toRegex()
 fun lbGroupTag(name: String) = "lbGroup=$name"
-fun lbGroupTagValue(tag: String): String? = "lbGroup=(.+)".toRegex()
-        .matchEntire(tag)
+fun lbGroupTag(tags: Set<String>) = tags.firstOrNull(::isLbGroupTag)
+fun isLbGroupTag(tag: String) = LBGROUP_REGEX.matches(tag)
+fun lbGroupTagValue(tags: Set<String>) = lbGroupTagValue(lbGroupTag(tags)?:"")
+fun lbGroupTagValue(tag: String): String? = LBGROUP_REGEX.matchEntire(tag)
         ?.groupValues
         ?.get(1)
 
@@ -29,16 +33,24 @@ const val STATE_UNREACHABLE = "unreachable"
 const val STATE_CLOSED = "closed"
 private val STATE_REGEX = "$STATE=(.+)".toRegex()
 fun stateTag(value: String) = "$STATE=$value"
-fun stateTag(tags: Set<String>) = tags.firstOrNull { isStateTag(it) }
+fun stateTag(tags: Set<String>) = tags.firstOrNull(::isStateTag)
 fun isStateTag(tag: String) = STATE_REGEX.matches(tag)
-fun stateTagValue(tags: Set<String>) = STATE_REGEX.matchEntire(stateTag(tags)?:"")
+fun stateTagValue(tags: Set<String>) = stateTagValue(stateTag(tags)?:"")
+fun stateTagValue(tag: String) = STATE_REGEX.matchEntire(tag)
         ?.groupValues
         ?.get(1)
 
 private const val HEALTH = "health"
 const val HEALTH_SUCCESS = "success"
 const val HEALTH_FAIL = "fail"
-fun healthTag(value: String?) = if (value != null) "$HEALTH=$value" else null
-fun healthTag(tags: Set<String>) = tags.firstOrNull { it.startsWith("$HEALTH=") }
-fun isHealthTag(tag: String) = tag.startsWith("$HEALTH=")
-fun healthTagValue(tags: Set<String>) = healthTag(tags)?.substring(HEALTH.length + 1)
+private val HEALTH_REGEX = "$HEALTH=(.+):([0-9]+)".toRegex()
+fun healthTag(value: Pair<String, Int>?) =
+        if (value != null && value.first.isNotBlank() && value.second > 0)
+            "$HEALTH=${value.first}:${value.second}"
+        else null
+fun healthTag(tags: Set<String>) = tags.firstOrNull(::isHealthTag)
+fun isHealthTag(tag: String) = HEALTH_REGEX.matches(tag)
+fun healthTagValue(tags: Set<String>) = healthTagValue(healthTag(tags)?:"")
+fun healthTagValue(tag: String) = HEALTH_REGEX.matchEntire(tag)
+        ?.groupValues
+        ?.let { Pair(it[1], it[2].toInt()) }

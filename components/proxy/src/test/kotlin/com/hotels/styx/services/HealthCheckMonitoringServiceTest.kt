@@ -116,27 +116,21 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
         objectHealthFrom(null, null) shouldBe ObjectUnreachable(0)
         objectHealthFrom("", null) shouldBe ObjectOther("")
         objectHealthFrom("abc", null) shouldBe ObjectOther("abc")
-        objectHealthFrom("abc", "fail:0") shouldBe ObjectOther("abc")
+        objectHealthFrom("abc", "fail" to 0) shouldBe ObjectOther("abc")
 
         objectHealthFrom("closed", null) shouldBe ObjectOther(STATE_CLOSED)
-        objectHealthFrom("closed", "fail:3") shouldBe ObjectOther(STATE_CLOSED)
-        objectHealthFrom("closed", "success:7") shouldBe ObjectOther(STATE_CLOSED)
+        objectHealthFrom("closed", "fail" to 3) shouldBe ObjectOther(STATE_CLOSED)
+        objectHealthFrom("closed", "success" to 7) shouldBe ObjectOther(STATE_CLOSED)
 
-        objectHealthFrom("active", "fail:") shouldBe ObjectActive(0)
-        objectHealthFrom("active", "fail:ab") shouldBe ObjectActive(0)
-        objectHealthFrom("active", "fail:-1") shouldBe ObjectActive(0)
+        objectHealthFrom("active", "fail" to -1) shouldBe ObjectActive(0)
         objectHealthFrom("active", null) shouldBe ObjectActive(0)
-        objectHealthFrom("active", "fail:2") shouldBe ObjectActive(2)
-        objectHealthFrom("active", "fail:124") shouldBe ObjectActive(124)
-        objectHealthFrom("active", "fail:124x") shouldBe ObjectActive(0)
+        objectHealthFrom("active", "fail" to 2) shouldBe ObjectActive(2)
+        objectHealthFrom("active", "fail" to 124) shouldBe ObjectActive(124)
 
-        objectHealthFrom("unreachable", "success:") shouldBe ObjectUnreachable(0)
-        objectHealthFrom("unreachable", "success:ab") shouldBe ObjectUnreachable(0)
-        objectHealthFrom("unreachable", "success:-1") shouldBe ObjectUnreachable(0)
+        objectHealthFrom("unreachable", "success" to -1) shouldBe ObjectUnreachable(0)
         objectHealthFrom("unreachable", null) shouldBe ObjectUnreachable(0)
-        objectHealthFrom("unreachable", "success:2") shouldBe ObjectUnreachable(2)
-        objectHealthFrom("unreachable", "success:124") shouldBe ObjectUnreachable(124)
-        objectHealthFrom("unreachable", "success:124x") shouldBe ObjectUnreachable(0)
+        objectHealthFrom("unreachable", "success" to 2) shouldBe ObjectUnreachable(2)
+        objectHealthFrom("unreachable", "success" to 124) shouldBe ObjectUnreachable(124)
     }
 
     fun StyxObjectStore<RoutingObjectRecord>.tagsOf(key: String) = this.get(key).get().tags

@@ -26,19 +26,19 @@ import java.time.Duration
 
 sealed class ObjectHealth {
     abstract fun state(): String
-    abstract fun health(): String?
+    abstract fun health(): Pair<String, Int>?
 }
 data class ObjectActive(val failedProbes: Int) : ObjectHealth() {
     override fun state() = STATE_ACTIVE
-    override fun health() = if (failedProbes > 0) "$HEALTH_FAIL:$failedProbes" else null
+    override fun health() = if (failedProbes > 0) Pair(HEALTH_FAIL, failedProbes) else null
 }
 data class ObjectUnreachable(val successfulProbes: Int) : ObjectHealth() {
     override fun state() = STATE_UNREACHABLE
-    override fun health() = if (successfulProbes > 0) "$HEALTH_SUCCESS:$successfulProbes" else null
+    override fun health() = if (successfulProbes > 0) Pair(HEALTH_SUCCESS, successfulProbes) else null
 }
 data class ObjectOther(val state: String) : ObjectHealth() {
     override fun state() = state
-    override fun health(): String? = null
+    override fun health(): Pair<String, Int>? = null
 }
 
 typealias Probe = (RoutingObject) -> Publisher<Boolean>
