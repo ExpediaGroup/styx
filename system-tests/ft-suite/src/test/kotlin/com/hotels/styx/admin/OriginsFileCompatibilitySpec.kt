@@ -37,6 +37,8 @@ import io.kotlintest.Spec
 import io.kotlintest.eventually
 import io.kotlintest.matchers.collections.shouldContainAll
 import io.kotlintest.matchers.collections.shouldHaveSize
+import io.kotlintest.matchers.string.shouldContain
+import io.kotlintest.matchers.string.shouldNotContain
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FunSpec
@@ -69,8 +71,10 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     type: YamlFileConfigurationService
                     config:
                       originsFile: ${originsFile.absolutePath}
+                      ingressObject: pathPrefixRouter
                       monitor: True
                       pollInterval: PT0.1S 
+
                 httpPipeline: pathPrefixRouter
                 """.trimIndent(),
             loggingConfig = ResourcePaths.fixturesHome(
@@ -80,12 +84,13 @@ class OriginsFileCompatibilitySpec : FunSpec() {
 
     init {
         context("Styx server starts") {
-            writeOrigins("""
+            val originsFile = """
                 - id: appA
                   path: "/"
                   origins:
                   - { id: "appA-01", host: "localhost:${mockServerA01.port()}" } 
-            """.trimIndent())
+            """.trimIndent()
+            writeOrigins(originsFile)
             styxServer.restart()
 
             test("It populates forwarding path from the origins yaml file") {
@@ -99,6 +104,17 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                                 it!!.status() shouldBe OK
                             }
                 }
+            }
+
+            test("The origins config file is returned from the admin service") {
+                client.send(get("/admin/providers/originsFileLoader/configuration")
+                        .header(HOST, styxServer().adminHostHeader())
+                        .build())
+                        .wait()!!
+                        .let {
+                            it.status() shouldBe OK
+                            it.bodyAs(UTF_8) shouldBe originsFile
+                        }
             }
         }
 
@@ -388,7 +404,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
 
                         originRestrictionCookie: ABC
 
-                        httpPipeline: pathPrefixRouter
+                        httpPipeline: originsFileLoader-router
                         """.trimIndent())
 
             test("Routes to origin indicated by origins restriction cookie") {
@@ -416,6 +432,81 @@ class OriginsFileCompatibilitySpec : FunSpec() {
             }
         }
 
+        context("Admin interface") {
+
+            val validOriginsFile = """
+                - id: appA
+                  path: "/"
+                  origins:
+                  - { id: "appA-01", host: "localhost:${mockServerA01.port()}" } 
+            """.trimIndent()
+
+            test("Styx dashboard is disabled") {
+                client.send(get("/")
+                        .header(HOST, styxServer().adminHostHeader())
+                        .build())
+                        .wait()!!
+                        .let {
+                            it.status() shouldBe OK
+                            it.bodyAs(UTF_8) shouldNotContain ("/admin/dashboard/")
+                        }
+
+                client.send(get("/admin/dashboard/index.html")
+                        .header(HOST, styxServer().adminHostHeader())
+                        .build())
+                        .wait()!!
+                        .let {
+                            // Admin index page (with links)
+                            it.bodyAs(UTF_8) shouldContain """<li><a href='/admin/configuration?pretty'>Configuration</a></li>"""
+                        }
+
+                client.send(get("/admin/dashboard/data.json")
+                        .header(HOST, styxServer().adminHostHeader())
+                        .build())
+                        .wait()!!
+                        .let {
+                            // Admin index page (with links)
+                            it.bodyAs(UTF_8) shouldContain """<li><a href='/admin/configuration?pretty'>Configuration</a></li>"""
+                        }
+            }
+
+            test("Modified origins config is returned after update") {
+
+                writeOrigins(validOriginsFile)
+
+                eventually(2.seconds, AssertionError::class.java) {
+                    client.send(get("/admin/providers/originsFileLoader/configuration")
+                            .header(HOST, styxServer().adminHostHeader())
+                            .build())
+                            .wait()!!
+                            .let {
+                                it.status() shouldBe OK
+                                it.bodyAs(UTF_8) shouldBe validOriginsFile
+                            }
+                }
+            }
+
+            test("Original origins config is returned after invalid update") {
+
+                writeOrigins("""
+                    - id: appA
+                    - this file has somehow corrupted
+                      .. bl;ah blah" 
+                    """.trimIndent())
+
+                eventually(2.seconds, AssertionError::class.java) {
+                    client.send(get("/admin/providers/originsFileLoader/configuration")
+                            .header(HOST, styxServer().adminHostHeader())
+                            .build())
+                            .wait()!!
+                            .let {
+                                it.status() shouldBe OK
+                                it.bodyAs(UTF_8) shouldBe validOriginsFile
+                            }
+                }
+            }
+        }
+
         context("Creates a health checking service") {
 
             fun deserialiseHealthCheckMonitor(yaml: String) =
@@ -428,9 +519,10 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                             .filter { it.type() == "HealthCheckMonitor" }
 
             fun validateHealthCheckMonitor(monitor: StyxObjectDefinition) {
-                monitor.name() shouldBe "appB"
+                monitor.name() shouldBe "appB-monitor"
                 monitor.type() shouldBe "HealthCheckMonitor"
-                monitor.tags().shouldContainAll("source=OriginsFileConverter", "target=appB")
+                monitor.tags().shouldContainAll("source=originsFileLoader", "target=appB")
+
                 val config = monitor.config()
 
                 config.get("objects").asText() shouldBe "appB"
@@ -502,7 +594,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
             }
 
             test("Health checking service returned from the admin endpoint") {
-                client.send(get("/admin/service/provider/appB")
+                client.send(get("/admin/service/provider/appB-monitor")
                         .header(HOST, styxServer().adminHostHeader())
                         .build())
                         .wait().let {
@@ -559,12 +651,13 @@ class OriginsFileCompatibilitySpec : FunSpec() {
 
 
         context("Error scenarios") {
-            writeOrigins("""
+            val originsFile = """
                 - id: appA
                   path: "/"
                   origins:
                   - { id: "appA-01", host: "localhost:${mockServerA01.port()}" } 
-                """.trimIndent())
+                """.trimIndent()
+            writeOrigins(originsFile)
             styxServer.restart()
 
             test("Keeps the original configuration when a one has problems") {
@@ -595,12 +688,13 @@ class OriginsFileCompatibilitySpec : FunSpec() {
             }
 
             test("Reloads a new configuration after error") {
-                writeOrigins("""
+                val newOriginsFile = """
                 - id: appA
                   path: "/"
                   origins:
                   - { id: "appA-02", host: "localhost:${mockServerA02.port()}" } 
-                """.trimIndent())
+                """.trimIndent()
+                writeOrigins(newOriginsFile)
 
                 eventually(2.seconds, AssertionError::class.java) {
                     client.send(get("/20")

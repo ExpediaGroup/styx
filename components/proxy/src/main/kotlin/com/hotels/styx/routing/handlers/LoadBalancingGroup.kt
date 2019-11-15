@@ -39,6 +39,7 @@ import com.hotels.styx.config.schema.SchemaDsl.integer
 import com.hotels.styx.config.schema.SchemaDsl.optional
 import com.hotels.styx.config.schema.SchemaDsl.string
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig
+import com.hotels.styx.lbGroupTag
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.RoutingObjectFactory
@@ -77,7 +78,6 @@ internal class LoadBalancingGroup(val client: StyxBackendServiceClient, val chan
         )
 
         private val LOGGER = LoggerFactory.getLogger(LoadBalancingGroup::class.java)
-
     }
 
     class Factory : RoutingObjectFactory {
@@ -122,7 +122,7 @@ internal class LoadBalancingGroup(val client: StyxBackendServiceClient, val chan
 
         private fun routeDatabaseChanged(appId: String, snapshot: ObjectStore<RoutingObjectRecord>, remoteHosts: AtomicReference<Set<RemoteHost>>) {
             val newSet = snapshot.entrySet()
-                    .filter { isTaggedWith(it, appId) }
+                    .filter { isTaggedWith(it, lbGroupTag(appId)) }
                     .filterNot { isTaggedWith(it, "$INACTIVE_TAG.*".toRegex()) }
                     .map { toRemoteHost(appId, it) }
                     .toSet()

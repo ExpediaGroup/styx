@@ -30,11 +30,12 @@ public interface ServiceProviderFactory {
     /**
      * Create a service provider instance.
      *
+     * @param name                 Service provider name
      * @param context              Routing object factory context
      * @param serviceConfiguration Styx service configuration
      * @param serviceDb            Styx service database
      *
      * @return Styx service instance
      */
-    StyxService create(RoutingObjectFactory.Context context, JsonNode serviceConfiguration, StyxObjectStore<ProviderObjectRecord> serviceDb);
+    StyxService create(String name, RoutingObjectFactory.Context context, JsonNode serviceConfiguration, StyxObjectStore<ProviderObjectRecord> serviceDb);
 }

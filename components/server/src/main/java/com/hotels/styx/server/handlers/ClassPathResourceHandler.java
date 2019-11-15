@@ -25,6 +25,7 @@ import com.hotels.styx.common.http.handler.BaseHttpHandler;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.regex.Pattern;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpResponseStatus.FORBIDDEN;
@@ -33,19 +34,38 @@ import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.server.handlers.MediaTypes.mediaTypeOf;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
+import static java.util.regex.Matcher.quoteReplacement;
 
 /**
  * Handler for class path resources.
  */
 public class ClassPathResourceHandler extends BaseHttpHandler {
-    private final String root;
+    private static final Pattern DOUBLE_SEPARATOR = Pattern.compile("//", Pattern.LITERAL);
+    private final String requestPrefix;
+    private final String resourceRoot;
 
-    public ClassPathResourceHandler(String root) {
-        this.root = ensureRootEndsInSlash(root);
+    public ClassPathResourceHandler(String resourceRoot) {
+        this(resourceRoot, resourceRoot);
     }
 
-    private static String ensureRootEndsInSlash(String root) {
-        return root.endsWith("/") ? root : root + "/";
+    public ClassPathResourceHandler(String requestPrefix, String resourceRoot) {
+        this.requestPrefix = checkPrefix(requestPrefix);
+        this.resourceRoot = ensureHasTrailingSlash(resourceRoot);
+    }
+
+    private static String checkPrefix(String requestPrefix) {
+        requireNonNull(requestPrefix);
+
+        if (requestPrefix.isEmpty()) {
+            throw new IllegalArgumentException("Request prefix is empty.");
+        }
+
+        if (!requestPrefix.startsWith("/")) {
+            throw new IllegalArgumentException("Request prefix must start with '/'");
+        }
+
+        return ensureHasTrailingSlash(requestPrefix);
     }
 
     @Override
@@ -53,12 +73,15 @@ public class ClassPathResourceHandler extends BaseHttpHandler {
         try {
             String path = request.path();
 
-            if (!path.startsWith(root) || path.contains("..")) {
+            if (!path.startsWith(requestPrefix) || path.contains("..")) {
                 return error(FORBIDDEN);
             }
 
+            String resourcePath = DOUBLE_SEPARATOR.matcher(resourceRoot + ensureHasPreceedingSlash(request.path().replace(requestPrefix, "")))
+                    .replaceAll(quoteReplacement("/"));
+
             return new HttpResponse.Builder(OK)
-                    .body(resourceBody(path), true)
+                    .body(resourceBody(resourcePath), true)
                     .header(CONTENT_TYPE, mediaTypeOf(path))
                     .build();
         } catch (FileNotFoundException e) {
@@ -66,6 +89,14 @@ public class ClassPathResourceHandler extends BaseHttpHandler {
         } catch (IOException e) {
             return error(INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private static String ensureHasTrailingSlash(String path) {
+        return path.endsWith("/") ? path : path + "/";
+    }
+
+    private static String ensureHasPreceedingSlash(String path) {
+        return path.startsWith("/") ? path : "/" + path;
     }
 
     private static byte[] resourceBody(String path) throws IOException {

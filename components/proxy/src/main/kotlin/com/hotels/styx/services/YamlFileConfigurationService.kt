@@ -16,7 +16,11 @@
 package com.hotels.styx.services
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.google.common.net.MediaType.HTML_UTF_8
+import com.google.common.net.MediaType.PLAIN_TEXT_UTF_8
+import com.hotels.styx.common.http.handler.HttpContentHandler
 import com.hotels.styx.api.extension.service.spi.StyxService
+import com.hotels.styx.common.http.handler.HttpAggregator
 import com.hotels.styx.config.schema.SchemaDsl
 import com.hotels.styx.config.schema.SchemaDsl.bool
 import com.hotels.styx.config.schema.SchemaDsl.field
@@ -28,21 +32,24 @@ import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.config.StyxObjectDefinition
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.ProviderObjectRecord
+import com.hotels.styx.server.handlers.ClassPathResourceHandler
 import com.hotels.styx.serviceproviders.ServiceProviderFactory
-import com.hotels.styx.services.OriginsConfigConverter.Companion.OBJECT_CREATOR_TAG
 import com.hotels.styx.services.OriginsConfigConverter.Companion.deserialiseOrigins
+import com.hotels.styx.sourceTag
 import org.slf4j.LoggerFactory
+import java.nio.charset.StandardCharsets.UTF_8
 import java.time.Duration
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicReference
 
 internal class YamlFileConfigurationService(
+        private val name: String,
         private val routeDb: StyxObjectStore<RoutingObjectRecord>,
         private val converter: OriginsConfigConverter,
         private val config: YamlFileConfigurationServiceConfig,
         private val serviceDb: StyxObjectStore<ProviderObjectRecord>) : StyxService {
 
-    private val pollInterval = if (config.pollInterval.isNullOrBlank()) {
+    private val pollInterval = if (config.pollInterval.isBlank()) {
         Duration.ofSeconds(1)
     } else {
         Duration.parse(config.pollInterval)
@@ -50,17 +57,25 @@ internal class YamlFileConfigurationService(
 
     private val initialised = CountDownLatch(1)
 
+    private val ingressObjectName = if (config.ingressObject.isNotBlank()) config.ingressObject else "$name-router"
+
+    private val objectSourceTag = sourceTag(name)
+
     private val fileMonitoringService = FileMonitoringService("YamlFileCoinfigurationService", config.originsFile, pollInterval) {
         reloadAction(it)
     }
 
     private val healthMonitors = AtomicReference<List<Pair<String, ProviderObjectRecord>>>(listOf())
 
+    @Volatile
+    private var originsConfig = ""
+
     companion object {
         @JvmField
         val SCHEMA = SchemaDsl.`object`(
                 field("originsFile", string()),
                 optional("monitor", bool()),
+                optional("ingressObject", string()),
                 optional("pollInterval", string()))
 
         private val LOGGER = LoggerFactory.getLogger(YamlFileConfigurationService::class.java)
@@ -78,19 +93,33 @@ internal class YamlFileConfigurationService(
                 LOGGER.info("service stopped")
             }
 
+    override fun adminInterfaceHandlers(namespace: String) = mapOf(
+            "assets/" to HttpAggregator(ClassPathResourceHandler("$namespace/assets/", "/admin/assets/YamlConfigurationService")),
+            "configuration" to HttpContentHandler(PLAIN_TEXT_UTF_8.toString(), UTF_8) { originsConfig },
+            "origins" to HttpContentHandler(HTML_UTF_8.toString(), UTF_8) {
+                OriginsPageRenderer("$namespace/assets", name, routeDb).render()
+            })
+
     fun reloadAction(content: String): Unit {
         LOGGER.info("New origins configuration: \n$content")
 
         kotlin.runCatching {
             val deserialised = deserialiseOrigins(content)
 
-            val routingObjectDefs = converter.routingObjects(deserialised)
+            val routingObjectDefs = (
+                    converter.routingObjects(deserialised) +
+                            converter.pathPrefixRouter(ingressObjectName, deserialised))
+                    .map { StyxObjectDefinition(it.name(), it.type(), it.tags() + objectSourceTag, it.config()) }
+
             val healthMonitors = converter.healthCheckServices(deserialised)
+                    .map { (name, record) -> Pair(name, record.copy(tags = record.tags + objectSourceTag)) }
 
             Pair(healthMonitors, routingObjectDefs)
         }.mapCatching { (healthMonitors, routingObjectDefs) ->
             updateRoutingObjects(routingObjectDefs)
             updateHealthCheckServices(serviceDb, healthMonitors)
+        }.onSuccess {
+            originsConfig = content
             initialised.countDown()
         }.onFailure {
             LOGGER.error("Failed to reload new configuration. cause='{}'", it.message, it)
@@ -101,7 +130,7 @@ internal class YamlFileConfigurationService(
 
     internal fun updateRoutingObjects(objectDefs: List<StyxObjectDefinition>) {
         val previousObjectNames = routeDb.entrySet()
-                .filter { it.value.tags.contains(OBJECT_CREATOR_TAG) }
+                .filter { it.value.tags.contains(objectSourceTag) }
                 .map { it.key }
 
         val newObjectNames = objectDefs.map { it.name() }
@@ -118,9 +147,11 @@ internal class YamlFileConfigurationService(
             }
         }
 
-        removedObjects.forEach { routeDb.remove(it).ifPresent {
-            it.routingObject.stop()
-        } }
+        removedObjects.forEach {
+            routeDb.remove(it).ifPresent {
+                it.routingObject.stop()
+            }
+        }
     }
 
     private fun updateHealthCheckServices(objectDb: StyxObjectStore<ProviderObjectRecord>, objects: List<Pair<String, ProviderObjectRecord>>): Unit {
@@ -143,19 +174,21 @@ internal class YamlFileConfigurationService(
             }
         }
 
-        removedObjects.forEach { objectDb.remove(it).ifPresent {
-            it.styxService.stop()
-        } }
+        removedObjects.forEach {
+            objectDb.remove(it).ifPresent {
+                it.styxService.stop()
+            }
+        }
     }
 }
 
-internal data class YamlFileConfigurationServiceConfig(val originsFile: String, val monitor: Boolean = true, val pollInterval: String = "")
+internal data class YamlFileConfigurationServiceConfig(val originsFile: String, val ingressObject: String = "", val monitor: Boolean = true, val pollInterval: String = "")
 
 internal class YamlFileConfigurationServiceFactory : ServiceProviderFactory {
-    override fun create(context: RoutingObjectFactory.Context, jsonConfig: JsonNode, serviceDb: StyxObjectStore<ProviderObjectRecord>): StyxService {
+    override fun create(name: String, context: RoutingObjectFactory.Context, jsonConfig: JsonNode, serviceDb: StyxObjectStore<ProviderObjectRecord>): StyxService {
         val serviceConfig = JsonNodeConfig(jsonConfig).`as`(YamlFileConfigurationServiceConfig::class.java)!!
         val originRestrictionCookie = context.environment().configuration().get("originRestrictionCookie").orElse(null)
 
-        return YamlFileConfigurationService(context.routeDb(), OriginsConfigConverter(serviceDb, context, originRestrictionCookie), serviceConfig, serviceDb)
+        return YamlFileConfigurationService(name, context.routeDb(), OriginsConfigConverter(serviceDb, context, originRestrictionCookie), serviceConfig, serviceDb)
     }
 }

@@ -86,28 +86,28 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                   app-A-01:
                                     type: HostProxy
                                     tags:
-                                      - App-A
+                                      - lbGroup=App-A
                                     config:
                                       host: localhost:${appA01.port()}
 
                                   app-A-02:
                                     type: HostProxy
                                     tags:
-                                      - App-A
+                                      - lbGroup=App-A
                                     config:
                                       host: localhost:${appA02.port()}
 
                                   app-A-03:
                                     type: HostProxy
                                     tags:
-                                      - App-A
+                                      - lbGroup=App-A
                                     config:
                                       host: localhost:${appA03.port()}
 
                                   app-B-01:
                                     type: HostProxy
                                     tags:
-                                      - App-B
+                                      - lbGroup=App-B
                                     config:
                                       host: localhost:${appB01.port()}
 
@@ -149,7 +149,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                   app-A-01:
                                     type: HostProxy
                                     tags:
-                                      - App-A
+                                      - lbGroup=App-A
                                       - state:inactive
                                     config:
                                       host: localhost:${appA01.port()}
@@ -157,7 +157,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                   app-A-02:
                                     type: HostProxy
                                     tags:
-                                      - App-A
+                                      - lbGroup=App-A
                                       - state:inactive:3
                                     config:
                                       host: localhost:${appA02.port()}
@@ -165,14 +165,14 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                   app-A-03:
                                     type: HostProxy
                                     tags:
-                                      - App-A
+                                      - lbGroup=App-A
                                     config:
                                       host: localhost:${appA03.port()}
 
                                   app-B-01:
                                     type: HostProxy
                                     tags:
-                                      - App-B
+                                      - lbGroup=App-B
                                     config:
                                       host: localhost:${appB01.port()}
 
@@ -226,7 +226,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                     styxServer().newRoutingObject("host-1", """
                         type: HostProxy
                         tags:
-                          - App-A
+                          - lbGroup=App-A
                         config:
                           host: localhost:${appA01.port()}
                     """.trimIndent()) shouldBe (CREATED)
@@ -285,14 +285,14 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                     app-A-01:
                                       type: HostProxy
                                       tags:
-                                        - App-A
+                                        - lbGroup=App-A
                                       config:
                                         host: localhost:${appA01.port()}
 
                                     app-A-02:
                                       type: HostProxy
                                       tags:
-                                        - App-A
+                                        - lbGroup=App-A
                                       config:
                                         host: localhost:${appA02.port()}
 
@@ -409,28 +409,28 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                     appA-01:
                                       type: HostProxy
                                       tags:
-                                        - appA
+                                        - lbGroup=appA
                                       config:
                                         host: localhost:${appA01.port()}
 
                                     appA-02:
                                       type: HostProxy
                                       tags:
-                                        - appA
+                                        - lbGroup=appA
                                       config:
                                         host: localhost:${appA02.port()}
 
                                     appA-03:
                                       type: HostProxy
                                       tags:
-                                        - appA
+                                        - lbGroup=appA
                                       config:
                                         host: localhost:${appA03.port()}
 
                                     appA-04:
                                       type: HostProxy
                                       tags:
-                                        - appA
+                                        - lbGroup=appA
                                       config:
                                         host: localhost:${appB01.port()}
 

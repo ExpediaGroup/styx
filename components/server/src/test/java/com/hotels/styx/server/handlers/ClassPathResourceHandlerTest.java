@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.server.handlers;
 
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.junit.jupiter.api.Test;
@@ -35,28 +35,73 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class ClassPathResourceHandlerTest {
-    ClassPathResourceHandler handler = new ClassPathResourceHandler("/admin/dashboard");
+class ClassPathResourceHandlerTest {
+    private final HttpInterceptor.Context context = HttpInterceptorContext.create();
 
     @Test
-    public void readsClassPathResources() {
-        HttpRequest request = get("/admin/dashboard/expected.txt").build();
-        HttpResponse response = Mono.from(handler.handle(request, HttpInterceptorContext.create())).block();
+    void servesResourcesFromClassPath() {
+        HttpResponse response = Mono.from(
+                new ClassPathResourceHandler("/admin/dashboard")
+                        .handle(get("/admin/dashboard/expected.txt").build(), context))
+                .block();
 
         assertThat(response.status(), is(OK));
         assertThat(body(response), is("Foo\nBar\n"));
     }
 
-    private static String body(HttpResponse response) {
-        return response.bodyAs(UTF_8).replace(lineSeparator(), "\n");
+    @Test
+    void servesResourcesForCorrectlyPrefixedRequests() {
+        HttpResponse response = Mono.from(
+                new ClassPathResourceHandler("/a/prefix/", "/admin/dashboard")
+                        .handle(get("/a/prefix/expected.txt").build(), context))
+                .block();
+
+        assertThat(response.status(), is(OK));
+        assertThat(body(response), is("Foo\nBar\n"));
     }
 
     @Test
-    public void returns404IfResourceDoesNotExist() {
-        HttpRequest request = get("/admin/dashboard/unexpected.txt").build();
-        HttpResponse response = Mono.from(handler.handle(request, HttpInterceptorContext.create())).block();
+    void removesDuplicatePathSeparators() {
+        HttpResponse response = Mono.from(
+                new ClassPathResourceHandler("/a/prefix/", "/admin/dashboard")
+                        .handle(get("/a/prefix/expected.txt").build(), context))
+                .block();
+
+        assertThat(response.status(), is(OK));
+        assertThat(body(response), is("Foo\nBar\n"));
+    }
+    @Test
+    void returns404IfResourceDoesNotExist() {
+        HttpResponse response = Mono.from(
+                new ClassPathResourceHandler("/admin/dashboard")
+                        .handle(get("/admin/dashboard/unexpected.txt").build(), context))
+                .block();
 
         assertThat(response.status(), is(NOT_FOUND));
+    }
+
+    @ParameterizedTest
+    @MethodSource("forbiddenPaths")
+    void returns403IfTryingToAccessResourcesOutsidePermittedRoot(String path) {
+        HttpResponse response = Mono.from(new ClassPathResourceHandler("/admin/dashboard")
+                .handle(get(path).build(), context)).block();
+
+        assertThat(response.status(), is(FORBIDDEN));
+    }
+
+    @ParameterizedTest
+    @MethodSource("forbiddenPaths")
+    void returnsForbiddenIfPrefixedRequestAttemptsToAccessResourcesOutsidePermittedRoot(String path) {
+        HttpResponse response = Mono.from(
+                new ClassPathResourceHandler("/admin/dashboard", "/admin/dashboard")
+                        .handle(get(path).build(), context))
+                .block();
+
+        assertThat(response.status(), is(FORBIDDEN));
+    }
+
+    private static String body(HttpResponse response) {
+        return response.bodyAs(UTF_8).replace(lineSeparator(), "\n");
     }
 
     private static Stream<Arguments> forbiddenPaths() {
@@ -67,13 +112,4 @@ public class ClassPathResourceHandlerTest {
         );
     }
 
-
-    @ParameterizedTest
-    @MethodSource("forbiddenPaths")
-    public void returns403IfTryingToAccessResourcesOutsidePermittedRoot(String path) {
-        HttpRequest request = get(path).build();
-        HttpResponse response = Mono.from(handler.handle(request, HttpInterceptorContext.create())).block();
-
-        assertThat(response.status(), is(FORBIDDEN));
-    }
 }
