@@ -27,7 +27,6 @@ import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.StaticPipelineFactory;
 import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
-import com.hotels.styx.routing.config.StyxObjectConfiguration;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
