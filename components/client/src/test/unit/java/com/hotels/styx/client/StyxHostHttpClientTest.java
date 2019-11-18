@@ -26,6 +26,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.reactivestreams.Subscription;
 import reactor.core.publisher.BaseSubscriber;
+import reactor.core.publisher.EmitterProcessor;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 import reactor.test.publisher.TestPublisher;
@@ -47,7 +49,7 @@ import static rx.Observable.just;
 public class StyxHostHttpClientTest {
     private LiveHttpRequest request;
     private LiveHttpResponse response;
-    private PublishSubject<LiveHttpResponse> responseProvider;
+    private EmitterProcessor<LiveHttpResponse> responseProvider;
 
     @BeforeEach
     public void setUp() {
@@ -57,12 +59,12 @@ public class StyxHostHttpClientTest {
                 .body("xyz", UTF_8)
                 .build()
                 .stream();
-        responseProvider = PublishSubject.create();
+        responseProvider = EmitterProcessor.create();
     }
 
     @Test
     public void returnsConnectionBackToPool() {
-        Connection connection = mockConnection(just(response));
+        Connection connection = mockConnection(Flux.just(response));
         ConnectionPool pool = mockPool(connection);
 
         StyxHostHttpClient hostClient = new StyxHostHttpClient(pool);
@@ -80,9 +82,9 @@ public class StyxHostHttpClientTest {
     @Test
     public void ignoresCancelledHeaders() {
         // Request observable unsubscribe/cancel has to be ignored after "onNext" event.
-        // This is because Reactor Mono will automatically cancel after an event has
+        // This is because Reactor Flux will automatically cancel after an event has
         // been published.
-        Connection connection = mockConnection(just(response));
+        Connection connection = mockConnection(Flux.just(response));
         ConnectionPool pool = mockPool(connection);
         AtomicReference<LiveHttpResponse> transformedResponse = new AtomicReference<>();
 
@@ -107,7 +109,7 @@ public class StyxHostHttpClientTest {
 
     @Test
     public void releasesIfRequestIsCancelledBeforeHeaders() {
-        Connection connection = mockConnection(PublishSubject.create());
+        Connection connection = mockConnection(EmitterProcessor.create());
         ConnectionPool pool = mockPool(connection);
 
         StyxHostHttpClient hostClient = new StyxHostHttpClient(pool);
@@ -152,7 +154,7 @@ public class StyxHostHttpClientTest {
     @Test
     public void terminatesConnectionWhenResponseObservableCompletesWithoutHeaders() {
         // A connection that yields no response:
-        Connection connection = mockConnection(Observable.empty());
+        Connection connection = mockConnection(Flux.empty());
         ConnectionPool pool = mockPool(connection);
 
         StyxHostHttpClient hostClient = new StyxHostHttpClient(pool);
@@ -168,7 +170,7 @@ public class StyxHostHttpClientTest {
 
     @Test
     public void releasesConnectionWhenResponseFailsBeforeHeaders() {
-        Connection connection = mockConnection(Observable.error(new RuntimeException()));
+        Connection connection = mockConnection(Flux.error(new RuntimeException()));
         ConnectionPool pool = mockPool(connection);
 
         StyxHostHttpClient hostClient = new StyxHostHttpClient(pool);
@@ -184,7 +186,7 @@ public class StyxHostHttpClientTest {
     @Test
     public void terminatesConnectionDueToUnsubscribedBody() {
         TestPublisher<Buffer> testPublisher = TestPublisher.create();
-        Connection connection = mockConnection(Observable.just(LiveHttpResponse.response(OK).body(new ByteStream(testPublisher)).build()));
+        Connection connection = mockConnection(Flux.just(LiveHttpResponse.response(OK).body(new ByteStream(testPublisher)).build()));
         ConnectionPool pool = mockPool(connection);
         AtomicReference<LiveHttpResponse> receivedResponse = new AtomicReference<>();
 
@@ -212,7 +214,7 @@ public class StyxHostHttpClientTest {
         verify(pool).close();
     }
 
-    Connection mockConnection(Observable<LiveHttpResponse> responseObservable) {
+    Connection mockConnection(Flux<LiveHttpResponse> responseObservable) {
         Connection connection = mock(Connection.class);
         when(connection.write(any(LiveHttpRequest.class))).thenReturn(responseObservable);
         return connection;

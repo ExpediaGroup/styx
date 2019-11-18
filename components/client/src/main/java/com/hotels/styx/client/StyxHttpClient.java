@@ -28,7 +28,6 @@ import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.client.ssl.SslContextFactory;
 import io.netty.handler.ssl.SslContext;
 import reactor.core.publisher.Mono;
-import rx.RxReactiveStreams;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -122,9 +121,8 @@ public final class StyxHttpClient implements HttpClient {
                 new ConnectionSettings(params.connectTimeoutMillis()),
                 sslContext
         ).flatMap(connection ->
-                Mono.from(RxReactiveStreams.toPublisher(
-                        connection.write(networkRequest)
-                                .doOnTerminate(connection::close)))
+                Mono.from(connection.write(networkRequest))
+                                .doOnTerminate(connection::close)
         );
 
         return responseObservable;

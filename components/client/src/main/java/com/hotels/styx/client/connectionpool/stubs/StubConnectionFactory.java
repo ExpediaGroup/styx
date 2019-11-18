@@ -21,8 +21,8 @@ import com.hotels.styx.api.extension.Announcer;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
-import rx.Observable;
 
 import static com.google.common.base.Objects.toStringHelper;
 
@@ -50,7 +50,7 @@ public class StubConnectionFactory implements Connection.Factory {
         }
 
         @Override
-        public Observable<LiveHttpResponse> write(LiveHttpRequest request) {
+        public Publisher<LiveHttpResponse> write(LiveHttpRequest request) {
             throw new UnsupportedOperationException("Not implemented");
         }
 

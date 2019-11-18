@@ -33,7 +33,7 @@ import io.netty.util.internal.OutOfDirectMemoryError;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import rx.Subscriber;
+import reactor.core.publisher.FluxSink;
 import rx.observers.TestSubscriber;
 
 import java.io.PrintWriter;
@@ -85,37 +85,37 @@ public class NettyToStyxResponsePropagatorTest {
 
     @Test
     public void notifiesSubscriberForNettyPipelineExceptions() {
-        Subscriber<LiveHttpResponse> subscriber = mock(Subscriber.class);
+        FluxSink<LiveHttpResponse> subscriber = mock(FluxSink.class);
         NettyToStyxResponsePropagator handler = new NettyToStyxResponsePropagator(subscriber, SOME_ORIGIN);
         EmbeddedChannel channel = new EmbeddedChannel(handler);
 
         channel.pipeline().fireExceptionCaught(new RuntimeException("Error"));
 
         ArgumentCaptor<Throwable> captor = ArgumentCaptor.forClass(Throwable.class);
-        verify(subscriber, times(1)).onError(captor.capture());
+        verify(subscriber, times(1)).error(captor.capture());
         assertThat(captor.getValue(), is(instanceOf(BadHttpResponseException.class)));
     }
 
     @Test
     public void propagatesExceptionWhenThereIsDecodeErrorInReceivedResponse() throws Exception {
-        Subscriber subscriber = mock(Subscriber.class);
+        FluxSink subscriber = mock(FluxSink.class);
         NettyToStyxResponsePropagator handler = new NettyToStyxResponsePropagator(subscriber, SOME_ORIGIN);
         EmbeddedChannel channel = new EmbeddedChannel(handler);
 
         channel.writeInbound(newCorruptedResponse());
 
-        verify(subscriber).onError(any(BadHttpResponseException.class));
+        verify(subscriber).error(any(BadHttpResponseException.class));
     }
 
     @Test
     public void notifiesSubscriberWhenChannelBecomesInactive() throws Exception {
-        Subscriber subscriber = mock(Subscriber.class);
+        FluxSink subscriber = mock(FluxSink.class);
         NettyToStyxResponsePropagator handler = new NettyToStyxResponsePropagator(subscriber, SOME_ORIGIN);
         EmbeddedChannel channel = new EmbeddedChannel(handler);
 
         channel.pipeline().fireChannelInactive();
 
-        verify(subscriber).onError(any(TransportLostException.class));
+        verify(subscriber).error(any(TransportLostException.class));
     }
 
     @Test

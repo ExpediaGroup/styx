@@ -29,7 +29,7 @@ import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.AttributeKey;
-import rx.Observable;
+import org.reactivestreams.Publisher;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -91,7 +91,7 @@ public class NettyConnection implements Connection, TimeToFirstByteListener {
     }
 
     @Override
-    public Observable<LiveHttpResponse> write(LiveHttpRequest request) {
+    public Publisher<LiveHttpResponse> write(LiveHttpRequest request) {
         return this.requestOperationFactory.newHttpRequestOperation(request).execute(this);
     }
 

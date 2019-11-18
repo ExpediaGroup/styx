@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ import com.google.common.base.Stopwatch;
 import com.google.common.base.Ticker;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.client.Connection;
 import com.hotels.styx.api.extension.Origin;
-import rx.Observable;
+import com.hotels.styx.client.Connection;
+import org.reactivestreams.Publisher;
 
 import java.util.function.Supplier;
 
@@ -53,7 +53,7 @@ class ExpiringConnection implements Connection {
     }
 
     @Override
-    public Observable<LiveHttpResponse> write(LiveHttpRequest request) {
+    public Publisher<LiveHttpResponse> write(LiveHttpRequest request) {
         return nettyConnection.write(request);
     }
 

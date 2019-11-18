@@ -18,6 +18,8 @@ package com.hotels.styx.client;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.extension.Origin;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import rx.Observable;
 
@@ -47,9 +49,9 @@ public interface Connection extends Closeable {
      * Writes HTTP request to a remote peer in the context of this connection.
      *
      * @param request
-     * @return an observable that provides the response
+     * @return a Publisher that provides the response
      */
-    Observable<LiveHttpResponse> write(LiveHttpRequest request);
+    Publisher<LiveHttpResponse> write(LiveHttpRequest request);
 
     /**
      * Returns if the underlying connection is still active.
