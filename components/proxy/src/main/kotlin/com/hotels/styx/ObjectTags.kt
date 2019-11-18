@@ -23,3 +23,7 @@ fun lbGroupTagValue(tag: String): String? = "lbGroup=(.+)".toRegex()
         ?.get(1)
 
 fun sourceTag(creator: String) = "source=$creator"
+
+fun sourceTag(tags: Set<String>) = tags.firstOrNull { it.startsWith("source=") }
+
+fun sourceTagValue(tags: Set<String>) = sourceTag(tags)?.substring("source".length + 1)
