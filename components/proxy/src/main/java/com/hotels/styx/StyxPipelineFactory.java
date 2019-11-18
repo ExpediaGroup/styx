@@ -23,17 +23,11 @@ import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
-import com.hotels.styx.routing.HttpPipelineFactory;
 import com.hotels.styx.routing.RoutingObject;
-import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.StaticPipelineFactory;
 import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
-import com.hotels.styx.routing.config.StyxObjectConfiguration;
-import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
-import com.hotels.styx.startup.PipelineFactory;
-import com.hotels.styx.startup.StyxServerComponents;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 
@@ -48,9 +42,8 @@ import static java.util.Objects.requireNonNull;
 /**
  * Produces the pipeline for the Styx proxy server.
  */
-public final class StyxPipelineFactory implements PipelineFactory {
+public final class StyxPipelineFactory {
 
-    private final StyxObjectStore<RoutingObjectRecord> routeDb;
     private final RoutingObjectFactory.Context builtinRoutingObjects;
     private final Environment environment;
     private final Map<String, StyxService> services;
@@ -60,14 +53,12 @@ public final class StyxPipelineFactory implements PipelineFactory {
 
 
     public StyxPipelineFactory(
-            StyxObjectStore<RoutingObjectRecord> routeDb,
             RoutingObjectFactory.Context builtinRoutingObjects,
             Environment environment,
             Map<String, StyxService> services,
             List<NamedPlugin> plugins,
             EventLoopGroup eventLoopGroup,
             Class<? extends SocketChannel> nettySocketChannelClass) {
-        this.routeDb = requireNonNull(routeDb);
         this.builtinRoutingObjects = requireNonNull(builtinRoutingObjects);
         this.environment = requireNonNull(environment);
         this.services = requireNonNull(services);
@@ -76,8 +67,7 @@ public final class StyxPipelineFactory implements PipelineFactory {
         this.nettySocketChannelClass = requireNonNull(nettySocketChannelClass);
     }
 
-    @Override
-    public HttpHandler create(StyxServerComponents config) {
+    public HttpHandler create() {
         boolean requestTracking = environment.configuration().get("requestTracking", Boolean.class).orElse(false);
 
         return new HttpInterceptorPipeline(
@@ -91,23 +81,18 @@ public final class StyxPipelineFactory implements PipelineFactory {
 
         Optional<JsonNode> rootHandlerNode = environment.configuration().get("httpPipeline", JsonNode.class);
 
-        HttpPipelineFactory pipelineBuilder = rootHandlerNode
-                .map(jsonNode -> {
-                    StyxObjectConfiguration node = toRoutingConfigNode(jsonNode);
-                    return (HttpPipelineFactory) () -> Builtins.build(ImmutableList.of("httpPipeline"), routingObjectFactoryContext, node);
-                })
-                .orElseGet(() -> {
-                    Registry<BackendService> registry = (Registry<BackendService>) services.get("backendServiceRegistry");
+        if (rootHandlerNode.isPresent()) {
+            return Builtins.build(ImmutableList.of("httpPipeline"), routingObjectFactoryContext, toRoutingConfigNode(rootHandlerNode.get()));
+        }
 
-                    return new StaticPipelineFactory(
-                            environment,
-                            registry != null ? registry : new MemoryBackedRegistry<>(),
-                            plugins,
-                            eventLoopGroup,
-                            nettySocketChannelClass,
-                            requestTracking);
-                });
-
-        return pipelineBuilder.build();
+        Registry<BackendService> registry = (Registry<BackendService>) services.get("backendServiceRegistry");
+        return new StaticPipelineFactory(
+                environment,
+                registry != null ? registry : new MemoryBackedRegistry<>(),
+                plugins,
+                eventLoopGroup,
+                nettySocketChannelClass,
+                requestTracking)
+                .build();
     }
 }

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -34,8 +34,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 /**
  * Factory that produces {@link OriginHealthStatusMonitor}s based on configuration.
  */
-public final class OriginHealthStatusMonitorFactory implements OriginHealthStatusMonitor.Factory {
-    @Override
+public final class OriginHealthStatusMonitorFactory {
+
     public OriginHealthStatusMonitor create(Id id, HealthCheckConfig healthCheckConfig, Supplier<OriginHealthCheckFunction> healthCheckFunction, HttpClient client) {
         if (healthCheckConfig == null || !healthCheckConfig.isEnabled()) {
             return new NoOriginHealthStatusMonitor();

@@ -16,6 +16,7 @@
 package com.hotels.styx.startup;
 
 import com.google.common.util.concurrent.Service;
+import com.hotels.styx.StyxPipelineFactory;
 import com.hotels.styx.proxy.ProxyServerBuilder;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpServer;
@@ -32,15 +33,15 @@ import static org.slf4j.LoggerFactory.getLogger;
 public final class ProxyServerSetUp {
     private static final Logger LOG = getLogger(ProxyServerSetUp.class);
 
-    private final PipelineFactory pipelineFactory;
+    private final StyxPipelineFactory styxPipelineFactory;
 
-    public ProxyServerSetUp(PipelineFactory pipelineFactory) {
-        this.pipelineFactory = requireNonNull(pipelineFactory);
+    public ProxyServerSetUp(StyxPipelineFactory styxPipelineFactory) {
+        this.styxPipelineFactory = requireNonNull(styxPipelineFactory);
     }
 
     public HttpServer createProxyServer(StyxServerComponents config) {
         HttpServer proxyServer = new ProxyServerBuilder(config.environment())
-                .handlerFactory(() -> pipelineFactory.create(config))
+                .handlerFactory(styxPipelineFactory::create)
                 .onStartup(() -> initialisePlugins(config.plugins()))
                 .build();
 

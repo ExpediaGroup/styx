@@ -16,6 +16,7 @@
 package com.hotels.styx.startup;
 
 import com.hotels.styx.StyxConfig;
+import com.hotels.styx.StyxPipelineFactory;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
@@ -87,9 +88,9 @@ public class ProxyServerSetUpTest {
                 .styxConfig(new StyxConfig(config))
                 .build();
 
-        PipelineFactory pipelineFactory = mockPipelineFactory(components);
+        StyxPipelineFactory styxPipelineFactory = mockStyxPipelineFactory();
 
-        server = new ProxyServerSetUp(pipelineFactory).createProxyServer(components);
+        server = new ProxyServerSetUp(styxPipelineFactory).createProxyServer(components);
 
         server.startAsync().awaitRunning(3, SECONDS);
 
@@ -107,9 +108,9 @@ public class ProxyServerSetUpTest {
                 .plugins(nameByIndex(plugin1, plugin2))
                 .build();
 
-        PipelineFactory pipelineFactory = mockPipelineFactory(components);
+        StyxPipelineFactory styxPipelineFactory = mockStyxPipelineFactory();
 
-        server = new ProxyServerSetUp(pipelineFactory).createProxyServer(components);
+        server = new ProxyServerSetUp(styxPipelineFactory).createProxyServer(components);
 
         server.startAsync().awaitRunning(3, SECONDS);
 
@@ -127,9 +128,9 @@ public class ProxyServerSetUpTest {
                 .plugins(nameByIndex(plugin1, plugin2))
                 .build();
 
-        PipelineFactory pipelineFactory = mockPipelineFactory(components);
+        StyxPipelineFactory styxPipelineFactory = mockStyxPipelineFactory();
 
-        server = new ProxyServerSetUp(pipelineFactory).createProxyServer(components);
+        server = new ProxyServerSetUp(styxPipelineFactory).createProxyServer(components);
 
         server.startAsync().awaitRunning(3, SECONDS);
         server.stopAsync().awaitTerminated(3, SECONDS);
@@ -151,9 +152,9 @@ public class ProxyServerSetUpTest {
                 .plugins(nameByIndex(mock(Plugin.class), plugin2, mock(Plugin.class), plugin4))
                 .build();
 
-        PipelineFactory pipelineFactory = mockPipelineFactory(components);
+        StyxPipelineFactory styxPipelineFactory = mockStyxPipelineFactory();
 
-        server = new ProxyServerSetUp(pipelineFactory).createProxyServer(components);
+        server = new ProxyServerSetUp(styxPipelineFactory).createProxyServer(components);
 
         expect(() -> server.startAsync().awaitRunning(3, SECONDS), IllegalStateException.class);
 
@@ -175,9 +176,9 @@ public class ProxyServerSetUpTest {
                 .plugins(nameByIndex(plugin1, plugin2, plugin3, plugin4))
                 .build();
 
-        PipelineFactory pipelineFactory = mockPipelineFactory(components);
+        StyxPipelineFactory styxPipelineFactory = mockStyxPipelineFactory();
 
-        server = new ProxyServerSetUp(pipelineFactory).createProxyServer(components);
+        server = new ProxyServerSetUp(styxPipelineFactory).createProxyServer(components);
 
         expect(() -> server.startAsync().awaitRunning(3, SECONDS), IllegalStateException.class);
 
@@ -200,9 +201,9 @@ public class ProxyServerSetUpTest {
                 .plugins(nameByIndex(mock(Plugin.class), plugin2, mock(Plugin.class), plugin4))
                 .build();
 
-        PipelineFactory pipelineFactory = mockPipelineFactory(components);
+        StyxPipelineFactory styxPipelineFactory = mockStyxPipelineFactory();
 
-        server = new ProxyServerSetUp(pipelineFactory).createProxyServer(components);
+        server = new ProxyServerSetUp(styxPipelineFactory).createProxyServer(components);
 
         server.startAsync().awaitRunning(3, SECONDS);
 
@@ -212,11 +213,11 @@ public class ProxyServerSetUpTest {
         assertThat(log.toString(), containsString("Error stopping plugin 'plugin4'"));
     }
 
-    private static PipelineFactory mockPipelineFactory(StyxServerComponents components) {
-        PipelineFactory pipelineFactory = mock(PipelineFactory.class);
+    private static StyxPipelineFactory mockStyxPipelineFactory() {
+        StyxPipelineFactory styxPipelineFactory = mock(StyxPipelineFactory.class);
         HttpHandler pipeline = mock(HttpHandler.class);
-        when(pipelineFactory.create(components)).thenReturn(pipeline);
-        return pipelineFactory;
+        when(styxPipelineFactory.create()).thenReturn(pipeline);
+        return styxPipelineFactory;
     }
 
     // Allows us to check for exceptions without letting them escape the test method
