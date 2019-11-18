@@ -83,8 +83,7 @@ public final class StyxPipelineFactory {
         Optional<JsonNode> rootHandlerNode = environment.configuration().get("httpPipeline", JsonNode.class);
 
         if (rootHandlerNode.isPresent()) {
-            StyxObjectConfiguration node = toRoutingConfigNode(rootHandlerNode.get());
-            return Builtins.build(ImmutableList.of("httpPipeline"), routingObjectFactoryContext, node);
+            return Builtins.build(ImmutableList.of("httpPipeline"), routingObjectFactoryContext, toRoutingConfigNode(rootHandlerNode.get()));
         }
 
         Registry<BackendService> registry = (Registry<BackendService>) services.get("backendServiceRegistry");
