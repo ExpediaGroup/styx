@@ -151,7 +151,7 @@ class FlowControllingHttpContentProducer {
      */
     private ProducerState rxBackpressureRequestInBuffering(RxBackpressureRequestEvent event) {
         // This can occur before the actual content subscribe event. This occurs if the subscriber
-        // has called request() before actually having subscribed to the content observable. In this
+        // has called request() before having subscribed to the content observable. In this
         // case just initialise the request count with requested N value.
         requested.compareAndSet(Long.MAX_VALUE, 0);
         getAndAddRequest(requested, event.n());
