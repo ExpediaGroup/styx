@@ -21,45 +21,52 @@ import io.kotlintest.TestResult
 import io.kotlintest.TestStatus
 import io.kotlintest.extensions.TestListener
 import org.slf4j.LoggerFactory
+import java.io.PrintWriter
+import java.io.StringWriter
 
-object TestErrorReporter: TestListener {
-    val LOGGER = LoggerFactory.getLogger("StyxFT")
+object TestResultReporter : TestListener {
+    val LOGGER = LoggerFactory.getLogger("Styx-Tests")
 
     override fun beforeSpec(spec: Spec) {
         super.beforeSpec(spec)
-        LOGGER.info("Starting ${spec.description().fullName()}")
+        LOGGER.info("Starting: ${spec.description().fullName()}")
     }
 
     override fun afterSpec(spec: Spec) {
-        LOGGER.info("Finished ${spec.description().fullName()}")
+        LOGGER.info("Finished: ${spec.description().fullName()}")
         super.afterSpec(spec)
     }
 
     override fun beforeTest(testCase: TestCase) {
         super.beforeTest(testCase)
 
-        LOGGER.info("Running '${testCase.name}' - ${testCase.source.fileName}:${testCase.source.lineNumber}")
+        LOGGER.info("Running: '${testCase.name}' - ${testCase.source.fileName}:${testCase.source.lineNumber}")
     }
 
     override fun afterTest(testCase: TestCase, result: TestResult) {
         super.afterTest(testCase, result)
 
-        LOGGER.info("${testCase.name} - ${result.status}")
+        LOGGER.info("Result: ${testCase.name} - ${result.status}")
         when (result.status) {
-            TestStatus.Success -> { }
-            TestStatus.Ignored -> { }
             TestStatus.Error -> {
                 result.error?.let {
                     LOGGER.info(it.message)
-                    it.printStackTrace()
+                    LOGGER.info(it.stackTrace())
                 }
             }
             TestStatus.Failure -> {
                 result.error?.let {
                     LOGGER.info(it.message)
-                    it.printStackTrace()
+                    LOGGER.info(it.stackTrace())
                 }
             }
+            else -> { }
         }
     }
+
+    private fun Throwable.stackTrace() = StringWriter()
+            .let {
+                this.printStackTrace(PrintWriter(it))
+                it.toString()
+            }
 }
