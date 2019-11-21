@@ -111,40 +111,51 @@ class OriginsAdminHandlerTest : FeatureSpec({
 
     feature("OriginsAdminHandler updates origin state for PUT request") {
 
-        fun expectStateChange(initialState: String, requestedState: String, expectedState: String) {
-            store.insert("app.origin", RoutingObjectRecord("HostProxy", setOf(sourceTag("testProvider"), stateTag(initialState)), mockk(), mockObject))
-            store.get("app.origin").get().tags shouldContain stateTag(initialState) // verify starting conditions
+        fun expectStateChange(initialState: String, requestedState: String, expectedState: String, expectHealthTagCleared: Boolean) {
+            val initialHealthTag = healthcheckTag(Pair(HEALTHCHECK_FAILING, 2))!!
+            store.insert("app.origin", RoutingObjectRecord("HostProxy",
+                    setOf(sourceTag("testProvider"),
+                            stateTag(initialState),
+                            initialHealthTag), mockk(), mockObject))
+
             val request = HttpRequest.put("http://host:7777/base/path/app/origin/state")
                     .body(mapper.writeValueAsString(requestedState), UTF_8)
                     .build().stream()
             val response = getResponse(handler, request)
+
             response!!.status() shouldBe OK
             mapper.readValue(response.bodyAs(UTF_8), String::class.java) shouldBe expectedState
-            store.get("app.origin").get().tags shouldContain stateTag(expectedState)
+            val tags = store.get("app.origin").get().tags
+            tags shouldContain stateTag(expectedState)
+            if (expectHealthTagCleared) {
+                healthcheckTag(tags) shouldBe null
+            } else {
+                healthcheckTag(tags) shouldBe initialHealthTag
+            }
         }
 
         scenario("Closing an active origin results in a closed state") {
-            expectStateChange(STATE_ACTIVE, STATE_CLOSED, STATE_CLOSED)
+            expectStateChange(STATE_ACTIVE, STATE_CLOSED, STATE_CLOSED, true)
         }
 
         scenario("Closing an unreachable origin results in a closed state") {
-            expectStateChange(STATE_UNREACHABLE, STATE_CLOSED, STATE_CLOSED)
+            expectStateChange(STATE_UNREACHABLE, STATE_CLOSED, STATE_CLOSED, true)
         }
 
         scenario("Closing a closed origin results in a closed state") {
-            expectStateChange(STATE_CLOSED, STATE_CLOSED, STATE_CLOSED)
+            expectStateChange(STATE_CLOSED, STATE_CLOSED, STATE_CLOSED, true)
         }
 
         scenario("Activating an active origin results in an active state") {
-            expectStateChange(STATE_ACTIVE, STATE_ACTIVE, STATE_ACTIVE)
+            expectStateChange(STATE_ACTIVE, STATE_ACTIVE, STATE_ACTIVE, false)
         }
 
         scenario("Activating an unreachable origin results in an unreachable state") {
-            expectStateChange(STATE_UNREACHABLE, STATE_ACTIVE, STATE_UNREACHABLE)
+            expectStateChange(STATE_UNREACHABLE, STATE_ACTIVE, STATE_UNREACHABLE, false)
         }
 
         scenario("Activating a closed origin results in an active state") {
-            expectStateChange(STATE_CLOSED, STATE_ACTIVE, STATE_ACTIVE)
+            expectStateChange(STATE_CLOSED, STATE_ACTIVE, STATE_ACTIVE, false)
         }
 
         scenario("Returns BAD_REQUEST when URL is not of the correct format") {

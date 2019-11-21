@@ -115,16 +115,19 @@ internal class OriginsAdminHandler(
             if (!isValidOrigin(origin)) {
                 throw HttpStatusException(NOT_FOUND, "No origin found for ID $objectId")
             }
-            updateStateTag(origin!!, STATE_CLOSED)
+            updateStateTag(origin!!, STATE_CLOSED, true)
         }
         return HttpResponse.response(OK)
                 .body(MAPPER.writeValueAsString(STATE_CLOSED), UTF_8)
                 .build().stream()
     }
 
-    private fun updateStateTag(origin: RoutingObjectRecord, newValue: String) : RoutingObjectRecord {
+    private fun updateStateTag(origin: RoutingObjectRecord, newValue: String, clearHealthcheck: Boolean = false) : RoutingObjectRecord {
         val oldTags = origin.tags
-        val newTags = oldTags.filterNot(::isStateTag).plus(stateTag(newValue)).toSet()
+        val newTags = oldTags
+                .filterNot{ clearHealthcheck && isHealthcheckTag(it) }
+                .filterNot(::isStateTag)
+                .plus(stateTag(newValue)).toSet()
         return if (oldTags != newTags) {
             origin.copy(tags = newTags)
         } else {
