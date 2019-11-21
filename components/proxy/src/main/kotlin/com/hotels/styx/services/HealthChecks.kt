@@ -30,11 +30,11 @@ sealed class ObjectHealth {
 }
 data class ObjectActive(val failedProbes: Int) : ObjectHealth() {
     override fun state() = STATE_ACTIVE
-    override fun health() = if (failedProbes > 0) Pair(HEALTH_FAIL, failedProbes) else null
+    override fun health() = if (failedProbes > 0) Pair(HEALTHCHECK_FAILING, failedProbes) else null
 }
 data class ObjectUnreachable(val successfulProbes: Int) : ObjectHealth() {
     override fun state() = STATE_UNREACHABLE
-    override fun health() = if (successfulProbes > 0) Pair(HEALTH_SUCCESS, successfulProbes) else null
+    override fun health() = if (successfulProbes > 0) Pair(HEALTHCHECK_PASSING, successfulProbes) else null
 }
 data class ObjectOther(val state: String) : ObjectHealth() {
     override fun state() = state

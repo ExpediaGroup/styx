@@ -35,50 +35,50 @@ class ObjectTagsKtTest : BehaviorSpec({
         }
     }
 
-    given("a health tag factory method") {
+    given("a healthcheck tag factory method") {
         `when`("the label is not blank and the count is > 0") {
             then("a tag string is returned") {
-                healthTag("success" to 1) shouldBe "health=success:1"
-                healthTag("fail" to 7) shouldBe "health=fail:7"
+                healthcheckTag("passing" to 1) shouldBe "healthcheck=passing:1"
+                healthcheckTag("failing" to 7) shouldBe "healthcheck=failing:7"
             }
         }
         `when`("the label is blank") {
             then("null is returned") {
-                healthTag(Pair("", 7)) shouldBe null
+                healthcheckTag(Pair("", 7)) shouldBe null
             }
         }
         `when`("the label is not blank and the count is <= 0") {
             then("null is returned") {
-                healthTag(Pair("success", 0)) shouldBe null
-                healthTag(Pair("fail", -1)) shouldBe null
+                healthcheckTag(Pair("passing", 0)) shouldBe null
+                healthcheckTag(Pair("failing", -1)) shouldBe null
             }
         }
         `when`("the factory data is null") {
             then("null is returned") {
-                healthTag(null) shouldBe null
+                healthcheckTag(null) shouldBe null
             }
         }
     }
 
-    given("a health tag decoding method") {
+    given("a healthcheck tag decoding method") {
         `when`("a valid tag is decoded") {
             then("decoded data is returned") {
-                healthTagValue("health=success:0") shouldBe Pair("success", 0)
-                healthTagValue("health=fail:2") shouldBe Pair("fail", 2)
+                healthcheckTagValue("healthcheck=passing:0") shouldBe Pair("passing", 0)
+                healthcheckTagValue("healthcheck=failing:2") shouldBe Pair("failing", 2)
             }
         }
         `when`("an invalid tag is decoded") {
             then("null is returned") {
-                healthTagValue("health=success:-1") shouldBe null
-                healthTagValue("health=") shouldBe null
-                healthTagValue("health=success") shouldBe null
-                healthTagValue("health=success:") shouldBe null
-                healthTagValue("health=:1") shouldBe null
-                healthTagValue("health") shouldBe null
-                healthTagValue("healthXX=success:0") shouldBe null
-                healthTagValue("XXhealth=success:0") shouldBe null
-                healthTagValue("health=success:0X") shouldBe null
-                healthTagValue("") shouldBe null
+                healthcheckTagValue("healthcheck=passing:-1") shouldBe null
+                healthcheckTagValue("healthcheck=") shouldBe null
+                healthcheckTagValue("healthcheck=passing") shouldBe null
+                healthcheckTagValue("healthcheck=passing:") shouldBe null
+                healthcheckTagValue("healthcheck=:1") shouldBe null
+                healthcheckTagValue("healthcheck") shouldBe null
+                healthcheckTagValue("healthcheckXX=passing:0") shouldBe null
+                healthcheckTagValue("XXhealthcheck=passing:0") shouldBe null
+                healthcheckTagValue("healthcheck=passing:0X") shouldBe null
+                healthcheckTagValue("") shouldBe null
             }
         }
     }

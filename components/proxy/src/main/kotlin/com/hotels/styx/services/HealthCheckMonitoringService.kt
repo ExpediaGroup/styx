@@ -34,7 +34,6 @@ import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.ProviderObjectRecord
 import com.hotels.styx.serviceproviders.ServiceProviderFactory
 import com.hotels.styx.services.HealthCheckMonitoringService.Companion.EXECUTOR
-import com.sun.org.apache.regexp.internal.RE
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Flux
 import reactor.core.publisher.toMono
@@ -100,7 +99,7 @@ internal class HealthCheckMonitoringService(
         val monitoredObjects = discoverMonitoredObjects(application, objectStore)
                 .map {
                     val tags = it.second.tags
-                    val objectHealth = objectHealthFrom(stateTagValue(tags), healthTagValue(tags))
+                    val objectHealth = objectHealthFrom(stateTagValue(tags), healthcheckTagValue(tags))
                     Triple(it.first, it.second, objectHealth)
                 }
                 .filter { (_, _, objectHealth) -> objectHealth != null }
@@ -155,11 +154,11 @@ internal class HealthCheckMonitoringServiceFactory : ServiceProviderFactory {
 
 internal fun objectHealthFrom(state: String?, health: Pair<String, Int>?) =
         when {
-            state == STATE_ACTIVE && (health?.first == HEALTH_FAIL && health.second >= 0) -> {
+            state == STATE_ACTIVE && (health?.first == HEALTHCHECK_FAILING && health.second >= 0) -> {
                 ObjectActive(health.second)
             }
 
-            state == STATE_UNREACHABLE && (health?.first == HEALTH_SUCCESS && health.second >= 0) -> {
+            state == STATE_UNREACHABLE && (health?.first == HEALTHCHECK_PASSING && health.second >= 0) -> {
                 ObjectUnreachable(health.second)
             }
 
@@ -194,9 +193,9 @@ private fun markObject(db: StyxObjectStore<RoutingObjectRecord>, name: String, n
 
 internal fun reTag(tags: Set<String>, newStatus: ObjectHealth) =
     tags.asSequence()
-            .filterNot { isStateTag(it) || isHealthTag(it) }
+            .filterNot { isStateTag(it) || isHealthcheckTag(it) }
             .plus(stateTag(newStatus.state()))
-            .plus(healthTag(newStatus.health()))
+            .plus(healthcheckTag(newStatus.health()))
             .filterNotNull()
             .toSet()
 
