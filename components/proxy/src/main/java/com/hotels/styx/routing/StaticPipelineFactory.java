@@ -34,7 +34,7 @@ import static java.util.Objects.requireNonNull;
  * Builds a static "backwards compatibility" pipeline which is just a sequence of plugins
  * followed by backend service proxy.
  */
-public class StaticPipelineFactory implements HttpPipelineFactory {
+public class StaticPipelineFactory {
     private final BackendServiceClientFactory clientFactory;
     private final Environment environment;
     private final Registry<BackendService> registry;
@@ -73,7 +73,6 @@ public class StaticPipelineFactory implements HttpPipelineFactory {
         return new StyxBackendServiceClientFactory(environment);
     }
 
-    @Override
     public RoutingObject build() {
         BackendServicesRouter backendServicesRouter = new BackendServicesRouter(clientFactory, environment, eventLoopGroup, nettySocketChannelClass);
         registry.addListener(backendServicesRouter);

@@ -24,7 +24,6 @@ import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Requests;
 import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.client.Operation;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.common.format.SanitisedHttpMessageFormatter;
@@ -61,7 +60,7 @@ import static rx.RxReactiveStreams.toObservable;
 /**
  * An operation that writes an HTTP request to an origin.
  */
-public class HttpRequestOperation implements Operation<NettyConnection, LiveHttpResponse> {
+public class HttpRequestOperation {
     private static final String IDLE_HANDLER_NAME = "idle-handler";
     private static final Logger LOGGER = getLogger(HttpRequestOperation.class);
 
@@ -128,7 +127,6 @@ public class HttpRequestOperation implements Operation<NettyConnection, LiveHttp
         return bodyChunkSubscriber != null && bodyChunkSubscriber.requestIsOngoing();
     }
 
-    @Override
     public Observable<LiveHttpResponse> execute(NettyConnection nettyConnection) {
         AtomicReference<RequestBodyChunkSubscriber> requestRequestBodyChunkSubscriber = new AtomicReference<>();
         requestTime = System.currentTimeMillis();
@@ -202,7 +200,6 @@ public class HttpRequestOperation implements Operation<NettyConnection, LiveHttp
     public int hashCode() {
         return Objects.hash(request);
     }
-
 
     @Override
     public boolean equals(Object obj) {

@@ -15,10 +15,10 @@
  */
 package io.kotlintest.provided
 
-import com.hotels.styx.support.TestErrorReporter
+import com.hotels.styx.support.TestResultReporter
 import io.kotlintest.AbstractProjectConfig
 import io.kotlintest.extensions.TestListener
 
 class ProjectConfig: AbstractProjectConfig() {
-    override fun listeners(): List<TestListener> = listOf(TestErrorReporter)
+    override fun listeners(): List<TestListener> = listOf(TestResultReporter)
 }

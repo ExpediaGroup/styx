@@ -165,7 +165,6 @@ public final class StyxServer extends AbstractService {
 
         ProxyServerSetUp proxyServerSetUp = new ProxyServerSetUp(
                 new StyxPipelineFactory(
-                        components.routeDatabase(),
                         components.routingObjectFactoryContext(),
                         components.environment(),
                         components.services(),

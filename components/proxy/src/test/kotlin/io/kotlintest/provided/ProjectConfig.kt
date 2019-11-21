@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,13 +13,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.startup;
+package io.kotlintest.provided
 
-import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.support.TestResultReporter
+import io.kotlintest.AbstractProjectConfig
+import io.kotlintest.extensions.TestListener
 
-/**
- * Factory that makes an HTTP pipeline.
- */
-public interface PipelineFactory {
-    HttpHandler create(StyxServerComponents config);
+class ProjectConfig: AbstractProjectConfig() {
+    override fun listeners(): List<TestListener> = listOf(TestResultReporter)
 }

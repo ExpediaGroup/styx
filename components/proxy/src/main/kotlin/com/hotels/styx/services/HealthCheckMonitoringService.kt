@@ -119,7 +119,11 @@ internal class HealthCheckMonitoringService(
                 .flatMap { it }
                 .collectList()
                 .subscribe {
-                    LOGGER.info("Health Check Completed ..")
+                    val details = it.joinToString(", ") { (name, _, health2) ->
+                        "{ app: $application, host: $name, result: $health2 }"
+                    }
+
+                    LOGGER.debug("Health Check Completed: ${details}")
                 }
     }
 

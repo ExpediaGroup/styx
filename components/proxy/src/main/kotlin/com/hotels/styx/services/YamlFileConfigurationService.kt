@@ -36,7 +36,9 @@ import com.hotels.styx.server.handlers.ClassPathResourceHandler
 import com.hotels.styx.serviceproviders.ServiceProviderFactory
 import com.hotels.styx.services.OriginsConfigConverter.Companion.deserialiseOrigins
 import com.hotels.styx.sourceTag
+import com.hotels.styx.sourceTagValue
 import org.slf4j.LoggerFactory
+import java.lang.RuntimeException
 import java.nio.charset.StandardCharsets.UTF_8
 import java.time.Duration
 import java.util.concurrent.CountDownLatch
@@ -112,8 +114,24 @@ internal class YamlFileConfigurationService(
                             converter.pathPrefixRouter(ingressObjectName, deserialised))
                     .map { StyxObjectDefinition(it.name(), it.type(), it.tags() + objectSourceTag, it.config()) }
 
+            routingObjectDefs.forEach { objectDef ->
+                routeDb.get(objectDef.name()).ifPresent {
+                    if (sourceTagValue(it.tags) != name) {
+                        throw DuplicateObjectException("Object name='${objectDef.name()}' already exists. Provider='${name}', file='${config.originsFile}'.")
+                    }
+                }
+            }
+
             val healthMonitors = converter.healthCheckServices(deserialised)
                     .map { (name, record) -> Pair(name, record.copy(tags = record.tags + objectSourceTag)) }
+
+            healthMonitors.forEach { (objectName, _) ->
+                serviceDb.get(objectName).ifPresent {
+                    if (sourceTagValue(it.tags) != name) {
+                        throw DuplicateObjectException("Health Monitor name='${objectName}' already exists. Provider='${name}', file='${config.originsFile}'.")
+                    }
+                }
+            }
 
             Pair(healthMonitors, routingObjectDefs)
         }.mapCatching { (healthMonitors, routingObjectDefs) ->
@@ -181,6 +199,8 @@ internal class YamlFileConfigurationService(
             }
         }
     }
+
+    private class DuplicateObjectException(message: String): RuntimeException(message)
 }
 
 internal data class YamlFileConfigurationServiceConfig(val originsFile: String, val ingressObject: String = "", val monitor: Boolean = true, val pollInterval: String = "")

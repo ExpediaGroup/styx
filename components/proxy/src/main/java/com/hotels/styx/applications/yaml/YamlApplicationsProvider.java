@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.extension.service.BackendService;
-import com.hotels.styx.applications.ApplicationsProvider;
 import com.hotels.styx.applications.BackendServices;
 
 import java.io.IOException;
@@ -38,7 +37,7 @@ import static java.lang.String.format;
  * Provides applications by reading from a YAML file.
  *
  */
-public class YamlApplicationsProvider implements ApplicationsProvider {
+public class YamlApplicationsProvider {
     private static final ObjectMapper MAPPER = addStyxMixins(new ObjectMapper(new YAMLFactory()));
     private static final CollectionType TYPE = MAPPER.getTypeFactory().constructCollectionType(List.class, BackendService.class);
 
@@ -82,7 +81,6 @@ public class YamlApplicationsProvider implements ApplicationsProvider {
         return loadFromPath(path).get();
     }
 
-    @Override
     public BackendServices get() {
         return backendServices;
     }

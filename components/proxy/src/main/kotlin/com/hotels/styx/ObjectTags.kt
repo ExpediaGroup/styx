@@ -26,6 +26,8 @@ fun lbGroupTagValue(tag: String): String? = LBGROUP_REGEX.matchEntire(tag)
         ?.get(1)
 
 fun sourceTag(creator: String) = "source=$creator"
+fun sourceTag(tags: Set<String>) = tags.firstOrNull { it.startsWith("source=") }
+fun sourceTagValue(tags: Set<String>) = sourceTag(tags)?.substring("source".length + 1)
 
 private const val STATE = "state"
 const val STATE_ACTIVE = "active"
