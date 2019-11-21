@@ -287,7 +287,7 @@ public class AdminServerBuilder {
         }
 
         static String dropFirstForwardSlash(String key) {
-            return key.charAt(0) == '/' ? key.substring(1) : key;
+            return key.length() > 0 && key.charAt(0) == '/' ? key.substring(1) : key;
         }
 
         String linkLabel() {

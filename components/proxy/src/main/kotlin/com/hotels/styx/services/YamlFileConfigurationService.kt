@@ -98,7 +98,8 @@ internal class YamlFileConfigurationService(
             "configuration" to HttpContentHandler(PLAIN_TEXT_UTF_8.toString(), UTF_8) { originsConfig },
             "origins" to HttpContentHandler(HTML_UTF_8.toString(), UTF_8) {
                 OriginsPageRenderer("$namespace/assets", name, routeDb).render()
-            })
+            },
+            "/" to OriginsAdminHandler(name, namespace, routeDb))
 
     fun reloadAction(content: String): Unit {
         LOGGER.info("New origins configuration: \n$content")
