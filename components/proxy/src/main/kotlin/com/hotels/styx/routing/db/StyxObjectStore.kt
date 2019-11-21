@@ -17,25 +17,30 @@ package com.hotels.styx.routing.db;
 
 import com.hotels.styx.api.configuration.ObjectStore
 import org.pcollections.HashTreePMap
-import org.pcollections.PMap
 import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
-import reactor.core.publisher.FluxSink
 import java.util.Optional
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Styx Route Database.
  */
-class StyxObjectStore<T> : ObjectStore<T> {
-    private val objects: AtomicReference<PMap<String, T>> = AtomicReference(HashTreePMap.empty())
+
+class StyxObjectStore<T> internal constructor(executor: ExecutorService): ObjectStore<T> {
+    private val objects: AtomicReference<IndexedSnapshot<T>> = AtomicReference(
+            IndexedSnapshot(0, HashTreePMap.empty()))
+
     private val watchers = CopyOnWriteArrayList<ChangeWatcher<T>>()
+    private val notificationQueue = NotificationQueue(watchers, executor)
 
     companion object {
-        private val executor = Executors.newSingleThreadExecutor()
+        private val sharedExecutor = Executors.newSingleThreadExecutor()
     }
+
+    constructor(): this(sharedExecutor)
 
     /**
      * Retrieves an object from this object store.
@@ -49,13 +54,13 @@ class StyxObjectStore<T> : ObjectStore<T> {
      */
 
     override fun get(name: String): Optional<T> {
-        return Optional.ofNullable(objects().get(name))
+        return Optional.ofNullable(objects().snapshot.get(name))
     }
 
     /**
      * Retrieves all entries.
      */
-    override fun entrySet(): Collection<Map.Entry<String, T>> = entrySet(objects.get())
+    override fun entrySet(): Collection<Map.Entry<String, T>> = entrySet(objects.get().snapshot)
 
     /**
      * Inserts a new object in object store.
@@ -75,18 +80,16 @@ class StyxObjectStore<T> : ObjectStore<T> {
         require(key.isNotEmpty()) { "ObjectStore insert: empty keys are not allowed." }
 
         var current = objects.get()
-        var new = current.plus(key, payload)
+        var new = current.map { it.plus(key, payload) }
 
         while (!objects.compareAndSet(current, new)) {
             current = objects.get()
-            new = current.plus(key, payload)
+            new = current.map { it.plus(key, payload) }
         }
 
-        queue {
-            notifyWatchers(new)
-        }
+        notificationQueue.publishChange(new)
 
-        return Optional.ofNullable(current[key])
+        return Optional.ofNullable(current.snapshot[key])
     }
 
     /**
@@ -121,17 +124,17 @@ class StyxObjectStore<T> : ObjectStore<T> {
     fun compute(key: String, computation: (T?) -> T): Optional<T> {
         require(key.isNotEmpty()) { "ObjectStore compute: empty keys are not allowed." }
 
-            var current: PMap<String, T>
+            var current: IndexedSnapshot<T>
             var result: T
-            var new: PMap<String, T>
+            var new: IndexedSnapshot<T>
 
             do {
                 current = objects.get()
-                result = computation(current.get(key))
+                result = computation(current.snapshot.get(key))
 
-                new = if (result != current.get(key)){
+                new = if (result != current.snapshot.get(key)){
                     // Consumer REPLACES an existing value or ADDS a new value
-                    current.plus(key, result)
+                    current.map { it.plus(key, result) }
                 } else {
                     // Consumer KEEPS the existing value
                     current
@@ -140,12 +143,10 @@ class StyxObjectStore<T> : ObjectStore<T> {
 
             if (current != new) {
                 // Notify only if content changed:
-                queue {
-                    notifyWatchers(new)
-                }
+                notificationQueue.publishChange(new)
             }
 
-            return Optional.ofNullable(current[key])
+            return Optional.ofNullable(current.snapshot[key])
     }
 
 
@@ -164,20 +165,20 @@ class StyxObjectStore<T> : ObjectStore<T> {
      */
     fun remove(key: String): Optional<T> {
         var current = objects.get()
-        var new = current.minus(key)
+        var new = current.map { it.minus(key) }
 
+        // Unnecessarily increments the index when "key" doesn't exist:
+        // We will live with this for now.
         while (!objects.compareAndSet(current, new)) {
             current = objects.get()
-            new = current.minus(key)
+            new = current.map { it.minus(key) }
         }
 
-        if (current != new) {
-            queue {
-                notifyWatchers(new)
-            }
+        if (current.snapshot != new.snapshot) {
+            notificationQueue.publishChange(new)
         }
 
-        return Optional.ofNullable(current[key])
+        return Optional.ofNullable(current.snapshot[key])
     }
 
     /**
@@ -195,41 +196,23 @@ class StyxObjectStore<T> : ObjectStore<T> {
             }
 
             watchers.add(watcher)
-            queue {
-                emitInitialSnapshot(sink)
-            }
-        }
-    }
 
-    private fun emitInitialSnapshot(sink: FluxSink<ObjectStore<T>>) {
-        sink.next(snapshot(objects()))
+            notificationQueue.publishInitialWatch(sink)
+        }
     }
 
     internal fun watchers() = watchers.size
 
     private fun objects() = objects.get()
 
-    private fun queue(task: () -> Unit) {
-        executor.submit(task)
+    override fun index() = objects.get().index
+
+    internal fun addDispatchListener(key: String, listener: DispatchListener<T>) {
+        notificationQueue.addDispatchListener(key, listener)
     }
 
-    private fun notifyWatchers(objectsV2: PMap<String, T>) {
-        watchers.forEach { listener ->
-            listener.invoke(snapshot(objectsV2))
-        }
+    internal fun removeDispatchListener(key: String) {
+        notificationQueue.removeDispatchListener(key)
     }
 
-    private fun snapshot(snapshot: PMap<String, T>) = object : ObjectStore<T> {
-        override fun get(key: String?): Optional<T> {
-            return Optional.ofNullable(snapshot[key])
-        }
-
-        override fun entrySet(): Collection<Map.Entry<String, T>> = entrySet(snapshot)
-    }
-
-
-    private fun entrySet(snapshot: PMap<String, T>): Collection<Map.Entry<String, T>> = snapshot
-            .entries
 }
-
-private typealias ChangeWatcher<T> = (ObjectStore<T>) -> Unit

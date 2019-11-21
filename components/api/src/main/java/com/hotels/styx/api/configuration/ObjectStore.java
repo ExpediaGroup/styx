@@ -41,4 +41,11 @@ public interface ObjectStore<T> {
      * @return a collection of all entries.
      */
     Collection<Map.Entry<String, T>> entrySet();
+
+    /**
+     * Returns this snapshot index.
+     *
+     * @return snapshot index.
+     */
+    long index();
 }
