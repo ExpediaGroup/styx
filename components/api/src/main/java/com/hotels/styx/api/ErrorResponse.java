@@ -15,14 +15,25 @@
  */
 package com.hotels.styx.api;
 
+/**
+ * Represents the body of an HTTP error response in a standard format.
+ */
 public class ErrorResponse {
 
     private String errorMessage;
 
+    /**
+     * Creates an {@link ErrorResponse} with an error message string.
+     * @param errorMessage the error message
+     */
     public ErrorResponse(String errorMessage) {
         this.errorMessage = errorMessage;
     }
 
+    /**
+     * Return the error message.
+     * @return the error message.
+     */
     public String errorMessage() {
         return errorMessage;
     }
