@@ -16,7 +16,6 @@
 package com.hotels.styx.client.netty.connectionpool;
 
 import com.google.common.base.Throwables;
-import com.hotels.styx.api.Buffers;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.exceptions.TransportLostException;
@@ -33,14 +32,11 @@ import io.netty.util.internal.OutOfDirectMemoryError;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import rx.Subscriber;
-import rx.observers.TestSubscriber;
+import reactor.core.publisher.FluxSink;
+import reactor.test.StepVerifier;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.List;
 import java.util.Optional;
 
 import static com.google.common.base.Charsets.UTF_8;
@@ -56,22 +52,24 @@ import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static io.netty.handler.timeout.IdleStateEvent.ALL_IDLE_STATE_EVENT;
-import static java.lang.Long.MAX_VALUE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.atMostOnce;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static rx.RxReactiveStreams.toObservable;
 
 public class NettyToStyxResponsePropagatorTest {
-    private ByteBuf firstContentChunk = copiedBuffer("first chunk", UTF_8);
-    private ByteBuf secondContentChunk = copiedBuffer("second chunk", UTF_8);
-    private TestSubscriber<LiveHttpResponse> responseSubscriber;
+    private static final String FIRST_CHUNK = "first chunk";
+    private static final String SECOND_CHUNK = "second chunk";
+    private ByteBuf firstContentChunk = copiedBuffer(FIRST_CHUNK, UTF_8);
+    private ByteBuf secondContentChunk = copiedBuffer(SECOND_CHUNK, UTF_8);
+    private FluxSink<LiveHttpResponse> responseSubscriber;
     private DefaultHttpResponse httpResponseHeaders = new DefaultHttpResponse(HTTP_1_1, OK);
     private DefaultHttpContent httpContentOne = new DefaultHttpContent(firstContentChunk);
     private DefaultHttpContent httpContentTwo = new DefaultHttpContent(secondContentChunk);
@@ -80,60 +78,39 @@ public class NettyToStyxResponsePropagatorTest {
 
     @BeforeEach
     public void setUp() {
-        responseSubscriber = new TestSubscriber<>();
+        responseSubscriber = mock(FluxSink.class);
     }
 
     @Test
     public void notifiesSubscriberForNettyPipelineExceptions() {
-        Subscriber<LiveHttpResponse> subscriber = mock(Subscriber.class);
-        NettyToStyxResponsePropagator handler = new NettyToStyxResponsePropagator(subscriber, SOME_ORIGIN);
+        NettyToStyxResponsePropagator handler = new NettyToStyxResponsePropagator(responseSubscriber, SOME_ORIGIN);
         EmbeddedChannel channel = new EmbeddedChannel(handler);
 
         channel.pipeline().fireExceptionCaught(new RuntimeException("Error"));
 
         ArgumentCaptor<Throwable> captor = ArgumentCaptor.forClass(Throwable.class);
-        verify(subscriber, times(1)).onError(captor.capture());
+        verify(responseSubscriber, times(1)).error(captor.capture());
         assertThat(captor.getValue(), is(instanceOf(BadHttpResponseException.class)));
     }
 
     @Test
     public void propagatesExceptionWhenThereIsDecodeErrorInReceivedResponse() throws Exception {
-        Subscriber subscriber = mock(Subscriber.class);
-        NettyToStyxResponsePropagator handler = new NettyToStyxResponsePropagator(subscriber, SOME_ORIGIN);
+        NettyToStyxResponsePropagator handler = new NettyToStyxResponsePropagator(responseSubscriber, SOME_ORIGIN);
         EmbeddedChannel channel = new EmbeddedChannel(handler);
 
         channel.writeInbound(newCorruptedResponse());
 
-        verify(subscriber).onError(any(BadHttpResponseException.class));
+        verify(responseSubscriber).error(any(BadHttpResponseException.class));
     }
 
     @Test
     public void notifiesSubscriberWhenChannelBecomesInactive() throws Exception {
-        Subscriber subscriber = mock(Subscriber.class);
-        NettyToStyxResponsePropagator handler = new NettyToStyxResponsePropagator(subscriber, SOME_ORIGIN);
-        EmbeddedChannel channel = new EmbeddedChannel(handler);
-
-        channel.pipeline().fireChannelInactive();
-
-        verify(subscriber).onError(any(TransportLostException.class));
-    }
-
-    @Test
-    public void ignoresChannelInactiveEventAfterResponseIsCompleted() throws Exception {
         NettyToStyxResponsePropagator handler = new NettyToStyxResponsePropagator(responseSubscriber, SOME_ORIGIN);
         EmbeddedChannel channel = new EmbeddedChannel(handler);
 
-        channel.writeInbound(httpResponseHeaders);
-        channel.writeInbound(newHttpContent("one"));
-
-        LiveHttpResponse response = responseSubscriber.getOnNextEvents().get(0);
-        subscribeToContent(response);
-
-        channel.writeInbound(EMPTY_LAST_CONTENT);
-        assertThat(responseSubscriber.getOnCompletedEvents().size(), is(1));
-
         channel.pipeline().fireChannelInactive();
-        assertThat(responseSubscriber.getOnErrorEvents().size(), is(0));
+
+        verify(responseSubscriber).error(any(TransportLostException.class));
     }
 
     @Test
@@ -142,16 +119,17 @@ public class NettyToStyxResponsePropagatorTest {
         EmbeddedChannel channel = new EmbeddedChannel(handler);
 
         channel.writeInbound(httpResponseHeaders);
-        channel.writeInbound(newHttpContent("one"));
 
-        LiveHttpResponse response = responseSubscriber.getOnNextEvents().get(0);
-        subscribeToContent(response);
+        LiveHttpResponse response = verifyNextCalledOnResponseSubscriber();
 
-        channel.pipeline().fireExceptionCaught(new RuntimeException("Simulated exception: something went horribly wrong!"));
-        assertThat(responseSubscriber.getOnErrorEvents().size(), is(1));
+        StepVerifier.create(response.body())
+                .then(channel::runPendingTasks) // Execute onSubscribe in FSM
+                .then(() -> channel.pipeline().fireExceptionCaught(new RuntimeException())) // Will emmit BadHttpResponseException
+                .then(() -> channel.pipeline().fireChannelInactive()) // Will emmit TransportLostException
+                .expectError(BadHttpResponseException.class)
+                .verify();
 
-        channel.pipeline().fireChannelInactive();
-        assertThat(responseSubscriber.getOnErrorEvents().size(), is(1));
+        verify(responseSubscriber, atMostOnce()).error(any());
     }
 
 
@@ -159,41 +137,14 @@ public class NettyToStyxResponsePropagatorTest {
     public void handlesIdleStateEvent() throws Exception {
         EmbeddedChannel channel = new EmbeddedChannel(new NettyToStyxResponsePropagator(responseSubscriber, SOME_ORIGIN));
         channel.writeInbound(httpResponseHeaders);
-        channel.writeInbound(newHttpContent("one"));
 
-        channel.pipeline().fireUserEventTriggered(ALL_IDLE_STATE_EVENT);
+        LiveHttpResponse response = verifyNextCalledOnResponseSubscriber();
 
-        List<Throwable> errors = responseSubscriber.getOnErrorEvents();
-        assertThat(errors, hasSize(1));
-        assertThat(errors.get(0), is(instanceOf(ResponseTimeoutException.class)));
-    }
-
-
-    @Test
-    public void pushesHttpContentOnChannelReadComplete() {
-        EmbeddedChannel channel = new EmbeddedChannel(new NettyToStyxResponsePropagator(responseSubscriber, SOME_ORIGIN));
-
-        channel.writeInbound(httpResponseHeaders);
-        LiveHttpResponse response = onNextEvent(responseSubscriber, 0);
-        channel.runPendingTasks();
-
-        TestSubscriber<ByteBuf> contentSubscriber = subscribeToContent(response);
-        channel.runPendingTasks();
-
-        HttpContent contentOne = newHttpContent("one");
-        channel.writeInbound(contentOne);
-        channel.runPendingTasks();
-
-        HttpContent contentTwo = newHttpContent("two");
-        channel.writeInbound(contentTwo);
-        channel.runPendingTasks();
-
-        channel.pipeline().fireChannelReadComplete();
-        channel.runPendingTasks();
-
-        assertNoErrors(contentSubscriber);
-        assertThat(asString(onNextEvent(contentSubscriber, 0)), is(asString(contentOne.content())));
-        assertThat(asString(onNextEvent(contentSubscriber, 1)), is(asString(contentTwo.content())));
+        StepVerifier.create(response.body())
+                .then(channel::runPendingTasks) // Execute onSubscribe in FSM
+                .then(() -> channel.pipeline().fireUserEventTriggered(ALL_IDLE_STATE_EVENT))
+                .expectError(ResponseTimeoutException.class)
+                .verify();
     }
 
 
@@ -204,17 +155,13 @@ public class NettyToStyxResponsePropagatorTest {
         channel.writeInbound(httpContentOne);
         channel.writeInbound(httpContentTwo);
 
-        assertThat(onCompletedEvents(responseSubscriber), is(0));
-        assertThat(onNextEvents(responseSubscriber), is(1));
-        LiveHttpResponse response = onNextEvent(responseSubscriber, 0);
+        LiveHttpResponse response = verifyNextCalledOnResponseSubscriber();
 
-        TestSubscriber<ByteBuf> contentSubscriber = subscribeToContent(response);
-        channel.runPendingTasks();
-
-        assertNoErrors(contentSubscriber);
-        assertThat(onNextEvents(contentSubscriber), is(2));
-        assertThat(contentChunk(contentSubscriber, 0), is(asString(httpContentOne.content())));
-        assertThat(contentChunk(contentSubscriber, 1), is(asString(httpContentTwo.content())));
+        StepVerifier.create(response.body())
+                .then(channel::runPendingTasks)
+                .assertNext(buf -> assertEquals(FIRST_CHUNK, new String(buf.content())))
+                .assertNext(buf -> assertEquals(SECOND_CHUNK, new String(buf.content())))
+                .thenCancel();
     }
 
 
@@ -226,9 +173,9 @@ public class NettyToStyxResponsePropagatorTest {
         channel.writeInbound(httpContentTwo);
         channel.writeInbound(EMPTY_LAST_CONTENT);
 
-        assertNoErrors(responseSubscriber);
-        assertThat(onNextEvents(responseSubscriber), is(1));
-        assertThat(onCompletedEvents(responseSubscriber), is(0));
+        verifyNextCalledOnResponseSubscriber();
+        verify(responseSubscriber, never()).error(any());
+        verify(responseSubscriber, never()).complete();
     }
 
     @Test
@@ -238,12 +185,11 @@ public class NettyToStyxResponsePropagatorTest {
         channel.writeInbound(httpResponseHeaders);
         channel.writeInbound(EMPTY_LAST_CONTENT);
 
-        LiveHttpResponse response = onNextEvent(responseSubscriber, 0);
-        TestSubscriber<ByteBuf> contentSubscriber = subscribeToContent(response);
-        channel.runPendingTasks();
+        LiveHttpResponse response = verifyNextCalledOnResponseSubscriber();
 
-        assertNoErrors(contentSubscriber);
-        assertThat(onCompletedEvents(contentSubscriber), is(1));
+        StepVerifier.create(response.body())
+                .then(channel::runPendingTasks)
+                .verifyComplete();
     }
 
     @Test
@@ -290,13 +236,13 @@ public class NettyToStyxResponsePropagatorTest {
     }
 
     @Test
-    public void mapsOutOfDirectMemoryExceptionsToResourceExhaustedException() throws Exception {
+    public void mapsOutOfDirectMemoryExceptionsToStyxClientException() throws Exception {
         EmbeddedChannel channel = new EmbeddedChannel(new NettyToStyxResponsePropagator(responseSubscriber, SOME_ORIGIN));
         channel.writeInbound(new DefaultHttpResponse(HTTP_1_1, OK));
 
         channel.pipeline().fireExceptionCaught(newOutOfDirectMemoryError("Simulated out of direct memory error in a test."));
 
-        assertThat(responseSubscriber.getOnErrorEvents().get(0), is(instanceOf(StyxClientException.class)));
+        verify(responseSubscriber).error(any(StyxClientException.class));
     }
 
     private OutOfDirectMemoryError newOutOfDirectMemoryError(String message) throws IllegalAccessException, InvocationTargetException, InstantiationException {
@@ -314,7 +260,8 @@ public class NettyToStyxResponsePropagatorTest {
 
     @Test
     public void shouldReleaseAlreadyReadBufferInCaseOfChannelGetsInactive() throws Exception {
-        EmbeddedChannel channel = new EmbeddedChannel(new NettyToStyxResponsePropagator(responseSubscriber, SOME_ORIGIN));
+        FluxSink subscriber = mock(FluxSink.class);
+        EmbeddedChannel channel = new EmbeddedChannel(new NettyToStyxResponsePropagator(subscriber, SOME_ORIGIN));
         channel.writeInbound(new DefaultHttpResponse(HTTP_1_1, OK));
 
         HttpContent httpContentOne = newHttpContent("first chunk");
@@ -367,48 +314,9 @@ public class NettyToStyxResponsePropagatorTest {
         return new DefaultHttpContent(copiedBuffer(content, UTF_8));
     }
 
-
-    private TestSubscriber<ByteBuf> subscribeToContent(LiveHttpResponse response) {
-        TestSubscriber<ByteBuf> contentSubscriber = new TestSubscriber<>(MAX_VALUE);
-        toObservable(response.body())
-                .map(Buffers::toByteBuf)
-                .subscribe(contentSubscriber);
-        return contentSubscriber;
+    private LiveHttpResponse verifyNextCalledOnResponseSubscriber() {
+        ArgumentCaptor<LiveHttpResponse> responseArg = ArgumentCaptor.forClass(LiveHttpResponse.class);
+        verify(responseSubscriber).next(responseArg.capture());
+        return responseArg.getValue();
     }
-
-    private void assertNoErrors(TestSubscriber subscriber) {
-        String message = "\nExpected no errors, but got at least: \n";
-        if (subscriber.getOnErrorEvents().size() > 0) {
-            message = message + stackTrace((Throwable) subscriber.getOnErrorEvents().get(0));
-        }
-        assertThat(message, subscriber.getOnErrorEvents().size(), is(0));
-    }
-
-    private String stackTrace(Throwable e) {
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        e.printStackTrace(pw);
-        return sw.toString();
-    }
-
-    private <T> int onNextEvents(TestSubscriber<T> subscriber) {
-        return subscriber.getOnNextEvents().size();
-    }
-
-    private <T> int onCompletedEvents(TestSubscriber<T> subscriber) {
-        return subscriber.getOnCompletedEvents().size();
-    }
-
-    private <T> T onNextEvent(TestSubscriber<T> subscriber, int i) {
-        return subscriber.getOnNextEvents().get(i);
-    }
-
-    private String contentChunk(TestSubscriber<ByteBuf> contentSubscriber, int i) {
-        return asString(onNextEvent(contentSubscriber, i));
-    }
-
-    private String asString(ByteBuf firstContentChunk) {
-        return firstContentChunk.toString(UTF_8);
-    }
-
 }

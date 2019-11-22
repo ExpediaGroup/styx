@@ -36,7 +36,7 @@ import io.netty.handler.codec.http.LastHttpContent;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import rx.Subscriber;
+import reactor.core.publisher.FluxSink;
 
 import java.util.List;
 import java.util.Optional;
@@ -119,7 +119,7 @@ public class RequestsToOriginMetricsCollectorTest {
         return new EmbeddedChannel(
                 new HttpClientCodec(),
                 new RequestsToOriginMetricsCollector(originMetrics),
-                new NettyToStyxResponsePropagator(mock(Subscriber.class), this.origin)
+                new NettyToStyxResponsePropagator(mock(FluxSink.class), this.origin)
         );
     }
 

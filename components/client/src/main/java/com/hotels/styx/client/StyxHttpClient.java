@@ -27,12 +27,13 @@ import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.client.ssl.SslContextFactory;
 import io.netty.handler.ssl.SslContext;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import rx.RxReactiveStreams;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
@@ -122,14 +123,23 @@ public final class StyxHttpClient implements HttpClient {
                 new ConnectionSettings(params.connectTimeoutMillis()),
                 sslContext
         ).flatMap(connection ->
-                Mono.from(RxReactiveStreams.toPublisher(
-                        connection.write(networkRequest)
-                                .doOnTerminate(connection::close)))
+                Mono.from(connection.write(networkRequest)
+                               .doOnTerminate(() -> {
+                                   // @Mikko, In the new code this gets called for each of the ctx.close() calls in ExcessConnectionRejector. However, it
+                                   // does not get called when the streams complete - I think because they are cancelled, not completed.
+                                   // In the old rxJava code, this gets called 10 times to close all 10 connections. I think this is
+                                   // because the streams complete successfully. You will see a call made to FlowControllingHttpContentProducer.contentEndEventWhileStreaming
+                                   // in the old code, but not in the new code.
+                                   System.out.println("****TERMINATING: " + count.incrementAndGet());
+                                   connection.close();
+                               })
+                )
         );
 
         return responseObservable;
 
     }
+    static AtomicInteger count = new AtomicInteger();
 
     private static LiveHttpRequest addUserAgent(String userAgent, LiveHttpRequest request) {
         if (userAgent != null) {

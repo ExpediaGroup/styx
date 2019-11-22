@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,8 +21,9 @@ import com.hotels.styx.api.extension.Announcer;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import rx.Observable;
 
 import static com.google.common.base.Objects.toStringHelper;
 
@@ -50,7 +51,7 @@ public class StubConnectionFactory implements Connection.Factory {
         }
 
         @Override
-        public Observable<LiveHttpResponse> write(LiveHttpRequest request) {
+        public Flux<LiveHttpResponse> write(LiveHttpRequest request) {
             throw new UnsupportedOperationException("Not implemented");
         }
 
