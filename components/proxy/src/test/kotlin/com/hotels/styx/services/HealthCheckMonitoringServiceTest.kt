@@ -86,32 +86,6 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
         }
     }
 
-    feature("Discovery of monitored objects") {
-
-        scenario("Obtains objects tagged with application name") {
-            discoverMonitoredObjects("aaa", StyxObjectStore<RoutingObjectRecord>()
-                    .apply {
-                        record("aaa-01", "X", setOf(lbGroupTag("aaa")), mockk(), mockk())
-                        record("aaa-02", "x", setOf(lbGroupTag("aaa")), mockk(), mockk())
-                    }).let {
-                it.size shouldBe 2
-                it.map { it.first }.shouldContainAll("aaa-01", "aaa-02")
-            }
-        }
-
-        scenario("Returns nothing when empty object store is created") {
-            discoverMonitoredObjects("aaa", styxObjectStore {}).size shouldBe 0
-        }
-
-        scenario("Returns nothing when tagged applications are not found") {
-            discoverMonitoredObjects("aaa", StyxObjectStore<RoutingObjectRecord>()
-                    .apply {
-                        record("bbb-01", "X", setOf(lbGroupTag("bbb")), mockk(), mockk())
-                        record("ccc-02", "x", setOf(lbGroupTag("ccc"), "state=disabled"), mockk(), mockk())
-                    }).size shouldBe 0
-        }
-    }
-
     feature("Extracting healthcheck check state from tags") {
         objectHealthFrom(null, null) shouldBe ObjectUnreachable(0)
         objectHealthFrom("", null) shouldBe ObjectOther("")

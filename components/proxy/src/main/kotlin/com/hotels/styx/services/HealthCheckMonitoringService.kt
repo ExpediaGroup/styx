@@ -96,17 +96,18 @@ internal class HealthCheckMonitoringService(
     }
 
     internal fun runChecks(application: String, objectStore: StyxObjectStore<RoutingObjectRecord>) {
-        val monitoredObjects = discoverMonitoredObjects(application, objectStore)
-                .map {
-                    val tags = it.second.tags
+        val monitoredObjects = objectStore.entrySet()
+                .map { Pair(it.key, it.value) }
+                .filter { (_, record) -> record.tags.contains(lbGroupTag(application)) }
+                .map { (name, record) ->
+                    val tags = record.tags
                     val objectHealth = objectHealthFrom(stateTagValue(tags), healthcheckTagValue(tags))
-                    Triple(it.first, it.second, objectHealth)
+                    Triple(name, record, objectHealth)
                 }
-                .filter { (_, _, objectHealth) -> objectHealth != null }
 
         val pendingHealthChecks = monitoredObjects
                 .map { (name, record, objectHealth) ->
-                    healthCheck(probe, record.routingObject, objectHealth!!)
+                    healthCheck(probe, record.routingObject, objectHealth)
                             .map { newHealth -> Triple(name, objectHealth, newHealth) }
                             .doOnNext { (name, currentHealth, newHealth) ->
                                 if (currentHealth != newHealth) {
@@ -173,11 +174,6 @@ internal fun objectHealthFrom(state: String?, health: Pair<String, Int>?) =
             else -> ObjectOther(state)
         }
 
-internal fun discoverMonitoredObjects(application: String, objectStore: StyxObjectStore<RoutingObjectRecord>) =
-        objectStore.entrySet()
-                .filter { it.value.tags.contains(lbGroupTag(application)) }
-                .map { Pair(it.key, it.value) }
-
 private fun markObject(db: StyxObjectStore<RoutingObjectRecord>, name: String, newStatus: ObjectHealth) {
     // The ifPresent is not ideal, but compute() does not allow the computation to return null. So we can't preserve
     // a state where the object does not exist using compute alone. But even with ifPresent, as we are open to
@@ -203,7 +199,7 @@ internal fun reTag(tags: Set<String>, newStatus: ObjectHealth) =
             .filterNotNull()
             .toSet()
 
-val RELEVANT_STATES = setOf(STATE_ACTIVE, STATE_UNREACHABLE)
+private val RELEVANT_STATES = setOf(STATE_ACTIVE, STATE_UNREACHABLE)
 private fun containsRelevantStateTag(entry: Map.Entry<String, RoutingObjectRecord>) =
         stateTagValue(entry.value.tags) in RELEVANT_STATES
 

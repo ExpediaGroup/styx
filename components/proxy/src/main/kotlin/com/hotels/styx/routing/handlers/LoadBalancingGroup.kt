@@ -121,15 +121,15 @@ internal class LoadBalancingGroup(val client: StyxBackendServiceClient, val chan
 
         private fun routeDatabaseChanged(appId: String, snapshot: ObjectStore<RoutingObjectRecord>, remoteHosts: AtomicReference<Set<RemoteHost>>) {
             val newSet = snapshot.entrySet()
-                    .filter { checkTag(it, ::lbGroupTagValue, appId) }
-                    .filter { checkTag(it, ::stateTagValue, STATE_ACTIVE, null) }
+                    .filter { taggedWith(it, ::lbGroupTagValue, appId) }
+                    .filter { taggedWith(it, ::stateTagValue, STATE_ACTIVE, null) }
                     .map { toRemoteHost(appId, it) }
                     .toSet()
 
             remoteHosts.set(newSet)
         }
 
-        private fun checkTag(recordEntry: Map.Entry<String, RoutingObjectRecord>, tagValue: (Set<String>) -> String?, vararg values: String?) =
+        private fun taggedWith(recordEntry: Map.Entry<String, RoutingObjectRecord>, tagValue: (Set<String>) -> String?, vararg values: String?) =
                 values.contains(tagValue(recordEntry.value.tags))
 
         private fun toRemoteHost(appId: String, record: Map.Entry<String, RoutingObjectRecord>): RemoteHost {
