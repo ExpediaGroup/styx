@@ -91,7 +91,7 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
             }
         }).timeout(
                 Duration.ofMillis(poolSettings.pendingConnectionTimeoutMillis()),
-                Mono.error(new MaxPendingConnectionTimeoutException(origin, connectionSettings.connectTimeoutMillis())));
+                Mono.error(() -> new MaxPendingConnectionTimeoutException(origin, connectionSettings.connectTimeoutMillis())));
     }
 
     private void newConnection() {
