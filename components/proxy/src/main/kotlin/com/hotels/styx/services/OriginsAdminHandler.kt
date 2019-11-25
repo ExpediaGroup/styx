@@ -18,13 +18,13 @@ package com.hotels.styx.services
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.net.MediaType.JSON_UTF_8
 import com.hotels.styx.*
+import com.hotels.styx.admin.handlers.UrlPatternRouter
+import com.hotels.styx.admin.handlers.UrlPatternRouter.placeholders
 import com.hotels.styx.api.*
-import com.hotels.styx.api.HttpMethod.*
 import com.hotels.styx.api.HttpResponseStatus.*
 import com.hotels.styx.infrastructure.configuration.json.mixins.ErrorResponseMixin
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
-import java.lang.RuntimeException
 import java.nio.charset.StandardCharsets.UTF_8
 
 /**
@@ -34,65 +34,64 @@ import java.nio.charset.StandardCharsets.UTF_8
  * One handler for all origins
  */
 internal class OriginsAdminHandler(
+        basePath: String,
         private val provider: String,
-        private val basePath: String,
         private val routeDb: StyxObjectStore<RoutingObjectRecord>) : HttpHandler {
 
     companion object {
-        private val ORIGIN_REGEX = "^/([^/]+)/([^/]+)/state$".toRegex() // /app-id/origin-id/state
         private val MAPPER = ObjectMapper().addMixIn(
                 ErrorResponse::class.java, ErrorResponseMixin::class.java
         )
     }
 
-    override fun handle(request: LiveHttpRequest, context: HttpInterceptor.Context?): Eventual<LiveHttpResponse> {
-        if (!request.path().startsWith(basePath)) {
-            return Eventual.of(errorResponse(BAD_REQUEST, "Incorrect URL format"))
-        }
-        val remainingPath = request.path().substring(basePath.length)
-        val requestData = ORIGIN_REGEX.matchEntire(remainingPath)?.groupValues
-                ?: return Eventual.of(errorResponse(BAD_REQUEST, "Incorrect URL format for $remainingPath"))
+    private val router: UrlPatternRouter
 
-        return handle(objectIdFrom(requestData[1], requestData[2]), request.method(), request)
+    init {
+        router = UrlPatternRouter.Builder()
+                .get("$basePath/:appid/:originid/state") { _, context ->
+                    Eventual.of(getState(objectIdFrom(context)))
+                }
+                .put("$basePath/:appid/:originid/state") { request, context ->
+                    Eventual.of(putState(objectIdFrom(context), request))
+                }
+                .build()
     }
 
-    private fun handle(objectId: String, method: HttpMethod, request: LiveHttpRequest) =
-            when (method) {
-                GET -> getState(objectId)
-                PUT -> putState(objectId, request)
-                else -> Eventual.of(errorResponse(METHOD_NOT_ALLOWED, "Should be GET or PUT"))
-            }
+    override fun handle(request: LiveHttpRequest, context: HttpInterceptor.Context): Eventual<LiveHttpResponse> {
+        return request.aggregate(1000)
+                .flatMap {
+                    router.handle(it, context)
+                            .map { response -> response.stream() }
+                }
+    }
 
-    private fun getState(objectId: String) : Eventual<LiveHttpResponse> {
+    private fun getState(objectId: String) : HttpResponse {
         val origin = findOrigin(objectId)
-        return Eventual.of(if (origin != null) {
+        return if (origin != null) {
             textValueResponse(stateTagValue(origin.tags) ?: "")
         } else {
             errorResponse(NOT_FOUND, "No origin found for ID $objectId")
-        })
+        }
     }
 
-    private fun putState(objectId: String, request: LiveHttpRequest) : Eventual<LiveHttpResponse> {
-        return request.aggregate(100)
-                .map { it.bodyAs(UTF_8) }
-                .map { MAPPER.readValue(it, String::class.java) }
-                .map {
-                    try {
-                        when (it) {
-                            STATE_ACTIVE -> activate(objectId)
-                            STATE_CLOSED -> close(objectId)
-                            else -> errorResponse(BAD_REQUEST, "Unrecognized target state: $it")
-                        }
-                    } catch (e: HttpStatusException) {
-                        errorResponse(e.status, e.message)
+    private fun putState(objectId: String, request: HttpRequest) : HttpResponse =
+            try {
+                val body = request.bodyAs(UTF_8)
+                val value = MAPPER.readValue(body, String::class.java)
+                try {
+                    when (value) {
+                        STATE_ACTIVE -> activate(objectId)
+                        STATE_CLOSED -> close(objectId)
+                        else -> errorResponse(BAD_REQUEST, "Unrecognized target state: $value")
                     }
+                } catch (e: HttpStatusException) {
+                    errorResponse(e.status, e.message)
                 }
-                .onError { t ->
-                    Eventual.of(errorResponse(BAD_REQUEST, "Error handling state change request: ${t.localizedMessage}"))
-                }
-    }
+            } catch (t: Throwable) {
+                errorResponse(BAD_REQUEST, "Error handling state change request: ${t.localizedMessage}")
+            }
 
-    private fun activate(objectId: String) : LiveHttpResponse {
+    private fun activate(objectId: String) : HttpResponse {
         var newState = ""
         routeDb.compute(objectId) { origin ->
             if (!isValidOrigin(origin)) {
@@ -107,10 +106,10 @@ internal class OriginsAdminHandler(
         }
         return HttpResponse.response(OK)
                 .body(MAPPER.writeValueAsString(newState), UTF_8)
-                .build().stream()
+                .build()
     }
 
-    private fun close(objectId: String) : LiveHttpResponse {
+    private fun close(objectId: String) : HttpResponse {
         routeDb.compute(objectId) { origin ->
             if (!isValidOrigin(origin)) {
                 throw HttpStatusException(NOT_FOUND, "No origin found for ID $objectId")
@@ -119,7 +118,7 @@ internal class OriginsAdminHandler(
         }
         return HttpResponse.response(OK)
                 .body(MAPPER.writeValueAsString(STATE_CLOSED), UTF_8)
-                .build().stream()
+                .build()
     }
 
     private fun updateStateTag(origin: RoutingObjectRecord, newValue: String, clearHealthcheck: Boolean = false) : RoutingObjectRecord {
@@ -140,16 +139,20 @@ internal class OriginsAdminHandler(
                     .disableCaching()
                     .addHeader(HttpHeaderNames.CONTENT_TYPE, JSON_UTF_8.toString())
                     .body(MAPPER.writeValueAsString(ErrorResponse(message)), UTF_8)
-                    .build().stream()
+                    .build()
 
     private fun textValueResponse(message: String) =
             HttpResponse.response(OK)
                     .disableCaching()
                     .addHeader(HttpHeaderNames.CONTENT_TYPE, JSON_UTF_8.toString())
                     .body(MAPPER.writeValueAsString(message), UTF_8)
-                    .build().stream()
+                    .build()
 
-    private fun objectIdFrom(appId: String, originId: String) = "$appId.$originId"
+    private fun objectIdFrom(context: HttpInterceptor.Context) : String {
+        val appId = placeholders(context)["appid"]
+        val originId = placeholders(context)["originid"]
+        return "$appId.$originId"
+    }
 
     private fun findOrigin(objectId: String): RoutingObjectRecord? {
         val origin = routeDb.get(objectId).orElse(null)

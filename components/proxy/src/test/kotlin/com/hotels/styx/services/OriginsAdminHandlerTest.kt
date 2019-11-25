@@ -27,6 +27,7 @@ import com.hotels.styx.routing.RoutingMetadataDecorator
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.mockObject
+import com.hotels.styx.server.HttpInterceptorContext
 import io.kotlintest.matchers.collections.shouldContain
 import io.kotlintest.matchers.string.shouldStartWith
 import io.kotlintest.shouldBe
@@ -41,7 +42,7 @@ class OriginsAdminHandlerTest : FeatureSpec({
 
     val store = StyxObjectStore<RoutingObjectRecord>()
     val mockObject = RoutingMetadataDecorator(mockObject())
-    val handler = OriginsAdminHandler("testProvider", "/base/path", store)
+    val handler = OriginsAdminHandler("/base/path", "testProvider", store)
 
     store.insert("app.active", RoutingObjectRecord("HostProxy", setOf(sourceTag("testProvider"), stateTag(STATE_ACTIVE)), mockk(), mockObject))
     store.insert("app.closed", RoutingObjectRecord("HostProxy", setOf(sourceTag("testProvider"), stateTag(STATE_CLOSED)), mockk(), mockObject))
@@ -49,14 +50,16 @@ class OriginsAdminHandlerTest : FeatureSpec({
     store.insert("app.nothostproxy", RoutingObjectRecord("NotHostProxy", setOf(sourceTag("testProvider"), stateTag(STATE_UNREACHABLE)), mockk(), mockObject))
 
     fun getResponse(handler: OriginsAdminHandler, request: LiveHttpRequest) =
-            Mono.from(Mono.from(handler.handle(request, null)).block().aggregate(1000)).block()
+            Mono.from(Mono.from(handler.handle(request, HttpInterceptorContext.create())).block().aggregate(1000)).block()
 
-    fun expectFailure(request: HttpRequest, responseStatus: HttpResponseStatus, errorMessageCheck: (String) -> Unit) {
+    fun expectFailure(request: HttpRequest, responseStatus: HttpResponseStatus, errorMessageCheck: (String?) -> Unit) {
         val response = getResponse(handler, request.stream())
         response!!.status() shouldBe responseStatus
 
-        val errorResponse = mapper.readValue(response.bodyAs(UTF_8), ErrorResponse::class.java)
-        errorMessageCheck(errorResponse.errorMessage())
+        val responseBody = response.bodyAs(UTF_8)
+        val errorResponse = if (responseBody.isNotEmpty()) { mapper.readValue(responseBody, ErrorResponse::class.java) } else { null }
+        val errorMessage = errorResponse?.errorMessage()
+        errorMessageCheck(errorMessage)
     }
 
     feature("OriginsAdminHandler returns origin state for GET request") {
@@ -88,14 +91,14 @@ class OriginsAdminHandlerTest : FeatureSpec({
             objectState shouldBe STATE_CLOSED
         }
 
-        scenario("Returns BAD_REQUEST when URL is not of the correct format") {
+        scenario("Returns NOT_FOUND when URL is not of the correct format") {
             expectFailure(HttpRequest.get("http://host:7777/base/path/not/valid/url").build(),
-                    BAD_REQUEST) { it shouldBe "Incorrect URL format for /not/valid/url" }
+                    NOT_FOUND) { it shouldBe null }
         }
 
-        scenario("Returns METHOD_NOT_ALLOWED if request is not GET or PUT") {
+        scenario("Returns NOT_FOUND if request is not GET or PUT") {
             expectFailure(HttpRequest.post("http://host:7777/base/path/appid/originid/state").build(),
-                    METHOD_NOT_ALLOWED) { it shouldBe "Should be GET or PUT" }
+                    NOT_FOUND) { it shouldBe null }
         }
 
         scenario("Returns NOT_FOUND when there is no object with the requested name") {
@@ -158,11 +161,11 @@ class OriginsAdminHandlerTest : FeatureSpec({
             expectStateChange(STATE_CLOSED, STATE_ACTIVE, STATE_ACTIVE, false)
         }
 
-        scenario("Returns BAD_REQUEST when URL is not of the correct format") {
+        scenario("Returns NOT_FOUND when URL is not of the correct format") {
             expectFailure(HttpRequest.put("http://host:7777/base/path/not/valid/url")
                     .body(mapper.writeValueAsString(STATE_CLOSED), UTF_8)
                     .build(),
-                    BAD_REQUEST) { it shouldBe "Incorrect URL format for /not/valid/url" }
+                    NOT_FOUND) { it shouldBe null }
         }
 
         scenario("Returns BAD_REQUEST when the target state is not a recognized value") {
