@@ -196,6 +196,7 @@ public class AdminServerBuilder {
     private static Iterable<IndexHandler.Link> indexLinkPaths(StyxConfig styxConfig) {
         ImmutableList.Builder<IndexHandler.Link> builder = ImmutableList.builder();
         builder.add(link("version.txt", "/version.txt"));
+        builder.add(link("uptime", "/admin/uptime"));
         builder.add(link("Ping", "/admin/ping"));
         builder.add(link("Threads", "/admin/threads"));
         builder.add(link("Current Requests", "/admin/current_requests?withStackTrace=true"));

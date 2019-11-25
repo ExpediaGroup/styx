@@ -18,6 +18,7 @@ package com.hotels.styx.admin
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.adminRequest
 import io.kotlintest.Spec
+import io.kotlintest.matchers.string.shouldContain
 import io.kotlintest.matchers.string.shouldMatch
 import io.kotlintest.specs.FeatureSpec
 import java.nio.charset.StandardCharsets.UTF_8
@@ -44,7 +45,17 @@ class AdminInterfaceSpec : FeatureSpec() {
     )
 
     init {
-        feature("Styx Server Admin Interface") {
+        feature("Styx Server Admin Interface Index") {
+            styxServer.restart()
+
+            scenario("Uptime endpoint link") {
+                styxServer.adminRequest("/admin", debug = true)
+                        .bodyAs(UTF_8)
+                        .shouldContain("<a href='/admin/uptime'>uptime</a>".toRegex())
+            }
+        }
+
+        feature("Styx Server Admin Interface Endpoints") {
             styxServer.restart()
 
             scenario("Uptime endpoint") {
