@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.hotels.styx.StyxConfig
 import com.hotels.styx.StyxServer
+import com.hotels.styx.api.HttpHeaderNames
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpResponse
@@ -105,6 +106,14 @@ class StyxServerProvider(
         }
     }
 }
+
+val testClient: StyxHttpClient = StyxHttpClient.Builder().build()
+
+fun StyxServerProvider.adminRequest(endpoint: String, debug: Boolean = false): HttpResponse = testClient
+        .send(HttpRequest.get(endpoint)
+                .header(HttpHeaderNames.HOST, this().adminHostHeader())
+                .build())
+        .wait(debug = debug)
 
 fun CompletableFuture<HttpResponse>.wait(debug: Boolean = false) = this.toMono()
         .doOnNext {

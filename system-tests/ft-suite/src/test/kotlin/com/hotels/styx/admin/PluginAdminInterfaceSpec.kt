@@ -17,18 +17,13 @@ package com.hotels.styx.admin
 
 import com.google.common.net.MediaType.PLAIN_TEXT_UTF_8
 import com.hotels.styx.api.HttpHandler
-import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpInterceptor
-import com.hotels.styx.api.HttpRequest.get
-import com.hotels.styx.api.HttpResponse
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.plugins.spi.Plugin
-import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.common.http.handler.HttpAggregator
 import com.hotels.styx.common.http.handler.StaticBodyHttpHandler
 import com.hotels.styx.support.StyxServerProvider
-import com.hotels.styx.support.adminHostHeader
-import com.hotels.styx.support.wait
+import com.hotels.styx.support.adminRequest
 import io.kotlintest.Spec
 import io.kotlintest.matchers.string.shouldInclude
 import io.kotlintest.shouldBe
@@ -116,14 +111,6 @@ class PluginAdminInterfaceSpec : FeatureSpec() {
             }
         }
     }
-
-    val client: StyxHttpClient = StyxHttpClient.Builder().build()
-
-    fun StyxServerProvider.adminRequest(endpoint: String): HttpResponse = client
-            .send(get(endpoint)
-                    .header(HOST, this().adminHostHeader())
-                    .build())
-            .wait()
 
     override fun afterSpec(spec: Spec) {
         styxServer.stop()

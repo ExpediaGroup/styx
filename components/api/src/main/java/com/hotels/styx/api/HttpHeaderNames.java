@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@ public final class HttpHeaderNames {
     public static final CharSequence TRAILER = newEntity(Names.TRAILER);
     public static final CharSequence UPGRADE = newEntity(Names.UPGRADE);
     public static final CharSequence VIA = newEntity(Names.VIA);
+    public static final CharSequence CACHE_CONTROL = newEntity(Names.CACHE_CONTROL);
 
     private HttpHeaderNames() {
     }

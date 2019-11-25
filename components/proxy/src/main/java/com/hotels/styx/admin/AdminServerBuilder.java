@@ -38,6 +38,7 @@ import com.hotels.styx.admin.handlers.ServiceProviderHandler;
 import com.hotels.styx.admin.handlers.StartupConfigHandler;
 import com.hotels.styx.admin.handlers.StyxConfigurationHandler;
 import com.hotels.styx.admin.handlers.ThreadsHandler;
+import com.hotels.styx.admin.handlers.UptimeHandler;
 import com.hotels.styx.admin.handlers.VersionTextHandler;
 import com.hotels.styx.admin.tasks.OriginsCommandHandler;
 import com.hotels.styx.admin.tasks.OriginsReloadCommandHandler;
@@ -131,6 +132,7 @@ public class AdminServerBuilder {
         httpRouter.aggregate("/", new IndexHandler(indexLinkPaths(styxConfig)));
         httpRouter.aggregate("/version.txt", new VersionTextHandler(styxConfig.versionFiles(startupConfig)));
         httpRouter.aggregate("/admin", new IndexHandler(indexLinkPaths(styxConfig)));
+        httpRouter.aggregate("/admin/uptime", new UptimeHandler(environment.metricRegistry()));
         httpRouter.aggregate("/admin/ping", new PingHandler());
         httpRouter.aggregate("/admin/threads", new ThreadsHandler());
         httpRouter.aggregate("/admin/current_requests", new CurrentRequestsHandler(CurrentRequestTracker.INSTANCE));
