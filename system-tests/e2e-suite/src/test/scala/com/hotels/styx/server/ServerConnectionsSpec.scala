@@ -79,7 +79,6 @@ class ServerConnectionsSpec extends FunSpec
       })
 
       eventually(timeout(1 second)) {
-        // @Mikko, this is the test that is failing
         getTotalConnectionsMetric.bodyAs(UTF_8) should be("{\"connections.total-connections\":{\"count\":0}}")
       }
     }

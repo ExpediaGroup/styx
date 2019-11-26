@@ -204,8 +204,6 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
 
     private void emitResponseCompleted() {
         if (responseCompleted.compareAndSet(false, true)) {
-            // @Mikko, Sink seems to always be cancelled. I think this is what is causing the doOnTerminate (line 127 in StyxHttpClient) not to be executed
-            System.out.println("Sink cancelled state: " + sink.isCancelled());
             sink.complete();
         }
     }

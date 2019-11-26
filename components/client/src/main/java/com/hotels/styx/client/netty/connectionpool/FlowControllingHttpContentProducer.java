@@ -296,7 +296,7 @@ class FlowControllingHttpContentProducer {
         if (readQueue.size() > 0) {
             return EMITTING_BUFFERED_CONTENT;
         } else {
-            this.contentSubscriber.onCompleted(); // @Mikko, this get called in the old code, but not the new code
+            this.contentSubscriber.onCompleted();
             this.onCompleteAction.run();
             return COMPLETED;
         }

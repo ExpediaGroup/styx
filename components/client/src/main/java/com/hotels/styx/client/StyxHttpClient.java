@@ -21,13 +21,13 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.ResponseEventListener;
 import com.hotels.styx.api.Url;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.client.ssl.SslContextFactory;
 import io.netty.handler.ssl.SslContext;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.Optional;
@@ -118,28 +118,24 @@ public final class StyxHttpClient implements HttpClient {
 
         SslContext sslContext = getSslContext(params.https(), params.tlsSettings());
 
-        Mono<LiveHttpResponse> responseObservable = connectionFactory.createConnection(
+        return connectionFactory.createConnection(
                 origin,
                 new ConnectionSettings(params.connectTimeoutMillis()),
                 sslContext
         ).flatMap(connection ->
                 Mono.from(connection.write(networkRequest)
-                               .doOnTerminate(() -> {
-                                   // @Mikko, In the new code this gets called for each of the ctx.close() calls in ExcessConnectionRejector. However, it
-                                   // does not get called when the streams complete - I think because they are cancelled, not completed.
-                                   // In the old rxJava code, this gets called 10 times to close all 10 connections. I think this is
-                                   // because the streams complete successfully. You will see a call made to FlowControllingHttpContentProducer.contentEndEventWhileStreaming
-                                   // in the old code, but not in the new code.
-                                   System.out.println("****TERMINATING: " + count.incrementAndGet());
-                                   connection.close();
-                               })
+                        .doOnComplete(connection::close)
+                        .doOnError(e -> connection.close())
+                        .map(response -> response.newBuilder()
+                            .body(it ->
+                                it.doOnEnd(x -> connection.close())
+                                  .doOnCancel(() -> connection.close())
+                            )
+                            .build()
+                        )
                 )
         );
-
-        return responseObservable;
-
     }
-    static AtomicInteger count = new AtomicInteger();
 
     private static LiveHttpRequest addUserAgent(String userAgent, LiveHttpRequest request) {
         if (userAgent != null) {

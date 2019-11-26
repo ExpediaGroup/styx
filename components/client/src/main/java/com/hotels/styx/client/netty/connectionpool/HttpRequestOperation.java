@@ -22,6 +22,7 @@ import com.hotels.styx.api.HttpVersion;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Requests;
+import com.hotels.styx.api.ResponseEventListener;
 import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.OriginStatsFactory;
@@ -146,12 +147,6 @@ public class HttpRequestOperation {
                     httpRequestMessageLogger.logRequest(request, nettyConnection.getOrigin());
                 }
             }
-        });
-
-        responseFlux = responseFlux.doOnCancel(() -> {
-            // @Mikko, In the old rxJava code the equivalent of doOnCancel is doOnUnsubscribe, which would also get called here.
-            // So maybe the problem isn't that it's being cancelled, because the same behaviour is in the old and new code.
-            System.out.println("****Cancelling");
         });
 
         if (requestLoggingEnabled) {
