@@ -118,6 +118,12 @@
     </dependency>
 
     <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-launcher</artifactId>
+      <version>1.5.2</version>
+    </dependency>
+
+    <dependency>
       <groupId>org.hamcrest</groupId>
       <artifactId>hamcrest</artifactId>
     </dependency>
@@ -162,11 +168,6 @@
     <dependency>
       <groupId>io.kotlintest</groupId>
       <artifactId>kotlintest-runner-junit5</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.junit.platform</groupId>
-      <artifactId>junit-platform-launcher</artifactId>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/com.natpryce/hamkrest -->

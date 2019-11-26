@@ -27,6 +27,12 @@
     <dependency>
       <groupId>com.hotels.styx</groupId>
       <artifactId>styx-proxy</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.junit.platform</groupId>
+          <artifactId>junit-platform-launcher</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>
@@ -38,16 +44,14 @@
     <dependency>
       <groupId>org.jetbrains.kotlin</groupId>
       <artifactId>kotlin-test</artifactId>
+      <version>${kotlin.version}</version>
     </dependency>
 
     <dependency>
       <groupId>io.kotlintest</groupId>
       <artifactId>kotlintest-runner-junit5</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.junit.platform</groupId>
-      <artifactId>junit-platform-launcher</artifactId>
+      <version>${kotlintest.version}</version>
+      <scope>test</scope>
     </dependency>
 
     <!-- Needs to be included to avoid dependency version clash with others
@@ -57,7 +61,6 @@
       <artifactId>jackson-annotations</artifactId>
       <version>${jackson.version}</version>
     </dependency>
-
     <dependency>
       <groupId>com.hotels.styx</groupId>
       <artifactId>styx-e2e-testsupport</artifactId>
@@ -81,6 +84,15 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
+        <version>${maven-failsafe-plugin.version}</version>
+
+        <dependencies>
+          <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-surefire-provider</artifactId>
+            <version>${junit.platform.surefire.provider.version}</version>
+          </dependency>
+        </dependencies>
 
         <executions>
           <execution>
