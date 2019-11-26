@@ -64,7 +64,7 @@ public class LoadBalancerFactoryProviderTest {
         Configuration configurations = new YamlConfig(yaml);
 
         assertThrows(RuntimeException.class,
-                () -> newProvider(configurations));
+                () -> newProvider(configurations).get());
     }
 
     @Test
@@ -76,7 +76,7 @@ public class LoadBalancerFactoryProviderTest {
         Configuration configurations = new YamlConfig(yaml);
 
         assertThrows(MissingConfigurationException.class,
-                () -> newProvider(configurations));
+                () -> newProvider(configurations).get());
     }
 
     @Test
