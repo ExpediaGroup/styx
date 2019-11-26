@@ -210,21 +210,21 @@ public class YamlApplicationsProviderTest {
     public void cannotLoadWithNoApplications() throws IOException {
         Exception e = assertThrows(Exception.class,
                 () -> loadFromPath("classpath:/conf/origins/empty-origins-for-configtest.yml"));
-        assertEquals("Invalid YAML from classpath:conf/origins/empty-origins-for-configtest.yml: No content to map due to end-of-input\n at \\[Source: .*\\]", e.getMessage());
+        assertThat(e.getMessage(), matchesPattern("Invalid YAML from classpath:conf/origins/empty-origins-for-configtest.yml: No content to map due to end-of-input\n at \\[Source: .*\\]"));
     }
 
     @Test
     public void doesNotLoadIfFileDoesNotExist() {
-        Exception e = assertThrows(DslFunctionResolutionError.class,
+        Exception e = assertThrows(RuntimeException.class,
                 () -> loadFromPath("/sadiusadasd"));
         assertThat(e.getMessage(), matchesPattern("Unable to load YAML from.*"));
     }
 
     @Test
     public void cannotLoadWithSyntaxErrors() throws IOException {
-        Exception e = assertThrows(DslFunctionResolutionError.class,
+        Exception e = assertThrows(RuntimeException.class,
                 () -> loadFromPath("classpath:/conf/origins/origins-with-syntax-error-for-configtest.yml"));
-        assertEquals("Invalid YAML from classpath:conf/origins/origins-with-syntax-error-for-configtest.yml: Cannot deserialize instance of `java.util.ArrayList` out of VALUE_STRING token\n at \\[Source: .*\\]", e.getMessage());
+        assertThat(e.getMessage(), matchesPattern("Invalid YAML from classpath:conf/origins/origins-with-syntax-error-for-configtest.yml: Cannot deserialize instance of `java.util.ArrayList<com.hotels.styx.api.extension.service.BackendService>` out of VALUE_STRING token\n at \\[Source: .*\\]"));
     }
 
     private static BackendService applicationFor(YamlApplicationsProvider provider, String appName) {

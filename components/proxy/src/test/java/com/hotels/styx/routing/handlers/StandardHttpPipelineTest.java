@@ -22,7 +22,9 @@ import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import com.hotels.styx.server.track.RequestTracker;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import reactor.core.publisher.Mono;
 
 import java.net.InetSocketAddress;
@@ -168,7 +170,8 @@ public class StandardHttpPipelineTest {
                 () -> toObservable(responseObservable).toBlocking().first());
     }
 
-    @Test
+    @ParameterizedTest
+    @MethodSource("multipleSubscriptionInterceptors")
     public void sendsExceptionUponExtraSubscriptionInsideInterceptor(HttpInterceptor interceptor) throws Exception {
         HttpHandler handler = (request, context) -> Eventual.of(response(OK).build());
 
@@ -176,9 +179,8 @@ public class StandardHttpPipelineTest {
         StandardHttpPipeline pipeline = new StandardHttpPipeline(interceptors, handler, RequestTracker.NO_OP);
 
         Eventual<LiveHttpResponse> responseObservable = pipeline.handle(get("/").build(), HttpInterceptorContext.create());
-        Exception e = assertThrows(IllegalStateException.class,
+        assertThrows(IllegalStateException.class,
                 () -> toObservable(responseObservable).toBlocking().first());
-        assertEquals("multipleSubscriptionInterceptors", e.getMessage());
     }
 
     private static Stream<Arguments> multipleSubscriptionInterceptors() {

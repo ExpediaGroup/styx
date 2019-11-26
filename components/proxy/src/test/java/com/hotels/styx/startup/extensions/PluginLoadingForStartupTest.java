@@ -229,10 +229,10 @@ public class PluginLoadingForStartupTest {
                 "        classPath: " + FIXTURES_CLASS_PATH + "\n";
 
         Exception e = assertThrows(RuntimeException.class, () -> PluginLoadingForStartup.loadPlugins(environment(yaml)));
-        assertEquals("3 plugin\\(s\\) could not be loaded: failedPlugins=\\[myPlugin1, myPlugin2, myPlugin3\\]; failureCauses=\\[" +
+        assertThat(e.getMessage(), matchesPattern("3 plugin\\(s\\) could not be loaded: failedPlugins=\\[myPlugin1, myPlugin2, myPlugin3\\]; failureCauses=\\[" +
                 "myPlugin1: com.hotels.styx.api.configuration.ConfigurationException: Could not load a plugin factory.*, " +
                 "myPlugin2: com.hotels.styx.api.configuration.ConfigurationException: Could not load a plugin factory.*, " +
-                "myPlugin3: com.hotels.styx.api.configuration.ConfigurationException: Could not load a plugin factory.*\\]", e.getMessage());
+                "myPlugin3: com.hotels.styx.api.configuration.ConfigurationException: Could not load a plugin factory.*\\]"));
         assertThat(log.log(), hasItem(loggingEvent(ERROR, "Could not load plugin: pluginName=myPlugin1; factoryClass=.*", ConfigurationException.class, "Could not load a plugin factory for.*")));
         log.stop();
     }
@@ -259,10 +259,10 @@ public class PluginLoadingForStartupTest {
                 "        classPath: " + FIXTURES_CLASS_PATH + "\n";
 
         Exception e = assertThrows(RuntimeException.class, () -> PluginLoadingForStartup.loadPlugins(environment(yaml)));
-        assertEquals( "3 plugin\\(s\\) could not be loaded: failedPlugins=\\[myPlugin1, myPlugin2, myPlugin3\\]; failureCauses=\\[" +
+        assertThat(e.getMessage(), matchesPattern( "3 plugin\\(s\\) could not be loaded: failedPlugins=\\[myPlugin1, myPlugin2, myPlugin3\\]; failureCauses=\\[" +
                 "myPlugin1: java.lang.RuntimeException: plugin factory error, " +
                 "myPlugin2: java.lang.RuntimeException: plugin factory error, " +
-                "myPlugin3: java.lang.RuntimeException: plugin factory error\\]", e.getMessage());
+                "myPlugin3: java.lang.RuntimeException: plugin factory error\\]"));
 
         assertThat(log.log(), hasItem(loggingEvent(ERROR, "Could not load plugin: pluginName=myPlugin1; factoryClass=.*", RuntimeException.class, "plugin factory error")));
         log.stop();

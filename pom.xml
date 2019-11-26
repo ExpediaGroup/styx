@@ -137,7 +137,6 @@
     <hamcrest.version>2.2</hamcrest.version>
     <mockito.version>3.1.0</mockito.version>
     <junit.version>5.5.2</junit.version>
-
     <scalatest.version>3.0.5</scalatest.version>
     <scalacheck.version>1.14.0</scalacheck.version>
     <scala.java8.compat.version>0.8.0</scala.java8.compat.version>
