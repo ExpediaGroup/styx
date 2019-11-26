@@ -34,9 +34,11 @@ import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.ProviderObjectRecord
 import com.hotels.styx.serviceproviders.ServiceProviderFactory
 import com.hotels.styx.services.HealthCheckMonitoringService.Companion.EXECUTOR
+import com.hotels.styx.services.HealthCheckMonitoringService.Companion.LOGGER
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Flux
 import reactor.core.publisher.toMono
+import java.lang.RuntimeException
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ScheduledExecutorService
@@ -174,19 +176,28 @@ internal fun objectHealthFrom(state: String?, health: Pair<String, Int>?) =
             else -> ObjectOther(state)
         }
 
+internal class ObjectDisappearedException : RuntimeException("Object disappeared")
+
 private fun markObject(db: StyxObjectStore<RoutingObjectRecord>, name: String, newStatus: ObjectHealth) {
     // The ifPresent is not ideal, but compute() does not allow the computation to return null. So we can't preserve
     // a state where the object does not exist using compute alone. But even with ifPresent, as we are open to
     // the object disappearing between the ifPresent and the compute, which would again lead to the compute creating
     // a new object when we don't want it to. But at least this will happen much less frequently.
     db.get(name).ifPresent {
-        db.compute(name) { previous ->
-            val prevTags = previous!!.tags // TODO: Handle the !! failure
-            val newTags = reTag(prevTags, newStatus)
-            if (prevTags != newTags)
-                it.copy(tags = newTags)
-            else
-                previous
+        try {
+            db.compute(name) { previous ->
+                if (previous == null) throw ObjectDisappearedException()
+                val prevTags = previous.tags
+                val newTags = reTag(prevTags, newStatus)
+                if (prevTags != newTags)
+                    it.copy(tags = newTags)
+                else
+                    previous
+            }
+        } catch (e: ObjectDisappearedException) {
+            // Object disappeared between the ifPresent check and the compute, but we don't really mind.
+            // We just want to exit the compute, to avoid re-creating it.
+            // (The ifPresent is not strictly required, but a pre-emptive check is preferred to an exception)
         }
     }
 }
