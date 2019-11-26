@@ -27,6 +27,12 @@
     <dependency>
       <groupId>com.hotels.styx</groupId>
       <artifactId>styx-proxy</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.junit.platform</groupId>
+          <artifactId>junit-platform-launcher</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>

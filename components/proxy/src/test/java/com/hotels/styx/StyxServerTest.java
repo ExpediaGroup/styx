@@ -40,6 +40,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
@@ -178,12 +179,6 @@ public class StyxServerTest {
     }
 
     @Test
-    public void systemExitIsCalledWhenCreateStyxServerFails() {
-        Runtime runtime = captureSystemExit(() -> StyxServer.main(new String[0]));
-        verify(runtime).exit(1);
-    }
-
-    @Test
     public void serverDoesNotStartIfServiceFails() {
         StyxServer styxServer = null;
         try {
@@ -208,24 +203,6 @@ public class StyxServerTest {
             eventually(() -> assertThat(log.log(), hasItem(loggingEvent(INFO, "Started Styx server in \\d+ ms"))));
         } finally {
             clearProperty("STYX_HOME");
-        }
-    }
-
-    @Test
-    public void logsExceptionWhenConfigurationIsInvalid() {
-        try {
-            setProperty("STYX_HOME", fixturesHome());
-            setProperty("CONFIG_FILE_LOCATION", Paths.get(fixturesHome()).resolve("conf/invalid.yml").toString());
-
-            Runtime runtime = captureSystemExit(() -> StyxServer.main(new String[0]));
-            verify(runtime).exit(2);
-
-            eventually(() -> assertThat(log.log(), hasItem(loggingEvent(ERROR,
-                    "Styx server failed to start due to configuration error in file .+: Missing a mandatory field 'proxy'"
-            ))));
-        } finally {
-            clearProperty("STYX_HOME");
-            clearProperty("CONFIG_FILE_LOCATION");
         }
     }
 
@@ -320,23 +297,4 @@ public class StyxServerTest {
         throw new AssertionError("Eventually block did not complete in 3 seconds.", lastError);
     }
 
-    private static Runtime captureSystemExit(Runnable block) {
-        try {
-            Runtime originalRuntime = Runtime.getRuntime();
-            Field runtimeField = Runtime.class.getDeclaredField("currentRuntime");
-            Runtime mockRuntime = mock(Runtime.class);
-            try {
-                runtimeField.setAccessible(true);
-                runtimeField.set(Runtime.class, mockRuntime);
-                block.run();
-            } finally {
-                runtimeField.set(Runtime.class, originalRuntime);
-                runtimeField.setAccessible(false);
-            }
-
-            return mockRuntime;
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
-    }
 }

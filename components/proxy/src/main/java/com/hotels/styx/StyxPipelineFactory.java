@@ -42,7 +42,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * Produces the pipeline for the Styx proxy server.
  */
-public final class StyxPipelineFactory {
+public class StyxPipelineFactory {
 
     private final RoutingObjectFactory.Context builtinRoutingObjects;
     private final Environment environment;

@@ -25,6 +25,8 @@ import org.mockito.MockitoAnnotations;
 
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.mockito.Matchers.any;
@@ -62,30 +64,25 @@ public class SanitisedHttpMessageFormatterTest {
     @Test
     public void shouldFormatHttpRequest() {
         String formattedRequest = sanitisedHttpMessageFormatter.formatRequest(httpRequest);
-        assertMatchesRegex(formattedRequest, HTTP_REQUEST_PATTERN);
+        assertThat(formattedRequest, matchesPattern(HTTP_REQUEST_PATTERN));
     }
 
     @Test
     public void shouldFormatLiveHttpRequest() {
         String formattedRequest = sanitisedHttpMessageFormatter.formatRequest(httpRequest.stream());
-        assertMatchesRegex(formattedRequest, HTTP_REQUEST_PATTERN);
+        assertThat(formattedRequest, matchesPattern(HTTP_REQUEST_PATTERN));
     }
 
     @Test
     public void shouldFormatHttpResponse() {
         String formattedResponse = sanitisedHttpMessageFormatter.formatResponse(httpResponse);
-        assertMatchesRegex(formattedResponse, HTTP_RESPONSE_PATTERN);
+        assertThat(formattedResponse, matchesPattern(HTTP_RESPONSE_PATTERN));
     }
 
     @Test
     public void shouldFormatLiveHttpResponse() {
         String formattedResponse = sanitisedHttpMessageFormatter.formatResponse(httpResponse.stream());
-        assertMatchesRegex(formattedResponse, HTTP_RESPONSE_PATTERN);
-    }
-
-    private void assertMatchesRegex(String actual, String expected) {
-        assertTrue(actual.matches(expected),
-                "\n\nPattern to match: " + expected + "\nActual result:    " + actual + "\n\n");
+        assertThat(formattedResponse, matchesPattern(HTTP_RESPONSE_PATTERN));
     }
 
 }
