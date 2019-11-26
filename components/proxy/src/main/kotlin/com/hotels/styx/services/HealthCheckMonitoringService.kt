@@ -102,7 +102,7 @@ internal class HealthCheckMonitoringService(
                 .filter { (_, record) -> record.tags.contains(lbGroupTag(application)) }
                 .map { (name, record) ->
                     val tags = record.tags
-                    val objectHealth = objectHealthFrom(stateTagValue(tags), healthCheckTagValue(tags))
+                    val objectHealth = objectHealthFrom(stateTag.find(tags), tags.valueOf(healthCheckTag))
                     Triple(name, record, objectHealth)
                 }
 
@@ -177,6 +177,7 @@ internal fun objectHealthFrom(state: String?, health: Pair<String, Int>?) =
 
 internal class ObjectDisappearedException : RuntimeException("Object disappeared")
 
+
 private fun markObject(db: StyxObjectStore<RoutingObjectRecord>, name: String, newStatus: ObjectHealth) {
     // The ifPresent is not ideal, but compute() does not allow the computation to return null. So we can't preserve
     // a state where the object does not exist using compute alone. But even with ifPresent, as we are open to
@@ -203,13 +204,13 @@ private fun markObject(db: StyxObjectStore<RoutingObjectRecord>, name: String, n
 
 internal fun reTag(tags: Set<String>, newStatus: ObjectHealth) =
     tags.asSequence()
-            .filterNot { isStateTag(it) || isHealthCheckTag(it) }
+            .filterNot { it.isA(stateTag) || it.isA(healthCheckTag) }
             .plus(stateTag(newStatus.state()))
-            .plus(healthCheckTag(newStatus.health()))
+            .plus(healthCheckTag(newStatus.health()!!))
             .filterNotNull()
             .toSet()
 
 private val RELEVANT_STATES = setOf(STATE_ACTIVE, STATE_UNREACHABLE)
 private fun containsRelevantStateTag(entry: Map.Entry<String, RoutingObjectRecord>) =
-        stateTagValue(entry.value.tags) in RELEVANT_STATES
+        entry.value.tags.valueOf(stateTag) in RELEVANT_STATES
 

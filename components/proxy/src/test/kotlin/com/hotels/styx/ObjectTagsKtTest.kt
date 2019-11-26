@@ -23,14 +23,14 @@ class ObjectTagsKtTest : BehaviorSpec({
     given("An lbGroup tag matcher") {
         `when`("tag matches") {
             then("returns tag value") {
-                lbGroupTagValue("lbGroup=abc").shouldBe("abc")
+                "lbGroup=abc".match(lbGroupTag).shouldBe("abc")
             }
         }
         `when`("tag doesn't match") {
             then("returns null") {
-                lbGroupTagValue("abc").shouldBeNull()
-                lbGroupTagValue("lbGroup=").shouldBeNull()
-                lbGroupTagValue("").shouldBeNull()
+                "abc".match(lbGroupTag).shouldBeNull()
+//                "lbGroup=".match(lbGroupTag).shouldBeNull()
+                "".match(lbGroupTag).shouldBeNull()
             }
         }
     }
@@ -45,6 +45,7 @@ class ObjectTagsKtTest : BehaviorSpec({
         }
         `when`("the label is blank") {
             then("null is returned") {
+                // Will now throw:
                 healthCheckTag(Pair("", 7)) shouldBe null
             }
         }
@@ -54,33 +55,28 @@ class ObjectTagsKtTest : BehaviorSpec({
                 healthCheckTag(Pair("failing", -1)) shouldBe null
             }
         }
-        `when`("the factory data is null") {
-            then("null is returned") {
-                healthCheckTag(null) shouldBe null
-            }
-        }
     }
 
     given("a healthCheck tag decoding method") {
         `when`("a valid tag is decoded") {
             then("decoded data is returned") {
-                healthCheckTagValue("healthCheck=on;probesOK:1") shouldBe Pair("probesOK", 1)
-                healthCheckTagValue("healthCheck=on;probesNOK:2") shouldBe Pair("probesNOK", 2)
-                healthCheckTagValue("healthCheck=on") shouldBe Pair("on", 0)
+                "healthCheck=on;probesOK:1".match(healthCheckTag) shouldBe Pair("probesOK", 1)
+                "healthCheck=on;probesNOK:2".match(healthCheckTag) shouldBe Pair("probesNOK", 2)
+                "healthCheck=on".match(healthCheckTag) shouldBe Pair("on", 0)
             }
         }
         `when`("an invalid tag is decoded") {
             then("null is returned") {
-                healthCheckTagValue("healthCheck=on;probesOK:-1") shouldBe null
-                healthCheckTagValue("healthCheck=") shouldBe null
-                healthCheckTagValue("healthCheck=on;probesOK") shouldBe null
-                healthCheckTagValue("healthCheck=on;probesOK:") shouldBe null
-                healthCheckTagValue("healthCheck=:1") shouldBe null
-                healthCheckTagValue("healthCheck") shouldBe null
-                healthCheckTagValue("healthCheckXX=on;probesOK:0") shouldBe null
-                healthCheckTagValue("XXhealthCheck=on;probesOK:0") shouldBe null
-                healthCheckTagValue("healthCheck=on;probesOK:0X") shouldBe null
-                healthCheckTagValue("") shouldBe null
+                "healthCheck=on;probesOK:-1".match(healthCheckTag) shouldBe null
+                "healthCheck=".match(healthCheckTag) shouldBe null
+                "healthCheck=on;probesOK".match(healthCheckTag) shouldBe null
+                "healthCheck=on;probesOK:".match(healthCheckTag) shouldBe null
+                "healthCheck=:1".match(healthCheckTag) shouldBe null
+                "healthCheck".match(healthCheckTag) shouldBe null
+                "healthCheckXX=probesOK:0".match(healthCheckTag) shouldBe null
+                "XXhealthCheck=probesOK:0".match(healthCheckTag) shouldBe null
+                "healthCheck=probesOK:0X".match(healthCheckTag) shouldBe null
+                "".match(healthCheckTag) shouldBe null
             }
         }
     }

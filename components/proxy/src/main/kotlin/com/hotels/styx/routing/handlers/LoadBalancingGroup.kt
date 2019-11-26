@@ -16,7 +16,6 @@
 package com.hotels.styx.routing.handlers
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.hotels.styx.*
 import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpInterceptor
 import com.hotels.styx.api.Id
@@ -40,10 +39,12 @@ import com.hotels.styx.config.schema.SchemaDsl.integer
 import com.hotels.styx.config.schema.SchemaDsl.optional
 import com.hotels.styx.config.schema.SchemaDsl.string
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig
+import com.hotels.styx.lbGroupTag
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.config.StyxObjectDefinition
+import com.hotels.styx.stateTag
 import org.slf4j.LoggerFactory
 import reactor.core.Disposable
 import reactor.core.publisher.toFlux
@@ -121,16 +122,15 @@ internal class LoadBalancingGroup(val client: StyxBackendServiceClient, val chan
 
         private fun routeDatabaseChanged(appId: String, snapshot: ObjectStore<RoutingObjectRecord>, remoteHosts: AtomicReference<Set<RemoteHost>>) {
             val newSet = snapshot.entrySet()
-                    .filter { taggedWith(it, ::lbGroupTagValue, appId) }
-                    .filter { taggedWith(it, ::stateTagValue, STATE_ACTIVE, null) }
+                    .filter { it.value.tags.contains(lbGroupTag(appId)) }
+                    .filter { stateTag.find(it.value.tags)
+                            .let { it == null || it == "active" }
+                    }
                     .map { toRemoteHost(appId, it) }
                     .toSet()
 
             remoteHosts.set(newSet)
         }
-
-        private fun taggedWith(recordEntry: Map.Entry<String, RoutingObjectRecord>, tagValue: (Set<String>) -> String?, vararg values: String?) =
-                values.contains(tagValue(recordEntry.value.tags))
 
         private fun toRemoteHost(appId: String, record: Map.Entry<String, RoutingObjectRecord>): RemoteHost {
             val routingObject = record.value.routingObject
