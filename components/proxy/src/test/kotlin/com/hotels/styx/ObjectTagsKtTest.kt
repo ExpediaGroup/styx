@@ -36,10 +36,11 @@ class ObjectTagsKtTest : BehaviorSpec({
     }
 
     given("a healthcheck tag factory method") {
-        `when`("the label is not blank and the count is > 0") {
+        `when`("the label is not blank and the count is >= 0") {
             then("a tag string is returned") {
-                healthcheckTag("passing" to 1) shouldBe "healthcheck=passing:1"
-                healthcheckTag("failing" to 7) shouldBe "healthcheck=failing:7"
+                healthcheckTag("probesOK" to 1) shouldBe "healthcheck=on;probesOK:1"
+                healthcheckTag("probesNOK" to 7) shouldBe "healthcheck=on;probesNOK:7"
+                healthcheckTag("on" to 0) shouldBe "healthcheck=on"
             }
         }
         `when`("the label is blank") {
@@ -49,7 +50,7 @@ class ObjectTagsKtTest : BehaviorSpec({
         }
         `when`("the label is not blank and the count is <= 0") {
             then("null is returned") {
-                healthcheckTag(Pair("passing", 0)) shouldBe null
+                healthcheckTag(Pair("passing", 0)) shouldBe "healthcheck=on"
                 healthcheckTag(Pair("failing", -1)) shouldBe null
             }
         }
@@ -63,21 +64,22 @@ class ObjectTagsKtTest : BehaviorSpec({
     given("a healthcheck tag decoding method") {
         `when`("a valid tag is decoded") {
             then("decoded data is returned") {
-                healthcheckTagValue("healthcheck=passing:0") shouldBe Pair("passing", 0)
-                healthcheckTagValue("healthcheck=failing:2") shouldBe Pair("failing", 2)
+                healthcheckTagValue("healthcheck=on;probesOK:1") shouldBe Pair("probesOK", 1)
+                healthcheckTagValue("healthcheck=on;probesNOK:2") shouldBe Pair("probesNOK", 2)
+                healthcheckTagValue("healthcheck=on") shouldBe Pair("on", 0)
             }
         }
         `when`("an invalid tag is decoded") {
             then("null is returned") {
-                healthcheckTagValue("healthcheck=passing:-1") shouldBe null
+                healthcheckTagValue("healthcheck=on;probesOK:-1") shouldBe null
                 healthcheckTagValue("healthcheck=") shouldBe null
-                healthcheckTagValue("healthcheck=passing") shouldBe null
-                healthcheckTagValue("healthcheck=passing:") shouldBe null
+                healthcheckTagValue("healthcheck=on;probesOK") shouldBe null
+                healthcheckTagValue("healthcheck=on;probesOK:") shouldBe null
                 healthcheckTagValue("healthcheck=:1") shouldBe null
                 healthcheckTagValue("healthcheck") shouldBe null
-                healthcheckTagValue("healthcheckXX=passing:0") shouldBe null
-                healthcheckTagValue("XXhealthcheck=passing:0") shouldBe null
-                healthcheckTagValue("healthcheck=passing:0X") shouldBe null
+                healthcheckTagValue("healthcheckXX=on;probesOK:0") shouldBe null
+                healthcheckTagValue("XXhealthcheck=on;probesOK:0") shouldBe null
+                healthcheckTagValue("healthcheck=on;probesOK:0X") shouldBe null
                 healthcheckTagValue("") shouldBe null
             }
         }

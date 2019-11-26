@@ -28,14 +28,22 @@ sealed class ObjectHealth {
     abstract fun state(): String
     abstract fun health(): Pair<String, Int>?
 }
-data class ObjectActive(val failedProbes: Int) : ObjectHealth() {
+
+data class ObjectActive(val failedProbes: Int, val healthcheckActive: Boolean = true, val healthTagPresent: Boolean = true) : ObjectHealth() {
     override fun state() = STATE_ACTIVE
-    override fun health() = if (failedProbes > 0) Pair(HEALTHCHECK_FAILING, failedProbes) else null
+    override fun health() =
+            if (!healthcheckActive) null
+            else if (failedProbes > 0) Pair(HEALTHCHECK_FAILING, failedProbes)
+            else Pair(HEALTHCHECK_ON, 0)
 }
-data class ObjectUnreachable(val successfulProbes: Int) : ObjectHealth() {
+
+data class ObjectUnreachable(val successfulProbes: Int, val healthTagPresent: Boolean = true) : ObjectHealth() {
     override fun state() = STATE_UNREACHABLE
-    override fun health() = if (successfulProbes > 0) Pair(HEALTHCHECK_PASSING, successfulProbes) else null
+    override fun health() =
+            if (successfulProbes > 0) Pair(HEALTHCHECK_PASSING, successfulProbes)
+            else Pair(HEALTHCHECK_ON, 0)
 }
+
 data class ObjectOther(val state: String) : ObjectHealth() {
     override fun state() = state
     override fun health(): Pair<String, Int>? = null

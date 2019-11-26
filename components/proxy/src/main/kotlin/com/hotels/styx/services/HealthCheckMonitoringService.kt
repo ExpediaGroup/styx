@@ -89,7 +89,7 @@ internal class HealthCheckMonitoringService(
         objectStore.entrySet()
                 .filter(::containsRelevantStateTag)
                 .forEach { (name, _) ->
-                    markObject(objectStore, name, ObjectActive(0))
+                    markObject(objectStore, name, ObjectActive(0, false))
                 }
 
         futureRef.get().cancel(false)
@@ -167,9 +167,9 @@ internal fun objectHealthFrom(state: String?, health: Pair<String, Int>?) =
                 ObjectUnreachable(health.second)
             }
 
-            state == STATE_ACTIVE -> ObjectActive(0)
-            state == STATE_UNREACHABLE -> ObjectUnreachable(0)
-            state == null -> ObjectUnreachable(0)
+            state == STATE_ACTIVE -> ObjectActive(0, healthTagPresent = (health != null))
+            state == STATE_UNREACHABLE -> ObjectUnreachable(0, healthTagPresent = (health != null))
+            state == null -> ObjectUnreachable(0, healthTagPresent = (health != null))
 
             else -> ObjectOther(state)
         }

@@ -43,16 +43,30 @@ fun stateTagValue(tag: String) = STATE_REGEX.matchEntire(tag)
         ?.get(1)
 
 private const val HEALTHCHECK = "healthcheck"
-const val HEALTHCHECK_PASSING = "passing"
-const val HEALTHCHECK_FAILING = "failing"
-private val HEALTHCHECK_REGEX = "$HEALTHCHECK=(.+):([0-9]+)".toRegex()
+const val HEALTHCHECK_PASSING = "probes-OK"
+const val HEALTHCHECK_FAILING = "probes-FAIL"
+const val HEALTHCHECK_ON = "on"
+
+// healthcheck=on
+// healthcheck=on;probes-OK:2
+// healthcheck=on;probes-FAIL:1
+private val HEALTHCHECK_REGEX = "$HEALTHCHECK=$HEALTHCHECK_ON(?:;(.+):([0-9]+))?".toRegex()
 fun healthcheckTag(value: Pair<String, Int>?) =
-        if (value != null && value.first.isNotBlank() && value.second > 0)
-            "$HEALTHCHECK=${value.first}:${value.second}"
-        else null
+        if (value != null && value.first.isNotBlank() && value.second > 0) {
+            "$HEALTHCHECK=$HEALTHCHECK_ON;${value.first}:${value.second}"
+        } else if (value != null && value.first.isNotBlank() && value.second == 0) {
+            "$HEALTHCHECK=$HEALTHCHECK_ON"
+        } else {
+            null
+        }
 fun healthcheckTag(tags: Set<String>) = tags.firstOrNull(::isHealthcheckTag)
 fun isHealthcheckTag(tag: String) = HEALTHCHECK_REGEX.matches(tag)
 fun healthcheckTagValue(tags: Set<String>) = healthcheckTagValue(healthcheckTag(tags)?:"")
 fun healthcheckTagValue(tag: String) = HEALTHCHECK_REGEX.matchEntire(tag)
         ?.groupValues
-        ?.let { Pair(it[1], it[2].toInt()) }
+        ?.let {
+            if (it[1].isNotEmpty()) {
+                Pair(it[1], it[2].toInt())
+            } else {
+                Pair(HEALTHCHECK_ON, 0)
+            }}
