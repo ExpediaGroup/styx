@@ -15,8 +15,7 @@
  */
 package com.hotels.styx.providers
 
-import com.hotels.styx.STATE_ACTIVE
-import com.hotels.styx.STATE_UNREACHABLE
+import com.hotels.styx.*
 import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpInterceptor
@@ -29,11 +28,9 @@ import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.client.StyxHttpClient
-import com.hotels.styx.lbGroupTag
 import com.hotels.styx.routing.ConditionRoutingSpec
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.routing.config.RoutingObjectFactory
-import com.hotels.styx.stateTag
 import com.hotels.styx.support.ResourcePaths
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.newRoutingObject
@@ -46,10 +43,12 @@ import io.kotlintest.eventually
 import io.kotlintest.matchers.numerics.shouldBeGreaterThan
 import io.kotlintest.matchers.string.shouldContain
 import io.kotlintest.matchers.string.shouldMatch
+import io.kotlintest.matchers.string.shouldNotContain
 import io.kotlintest.matchers.withClue
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
+import kotlinx.coroutines.delay
 import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.concurrent.atomic.AtomicBoolean
@@ -95,6 +94,15 @@ class HealthCheckProviderSpec : FeatureSpec() {
         type: HostProxy
         tags:
           - $tag
+        config:
+          host: ${remote().proxyHttpHostHeader()}
+        """.trimIndent()
+
+    fun hostProxy(tag1: String, tag2: String, remote: StyxServerProvider) = """
+        type: HostProxy
+        tags:
+          - $tag1
+          - $tag2
         config:
           host: ${remote().proxyHttpHostHeader()}
         """.trimIndent()
@@ -147,7 +155,10 @@ class HealthCheckProviderSpec : FeatureSpec() {
             }
 
             scenario("Ignores closed origins") {
-                // TODO: Do this
+                styxServer().newRoutingObject("aaa-04", hostProxy(lbGroupTag("aaa"), stateTag(STATE_CLOSED), testServer03)).shouldBe(CREATED)
+                Thread.sleep(5.seconds.toMillis())
+                styxServer().routingObject("aaa-04").get().shouldContain(stateTag(STATE_CLOSED))
+                styxServer().routingObject("aaa-04").get().shouldNotContain(healthcheckTag("on" to 0)!!)
             }
 
             scenario("Detects up new origins") {
@@ -155,14 +166,18 @@ class HealthCheckProviderSpec : FeatureSpec() {
 
                 eventually(2.seconds, AssertionError::class.java) {
                     styxServer().routingObject("aaa-03").get().shouldContain(stateTag(STATE_ACTIVE))
+                    styxServer().routingObject("aaa-03").get().shouldContain(healthcheckTag("on" to 0)!!)
                 }
 
                 eventually(2.seconds, AssertionError::class.java) {
-                    pollOrigins(styxServer, "origin-0[123]").let {
+                    pollOrigins(styxServer, "origin-0[1234]").let {
                         withClue("Both origins should be taking traffic. Origins distribution: $it") {
                             (it["origin-01"] ?: 0).shouldBeGreaterThan(15)
                             (it["origin-02"] ?: 0).shouldBeGreaterThan(15)
                             (it["origin-03"] ?: 0).shouldBeGreaterThan(15)
+                        }
+                        withClue("Closed origin should be taking no traffic. Origins distribution: $it") {
+                            (it["origin-04"] ?: 0).shouldBe(0)
                         }
                     }
                 }
