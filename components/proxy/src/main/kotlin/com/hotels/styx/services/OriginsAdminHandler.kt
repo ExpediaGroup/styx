@@ -18,6 +18,7 @@ package com.hotels.styx.services
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.net.MediaType.JSON_UTF_8
 import com.hotels.styx.*
+import com.hotels.styx.ErrorResponse
 import com.hotels.styx.admin.handlers.UrlPatternRouter
 import com.hotels.styx.admin.handlers.UrlPatternRouter.placeholders
 import com.hotels.styx.api.*

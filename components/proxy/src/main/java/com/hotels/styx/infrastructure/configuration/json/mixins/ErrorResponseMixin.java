@@ -17,7 +17,7 @@ package com.hotels.styx.infrastructure.configuration.json.mixins;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hotels.styx.api.ErrorResponse;
+import com.hotels.styx.ErrorResponse;
 
 /**
  * Jackson annotations for {@link ErrorResponse}.

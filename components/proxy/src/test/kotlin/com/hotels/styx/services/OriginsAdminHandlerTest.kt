@@ -17,7 +17,7 @@ package com.hotels.styx.services
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.hotels.styx.*
-import com.hotels.styx.api.ErrorResponse
+import com.hotels.styx.ErrorResponse
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpResponseStatus
 import com.hotels.styx.api.HttpResponseStatus.*
@@ -58,7 +58,7 @@ class OriginsAdminHandlerTest : FeatureSpec({
 
         val responseBody = response.bodyAs(UTF_8)
         val errorResponse = if (responseBody.isNotEmpty()) { mapper.readValue(responseBody, ErrorResponse::class.java) } else { null }
-        val errorMessage = errorResponse?.errorMessage()
+        val errorMessage = errorResponse?.errorMessage
         errorMessageCheck(errorMessage)
     }
 
