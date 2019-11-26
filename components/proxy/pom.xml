@@ -21,12 +21,6 @@
     </dependency>
 
     <dependency>
-      <groupId>org.junit.platform</groupId>
-      <artifactId>junit-platform-launcher</artifactId>
-      <version>1.5.2</version>
-    </dependency>
-
-    <dependency>
       <groupId>com.hotels.styx</groupId>
       <artifactId>styx-common</artifactId>
     </dependency>
@@ -168,7 +162,11 @@
     <dependency>
       <groupId>io.kotlintest</groupId>
       <artifactId>kotlintest-runner-junit5</artifactId>
-      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-launcher</artifactId>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/com.natpryce/hamkrest -->
