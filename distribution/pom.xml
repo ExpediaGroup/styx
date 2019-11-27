@@ -167,7 +167,7 @@
                       <inline>
                         <files>
                           <file>
-                            <source>${project.basedir}/target/styx-1.0-SNAPSHOT-linux-x86_64.zip</source>
+                            <source>${project.basedir}/target/${artifact.finalName}.zip</source>
                           </file>
                         </files>
                       </inline>
@@ -177,7 +177,7 @@
                       <tag>${project.version}</tag>
                     </tags>
                     <args>
-                      <STYX_IMAGE>maven/styx-1.0-SNAPSHOT-linux-x86_64.zip</STYX_IMAGE>
+                      <STYX_IMAGE>maven/${artifact.finalName}.zip</STYX_IMAGE>
                       <TAG>11-jdk</TAG>
                     </args>
                   </build>
