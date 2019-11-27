@@ -21,16 +21,24 @@ import io.kotlintest.matchers.boolean.shouldBeTrue
 import io.kotlintest.matchers.collections.shouldBeEmpty
 import io.kotlintest.matchers.collections.shouldNotBeEmpty
 import io.kotlintest.matchers.numerics.shouldBeGreaterThanOrEqual
+import io.kotlintest.matchers.numerics.shouldBeLessThanOrEqual
 import io.kotlintest.milliseconds
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
+import io.kotlintest.shouldNotBe
 import io.kotlintest.specs.FeatureSpec
 import reactor.core.publisher.Flux
+import reactor.core.publisher.toFlux
 import reactor.test.StepVerifier
+import java.time.Duration
 import java.util.Optional
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
 import java.util.concurrent.Executors.newFixedThreadPool
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.SECONDS
+import java.util.concurrent.atomic.AtomicReference
 
 // We can remove AssertionError::class.java argument from the
 // calls to `eventually`, after this bug fix is released:
@@ -84,6 +92,7 @@ class StyxObjectStoreTest : FeatureSpec() {
                             it.get("y") shouldBe Optional.of("y")
                         }
                         .thenCancel()
+                        .log()
                         .verify(4.seconds)
 
                 db.watchers() shouldBe 0
@@ -102,6 +111,43 @@ class StyxObjectStoreTest : FeatureSpec() {
 
                 for (i in 1..10000) {
                     db.get("redirect-$i") shouldBe (Optional.of("Record-$i"))
+                }
+            }
+
+            scenario("Maintains relative ordering between change and initial watch notifications") {
+                val executor = Executors.newSingleThreadExecutor()
+
+                val db = StyxObjectStore<Int>(executor)
+                val events = mutableListOf<Int>()
+
+                val watchConsumer = db.watch().toFlux().subscribe {
+                    // Keeps the event notification thread busy to build up a backlog of events.
+                    Thread.sleep(10)
+                }
+
+                db.insert("key", 1)
+                db.insert("key", 2)
+
+                val watcher = db.watch()
+                        .toFlux()
+                        .subscribe {
+                            events.add(it.get("key").orElse(0xBAD_BEEF))
+                        }
+
+                db.insert("key", 3)
+                db.insert("key", 4)
+
+                watchConsumer.dispose()
+                watcher.dispose()
+
+                executor.shutdown()
+                executor.awaitTermination(250, TimeUnit.MILLISECONDS)
+
+                // Ensure the events were delivered in order
+                events.fold(0) { acc, value ->
+                    value.shouldNotBe(0xBAD_BEEF)
+                    value.shouldBeGreaterThanOrEqual(acc)
+                    value
                 }
             }
 
@@ -165,8 +211,21 @@ class StyxObjectStoreTest : FeatureSpec() {
 
             scenario("Replace an existing value") {
                 val db = StyxObjectStore<String>()
+                val latch = CountDownLatch(1)
+
+                db.addDispatchListener("_") {
+                    when (it) {
+                        is ChangeNotification ->
+                            if (it.snapshot.index() == 1L) {
+                                latch.countDown()
+                            }
+
+                        else -> { }
+                    }
+                }
 
                 db.insert("key", "old value")
+                latch.await()
 
                 StepVerifier.create(db.watch())
                         .expectNextCount(1)
@@ -174,6 +233,43 @@ class StyxObjectStoreTest : FeatureSpec() {
                         .assertNext { it.get("key") shouldBe Optional.of("new value") }
                         .thenCancel()
                         .verify()
+            }
+
+            scenario("Maintains relative ordering between change and initial watch notifications") {
+                val executor = Executors.newSingleThreadExecutor()
+
+                val db = StyxObjectStore<Int>(executor)
+                val events = mutableListOf<Int>()
+
+                val watchConsumer = db.watch().toFlux().subscribe {
+                    // Keeps the event notification thread busy to build up a backlog of events.
+                    Thread.sleep(10)
+                }
+
+                db.compute("key") { 1 }
+                db.compute("key") { 2 }
+
+                val watcher = db.watch()
+                        .toFlux()
+                        .subscribe {
+                            events.add(it.get("key").orElse(0xBAD_BEEF))
+                        }
+
+                db.compute("key") { 3 }
+                db.compute("key") { 4 }
+
+                watchConsumer.dispose()
+                watcher.dispose()
+
+                executor.shutdown()
+                executor.awaitTermination(250, TimeUnit.MILLISECONDS)
+
+                // Ensure the events were delivered in order
+                events.fold(0) { acc, value ->
+                    value.shouldNotBe(0xBAD_BEEF)
+                    value.shouldBeGreaterThanOrEqual(acc)
+                    value
+                }
             }
         }
 
@@ -256,6 +352,48 @@ class StyxObjectStoreTest : FeatureSpec() {
                 db.entrySet().shouldBeEmpty()
             }
 
+            scenario("Maintains relative ordering between change and initial watch notifications") {
+                val executor = Executors.newSingleThreadExecutor()
+
+                val db = StyxObjectStore<Int>(executor)
+                db.insert("key-01", 1)
+                db.insert("key-02", 2)
+                db.insert("key-03", 3)
+                db.insert("key-04", 4)
+
+
+                val events = mutableListOf<Long>()
+
+                val watchConsumer = db.watch().toFlux().subscribe {
+                    // Keeps the event notification thread busy to build up a backlog of events.
+                    Thread.sleep(10)
+                }
+
+                db.remove("key-01")
+                db.remove("key-02")
+
+                val watcher = db.watch()
+                        .toFlux()
+                        .subscribe {
+                            events.add(it.index())
+                        }
+
+                db.remove("key-03")
+                db.remove("key-04")
+
+                watchConsumer.dispose()
+                watcher.dispose()
+
+                executor.shutdown()
+                executor.awaitTermination(250, TimeUnit.MILLISECONDS)
+
+                // Ensure the events were delivered in order
+                events.fold(0L) { previous, index ->
+                    index.shouldBeGreaterThanOrEqual(previous)
+                    index
+                }
+            }
+
             scenario("Returns Optional.empty, when previous value doesn't exist") {
                 val db = StyxObjectStore<String>()
 
@@ -273,59 +411,11 @@ class StyxObjectStoreTest : FeatureSpec() {
         }
 
         feature("Watch") {
-            scenario("Supports multiple watchers") {
-                val db = StyxObjectStore<String>()
-                val watchEvents1 = CopyOnWriteArrayList<ObjectStore<String>>()
-                val watchEvents2 = CopyOnWriteArrayList<ObjectStore<String>>()
-
-                val watcher1 = Flux.from(db.watch()).subscribe { watchEvents1.add(it) }
-                val watcher2 = Flux.from(db.watch()).subscribe { watchEvents2.add(it) }
-
-                // Wait for the initial watch event ...
-                eventually(1.seconds, java.lang.AssertionError::class.java) {
-                    watchEvents1.size shouldBe 1
-                    watchEvents1[0].get("x") shouldBe Optional.empty()
-
-                    watchEvents2.size shouldBe 1
-                    watchEvents2[0].get("x") shouldBe Optional.empty()
-                }
-
-                db.insert("x", "x")
-                db.insert("y", "y")
-
-                // ... otherwise we aren't guaranteed what events are going show up.
-                //
-                // The ordering between initial watch event in relation to objectStore.inserts are
-                // non-deterministic.
-                eventually(1.seconds, AssertionError::class.java) {
-                    watchEvents1.size shouldBe 3
-                    watchEvents2.size shouldBe 3
-
-                    watchEvents1[1].get("x") shouldBe Optional.of("x")
-                    watchEvents2[1].get("x") shouldBe Optional.of("x")
-
-                    watchEvents1[1].get("y") shouldBe Optional.empty()
-                    watchEvents2[1].get("y") shouldBe Optional.empty()
-
-                    watchEvents1[2].get("x") shouldBe Optional.of("x")
-                    watchEvents2[2].get("x") shouldBe Optional.of("x")
-
-                    watchEvents1[2].get("y") shouldBe Optional.of("y")
-                    watchEvents2[2].get("y") shouldBe Optional.of("y")
-                }
-
-                watcher1.dispose()
-                db.watchers() shouldBe 1
-
-                watcher2.dispose()
-                db.watchers() shouldBe 0
-            }
-
-            scenario("Provides immutable snapshot") {
+            scenario("Publishes an immutable final state snapshot") {
                 val db = StyxObjectStore<String>()
                 val watchEvents = CopyOnWriteArrayList<ObjectStore<String>>()
 
-                val watcher = Flux.from(db.watch()).subscribe { watchEvents.add(it) }
+                val watcher = db.watch().toFlux().subscribe { watchEvents.add(it) }
 
                 eventually(1.seconds, AssertionError::class.java) {
                     watchEvents.isNotEmpty().shouldBeTrue()
@@ -337,16 +427,53 @@ class StyxObjectStoreTest : FeatureSpec() {
                 db.insert("y", "y")
 
                 eventually(1.seconds, AssertionError::class.java) {
-                    watchEvents.size shouldBe 3
-                    watchEvents[1].get("x") shouldBe Optional.of("x")
-                    watchEvents[1].get("y") shouldBe Optional.empty()
-
-                    watchEvents[2].get("x") shouldBe Optional.of("x")
-                    watchEvents[2].get("y") shouldBe Optional.of("y")
+                    watchEvents.last()["x"].isPresent.shouldBeTrue()
+                    watchEvents.last()["y"].isPresent.shouldBeTrue()
                 }
 
                 watcher.dispose()
                 db.watchers() shouldBe 0
+            }
+
+            scenario("Supports multiple watchers") {
+                for (x in 0..100) {
+                    val db = StyxObjectStore<String>()
+                    val watchEvents1 = CopyOnWriteArrayList<ObjectStore<String>>()
+                    val watchEvents2 = CopyOnWriteArrayList<ObjectStore<String>>()
+
+                    val watcher1 = Flux.from(db.watch()).subscribe { watchEvents1.add(it) }
+                    val watcher2 = Flux.from(db.watch()).subscribe { watchEvents2.add(it) }
+
+                    // Wait for the initial watch event ...
+                    eventually(1.seconds, java.lang.AssertionError::class.java) {
+                        watchEvents1.size shouldBe 1
+                        watchEvents1[0].get("x") shouldBe Optional.empty()
+
+                        watchEvents2.size shouldBe 1
+                        watchEvents2[0].get("x") shouldBe Optional.empty()
+                    }
+
+                    db.insert("x", "x")
+                    db.insert("y", "y")
+
+                    // ... otherwise we aren't guaranteed what events are going show up.
+                    //
+                    // The ordering between initial watch event in relation to objectStore.inserts are
+                    // non-deterministic.
+                    eventually(1.seconds, AssertionError::class.java) {
+                        watchEvents1.last()["x"].isPresent.shouldBeTrue()
+                        watchEvents1.last()["y"].isPresent.shouldBeTrue()
+
+                        watchEvents1.last()["x"].shouldBe(Optional.of("x"))
+                        watchEvents1.last()["y"].shouldBe(Optional.of("y"))
+                    }
+
+                    watcher1.dispose()
+                    db.watchers() shouldBe 1
+
+                    watcher2.dispose()
+                    db.watchers() shouldBe 0
+                }
             }
 
             scenario("Provides current snapshot at subscription") {
