@@ -21,7 +21,6 @@ import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.Connection;
-import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
 import java.util.function.Supplier;

@@ -21,7 +21,6 @@ import com.hotels.styx.api.extension.Announcer;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
-import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 

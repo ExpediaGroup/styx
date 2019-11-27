@@ -21,7 +21,6 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.ResponseEventListener;
 import com.hotels.styx.api.Url;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.TlsSettings;
@@ -33,7 +32,6 @@ import reactor.core.publisher.Mono;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
