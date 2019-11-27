@@ -66,6 +66,7 @@
       <name>libs-snapshot</name>
       <url>${libs.snapshot.url}</url>
     </snapshotRepository>
+
     <site>
       <id>Styx-Site</id>
       <url>${site.url}</url>
@@ -734,22 +735,8 @@
               -XX:+HeapDumpOnOutOfMemoryError
               -XX:HeapDumpPath=${project.build.directory}/failsafe-reports
             </argLine>
+            <skipITs>false</skipITs>
           </configuration>
-          <executions>
-            <execution>
-              <goals>
-                <goal>integration-test</goal>
-                <goal>verify</goal>
-              </goals>
-            </execution>
-            <execution>
-              <id>failsafe-integration-tests</id>
-              <phase>integration-test</phase>
-              <goals>
-                <goal>integration-test</goal>
-              </goals>
-            </execution>
-          </executions>
         </plugin>
 
         <plugin>
