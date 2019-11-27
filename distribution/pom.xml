@@ -21,6 +21,7 @@
     <main.basedir>${project.parent.basedir}</main.basedir>
     <TAG>11-jdk</TAG>
     <styxcore.docker.tag>${project.version}</styxcore.docker.tag>
+    <styxcore.docker.image>styxcore</styxcore.docker.image>
   </properties>
 
   <dependencies>
@@ -159,7 +160,7 @@
               <images>
                 <image>
                   <alias>styxcore</alias>
-                  <name>styxcore</name>
+                  <name>${styxcore.docker.image}</name>
                   <build>
                     <dockerFile>${project.basedir}/../docker/styx-image/Dockerfile</dockerFile>
                     <contextDir>${project.basedir}/../docker/styx-image/</contextDir>
