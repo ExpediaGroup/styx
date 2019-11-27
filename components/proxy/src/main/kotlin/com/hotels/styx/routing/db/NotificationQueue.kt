@@ -36,27 +36,35 @@ internal class NotificationQueue<T>(val watchers: CopyOnWriteArrayList<ChangeWat
     private val pendingChangeNotification = AtomicBoolean(false)
     private val lock = ReentrantLock()
 
+    // Listeners are just for testing purposes.
     private val listeners = ConcurrentHashMap<String, DispatchListener<T>>()
 
     fun publishChange(snapshot: IndexedSnapshot<T>) {
+
         val inQueue = lock.withLock {
-            if (snapshot.index <= pendingSnapshot.index) {
-                // Snapshot is older than one pending for publishing
+            // Preserve invariant:
+            // - pendingSnapshot is only ever increasing
+            // - (pendingChangeNotification == True) only if (pendingSnapshot > issuedSnapshot)
+            if (snapshot.index > pendingSnapshot.index) {
+                pendingSnapshot = snapshot
+                pendingChangeNotification.getAndSet(true)
+            } else {
+                // Ignore this event. Pending snapshot is more recent.
                 return
             }
-
-            pendingSnapshot = snapshot
-
-            pendingChangeNotification.getAndSet(true)
         }
 
         if (!inQueue) {
             executor.submit {
-                pendingChangeNotification.set(false)
+                lock.withLock {
+                    // Preserve invariant:
+                    // - (pendingChangeNotification == False) only if (pendingSnapshot <= issuedSnapshot)
+                    pendingChangeNotification.set(false)
+                    issuedSnapshot = pendingSnapshot
+                }
 
-                issuedSnapshot = pendingSnapshot
-                watchers.forEach { watcher ->
-                    watcher.invoke(newSnapshot(pendingSnapshot))
+                watchers.forEach {
+                    it.invoke(newSnapshot(issuedSnapshot))
                 }
 
                 listeners.forEach {
@@ -67,7 +75,6 @@ internal class NotificationQueue<T>(val watchers: CopyOnWriteArrayList<ChangeWat
                 }
             }
         }
-
     }
 
     fun publishInitialWatch(sink: FluxSink<ObjectStore<T>>) {
