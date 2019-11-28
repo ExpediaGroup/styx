@@ -45,7 +45,7 @@ class OriginsAdminHandlerTest : FeatureSpec({
     val handler = OriginsAdminHandler("/base/path", "testProvider", store)
 
     store.insert("app.active", RoutingObjectRecord("HostProxy", setOf(sourceTag("testProvider"), stateTag(STATE_ACTIVE)), mockk(), mockObject))
-    store.insert("app.closed", RoutingObjectRecord("HostProxy", setOf(sourceTag("testProvider"), stateTag(STATE_CLOSED)), mockk(), mockObject))
+    store.insert("app.closed", RoutingObjectRecord("HostProxy", setOf(sourceTag("testProvider"), stateTag(STATE_INACTIVE)), mockk(), mockObject))
     store.insert("app.unreachable", RoutingObjectRecord("HostProxy", setOf(sourceTag("testProvider"), stateTag(STATE_UNREACHABLE)), mockk(), mockObject))
     store.insert("app.nothostproxy", RoutingObjectRecord("NotHostProxy", setOf(sourceTag("testProvider"), stateTag(STATE_UNREACHABLE)), mockk(), mockObject))
 
@@ -88,7 +88,7 @@ class OriginsAdminHandlerTest : FeatureSpec({
             response!!.status() shouldBe OK
 
             val objectState = mapper.readValue(response.bodyAs(UTF_8), String::class.java)
-            objectState shouldBe STATE_CLOSED
+            objectState shouldBe STATE_INACTIVE
         }
 
         scenario("Returns NOT_FOUND when URL is not of the correct format") {
@@ -115,7 +115,7 @@ class OriginsAdminHandlerTest : FeatureSpec({
     feature("OriginsAdminHandler updates origin state for PUT request") {
 
         fun expectStateChange(initialState: String, requestedState: String, expectedState: String, expectHealthTagCleared: Boolean) {
-            val initialHealthTag = healthcheckTag(Pair(HEALTHCHECK_FAILING, 2))!!
+            val initialHealthTag = healthCheckTag(Pair(HEALTHCHECK_FAILING, 2))!!
             store.insert("app.origin", RoutingObjectRecord("HostProxy",
                     setOf(sourceTag("testProvider"),
                             stateTag(initialState),
@@ -131,22 +131,22 @@ class OriginsAdminHandlerTest : FeatureSpec({
             val tags = store.get("app.origin").get().tags
             tags shouldContain stateTag(expectedState)
             if (expectHealthTagCleared) {
-                healthcheckTag(tags) shouldBe null
+                healthCheckTag(tags) shouldBe null
             } else {
-                healthcheckTag(tags) shouldBe initialHealthTag
+                healthCheckTag(tags) shouldBe initialHealthTag
             }
         }
 
         scenario("Closing an active origin results in a closed state") {
-            expectStateChange(STATE_ACTIVE, STATE_CLOSED, STATE_CLOSED, true)
+            expectStateChange(STATE_ACTIVE, STATE_INACTIVE, STATE_INACTIVE, true)
         }
 
         scenario("Closing an unreachable origin results in a closed state") {
-            expectStateChange(STATE_UNREACHABLE, STATE_CLOSED, STATE_CLOSED, true)
+            expectStateChange(STATE_UNREACHABLE, STATE_INACTIVE, STATE_INACTIVE, true)
         }
 
         scenario("Closing a closed origin results in a closed state") {
-            expectStateChange(STATE_CLOSED, STATE_CLOSED, STATE_CLOSED, true)
+            expectStateChange(STATE_INACTIVE, STATE_INACTIVE, STATE_INACTIVE, true)
         }
 
         scenario("Activating an active origin results in an active state") {
@@ -158,12 +158,12 @@ class OriginsAdminHandlerTest : FeatureSpec({
         }
 
         scenario("Activating a closed origin results in an active state") {
-            expectStateChange(STATE_CLOSED, STATE_ACTIVE, STATE_ACTIVE, false)
+            expectStateChange(STATE_INACTIVE, STATE_ACTIVE, STATE_ACTIVE, false)
         }
 
         scenario("Returns NOT_FOUND when URL is not of the correct format") {
             expectFailure(HttpRequest.put("http://host:7777/base/path/not/valid/url")
-                    .body(mapper.writeValueAsString(STATE_CLOSED), UTF_8)
+                    .body(mapper.writeValueAsString(STATE_INACTIVE), UTF_8)
                     .build(),
                     NOT_FOUND) { it shouldBe null }
         }
@@ -190,14 +190,14 @@ class OriginsAdminHandlerTest : FeatureSpec({
 
         scenario("Returns NOT_FOUND when there is no object with the requested name") {
             expectFailure(HttpRequest.put("http://host:7777/base/path/app/missing/state")
-                    .body(mapper.writeValueAsString(STATE_CLOSED), UTF_8)
+                    .body(mapper.writeValueAsString(STATE_INACTIVE), UTF_8)
                     .build(),
                     NOT_FOUND) { it shouldBe "No origin found for ID app.missing" }
         }
 
         scenario("Returns NOT_FOUND if the object with the requested name is not a HostProxy") {
             expectFailure(HttpRequest.put("http://host:7777/base/path/app/nothostproxy/state")
-                    .body(mapper.writeValueAsString(STATE_CLOSED), UTF_8)
+                    .body(mapper.writeValueAsString(STATE_INACTIVE), UTF_8)
                     .build(),
                     NOT_FOUND) { it shouldBe "No origin found for ID app.nothostproxy" }
         }

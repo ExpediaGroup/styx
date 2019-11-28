@@ -82,7 +82,7 @@ internal class OriginsAdminHandler(
                 try {
                     when (value) {
                         STATE_ACTIVE -> activate(objectId)
-                        STATE_CLOSED -> close(objectId)
+                        STATE_INACTIVE -> close(objectId)
                         else -> errorResponse(BAD_REQUEST, "Unrecognized target state: $value")
                     }
                 } catch (e: HttpStatusException) {
@@ -99,7 +99,7 @@ internal class OriginsAdminHandler(
                 throw HttpStatusException(NOT_FOUND, "No origin found for ID $objectId")
             }
             newState = when(stateTagValue(origin!!.tags)) {
-                STATE_CLOSED, STATE_ACTIVE -> STATE_ACTIVE
+                STATE_INACTIVE, STATE_ACTIVE -> STATE_ACTIVE
                 STATE_UNREACHABLE -> STATE_UNREACHABLE
                 else -> STATE_ACTIVE
             }
@@ -115,17 +115,17 @@ internal class OriginsAdminHandler(
             if (!isValidOrigin(origin)) {
                 throw HttpStatusException(NOT_FOUND, "No origin found for ID $objectId")
             }
-            updateStateTag(origin!!, STATE_CLOSED, true)
+            updateStateTag(origin!!, STATE_INACTIVE, true)
         }
         return HttpResponse.response(OK)
-                .body(MAPPER.writeValueAsString(STATE_CLOSED), UTF_8)
+                .body(MAPPER.writeValueAsString(STATE_INACTIVE), UTF_8)
                 .build()
     }
 
     private fun updateStateTag(origin: RoutingObjectRecord, newValue: String, clearHealthcheck: Boolean = false) : RoutingObjectRecord {
         val oldTags = origin.tags
         val newTags = oldTags
-                .filterNot{ clearHealthcheck && isHealthcheckTag(it) }
+                .filterNot{ clearHealthcheck && isHealthCheckTag(it) }
                 .filterNot(::isStateTag)
                 .plus(stateTag(newValue)).toSet()
         return if (oldTags != newTags) {

@@ -34,7 +34,6 @@ import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.ProviderObjectRecord
 import com.hotels.styx.serviceproviders.ServiceProviderFactory
 import com.hotels.styx.services.HealthCheckMonitoringService.Companion.EXECUTOR
-import com.hotels.styx.services.HealthCheckMonitoringService.Companion.LOGGER
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Flux
 import reactor.core.publisher.toMono
@@ -103,7 +102,7 @@ internal class HealthCheckMonitoringService(
                 .filter { (_, record) -> record.tags.contains(lbGroupTag(application)) }
                 .map { (name, record) ->
                     val tags = record.tags
-                    val objectHealth = objectHealthFrom(stateTagValue(tags), healthcheckTagValue(tags))
+                    val objectHealth = objectHealthFrom(stateTagValue(tags), healthCheckTagValue(tags))
                     Triple(name, record, objectHealth)
                 }
 
@@ -204,9 +203,9 @@ private fun markObject(db: StyxObjectStore<RoutingObjectRecord>, name: String, n
 
 internal fun reTag(tags: Set<String>, newStatus: ObjectHealth) =
     tags.asSequence()
-            .filterNot { isStateTag(it) || isHealthcheckTag(it) }
+            .filterNot { isStateTag(it) || isHealthCheckTag(it) }
             .plus(stateTag(newStatus.state()))
-            .plus(healthcheckTag(newStatus.health()))
+            .plus(healthCheckTag(newStatus.health()))
             .filterNotNull()
             .toSet()
 

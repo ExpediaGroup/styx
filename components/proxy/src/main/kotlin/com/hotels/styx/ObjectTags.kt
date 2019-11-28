@@ -32,7 +32,7 @@ fun sourceTagValue(tags: Set<String>) = sourceTag(tags)?.substring("source".leng
 private const val STATE = "state"
 const val STATE_ACTIVE = "active"
 const val STATE_UNREACHABLE = "unreachable"
-const val STATE_CLOSED = "closed"
+const val STATE_INACTIVE = "inactive"
 private val STATE_REGEX = "$STATE=(.+)".toRegex()
 fun stateTag(value: String) = "$STATE=$value"
 fun stateTag(tags: Set<String>) = tags.firstOrNull(::isStateTag)
@@ -42,16 +42,16 @@ fun stateTagValue(tag: String) = STATE_REGEX.matchEntire(tag)
         ?.groupValues
         ?.get(1)
 
-private const val HEALTHCHECK = "healthcheck"
+private const val HEALTHCHECK = "healthCheck"
 const val HEALTHCHECK_PASSING = "probes-OK"
 const val HEALTHCHECK_FAILING = "probes-FAIL"
 const val HEALTHCHECK_ON = "on"
 
-// healthcheck=on
-// healthcheck=on;probes-OK:2
-// healthcheck=on;probes-FAIL:1
+// healthCheck=on
+// healthCheck=on;probes-OK:2
+// healthCheck=on;probes-FAIL:1
 private val HEALTHCHECK_REGEX = "$HEALTHCHECK=$HEALTHCHECK_ON(?:;(.+):([0-9]+))?".toRegex()
-fun healthcheckTag(value: Pair<String, Int>?) =
+fun healthCheckTag(value: Pair<String, Int>?) =
         if (value != null && value.first.isNotBlank() && value.second > 0) {
             "$HEALTHCHECK=$HEALTHCHECK_ON;${value.first}:${value.second}"
         } else if (value != null && value.first.isNotBlank() && value.second == 0) {
@@ -59,10 +59,10 @@ fun healthcheckTag(value: Pair<String, Int>?) =
         } else {
             null
         }
-fun healthcheckTag(tags: Set<String>) = tags.firstOrNull(::isHealthcheckTag)
-fun isHealthcheckTag(tag: String) = HEALTHCHECK_REGEX.matches(tag)
-fun healthcheckTagValue(tags: Set<String>) = healthcheckTagValue(healthcheckTag(tags)?:"")
-fun healthcheckTagValue(tag: String) = HEALTHCHECK_REGEX.matchEntire(tag)
+fun healthCheckTag(tags: Set<String>) = tags.firstOrNull(::isHealthCheckTag)
+fun isHealthCheckTag(tag: String) = HEALTHCHECK_REGEX.matches(tag)
+fun healthCheckTagValue(tags: Set<String>) = healthCheckTagValue(healthCheckTag(tags)?:"")
+fun healthCheckTagValue(tag: String) = HEALTHCHECK_REGEX.matchEntire(tag)
         ?.groupValues
         ?.let {
             if (it[1].isNotEmpty()) {

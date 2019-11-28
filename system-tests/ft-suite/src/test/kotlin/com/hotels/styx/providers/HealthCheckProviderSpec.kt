@@ -48,7 +48,6 @@ import io.kotlintest.matchers.withClue
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
-import kotlinx.coroutines.delay
 import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.concurrent.atomic.AtomicBoolean
@@ -155,10 +154,10 @@ class HealthCheckProviderSpec : FeatureSpec() {
             }
 
             scenario("Ignores closed origins") {
-                styxServer().newRoutingObject("aaa-04", hostProxy(lbGroupTag("aaa"), stateTag(STATE_CLOSED), testServer03)).shouldBe(CREATED)
+                styxServer().newRoutingObject("aaa-04", hostProxy(lbGroupTag("aaa"), stateTag(STATE_INACTIVE), testServer03)).shouldBe(CREATED)
                 Thread.sleep(5.seconds.toMillis())
-                styxServer().routingObject("aaa-04").get().shouldContain(stateTag(STATE_CLOSED))
-                styxServer().routingObject("aaa-04").get().shouldNotContain(healthcheckTag("on" to 0)!!)
+                styxServer().routingObject("aaa-04").get().shouldContain(stateTag(STATE_INACTIVE))
+                styxServer().routingObject("aaa-04").get().shouldNotContain(healthCheckTag("on" to 0)!!)
             }
 
             scenario("Detects up new origins") {
@@ -166,7 +165,7 @@ class HealthCheckProviderSpec : FeatureSpec() {
 
                 eventually(2.seconds, AssertionError::class.java) {
                     styxServer().routingObject("aaa-03").get().shouldContain(stateTag(STATE_ACTIVE))
-                    styxServer().routingObject("aaa-03").get().shouldContain(healthcheckTag("on" to 0)!!)
+                    styxServer().routingObject("aaa-03").get().shouldContain(healthCheckTag("on" to 0)!!)
                 }
 
                 eventually(2.seconds, AssertionError::class.java) {

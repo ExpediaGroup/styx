@@ -35,52 +35,52 @@ class ObjectTagsKtTest : BehaviorSpec({
         }
     }
 
-    given("a healthcheck tag factory method") {
+    given("a healthCheck tag factory method") {
         `when`("the label is not blank and the count is >= 0") {
             then("a tag string is returned") {
-                healthcheckTag("probesOK" to 1) shouldBe "healthcheck=on;probesOK:1"
-                healthcheckTag("probesNOK" to 7) shouldBe "healthcheck=on;probesNOK:7"
-                healthcheckTag("on" to 0) shouldBe "healthcheck=on"
+                healthCheckTag("probesOK" to 1) shouldBe "healthCheck=on;probesOK:1"
+                healthCheckTag("probesNOK" to 7) shouldBe "healthCheck=on;probesNOK:7"
+                healthCheckTag("on" to 0) shouldBe "healthCheck=on"
             }
         }
         `when`("the label is blank") {
             then("null is returned") {
-                healthcheckTag(Pair("", 7)) shouldBe null
+                healthCheckTag(Pair("", 7)) shouldBe null
             }
         }
         `when`("the label is not blank and the count is <= 0") {
             then("null is returned") {
-                healthcheckTag(Pair("passing", 0)) shouldBe "healthcheck=on"
-                healthcheckTag(Pair("failing", -1)) shouldBe null
+                healthCheckTag(Pair("passing", 0)) shouldBe "healthCheck=on"
+                healthCheckTag(Pair("failing", -1)) shouldBe null
             }
         }
         `when`("the factory data is null") {
             then("null is returned") {
-                healthcheckTag(null) shouldBe null
+                healthCheckTag(null) shouldBe null
             }
         }
     }
 
-    given("a healthcheck tag decoding method") {
+    given("a healthCheck tag decoding method") {
         `when`("a valid tag is decoded") {
             then("decoded data is returned") {
-                healthcheckTagValue("healthcheck=on;probesOK:1") shouldBe Pair("probesOK", 1)
-                healthcheckTagValue("healthcheck=on;probesNOK:2") shouldBe Pair("probesNOK", 2)
-                healthcheckTagValue("healthcheck=on") shouldBe Pair("on", 0)
+                healthCheckTagValue("healthCheck=on;probesOK:1") shouldBe Pair("probesOK", 1)
+                healthCheckTagValue("healthCheck=on;probesNOK:2") shouldBe Pair("probesNOK", 2)
+                healthCheckTagValue("healthCheck=on") shouldBe Pair("on", 0)
             }
         }
         `when`("an invalid tag is decoded") {
             then("null is returned") {
-                healthcheckTagValue("healthcheck=on;probesOK:-1") shouldBe null
-                healthcheckTagValue("healthcheck=") shouldBe null
-                healthcheckTagValue("healthcheck=on;probesOK") shouldBe null
-                healthcheckTagValue("healthcheck=on;probesOK:") shouldBe null
-                healthcheckTagValue("healthcheck=:1") shouldBe null
-                healthcheckTagValue("healthcheck") shouldBe null
-                healthcheckTagValue("healthcheckXX=on;probesOK:0") shouldBe null
-                healthcheckTagValue("XXhealthcheck=on;probesOK:0") shouldBe null
-                healthcheckTagValue("healthcheck=on;probesOK:0X") shouldBe null
-                healthcheckTagValue("") shouldBe null
+                healthCheckTagValue("healthCheck=on;probesOK:-1") shouldBe null
+                healthCheckTagValue("healthCheck=") shouldBe null
+                healthCheckTagValue("healthCheck=on;probesOK") shouldBe null
+                healthCheckTagValue("healthCheck=on;probesOK:") shouldBe null
+                healthCheckTagValue("healthCheck=:1") shouldBe null
+                healthCheckTagValue("healthCheck") shouldBe null
+                healthCheckTagValue("healthCheckXX=on;probesOK:0") shouldBe null
+                healthCheckTagValue("XXhealthCheck=on;probesOK:0") shouldBe null
+                healthCheckTagValue("healthCheck=on;probesOK:0X") shouldBe null
+                healthCheckTagValue("") shouldBe null
             }
         }
     }

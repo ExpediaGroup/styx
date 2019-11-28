@@ -16,7 +16,7 @@
 package com.hotels.styx.routing
 
 import com.github.tomakehurst.wiremock.client.WireMock
-import com.hotels.styx.STATE_CLOSED
+import com.hotels.styx.STATE_INACTIVE
 import com.hotels.styx.STATE_UNREACHABLE
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest.get
@@ -153,7 +153,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                     type: HostProxy
                                     tags:
                                       - lbGroup=App-A
-                                      - ${stateTag(STATE_CLOSED)}
+                                      - ${stateTag(STATE_INACTIVE)}
                                     config:
                                       host: localhost:${appA01.port()}
 
