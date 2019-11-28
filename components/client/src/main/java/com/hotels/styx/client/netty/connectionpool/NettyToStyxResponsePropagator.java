@@ -34,6 +34,7 @@ import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
+import reactor.core.publisher.FluxSink;
 import rx.Observable;
 import rx.Producer;
 import rx.Subscriber;
@@ -42,8 +43,8 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.statusWithCode;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONNECTION;
 import static io.netty.util.ReferenceCountUtil.retain;
 import static java.lang.String.format;
@@ -60,7 +61,7 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
     private static final Logger LOGGER = getLogger(NettyToStyxResponsePropagator.class);
 
     private final AtomicBoolean responseCompleted = new AtomicBoolean(false);
-    private final Subscriber<? super LiveHttpResponse> responseObserver;
+    private final FluxSink<LiveHttpResponse> sink;
     private final LiveHttpRequest request;
 
     private final Origin origin;
@@ -71,23 +72,16 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
     // to be delivered from the same thread.
     private boolean toBeClosed;
 
-    NettyToStyxResponsePropagator(Subscriber<? super LiveHttpResponse> responseObserver, Origin origin) {
-        this(responseObserver, origin, 5L, TimeUnit.SECONDS);
+    NettyToStyxResponsePropagator(FluxSink<LiveHttpResponse> sink, Origin origin) {
+        this(sink, origin, 5L, TimeUnit.SECONDS, null);
     }
 
-    NettyToStyxResponsePropagator(Subscriber<? super LiveHttpResponse> responseObserver,
-                                  Origin origin,
-                                  long idleTimeout,
-                                  TimeUnit timeUnit) {
-        this(responseObserver, origin, idleTimeout, timeUnit, null);
-    }
-
-    NettyToStyxResponsePropagator(Subscriber<? super LiveHttpResponse> responseObserver,
+    NettyToStyxResponsePropagator(FluxSink<LiveHttpResponse> sink,
                                   Origin origin,
                                   long idleTimeout,
                                   TimeUnit timeUnit,
                                   LiveHttpRequest request) {
-        this.responseObserver = responseObserver;
+        this.sink = sink;
         this.origin = origin;
         this.idleTimeoutMillis = timeUnit.toMillis(idleTimeout);
         this.request = request;
@@ -150,7 +144,7 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
             }
 
             LiveHttpResponse response = toStyxResponse(nettyResponse, contentObservable, origin);
-            this.responseObserver.onNext(response);
+            this.sink.next(response);
         }
         if (msg instanceof HttpContent) {
             ByteBuf content = ((ByteBufHolder) msg).content();
@@ -210,13 +204,13 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
 
     private void emitResponseCompleted() {
         if (responseCompleted.compareAndSet(false, true)) {
-            responseObserver.onCompleted();
+            sink.complete();
         }
     }
 
     private void emitResponseError(Throwable cause) {
         if (responseCompleted.compareAndSet(false, true)) {
-            this.responseObserver.onError(cause);
+            this.sink.error(cause);
         }
     }
 
