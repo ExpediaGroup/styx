@@ -162,8 +162,8 @@
                   <alias>styxcore</alias>
                   <name>${styxcore.docker.image}</name>
                   <build>
-                    <dockerFile>${project.basedir}/../docker/styx-image/Dockerfile</dockerFile>
-                    <contextDir>${project.basedir}/../docker/styx-image/</contextDir>
+                    <dockerFile>${project.parent.basedir}/docker/styx-image/Dockerfile</dockerFile>
+                    <contextDir>${project.parent.basedir}/docker/styx-image/</contextDir>
                     <assembly>
                       <inline>
                         <files>

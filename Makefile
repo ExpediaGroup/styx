@@ -133,4 +133,4 @@ changelog:
 # Default configuration file: /styx/default-config/default.yml
 #
 docker-image: clean
-	mvn clean install -Prelease,linux,docker -Dmaven.test.skip=true
+	mvn install -Prelease,linux,docker -Dmaven.test.skip=true
