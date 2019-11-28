@@ -38,6 +38,8 @@ import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.timeout.IdleStateHandler;
 import org.slf4j.Logger;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
 import rx.Observable;
 import rx.Subscriber;
 
@@ -127,17 +129,17 @@ public class HttpRequestOperation {
         return bodyChunkSubscriber != null && bodyChunkSubscriber.requestIsOngoing();
     }
 
-    public Observable<LiveHttpResponse> execute(NettyConnection nettyConnection) {
+    public Flux<LiveHttpResponse> execute(NettyConnection nettyConnection) {
         AtomicReference<RequestBodyChunkSubscriber> requestRequestBodyChunkSubscriber = new AtomicReference<>();
         requestTime = System.currentTimeMillis();
         executeCount.incrementAndGet();
 
-        Observable<LiveHttpResponse> observable = Observable.create(subscriber -> {
+        Flux<LiveHttpResponse> responseFlux = Flux.<LiveHttpResponse>create(sink -> {
             if (nettyConnection.isConnected()) {
                 RequestBodyChunkSubscriber bodyChunkSubscriber = new RequestBodyChunkSubscriber(request, nettyConnection);
                 requestRequestBodyChunkSubscriber.set(bodyChunkSubscriber);
-                addProxyBridgeHandlers(nettyConnection, subscriber);
-                new WriteRequestToOrigin(subscriber, nettyConnection, request, bodyChunkSubscriber)
+                addProxyBridgeHandlers(nettyConnection, sink);
+                new WriteRequestToOrigin(sink, nettyConnection, request, bodyChunkSubscriber)
                         .write();
                 if (requestLoggingEnabled) {
                     httpRequestMessageLogger.logRequest(request, nettyConnection.getOrigin());
@@ -146,13 +148,12 @@ public class HttpRequestOperation {
         });
 
         if (requestLoggingEnabled) {
-            observable = observable
+            responseFlux = responseFlux
                     .doOnNext(response -> {
                         httpRequestMessageLogger.logResponse(request, response);
                     });
         }
-
-        return observable.map(response ->
+        return responseFlux.map(response ->
                         Requests.doFinally(response, cause -> {
                             if (nettyConnection.isConnected()) {
                                 removeProxyBridgeHandlers(nettyConnection);
@@ -166,7 +167,7 @@ public class HttpRequestOperation {
                         }));
     }
 
-    private void addProxyBridgeHandlers(NettyConnection nettyConnection, Subscriber<? super LiveHttpResponse> observer) {
+    private void addProxyBridgeHandlers(NettyConnection nettyConnection, FluxSink<LiveHttpResponse> sink) {
         Origin origin = nettyConnection.getOrigin();
         Channel channel = nettyConnection.channel();
         channel.pipeline().addLast(IDLE_HANDLER_NAME, new IdleStateHandler(0, 0, responseTimeoutMillis, MILLISECONDS));
@@ -176,7 +177,7 @@ public class HttpRequestOperation {
                                 new RequestsToOriginMetricsCollector(originStatsFactory.originStats(origin))));
         channel.pipeline().addLast(
                 NettyToStyxResponsePropagator.NAME,
-                new NettyToStyxResponsePropagator(observer, origin, responseTimeoutMillis, MILLISECONDS, request));
+                new NettyToStyxResponsePropagator(sink, origin, responseTimeoutMillis, MILLISECONDS, request));
     }
 
     private void removeProxyBridgeHandlers(NettyConnection connection) {
@@ -221,14 +222,14 @@ public class HttpRequestOperation {
     }
 
     private static final class WriteRequestToOrigin {
-        private final Subscriber<? super LiveHttpResponse> responseFromOriginObserver;
+        private final FluxSink<LiveHttpResponse> responseFromOriginFlux;
         private final NettyConnection nettyConnection;
         private final LiveHttpRequest request;
         private final RequestBodyChunkSubscriber requestBodyChunkSubscriber;
 
-        private WriteRequestToOrigin(Subscriber<? super LiveHttpResponse> responseFromOriginObserver, NettyConnection nettyConnection, LiveHttpRequest request,
+        private WriteRequestToOrigin(FluxSink<LiveHttpResponse> responseFromOriginFlux, NettyConnection nettyConnection, LiveHttpRequest request,
                                      RequestBodyChunkSubscriber requestBodyChunkSubscriber) {
-            this.responseFromOriginObserver = responseFromOriginObserver;
+            this.responseFromOriginFlux = responseFromOriginFlux;
             this.nettyConnection = nettyConnection;
             this.request = request;
             this.requestBodyChunkSubscriber = requestBodyChunkSubscriber;
@@ -242,7 +243,7 @@ public class HttpRequestOperation {
                 originChannel.writeAndFlush(messageHeaders)
                         .addListener(subscribeToRequestBody());
             } else {
-                responseFromOriginObserver.onError(new TransportLostException(originChannel.remoteAddress(), nettyConnection.getOrigin()));
+                responseFromOriginFlux.error(new TransportLostException(originChannel.remoteAddress(), nettyConnection.getOrigin()));
             }
         }
 
@@ -256,7 +257,7 @@ public class HttpRequestOperation {
                     String channelIdentifier = String.format("%s -> %s", nettyConnection.channel().localAddress(), nettyConnection.channel().remoteAddress());
                     LOGGER.error(format("Failed to send request headers. origin=%s connection=%s request=%s",
                             nettyConnection.getOrigin(), channelIdentifier, request), headersFuture.cause());
-                    responseFromOriginObserver.onError(new TransportLostException(nettyConnection.channel().remoteAddress(), nettyConnection.getOrigin()));
+                    responseFromOriginFlux.error(new TransportLostException(nettyConnection.channel().remoteAddress(), nettyConnection.getOrigin()));
                 }
             };
         }

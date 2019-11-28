@@ -28,7 +28,6 @@ import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.client.ssl.SslContextFactory;
 import io.netty.handler.ssl.SslContext;
 import reactor.core.publisher.Mono;
-import rx.RxReactiveStreams;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -117,18 +116,23 @@ public final class StyxHttpClient implements HttpClient {
 
         SslContext sslContext = getSslContext(params.https(), params.tlsSettings());
 
-        Mono<LiveHttpResponse> responseObservable = connectionFactory.createConnection(
+        return connectionFactory.createConnection(
                 origin,
                 new ConnectionSettings(params.connectTimeoutMillis()),
                 sslContext
         ).flatMap(connection ->
-                Mono.from(RxReactiveStreams.toPublisher(
-                        connection.write(networkRequest)
-                                .doOnTerminate(connection::close)))
+                Mono.from(connection.write(networkRequest)
+                        .doOnComplete(connection::close)
+                        .doOnError(e -> connection.close())
+                        .map(response -> response.newBuilder()
+                            .body(it ->
+                                it.doOnEnd(x -> connection.close())
+                                  .doOnCancel(() -> connection.close())
+                            )
+                            .build()
+                        )
+                )
         );
-
-        return responseObservable;
-
     }
 
     private static LiveHttpRequest addUserAgent(String userAgent, LiveHttpRequest request) {
