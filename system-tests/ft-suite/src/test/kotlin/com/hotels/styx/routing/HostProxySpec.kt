@@ -41,6 +41,7 @@ import io.kotlintest.matchers.beGreaterThan
 import io.kotlintest.matchers.beLessThan
 import io.kotlintest.matchers.numerics.shouldBeInRange
 import io.kotlintest.matchers.types.shouldBeNull
+import io.kotlintest.matchers.withClue
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
@@ -153,14 +154,17 @@ class HostProxySpec : FeatureSpec() {
                             clientResponse.bodyAs(UTF_8) shouldBe "Hello - HTTP"
                         }
 
-                testServer().metrics().let {
-                    (it["connections.total-connections"]!!.get("count") as Int) shouldBeInRange 1..2
+                withClue("Origin connections.total-connections") {
+                    testServer().metrics().let {
+                        (it["connections.total-connections"]!!.get("count") as Int) shouldBeInRange 1..2
+                    }
                 }
 
-                styxServer().metrics().let {
-                    (it["routing.objects.hostProxy.connectionspool.connection-attempts"]!!.get("value") as Int) shouldBeInRange 1..2
+                withClue("Styx Server routing.objects.hostProxy.connectionspool.connection-attempts") {
+                    styxServer().metrics().let {
+                        (it["routing.objects.hostProxy.connectionspool.connection-attempts"]!!.get("value") as Int) shouldBeInRange 1..2
+                    }
                 }
-
             }
 
             scenario("Applies connection expiration settings") {
