@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <parent>
     <groupId>com.hotels.styx</groupId>
     <artifactId>styx-parent</artifactId>
@@ -18,6 +19,9 @@
     <main.basedir>${project.parent.basedir}</main.basedir>
     <skipCheckstyle>true</skipCheckstyle>
     <main.basedir>${project.parent.basedir}</main.basedir>
+    <TAG>11-jdk</TAG>
+    <styxcore.docker.tag>${project.version}</styxcore.docker.tag>
+    <styxcore.docker.image>styxcore</styxcore.docker.image>
   </properties>
 
   <dependencies>
@@ -132,5 +136,59 @@
 
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>docker</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>io.fabric8</groupId>
+            <artifactId>docker-maven-plugin</artifactId>
+            <version>0.31.0</version>
+
+            <executions>
+              <execution>
+                <phase>install</phase>
+                <goals>
+                  <goal>build</goal>
+                </goals>
+              </execution>
+            </executions>
+
+            <configuration>
+              <images>
+                <image>
+                  <alias>styxcore</alias>
+                  <name>${styxcore.docker.image}</name>
+                  <build>
+                    <dockerFile>${project.parent.basedir}/docker/styx-image/Dockerfile</dockerFile>
+                    <contextDir>${project.parent.basedir}/docker/styx-image/</contextDir>
+                    <assembly>
+                      <inline>
+                        <files>
+                          <file>
+                            <source>${project.basedir}/target/${artifact.finalName}.zip</source>
+                          </file>
+                        </files>
+                      </inline>
+                    </assembly>
+                    <tags>
+                      <tag>${styxcore.docker.tag}</tag>
+                      <tag>${project.version}</tag>
+                    </tags>
+                    <args>
+                      <STYX_IMAGE>maven/${artifact.finalName}.zip</STYX_IMAGE>
+                      <TAG>11-jdk</TAG>
+                    </args>
+                  </build>
+                </image>
+              </images>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
 </project>

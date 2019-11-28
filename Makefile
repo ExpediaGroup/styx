@@ -133,8 +133,4 @@ changelog:
 # Default configuration file: /styx/default-config/default.yml
 #
 docker-image: clean
-	mvn install -Prelease,linux -Dmaven.test.skip=true
-	mkdir -p ${DOCKER_CONTEXT}
-	cp `find  distribution/target -maxdepth 1 -name "styx*linux-x86_64.zip"` ${DOCKER_CONTEXT}/styx.zip
-	cp docker/styx-image/* ${DOCKER_CONTEXT}
-	docker build -t styxcore:latest --build-arg STYX_IMAGE=styx.zip ${DOCKER_CONTEXT}/.
+	mvn install -Prelease,linux,docker -Dmaven.test.skip=true
