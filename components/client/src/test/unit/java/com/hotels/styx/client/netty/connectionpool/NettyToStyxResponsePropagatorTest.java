@@ -124,8 +124,8 @@ public class NettyToStyxResponsePropagatorTest {
 
         StepVerifier.create(response.body())
                 .then(channel::runPendingTasks) // Execute onSubscribe in FSM
-                .then(() -> channel.pipeline().fireExceptionCaught(new RuntimeException())) // Will emmit BadHttpResponseException
-                .then(() -> channel.pipeline().fireChannelInactive()) // Will emmit TransportLostException
+                .then(() -> channel.pipeline().fireExceptionCaught(new RuntimeException())) // Will emit BadHttpResponseException
+                .then(() -> channel.pipeline().fireChannelInactive()) // Will emit TransportLostException
                 .expectError(BadHttpResponseException.class)
                 .verify();
 
