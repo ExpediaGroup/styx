@@ -29,8 +29,10 @@ import com.hotels.styx.routing.handle
 import com.hotels.styx.routing.routingObjectDef
 import com.hotels.styx.server.HttpInterceptorContext
 import io.kotlintest.IsolationMode
+import io.kotlintest.eventually
 import io.kotlintest.matchers.numerics.shouldBeGreaterThan
 import io.kotlintest.matchers.types.shouldBeNull
+import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import io.kotlintest.specs.FeatureSpec
@@ -72,15 +74,16 @@ class LoadBalancingGroupTest : FeatureSpec() {
             scenario("Discovers origins with appropriate tag") {
                 val frequencies = mutableMapOf<String, Int>()
 
-                for (i in 1..100) {
-                    lbGroup.call(get("/").build())
-                            .bodyAs(UTF_8)
-                            .let {
-                                val current = frequencies.getOrDefault(it, 0)
-                                frequencies[it] = current + 1
-                            }
+                eventually(2.seconds, AssertionError::class.java) {
+                    for (i in 1..100) {
+                        lbGroup.call(get("/").build())
+                                .bodyAs(UTF_8)
+                                .let {
+                                    val current = frequencies.getOrDefault(it, 0)
+                                    frequencies[it] = current + 1
+                                }
+                    }
                 }
-
                 frequencies["appx-01"]!!.shouldBeGreaterThan(15)
                 frequencies["appx-02"]!!.shouldBeGreaterThan(15)
                 frequencies["appx-03"]!!.shouldBeGreaterThan(15)

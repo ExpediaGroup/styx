@@ -22,10 +22,14 @@ import com.hotels.styx.ErrorResponse
 import com.hotels.styx.admin.handlers.UrlPatternRouter
 import com.hotels.styx.admin.handlers.UrlPatternRouter.placeholders
 import com.hotels.styx.api.*
+import com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE
+import com.hotels.styx.api.HttpResponse.response
 import com.hotels.styx.api.HttpResponseStatus.*
+import com.hotels.styx.common.http.handler.HttpAggregator
 import com.hotels.styx.infrastructure.configuration.json.mixins.ErrorResponseMixin
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
+import io.netty.handler.codec.http.HttpObjectAggregator
 import java.nio.charset.StandardCharsets.UTF_8
 
 /**
@@ -45,26 +49,16 @@ internal class OriginsAdminHandler(
         )
     }
 
-    private val router: UrlPatternRouter
-
-    init {
-        router = UrlPatternRouter.Builder()
+    private val router = HttpAggregator(1000, UrlPatternRouter.Builder()
                 .get("$basePath/:appid/:originid/state") { _, context ->
                     Eventual.of(getState(objectIdFrom(context)))
                 }
                 .put("$basePath/:appid/:originid/state") { request, context ->
                     Eventual.of(putState(objectIdFrom(context), request))
                 }
-                .build()
-    }
+                .build())
 
-    override fun handle(request: LiveHttpRequest, context: HttpInterceptor.Context): Eventual<LiveHttpResponse> {
-        return request.aggregate(1000)
-                .flatMap {
-                    router.handle(it, context)
-                            .map { response -> response.stream() }
-                }
-    }
+    override fun handle(request: LiveHttpRequest, context: HttpInterceptor.Context): Eventual<LiveHttpResponse> = router.handle(request, context)
 
     private fun getState(objectId: String) : HttpResponse {
         val origin = findOrigin(objectId)
@@ -105,7 +99,7 @@ internal class OriginsAdminHandler(
             }
             updateStateTag(origin, newState)
         }
-        return HttpResponse.response(OK)
+        return response(OK)
                 .body(MAPPER.writeValueAsString(newState), UTF_8)
                 .build()
     }
@@ -117,7 +111,7 @@ internal class OriginsAdminHandler(
             }
             updateStateTag(origin!!, STATE_INACTIVE, true)
         }
-        return HttpResponse.response(OK)
+        return response(OK)
                 .body(MAPPER.writeValueAsString(STATE_INACTIVE), UTF_8)
                 .build()
     }
@@ -136,16 +130,16 @@ internal class OriginsAdminHandler(
     }
 
     private fun errorResponse(status: HttpResponseStatus, message: String) =
-            HttpResponse.response(status)
+            response(status)
                     .disableCaching()
-                    .addHeader(HttpHeaderNames.CONTENT_TYPE, JSON_UTF_8.toString())
+                    .addHeader(CONTENT_TYPE, JSON_UTF_8.toString())
                     .body(MAPPER.writeValueAsString(ErrorResponse(message)), UTF_8)
                     .build()
 
     private fun textValueResponse(message: String) =
-            HttpResponse.response(OK)
+            response(OK)
                     .disableCaching()
-                    .addHeader(HttpHeaderNames.CONTENT_TYPE, JSON_UTF_8.toString())
+                    .addHeader(CONTENT_TYPE, JSON_UTF_8.toString())
                     .body(MAPPER.writeValueAsString(message), UTF_8)
                     .build()
 

@@ -16,24 +16,32 @@
 package com.hotels.styx.services
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.hotels.styx.*
 import com.hotels.styx.ErrorResponse
+import com.hotels.styx.HEALTHCHECK_FAILING
+import com.hotels.styx.STATE_ACTIVE
+import com.hotels.styx.STATE_INACTIVE
+import com.hotels.styx.STATE_UNREACHABLE
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpResponseStatus
-import com.hotels.styx.api.HttpResponseStatus.*
+import com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST
+import com.hotels.styx.api.HttpResponseStatus.NOT_FOUND
+import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
+import com.hotels.styx.healthCheckTag
 import com.hotels.styx.infrastructure.configuration.json.mixins.ErrorResponseMixin
 import com.hotels.styx.routing.RoutingMetadataDecorator
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.mockObject
 import com.hotels.styx.server.HttpInterceptorContext
+import com.hotels.styx.sourceTag
+import com.hotels.styx.stateTag
+import com.hotels.styx.wait
 import io.kotlintest.matchers.collections.shouldContain
 import io.kotlintest.matchers.string.shouldStartWith
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
 import io.mockk.mockk
-import reactor.core.publisher.Mono
 import java.nio.charset.StandardCharsets.UTF_8
 
 class OriginsAdminHandlerTest : FeatureSpec({
@@ -49,8 +57,10 @@ class OriginsAdminHandlerTest : FeatureSpec({
     store.insert("app.unreachable", RoutingObjectRecord("HostProxy", setOf(sourceTag("testProvider"), stateTag(STATE_UNREACHABLE)), mockk(), mockObject))
     store.insert("app.nothostproxy", RoutingObjectRecord("NotHostProxy", setOf(sourceTag("testProvider"), stateTag(STATE_UNREACHABLE)), mockk(), mockObject))
 
-    fun getResponse(handler: OriginsAdminHandler, request: LiveHttpRequest) =
-            Mono.from(Mono.from(handler.handle(request, HttpInterceptorContext.create())).block().aggregate(1000)).block()
+
+    fun getResponse(handler: OriginsAdminHandler, request: LiveHttpRequest) = handler
+            .handle(request, HttpInterceptorContext.create())
+            .wait()
 
     fun expectFailure(request: HttpRequest, responseStatus: HttpResponseStatus, errorMessageCheck: (String?) -> Unit) {
         val response = getResponse(handler, request.stream())
@@ -137,15 +147,15 @@ class OriginsAdminHandlerTest : FeatureSpec({
             }
         }
 
-        scenario("Closing an active origin results in a closed state") {
+        scenario("Disabling an active origin results in an inactive state") {
             expectStateChange(STATE_ACTIVE, STATE_INACTIVE, STATE_INACTIVE, true)
         }
 
-        scenario("Closing an unreachable origin results in a closed state") {
+        scenario("Disabling an unreachable origin results in an inactive state") {
             expectStateChange(STATE_UNREACHABLE, STATE_INACTIVE, STATE_INACTIVE, true)
         }
 
-        scenario("Closing a closed origin results in a closed state") {
+        scenario("Disabling an inactive origin results in an inactive state") {
             expectStateChange(STATE_INACTIVE, STATE_INACTIVE, STATE_INACTIVE, true)
         }
 
@@ -157,7 +167,7 @@ class OriginsAdminHandlerTest : FeatureSpec({
             expectStateChange(STATE_UNREACHABLE, STATE_ACTIVE, STATE_UNREACHABLE, false)
         }
 
-        scenario("Activating a closed origin results in an active state") {
+        scenario("Activating an inactive origin results in an active state") {
             expectStateChange(STATE_INACTIVE, STATE_ACTIVE, STATE_ACTIVE, false)
         }
 

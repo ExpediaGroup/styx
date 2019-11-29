@@ -101,12 +101,10 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
         objectHealthFrom("inactive", "probes-FAIL" to 3) shouldBe ObjectOther(STATE_INACTIVE)
         objectHealthFrom("inactive", "probes-OK" to 7) shouldBe ObjectOther(STATE_INACTIVE)
 
-//        objectHealthFrom("active", "probes-FAIL" to -1) shouldBe ObjectActive(0, healthTagPresent = false)
         objectHealthFrom("active", null) shouldBe ObjectActive(0, healthTagPresent = false)
         objectHealthFrom("active", "probes-FAIL" to 2) shouldBe ObjectActive(2)
         objectHealthFrom("active", "probes-FAIL" to 124) shouldBe ObjectActive(124)
 
-//        objectHealthFrom("unreachable", "probes-OK" to -1) shouldBe ObjectUnreachable(0, healthTagPresent = false)
         objectHealthFrom("unreachable", null) shouldBe ObjectUnreachable(0, healthTagPresent = false)
         objectHealthFrom("unreachable", "probes-OK" to 2) shouldBe ObjectUnreachable(2)
         objectHealthFrom("unreachable", "probes-OK" to 124) shouldBe ObjectUnreachable(124)
