@@ -71,7 +71,7 @@ class MetricsSpec : FunSpec() {
                     .toAbsolutePath())
 
     init {
-        context("Connections pool metrics in backwards compatibility mode") {
+        context("Origin metrics in backwards compatibility mode") {
             writeOrigins("""
                 - id: appA
                   path: "/"
@@ -80,7 +80,7 @@ class MetricsSpec : FunSpec() {
             """.trimIndent())
             styxServer.restart()
 
-            test("Metrics path ...") {
+            test("Connection pool metrics path") {
                 eventually(2.seconds, AssertionError::class.java) {
                     testClient.send(get("/")
                             .header(HOST, styxServer().proxyHttpHostHeader())
