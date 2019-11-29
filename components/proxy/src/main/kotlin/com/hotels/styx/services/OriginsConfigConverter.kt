@@ -162,7 +162,7 @@ internal class OriginsConfigConverter(
                         app.tlsSettings().orElse(null),
                         app.responseTimeoutMillis(),
                         origin,
-                        "origins.${app.id()}.${origin.id()}"));
+                        "origins"));
         }
 
         private fun isHealthCheckConfigured(app: BackendService): Boolean {

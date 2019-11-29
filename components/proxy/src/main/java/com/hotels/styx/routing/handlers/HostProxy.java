@@ -108,7 +108,7 @@ public class HostProxy implements RoutingObject {
 
     private final String errorMessage;
     private final StyxHostHttpClient client;
-    private OriginMetrics originMetrics;
+    private final OriginMetrics originMetrics;
     private volatile boolean active = true;
 
     @VisibleForTesting final String host;
