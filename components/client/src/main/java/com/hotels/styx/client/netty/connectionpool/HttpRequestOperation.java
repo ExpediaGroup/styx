@@ -290,6 +290,11 @@ public class HttpRequestOperation {
         }
 
         @Override
+        public void hookOnError(Throwable e) {
+            completed = true;
+        }
+
+        @Override
         public void hookOnNext(ByteBuf chunk) {
             HttpObject msg = new DefaultHttpContent(chunk);
             channel.writeAndFlush(msg)
