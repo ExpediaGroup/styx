@@ -35,15 +35,8 @@ import io.kotlintest.milliseconds
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
-import io.mockk.mockk
-import org.pcollections.HashTreePMap
-import org.pcollections.HashTreePSet
-import org.pcollections.PMap
-import org.pcollections.PSet
 import reactor.core.publisher.Mono
-import reactor.core.publisher.toFlux
 import reactor.core.publisher.toMono
-import java.util.concurrent.atomic.AtomicReference
 import kotlin.system.measureTimeMillis
 
 
@@ -97,22 +90,22 @@ class HealthChecksTest : FeatureSpec({
         val check = healthCheckFunction(2, 3)
 
         scenario("Transitions to Active after N consecutive positive probes") {
-            check(ObjectInactive(0), true) shouldBe ObjectInactive(1)
-            check(ObjectInactive(1), true) shouldBe ObjectActive(0)
+            check(ObjectUnreachable(0), true) shouldBe ObjectUnreachable(1)
+            check(ObjectUnreachable(1), true) shouldBe ObjectActive(0)
         }
 
         scenario("An negative probe resets successful probes count") {
-            check(ObjectInactive(1), false) shouldBe ObjectInactive(0)
+            check(ObjectUnreachable(1), false) shouldBe ObjectUnreachable(0)
         }
 
         scenario("An negative probe doesn't affect successful probes in Inactive state") {
-            check(ObjectInactive(0), false) shouldBe ObjectInactive(0)
+            check(ObjectUnreachable(0), false) shouldBe ObjectUnreachable(0)
         }
 
         scenario("Transitions to Inactive after N consecutive negative probes") {
             check(ObjectActive(0), false) shouldBe ObjectActive(1)
             check(ObjectActive(1), false) shouldBe ObjectActive(2)
-            check(ObjectActive(2), false) shouldBe ObjectInactive(0)
+            check(ObjectActive(2), false) shouldBe ObjectUnreachable(0)
         }
 
         scenario("A successful probe resets inactive count") {

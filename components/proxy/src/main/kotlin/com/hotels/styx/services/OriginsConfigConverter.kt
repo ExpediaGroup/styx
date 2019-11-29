@@ -21,6 +21,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PRO
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import com.hotels.styx.STATE_ACTIVE
+import com.hotels.styx.STATE_UNREACHABLE
 import com.hotels.styx.api.extension.Origin
 import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings
@@ -47,8 +49,7 @@ import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.HostProxy.HostProxyConfiguration
 import com.hotels.styx.routing.handlers.LoadBalancingGroup
 import com.hotels.styx.routing.handlers.ProviderObjectRecord
-import com.hotels.styx.services.HealthCheckMonitoringService.Companion.ACTIVE_TAG
-import com.hotels.styx.services.HealthCheckMonitoringService.Companion.INACTIVE_TAG
+import com.hotels.styx.stateTag
 import org.slf4j.LoggerFactory
 
 internal class OriginsConfigConverter(
@@ -150,7 +151,7 @@ internal class OriginsConfigConverter(
         }
 
         internal fun hostProxy(app: BackendService, origin: Origin) : StyxObjectDefinition {
-            val healthCheckTag :String = if (isHealthCheckConfigured(app)) INACTIVE_TAG else ACTIVE_TAG;
+            val healthCheckTag :String = if (isHealthCheckConfigured(app)) stateTag(STATE_UNREACHABLE) else stateTag(STATE_ACTIVE);
 
             return StyxObjectDefinition(
                 "${app.id()}.${origin.id()}",

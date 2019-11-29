@@ -16,6 +16,8 @@
 package com.hotels.styx.routing
 
 import com.github.tomakehurst.wiremock.client.WireMock
+import com.hotels.styx.STATE_INACTIVE
+import com.hotels.styx.STATE_UNREACHABLE
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY
@@ -25,6 +27,7 @@ import com.hotels.styx.api.RequestCookie.requestCookie
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.server.HttpConnectorConfig
 import com.hotels.styx.servers.MockOriginServer
+import com.hotels.styx.stateTag
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.newRoutingObject
 import com.hotels.styx.support.proxyHttpHostHeader
@@ -130,7 +133,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
         }
 
         feature("Object discovery") {
-            scenario("Ignores inactive objects") {
+            scenario("Ignores unreachable and closed objects") {
                 styxServer.restart(configuration = """
                                 proxy:
                                   connectors:
@@ -150,7 +153,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                     type: HostProxy
                                     tags:
                                       - lbGroup=App-A
-                                      - state:inactive
+                                      - ${stateTag(STATE_INACTIVE)}
                                     config:
                                       host: localhost:${appA01.port()}
 
@@ -158,7 +161,8 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                     type: HostProxy
                                     tags:
                                       - lbGroup=App-A
-                                      - state:inactive:3
+                                      - ${stateTag(STATE_UNREACHABLE)}
+                                      - health=success:3
                                     config:
                                       host: localhost:${appA02.port()}
 

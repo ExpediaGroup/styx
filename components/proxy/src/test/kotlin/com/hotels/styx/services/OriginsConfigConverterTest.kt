@@ -15,6 +15,8 @@
  */
 package com.hotels.styx.services
 
+import com.hotels.styx.STATE_ACTIVE
+import com.hotels.styx.STATE_UNREACHABLE
 import com.hotels.styx.lbGroupTag
 import com.hotels.styx.routing.RoutingObjectFactoryContext
 import com.hotels.styx.routing.config.Builtins.INTERCEPTOR_PIPELINE
@@ -22,8 +24,9 @@ import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.ProviderObjectRecord
 import com.hotels.styx.services.OriginsConfigConverter.Companion.deserialiseOrigins
 import com.hotels.styx.services.OriginsConfigConverter.Companion.loadBalancingGroup
+import com.hotels.styx.stateTag
 import io.kotlintest.matchers.collections.shouldBeEmpty
-import io.kotlintest.matchers.collections.shouldContainAll
+import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotlintest.matchers.types.shouldNotBeNull
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
@@ -49,12 +52,12 @@ class OriginsConfigConverterTest : StringSpec({
                     it.size shouldBe 3
 
                     it[0].name() shouldBe "app.app1"
-                    it[0].tags().shouldContainAll(lbGroupTag("app"), "state:active")
+                    it[0].tags().shouldContainExactlyInAnyOrder(lbGroupTag("app"), stateTag(STATE_ACTIVE))
                     it[0].type().shouldBe("HostProxy")
                     it[0].config().shouldNotBeNull()
 
                     it[1].name() shouldBe "app.app2"
-                    it[1].tags().shouldContainAll(lbGroupTag("app"), "state:active")
+                    it[1].tags().shouldContainExactlyInAnyOrder(lbGroupTag("app"), stateTag(STATE_ACTIVE))
                     it[1].type().shouldBe("HostProxy")
                     it[1].config().shouldNotBeNull()
 
@@ -128,12 +131,12 @@ class OriginsConfigConverterTest : StringSpec({
                     it.size shouldBe 3
 
                     it[0].name() shouldBe "app.app1"
-                    it[0].tags().shouldContainAll(lbGroupTag("app"), "state:active")
+                    it[0].tags().shouldContainExactlyInAnyOrder(lbGroupTag("app"), stateTag(STATE_ACTIVE))
                     it[0].type().shouldBe("HostProxy")
                     it[0].config().shouldNotBeNull()
 
                     it[1].name() shouldBe "app.app2"
-                    it[1].tags().shouldContainAll(lbGroupTag("app"), "state:active")
+                    it[1].tags().shouldContainExactlyInAnyOrder(lbGroupTag("app"), stateTag(STATE_ACTIVE))
                     it[1].type().shouldBe("HostProxy")
                     it[1].config().shouldNotBeNull()
 
@@ -169,12 +172,12 @@ class OriginsConfigConverterTest : StringSpec({
                     it.size shouldBe 8
 
                     it[0].name() shouldBe "appA.appA-1"
-                    it[0].tags().shouldContainAll(lbGroupTag("appA"), "state:active")
+                    it[0].tags().shouldContainExactlyInAnyOrder(lbGroupTag("appA"), stateTag(STATE_ACTIVE))
                     it[0].type().shouldBe("HostProxy")
                     it[0].config().shouldNotBeNull()
 
                     it[1].name() shouldBe "appA.appA-2"
-                    it[1].tags().shouldContainAll(lbGroupTag("appA"), "state:active")
+                    it[1].tags().shouldContainExactlyInAnyOrder(lbGroupTag("appA"), stateTag(STATE_ACTIVE))
                     it[1].type().shouldBe("HostProxy")
                     it[1].config().shouldNotBeNull()
 
@@ -184,7 +187,7 @@ class OriginsConfigConverterTest : StringSpec({
                     it[2].config().shouldNotBeNull()
 
                     it[3].name() shouldBe "appB.appB-1"
-                    it[3].tags().shouldContainAll(lbGroupTag("appB"), "state:active")
+                    it[3].tags().shouldContainExactlyInAnyOrder(lbGroupTag("appB"), stateTag(STATE_ACTIVE))
                     it[3].type().shouldBe("HostProxy")
                     it[3].config().shouldNotBeNull()
 
@@ -194,12 +197,12 @@ class OriginsConfigConverterTest : StringSpec({
                     it[4].config().shouldNotBeNull()
 
                     it[5].name() shouldBe "appC.appC-1"
-                    it[5].tags().shouldContainAll(lbGroupTag("appC"), "state:active")
+                    it[5].tags().shouldContainExactlyInAnyOrder(lbGroupTag("appC"), stateTag(STATE_ACTIVE))
                     it[5].type().shouldBe("HostProxy")
                     it[5].config().shouldNotBeNull()
 
                     it[6].name() shouldBe "appC.appC-2"
-                    it[6].tags().shouldContainAll(lbGroupTag("appC"), "state:active")
+                    it[6].tags().shouldContainExactlyInAnyOrder(lbGroupTag("appC"), stateTag(STATE_ACTIVE))
                     it[6].type().shouldBe("HostProxy")
                     it[6].config().shouldNotBeNull()
 
@@ -314,9 +317,9 @@ class OriginsConfigConverterTest : StringSpec({
         OriginsConfigConverter(serviceDb, RoutingObjectFactoryContext().get(), "")
                 .routingObjects(deserialiseOrigins(config))
                 .let {
-                    it[0].tags().shouldContainAll(lbGroupTag("appWithHealthCheck"), "state:inactive")
-                    it[2].tags().shouldContainAll(lbGroupTag("appMissingHealthCheckUri"), "state:active")
-                    it[4].tags().shouldContainAll(lbGroupTag("appWithNoHealthCheck"), "state:active")
+                    it[0].tags().shouldContainExactlyInAnyOrder(lbGroupTag("appWithHealthCheck"), stateTag(STATE_UNREACHABLE))
+                    it[2].tags().shouldContainExactlyInAnyOrder(lbGroupTag("appMissingHealthCheckUri"), stateTag(STATE_ACTIVE))
+                    it[4].tags().shouldContainExactlyInAnyOrder(lbGroupTag("appWithNoHealthCheck"), stateTag(STATE_ACTIVE))
                 }
     }
 

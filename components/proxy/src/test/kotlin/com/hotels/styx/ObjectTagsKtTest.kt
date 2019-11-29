@@ -34,4 +34,54 @@ class ObjectTagsKtTest : BehaviorSpec({
             }
         }
     }
+
+    given("a healthCheck tag factory method") {
+        `when`("the label is not blank and the count is >= 0") {
+            then("a tag string is returned") {
+                healthCheckTag("probesOK" to 1) shouldBe "healthCheck=on;probesOK:1"
+                healthCheckTag("probesNOK" to 7) shouldBe "healthCheck=on;probesNOK:7"
+                healthCheckTag("on" to 0) shouldBe "healthCheck=on"
+            }
+        }
+        `when`("the label is blank") {
+            then("null is returned") {
+                healthCheckTag(Pair("", 7)) shouldBe null
+            }
+        }
+        `when`("the label is not blank and the count is <= 0") {
+            then("null is returned") {
+                healthCheckTag(Pair("passing", 0)) shouldBe "healthCheck=on"
+                healthCheckTag(Pair("failing", -1)) shouldBe null
+            }
+        }
+        `when`("the factory data is null") {
+            then("null is returned") {
+                healthCheckTag(null) shouldBe null
+            }
+        }
+    }
+
+    given("a healthCheck tag decoding method") {
+        `when`("a valid tag is decoded") {
+            then("decoded data is returned") {
+                healthCheckTagValue("healthCheck=on;probesOK:1") shouldBe Pair("probesOK", 1)
+                healthCheckTagValue("healthCheck=on;probesNOK:2") shouldBe Pair("probesNOK", 2)
+                healthCheckTagValue("healthCheck=on") shouldBe Pair("on", 0)
+            }
+        }
+        `when`("an invalid tag is decoded") {
+            then("null is returned") {
+                healthCheckTagValue("healthCheck=on;probesOK:-1") shouldBe null
+                healthCheckTagValue("healthCheck=") shouldBe null
+                healthCheckTagValue("healthCheck=on;probesOK") shouldBe null
+                healthCheckTagValue("healthCheck=on;probesOK:") shouldBe null
+                healthCheckTagValue("healthCheck=:1") shouldBe null
+                healthCheckTagValue("healthCheck") shouldBe null
+                healthCheckTagValue("healthCheckXX=on;probesOK:0") shouldBe null
+                healthCheckTagValue("XXhealthCheck=on;probesOK:0") shouldBe null
+                healthCheckTagValue("healthCheck=on;probesOK:0X") shouldBe null
+                healthCheckTagValue("") shouldBe null
+            }
+        }
+    }
 })
