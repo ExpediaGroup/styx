@@ -191,6 +191,11 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
         availableConnections.remove(connection);
     }
 
+    @Override
+    public void close() {
+        availableConnections.forEach(Connection::close);
+    }
+
     public ConnectionPool.Stats stats() {
         return this.stats;
     }
@@ -236,6 +241,7 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
         public int connectionsInEstablishment() {
             return connectionsInEstablishment.get();
         }
+
 
         @Override
         public String toString() {
