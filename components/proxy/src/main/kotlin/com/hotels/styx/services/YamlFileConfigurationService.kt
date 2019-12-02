@@ -36,7 +36,6 @@ import com.hotels.styx.server.handlers.ClassPathResourceHandler
 import com.hotels.styx.serviceproviders.ServiceProviderFactory
 import com.hotels.styx.services.OriginsConfigConverter.Companion.deserialiseOrigins
 import com.hotels.styx.sourceTag
-import com.hotels.styx.valueOf
 import org.slf4j.LoggerFactory
 import java.io.PrintWriter
 import java.io.StringWriter
@@ -63,7 +62,7 @@ internal class YamlFileConfigurationService(
 
     private val ingressObjectName = if (config.ingressObject.isNotBlank()) config.ingressObject else "$name-router"
 
-    private val objectSourceTag = sourceTag(name)!!
+    private val objectSourceTag = sourceTag(name)
 
     private val fileMonitoringService = FileMonitoringService("YamlFileCoinfigurationService", config.originsFile, pollInterval) {
         reloadAction(it)
@@ -118,7 +117,7 @@ internal class YamlFileConfigurationService(
 
             routingObjectDefs.forEach { objectDef ->
                 routeDb.get(objectDef.name()).ifPresent {
-                    if (it.tags.valueOf(sourceTag) != name) {
+                    if (sourceTag.find(it.tags) != name) {
                         throw DuplicateObjectException("Object name='${objectDef.name()}' already exists. Provider='${name}', file='${config.originsFile}'.")
                     }
                 }
@@ -129,7 +128,7 @@ internal class YamlFileConfigurationService(
 
             healthMonitors.forEach { (objectName, _) ->
                 serviceDb.get(objectName).ifPresent {
-                    if (it.tags.valueOf(sourceTag) != name) {
+                    if (sourceTag.find(it.tags) != name) {
                         throw DuplicateObjectException("Health Monitor name='${objectName}' already exists. Provider='${name}', file='${config.originsFile}'.")
                     }
                 }

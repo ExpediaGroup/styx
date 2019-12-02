@@ -18,7 +18,6 @@ package com.hotels.styx.services
 import com.fasterxml.jackson.databind.JsonNode
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig
 import com.hotels.styx.lbGroupTag
-import com.hotels.styx.match
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.RoutingConfigParser.toRoutingConfigNode
 import com.hotels.styx.routing.config.StyxObjectDefinition

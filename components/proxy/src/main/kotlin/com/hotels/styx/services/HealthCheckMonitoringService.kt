@@ -122,7 +122,7 @@ internal class HealthCheckMonitoringService(
                 .filter { (_, record) -> record.tags.contains(lbGroupTag(application)) }
                 .map { (name, record) ->
                     val tags = record.tags
-                    val objectHealth = objectHealthFrom(stateTag.find(tags), tags.valueOf(healthCheckTag))
+                    val objectHealth = objectHealthFrom(stateTag.find(tags), healthCheckTag.find(tags))
                     Triple(name, record, objectHealth)
                 }
 
@@ -224,7 +224,7 @@ private fun markObject(db: StyxObjectStore<RoutingObjectRecord>, name: String, n
 
 internal fun reTag(tags: Set<String>, newStatus: ObjectHealth) =
         tags.asSequence()
-                .filterNot { it.isA(stateTag) || it.isA(healthCheckTag) }
+                .filterNot { stateTag.match(it) || healthCheckTag.match(it) }
                 .plus(stateTag(newStatus.state()))
                 .plus(healthCheckTag(newStatus.health()!!))
                 .filterNotNull()
@@ -232,5 +232,5 @@ internal fun reTag(tags: Set<String>, newStatus: ObjectHealth) =
 
 private val RELEVANT_STATES = setOf(STATE_ACTIVE, STATE_UNREACHABLE)
 private fun containsRelevantStateTag(entry: Map.Entry<String, RoutingObjectRecord>) =
-        entry.value.tags.valueOf(stateTag) in RELEVANT_STATES
+        stateTag.find(entry.value.tags) in RELEVANT_STATES
 
