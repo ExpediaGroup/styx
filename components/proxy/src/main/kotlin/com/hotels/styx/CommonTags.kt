@@ -38,6 +38,10 @@ sealed class CommonValueTag<T>(
     fun find(tags: Set<String>) = tags.firstOrNull { this.match(it) }
             ?.let { valuePart(it) }
             ?.let { this.decode(it) }
+
+    fun remove(tags: Set<String>) = tags
+            .filterNot { this.match(it) }
+            .toSet()
 }
 
 

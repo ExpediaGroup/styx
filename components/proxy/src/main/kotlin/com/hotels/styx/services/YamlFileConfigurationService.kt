@@ -38,6 +38,8 @@ import com.hotels.styx.services.OriginsConfigConverter.Companion.deserialiseOrig
 import com.hotels.styx.sourceTag
 import com.hotels.styx.valueOf
 import org.slf4j.LoggerFactory
+import java.io.PrintWriter
+import java.io.StringWriter
 import java.lang.RuntimeException
 import java.nio.charset.StandardCharsets.UTF_8
 import java.time.Duration
@@ -185,6 +187,15 @@ internal class YamlFileConfigurationService(
                 if (previous == null || changed(new.config, previous.config)) {
                     new.styxService.start()
                     previous?.styxService?.stop()
+                            ?.whenComplete({ void, throwable ->
+                                if (throwable != null) {
+                                    val stack = StringWriter().let {
+                                        throwable.printStackTrace(PrintWriter(it))
+                                        it.toString()
+                                    }
+                                    LOGGER.warn("Service failed to terminate cleanly. cause=$throwable stack=$stack")
+                                }
+                            })
                     new
                 } else {
                     // No need to shout down the new one. It has yet been started.

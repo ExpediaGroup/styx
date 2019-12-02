@@ -68,7 +68,7 @@ internal class HealthCheckMonitoringService(
 
         internal val EXECUTOR = ScheduledThreadPoolExecutor(2)
 
-        private val LOGGER = LoggerFactory.getLogger(HealthCheckMonitoringService::class.java)
+        internal val LOGGER = LoggerFactory.getLogger(HealthCheckMonitoringService::class.java)
     }
 
     private val probe = urlProbe(HttpRequest.get(urlPath).build(), Duration.ofMillis(1000))
@@ -76,7 +76,7 @@ internal class HealthCheckMonitoringService(
     private val futureRef: AtomicReference<ScheduledFuture<*>> = AtomicReference()
 
     override fun startService() = CompletableFuture.runAsync {
-        LOGGER.info("started - {} - {}", period.toMillis(), period.toMillis())
+        LOGGER.info("started service for {} - {} - {}", arrayOf(application, period.toMillis(), period.toMillis()))
         futureRef.set(executor.scheduleAtFixedRate(
                 { runChecks(application, objectStore) },
                 period.toMillis(),
@@ -85,12 +85,32 @@ internal class HealthCheckMonitoringService(
     }
 
     override fun stopService() = CompletableFuture.runAsync {
-        LOGGER.info("stopped")
+        LOGGER.info("stopped service for {}", application)
 
         objectStore.entrySet()
                 .filter(::containsRelevantStateTag)
-                .forEach { (name, _) ->
-                    markObject(objectStore, name, ObjectActive(0, false))
+                .forEach { (name, record) ->
+                    objectStore.get(name).ifPresent {
+                        try {
+                            objectStore.compute(name) { previous ->
+                                if (previous == null) throw ObjectDisappearedException()
+
+                                val newTags = record.tags
+                                        .let { healthCheckTag.remove(it) }
+                                        .let { stateTag.remove(it) }
+                                        .plus(stateTag(STATE_ACTIVE))
+
+                                if (previous.tags != newTags)
+                                    it.copy(tags = newTags)
+                                else
+                                    previous
+                            }
+                        } catch (e: ObjectDisappearedException) {
+                            // Object disappeared between the ifPresent check and the compute, but we don't really mind.
+                            // We just want to exit the compute, to avoid re-creating it.
+                            // (The ifPresent is not strictly required, but a pre-emptive check is preferred to an exception)
+                        }
+                    }
                 }
 
         futureRef.get().cancel(false)
@@ -203,12 +223,12 @@ private fun markObject(db: StyxObjectStore<RoutingObjectRecord>, name: String, n
 }
 
 internal fun reTag(tags: Set<String>, newStatus: ObjectHealth) =
-    tags.asSequence()
-            .filterNot { it.isA(stateTag) || it.isA(healthCheckTag) }
-            .plus(stateTag(newStatus.state()))
-            .plus(healthCheckTag(newStatus.health()!!))
-            .filterNotNull()
-            .toSet()
+        tags.asSequence()
+                .filterNot { it.isA(stateTag) || it.isA(healthCheckTag) }
+                .plus(stateTag(newStatus.state()))
+                .plus(healthCheckTag(newStatus.health()!!))
+                .filterNotNull()
+                .toSet()
 
 private val RELEVANT_STATES = setOf(STATE_ACTIVE, STATE_UNREACHABLE)
 private fun containsRelevantStateTag(entry: Map.Entry<String, RoutingObjectRecord>) =
