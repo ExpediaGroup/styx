@@ -56,6 +56,7 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
     private final AtomicInteger terminatedConnections = new AtomicInteger();
     private final AtomicInteger connectionFailures = new AtomicInteger();
     private final AtomicInteger connectionsInEstablishment = new AtomicInteger();
+    private volatile boolean active;
 
 
     public SimpleConnectionPool(Origin origin, ConnectionPoolSettings poolSettings, Connection.Factory connectionFactory) {
@@ -65,6 +66,7 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
         this.connectionFactory = requireNonNull(connectionFactory);
         this.availableConnections = new ConcurrentLinkedDeque<>();
         this.waitingSubscribers = new ConcurrentLinkedDeque<>();
+        this.active = true;
     }
 
     public Origin getOrigin() {
@@ -156,9 +158,13 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
     }
 
     public boolean returnConnection(Connection connection) {
-        borrowedCount.decrementAndGet();
-        if (connection.isConnected()) {
-            queueNewConnection(connection);
+        if (!active) {
+            connection.close();
+        } else {
+            borrowedCount.decrementAndGet();
+            if (connection.isConnected()) {
+                queueNewConnection(connection);
+            }
         }
         return false;
     }
@@ -193,7 +199,11 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
 
     @Override
     public void close() {
-        availableConnections.forEach(Connection::close);
+        active = false;
+        Connection con;
+        while ((con = availableConnections.poll()) != null) {
+            con.close();
+        }
     }
 
     public ConnectionPool.Stats stats() {
