@@ -42,7 +42,9 @@ import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defau
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -920,5 +922,58 @@ public class SimpleConnectionPoolTest {
                 .expectNext(connection3)
                 .verifyComplete();
     }
+
+    @Test
+    public void errorWhenBrrowingFromClosedPool() {
+
+        SimpleConnectionPool pool = new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), connectionFactory);
+        pool.close();
+        StepVerifier.create(pool.borrowConnection())
+                .expectError(IllegalStateException.class)
+                .verify();
+        assertEquals(pool.stats().connectionAttempts(), 0);
+        assertEquals(pool.stats().busyConnectionCount(), 0);
+        assertEquals(pool.stats().availableConnectionCount(), 0);
+        assertEquals(pool.stats().pendingConnectionCount(), 0);
+    }
+
+    @Test
+    public void justClosesConnectionWhenReturningToClosedPool() {
+        when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class))).thenReturn(Mono.just(connection1));
+        SimpleConnectionPool pool = new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), connectionFactory);
+
+        StepVerifier.create(pool.borrowConnection())
+                .expectNext(connection1)
+                .verifyComplete();
+        assertEquals(pool.stats().connectionAttempts(), 1);
+        assertEquals(pool.stats().busyConnectionCount(), 1);
+
+        pool.close();
+        pool.returnConnection(connection1);
+        assertEquals(pool.stats().connectionAttempts(), 1);
+        assertEquals(pool.stats().busyConnectionCount(), 1);
+        assertEquals(pool.stats().availableConnectionCount(), 0);
+        assertEquals(pool.stats().pendingConnectionCount(), 0);
+    }
+
+    @Test
+    public void justClosesConnectionWhenClosingConnectionFromClosedPool() {
+        when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class))).thenReturn(Mono.just(connection1));
+        SimpleConnectionPool pool = new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), connectionFactory);
+
+        StepVerifier.create(pool.borrowConnection())
+                .expectNext(connection1)
+                .verifyComplete();
+        assertEquals(pool.stats().closedConnections(), 0);
+        assertEquals(pool.stats().busyConnectionCount(), 1);
+
+        pool.close();
+        pool.returnConnection(connection1);
+        assertEquals(pool.stats().closedConnections(), 0);
+        assertEquals(pool.stats().busyConnectionCount(), 1);
+    }
+
+
+
 
 }
