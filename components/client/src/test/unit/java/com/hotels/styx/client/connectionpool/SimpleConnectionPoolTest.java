@@ -923,7 +923,7 @@ public class SimpleConnectionPoolTest {
     }
 
     @Test
-    public void errorWhenBrrowingFromClosedPool() {
+    public void emitsExceptionWhenBrrowingFromClosedPool() {
 
         SimpleConnectionPool pool = new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), connectionFactory);
         pool.close();
@@ -988,7 +988,32 @@ public class SimpleConnectionPoolTest {
         assertEquals(0, pool.stats().busyConnectionCount());
     }
 
+    @Test
+    public void purgesTerminatedConnectionsForClosedPools() {
+        when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
+                .thenReturn(Mono.just(connection1));
 
+        // Create a new connection
+        SimpleConnectionPool pool = new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), connectionFactory);
+
+        StepVerifier.create(pool.borrowConnection())
+                .expectNext(connection1)
+                 .verifyComplete();
+        //Close the pool
+        pool.close();
+        //Close and return the connection
+        pool.connectionClosed(connection1);
+        when(connection1.isConnected()).thenReturn(false);
+        pool.returnConnection(connection1);
+
+        assertEquals(pool.stats().connectionAttempts(), 1);
+        assertEquals(pool.stats().pendingConnectionCount(), 0);
+        assertEquals(pool.stats().busyConnectionCount(), 0);
+        assertEquals(pool.stats().availableConnectionCount(), 0);
+
+        assertEquals(pool.stats().terminatedConnections(), 1);
+        assertEquals(pool.stats().closedConnections(), 0);
+    }
 
 
 }
