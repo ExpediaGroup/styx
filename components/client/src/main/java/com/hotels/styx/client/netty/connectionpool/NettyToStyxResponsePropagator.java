@@ -33,11 +33,12 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.timeout.IdleStateEvent;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
+import reactor.core.publisher.BaseSubscriber;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
-import rx.Observable;
-import rx.Producer;
-import rx.Subscriber;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -51,7 +52,6 @@ import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.StreamSupport.stream;
 import static org.slf4j.LoggerFactory.getLogger;
-import static rx.RxReactiveStreams.toPublisher;
 
 /**
  * A netty channel handler that reads from a channel and pass the message to a {@link Subscriber}.
@@ -89,8 +89,7 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        ensureContentProducerIsCreated(ctx);
-        contentProducer.ifPresent(producer -> producer.channelException(toStyxException(cause)));
+        getContentProducer(ctx).channelException(toStyxException(cause));
     }
 
     private RuntimeException toStyxException(Throwable cause) {
@@ -103,10 +102,8 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
-        ensureContentProducerIsCreated(ctx);
-
         TransportLostException cause = new TransportLostException(ctx.channel().remoteAddress(), origin);
-        contentProducer.ifPresent(producer -> producer.channelInactive(cause));
+        getContentProducer(ctx).channelInactive(cause);
     }
 
     private void scheduleResourcesTearDown(ChannelHandlerContext ctx) {
@@ -118,7 +115,7 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
-        ensureContentProducerIsCreated(ctx);
+        FlowControllingHttpContentProducer producer = getContentProducer(ctx);
 
         if (msg instanceof io.netty.handler.codec.http.HttpResponse) {
             io.netty.handler.codec.http.HttpResponse nettyResponse = (io.netty.handler.codec.http.HttpResponse) msg;
@@ -133,28 +130,29 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
             // Can be started with flow controlling disabled
             EventLoop eventLoop = ctx.channel().eventLoop();
 
-            Observable<ByteBuf> contentObservable = Observable
-                    .create(new InitializeNettyContentProducerOnSubscribe(eventLoop, this.contentProducer.get()))
-                    .doOnUnsubscribe(() -> {
-                        eventLoop.submit(() -> this.contentProducer.ifPresent(FlowControllingHttpContentProducer::unsubscribe));
-                    });
+            ResponseBodyChunkSubscriber responseBodySubscriber = new ResponseBodyChunkSubscriber(eventLoop, producer);
+            Flux<ByteBuf> contentFlux = Flux.<ByteBuf>create(
+                    sink -> {
+                        sink.onRequest(producer::request);
+                    })
+                    .doOnSubscribe(responseBodySubscriber::onSubscribe);
 
             if ("close".equalsIgnoreCase(nettyResponse.headers().get(CONNECTION))) {
                 toBeClosed = true;
             }
 
-            LiveHttpResponse response = toStyxResponse(nettyResponse, contentObservable, origin);
+            LiveHttpResponse response = toStyxResponse(nettyResponse, contentFlux, origin);
             this.sink.next(response);
         }
         if (msg instanceof HttpContent) {
             ByteBuf content = ((ByteBufHolder) msg).content();
             if (content.isReadable()) {
-                contentProducer.ifPresent(producer -> producer.newChunk(retain(content)));
+                producer.newChunk(retain(content));
             }
             if (msg instanceof LastHttpContent) {
                 // Note: Netty may send a LastHttpContent as a response to TCP connection close.
                 // In this case channelReadComplete event will _not_ follow the LastHttpContent.
-                contentProducer.ifPresent(FlowControllingHttpContentProducer::lastHttpContent);
+                producer.lastHttpContent();
                 if (toBeClosed) {
                     ctx.channel().close();
                 }
@@ -164,26 +162,27 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
 
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-        ensureContentProducerIsCreated(ctx);
+        FlowControllingHttpContentProducer producer = getContentProducer(ctx);
 
         if (evt instanceof IdleStateEvent) {
-            contentProducer.ifPresent(producer -> producer.channelInactive(
+            producer.channelInactive(
                     new ResponseTimeoutException(
                             origin,
                             "idleStateEvent",
                             producer.receivedBytes(),
                             producer.receivedChunks(),
                             producer.emittedBytes(),
-                            producer.emittedChunks())));
+                            producer.emittedChunks()));
         } else {
             super.userEventTriggered(ctx, evt);
         }
     }
 
-    private void ensureContentProducerIsCreated(ChannelHandlerContext ctx) {
+    private FlowControllingHttpContentProducer getContentProducer(ChannelHandlerContext ctx) {
         if (!this.contentProducer.isPresent()) {
             this.contentProducer = Optional.of(createProducer(ctx, request));
         }
+        return this.contentProducer.get();
     }
 
     private FlowControllingHttpContentProducer createProducer(ChannelHandlerContext ctx, LiveHttpRequest request) {
@@ -224,45 +223,34 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
         return responseBuilder;
     }
 
-    private static LiveHttpResponse toStyxResponse(io.netty.handler.codec.http.HttpResponse nettyResponse, Observable<ByteBuf> contentObservable, Origin origin) {
+    private static LiveHttpResponse toStyxResponse(io.netty.handler.codec.http.HttpResponse nettyResponse, Flux<ByteBuf> contentFlux, Origin origin) {
         try {
             return toStyxResponse(nettyResponse)
-                    .body(new ByteStream(toPublisher(contentObservable.map(Buffers::fromByteBuf))))
+                    .body(new ByteStream(contentFlux.map(Buffers::fromByteBuf)))
                     .build();
         } catch (IllegalArgumentException e) {
             throw new BadHttpResponseException(origin, e);
         }
     }
 
-    private static class InitializeNettyContentProducerOnSubscribe implements Observable.OnSubscribe<ByteBuf> {
-        private final EventLoop eventLoop;
-        private final FlowControllingHttpContentProducer producer;
+    private static final class ResponseBodyChunkSubscriber extends BaseSubscriber<ByteBuf> {
 
-        InitializeNettyContentProducerOnSubscribe(EventLoop eventLoop, FlowControllingHttpContentProducer producer) {
+        private final EventLoop eventLoop;
+        private final FlowControllingHttpContentProducer contentProducer;
+
+        public ResponseBodyChunkSubscriber(EventLoop eventLoop, FlowControllingHttpContentProducer contentProducer) {
             this.eventLoop = eventLoop;
-            this.producer = producer;
+            this.contentProducer = contentProducer;
         }
 
         @Override
-        public void call(Subscriber<? super ByteBuf> subscriber) {
-            ResponseContentProducer responseContentProducer = new ResponseContentProducer(eventLoop, this.producer);
-            subscriber.setProducer(responseContentProducer);
-            this.eventLoop.submit(() -> producer.onSubscribed(subscriber));
-        }
-    }
-
-    private static class ResponseContentProducer implements Producer {
-        private final EventLoop eventLoop;
-        private final FlowControllingHttpContentProducer producer;
-
-        ResponseContentProducer(EventLoop eventLoop, FlowControllingHttpContentProducer producer) {
-            this.eventLoop = eventLoop;
-            this.producer = producer;
+        public void hookOnSubscribe(Subscription subscription) {
+            eventLoop.submit(() -> contentProducer.onSubscribed(this));
         }
 
         @Override
-        public void request(long n) {
-            eventLoop.submit(() -> producer.request(n));
+        public void hookOnCancel() {
+            eventLoop.submit(this.contentProducer::unsubscribe);
         }
     }
 }
