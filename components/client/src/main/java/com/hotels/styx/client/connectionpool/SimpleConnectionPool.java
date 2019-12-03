@@ -162,23 +162,26 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
     }
 
     public boolean returnConnection(Connection connection) {
-        if (active) {
-            borrowedCount.decrementAndGet();
-            if (connection.isConnected()) {
+        borrowedCount.decrementAndGet();
+        if (connection.isConnected()) {
+            if (active) {
                 queueNewConnection(connection);
+            } else {
+                doCloseConnection(connection);
             }
-        } else {
-            connection.close();
         }
         return false;
     }
 
-    public boolean closeConnection(Connection connection) {
+    private void doCloseConnection(Connection connection) {
         connection.close();
-        if (active) {
-            borrowedCount.decrementAndGet();
-            closedConnections.incrementAndGet();
+        closedConnections.incrementAndGet();
+    }
 
+    public boolean closeConnection(Connection connection) {
+        borrowedCount.decrementAndGet();
+        doCloseConnection(connection);
+        if (active) {
             newConnection();
         }
         return true;
@@ -199,10 +202,8 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
 
     @Override
     public void connectionClosed(Connection connection) {
-        if (active) {
-            terminatedConnections.incrementAndGet();
-            availableConnections.remove(connection);
-        }
+        terminatedConnections.incrementAndGet();
+        availableConnections.remove(connection);
     }
 
     @Override
@@ -210,7 +211,10 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
         active = false;
         Connection con;
         while ((con = availableConnections.poll()) != null) {
-            con.close();
+            borrowedCount.decrementAndGet();
+            if (con.isConnected()) {
+                doCloseConnection(con);
+            }
         }
     }
 
