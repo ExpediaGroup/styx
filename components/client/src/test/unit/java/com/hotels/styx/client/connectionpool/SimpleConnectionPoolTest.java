@@ -419,12 +419,8 @@ public class SimpleConnectionPoolTest {
                 .thenReturn(Mono.just(connection3))
                 .thenReturn(Mono.just(connection4));
 
-        ConnectionPoolSettings poolSettings = new ConnectionPoolSettings.Builder()
-                .maxConnectionsPerHost(2)
-                .maxPendingConnectionsPerHost(2)
-                .build();
 
-        SimpleConnectionPool pool = new SimpleConnectionPool(origin, poolSettings, connectionFactory);
+        SimpleConnectionPool pool = new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), connectionFactory);
 
         StepVerifier.create(pool.borrowConnection())
                 .expectNext(connection1)
@@ -445,12 +441,7 @@ public class SimpleConnectionPoolTest {
                 .thenReturn(Mono.just(connection3))
                 .thenReturn(Mono.just(connection4));
 
-        ConnectionPoolSettings poolSettings = new ConnectionPoolSettings.Builder()
-                .maxConnectionsPerHost(2)
-                .maxPendingConnectionsPerHost(2)
-                .build();
-
-        SimpleConnectionPool pool = new SimpleConnectionPool(origin, poolSettings, connectionFactory);
+        SimpleConnectionPool pool = new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), connectionFactory);
 
         // Saturate pool:
         StepVerifier.create(pool.borrowConnection())
@@ -538,12 +529,8 @@ public class SimpleConnectionPoolTest {
                 .thenReturn(Mono.just(connection3))
                 .thenReturn(Mono.just(connection4));
 
-        ConnectionPoolSettings poolSettings = new ConnectionPoolSettings.Builder()
-                .maxConnectionsPerHost(2)
-                .maxPendingConnectionsPerHost(2)
-                .build();
 
-        SimpleConnectionPool pool = new SimpleConnectionPool(origin, poolSettings, connectionFactory);
+        SimpleConnectionPool pool = new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), connectionFactory);
 
         // Create a new connection
         StepVerifier.create(pool.borrowConnection())
@@ -592,12 +579,8 @@ public class SimpleConnectionPoolTest {
                 .thenReturn(Mono.error(new OriginUnreachableException(origin, new RuntimeException())))
                 .thenReturn(Mono.just(connection4));
 
-        ConnectionPoolSettings poolSettings = new ConnectionPoolSettings.Builder()
-                .maxConnectionsPerHost(2)
-                .maxPendingConnectionsPerHost(2)
-                .build();
 
-        SimpleConnectionPool pool = new SimpleConnectionPool(origin, poolSettings, connectionFactory);
+        SimpleConnectionPool pool = new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), connectionFactory);
 
         StepVerifier.create(pool.borrowConnection())
                 .expectNext(connection4)
@@ -612,12 +595,7 @@ public class SimpleConnectionPoolTest {
                 .thenReturn(Mono.error(new OriginUnreachableException(origin, new RuntimeException())))
                 .thenReturn(Mono.just(connection4));
 
-        ConnectionPoolSettings poolSettings = new ConnectionPoolSettings.Builder()
-                .maxConnectionsPerHost(2)
-                .maxPendingConnectionsPerHost(2)
-                .build();
-
-        SimpleConnectionPool pool = new SimpleConnectionPool(origin, poolSettings, connectionFactory);
+        SimpleConnectionPool pool = new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), connectionFactory);
 
         StepVerifier.create(pool.borrowConnection())
                 .expectNext(connection1)
@@ -644,12 +622,7 @@ public class SimpleConnectionPoolTest {
                 .thenReturn(Mono.error(new OriginUnreachableException(origin, new RuntimeException())))
                 .thenReturn(Mono.error(new OriginUnreachableException(origin, new RuntimeException())));
 
-        ConnectionPoolSettings poolSettings = new ConnectionPoolSettings.Builder()
-                .maxConnectionsPerHost(2)
-                .maxPendingConnectionsPerHost(2)
-                .build();
-
-        SimpleConnectionPool pool = new SimpleConnectionPool(origin, poolSettings, connectionFactory);
+        SimpleConnectionPool pool = new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), connectionFactory);
 
         Mono.from(pool.borrowConnection()).subscribe();
 
@@ -668,12 +641,8 @@ public class SimpleConnectionPoolTest {
                 .thenReturn(Mono.error(new OriginUnreachableException(origin, new RuntimeException())))
                 .thenReturn(Mono.error(new OriginUnreachableException(origin, new RuntimeException())));
 
-        ConnectionPoolSettings poolSettings = new ConnectionPoolSettings.Builder()
-                .maxConnectionsPerHost(2)
-                .maxPendingConnectionsPerHost(2)
-                .build();
 
-        SimpleConnectionPool pool = new SimpleConnectionPool(origin, poolSettings, connectionFactory);
+        SimpleConnectionPool pool = new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), connectionFactory);
 
         StepVerifier.create(pool.borrowConnection())
                 .expectNext(connection1)
@@ -923,6 +892,25 @@ public class SimpleConnectionPoolTest {
     }
 
     @Test
+    public void availableConnectionsAreClosedAsPartOfPoolClosure() {
+        when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
+                .thenReturn(Mono.just(connection1));
+
+        SimpleConnectionPool pool = new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), connectionFactory);
+
+        StepVerifier.create(pool.borrowConnection())
+                .consumeNextWith(pool::returnConnection)
+                .verifyComplete();
+
+        assertEquals(1, pool.stats().availableConnectionCount());
+        pool.close();
+
+        verify(connection1).close();
+        assertEquals(0, pool.stats().availableConnectionCount());
+        assertEquals(0, pool.stats().busyConnectionCount());
+    }
+
+    @Test
     public void emitsExceptionWhenBrrowingFromClosedPool() {
 
         SimpleConnectionPool pool = new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), connectionFactory);
@@ -961,17 +949,13 @@ public class SimpleConnectionPoolTest {
     }
 
     @Test
-    public void closesConnectionAndUpdatesMetricsWhenClosingConnectionFromClosedPool() {
+    public void closedPoolDoesNotOpenNewConnectionWhenConnectionIsClosed() {
 
         when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
                 .thenReturn(Mono.just(connection1));
 
-        ConnectionPoolSettings poolSettings = new ConnectionPoolSettings.Builder()
-                .maxConnectionsPerHost(2)
-                .maxPendingConnectionsPerHost(2)
-                .build();
 
-        SimpleConnectionPool pool = new SimpleConnectionPool(origin, poolSettings, connectionFactory);
+        SimpleConnectionPool pool = new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), connectionFactory);
 
         StepVerifier.create(pool.borrowConnection())
                 .expectNext(connection1)

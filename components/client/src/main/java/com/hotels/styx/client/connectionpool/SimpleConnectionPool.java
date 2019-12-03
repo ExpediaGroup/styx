@@ -211,7 +211,6 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
         active = false;
         Connection con;
         while ((con = availableConnections.poll()) != null) {
-            borrowedCount.decrementAndGet();
             if (con.isConnected()) {
                 doCloseConnection(con);
             }
