@@ -45,7 +45,6 @@ class ObjectTagsTest : BehaviorSpec({
         }
         `when`("the label is blank") {
             then("null is returned") {
-                // Will now throw:
                 healthCheckTag(Pair("", 7)) shouldBe null
             }
         }

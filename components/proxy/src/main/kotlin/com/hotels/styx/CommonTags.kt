@@ -75,8 +75,7 @@ sealed class CommonValueTag<T>(
      * @return A decoded value if tag was found. Otherwise return null.
      */
     fun find(tags: Set<String>) = tags.firstOrNull { this.match(it) }
-            ?.let { valuePart(it) }
-            ?.let { this.decode(it) }
+            ?.let { valueOf(it) }
 
     /**
      * Removes all instances of this tag from a set of tag strings.

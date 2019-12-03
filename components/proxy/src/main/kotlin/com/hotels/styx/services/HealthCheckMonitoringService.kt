@@ -95,7 +95,7 @@ internal class HealthCheckMonitoringService(
                             objectStore.compute(name) { previous ->
                                 if (previous == null) throw ObjectDisappearedException()
 
-                                val newTags = record.tags
+                                val newTags = previous.tags
                                         .let { healthCheckTag.remove(it) }
                                         .let { stateTag.remove(it) }
                                         .plus(stateTag(STATE_ACTIVE))

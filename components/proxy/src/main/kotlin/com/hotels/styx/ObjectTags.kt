@@ -50,7 +50,6 @@ val stateTag = SafeValueTag(
  * healthCheck=on;probes-OK:2
  * healthCheck=on;probes-FAIL:1
  */
-private const val HEALTHCHECK = "healthCheck"
 const val HEALTHCHECK_PASSING = "probes-OK"
 const val HEALTHCHECK_FAILING = "probes-FAIL"
 const val HEALTHCHECK_ON = "on"
