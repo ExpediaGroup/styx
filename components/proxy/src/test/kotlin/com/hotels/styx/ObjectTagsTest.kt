@@ -19,7 +19,7 @@ import io.kotlintest.matchers.types.shouldBeNull
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.BehaviorSpec
 
-class ObjectTagsKtTest : BehaviorSpec({
+class ObjectTagsTest : BehaviorSpec({
     given("An lbGroup tag matcher") {
         `when`("tag matches") {
             then("returns tag value") {

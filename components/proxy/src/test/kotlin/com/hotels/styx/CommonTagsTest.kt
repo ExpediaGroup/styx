@@ -16,10 +16,11 @@
 package com.hotels.styx
 
 import io.kotlintest.matchers.collections.shouldBeEmpty
+import io.kotlintest.matchers.types.shouldBeNull
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FunSpec
 
-class CommonValueTagTest : FunSpec({
+class CommonTagsTest : FunSpec({
 
     val intTag = NullableValueTag(
             "intTag",
@@ -29,6 +30,41 @@ class CommonValueTagTest : FunSpec({
                         .getOrNull()
             })
 
+    context("invoke() method") {
+        test("Creates a new tag string from a valid input") {
+            intTag(5) shouldBe "intTag=5"
+            intTag(-55) shouldBe "intTag=-55"
+        }
+    }
+
+    context("valueOf() method") {
+        test("Decodes a value from a valid tag string") {
+            intTag.valueOf("intTag=99") shouldBe 99
+            intTag.valueOf("intTag=-99") shouldBe -99
+        }
+
+        test("Returns null for non-conforming tag strings") {
+            intTag.valueOf("").shouldBeNull()
+            intTag.valueOf("intT").shouldBeNull()
+            intTag.valueOf("intTag").shouldBeNull()
+            intTag.valueOf("intTag=").shouldBeNull()
+            intTag.valueOf("intTag=abc").shouldBeNull()
+            intTag.valueOf("=abc").shouldBeNull()
+            intTag.valueOf("=").shouldBeNull()
+        }
+    }
+
+    context("find() method") {
+        test("Returns the first found tag value") {
+            intTag.find(setOf("intTag=99")) shouldBe 99
+            intTag.find(setOf("abc", "blah=", "foo=bar", "intTag=99", "otherTag=")) shouldBe 99
+        }
+
+        test("Returns null when it encounters non-conforming tag") {
+            // Returns null despite a correctly formatted tag is present
+            intTag.find(setOf("intTag=", "intTag=99")).shouldBeNull()
+        }
+    }
 
     context("remove() method") {
         test("Removes a tag") {

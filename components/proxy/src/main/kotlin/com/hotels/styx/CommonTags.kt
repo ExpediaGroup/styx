@@ -120,6 +120,3 @@ class SafeValueTag<T>(
                 "$name=$it"
             }
 }
-
-fun <T> String.match(tag: CommonValueTag<T>) = tag.valuePart(this)
-        ?.let { tag.decode(it) }
