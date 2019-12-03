@@ -75,25 +75,29 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
 
     @Override
     public Publisher<Connection> borrowConnection() {
-        return Mono.<Connection>create(sink -> {
-            Connection connection = dequeue();
-            if (connection != null) {
-                attemptBorrowConnection(sink, connection);
-            } else {
-                if (waitingSubscribers.size() < poolSettings.maxPendingConnectionsPerHost()) {
-                    this.waitingSubscribers.add(sink);
-                    sink.onDispose(() -> waitingSubscribers.remove(sink));
-                    newConnection();
+        if (active) {
+            return Mono.<Connection>create(sink -> {
+                Connection connection = dequeue();
+                if (connection != null) {
+                    attemptBorrowConnection(sink, connection);
                 } else {
-                    sink.error(new MaxPendingConnectionsExceededException(
-                            origin,
-                            poolSettings.maxPendingConnectionsPerHost(),
-                            poolSettings.maxPendingConnectionsPerHost()));
+                    if (waitingSubscribers.size() < poolSettings.maxPendingConnectionsPerHost()) {
+                        this.waitingSubscribers.add(sink);
+                        sink.onDispose(() -> waitingSubscribers.remove(sink));
+                        newConnection();
+                    } else {
+                        sink.error(new MaxPendingConnectionsExceededException(
+                                origin,
+                                poolSettings.maxPendingConnectionsPerHost(),
+                                poolSettings.maxPendingConnectionsPerHost()));
+                    }
                 }
-            }
-        }).timeout(
-                Duration.ofMillis(poolSettings.pendingConnectionTimeoutMillis()),
-                Mono.error(() -> new MaxPendingConnectionTimeoutException(origin, connectionSettings.connectTimeoutMillis())));
+            }).timeout(
+                    Duration.ofMillis(poolSettings.pendingConnectionTimeoutMillis()),
+                    Mono.error(() -> new MaxPendingConnectionTimeoutException(origin, connectionSettings.connectTimeoutMillis())));
+        } else {
+            throw new IllegalStateException("Pool is closed");
+        }
     }
 
     private void newConnection() {
@@ -158,23 +162,25 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
     }
 
     public boolean returnConnection(Connection connection) {
-        if (!active) {
-            connection.close();
-        } else {
+        if (active) {
             borrowedCount.decrementAndGet();
             if (connection.isConnected()) {
                 queueNewConnection(connection);
             }
+        } else {
+            connection.close();
         }
         return false;
     }
 
     public boolean closeConnection(Connection connection) {
         connection.close();
-        borrowedCount.decrementAndGet();
-        closedConnections.incrementAndGet();
+        if (active) {
+            borrowedCount.decrementAndGet();
+            closedConnections.incrementAndGet();
 
-        newConnection();
+            newConnection();
+        }
         return true;
     }
 
@@ -193,8 +199,10 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
 
     @Override
     public void connectionClosed(Connection connection) {
-        terminatedConnections.incrementAndGet();
-        availableConnections.remove(connection);
+        if (active) {
+            terminatedConnections.incrementAndGet();
+            availableConnections.remove(connection);
+        }
     }
 
     @Override
