@@ -26,14 +26,10 @@ import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 
-import java.util.List;
-
 import static com.google.common.base.Objects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.Lists.newCopyOnWriteArrayList;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.server.netty.eventloop.ServerEventLoopFactories.memoize;
-import static java.util.Arrays.asList;
 
 /**
  * A builder of {@link NettyServer} instances.
@@ -46,7 +42,6 @@ public final class NettyServerBuilder {
     private MetricRegistry metricRegistry;
     private String name = "styx";
     private ServerConnector httpConnector;
-    private final List<Runnable> startupActions = newCopyOnWriteArrayList();
     private HttpHandler handler = (request, context) -> Eventual.of(LiveHttpResponse.response(NOT_FOUND).build());
 
     public static NettyServerBuilder newBuilder() {
@@ -105,15 +100,6 @@ public final class NettyServerBuilder {
 
     ServerConnector protocolConnector() {
         return httpConnector;
-    }
-
-    public NettyServerBuilder doOnStartUp(Runnable... startupActions) {
-        this.startupActions.addAll(asList(startupActions));
-        return this;
-    }
-
-    Iterable<Runnable> startupActions() {
-        return startupActions;
     }
 
     public HttpServer build() {

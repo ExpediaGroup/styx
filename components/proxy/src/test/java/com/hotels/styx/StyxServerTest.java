@@ -32,10 +32,8 @@ import com.hotels.styx.infrastructure.RegistryServiceAdapter;
 import com.hotels.styx.proxy.ProxyServerConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpConnectorConfig;
-import com.hotels.styx.startup.ProxyServerSetUp;
 import com.hotels.styx.startup.StyxServerComponents;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
-import io.netty.util.ResourceLeakDetector;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -74,7 +72,7 @@ public class StyxServerTest {
     @BeforeEach
     public void setUp() {
         log = new LoggingTestSupport(StyxServer.class);
-        pssLog = new LoggingTestSupport(ProxyServerSetUp.class);
+        pssLog = new LoggingTestSupport(StyxServer.class);
     }
 
     @AfterEach

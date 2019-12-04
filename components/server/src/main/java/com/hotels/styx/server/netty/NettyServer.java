@@ -62,7 +62,6 @@ final class NettyServer extends AbstractService implements HttpServer {
 
     private final ServerConnector protocolConnector;
 
-    private final Iterable<Runnable> startupActions;
     private final HttpHandler handler;
     private final ServerSocketBinder protocolSocketBinder;
 
@@ -78,8 +77,6 @@ final class NettyServer extends AbstractService implements HttpServer {
         this.protocolConnector = nettyServerBuilder.protocolConnector();
 
         this.protocolSocketBinder = new ServerSocketBinder(protocolConnector);
-
-        this.startupActions = nettyServerBuilder.startupActions();
     }
 
     @Override
@@ -94,15 +91,6 @@ final class NettyServer extends AbstractService implements HttpServer {
     @Override
     protected void doStart() {
         LOGGER.info("starting services");
-
-        for (Runnable action : startupActions) {
-            try {
-                action.run();
-            } catch (Exception e) {
-                notifyFailed(e);
-                return;
-            }
-        }
 
         httpHandler = NettyServer.this.handler;
 

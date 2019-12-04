@@ -43,9 +43,6 @@ public final class ProxyServerBuilder {
     private final CharSequence styxInfoHeaderName;
 
     private HttpHandler handler;
-    private Runnable onStartupAction = () -> {
-    };
-
     private ConnectorConfig connectorConfig;
 
     public ProxyServerBuilder(Environment environment) {
@@ -80,9 +77,6 @@ public final class ProxyServerBuilder {
                                 requestTracking)
                                 .create(connectorConfig))
                 .handler(handler)
-
-                // register health check - this is unnecessary in the routing object model
-                .doOnStartUp(onStartupAction)
                 .build();
 
         return builder;
@@ -94,11 +88,6 @@ public final class ProxyServerBuilder {
 
     public ProxyServerBuilder handler(HttpHandler handlerFactory) {
         this.handler = handlerFactory;
-        return this;
-    }
-
-    public ProxyServerBuilder onStartup(Runnable startupAction) {
-        this.onStartupAction = startupAction;
         return this;
     }
 

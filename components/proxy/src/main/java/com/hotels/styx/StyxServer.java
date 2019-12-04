@@ -29,9 +29,10 @@ import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.config.schema.SchemaValidationException;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
+import com.hotels.styx.proxy.ProxyServerBuilder;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
+import com.hotels.styx.server.ConnectorConfig;
 import com.hotels.styx.server.HttpServer;
-import com.hotels.styx.startup.ProxyServerSetUp;
 import com.hotels.styx.startup.StyxServerComponents;
 import io.netty.util.ResourceLeakDetector;
 import org.jetbrains.annotations.NotNull;
@@ -161,6 +162,13 @@ public final class StyxServer extends AbstractService {
         this(config, null);
     }
 
+    private static HttpServer httpServer(StyxServerComponents config, ConnectorConfig connectorConfig, HttpHandler styxDataPlane) {
+        return new ProxyServerBuilder(config.environment())
+                .handler(styxDataPlane)
+                .connectorConfig(connectorConfig)
+                .build();
+    }
+
     public StyxServer(StyxServerComponents components, Stopwatch stopwatch) {
         this.stopwatch = stopwatch;
 
@@ -174,30 +182,25 @@ public final class StyxServer extends AbstractService {
                 components.eventLoopGroup(),
                 components.nettySocketChannelClass()).create();
 
-        ProxyServerSetUp proxyServerSetUp = new ProxyServerSetUp(styxDataPlane);
-
         ArrayList<Service> services = new ArrayList<>();
 
         StyxConfig styxConfig = components.environment().configuration();
 
         httpServer = styxConfig.proxyServerConfig()
                 .httpConnectorConfig()
-                .map(it -> proxyServerSetUp.createProxyServer(components, it))
+                .map(it -> httpServer(components, it, styxDataPlane))
                 .orElse(null);
 
         httpsServer = styxConfig.proxyServerConfig()
                 .httpsConnectorConfig()
-                .map(it -> proxyServerSetUp.createProxyServer(components, it))
+                .map(it -> httpServer(components, it, styxDataPlane))
                 .orElse(null);
 
         adminServer = createAdminServer(components);
 
-        if (httpServer != null) {
-            services.add(httpServer);
-        }
-        if (httpsServer != null) {
-            services.add(httpsServer);
-        }
+        Optional.ofNullable(httpServer).ifPresent(services::add);
+        Optional.ofNullable(httpsServer).ifPresent(services::add);
+
         services.add(adminServer);
         services.add(toGuavaService(new AbstractStyxService("Plugins manager") {
             @Override
