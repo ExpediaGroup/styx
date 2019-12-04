@@ -16,6 +16,7 @@
 package com.hotels.styx.client.netty.connectionpool;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.Buffers;
 import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.LiveHttpRequest;
@@ -33,11 +34,10 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.timeout.IdleStateEvent;
+import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
-import reactor.core.publisher.BaseSubscriber;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 
 import java.util.Optional;
@@ -130,18 +130,13 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
             // Can be started with flow controlling disabled
             EventLoop eventLoop = ctx.channel().eventLoop();
 
-            ResponseBodyChunkSubscriber responseBodySubscriber = new ResponseBodyChunkSubscriber(eventLoop, producer);
-            Flux<ByteBuf> contentFlux = Flux.<ByteBuf>create(
-                    sink -> {
-                        sink.onRequest(producer::request);
-                    })
-                    .doOnSubscribe(responseBodySubscriber::hookOnSubscribe);
+            Publisher<Buffer> contentPublisher = new ContentPublisher(eventLoop, getContentProducer(ctx));
 
             if ("close".equalsIgnoreCase(nettyResponse.headers().get(CONNECTION))) {
                 toBeClosed = true;
             }
 
-            LiveHttpResponse response = toStyxResponse(nettyResponse, contentFlux, origin);
+            LiveHttpResponse response = toStyxResponse(nettyResponse, contentPublisher, origin);
             this.sink.next(response);
         }
         if (msg instanceof HttpContent) {
@@ -223,34 +218,81 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
         return responseBuilder;
     }
 
-    private static LiveHttpResponse toStyxResponse(io.netty.handler.codec.http.HttpResponse nettyResponse, Flux<ByteBuf> contentFlux, Origin origin) {
+    private static LiveHttpResponse toStyxResponse(io.netty.handler.codec.http.HttpResponse nettyResponse, Publisher<Buffer> contentPublisher, Origin origin) {
         try {
             return toStyxResponse(nettyResponse)
-                    .body(new ByteStream(contentFlux.map(Buffers::fromByteBuf)))
+                    .body(new ByteStream(contentPublisher))
                     .build();
         } catch (IllegalArgumentException e) {
             throw new BadHttpResponseException(origin, e);
         }
     }
 
-    private static final class ResponseBodyChunkSubscriber extends BaseSubscriber<ByteBuf> {
+    private static final class ResponseBodyChunkSubscription implements Subscription {
 
         private final EventLoop eventLoop;
         private final FlowControllingHttpContentProducer contentProducer;
 
-        public ResponseBodyChunkSubscriber(EventLoop eventLoop, FlowControllingHttpContentProducer contentProducer) {
+        public ResponseBodyChunkSubscription(EventLoop eventLoop, FlowControllingHttpContentProducer contentProducer) {
             this.eventLoop = eventLoop;
             this.contentProducer = contentProducer;
         }
 
         @Override
-        public void hookOnSubscribe(Subscription subscription) {
-            eventLoop.submit(() -> contentProducer.onSubscribed(this));
+        public void request(long n) {
+            eventLoop.submit(() -> contentProducer.request(n));
         }
 
         @Override
-        public void hookOnCancel() {
-            eventLoop.submit(this.contentProducer::unsubscribe);
+        public void cancel() {
+            eventLoop.submit(contentProducer::unsubscribe);
+        }
+    }
+
+    private static final class BufferSubscriber implements Subscriber<ByteBuf> {
+
+        private final Subscriber<? super Buffer> actual;
+
+        public BufferSubscriber(Subscriber<? super Buffer> actual) {
+            this.actual = actual;
+        }
+
+        @Override
+        public void onSubscribe(Subscription s) {
+            actual.onSubscribe(s);
+        }
+
+        @Override
+        public void onNext(ByteBuf byteBuf) {
+            actual.onNext(Buffers.fromByteBuf(byteBuf));
+        }
+
+        @Override
+        public void onError(Throwable t) {
+            actual.onError(t);
+        }
+
+        @Override
+        public void onComplete() {
+            actual.onComplete();
+        }
+    }
+
+    private static final class ContentPublisher implements Publisher<Buffer> {
+
+        private final EventLoop eventLoop;
+        private final FlowControllingHttpContentProducer contentProducer;
+
+        public ContentPublisher(EventLoop eventLoop, FlowControllingHttpContentProducer contentProducer) {
+            this.eventLoop = eventLoop;
+            this.contentProducer = contentProducer;
+        }
+
+        @Override
+        public void subscribe(Subscriber<? super Buffer> subscriber) {
+            BufferSubscriber bufferSubscriber = new BufferSubscriber(subscriber);
+            eventLoop.submit(() -> contentProducer.onSubscribed(bufferSubscriber));
+            subscriber.onSubscribe(new ResponseBodyChunkSubscription(eventLoop, contentProducer));
         }
     }
 }

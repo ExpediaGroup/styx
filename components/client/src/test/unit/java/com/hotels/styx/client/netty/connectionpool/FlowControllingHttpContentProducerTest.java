@@ -105,7 +105,7 @@ public class FlowControllingHttpContentProducerTest {
 
     /* ---- Buffering state tests ---- */
 
-
+/*
     @Test
     public void transitionFromBufferingToStreamingState() {
         // On Subscribe, transition from buffering to streaming state
@@ -120,7 +120,7 @@ public class FlowControllingHttpContentProducerTest {
         assertThat(producer.state(), is(STREAMING));
         assertThat(downstream.getOnNextEvents(), contains(copiedBuffer("aaa", UTF_8), copiedBuffer("bbb", UTF_8)));
     }
-
+*/
 
     @Test
     public void transitionFromBufferingToBufferingCompletedState() throws Exception {
@@ -136,7 +136,7 @@ public class FlowControllingHttpContentProducerTest {
         assertThat(downstream.getOnNextEvents(), is(emptyList()));
     }
 
-
+/*
     @Test
     public void handlesContentUnsubscriptionWhenStreaming() throws Exception {
         // On Subscribe, transition from buffering to streaming state
@@ -262,7 +262,6 @@ public class FlowControllingHttpContentProducerTest {
     }
 
 
-    /* ---- Streaming state tests ---- */
 
     @Test
     public void doesNotAllowDoubleSubscriptionInStreamingState() {
@@ -789,14 +788,6 @@ public class FlowControllingHttpContentProducerTest {
         assertThat(getCause(downstream), is(instanceOf(ResponseTimeoutException.class)));
     }
 
-
-
-    /*
-     *  1. subscribe
-     *  2. empty last newChunk (lastHttpContent)
-     *  3. newChunk
-     *  4. notifySubscriber
-     */
     @Test
     public void ignoresContentChunksAndContentEndEventsInCompletedState() throws Exception {
         setUpAndRequest(NO_BACKPRESSURE);
@@ -961,9 +952,6 @@ public class FlowControllingHttpContentProducerTest {
     }
 
 
-    /*
-     * Flow Control
-     */
 
     @Test
     public void requestN0EventInBufferingState() {
@@ -1093,7 +1081,7 @@ public class FlowControllingHttpContentProducerTest {
         producer.newChunk(contentChunk2);
         verify(askForMore, times(3)).run();
     }
-
+*/
 
 
     public <T> void assertException(Throwable cause, Class<T> klass, String message) {
