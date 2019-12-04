@@ -135,7 +135,7 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
                     sink -> {
                         sink.onRequest(producer::request);
                     })
-                    .doOnSubscribe(responseBodySubscriber::onSubscribe);
+                    .doOnSubscribe(responseBodySubscriber::hookOnSubscribe);
 
             if ("close".equalsIgnoreCase(nettyResponse.headers().get(CONNECTION))) {
                 toBeClosed = true;
