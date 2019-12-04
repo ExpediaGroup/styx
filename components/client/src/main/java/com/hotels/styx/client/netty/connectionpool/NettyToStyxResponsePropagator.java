@@ -228,27 +228,6 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
         }
     }
 
-    private static final class ResponseBodyChunkSubscription implements Subscription {
-
-        private final EventLoop eventLoop;
-        private final FlowControllingHttpContentProducer contentProducer;
-
-        public ResponseBodyChunkSubscription(EventLoop eventLoop, FlowControllingHttpContentProducer contentProducer) {
-            this.eventLoop = eventLoop;
-            this.contentProducer = contentProducer;
-        }
-
-        @Override
-        public void request(long n) {
-            eventLoop.submit(() -> contentProducer.request(n));
-        }
-
-        @Override
-        public void cancel() {
-            eventLoop.submit(contentProducer::unsubscribe);
-        }
-    }
-
     private static final class BufferSubscriber implements Subscriber<ByteBuf> {
 
         private final Subscriber<? super Buffer> actual;
@@ -292,7 +271,17 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
         public void subscribe(Subscriber<? super Buffer> subscriber) {
             BufferSubscriber bufferSubscriber = new BufferSubscriber(subscriber);
             eventLoop.submit(() -> contentProducer.onSubscribed(bufferSubscriber));
-            subscriber.onSubscribe(new ResponseBodyChunkSubscription(eventLoop, contentProducer));
+            subscriber.onSubscribe(new Subscription() {
+                @Override
+                public void request(long n) {
+                    eventLoop.submit(() -> contentProducer.request(n));
+                }
+
+                @Override
+                public void cancel() {
+                    eventLoop.submit(contentProducer::unsubscribe);
+                }
+            });
         }
     }
 }
