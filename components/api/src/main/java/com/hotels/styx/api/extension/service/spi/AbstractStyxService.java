@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import static com.hotels.styx.api.HttpHeaderValues.APPLICATION_JSON;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.CREATED;
+import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.FAILED;
 import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.RUNNING;
 import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.STARTING;
 import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.STOPPED;
@@ -91,7 +92,7 @@ public abstract class AbstractStyxService implements StyxService {
 
     private Function<Throwable, Void> failWithMessage(String message) {
         return cause -> {
-            status.set(StyxServiceStatus.FAILED);
+            status.set(FAILED);
             throw new ServiceFailureException(message, cause);
         };
     }

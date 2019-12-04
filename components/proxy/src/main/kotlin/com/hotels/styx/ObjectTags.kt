@@ -15,58 +15,63 @@
  */
 package com.hotels.styx
 
-private const val LBGROUP = "lbGroup"
-private val LBGROUP_REGEX = "$LBGROUP=(.+)".toRegex()
-fun lbGroupTag(name: String) = "lbGroup=$name"
-fun lbGroupTag(tags: Set<String>) = tags.firstOrNull(::isLbGroupTag)
-fun isLbGroupTag(tag: String) = LBGROUP_REGEX.matches(tag)
-fun lbGroupTagValue(tags: Set<String>) = lbGroupTagValue(lbGroupTag(tags)?:"")
-fun lbGroupTagValue(tag: String): String? = LBGROUP_REGEX.matchEntire(tag)
-        ?.groupValues
-        ?.get(1)
+/*
+ * TAG: lbGroup
+ */
+val lbGroupTag = SafeValueTag(
+        "lbGroup",
+        { it },
+        { it })
 
-fun sourceTag(creator: String) = "source=$creator"
-fun sourceTag(tags: Set<String>) = tags.firstOrNull { it.startsWith("source=") }
-fun sourceTagValue(tags: Set<String>) = sourceTag(tags)?.substring("source".length + 1)
+/*
+ * TAG: source
+ */
+val sourceTag = SafeValueTag(
+        "source",
+        { it },
+        { it })
 
-private const val STATE = "state"
+
+/*
+ * TAG: state
+ */
 const val STATE_ACTIVE = "active"
 const val STATE_UNREACHABLE = "unreachable"
 const val STATE_INACTIVE = "inactive"
-private val STATE_REGEX = "$STATE=(.+)".toRegex()
-fun stateTag(value: String) = "$STATE=$value"
-fun stateTag(tags: Set<String>) = tags.firstOrNull(::isStateTag)
-fun isStateTag(tag: String) = STATE_REGEX.matches(tag)
-fun stateTagValue(tags: Set<String>) = stateTagValue(stateTag(tags)?:"")
-fun stateTagValue(tag: String) = STATE_REGEX.matchEntire(tag)
-        ?.groupValues
-        ?.get(1)
 
-private const val HEALTHCHECK = "healthCheck"
+val stateTag = SafeValueTag(
+        "state",
+        { it },
+        { it })
+
+/*
+ * TAG: healthCheck
+ * healthCheck=on
+ * healthCheck=on;probes-OK:2
+ * healthCheck=on;probes-FAIL:1
+ */
 const val HEALTHCHECK_PASSING = "probes-OK"
 const val HEALTHCHECK_FAILING = "probes-FAIL"
 const val HEALTHCHECK_ON = "on"
+private val HEALTHCHECK_REGEX = "$HEALTHCHECK_ON(?:;(.+):([0-9]+))?".toRegex()
 
-// healthCheck=on
-// healthCheck=on;probes-OK:2
-// healthCheck=on;probes-FAIL:1
-private val HEALTHCHECK_REGEX = "$HEALTHCHECK=$HEALTHCHECK_ON(?:;(.+):([0-9]+))?".toRegex()
-fun healthCheckTag(value: Pair<String, Int>?) =
-        if (value != null && value.first.isNotBlank() && value.second > 0) {
-            "$HEALTHCHECK=$HEALTHCHECK_ON;${value.first}:${value.second}"
-        } else if (value != null && value.first.isNotBlank() && value.second == 0) {
-            "$HEALTHCHECK=$HEALTHCHECK_ON"
-        } else {
-            null
-        }
-fun healthCheckTag(tags: Set<String>) = tags.firstOrNull(::isHealthCheckTag)
-fun isHealthCheckTag(tag: String) = HEALTHCHECK_REGEX.matches(tag)
-fun healthCheckTagValue(tags: Set<String>) = healthCheckTagValue(healthCheckTag(tags)?:"")
-fun healthCheckTagValue(tag: String) = HEALTHCHECK_REGEX.matchEntire(tag)
-        ?.groupValues
-        ?.let {
-            if (it[1].isNotEmpty()) {
-                Pair(it[1], it[2].toInt())
+
+val healthCheckTag = NullableValueTag(
+        "healthCheck",
+        { value -> if (value.first.isNotBlank() && value.second > 0) {
+                "$HEALTHCHECK_ON;${value.first}:${value.second}"
+            } else if (value.first.isNotBlank() && value.second == 0) {
+                HEALTHCHECK_ON
             } else {
-                Pair(HEALTHCHECK_ON, 0)
-            }}
+                null
+            }
+        },
+        { tagValue -> HEALTHCHECK_REGEX.matchEntire(tagValue)
+                ?.groupValues
+                ?.let {
+                    if (it[1].isNotEmpty()) {
+                        Pair(it[1], it[2].toInt())
+                    } else {
+                        Pair(HEALTHCHECK_ON, 0)
+                    }}
+        })

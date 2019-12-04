@@ -129,7 +129,7 @@ class OriginsAdminHandlerTest : FeatureSpec({
             store.insert("app.origin", RoutingObjectRecord("HostProxy",
                     setOf(sourceTag("testProvider"),
                             stateTag(initialState),
-                            initialHealthTag), mockk(), mockObject))
+                            healthCheckTag(Pair(HEALTHCHECK_FAILING, 2))!!), mockk(), mockObject))
 
             val request = HttpRequest.put("http://host:7777/base/path/app/origin/state")
                     .body(mapper.writeValueAsString(requestedState), UTF_8)
@@ -141,9 +141,9 @@ class OriginsAdminHandlerTest : FeatureSpec({
             val tags = store.get("app.origin").get().tags
             tags shouldContain stateTag(expectedState)
             if (expectHealthTagCleared) {
-                healthCheckTag(tags) shouldBe null
+                healthCheckTag.find(tags) shouldBe null
             } else {
-                healthCheckTag(tags) shouldBe initialHealthTag
+                healthCheckTag.find(tags) shouldBe Pair(HEALTHCHECK_FAILING, 2)
             }
         }
 

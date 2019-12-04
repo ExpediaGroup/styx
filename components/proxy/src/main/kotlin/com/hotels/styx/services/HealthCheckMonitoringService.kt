@@ -68,7 +68,7 @@ internal class HealthCheckMonitoringService(
 
         internal val EXECUTOR = ScheduledThreadPoolExecutor(2)
 
-        private val LOGGER = LoggerFactory.getLogger(HealthCheckMonitoringService::class.java)
+        internal val LOGGER = LoggerFactory.getLogger(HealthCheckMonitoringService::class.java)
     }
 
     private val probe = urlProbe(HttpRequest.get(urlPath).build(), Duration.ofMillis(1000))
@@ -76,7 +76,7 @@ internal class HealthCheckMonitoringService(
     private val futureRef: AtomicReference<ScheduledFuture<*>> = AtomicReference()
 
     override fun startService() = CompletableFuture.runAsync {
-        LOGGER.info("started - {} - {}", period.toMillis(), period.toMillis())
+        LOGGER.info("started service for {} - {} - {}", arrayOf(application, period.toMillis(), period.toMillis()))
         futureRef.set(executor.scheduleAtFixedRate(
                 { runChecks(application, objectStore) },
                 period.toMillis(),
@@ -85,12 +85,32 @@ internal class HealthCheckMonitoringService(
     }
 
     override fun stopService() = CompletableFuture.runAsync {
-        LOGGER.info("stopped")
+        LOGGER.info("stopped service for {}", application)
 
         objectStore.entrySet()
                 .filter(::containsRelevantStateTag)
-                .forEach { (name, _) ->
-                    markObject(objectStore, name, ObjectActive(0, false))
+                .forEach { (name, record) ->
+                    objectStore.get(name).ifPresent {
+                        try {
+                            objectStore.compute(name) { previous ->
+                                if (previous == null) throw ObjectDisappearedException()
+
+                                val newTags = previous.tags
+                                        .let { healthCheckTag.remove(it) }
+                                        .let { stateTag.remove(it) }
+                                        .plus(stateTag(STATE_ACTIVE))
+
+                                if (previous.tags != newTags)
+                                    it.copy(tags = newTags)
+                                else
+                                    previous
+                            }
+                        } catch (e: ObjectDisappearedException) {
+                            // Object disappeared between the ifPresent check and the compute, but we don't really mind.
+                            // We just want to exit the compute, to avoid re-creating it.
+                            // (The ifPresent is not strictly required, but a pre-emptive check is preferred to an exception)
+                        }
+                    }
                 }
 
         futureRef.get().cancel(false)
@@ -102,7 +122,7 @@ internal class HealthCheckMonitoringService(
                 .filter { (_, record) -> record.tags.contains(lbGroupTag(application)) }
                 .map { (name, record) ->
                     val tags = record.tags
-                    val objectHealth = objectHealthFrom(stateTagValue(tags), healthCheckTagValue(tags))
+                    val objectHealth = objectHealthFrom(stateTag.find(tags), healthCheckTag.find(tags))
                     Triple(name, record, objectHealth)
                 }
 
@@ -177,6 +197,7 @@ internal fun objectHealthFrom(state: String?, health: Pair<String, Int>?) =
 
 internal class ObjectDisappearedException : RuntimeException("Object disappeared")
 
+
 private fun markObject(db: StyxObjectStore<RoutingObjectRecord>, name: String, newStatus: ObjectHealth) {
     // The ifPresent is not ideal, but compute() does not allow the computation to return null. So we can't preserve
     // a state where the object does not exist using compute alone. But even with ifPresent, as we are open to
@@ -202,14 +223,14 @@ private fun markObject(db: StyxObjectStore<RoutingObjectRecord>, name: String, n
 }
 
 internal fun reTag(tags: Set<String>, newStatus: ObjectHealth) =
-    tags.asSequence()
-            .filterNot { isStateTag(it) || isHealthCheckTag(it) }
-            .plus(stateTag(newStatus.state()))
-            .plus(healthCheckTag(newStatus.health()))
-            .filterNotNull()
-            .toSet()
+        tags.asSequence()
+                .filterNot { stateTag.match(it) || healthCheckTag.match(it) }
+                .plus(stateTag(newStatus.state()))
+                .plus(healthCheckTag(newStatus.health()!!))
+                .filterNotNull()
+                .toSet()
 
 private val RELEVANT_STATES = setOf(STATE_ACTIVE, STATE_UNREACHABLE)
 private fun containsRelevantStateTag(entry: Map.Entry<String, RoutingObjectRecord>) =
-        stateTagValue(entry.value.tags) in RELEVANT_STATES
+        stateTag.find(entry.value.tags) in RELEVANT_STATES
 

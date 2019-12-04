@@ -36,8 +36,9 @@ import com.hotels.styx.server.handlers.ClassPathResourceHandler
 import com.hotels.styx.serviceproviders.ServiceProviderFactory
 import com.hotels.styx.services.OriginsConfigConverter.Companion.deserialiseOrigins
 import com.hotels.styx.sourceTag
-import com.hotels.styx.sourceTagValue
 import org.slf4j.LoggerFactory
+import java.io.PrintWriter
+import java.io.StringWriter
 import java.lang.RuntimeException
 import java.nio.charset.StandardCharsets.UTF_8
 import java.time.Duration
@@ -116,7 +117,7 @@ internal class YamlFileConfigurationService(
 
             routingObjectDefs.forEach { objectDef ->
                 routeDb.get(objectDef.name()).ifPresent {
-                    if (sourceTagValue(it.tags) != name) {
+                    if (sourceTag.find(it.tags) != name) {
                         throw DuplicateObjectException("Object name='${objectDef.name()}' already exists. Provider='${name}', file='${config.originsFile}'.")
                     }
                 }
@@ -127,7 +128,7 @@ internal class YamlFileConfigurationService(
 
             healthMonitors.forEach { (objectName, _) ->
                 serviceDb.get(objectName).ifPresent {
-                    if (sourceTagValue(it.tags) != name) {
+                    if (sourceTag.find(it.tags) != name) {
                         throw DuplicateObjectException("Health Monitor name='${objectName}' already exists. Provider='${name}', file='${config.originsFile}'.")
                     }
                 }
@@ -185,6 +186,15 @@ internal class YamlFileConfigurationService(
                 if (previous == null || changed(new.config, previous.config)) {
                     new.styxService.start()
                     previous?.styxService?.stop()
+                            ?.whenComplete({ void, throwable ->
+                                if (throwable != null) {
+                                    val stack = StringWriter().let {
+                                        throwable.printStackTrace(PrintWriter(it))
+                                        it.toString()
+                                    }
+                                    LOGGER.warn("Service failed to terminate cleanly. cause=$throwable stack=$stack")
+                                }
+                            })
                     new
                 } else {
                     // No need to shout down the new one. It has yet been started.

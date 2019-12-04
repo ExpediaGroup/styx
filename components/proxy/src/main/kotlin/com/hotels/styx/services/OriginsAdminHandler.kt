@@ -63,7 +63,7 @@ internal class OriginsAdminHandler(
     private fun getState(objectId: String) : HttpResponse {
         val origin = findOrigin(objectId)
         return if (origin != null) {
-            textValueResponse(stateTagValue(origin.tags) ?: "")
+            textValueResponse(stateTag.find(origin.tags) ?: "")
         } else {
             errorResponse(NOT_FOUND, "No origin found for ID $objectId")
         }
@@ -92,7 +92,7 @@ internal class OriginsAdminHandler(
             if (!isValidOrigin(origin)) {
                 throw HttpStatusException(NOT_FOUND, "No origin found for ID $objectId")
             }
-            newState = when(stateTagValue(origin!!.tags)) {
+            newState = when(stateTag.find(origin!!.tags)) {
                 STATE_INACTIVE, STATE_ACTIVE -> STATE_ACTIVE
                 STATE_UNREACHABLE -> STATE_UNREACHABLE
                 else -> STATE_ACTIVE
@@ -119,9 +119,10 @@ internal class OriginsAdminHandler(
     private fun updateStateTag(origin: RoutingObjectRecord, newValue: String, clearHealthcheck: Boolean = false) : RoutingObjectRecord {
         val oldTags = origin.tags
         val newTags = oldTags
-                .filterNot{ clearHealthcheck && isHealthCheckTag(it) }
-                .filterNot(::isStateTag)
-                .plus(stateTag(newValue)).toSet()
+                .filterNot{ clearHealthcheck && healthCheckTag.match(it) }
+                .filterNot{ stateTag.match(it) }
+                .plus(stateTag(newValue))
+                .toSet()
         return if (oldTags != newTags) {
             origin.copy(tags = newTags)
         } else {
