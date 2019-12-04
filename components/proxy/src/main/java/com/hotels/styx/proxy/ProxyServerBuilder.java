@@ -19,25 +19,34 @@ import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.server.ConnectorConfig;
 import com.hotels.styx.server.HttpServer;
-import com.hotels.styx.server.netty.NettyServerBuilderSpec;
-
-import java.util.function.Supplier;
+import com.hotels.styx.server.ServerEventLoopFactory;
+import com.hotels.styx.server.netty.NettyServerBuilder;
+import com.hotels.styx.server.netty.NettyServerConfig;
+import com.hotels.styx.server.netty.eventloop.PlatformAwareServerEventLoopFactory;
+import org.slf4j.Logger;
 
 import static com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder.ENCODE_UNWISECHARS;
+import static com.hotels.styx.server.netty.eventloop.ServerEventLoopFactories.memoize;
 import static java.util.Objects.requireNonNull;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * A builder for a ProxyServer.
  */
 public final class ProxyServerBuilder {
+    private static final Logger LOG = getLogger(ProxyServerBuilder.class);
+
     private final Environment environment;
     private final ResponseInfoFormat responseInfoFormat;
     private final CharSequence styxInfoHeaderName;
 
-    private Supplier<HttpHandler> handlerFactory;
+    private HttpHandler handler;
     private Runnable onStartupAction = () -> {
     };
+
+    private ConnectorConfig connectorConfig;
 
     public ProxyServerBuilder(Environment environment) {
         this.environment = requireNonNull(environment);
@@ -45,31 +54,56 @@ public final class ProxyServerBuilder {
         this.styxInfoHeaderName = environment.styxConfig().styxHeaderConfig().styxInfoHeaderName();
     }
 
+    private ServerEventLoopFactory serverEventLoopFactory(String name, NettyServerConfig serverConfig) {
+        return memoize(new PlatformAwareServerEventLoopFactory(name, serverConfig.bossThreadsCount(), serverConfig.workerThreadsCount()));
+    }
+
     public HttpServer build() {
         ProxyServerConfig proxyConfig = environment.styxConfig().proxyServerConfig();
         String unwiseCharacters = environment.styxConfig().get(ENCODE_UNWISECHARS).orElse("");
         boolean requestTracking = environment.configuration().get("requestTracking", Boolean.class).orElse(false);
 
-        return new NettyServerBuilderSpec("Proxy", environment.serverEnvironment(),
-                new ProxyConnectorFactory(proxyConfig, environment.metricRegistry(), environment.errorListener(), unwiseCharacters, this::addInfoHeader, requestTracking))
-                .toNettyServerBuilder(proxyConfig)
-                .handlerFactory(handlerFactory)
-                // register health check
+        ProxyServerConfig serverConfig = proxyConfig;
+
+        LOG.info("connectors={} name={}", serverConfig.connectors(), "Proxy");
+
+        HttpServer builder = NettyServerBuilder.newBuilder()
+                .setMetricsRegistry(environment.metricRegistry())
+                .setServerEventLoopFactory(serverEventLoopFactory("Proxy", serverConfig))
+                .setProtocolConnector(
+                        new ProxyConnectorFactory(
+                                proxyConfig,
+                                environment.metricRegistry(),
+                                environment.errorListener(),
+                                unwiseCharacters,
+                                this::addInfoHeader,
+                                requestTracking)
+                                .create(connectorConfig))
+                .handler(handler)
+
+                // register health check - this is unnecessary in the routing object model
                 .doOnStartUp(onStartupAction)
                 .build();
+
+        return builder;
     }
 
     private LiveHttpResponse.Transformer addInfoHeader(LiveHttpResponse.Transformer responseBuilder, LiveHttpRequest request) {
         return responseBuilder.header(styxInfoHeaderName, responseInfoFormat.format(request));
     }
 
-    public ProxyServerBuilder handlerFactory(Supplier<HttpHandler> handlerFactory) {
-        this.handlerFactory = handlerFactory;
+    public ProxyServerBuilder handler(HttpHandler handlerFactory) {
+        this.handler = handlerFactory;
         return this;
     }
 
     public ProxyServerBuilder onStartup(Runnable startupAction) {
         this.onStartupAction = startupAction;
+        return this;
+    }
+
+    public ProxyServerBuilder connectorConfig(ConnectorConfig connectorConfig) {
+        this.connectorConfig = connectorConfig;
         return this;
     }
 }

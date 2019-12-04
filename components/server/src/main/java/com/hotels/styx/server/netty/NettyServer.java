@@ -35,10 +35,7 @@ import org.slf4j.Logger;
 
 import java.net.BindException;
 import java.net.InetSocketAddress;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -63,13 +60,11 @@ final class NettyServer extends AbstractService implements HttpServer {
     private final ChannelGroup channelGroup;
     private final ServerEventLoopFactory serverEventLoopFactory;
 
-    private final Optional<ServerConnector> httpConnector;
-    private final Optional<ServerConnector> httpsConnector;
+    private final ServerConnector protocolConnector;
 
     private final Iterable<Runnable> startupActions;
-    private final Supplier<HttpHandler> handlerFactory;
-    private final ServerSocketBinder httpServerSocketBinder;
-    private final ServerSocketBinder httpsServerSocketBinder;
+    private final HttpHandler handler;
+    private final ServerSocketBinder protocolSocketBinder;
 
     private volatile Callable<?> stopper;
     private volatile HttpHandler httpHandler;
@@ -78,30 +73,19 @@ final class NettyServer extends AbstractService implements HttpServer {
         this.host = nettyServerBuilder.host();
         this.channelGroup = requireNonNull(nettyServerBuilder.channelGroup());
         this.serverEventLoopFactory = requireNonNull(nettyServerBuilder.serverEventLoopFactory(), "serverEventLoopFactory cannot be null");
-        this.handlerFactory = requireNonNull(nettyServerBuilder.handlerFactory());
+        this.handler = requireNonNull(nettyServerBuilder.handler());
 
-        this.httpConnector = nettyServerBuilder.httpConnector();
-        this.httpsConnector = nettyServerBuilder.httpsConnector();
+        this.protocolConnector = nettyServerBuilder.protocolConnector();
 
-        this.httpServerSocketBinder = httpConnector.map(ServerSocketBinder::new).orElse(null);
-        this.httpsServerSocketBinder = httpsConnector.map(ServerSocketBinder::new).orElse(null);
+        this.protocolSocketBinder = new ServerSocketBinder(protocolConnector);
 
         this.startupActions = nettyServerBuilder.startupActions();
     }
 
     @Override
     public InetSocketAddress httpAddress() {
-        if (httpServerSocketBinder != null) {
-            return new InetSocketAddress(host, httpServerSocketBinder.port());
-        } else {
-            return null;
-        }
-    }
-
-    @Override
-    public InetSocketAddress httpsAddress() {
-        if (httpsServerSocketBinder != null) {
-            return new InetSocketAddress(host, httpsServerSocketBinder.port());
+        if (protocolSocketBinder != null) {
+            return new InetSocketAddress(host, protocolSocketBinder.port());
         } else {
             return null;
         }
@@ -120,11 +104,10 @@ final class NettyServer extends AbstractService implements HttpServer {
             }
         }
 
-        httpHandler = NettyServer.this.handlerFactory.get();
+        httpHandler = NettyServer.this.handler;
 
         ServiceManager serviceManager = new ServiceManager(
-                Stream.of(httpServerSocketBinder, httpsServerSocketBinder)
-                .filter(Objects::nonNull)
+                Stream.of(protocolSocketBinder)
                 .collect(Collectors.toList())
         );
 

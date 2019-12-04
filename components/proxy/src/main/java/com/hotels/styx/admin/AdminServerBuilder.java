@@ -122,7 +122,7 @@ public class AdminServerBuilder {
 
         return new NettyServerBuilderSpec("Admin", environment.serverEnvironment(), new WebServerConnectorFactory())
                 .toNettyServerBuilder(adminServerConfig)
-                .handlerFactory(() -> adminEndpoints(styxConfig, startupConfig))
+                .handler(adminEndpoints(styxConfig, startupConfig))
                 .build();
     }
 

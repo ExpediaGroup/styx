@@ -56,8 +56,8 @@ class MockServer(id: String, val port: Int) extends AbstractIdleService with Htt
   val requestQueue: BlockingQueue[LiveHttpRequest] = new LinkedBlockingQueue
   val server = NettyServerBuilder.newBuilder()
       .name("MockServer")
-      .setHttpConnector(new WebServerConnectorFactory().create(new HttpConnectorConfig(port)))
-      .handlerFactory(() => router)
+      .setProtocolConnector(new WebServerConnectorFactory().create(new HttpConnectorConfig(port)))
+      .handler(router)
     .build()
 
   def takeRequest(): LiveHttpRequest = {
@@ -89,10 +89,6 @@ class MockServer(id: String, val port: Int) extends AbstractIdleService with Htt
 
   override def httpAddress(): InetSocketAddress = {
     server.httpAddress()
-  }
-
-  override def httpsAddress(): InetSocketAddress = {
-    server.httpsAddress()
   }
 
   private def connectorOnFreePort: ServerConnector = {
