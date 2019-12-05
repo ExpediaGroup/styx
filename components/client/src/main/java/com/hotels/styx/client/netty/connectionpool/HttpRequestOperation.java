@@ -38,10 +38,9 @@ import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.timeout.IdleStateHandler;
 import org.slf4j.Logger;
+import reactor.core.publisher.BaseSubscriber;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
-import rx.Observable;
-import rx.Subscriber;
 
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -57,7 +56,6 @@ import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
-import static rx.RxReactiveStreams.toObservable;
 
 /**
  * An operation that writes an HTTP request to an origin.
@@ -251,8 +249,9 @@ public class HttpRequestOperation {
             return headersFuture -> {
                 if (headersFuture.isSuccess()) {
                     headersFuture.channel().read();
-                    Observable<ByteBuf> bufferObservable = toObservable(request.body()).map(Buffers::toByteBuf);
-                    bufferObservable.subscribe(requestBodyChunkSubscriber);
+                    Flux.from(request.body())
+                            .map(Buffers::toByteBuf)
+                            .subscribe(requestBodyChunkSubscriber);
                 } else {
                     String channelIdentifier = String.format("%s -> %s", nettyConnection.channel().localAddress(), nettyConnection.channel().remoteAddress());
                     LOGGER.error(format("Failed to send request headers. origin=%s connection=%s request=%s",
@@ -272,7 +271,7 @@ public class HttpRequestOperation {
         }
     }
 
-    private static final class RequestBodyChunkSubscriber extends Subscriber<ByteBuf> {
+    private static final class RequestBodyChunkSubscriber extends BaseSubscriber<ByteBuf> {
         private final NettyConnection nettyConnection;
         private final LiveHttpRequest request;
         private final Channel channel;
@@ -285,23 +284,18 @@ public class HttpRequestOperation {
         }
 
         @Override
-        public void onStart() {
-            super.onStart();
-        }
-
-        @Override
-        public void onCompleted() {
+        public void hookOnComplete() {
             channel.writeAndFlush(EMPTY_LAST_CONTENT)
                     .addListener(future -> completed = true);
         }
 
         @Override
-        public void onError(Throwable e) {
+        public void hookOnError(Throwable e) {
             completed = true;
         }
 
         @Override
-        public void onNext(ByteBuf chunk) {
+        public void hookOnNext(ByteBuf chunk) {
             HttpObject msg = new DefaultHttpContent(chunk);
             channel.writeAndFlush(msg)
                     .addListener((ChannelFuture future) -> {
