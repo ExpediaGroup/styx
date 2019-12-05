@@ -21,8 +21,8 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 /**
  * Stops channelInactive events from propagating if the channel never became active to begin with.
  *
- * In some circumstances (e.g. when a channel is rejected due to having too many connections) we may receive a
- * channelInactive event on a channel that was not active.
+ * In some circumstances (e.g. when a channel is rejected due to having too many connections)
+ * we may receive a channelInactive event on a channel that was not active.
  *
  * This event is unneeded and will confuse later handlers that collect metrics about channel activity.
  *

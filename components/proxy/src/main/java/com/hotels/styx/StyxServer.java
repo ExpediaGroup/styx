@@ -154,7 +154,8 @@ public final class StyxServer extends AbstractService {
         }
     }
 
-    private final ServiceManager serviceManager;
+    private final ServiceManager phase1Services;
+    private final ServiceManager phase2Services;
 
     private final Stopwatch stopwatch;
 
@@ -174,33 +175,21 @@ public final class StyxServer extends AbstractService {
 
         registerCoreMetrics(components.environment().buildInfo(), components.environment().metricRegistry());
 
-        HttpHandler styxDataPlane = new StyxPipelineFactory(
+        // The plugins are loaded, but not initialised.
+        // And therefore not able to accept traffic.
+        HttpHandler httpHandler = new StyxPipelineFactory(
                 components.routingObjectFactoryContext(),
                 components.environment(),
                 components.services(),
                 components.plugins(),
                 components.eventLoopGroup(),
-                components.nettySocketChannelClass()).create();
+                components.nettySocketChannelClass())
+                .create();
 
+        // Startup phase 1: start plugins, control plane providers, and other services:
         ArrayList<Service> services = new ArrayList<>();
 
-        StyxConfig styxConfig = components.environment().configuration();
-
-        httpServer = styxConfig.proxyServerConfig()
-                .httpConnectorConfig()
-                .map(it -> httpServer(components, it, styxDataPlane))
-                .orElse(null);
-
-        httpsServer = styxConfig.proxyServerConfig()
-                .httpsConnectorConfig()
-                .map(it -> httpServer(components, it, styxDataPlane))
-                .orElse(null);
-
         adminServer = createAdminServer(components);
-
-        Optional.ofNullable(httpServer).ifPresent(services::add);
-        Optional.ofNullable(httpsServer).ifPresent(services::add);
-
         services.add(adminServer);
         services.add(toGuavaService(new AbstractStyxService("Plugins manager") {
             @Override
@@ -223,8 +212,27 @@ public final class StyxServer extends AbstractService {
         }));
         services.add(toGuavaService(new ServiceProviderMonitor("Styx-Service-Monitor", components.servicesDatabase())));
         components.services().values().forEach(it -> services.add(toGuavaService(it)));
+        this.phase1Services = new ServiceManager(services);
 
-        this.serviceManager = new ServiceManager(services);
+        // Phase 2: start HTTP services;
+        StyxConfig styxConfig = components.environment().configuration();
+        httpServer = styxConfig.proxyServerConfig()
+                .httpConnectorConfig()
+                .map(it -> httpServer(components, it, httpHandler))
+                .orElse(null);
+
+        httpsServer = styxConfig.proxyServerConfig()
+                .httpsConnectorConfig()
+                .map(it -> httpServer(components, it, httpHandler))
+                .orElse(null);
+
+
+        ArrayList<Service> services2 = new ArrayList<>();
+
+        Optional.ofNullable(httpServer).ifPresent(services2::add);
+        Optional.ofNullable(httpsServer).ifPresent(services2::add);
+
+        this.phase2Services = new ServiceManager(services2);
     }
 
     public InetSocketAddress proxyHttpAddress() {
@@ -276,8 +284,9 @@ public final class StyxServer extends AbstractService {
     @Override
     protected void doStart() {
         printBanner();
-        this.serviceManager.addListener(new ServerStartListener(this));
-        this.serviceManager.startAsync();
+        this.phase1Services.startAsync().awaitHealthy();
+        this.phase2Services.addListener(new ServerStartListener(this));
+        this.phase2Services.startAsync();
     }
 
     private void printBanner() {
@@ -293,7 +302,8 @@ public final class StyxServer extends AbstractService {
 
     @Override
     protected void doStop() {
-        this.serviceManager.stopAsync();
+        this.phase1Services.stopAsync();
+        this.phase2Services.stopAsync();
         shutdownLogging(true);
     }
 

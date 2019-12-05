@@ -19,7 +19,9 @@ import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.server.ConnectorConfig;
+import com.hotels.styx.server.HttpErrorStatusListener;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.ServerEventLoopFactory;
 import com.hotels.styx.server.netty.NettyServerBuilder;
@@ -29,7 +31,6 @@ import org.slf4j.Logger;
 
 import static com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder.ENCODE_UNWISECHARS;
 import static com.hotels.styx.server.netty.eventloop.ServerEventLoopFactories.memoize;
-import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -38,15 +39,23 @@ import static org.slf4j.LoggerFactory.getLogger;
 public final class ProxyServerBuilder {
     private static final Logger LOG = getLogger(ProxyServerBuilder.class);
 
-    private final Environment environment;
     private final ResponseInfoFormat responseInfoFormat;
     private final CharSequence styxInfoHeaderName;
+    private final ProxyServerConfig serverConfig;
+    private final String unwiseCharacters;
+    private final Boolean requestTracking;
+    private final MetricRegistry metricRegistry;
+    private final HttpErrorStatusListener errorListener;
 
     private HttpHandler handler;
     private ConnectorConfig connectorConfig;
 
     public ProxyServerBuilder(Environment environment) {
-        this.environment = requireNonNull(environment);
+        this.serverConfig = environment.configuration().proxyServerConfig();
+        this.errorListener = environment.errorListener();
+        this.metricRegistry = environment.metricRegistry();
+        this.requestTracking = environment.configuration().get("requestTracking", Boolean.class).orElse(false);
+        this.unwiseCharacters = environment.styxConfig().get(ENCODE_UNWISECHARS).orElse("");
         this.responseInfoFormat = new ResponseInfoFormat(environment);
         this.styxInfoHeaderName = environment.styxConfig().styxHeaderConfig().styxInfoHeaderName();
     }
@@ -56,25 +65,19 @@ public final class ProxyServerBuilder {
     }
 
     public HttpServer build() {
-        ProxyServerConfig proxyConfig = environment.styxConfig().proxyServerConfig();
-        String unwiseCharacters = environment.styxConfig().get(ENCODE_UNWISECHARS).orElse("");
-        boolean requestTracking = environment.configuration().get("requestTracking", Boolean.class).orElse(false);
-
-        ProxyServerConfig serverConfig = proxyConfig;
-
-        LOG.info("connectors={} name={}", serverConfig.connectors(), "Proxy");
+        LOG.info("connectors={} name={}", this.serverConfig.connectors(), "Proxy");
 
         HttpServer builder = NettyServerBuilder.newBuilder()
-                .setMetricsRegistry(environment.metricRegistry())
-                .setServerEventLoopFactory(serverEventLoopFactory("Proxy", serverConfig))
+                .setMetricsRegistry(this.metricRegistry)
+                .setServerEventLoopFactory(serverEventLoopFactory("Proxy", this.serverConfig))
                 .setProtocolConnector(
                         new ProxyConnectorFactory(
-                                proxyConfig,
-                                environment.metricRegistry(),
-                                environment.errorListener(),
-                                unwiseCharacters,
+                                this.serverConfig,
+                                this.metricRegistry,
+                                this.errorListener,
+                                this.unwiseCharacters,
                                 this::addInfoHeader,
-                                requestTracking)
+                                this.requestTracking)
                                 .create(connectorConfig))
                 .handler(handler)
                 .build();
