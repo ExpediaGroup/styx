@@ -34,6 +34,7 @@ import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.startup.StyxServerComponents;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
+import io.netty.util.ResourceLeakDetector;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -93,113 +94,113 @@ public class StyxServerTest {
         clearProperty("UNIT_TESTING_MODE");
     }
 
-//    @Test
-//    public void invokesPluginLifecycleMethods() {
-//        Plugin pluginMock1 = mock(Plugin.class);
-//        Plugin pluginMock2 = mock(Plugin.class);
-//
-//        StyxServer styxServer = styxServerWithPlugins(ImmutableMap.of(
-//                "mockplugin1", pluginMock1,
-//                "mockplugin2", pluginMock2
-//        ));
-//        try {
-//            styxServer.startAsync().awaitRunning();
-//            verify(pluginMock1).styxStarting();
-//            verify(pluginMock2).styxStarting();
-//
-//            styxServer.stopAsync().awaitTerminated();
-//            verify(pluginMock1).styxStopping();
-//            verify(pluginMock2).styxStopping();
-//        } finally {
-//            stopIfRunning(styxServer);
-//        }
-//    }
+    @Test
+    public void invokesPluginLifecycleMethods() {
+        Plugin pluginMock1 = mock(Plugin.class);
+        Plugin pluginMock2 = mock(Plugin.class);
 
-//    @Test
-//    public void disablesResourceLeakDetectionByDefault() {
-//        StyxServerComponents config = new StyxServerComponents.Builder()
-//                .configuration(EMPTY_CONFIGURATION)
-//                .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(new MemoryBackedRegistry<>())))
-//                .build();
-//
-//        new StyxServer(config);
-//
-//        assertThat(ResourceLeakDetector.getLevel(), is(DISABLED));
-//    }
+        StyxServer styxServer = styxServerWithPlugins(ImmutableMap.of(
+                "mockplugin1", pluginMock1,
+                "mockplugin2", pluginMock2
+        ));
+        try {
+            styxServer.startAsync().awaitRunning();
+            verify(pluginMock1).styxStarting();
+            verify(pluginMock2).styxStarting();
 
-//    @Test
-//    public void stopsTheServerWhenPluginFailsToStart() {
-//        StyxServer styxServer = null;
-//        try {
-//            styxServer = styxServerWithPlugins(ImmutableMap.of(
-//                    "foo", new NonStarterPlugin("foo"),
-//                    "mockplugin3", mock(Plugin.class)));
-//
-//            Service service = styxServer.startAsync();
-//            eventually(() -> assertThat(service.state(), is(FAILED)));
-//
-//            assertThat(pssLog.log(), hasItem(
-//                    loggingEvent(ERROR, "Error starting plugin 'foo'", RuntimeException.class, "Plugin start test error: foo")));
-//
-//            assertThat(styxServer.state(), is(FAILED));
-//        } finally {
-//            stopIfRunning(styxServer);
-//        }
-//    }
+            styxServer.stopAsync().awaitTerminated();
+            verify(pluginMock1).styxStopping();
+            verify(pluginMock2).styxStopping();
+        } finally {
+            stopIfRunning(styxServer);
+        }
+    }
 
-//    @Test
-//    public void allPluginsAreStartedEvenIfSomeFail() {
-//        StyxServer styxServer = null;
-//        try {
-//            Plugin pluginMock2 = mock(Plugin.class);
-//            Plugin pluginMock4 = mock(Plugin.class);
-//
-//            styxServer = styxServerWithPlugins(ImmutableMap.of(
-//                    "plug1", new NonStarterPlugin("plug1"),
-//                    "plug2", pluginMock2,
-//                    "plug3", new NonStarterPlugin("plug3"),
-//                    "plug4", pluginMock4));
-//
-//            Service service = styxServer.startAsync();
-//            eventually(() -> assertThat(service.state(), is(FAILED)));
-//
-//            assertThat(pssLog.log(), hasItem(loggingEvent(ERROR, "Error starting plugin 'plug1'", RuntimeException.class, "Plugin start test error: plug1")));
-//            assertThat(pssLog.log(), hasItem(loggingEvent(ERROR, "Error starting plugin 'plug3'", RuntimeException.class, "Plugin start test error: plug3")));
-//
-//            verify(pluginMock2).styxStarting();
-//            verify(pluginMock4).styxStarting();
-//        } finally {
-//            stopIfRunning(styxServer);
-//        }
-//    }
+    @Test
+    public void disablesResourceLeakDetectionByDefault() {
+        StyxServerComponents config = new StyxServerComponents.Builder()
+                .configuration(EMPTY_CONFIGURATION)
+                .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(new MemoryBackedRegistry<>())))
+                .build();
 
-//    @Test
-//    public void serverDoesNotStartIfServiceFails() {
-//        StyxServer styxServer = null;
-//        try {
-//            StyxService testService = registryThatFailsToStart();
-//            styxServer = styxServerWithBackendServiceRegistry(testService);
-//
-//            Service serverService = styxServer.startAsync();
-//            eventually(() -> assertThat(serverService.state(), is(FAILED)));
-//
-//            assertThat(styxServer.state(), is(FAILED));
-//        } finally {
-//            stopIfRunning(styxServer);
-//        }
-//    }
+        new StyxServer(config);
 
-//    @Test
-//    public void startsFromMain() {
-//        try {
-//            setProperty("STYX_HOME", fixturesHome());
-//            StyxServer.main(new String[0]);
-//
-//            eventually(() -> assertThat(log.log(), hasItem(loggingEvent(INFO, "Started Styx server in \\d+ ms"))));
-//        } finally {
-//            clearProperty("STYX_HOME");
-//        }
-//    }
+        assertThat(ResourceLeakDetector.getLevel(), is(DISABLED));
+    }
+
+    @Test
+    public void stopsTheServerWhenPluginFailsToStart() {
+        StyxServer styxServer = null;
+        try {
+            styxServer = styxServerWithPlugins(ImmutableMap.of(
+                    "foo", new NonStarterPlugin("foo"),
+                    "mockplugin3", mock(Plugin.class)));
+
+            Service service = styxServer.startAsync();
+            eventually(() -> assertThat(service.state(), is(FAILED)));
+
+            assertThat(pssLog.log(), hasItem(
+                    loggingEvent(ERROR, "Error starting plugin 'foo'", RuntimeException.class, "Plugin start test error: foo")));
+
+            assertThat(styxServer.state(), is(FAILED));
+        } finally {
+            stopIfRunning(styxServer);
+        }
+    }
+
+    @Test
+    public void allPluginsAreStartedEvenIfSomeFail() {
+        StyxServer styxServer = null;
+        try {
+            Plugin pluginMock2 = mock(Plugin.class);
+            Plugin pluginMock4 = mock(Plugin.class);
+
+            styxServer = styxServerWithPlugins(ImmutableMap.of(
+                    "plug1", new NonStarterPlugin("plug1"),
+                    "plug2", pluginMock2,
+                    "plug3", new NonStarterPlugin("plug3"),
+                    "plug4", pluginMock4));
+
+            Service service = styxServer.startAsync();
+            eventually(() -> assertThat(service.state(), is(FAILED)));
+
+            assertThat(pssLog.log(), hasItem(loggingEvent(ERROR, "Error starting plugin 'plug1'", RuntimeException.class, "Plugin start test error: plug1")));
+            assertThat(pssLog.log(), hasItem(loggingEvent(ERROR, "Error starting plugin 'plug3'", RuntimeException.class, "Plugin start test error: plug3")));
+
+            verify(pluginMock2).styxStarting();
+            verify(pluginMock4).styxStarting();
+        } finally {
+            stopIfRunning(styxServer);
+        }
+    }
+
+    @Test
+    public void serverDoesNotStartIfServiceFails() {
+        StyxServer styxServer = null;
+        try {
+            StyxService testService = registryThatFailsToStart();
+            styxServer = styxServerWithBackendServiceRegistry(testService);
+
+            Service serverService = styxServer.startAsync();
+            eventually(() -> assertThat(serverService.state(), is(FAILED)));
+
+            assertThat(styxServer.state(), is(FAILED));
+        } finally {
+            stopIfRunning(styxServer);
+        }
+    }
+
+    @Test
+    public void startsFromMain() {
+        try {
+            setProperty("STYX_HOME", fixturesHome());
+            StyxServer.main(new String[0]);
+
+            eventually(() -> assertThat(log.log(), hasItem(loggingEvent(INFO, "Started Styx server in \\d+ ms"))));
+        } finally {
+            clearProperty("STYX_HOME");
+        }
+    }
 
     private static StyxService registryThatFailsToStart() {
         Registry<BackendService> registry = mock(Registry.class);
