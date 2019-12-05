@@ -25,10 +25,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import rx.observers.TestSubscriber;
+import org.reactivestreams.Subscriber;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.function.Consumer;
 
 import static ch.qos.logback.classic.Level.WARN;
@@ -42,16 +43,16 @@ import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpCon
 import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.TERMINATED;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static io.netty.buffer.Unpooled.copiedBuffer;
-import static java.util.Collections.emptyList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -60,8 +61,8 @@ import static org.mockito.Mockito.verify;
 
 public class FlowControllingHttpContentProducerTest {
     private static final Long NO_BACKPRESSURE = Long.MAX_VALUE;
-    private TestSubscriber<? super ByteBuf> downstream;
-    private TestSubscriber<? super ByteBuf> additionalSubscriber;
+    private Subscriber<? super ByteBuf> downstream;
+    private Subscriber<? super ByteBuf> additionalSubscriber;
     private FlowControllingHttpContentProducer producer;
     private Runnable askForMore;
     private Runnable onCompleteAction;
@@ -73,8 +74,8 @@ public class FlowControllingHttpContentProducerTest {
     private LoggingTestSupport logger;
 
     public void setUpAndRequest(long initialCount) {
-        downstream = new TestSubscriber<>(initialCount);
-        additionalSubscriber = new TestSubscriber<>(initialCount);
+        downstream = mock(Subscriber.class);
+        additionalSubscriber = mock(Subscriber.class);
         askForMore = mock(Runnable.class);
         onCompleteAction = mock(Runnable.class);
         onTerminateAction = mock(Consumer.class);
@@ -105,7 +106,7 @@ public class FlowControllingHttpContentProducerTest {
 
     /* ---- Buffering state tests ---- */
 
-/*
+
     @Test
     public void transitionFromBufferingToStreamingState() {
         // On Subscribe, transition from buffering to streaming state
@@ -114,13 +115,13 @@ public class FlowControllingHttpContentProducerTest {
 
         producer.newChunk(copiedBuffer("aaa", UTF_8));
         producer.newChunk(copiedBuffer("bbb", UTF_8));
-        assertThat(downstream.getOnNextEvents(), is(emptyList()));
+        verify(downstream, never()).onNext(any());
 
         producer.onSubscribed(downstream);
         assertThat(producer.state(), is(STREAMING));
-        assertThat(downstream.getOnNextEvents(), contains(copiedBuffer("aaa", UTF_8), copiedBuffer("bbb", UTF_8)));
+        assertThat(captureOnNext(), contains(copiedBuffer("aaa", UTF_8), copiedBuffer("bbb", UTF_8)));
     }
-*/
+
 
     @Test
     public void transitionFromBufferingToBufferingCompletedState() throws Exception {
@@ -133,10 +134,10 @@ public class FlowControllingHttpContentProducerTest {
         producer.lastHttpContent();
 
         assertThat(producer.state(), is(BUFFERING_COMPLETED));
-        assertThat(downstream.getOnNextEvents(), is(emptyList()));
+        verify(downstream, never()).onNext(any());
     }
 
-/*
+
     @Test
     public void handlesContentUnsubscriptionWhenStreaming() throws Exception {
         // On Subscribe, transition from buffering to streaming state
@@ -145,12 +146,12 @@ public class FlowControllingHttpContentProducerTest {
 
         ByteBuf firstChunk = copiedBuffer("aaa", UTF_8);
         producer.newChunk(firstChunk);
-        assertThat(downstream.getOnNextEvents(), is(emptyList()));
+        verify(downstream, never()).onNext(any());
 
         producer.onSubscribed(downstream);
 
         assertThat(producer.state(), is(STREAMING));
-        assertThat(downstream.getOnNextEvents(), is(empty()));
+        verify(downstream, never()).onNext(any());
         producer.unsubscribe();
 
         ByteBuf secondChunk = copiedBuffer("bbbb", UTF_8);
@@ -159,8 +160,8 @@ public class FlowControllingHttpContentProducerTest {
         assertThat(producer.state(), is(TERMINATED));
         verify(onCompleteAction, never()).run();
         verify(onTerminateAction).accept(isA(Throwable.class));
-        assertThat(downstream.getOnNextEvents(), is(empty()));
-        downstream.assertError(ConsumerDisconnectedException.class);
+        verify(downstream, never()).onNext(any());
+        verify(downstream, times(1)).onError(any(ConsumerDisconnectedException.class));
         assertThat(firstChunk.refCnt(), is(0));
         assertThat(secondChunk.refCnt(), is(0));
     }
@@ -174,7 +175,7 @@ public class FlowControllingHttpContentProducerTest {
         ByteBuf firstChunk = copiedBuffer("aaa", UTF_8);
 
         producer.newChunk(firstChunk);
-        assertThat(downstream.getOnNextEvents(), is(emptyList()));
+        verify(onCompleteAction, never()).run();
         producer.lastHttpContent();
 
         producer.onSubscribed(downstream);
@@ -188,8 +189,8 @@ public class FlowControllingHttpContentProducerTest {
         assertThat(producer.state(), is(TERMINATED));
         verify(onCompleteAction, never()).run();
         verify(onTerminateAction).accept(isA(Throwable.class));
-        assertThat(downstream.getOnNextEvents(), is(empty()));
-        assertException(downstream.getOnErrorEvents().get(0), Throwable.class, "The consumer unsubscribed. connection=foobar producerState=EMITTING_BUFFERED_CONTENT");
+        verify(onCompleteAction, never()).run();
+        assertException(downstream, Throwable.class, "The consumer unsubscribed. connection=foobar producerState=EMITTING_BUFFERED_CONTENT");
         assertThat(firstChunk.refCnt(), is(0));
         assertThat(secondChunk.refCnt(), is(0));
     }
@@ -262,6 +263,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
 
+    /* ---- Streaming state tests ---- */
 
     @Test
     public void doesNotAllowDoubleSubscriptionInStreamingState() {
@@ -282,9 +284,9 @@ public class FlowControllingHttpContentProducerTest {
         verify(onTerminateAction).accept(isA(Throwable.class));
         assertThat(contentChunk1.refCnt(), is(0));
         assertThat(contentChunk2.refCnt(), is(0));
-        assertException(getCause(downstream), IllegalStateException.class,
+        assertException(downstream, IllegalStateException.class,
                 "Secondary subscription occurred. producerState=STREAMING. connection=foobar");
-        assertException(getCause(additionalSubscriber), IllegalStateException.class,
+        assertException(downstream, IllegalStateException.class,
                 "Secondary subscription occurred. producerState=STREAMING. connection=foobar");
     }
 
@@ -299,7 +301,7 @@ public class FlowControllingHttpContentProducerTest {
         producer.newChunk(copiedBuffer("ccc", UTF_8));
         producer.newChunk(copiedBuffer("ddd", UTF_8));
 
-        assertThat(downstream.getOnNextEvents(), contains(copiedBuffer("ccc", UTF_8), copiedBuffer("ddd", UTF_8)));
+        assertThat(captureOnNext(), contains(copiedBuffer("ccc", UTF_8), copiedBuffer("ddd", UTF_8)));
     }
 
     @Test
@@ -315,7 +317,7 @@ public class FlowControllingHttpContentProducerTest {
         assertThat(producer.state(), is(COMPLETED));
         verify(onCompleteAction).run();
         verify(onTerminateAction, never()).accept(isA(Throwable.class));
-        assertThat(hasCompleted(downstream), is(true));
+        verify(downstream).onComplete();
     }
 
     @Test
@@ -334,7 +336,7 @@ public class FlowControllingHttpContentProducerTest {
 
         assertThat(logger.log(), hasItem(loggingEvent(WARN, "message=.Secondary content subscription.*")));
 
-        assertException(getCause(additionalSubscriber), IllegalStateException.class,
+        assertException(additionalSubscriber, IllegalStateException.class,
                 "Secondary subscription occurred. producerState=COMPLETED. connection=foobar");
     }
 
@@ -352,7 +354,7 @@ public class FlowControllingHttpContentProducerTest {
 
         assertThat(logger.log(), hasItem(loggingEvent(WARN, "message=.Secondary content subscription.*")));
 
-        assertException(getCause(additionalSubscriber), IllegalStateException.class,
+        assertException(additionalSubscriber, IllegalStateException.class,
                 "Secondary subscription occurred. producerState=TERMINATED. connection=foobar");
     }
 
@@ -366,7 +368,7 @@ public class FlowControllingHttpContentProducerTest {
 
         producer.newChunk(copiedBuffer("ccc", UTF_8));
         producer.newChunk(copiedBuffer("ddd", UTF_8));
-        assertThat(downstream.getOnNextEvents(), is(emptyList()));
+        verify(downstream, never()).onNext(any());
 
         producer.lastHttpContent();
         assertThat(producer.state(), is(EMITTING_BUFFERED_CONTENT));
@@ -376,8 +378,8 @@ public class FlowControllingHttpContentProducerTest {
         assertThat(producer.state(), is(COMPLETED));
         verify(onCompleteAction).run();
         verify(onTerminateAction, never()).accept(isA(Throwable.class));
-        assertThat(downstream.getOnNextEvents(), contains(copiedBuffer("ccc", UTF_8), copiedBuffer("ddd", UTF_8)));
-        assertThat(hasCompleted(downstream), is(true));
+        assertThat(captureOnNext(), contains(copiedBuffer("ccc", UTF_8), copiedBuffer("ddd", UTF_8)));
+        verify(downstream).onComplete();
     }
 
     @Test
@@ -391,13 +393,13 @@ public class FlowControllingHttpContentProducerTest {
         producer.newChunk(copiedBuffer("chunk 2", UTF_8));
         producer.newChunk(copiedBuffer("chunk 3", UTF_8));
         producer.newChunk(copiedBuffer("chunk 4", UTF_8));
-        assertThat(downstream.getOnNextEvents(), contains(copiedBuffer("chunk 1", UTF_8)));
+        assertThat(captureOnNext(), contains(copiedBuffer("chunk 1", UTF_8)));
 
         producer.request(2);
-        assertThat(downstream.getOnNextEvents(), contains(copiedBuffer("chunk 1", UTF_8), copiedBuffer("chunk 2", UTF_8), copiedBuffer("chunk 3", UTF_8)));
+        assertThat(captureOnNext(), contains(copiedBuffer("chunk 1", UTF_8), copiedBuffer("chunk 2", UTF_8), copiedBuffer("chunk 3", UTF_8)));
 
         producer.request(1);
-        assertThat(downstream.getOnNextEvents(), contains(
+        assertThat(captureOnNext(), contains(
                 copiedBuffer("chunk 1", UTF_8),
                 copiedBuffer("chunk 2", UTF_8),
                 copiedBuffer("chunk 3", UTF_8),
@@ -408,7 +410,7 @@ public class FlowControllingHttpContentProducerTest {
         assertThat(producer.state(), is(COMPLETED));
         verify(onCompleteAction).run();
         verify(onTerminateAction, never()).accept(isA(Throwable.class));
-        assertThat(hasCompleted(downstream), is(true));
+        verify(downstream).onComplete();
     }
 
     @Test
@@ -429,7 +431,7 @@ public class FlowControllingHttpContentProducerTest {
 
         assertThat(contentChunk1.refCnt(), is(0));
         assertThat(contentChunk2.refCnt(), is(0));
-        assertException(getCause(downstream), RuntimeException.class, "Something went wrong - simulated exception");
+        assertException(downstream, RuntimeException.class, "Something went wrong - simulated exception");
     }
 
     @Test
@@ -451,7 +453,7 @@ public class FlowControllingHttpContentProducerTest {
 
         assertThat(contentChunk1.refCnt(), is(0));
         assertThat(contentChunk2.refCnt(), is(0));
-        assertException(getCause(downstream), TransportLostException.class,
+        assertException(downstream, TransportLostException.class,
                 "Connection to origin lost. origin=\"generic-app:anonymous-origin:localhost:8080\", remoteAddress=\"0.0.0.0/0.0.0.0:8080\".");
     }
 
@@ -473,7 +475,7 @@ public class FlowControllingHttpContentProducerTest {
 
         assertThat(contentChunk1.refCnt(), is(0));
         assertThat(contentChunk2.refCnt(), is(0));
-        assertException(getCause(downstream), TransportLostException.class,
+        assertException(downstream, TransportLostException.class,
                 "Connection to origin lost. origin=\"generic-app:anonymous-origin:localhost:8080\", remoteAddress=\"0.0.0.0/0.0.0.0:8080\".");
     }
 
@@ -484,7 +486,7 @@ public class FlowControllingHttpContentProducerTest {
         producer.newChunk(copiedBuffer("blah", UTF_8));
         producer.lastHttpContent();
         assertThat(producer.state(), is(BUFFERING_COMPLETED));
-        assertThat(downstream.getOnNextEvents(), is(emptyList()));
+        verify(downstream, never()).onNext(any());
 
         producer.newChunk(contentChunk1);
 
@@ -499,15 +501,15 @@ public class FlowControllingHttpContentProducerTest {
         producer.newChunk(copiedBuffer("blah", UTF_8));
         producer.lastHttpContent();
         assertThat(producer.state(), is(BUFFERING_COMPLETED));
-        assertThat(downstream.getOnNextEvents(), is(emptyList()));
+        verify(downstream, never()).onNext(any());
 
         producer.onSubscribed(downstream);
         assertThat(producer.state(), is(EMITTING_BUFFERED_CONTENT));
 
         producer.request(1);
 
-        assertThat(downstream.getOnNextEvents(), contains(copiedBuffer("blah", UTF_8)));
-        assertThat(hasCompleted(downstream), is(true));
+        assertThat(captureOnNext(), contains(copiedBuffer("blah", UTF_8)));
+        verify(downstream).onComplete();
     }
 
     @Test
@@ -517,15 +519,15 @@ public class FlowControllingHttpContentProducerTest {
         producer.newChunk(copiedBuffer("blah", UTF_8));
         producer.lastHttpContent();
         assertThat(producer.state(), is(BUFFERING_COMPLETED));
-        assertThat(downstream.getOnNextEvents(), is(emptyList()));
+        verify(downstream, never()).onNext(any());
 
         producer.onSubscribed(downstream);
 
         assertThat(producer.state(), is(COMPLETED));
         verify(onCompleteAction).run();
         verify(onTerminateAction, never()).accept(isA(Throwable.class));
-        assertThat(downstream.getOnNextEvents(), contains(copiedBuffer("blah", UTF_8)));
-        assertThat(hasCompleted(downstream), is(true));
+        assertThat(captureOnNext(), contains(copiedBuffer("blah", UTF_8)));
+        verify(downstream).onComplete();
     }
 
     @Test
@@ -566,8 +568,8 @@ public class FlowControllingHttpContentProducerTest {
         assertThat(producer.state(), is(COMPLETED));
         verify(onCompleteAction).run();
         verify(onTerminateAction, never()).accept(isA(Throwable.class));
-        assertThat(downstream.getOnNextEvents(), contains(contentChunk1));
-        assertThat(hasCompleted(downstream), is(true));
+        assertThat(captureOnNext(), contains(contentChunk1));
+        verify(downstream).onComplete();
     }
 
     @Test
@@ -662,15 +664,12 @@ public class FlowControllingHttpContentProducerTest {
         assertThat(producer.state(), is(EMITTING_BUFFERED_CONTENT));
 
         // Note: This generates additional backpressure request() for content producer:
-        TestSubscriber<? super ByteBuf> downstream2 = new TestSubscriber<>(1);
-        producer.onSubscribed(downstream2);
+        producer.onSubscribed(additionalSubscriber);
 
-        assertException(getCause(downstream),
-                IllegalStateException.class,
+        assertException(downstream, IllegalStateException.class,
                 "Secondary subscription occurred. producerState=EMITTING_BUFFERED_CONTENT, connection=foobar");
 
-        assertException(getCause(downstream2),
-                IllegalStateException.class,
+        assertException(additionalSubscriber, IllegalStateException.class,
                 "Content observable is already subscribed. producerState=EMITTING_BUFFERED_CONTENT, connection=foobar");
 
         assertThat(producer.state(), is(TERMINATED));
@@ -687,7 +686,7 @@ public class FlowControllingHttpContentProducerTest {
 
         producer.newChunk(copiedBuffer("aaa", UTF_8));
         producer.newChunk(copiedBuffer("bbbb", UTF_8));
-        assertThat(downstream.getOnNextEvents(), is(emptyList()));
+        verify(downstream, never()).onNext(any());
 
         producer.lastHttpContent();
         assertThat(producer.state(), is(EMITTING_BUFFERED_CONTENT));
@@ -700,8 +699,8 @@ public class FlowControllingHttpContentProducerTest {
         verify(onCompleteAction).run();
         verify(onTerminateAction, never()).accept(isA(Throwable.class));
 
-        assertThat(downstream.getOnNextEvents(), contains(copiedBuffer("aaa", UTF_8), copiedBuffer("bbbb", UTF_8)));
-        assertThat(downstream.getOnCompletedEvents().size(), is(1));
+        assertThat(captureOnNext(), contains(copiedBuffer("aaa", UTF_8), copiedBuffer("bbbb", UTF_8)));
+        verify(downstream).onComplete();
     }
 
 
@@ -722,8 +721,8 @@ public class FlowControllingHttpContentProducerTest {
         assertThat(producer.state(), is(COMPLETED));
         verify(onCompleteAction).run();
         verify(onTerminateAction, never()).accept(isA(Throwable.class));
-        assertThat(downstream.getOnNextEvents(), contains(copiedBuffer("blah", UTF_8)));
-        assertThat(hasCompleted(downstream), is(true));
+        assertThat(captureOnNext(), contains(copiedBuffer("blah", UTF_8)));
+        verify(downstream).onComplete();
     }
 
     @Test
@@ -743,8 +742,8 @@ public class FlowControllingHttpContentProducerTest {
         assertThat(producer.state(), is(COMPLETED));
         verify(onCompleteAction).run();
         verify(onTerminateAction, never()).accept(isA(Throwable.class));
-        assertThat(downstream.getOnNextEvents(), contains(copiedBuffer("blah", UTF_8)));
-        assertThat(hasCompleted(downstream), is(true));
+        assertThat(captureOnNext(), contains(copiedBuffer("blah", UTF_8)));
+        verify(downstream).onComplete();
     }
 
     @Test
@@ -764,8 +763,8 @@ public class FlowControllingHttpContentProducerTest {
         assertThat(producer.state(), is(COMPLETED));
         verify(onCompleteAction).run();
         verify(onTerminateAction, never()).accept(isA(Throwable.class));
-        assertThat(downstream.getOnNextEvents(), contains(copiedBuffer("blah", UTF_8)));
-        assertThat(hasCompleted(downstream), is(true));
+        assertThat(captureOnNext(), contains(copiedBuffer("blah", UTF_8)));
+        verify(downstream).onComplete();
     }
 
     @Test
@@ -784,10 +783,20 @@ public class FlowControllingHttpContentProducerTest {
         verify(onCompleteAction, never()).run();
         verify(onTerminateAction).accept(isA(Throwable.class));
 
-        assertThat(downstream.getOnNextEvents(), is(emptyList()));
-        assertThat(getCause(downstream), is(instanceOf(ResponseTimeoutException.class)));
+        verify(downstream, never()).onNext(any());
+        ArgumentCaptor<Throwable> errorArg = ArgumentCaptor.forClass(Throwable.class);
+        verify(downstream, atLeast(1)).onError(errorArg.capture());
+        assertThat(errorArg.getValue(), is(instanceOf(ResponseTimeoutException.class)));
     }
 
+
+
+    /*
+     *  1. subscribe
+     *  2. empty last newChunk (lastHttpContent)
+     *  3. newChunk
+     *  4. notifySubscriber
+     */
     @Test
     public void ignoresContentChunksAndContentEndEventsInCompletedState() throws Exception {
         setUpAndRequest(NO_BACKPRESSURE);
@@ -801,8 +810,8 @@ public class FlowControllingHttpContentProducerTest {
         assertThat(producer.state(), is(COMPLETED));
         verify(onCompleteAction).run();
         verify(onTerminateAction, never()).accept(isA(Throwable.class));
-        assertThat(downstream.getOnCompletedEvents().size(), is(1));
-        assertThat(downstream.getOnNextEvents(), is(emptyList()));
+        verify(downstream).onComplete();
+        verify(downstream, never()).onNext(any());
     }
 
 
@@ -820,20 +829,20 @@ public class FlowControllingHttpContentProducerTest {
         producer.onSubscribed(downstream);
         assertThat(producer.state(), is(EMITTING_BUFFERED_CONTENT));
 
-        assertThat(downstream.getOnNextEvents(), is(emptyList()));
+        verify(downstream, never()).onNext(any());
 
         producer.request(1);
-        assertThat(downstream.getOnNextEvents(), contains(copiedBuffer("chunk 1", UTF_8)));
+        assertThat(captureOnNext(), contains(copiedBuffer("chunk 1", UTF_8)));
 
         producer.request(2);
-        assertThat(downstream.getOnNextEvents(), contains(
+        assertThat(captureOnNext(), contains(
                 copiedBuffer("chunk 1", UTF_8),
                 copiedBuffer("chunk 2", UTF_8),
                 copiedBuffer("chunk 3", UTF_8)
         ));
 
         producer.request(2);
-        assertThat(downstream.getOnNextEvents(), contains(
+        assertThat(captureOnNext(), contains(
                 copiedBuffer("chunk 1", UTF_8),
                 copiedBuffer("chunk 2", UTF_8),
                 copiedBuffer("chunk 3", UTF_8),
@@ -858,11 +867,11 @@ public class FlowControllingHttpContentProducerTest {
         producer.newChunk(copiedBuffer("chunk 4", UTF_8));
         producer.newChunk(copiedBuffer("chunk 5", UTF_8));
 
-        assertThat(downstream.getOnNextEvents(), contains(
+        assertThat(captureOnNext(), contains(
                 copiedBuffer("chunk 1", UTF_8)));
 
         producer.request(3);
-        assertThat(downstream.getOnNextEvents(), contains(
+        assertThat(captureOnNext(), contains(
                 copiedBuffer("chunk 1", UTF_8),
                 copiedBuffer("chunk 2", UTF_8),
                 copiedBuffer("chunk 3", UTF_8),
@@ -870,7 +879,7 @@ public class FlowControllingHttpContentProducerTest {
         ));
 
         producer.request(1);
-        assertThat(downstream.getOnNextEvents(), contains(
+        assertThat(captureOnNext(), contains(
                 copiedBuffer("chunk 1", UTF_8),
                 copiedBuffer("chunk 2", UTF_8),
                 copiedBuffer("chunk 3", UTF_8),
@@ -879,7 +888,7 @@ public class FlowControllingHttpContentProducerTest {
         ));
 
         producer.lastHttpContent();
-        assertThat(downstream.getOnCompletedEvents().size(), is(1));
+        verify(downstream).onComplete();
         assertThat(producer.state(), is(COMPLETED));
         verify(onCompleteAction).run();
         verify(onTerminateAction, never()).accept(isA(Throwable.class));
@@ -899,12 +908,12 @@ public class FlowControllingHttpContentProducerTest {
         producer.onSubscribed(downstream);
         assertThat(producer.state(), is(EMITTING_BUFFERED_CONTENT));
 
-        assertThat(downstream.getOnNextEvents(), contains(
+        assertThat(captureOnNext(), contains(
                 copiedBuffer("chunk 1", UTF_8)
         ));
 
         producer.request(Long.MAX_VALUE);
-        assertThat(downstream.getOnNextEvents(), contains(
+        assertThat(captureOnNext(), contains(
                 copiedBuffer("chunk 1", UTF_8),
                 copiedBuffer("chunk 2", UTF_8),
                 copiedBuffer("chunk 3", UTF_8),
@@ -927,7 +936,7 @@ public class FlowControllingHttpContentProducerTest {
         producer.onSubscribed(downstream);
         assertThat(producer.state(), is(STREAMING));
 
-        assertThat(downstream.getOnNextEvents(), contains(
+        assertThat(captureOnNext(), contains(
                 copiedBuffer("chunk 1", UTF_8),
                 copiedBuffer("chunk 2", UTF_8)
         ));
@@ -937,13 +946,13 @@ public class FlowControllingHttpContentProducerTest {
         producer.newChunk(copiedBuffer("chunk 3", UTF_8));
         producer.newChunk(copiedBuffer("chunk 4", UTF_8));
 
-        assertThat(downstream.getOnNextEvents(), contains(
+        assertThat(captureOnNext(), contains(
                 copiedBuffer("chunk 1", UTF_8),
                 copiedBuffer("chunk 2", UTF_8)
         ));
 
         producer.request(2);
-        assertThat(downstream.getOnNextEvents(), contains(
+        assertThat(captureOnNext(), contains(
                 copiedBuffer("chunk 1", UTF_8),
                 copiedBuffer("chunk 2", UTF_8),
                 copiedBuffer("chunk 3", UTF_8),
@@ -952,6 +961,9 @@ public class FlowControllingHttpContentProducerTest {
     }
 
 
+    /*
+     * Flow Control
+     */
 
     @Test
     public void requestN0EventInBufferingState() {
@@ -1081,20 +1093,17 @@ public class FlowControllingHttpContentProducerTest {
         producer.newChunk(contentChunk2);
         verify(askForMore, times(3)).run();
     }
-*/
 
-
-    public <T> void assertException(Throwable cause, Class<T> klass, String message) {
-        assertThat(cause, is(instanceOf(klass)));
-        assertThat(cause.getMessage(), is(message));
+    public <T> void assertException(Subscriber subscriber, Class<T> klass, String message) {
+        ArgumentCaptor<Throwable> errorArg = ArgumentCaptor.forClass(Throwable.class);
+        verify(subscriber, atLeast(1)).onError(errorArg.capture());
+        assertThat(errorArg.getValue(), is(instanceOf(klass)));
+        assertThat(errorArg.getValue().getMessage(), is(message));
     }
 
-    private Throwable getCause(TestSubscriber<? super ByteBuf> downstream) {
-        return downstream.getOnErrorEvents().get(0);
+    private List<ByteBuf> captureOnNext() {
+        ArgumentCaptor<ByteBuf> responseArg = ArgumentCaptor.forClass(ByteBuf.class);
+        verify(downstream, atLeast(1)).onNext(responseArg.capture());
+        return responseArg.getAllValues();
     }
-
-    private boolean hasCompleted(TestSubscriber<? super ByteBuf> downstream) {
-        return downstream.getOnCompletedEvents().size() == 1;
-    }
-
 }
