@@ -39,6 +39,33 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class ProviderListHandler implements WebServiceHandler {
 
+    private static final String HTML_TEMPLATE = ""
+            + "<!DOCTYPE html>\n"
+            + "<html>\n"
+            + "<head>\n"
+            + "<meta charset=\"UTF-8\">\n"
+            + "<title>%s</title>\n"
+            + "</head>\n"
+            + "\n"
+            + "<body>\n"
+            + "%s\n"
+            + "</body>\n"
+            + "</html>";
+    private static final String HTML_TEMPLATE2 = "" +
+            "<!DOCTYPE html>\n" +
+            "<html>\n" +
+            "<head>\n" +
+            "<meta charset=\"UTF-8\">\n" +
+            "<title>%s</title>\n" +
+            "</head>\n" +
+            "\n" +
+            "<body>\n" +
+            "%s\n" +
+            "</body>\n" +
+            "</html>";
+
+    private static final String TITLE = "List of Providers";
+
     private final StyxObjectStore<ProviderObjectRecord> providerDb;
 
     public ProviderListHandler(StyxObjectStore<ProviderObjectRecord> providerDb) {
@@ -47,9 +74,13 @@ public class ProviderListHandler implements WebServiceHandler {
 
     @Override
     public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-        String output = providerDb.entrySet().stream()
-                .map(entry -> htmlForProvider(entry.getKey(), entry.getValue()))
-                .collect(Collectors.joining("\n"));
+        String htmlBody = new StringBuilder()
+                .append(h2(TITLE))
+                .append(providerDb.entrySet().stream()
+                        .map(entry -> htmlForProvider(entry.getKey(), entry.getValue()))
+                        .collect(Collectors.joining()))
+                .toString();
+        String output = String.format(HTML_TEMPLATE, TITLE, htmlBody);
         return Eventual.of(response(OK)
                 .body(output, UTF_8)
                 .addHeader(CONTENT_TYPE, HTML_UTF_8.toString())
@@ -59,16 +90,20 @@ public class ProviderListHandler implements WebServiceHandler {
     private String htmlForProvider(String name, ProviderObjectRecord provider) {
         StringBuilder html = new StringBuilder();
         html.append(h3(name + " (" + provider.getType() + ")"));
-        html.append("<ul>");
+        html.append("<ul>\n");
         html.append(provider.getStyxService()
                 .adminInterfaceHandlers(adminPath("providers", name))
                 .keySet()
                 .stream()
                 .map(relativePath -> adminEndpointPath("providers", name, relativePath))
                 .map(absolutePath -> li(link(absolutePath, absolutePath)))
-                .collect(Collectors.joining("\n")));
-        html.append("</ul>");
+                .collect(Collectors.joining()));
+        html.append("</ul>\n");
         return html.toString();
+    }
+
+    private String h2(String content) {
+        return String.format("<h2>%s</h2>\n", content);
     }
 
     private String h3(String content) {
