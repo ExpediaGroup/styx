@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 
 import java.net.BindException;
 import java.net.InetSocketAddress;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -81,11 +82,15 @@ final class NettyServer extends AbstractService implements HttpServer {
 
     @Override
     public InetSocketAddress httpAddress() {
-        if (protocolSocketBinder != null) {
-            return new InetSocketAddress(host, protocolSocketBinder.port());
-        } else {
-            return null;
-        }
+        return Optional.ofNullable(protocolSocketBinder)
+                .map(it -> {
+                    try {
+                        return new InetSocketAddress(host, it.port());
+                    } catch (IllegalArgumentException e) {
+                        return null;
+                    }
+                })
+                .orElse(null);
     }
 
     @Override

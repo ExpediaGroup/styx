@@ -284,9 +284,13 @@ public final class StyxServer extends AbstractService {
     @Override
     protected void doStart() {
         printBanner();
-        this.phase1Services.startAsync().awaitHealthy();
-        this.phase2Services.addListener(new ServerStartListener(this));
-        this.phase2Services.startAsync();
+        CompletableFuture.runAsync(() -> {
+            // doStart should return quicly. Therefore offload waiting on a separate thread:
+            this.phase1Services.startAsync().awaitHealthy();
+
+            this.phase2Services.addListener(new ServerStartListener(this));
+            this.phase2Services.startAsync();
+        });
     }
 
     private void printBanner() {
