@@ -21,6 +21,12 @@
     </dependency>
 
     <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-transport-native-epoll</artifactId>
+      <classifier>${netty-transport-native-epoll.classifier}</classifier>
+    </dependency>
+
+    <dependency>
       <groupId>com.hotels.styx</groupId>
       <artifactId>styx-api</artifactId>
     </dependency>
