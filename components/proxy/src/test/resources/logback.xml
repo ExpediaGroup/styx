@@ -7,5 +7,6 @@
   <logger name="Styx-Tests" level="INFO"/>
   <logger name="com.hotels.styx.startup.extensions.FailureHandling" level="INFO"/>
   <logger name="com.hotels.styx.proxy.HttpErrorStatusCauseLogger" level="INFO"/>
+  <logger name="com.hotels.styx.startup.ProxyServerSetUp" level="INFO"/>
 
 </configuration>
