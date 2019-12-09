@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hotels.styx.servers.MockOriginServer
 import com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith
 import com.hotels.styx.support.server.{FakeHttpServer => JavaFakeHttpServer}
 import com.hotels.styx.utils.StubOriginHeader.STUB_ORIGIN_INFO
+import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
 
@@ -70,8 +71,9 @@ object FakeHttpServer {
     }
 
     def start(): JavaFakeHttpServer = {
+      val LOGGER = LoggerFactory.getLogger(this.getClass)
       val server = JavaFakeHttpServer.newHttpServer(appId, originId, this.asJava).start()
-      println("server ports: " + server.adminPort() + " " + server.port())
+      LOGGER.info("server ports: " + server.adminPort() + " " + server.port())
 
       val response = s"Response From $appId:$originId, localhost:$port"
 

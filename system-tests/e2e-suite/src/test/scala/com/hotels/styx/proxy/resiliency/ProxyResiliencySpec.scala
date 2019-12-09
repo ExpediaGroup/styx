@@ -30,6 +30,7 @@ import io.netty.handler.codec.http._
 import org.scalacheck.Test
 import org.scalatest.prop.{Checkers, Configuration, PropertyChecks}
 import org.scalatest.{BeforeAndAfter, FunSpec}
+import org.slf4j.LoggerFactory
 
 import scala.util.{Failure, Success, Try}
 
@@ -44,6 +45,8 @@ class ProxyResiliencySpec extends FunSpec
   with BeforeAndAfter {
 
   val (originOne, originOneServer) = originAndCustomResponseWebServer("NettyOrigin")
+
+  val LOGGER = LoggerFactory.getLogger(classOf[ProxyResiliencySpec])
 
   val logback = fixturesHome(this.getClass, "/conf/logback/logback-suppress-errors.xml")
   override val styxConfig = StyxConfig(
@@ -89,7 +92,7 @@ class ProxyResiliencySpec extends FunSpec
       forAll(badRequests(styxHost())) { (request: HttpRequest) =>
         sendRequest(request) match {
           case Success(response) => assertResponseIsBadRequest(response)
-          case Failure(exception) => println(exception)
+          case Failure(exception) => LOGGER.warn("Request: Failure", exception)
         }
       }
     }
@@ -101,9 +104,9 @@ class ProxyResiliencySpec extends FunSpec
 
         sendRequest(request) match {
           case Success(response) =>
-            println("response=" + response)
+            LOGGER.info("response=" + response)
             assertResponseIsBadRequest(response)
-          case Failure(exception) => println(exception)
+          case Failure(exception) => LOGGER.warn("Request: Failure", exception)
         }
       }
     }
@@ -149,7 +152,7 @@ class ProxyResiliencySpec extends FunSpec
     if (status != OK) {
       testClient.disconnect()
       testClient = aggregatingTestClient("localhost", styxServer.httpPort)
-      println("Client reconnected after HTTP status=%d.".format(status.code()))
+      LOGGER.info("Client reconnected after HTTP status=%d.".format(status.code()))
     }
   }
 

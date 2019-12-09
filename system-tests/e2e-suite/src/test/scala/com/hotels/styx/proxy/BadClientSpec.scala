@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import io.netty.handler.codec.http.HttpVersion.HTTP_1_1
 import io.netty.handler.codec.http._
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration._
 
@@ -37,13 +38,14 @@ class BadClientSpec extends FunSpec
   with NettyOrigins
   with Eventually {
 
+  private val LOGGER = LoggerFactory.getLogger(classOf[BadClientSpec])
   val (originOne, originOneServer) = originAndCustomResponseWebServer("NettyOrigin")
 
   private lazy val testClient = aggregatingTestClient("localhost", styxServer.httpPort)
 
   override protected def beforeAll() = {
     super.beforeAll()
-    println("Orign port is: [%d]".format(originOne.port))
+    LOGGER.info("Orign port is: [%d]".format(originOne.port))
     styxServer.setBackends("/badClientSpec/" -> HttpBackend("app-1", Origins(originOneServer)))
   }
 
