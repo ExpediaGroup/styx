@@ -8,5 +8,6 @@
   <logger name="com.hotels.styx.startup.extensions.FailureHandling" level="INFO"/>
   <logger name="com.hotels.styx.proxy.HttpErrorStatusCauseLogger" level="INFO"/>
   <logger name="com.hotels.styx.startup.ProxyServerSetUp" level="INFO"/>
+  <logger name="com.hotels.styx.http-messages.inbound" level="INFO"/>
 
 </configuration>
