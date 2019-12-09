@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration>
+
+    <logger name="Styx-Tests" level="INFO"/>
+    <logger name="com.hotels.styx.http-messages.inbound" level="INFO"/>
+    <logger name="com.hotels.styx.http-messages.outbound" level="INFO"/>
+    <logger name="com.hotels.styx.proxy.backends.file.FileChangeMonitor" level="INFO"/>
+    <logger name="com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder" level="INFO"/>
+    <logger name="com.hotels.styx.server.netty.connectors.HttpPipelineHandler" level="INFO"/>
+
+  <root level="ERROR">
+  </root>
+
+</configuration>

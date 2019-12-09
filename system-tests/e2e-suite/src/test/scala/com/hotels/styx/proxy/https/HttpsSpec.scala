@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package com.hotels.styx.proxy.https
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.HttpHeaderNames.{X_FORWARDED_PROTO, _}
-import com.hotels.styx.api.HttpMethod.GET
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.infrastructure.HttpResponseImplicits
@@ -63,7 +62,7 @@ class HttpsSpec extends FunSpec
         "https-app", Origins(recordingBackend), TlsSettings()
       ))
 
-      val req = new HttpRequest.Builder(GET, styxServer.secureRouterURL("/secure"))
+      val req = HttpRequest.get("/secure")
         .header(HOST, styxServer.httpsProxyHost)
         .build()
 

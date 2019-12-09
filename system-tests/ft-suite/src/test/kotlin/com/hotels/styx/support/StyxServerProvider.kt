@@ -31,6 +31,7 @@ import com.hotels.styx.api.plugins.spi.Plugin
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.startup.StyxServerComponents
+import org.slf4j.LoggerFactory
 import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Path
@@ -56,11 +57,15 @@ val defaultServerConfig = """
         http:
           port: 0""".trimIndent()
 
+val LOGGER = LoggerFactory.getLogger(StyxServerProvider::class.java)
+
+private val logConfigPath = ResourcePaths.fixturesHome(StyxServerProvider::class.java, "/logback.xml")
+
 class StyxServerProvider(
         val defaultConfig: String = defaultServerConfig,
         val defaultAdditionalRoutingObjects: Map<String, RoutingObjectFactory> = mapOf(),
         val defaultAdditionalPlugins: Map<String, Plugin> = mapOf(),
-        val loggingConfig: Path? = null,
+        val loggingConfig: Path? = logConfigPath,
         val validateConfig: Boolean = true) {
     val serverRef: AtomicReference<StyxServer?> = AtomicReference()
 
@@ -80,6 +85,7 @@ class StyxServerProvider(
             configuration: String = this.defaultConfig,
             additionalRoutingObjects: Map<String, RoutingObjectFactory> = this.defaultAdditionalRoutingObjects,
             additionalPlugins: Map<String, Plugin> = this.defaultAdditionalPlugins,
+            loggingConfig: Path? = logConfigPath,
             validateConfig: Boolean = this.validateConfig): StyxServerProvider {
         if (started()) {
             stop()
@@ -90,6 +96,7 @@ class StyxServerProvider(
                 .additionalRoutingObjects(additionalRoutingObjects)
                 .plugins(additionalPlugins)
 
+        println("restarted with logging config: $loggingConfig")
         components = if (loggingConfig != null) components.loggingSetUp(loggingConfig.toString()) else components
 
         val newServer = StyxServer(components.build())
@@ -118,7 +125,7 @@ fun StyxServerProvider.adminRequest(endpoint: String, debug: Boolean = false): H
 fun CompletableFuture<HttpResponse>.wait(debug: Boolean = false) = this.toMono()
         .doOnNext {
             if (debug) {
-                println("${it.status()} - ${it.headers()} - ${it.bodyAs(UTF_8)}")
+                LOGGER.debug("${it.status()} - ${it.headers()} - ${it.bodyAs(UTF_8)}")
             }
         }
         .block()
@@ -164,7 +171,7 @@ fun StyxServer.newRoutingObject(name: String, routingObject: String): HttpRespon
             .wait()
 
     if (response?.status() != CREATED) {
-        println("Object $name was not created. Response from server: ${response?.status()} - '${response?.bodyAs(UTF_8)}'")
+        LOGGER.debug("Object $name was not created. Response from server: ${response?.status()} - '${response?.bodyAs(UTF_8)}'")
     }
 
     return response?.status() ?: HttpResponseStatus.statusWithCode(666)
@@ -178,7 +185,7 @@ fun StyxServer.removeRoutingObject(name: String): HttpResponseStatus {
             .wait()
 
     if (response?.status() != OK) {
-        println("Object $name was not removed. Response from server: ${response?.status()} - '${response?.bodyAs(UTF_8)}'")
+        LOGGER.debug("Object $name was not removed. Response from server: ${response?.status()} - '${response?.bodyAs(UTF_8)}'")
     }
 
     return response?.status() ?: HttpResponseStatus.statusWithCode(666)

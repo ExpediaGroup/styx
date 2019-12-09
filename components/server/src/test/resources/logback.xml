@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration>
+
+  <root level="OFF">
+  </root>
+
+  <logger name="Styx-Tests" level="INFO"/>
+  <logger name="com.hotels.styx.server.netty.connectors.HttpPipelineHandler" level="INFO"/>
+  <logger name="com.hotels.styx.server.netty.connectors.ExceptionStatusMapper" level="INFO"/>
+  <logger name="com.hotels.styx.server.netty.connectors.HttpResponseWriter" level="INFO"/>
+
+</configuration>
