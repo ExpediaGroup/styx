@@ -65,7 +65,7 @@ class StyxServerProvider(
         val defaultConfig: String = defaultServerConfig,
         val defaultAdditionalRoutingObjects: Map<String, RoutingObjectFactory> = mapOf(),
         val defaultAdditionalPlugins: Map<String, Plugin> = mapOf(),
-        val loggingConfig: Path? = logConfigPath,
+        val defaultLoggingConfig: Path? = logConfigPath,
         val validateConfig: Boolean = true) {
     val serverRef: AtomicReference<StyxServer?> = AtomicReference()
 
@@ -85,7 +85,7 @@ class StyxServerProvider(
             configuration: String = this.defaultConfig,
             additionalRoutingObjects: Map<String, RoutingObjectFactory> = this.defaultAdditionalRoutingObjects,
             additionalPlugins: Map<String, Plugin> = this.defaultAdditionalPlugins,
-            loggingConfig: Path? = logConfigPath,
+            loggingConfig: Path? = this.defaultLoggingConfig,
             validateConfig: Boolean = this.validateConfig): StyxServerProvider {
         if (started()) {
             stop()
@@ -96,7 +96,7 @@ class StyxServerProvider(
                 .additionalRoutingObjects(additionalRoutingObjects)
                 .plugins(additionalPlugins)
 
-        println("restarted with logging config: $loggingConfig")
+        LOGGER.info("restarted with logging config: $loggingConfig")
         components = if (loggingConfig != null) components.loggingSetUp(loggingConfig.toString()) else components
 
         val newServer = StyxServer(components.build())

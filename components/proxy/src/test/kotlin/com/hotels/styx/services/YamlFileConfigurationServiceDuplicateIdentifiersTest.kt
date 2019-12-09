@@ -81,7 +81,7 @@ class YamlFileConfigurationServiceDuplicateIdentifiersTest : FunSpec() {
                 Thread.sleep(500)
 
                 objectStore.entrySet().forEach {
-                    println("entry: ${it.key} -> ${it.value.type} - ${it.value.tags}")
+                    LOGGER.debug("entry: ${it.key} -> ${it.value.type} - ${it.value.tags}")
                 }
 
                 objectStore.entrySet().size.shouldBe(4)
@@ -114,10 +114,10 @@ class YamlFileConfigurationServiceDuplicateIdentifiersTest : FunSpec() {
                 Thread.sleep(500)
 
                 objectStore.entrySet().forEach {
-                    println("routing entry: ${it.key} -> ${it.value.type} - ${it.value.tags}")
+                    LOGGER.debug("routing entry: ${it.key} -> ${it.value.type} - ${it.value.tags}")
                 }
                 serviceDb.entrySet().forEach {
-                    println("service entry: ${it.key} -> ${it.value.type} - ${it.value.tags}")
+                    LOGGER.debug("service entry: ${it.key} -> ${it.value.type} - ${it.value.tags}")
                 }
 
                 serviceDb.entrySet().size.shouldBe(1)

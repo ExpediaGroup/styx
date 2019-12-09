@@ -20,12 +20,13 @@ import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.RewriteConfig;
 import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.applications.BackendServices;
-import com.hotels.styx.server.routing.antlr.DslFunctionResolutionError;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
@@ -52,10 +53,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.matchesPattern;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class YamlApplicationsProviderTest {
+    private static final Logger LOGGER = LoggerFactory.getLogger(YamlApplicationsProviderTest.class);
 
     private static final String ORIGINS_FILE = fixturesHome() + "conf/origins/origins-for-https-test.yml";
     private static final String OLD_ORIGINS_FILE = fixturesHome() + "conf/origins/origins-for-https-test-ssl-settings.yml";
@@ -119,7 +120,7 @@ public class YamlApplicationsProviderTest {
         YamlApplicationsProvider config = loadFromPath(path);
 
         StreamSupport.stream(config.get().spliterator(), false)
-                .forEach(service -> System.out.println(service.id() + " - " + service.healthCheckConfig()));
+                .forEach(service -> LOGGER.info(service.id() + " - " + service.healthCheckConfig()));
 
         assertThat(config.get(), containsInAnyOrder(
                 anApplication()

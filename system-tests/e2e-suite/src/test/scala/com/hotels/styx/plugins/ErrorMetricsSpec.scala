@@ -30,8 +30,10 @@ import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.infrastructure.{MemoryBackedRegistry, RegistryServiceAdapter}
 import com.hotels.styx.support.ImplicitStyxConversions
 import com.hotels.styx.support.backends.FakeHttpServer
+import com.hotels.styx.support.backends.FakeHttpServer.HttpStartupConfig
 import com.hotels.styx.support.configuration
 import com.hotels.styx.support.configuration._
+import com.hotels.styx.support.server.FakeHttpServer
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSpec, Matchers}
 
@@ -50,10 +52,7 @@ class ErrorMetricsSpec extends FunSpec
   with StyxClientSupplier
   with Eventually {
 
-  val normalBackend = FakeHttpServer.HttpStartupConfig(appId = "appOne", originId = "01")
-    .start()
-    .stub(urlMatching("/.*"), aResponse.withStatus(200))
-    .stub(urlMatching("/fail"), aResponse.withStatus(500))
+  var normalBackend: FakeHttpServer = _
 
   var backendsRegistry: MemoryBackedRegistry[BackendService] = _
   var styxServer: StyxServer = _
@@ -67,6 +66,15 @@ class ErrorMetricsSpec extends FunSpec
     "generateBadGatewayStatusPlugin" -> new Return502Interceptor(),
     "mapToBadGatewayStatusPlugin" -> new MapTo502Interceptor()
   ))
+
+
+  override protected def beforeAll(): Unit = {
+    super.beforeAll()
+    normalBackend = HttpStartupConfig(appId = "appOne", originId = "01")
+      .start()
+      .stub(urlMatching("/.*"), aResponse.withStatus(200))
+      .stub(urlMatching("/fail"), aResponse.withStatus(500))
+  }
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()

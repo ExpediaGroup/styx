@@ -180,7 +180,6 @@ public class BackendServicesRouterTest {
 
         LiveHttpRequest request = get("/ba/").build();
         Optional<HttpHandler> route = router.route(request, context);
-        System.out.println("route: " + route);
 
         assertThat(route, is(Optional.empty()));
     }

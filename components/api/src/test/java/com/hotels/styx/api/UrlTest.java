@@ -93,8 +93,6 @@ public class UrlTest {
         Url url = url("http://example.com/?foo=bar")
                 .build();
 
-        System.out.println(url.query());
-
         assertThat(url.queryParam("foo"), isValue("bar"));
     }
 

@@ -65,7 +65,7 @@ class MetricsSpec : FunSpec() {
 
                 httpPipeline: pathPrefixRouter
                 """.trimIndent(),
-            loggingConfig = ResourcePaths.fixturesHome(
+            defaultLoggingConfig = ResourcePaths.fixturesHome(
                     OriginsFileCompatibilitySpec::class.java,
                     "/conf/logback/logback.xml")
                     .toAbsolutePath())

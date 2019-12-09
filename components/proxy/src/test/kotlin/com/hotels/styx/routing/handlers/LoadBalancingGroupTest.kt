@@ -39,6 +39,7 @@ import io.kotlintest.specs.FeatureSpec
 import io.mockk.mockk
 import io.mockk.verify
 import org.reactivestreams.Publisher
+import org.slf4j.LoggerFactory
 import reactor.core.Disposable
 import reactor.core.publisher.toFlux
 import reactor.core.publisher.toMono
@@ -46,6 +47,8 @@ import java.nio.charset.StandardCharsets.UTF_8
 import java.time.Duration
 
 class LoadBalancingGroupTest : FeatureSpec() {
+
+    private val LOGGER = LoggerFactory.getLogger(LoadBalancingGroupTest::class.java)
 
     // Tests depend on each other. So run the tests sequentially:
     override fun isolationMode(): IsolationMode = IsolationMode.SingleInstance
@@ -177,7 +180,7 @@ class LoadBalancingGroupTest : FeatureSpec() {
 
                 invocations.forEach {
                     val response = it.block()
-                    println("response: ${response.bodyAs(UTF_8)}")
+                    LOGGER.debug("response: ${response.bodyAs(UTF_8)}")
                 }
             }
 
