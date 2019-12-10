@@ -130,7 +130,7 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
             // Can be started with flow controlling disabled
             EventLoop eventLoop = ctx.channel().eventLoop();
 
-            Publisher<Buffer> contentPublisher = new ContentPublisher(eventLoop, getContentProducer(ctx));
+            Publisher<Buffer> contentPublisher = new ContentPublisher(eventLoop, producer);
 
             if ("close".equalsIgnoreCase(nettyResponse.headers().get(CONNECTION))) {
                 toBeClosed = true;
