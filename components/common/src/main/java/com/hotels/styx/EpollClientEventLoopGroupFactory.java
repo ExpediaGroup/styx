@@ -13,10 +13,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.client.netty.eventloop.epoll;
+package com.hotels.styx;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.hotels.styx.client.netty.ClientEventLoopFactory;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollSocketChannel;

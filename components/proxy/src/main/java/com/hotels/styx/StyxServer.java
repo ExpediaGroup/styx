@@ -175,8 +175,7 @@ public final class StyxServer extends AbstractService {
                 components.environment(),
                 components.services(),
                 components.plugins(),
-                components.eventLoopGroup(),
-                components.nettySocketChannelClass())
+                components.executor())
                 .create();
 
         // Startup phase 1: start plugins, control plane providers, and other services:

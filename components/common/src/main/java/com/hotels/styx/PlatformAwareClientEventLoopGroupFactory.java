@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,11 +13,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.client.netty.eventloop;
+package com.hotels.styx;
 
-import com.hotels.styx.client.netty.ClientEventLoopFactory;
-import com.hotels.styx.client.netty.eventloop.epoll.EpollClientEventLoopGroupFactory;
-import com.hotels.styx.client.netty.eventloop.nio.NioClientEventLoopGroupFactory;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.socket.SocketChannel;

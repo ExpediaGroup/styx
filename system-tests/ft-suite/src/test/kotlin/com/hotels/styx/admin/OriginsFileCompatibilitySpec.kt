@@ -65,7 +65,13 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                   connectors:
                     http:
                       port: 0
-        
+
+                request-logging:
+                  inbound:
+                    enabled: true
+                  outbound:
+                    enabled: true
+
                 providers:
                   originsFileLoader:
                     type: YamlFileConfigurationService
@@ -94,7 +100,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
             styxServer.restart()
 
             test("It populates forwarding path from the origins yaml file") {
-                println("Object database: " + dumpObjectDatabase())
+                LOGGER.info("Object database: " + dumpObjectDatabase())
 
                 eventually(2.seconds, AssertionError::class.java) {
                     client.send(get("/1")
@@ -769,4 +775,6 @@ class OriginsFileCompatibilitySpec : FunSpec() {
     }
 }
 
-private val client: StyxHttpClient = StyxHttpClient.Builder().build()
+private val client: StyxHttpClient = StyxHttpClient.Builder()
+        .threadSettings("styx-client", 0)
+        .build()
