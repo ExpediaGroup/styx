@@ -178,7 +178,6 @@ class ProxyConnectorFactory implements ServerConnectorFactory {
 
         private NettyToStyxRequestDecoder requestTranslator() {
             return new NettyToStyxRequestDecoder.Builder()
-                    .flowControlEnabled(true)
                     .unwiseCharEncoder(unwiseCharEncoder)
                     .build();
         }

@@ -34,9 +34,8 @@ import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.ReferenceCountUtil;
-import rx.Observable;
-import rx.Producer;
-import rx.Subscriber;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -52,7 +51,6 @@ import static com.hotels.styx.server.UniqueIdSuppliers.UUID_VERSION_ONE_SUPPLIER
 import static com.hotels.styx.server.netty.codec.UnwiseCharsEncoder.IGNORE;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.StreamSupport.stream;
-import static rx.RxReactiveStreams.toPublisher;
 
 /**
  * This {@link MessageToMessageDecoder} is responsible for decode {@link io.netty.handler.codec.http.HttpRequest}
@@ -62,13 +60,11 @@ import static rx.RxReactiveStreams.toPublisher;
  */
 public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<HttpObject> {
     private final UniqueIdSupplier uniqueIdSupplier;
-    private final boolean flowControlEnabled;
     private final UnwiseCharsEncoder unwiseCharEncoder;
     private FlowControllingHttpContentProducer producer;
 
     private NettyToStyxRequestDecoder(Builder builder) {
         this.uniqueIdSupplier = builder.uniqueIdSupplier;
-        this.flowControlEnabled = builder.flowControlEnabled;
         this.unwiseCharEncoder = builder.unwiseCharEncoder;
     }
 
@@ -80,10 +76,13 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
 
         try {
             if (httpObject instanceof HttpRequest) {
-                this.producer = new FlowControllingHttpContentProducer(ctx, this.flowControlEnabled);
-                Observable<ByteBuf> contentObservable = Observable.create(contentSubscriber -> {
-                    contentSubscriber.setProducer(this.producer);
-                    this.producer.subscriptionStart(contentSubscriber);
+                this.producer = new FlowControllingHttpContentProducer(ctx);
+                Flux<ByteBuf> contentObservable = Flux.create(sink -> {
+                    ctx.channel().config().setAutoRead(false);
+                    sink.onRequest(n -> {
+                        ctx.channel().read();
+                    });
+                    this.producer.subscriptionStart(sink);
                 });
 
                 HttpRequest request = (HttpRequest) httpObject;
@@ -132,7 +131,7 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
         }
     }
 
-    private LiveHttpRequest toStyxRequest(HttpRequest request, Observable<ByteBuf> contentObservable) {
+    private LiveHttpRequest toStyxRequest(HttpRequest request, Flux<ByteBuf> contentObservable) {
         validateHostHeader(request);
         return makeAStyxRequestFrom(request, contentObservable)
                 .removeHeader(EXPECT)
@@ -161,14 +160,14 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
 
 
     @VisibleForTesting
-    LiveHttpRequest.Builder makeAStyxRequestFrom(HttpRequest request, Observable<ByteBuf> content) {
+    LiveHttpRequest.Builder makeAStyxRequestFrom(HttpRequest request, Flux<ByteBuf> content) {
         Url url = UrlDecoder.decodeUrl(unwiseCharEncoder, request);
         LiveHttpRequest.Builder requestBuilder = new LiveHttpRequest.Builder()
                 .method(toStyxMethod(request.method()))
                 .url(url)
                 .version(toStyxVersion(request.protocolVersion()))
                 .id(uniqueIdSupplier.get())
-                .body(new ByteStream(toPublisher(content.map(Buffers::fromByteBuf))));
+                .body(new ByteStream(content.map(Buffers::fromByteBuf)));
 
         stream(request.headers().spliterator(), false)
                 .forEach(entry -> requestBuilder.addHeader(entry.getKey(), entry.getValue()));
@@ -184,22 +183,17 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
         return com.hotels.styx.api.HttpMethod.httpMethod(method.name());
     }
 
-    private static class FlowControllingHttpContentProducer implements Producer {
+    private static class FlowControllingHttpContentProducer {
         private final ChannelHandlerContext ctx;
 
         private final Queue<ByteBuf> readQueue = new ArrayDeque<>();
         private boolean completed;
-        private Subscriber<? super ByteBuf> contentSubscriber;
+        private FluxSink<? super ByteBuf> contentSubscriber;
 
-        FlowControllingHttpContentProducer(ChannelHandlerContext ctx, boolean flowControlEnabled) {
+        FlowControllingHttpContentProducer(ChannelHandlerContext ctx) {
             this.ctx = ctx;
-
-            if (flowControlEnabled) {
-                this.ctx.channel().config().setAutoRead(false);
-            }
         }
 
-        @Override
         public void request(long n) {
             this.ctx.channel().read();
         }
@@ -220,16 +214,16 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
                 synchronized (this.readQueue) {
                     ByteBuf value;
                     while ((value = this.readQueue.poll()) != null) {
-                        this.contentSubscriber.onNext(value);
+                        this.contentSubscriber.next(value);
                     }
                 }
                 if (this.completed) {
-                    this.contentSubscriber.onCompleted();
+                    this.contentSubscriber.complete();
                 }
             }
         }
 
-        void subscriptionStart(Subscriber<? super ByteBuf> subscriber) {
+        void subscriptionStart(FluxSink<? super ByteBuf> subscriber) {
             this.contentSubscriber = subscriber;
             notifySubscriber();
         }
@@ -248,17 +242,11 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
      * Builder.
      */
     public static final class Builder {
-        private boolean flowControlEnabled;
         private UniqueIdSupplier uniqueIdSupplier = UUID_VERSION_ONE_SUPPLIER;
         private UnwiseCharsEncoder unwiseCharEncoder = IGNORE;
 
         public Builder uniqueIdSupplier(UniqueIdSupplier uniqueIdSupplier) {
             this.uniqueIdSupplier = requireNonNull(uniqueIdSupplier);
-            return this;
-        }
-
-        public Builder flowControlEnabled(boolean flowControlEnabled) {
-            this.flowControlEnabled = flowControlEnabled;
             return this;
         }
 

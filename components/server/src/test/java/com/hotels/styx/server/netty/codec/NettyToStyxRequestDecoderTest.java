@@ -41,6 +41,7 @@ import io.netty.handler.codec.http.HttpResponse;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import reactor.core.publisher.Flux;
 import rx.Observable;
 import rx.Subscriber;
 import rx.observers.TestSubscriber;
@@ -245,10 +246,9 @@ public class NettyToStyxRequestDecoderTest {
 
         NettyToStyxRequestDecoder decoder = new NettyToStyxRequestDecoder.Builder()
                 .uniqueIdSupplier(uniqueIdSupplier)
-                .flowControlEnabled(true)
                 .build();
 
-        LiveHttpRequest styxRequest = decoder.makeAStyxRequestFrom(request, Observable.<ByteBuf>empty())
+        LiveHttpRequest styxRequest = decoder.makeAStyxRequestFrom(request, Flux.empty())
                 .build();
 
         LiveHttpRequest expected = new LiveHttpRequest.Builder(
@@ -270,10 +270,9 @@ public class NettyToStyxRequestDecoderTest {
 
         NettyToStyxRequestDecoder decoder = new NettyToStyxRequestDecoder.Builder()
                 .uniqueIdSupplier(uniqueIdSupplier)
-                .flowControlEnabled(true)
                 .build();
 
-        LiveHttpRequest styxRequest = decoder.makeAStyxRequestFrom(request, Observable.<ByteBuf>empty())
+        LiveHttpRequest styxRequest = decoder.makeAStyxRequestFrom(request, Flux.empty())
                 .build();
 
         LiveHttpRequest expected = new LiveHttpRequest.Builder(
@@ -400,7 +399,6 @@ public class NettyToStyxRequestDecoderTest {
 
     public static NettyToStyxRequestDecoder newHttpRequestDecoderWithFlowControl() {
         return new NettyToStyxRequestDecoder.Builder()
-                .flowControlEnabled(true)
                 .build();
     }
 
