@@ -21,8 +21,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PRO
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
-import com.hotels.styx.STATE_ACTIVE
-import com.hotels.styx.STATE_UNREACHABLE
+import com.hotels.styx.*
 import com.hotels.styx.api.extension.Origin
 import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings
@@ -34,7 +33,6 @@ import com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSo
 import com.hotels.styx.infrastructure.configuration.json.ObjectMappers
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML
-import com.hotels.styx.lbGroupTag
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.Builtins
 import com.hotels.styx.routing.config.Builtins.HEALTH_CHECK_MONITOR
@@ -49,7 +47,6 @@ import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.HostProxy.HostProxyConfiguration
 import com.hotels.styx.routing.handlers.LoadBalancingGroup
 import com.hotels.styx.routing.handlers.ProviderObjectRecord
-import com.hotels.styx.stateTag
 import org.slf4j.LoggerFactory
 
 internal class OriginsConfigConverter(
@@ -114,7 +111,7 @@ internal class OriginsConfigConverter(
                 serviceDb, Builtins.BUILTIN_SERVICE_PROVIDER_FACTORIES, context)
 
         return ProviderObjectRecord(HEALTH_CHECK_MONITOR,
-                setOf("target=$appId"),
+                setOf(targetTag(appId)),
                 serviceConfig,
                 providerObject)
     }
