@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hotels.styx.support.{NettyOrigins, TestClientSupport}
 import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
+import org.slf4j.LoggerFactory
 
 class OriginCancellationMetrics extends FunSpec
   with StyxProxySpec
@@ -31,6 +32,7 @@ class OriginCancellationMetrics extends FunSpec
   with TestClientSupport
   with Eventually {
 
+  private val LOGGER = LoggerFactory.getLogger(classOf[OriginCancellationMetrics])
 
   val (originOne, originOneServer) = originAndCustomResponseWebServer("NettyOrigin")
 
@@ -48,7 +50,7 @@ class OriginCancellationMetrics extends FunSpec
     originOneServer.stopAsync().awaitTerminated()
     // This test is failing intermittently. Print the metrics snapshot in case it fails,
     // to offer insight into what is going wrong:
-    println("Styx metrics after BadResponseFromOriginSpec: " + styxServer.metricsSnapshot)
+    LOGGER.info("Styx metrics after BadResponseFromOriginSpec: " + styxServer.metricsSnapshot)
     super.afterAll()
   }
 

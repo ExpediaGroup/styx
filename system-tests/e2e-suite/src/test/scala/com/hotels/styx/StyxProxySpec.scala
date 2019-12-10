@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hotels.styx.plugins.PluginPipelineSpec
 import com.hotels.styx.support.configuration.{ImplicitOriginConversions, StyxBackend, StyxBaseConfig}
 import com.hotels.styx.support.{ImplicitStyxConversions, configuration}
 import org.scalatest._
+import org.slf4j.LoggerFactory
 
 
 trait StyxProxySpec extends StyxClientSupplier
@@ -35,6 +36,7 @@ trait StyxProxySpec extends StyxClientSupplier
   with SSLSetup {
   this: Suite =>
 
+  private val LOGGER = LoggerFactory.getLogger(getClass)
   var backendsRegistry = new MemoryBackedRegistry[BackendService]
   var styxServer: StyxServer = _
 
@@ -50,14 +52,14 @@ trait StyxProxySpec extends StyxClientSupplier
 
   override protected def beforeAll() = {
     styxServer = styxConfig.startServer(new RegistryServiceAdapter(backendsRegistry))
-    println("Styx http port is: [%d]".format(styxServer.httpPort))
-    println("Styx https port is: [%d]".format(styxServer.secureHttpPort))
+    LOGGER.info("Styx http port is: [%d]".format(styxServer.httpPort))
+    LOGGER.info("Styx https port is: [%d]".format(styxServer.secureHttpPort))
     super.beforeAll()
   }
 
   override protected def afterAll() = {
-    println("Styx http port was: [%d]".format(styxServer.httpPort))
-    println("Styx https port was: [%d]".format(styxServer.secureHttpPort))
+    LOGGER.info("Styx http port was: [%d]".format(styxServer.httpPort))
+    LOGGER.info("Styx https port was: [%d]".format(styxServer.secureHttpPort))
     styxServer.stopAsync().awaitTerminated()
     super.afterAll()
   }

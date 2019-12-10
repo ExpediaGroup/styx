@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import com.hotels.styx.utils.StubOriginHeader.STUB_ORIGIN_INFO
 import com.hotels.styx.{StyxClientSupplier, StyxProxySpec}
 import io.netty.buffer.{ByteBuf, Unpooled}
 import org.scalatest.{FunSpec, SequentialNestedSuiteExecution}
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration._
 
@@ -37,6 +38,7 @@ class ProtocolsSpec extends FunSpec
   with StyxClientSupplier
   with SequentialNestedSuiteExecution {
 
+  private val LOGGER = LoggerFactory.getLogger(classOf[ProtocolsSpec])
   val logback = fixturesHome(this.getClass, "/conf/logback/logback-debug-stdout.xml")
   val crtFile = fixturesHome(this.getClass, "/ssl/testCredentials.crt").toString
   val keyFile = fixturesHome(this.getClass, "/ssl/testCredentials.key").toString
@@ -113,9 +115,9 @@ class ProtocolsSpec extends FunSpec
 
   }
 
-  println("httpOrigin: " + httpServer.port())
-  println("httpsOriginWithCert: " + httpsOriginWithCert.port())
-  println("httpsOriginWithoutCert: " + httpsOriginWithoutCert.port())
+  LOGGER.info("httpOrigin: " + httpServer.port())
+  LOGGER.info("httpsOriginWithCert: " + httpsOriginWithCert.port())
+  LOGGER.info("httpsOriginWithoutCert: " + httpsOriginWithoutCert.port())
 
   override protected def afterAll(): Unit = {
     httpsOriginWithoutCert.stop()

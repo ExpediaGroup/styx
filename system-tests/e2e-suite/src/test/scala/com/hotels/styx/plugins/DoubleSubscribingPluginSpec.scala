@@ -18,7 +18,7 @@ package com.hotels.styx.plugins
 import ch.qos.logback.classic.Level.ERROR
 import com.hotels.styx.MockServer.responseSupplier
 import com.hotels.styx.api.HttpResponseStatus._
-import com.hotels.styx.api.{LiveHttpResponse, HttpResponse}
+import com.hotels.styx.api.{HttpResponse, LiveHttpResponse}
 import com.hotels.styx.proxy.HttpErrorStatusCauseLogger
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, ProxyConfig, StyxConfig}
 import com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent
@@ -32,6 +32,7 @@ import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.hasItem
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration._
 
@@ -40,6 +41,7 @@ class DoubleSubscribingPluginSpec extends FunSpec
   with Eventually
   with TestClientSupport {
 
+  private val LOGGER = LoggerFactory.getLogger(classOf[DoubleSubscribingPluginSpec])
   var logger: LoggingTestSupport = _
   val mockServer = new MockServer("origin-1", 0)
 
@@ -90,7 +92,7 @@ class DoubleSubscribingPluginSpec extends FunSpec
         testClient.write(request)
 
         val response = testClient.waitForResponse(3, SECONDS).asInstanceOf[FullHttpResponse]
-        println("got response: " + response)
+        LOGGER.info("got response: " + response)
 
         // Note - In this scenario the Styx HttpResponseWriter manages to send the response headers (200 OK)
         // before the content observable fails with error. For this reason the content observable error cannot

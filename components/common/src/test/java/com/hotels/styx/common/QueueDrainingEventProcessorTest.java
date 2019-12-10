@@ -120,7 +120,7 @@ public class QueueDrainingEventProcessorTest {
         } catch (InterruptedException e) {
             e.printStackTrace();
             currentThread().interrupt();
-            ;
+
             throw new RuntimeException(e);
         } catch (BrokenBarrierException e) {
             throw new RuntimeException(e);

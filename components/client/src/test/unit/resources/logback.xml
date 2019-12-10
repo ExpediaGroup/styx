@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration>
+
+  <root level="OFF">
+  </root>
+
+  <logger name="Styx-Tests" level="INFO"/>
+  <logger name="com.hotels.styx.client.OriginsInventory" level="INFO"/>
+  <logger name="com.hotels.styx.http-messages.inbound" level="INFO"/>
+  <logger name="com.hotels.styx.http-messages.outbound" level="INFO"/>
+  <logger name="com.hotels.styx.client.OriginRestrictionLoadBalancingStrategy" level="INFO"/>
+  <logger name="com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer" level="INFO"/>
+
+</configuration>

@@ -17,15 +17,18 @@ package com.hotels.styx
 
 import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.LiveHttpResponse
+import org.slf4j.LoggerFactory
 import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets
 
+
+private val LOGGER = LoggerFactory.getLogger("com.hotels.styx.Responses")
 
 fun Eventual<LiveHttpResponse>.wait(maxBytes: Int = 100*1024, debug: Boolean = false) = this.toMono()
         .flatMap { it.aggregate(maxBytes).toMono() }
         .doOnNext {
             if (debug) {
-                println("${it.status()} - ${it.headers()} - ${it.bodyAs(StandardCharsets.UTF_8)}")
+                LOGGER.info("${it.status()} - ${it.headers()} - ${it.bodyAs(StandardCharsets.UTF_8)}")
             }
         }
         .block()

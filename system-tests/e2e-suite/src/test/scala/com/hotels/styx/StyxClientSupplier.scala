@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 import com.hotels.styx.api._
 import com.hotels.styx.client.StyxHttpClient
 import org.scalatest.{BeforeAndAfterAll, Suite}
+import org.slf4j.LoggerFactory
 
 import scala.compat.java8.FutureConverters.CompletionStageOps
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -31,6 +32,8 @@ trait StyxClientSupplier extends BeforeAndAfterAll {
 
   val TWO_SECONDS: Int = 2 * 1000
   val FIVE_SECONDS: Int = 5 * 1000
+
+  private val LOGGER = LoggerFactory.getLogger(getClass)
 
   val client: StyxHttpClient = new StyxHttpClient.Builder()
     .connectTimeout(1000, MILLISECONDS)
@@ -54,7 +57,7 @@ trait StyxClientSupplier extends BeforeAndAfterAll {
     val future = doRequest(request, secure = secure)
       .map(response => {
         if (debug) {
-          println("StyxClientSupplier: received response for: " + request.url().path())
+          LOGGER.info("StyxClientSupplier: received response for: " + request.url().path())
         }
         response
       })

@@ -31,12 +31,15 @@ import io.kotlintest.eventually
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
+import org.slf4j.LoggerFactory
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Files.copy
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption.REPLACE_EXISTING
+
+private val LOGGER = LoggerFactory.getLogger(FileBasedOriginsFileChangeMonitorSpec::class.java)
 
 class FileBasedOriginsFileChangeMonitorSpec: StringSpec() {
 
@@ -125,8 +128,8 @@ class FileBasedOriginsFileChangeMonitorSpec: StringSpec() {
 private val client: StyxHttpClient = StyxHttpClient.Builder().build()
 
 private fun writeConfig(path: Path, text: String): Unit {
-    println("Updating origins configuration to $path")
-    println(text)
+    LOGGER.info("Updating origins configuration to $path")
+    LOGGER.info(text)
     text.toByteArray(UTF_8)
     copy(ByteArrayInputStream(text.toByteArray(UTF_8)), path, REPLACE_EXISTING)
 }

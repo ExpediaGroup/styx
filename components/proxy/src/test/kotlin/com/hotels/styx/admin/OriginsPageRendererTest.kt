@@ -122,9 +122,6 @@ class OriginsPageRendererTest : FunSpec({
 
         val page = OriginsPageRenderer(assetsRoot, "dcProvider", routeDb).render()
 
-        println("page: ")
-        println(page)
-
         test("Provider name appears in title") {
             page.shouldContain("<h3 class=\"title grey-text text-darken-3 left-align\">Configured Services</h3>")
             page.shouldContain("<h6 class=\"title grey-text text-darken-3 left-align\">Provider: dcProvider</h6>")
@@ -203,9 +200,6 @@ class OriginsPageRendererTest : FunSpec({
                 mockk()))
 
         val page = OriginsPageRenderer(assetsRoot, "dcProvider", routeDb).render()
-
-        println("page: ")
-        println(page)
 
         test("It detects them wrapped LoadBalancingGroup objects as configured applications") {
             page.shouldContain("<h6>/rewrites/ -&gt; appWithRewrites</h6>")

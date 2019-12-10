@@ -66,7 +66,9 @@ class HostProxySpec : FeatureSpec() {
     }
 
     init {
-        feature("Executor thread pool") {
+        // There are other tests that set the JVM system property io.netty.eventLoopThreads=16,
+        // thus potentially affecting and breaking this test.
+        feature("!Executor thread pool") {
             scenario("Runs on StyxHttpClient global thread pool") {
                 testServer.restart()
                 styxServer.restart()
@@ -85,7 +87,9 @@ class HostProxySpec : FeatureSpec() {
                     styxServer().removeRoutingObject("hostProxy")
                 }
 
-                threadCount("Styx-Client-Global") shouldBe 2
+                withClue("Thread count") {
+                    threadCount("Styx-Client-Global") shouldBe 2
+                }
             }
         }
 

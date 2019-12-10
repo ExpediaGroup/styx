@@ -57,7 +57,7 @@ sealed trait StyxBaseConfig {
 }
 
 object StyxBaseConfig {
-  val defaultLogbackXml = ResourcePaths.fixturesHome(this.getClass, "/conf/logback/logback.xml")
+  val defaultLogbackXml = ResourcePaths.fixturesHome(this.getClass, "/logback.xml")
 }
 
 case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),

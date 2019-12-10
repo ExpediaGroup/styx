@@ -39,6 +39,7 @@ import com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith
 import com.hotels.styx.{DefaultStyxConfiguration, MockServer, StyxProxySpec}
 import org.hamcrest.MatcherAssert.assertThat
 import org.scalatest.{BeforeAndAfter, FunSpec}
+import org.slf4j.LoggerFactory
 
 import scala.compat.java8.FutureConverters.CompletionStageOps
 import scala.concurrent.Await
@@ -50,6 +51,7 @@ class ProxySpec extends FunSpec
   with BeforeAndAfter {
   val mockServer = new MockServer(0)
 
+  private val LOGGER = LoggerFactory.getLogger(getClass)
   val recordingBackend = FakeHttpServer.HttpStartupConfig().start()
 
   override protected def beforeAll(): Unit = {
@@ -201,8 +203,8 @@ class ProxySpec extends FunSpec
 
         val resp = decodedRequest(req)
 
-        println("resp: " + resp)
-        println("body: " + resp.bodyAs(UTF_8))
+        LOGGER.info("resp: " + resp)
+        LOGGER.info("body: " + resp.bodyAs(UTF_8))
 
         assert(resp.status() == BAD_GATEWAY)
         assert(resp.header(CONNECTION) == Optional.of("close"))

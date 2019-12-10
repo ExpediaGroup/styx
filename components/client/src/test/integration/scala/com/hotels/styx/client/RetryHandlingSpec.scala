@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -41,9 +41,12 @@ import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values._
 import io.netty.handler.codec.http.LastHttpContent
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
+import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
 
 class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers with OriginSupport {
+
+  val LOGGER = LoggerFactory.getLogger(classOf[RetryHandlingSpec])
 
   val response = "Response From localhost"
 
@@ -178,7 +181,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
   private def doNotRespond(retryCount: AtomicInteger): (ChannelHandlerContext, Any) => Unit = {
     (ctx: ChannelHandlerContext, msg: scala.Any) => {
       if (msg.isInstanceOf[LastHttpContent]) {
-        println("Origin received request, but not responding.")
+        LOGGER.warn("Origin received request, but not responding.")
         retryCount.incrementAndGet
       }
     }
@@ -187,7 +190,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
   private def doNotRespond(latch: CountDownLatch, responseCount: AtomicInteger): (ChannelHandlerContext, Any) => Unit = {
     (ctx: ChannelHandlerContext, msg: scala.Any) => {
       if (msg.isInstanceOf[LastHttpContent]) {
-        println("Origin received request, but not responding.")
+        LOGGER.warn("Origin received request, but not responding.")
         responseCount.incrementAndGet
         latch.countDown()
       }
