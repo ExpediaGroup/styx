@@ -29,6 +29,7 @@ class ServerConfigSchemaTest : DescribeSpec({
         it("Validates a minimal server configuration") {
             validateServerConfiguration(yamlConfig("""
                   proxy:
+                    compressResponses: true
                     connectors:
                       http:
                         port: 8080

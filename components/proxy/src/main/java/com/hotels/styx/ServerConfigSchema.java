@@ -71,6 +71,7 @@ final class ServerConfigSchema {
         STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER = newDocument()
                     .rootSchema(object(
                             field("proxy", object(
+                                    optional("compressResponses", bool()),
                                     field("connectors", serverConnectorsSchema),
                                     optional("bossThreadsCount", integer()),
                                     optional("clientWorkerThreadsCount", integer()),
