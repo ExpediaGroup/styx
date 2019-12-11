@@ -84,6 +84,7 @@ case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),
       .setNioAcceptorBacklog(proxyConfig.nioAcceptorBacklog)
       .setRequestTimeoutMillis(proxyConfig.requestTimeoutMillis)
       .setClientWorkerThreadsCount(proxyConfig.clientWorkerThreadsCount)
+      .setCompressResponses(proxyConfig.compressResponses)
 
     val styxConfig = newStyxConfig(this.yamlText,
       proxyConfigBuilder,

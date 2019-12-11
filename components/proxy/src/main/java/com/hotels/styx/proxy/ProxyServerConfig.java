@@ -129,6 +129,12 @@ public class ProxyServerConfig extends NettyServerConfig {
             return this;
         }
 
+        @JsonProperty("compressResponses")
+        public Builder setCompressResponses(boolean compressResponses) {
+            builder.setCompressResponses(compressResponses);
+            return this;
+        }
+
         public ProxyServerConfig build() {
             if (clientWorkerThreadsCount == null || clientWorkerThreadsCount == 0) {
                 clientWorkerThreadsCount = HALF_OF_AVAILABLE_PROCESSORS;

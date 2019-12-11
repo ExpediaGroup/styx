@@ -173,6 +173,10 @@ class ProxyConnectorFactory implements ServerConnectorFactory {
                             .secure(sslContext.isPresent())
                             .requestTracker(requestTracker)
                             .build());
+
+            if (serverConfig.compressResponses()) {
+                channel.pipeline().addBefore("styx-decoder", "compression", new HttpCompressor());
+            }
         }
 
 
