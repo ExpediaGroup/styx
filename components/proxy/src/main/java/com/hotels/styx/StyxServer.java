@@ -374,6 +374,7 @@ public final class StyxServer extends AbstractService {
             styxServer.notifyStopped();
         }
     }
+
     private class Phase1ServerStartListener extends ServiceManager.Listener {
         private final StyxServer styxServer;
 

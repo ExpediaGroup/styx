@@ -72,16 +72,23 @@ class StyxServerProvider(
     operator fun invoke() = get()
 
     fun get(): StyxServer {
-        if (!started()) {
-            restart()
-        }
-
         return serverRef.get()!!
     }
 
     fun started() = (serverRef.get() == null) || serverRef.get()!!.isRunning
 
     fun restart(
+            configuration: String = this.defaultConfig,
+            additionalRoutingObjects: Map<String, RoutingObjectFactory> = this.defaultAdditionalRoutingObjects,
+            additionalPlugins: Map<String, Plugin> = this.defaultAdditionalPlugins,
+            loggingConfig: Path? = this.defaultLoggingConfig,
+            validateConfig: Boolean = this.validateConfig): StyxServerProvider {
+        restartAsync(configuration, additionalRoutingObjects, additionalPlugins, loggingConfig, validateConfig)
+        serverRef.get()?.awaitRunning()
+        return this
+    }
+
+    fun restartAsync(
             configuration: String = this.defaultConfig,
             additionalRoutingObjects: Map<String, RoutingObjectFactory> = this.defaultAdditionalRoutingObjects,
             additionalPlugins: Map<String, Plugin> = this.defaultAdditionalPlugins,
@@ -100,17 +107,20 @@ class StyxServerProvider(
         components = if (loggingConfig != null) components.loggingSetUp(loggingConfig.toString()) else components
 
         val newServer = StyxServer(components.build())
-        newServer.startAsync()?.awaitRunning()
-
+        newServer.startAsync()
         serverRef.set(newServer)
+
         return this
     }
 
+
     fun stop() {
-        val oldServer = serverRef.get()
-        if (oldServer?.isRunning ?: false) {
-            oldServer!!.stopAsync().awaitTerminated()
-        }
+        serverRef.getAndSet(null)
+                ?.let {
+                    if (it.isRunning()) {
+                        it.stopAsync().awaitTerminated()
+                    }
+                }
     }
 }
 
@@ -192,30 +202,30 @@ fun StyxServer.removeRoutingObject(name: String): HttpResponseStatus {
 }
 
 fun StyxServer.routingObject(name: String, debug: Boolean = false): Optional<String> = StyxHttpClient.Builder().build()
-            .send(HttpRequest.get("/admin/routing/objects/$name")
-                    .header(HOST, this.adminHostHeader())
-                    .build())
-            .wait(debug)!!
-            .let {
-                if (it.status() == OK) {
-                    Optional.of(it.bodyAs(UTF_8))
-                } else {
-                    Optional.empty()
-                }
+        .send(HttpRequest.get("/admin/routing/objects/$name")
+                .header(HOST, this.adminHostHeader())
+                .build())
+        .wait(debug)!!
+        .let {
+            if (it.status() == OK) {
+                Optional.of(it.bodyAs(UTF_8))
+            } else {
+                Optional.empty()
             }
+        }
 
 fun StyxServer.routingObjects(debug: Boolean = false): Optional<String> = StyxHttpClient.Builder().build()
-            .send(HttpRequest.get("/admin/routing/objects")
-                    .header(HOST, this.adminHostHeader())
-                    .build())
-            .wait(debug)!!
-            .let {
-                if (it.status() == OK) {
-                    Optional.of(it.bodyAs(UTF_8))
-                } else {
-                    Optional.empty()
-                }
+        .send(HttpRequest.get("/admin/routing/objects")
+                .header(HOST, this.adminHostHeader())
+                .build())
+        .wait(debug)!!
+        .let {
+            if (it.status() == OK) {
+                Optional.of(it.bodyAs(UTF_8))
+            } else {
+                Optional.empty()
             }
+        }
 
 fun threadCount(namePattern: String) = Thread.getAllStackTraces().keys
         .map { it.name }
