@@ -17,7 +17,6 @@ package com.hotels.styx.server.netty;
 
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.ServerEventLoopFactory;
@@ -29,6 +28,7 @@ import io.netty.util.concurrent.ImmediateEventExecutor;
 import static com.google.common.base.Objects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.server.netty.eventloop.ServerEventLoopFactories.memoize;
 
 /**
@@ -42,7 +42,7 @@ public final class NettyServerBuilder {
     private MetricRegistry metricRegistry;
     private String name = "styx";
     private ServerConnector httpConnector;
-    private HttpHandler handler = (request, context) -> Eventual.of(LiveHttpResponse.response(NOT_FOUND).build());
+    private HttpHandler handler = (request, context) -> Eventual.of(response(NOT_FOUND).build());
 
     public static NettyServerBuilder newBuilder() {
         return new NettyServerBuilder();
