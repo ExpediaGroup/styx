@@ -32,10 +32,10 @@ class CompressionSpec : FeatureSpec() {
 
     init {
         feature("Content-type of the response is compressible") {
-            scenario("Compresses HTTP response if client requested gzip accept-encoding") {
+            scenario("Compresses HTTP response if client requests gzip accept-encoding") {
                 val request = get("/11")
                         .header(HOST, styxServer().proxyHttpHostHeader())
-                        .header("accept-encoding", "gzip")
+                        .header("accept-encoding", "7z, gzip")
                         .build();
 
                 client.send(request)
@@ -49,6 +49,21 @@ class CompressionSpec : FeatureSpec() {
             scenario("Does not compress HTTP response if client did not send accept-encoding") {
                 val request = get("/11")
                         .header(HOST, styxServer().proxyHttpHostHeader())
+                        .build();
+
+                client.send(request)
+                        .toMono()
+                        .block()
+                        .let {
+                            it!!.status() shouldBe (OK)
+                            it.bodyAs(UTF_8) shouldBe ("Hello from http server!")
+                        }
+            }
+
+            scenario("Does not compress HTTP response if unsupported accept-encoding") {
+                val request = get("/11")
+                        .header(HOST, styxServer().proxyHttpHostHeader())
+                        .header("accept-encoding", "7z")
                         .build();
 
                 client.send(request)
