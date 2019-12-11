@@ -19,6 +19,7 @@ import com.hotels.styx.Environment
 import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpHandler
 import com.hotels.styx.api.HttpRequest
+import com.hotels.styx.api.HttpResponse
 import com.hotels.styx.api.HttpResponse.response
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
@@ -38,6 +39,8 @@ import com.hotels.styx.server.HttpInterceptorContext
 import io.mockk.CapturingSlot
 import io.mockk.every
 import io.mockk.mockk
+import org.slf4j.LoggerFactory
+import reactor.core.publisher.toMono
 import java.lang.RuntimeException
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.concurrent.CompletableFuture
@@ -71,6 +74,16 @@ fun routeLookup(block: HashMap<StyxObjectReference, RoutingObject>.() -> Unit): 
     refLookup.block()
     return RouteRefLookup { refLookup[it] }
 }
+
+private val LOGGER = LoggerFactory.getLogger("ProxySupport")
+
+fun CompletableFuture<HttpResponse>.wait(debug: Boolean = false) = this.toMono()
+        .doOnNext {
+            if (debug) {
+                LOGGER.debug("${it.status()} - ${it.headers()} - ${it.bodyAs(UTF_8)}")
+            }
+        }
+        .block()
 
 /**
  * Creates a mock routing object with specified capturing behaviour for incoming HTTP requests.
