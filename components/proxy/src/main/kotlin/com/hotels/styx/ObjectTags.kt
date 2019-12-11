@@ -31,6 +31,14 @@ val sourceTag = SafeValueTag(
         { it },
         { it })
 
+/*
+ * TAG: target
+ */
+val targetTag = SafeValueTag(
+        "target",
+        { it },
+        { it })
+
 
 /*
  * TAG: state

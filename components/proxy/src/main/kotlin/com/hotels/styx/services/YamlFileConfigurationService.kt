@@ -102,7 +102,7 @@ internal class YamlFileConfigurationService(
             "origins" to HttpContentHandler(HTML_UTF_8.toString(), UTF_8) {
                 OriginsPageRenderer("$namespace/assets", name, routeDb).render()
             },
-            "/" to OriginsAdminHandler(namespace, name, routeDb))
+            "/" to OriginsAdminHandler(namespace, name, routeDb, serviceDb))
 
     fun reloadAction(content: String): Unit {
         LOGGER.info("New origins configuration: \n$content")
@@ -186,7 +186,7 @@ internal class YamlFileConfigurationService(
                 if (previous == null || changed(new.config, previous.config)) {
                     new.styxService.start()
                     previous?.styxService?.stop()
-                            ?.whenComplete({ void, throwable ->
+                            ?.whenComplete { _, throwable ->
                                 if (throwable != null) {
                                     val stack = StringWriter().let {
                                         throwable.printStackTrace(PrintWriter(it))
@@ -194,7 +194,7 @@ internal class YamlFileConfigurationService(
                                     }
                                     LOGGER.warn("Service failed to terminate cleanly. cause=$throwable stack=$stack")
                                 }
-                            })
+                            }
                     new
                 } else {
                     // No need to shout down the new one. It has yet been started.

@@ -16,31 +16,27 @@
 package com.hotels.styx.services
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.hotels.styx.ErrorResponse
-import com.hotels.styx.HEALTHCHECK_FAILING
-import com.hotels.styx.STATE_ACTIVE
-import com.hotels.styx.STATE_INACTIVE
-import com.hotels.styx.STATE_UNREACHABLE
+import com.hotels.styx.*
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpResponseStatus
 import com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST
 import com.hotels.styx.api.HttpResponseStatus.NOT_FOUND
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
-import com.hotels.styx.healthCheckTag
 import com.hotels.styx.infrastructure.configuration.json.mixins.ErrorResponseMixin
 import com.hotels.styx.routing.RoutingMetadataDecorator
 import com.hotels.styx.routing.RoutingObjectRecord
+import com.hotels.styx.routing.config.Builtins
+import com.hotels.styx.routing.config.Builtins.HEALTH_CHECK_MONITOR
 import com.hotels.styx.routing.db.StyxObjectStore
+import com.hotels.styx.routing.handlers.ProviderObjectRecord
 import com.hotels.styx.routing.mockObject
 import com.hotels.styx.server.HttpInterceptorContext
-import com.hotels.styx.sourceTag
-import com.hotels.styx.stateTag
-import com.hotels.styx.wait
 import io.kotlintest.matchers.collections.shouldContain
 import io.kotlintest.matchers.string.shouldStartWith
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
+import io.mockk.every
 import io.mockk.mockk
 import java.nio.charset.StandardCharsets.UTF_8
 
@@ -49,14 +45,22 @@ class OriginsAdminHandlerTest : FeatureSpec({
     val mapper = ObjectMapper().addMixIn(ErrorResponse::class.java, ErrorResponseMixin::class.java)
 
     val store = StyxObjectStore<RoutingObjectRecord>()
+    val serviceDb = StyxObjectStore<ProviderObjectRecord>()
     val mockObject = RoutingMetadataDecorator(mockObject())
-    val handler = OriginsAdminHandler("/base/path", "testProvider", store)
+    val handler = OriginsAdminHandler("/base/path", "testProvider", store, serviceDb)
+
+    fun mockHealthCheck(running: Boolean) =
+            mockk<HealthCheckMonitoringService>() {
+                every { isRunning() } returns running
+            }
 
     store.insert("app.active", RoutingObjectRecord("HostProxy", setOf(sourceTag("testProvider"), stateTag(STATE_ACTIVE)), mockk(), mockObject))
     store.insert("app.closed", RoutingObjectRecord("HostProxy", setOf(sourceTag("testProvider"), stateTag(STATE_INACTIVE)), mockk(), mockObject))
     store.insert("app.unreachable", RoutingObjectRecord("HostProxy", setOf(sourceTag("testProvider"), stateTag(STATE_UNREACHABLE)), mockk(), mockObject))
     store.insert("app.nothostproxy", RoutingObjectRecord("NotHostProxy", setOf(sourceTag("testProvider"), stateTag(STATE_UNREACHABLE)), mockk(), mockObject))
 
+    serviceDb.insert("hc.running", ProviderObjectRecord(HEALTH_CHECK_MONITOR, setOf(targetTag("app.origin.hc.running")), mockk(), mockHealthCheck(true)))
+    serviceDb.insert("hc.stopped", ProviderObjectRecord(HEALTH_CHECK_MONITOR, setOf(targetTag("app.origin.hc.stopped")), mockk(), mockHealthCheck(false)))
 
     fun getResponse(handler: OriginsAdminHandler, request: LiveHttpRequest) = handler
             .handle(request, HttpInterceptorContext.create())
@@ -124,10 +128,10 @@ class OriginsAdminHandlerTest : FeatureSpec({
 
     feature("OriginsAdminHandler updates origin state for PUT request") {
 
-        fun expectStateChange(initialState: String, requestedState: String, expectedState: String, expectHealthTagCleared: Boolean) {
-            val initialHealthTag = healthCheckTag(Pair(HEALTHCHECK_FAILING, 2))!!
+        fun expectStateChange(initialState: String, requestedState: String, expectedState: String, expectHealthTagCleared: Boolean, appId: String = "testGroup") {
             store.insert("app.origin", RoutingObjectRecord("HostProxy",
                     setOf(sourceTag("testProvider"),
+                            lbGroupTag(appId),
                             stateTag(initialState),
                             healthCheckTag(Pair(HEALTHCHECK_FAILING, 2))!!), mockk(), mockObject))
 
@@ -167,8 +171,16 @@ class OriginsAdminHandlerTest : FeatureSpec({
             expectStateChange(STATE_UNREACHABLE, STATE_ACTIVE, STATE_UNREACHABLE, false)
         }
 
-        scenario("Activating an inactive origin results in an active state") {
+        scenario("Activating an unhealthchecked, inactive origin results in an active state") {
             expectStateChange(STATE_INACTIVE, STATE_ACTIVE, STATE_ACTIVE, false)
+        }
+
+        scenario("Activating a healthchecked, inactive origin results in an unreachable state") {
+            expectStateChange(STATE_INACTIVE, STATE_ACTIVE, STATE_UNREACHABLE, false, "app.origin.hc.running")
+        }
+
+        scenario("Activating a healthchecked (but the healthchecker is stopped), inactive origin results in an unreachable state") {
+            expectStateChange(STATE_INACTIVE, STATE_ACTIVE, STATE_ACTIVE, false, "app.origin.hc.stopped")
         }
 
         scenario("Returns NOT_FOUND when URL is not of the correct format") {

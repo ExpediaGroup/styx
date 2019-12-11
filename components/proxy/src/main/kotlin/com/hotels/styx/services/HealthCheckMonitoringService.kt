@@ -116,6 +116,8 @@ internal class HealthCheckMonitoringService(
         futureRef.get().cancel(false)
     }
 
+    fun isRunning() = futureRef.get()?.let { !it.isCancelled && !it.isDone } == true
+
     internal fun runChecks(application: String, objectStore: StyxObjectStore<RoutingObjectRecord>) {
         val monitoredObjects = objectStore.entrySet()
                 .map { Pair(it.key, it.value) }

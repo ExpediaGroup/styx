@@ -28,8 +28,9 @@ import com.hotels.styx.api.HttpResponseStatus.*
 import com.hotels.styx.common.http.handler.HttpAggregator
 import com.hotels.styx.infrastructure.configuration.json.mixins.ErrorResponseMixin
 import com.hotels.styx.routing.RoutingObjectRecord
+import com.hotels.styx.routing.config.Builtins.HEALTH_CHECK_MONITOR
 import com.hotels.styx.routing.db.StyxObjectStore
-import io.netty.handler.codec.http.HttpObjectAggregator
+import com.hotels.styx.routing.handlers.ProviderObjectRecord
 import java.nio.charset.StandardCharsets.UTF_8
 
 /**
@@ -41,7 +42,8 @@ import java.nio.charset.StandardCharsets.UTF_8
 internal class OriginsAdminHandler(
         basePath: String,
         private val provider: String,
-        private val routeDb: StyxObjectStore<RoutingObjectRecord>) : HttpHandler {
+        private val routeDb: StyxObjectStore<RoutingObjectRecord>,
+        private val serviceDb: StyxObjectStore<ProviderObjectRecord>) : HttpHandler {
 
     companion object {
         private val MAPPER = ObjectMapper().addMixIn(
@@ -91,11 +93,14 @@ internal class OriginsAdminHandler(
         routeDb.compute(objectId) { origin ->
             if (!isValidOrigin(origin)) {
                 throw HttpStatusException(NOT_FOUND, "No origin found for ID $objectId")
-            }
-            newState = when(stateTag.find(origin!!.tags)) {
-                STATE_INACTIVE, STATE_ACTIVE -> STATE_ACTIVE
+            } else { origin!! }
+
+            val newActiveState = if (hasActiveHealthCheck(origin)) STATE_UNREACHABLE else STATE_ACTIVE
+            newState = when(stateTag.find(origin.tags)) {
+                STATE_INACTIVE -> newActiveState
+                STATE_ACTIVE -> STATE_ACTIVE
                 STATE_UNREACHABLE -> STATE_UNREACHABLE
-                else -> STATE_ACTIVE
+                else -> newActiveState
             }
             updateStateTag(origin, newState)
         }
@@ -129,6 +134,16 @@ internal class OriginsAdminHandler(
             origin
         }
     }
+
+    private fun hasActiveHealthCheck(origin: RoutingObjectRecord) =
+            lbGroupTag.find(origin.tags)?.let(::findActiveHealthCheckMonitor) != null
+
+    private fun findActiveHealthCheckMonitor(appId: String) =
+            serviceDb.entrySet().firstOrNull { (_, provider) ->
+                provider.type == HEALTH_CHECK_MONITOR
+                        && provider.tags.contains(targetTag(appId))
+                        && (provider.styxService as HealthCheckMonitoringService).isRunning()
+            }
 
     private fun errorResponse(status: HttpResponseStatus, message: String) =
             response(status)
