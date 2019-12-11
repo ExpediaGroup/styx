@@ -135,15 +135,15 @@ internal class OriginsAdminHandler(
         }
     }
 
-    private fun hasActiveHealthCheck(origin: RoutingObjectRecord) : Boolean {
-        val appId = lbGroupTag.find(origin.tags) ?: return false
-        serviceDb.entrySet().firstOrNull { (_, provider) ->
-            provider.type == HEALTH_CHECK_MONITOR
-                    && provider.tags.contains(targetTag(appId))
-                    && (provider.styxService as HealthCheckMonitoringService).isRunning()
-        } ?: return false
-        return true
-    }
+    private fun hasActiveHealthCheck(origin: RoutingObjectRecord) =
+            lbGroupTag.find(origin.tags)?.let(::findActiveHealthCheckMonitor) != null
+
+    private fun findActiveHealthCheckMonitor(appId: String) =
+            serviceDb.entrySet().firstOrNull { (_, provider) ->
+                provider.type == HEALTH_CHECK_MONITOR
+                        && provider.tags.contains(targetTag(appId))
+                        && (provider.styxService as HealthCheckMonitoringService).isRunning()
+            }
 
     private fun errorResponse(status: HttpResponseStatus, message: String) =
             response(status)

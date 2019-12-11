@@ -171,17 +171,14 @@ class OriginsAdminHandlerTest : FeatureSpec({
             expectStateChange(STATE_UNREACHABLE, STATE_ACTIVE, STATE_UNREACHABLE, false)
         }
 
-        // TODO: Complete this test
         scenario("Activating an unhealthchecked, inactive origin results in an active state") {
             expectStateChange(STATE_INACTIVE, STATE_ACTIVE, STATE_ACTIVE, false)
         }
 
-        // TODO: Complete this test
         scenario("Activating a healthchecked, inactive origin results in an unreachable state") {
             expectStateChange(STATE_INACTIVE, STATE_ACTIVE, STATE_UNREACHABLE, false, "app.origin.hc.running")
         }
 
-        // TODO: Complete this test
         scenario("Activating a healthchecked (but the healthchecker is stopped), inactive origin results in an unreachable state") {
             expectStateChange(STATE_INACTIVE, STATE_ACTIVE, STATE_ACTIVE, false, "app.origin.hc.stopped")
         }
