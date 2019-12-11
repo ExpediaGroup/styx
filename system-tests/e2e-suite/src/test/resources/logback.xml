@@ -1,14 +1,22 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <configuration>
 
-    <logger name="Styx-Tests" level="INFO"/>
-    <logger name="com.hotels.styx.http-messages.inbound" level="INFO"/>
-    <logger name="com.hotels.styx.http-messages.outbound" level="INFO"/>
-    <logger name="com.hotels.styx.proxy.backends.file.FileChangeMonitor" level="INFO"/>
-    <logger name="com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder" level="INFO"/>
-    <logger name="com.hotels.styx.server.netty.connectors.HttpPipelineHandler" level="INFO"/>
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
 
-  <root level="ERROR">
+  <root level="OFF">
+    <appender-ref ref="STDOUT"/>
   </root>
+
+  <logger name="Styx-Tests" level="INFO"/>
+  <logger name="com.hotels.styx.http-messages.inbound" level="INFO"/>
+  <logger name="com.hotels.styx.http-messages.outbound" level="INFO"/>
+  <logger name="com.hotels.styx.proxy.backends.file.FileChangeMonitor" level="INFO"/>
+  <logger name="com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder" level="INFO"/>
+  <logger name="com.hotels.styx.server.netty.connectors.HttpPipelineHandler" level="INFO"/>
+  <logger name="com.hotels.styx.proxy.HttpErrorStatusCauseLogger" level="INFO"/>
 
 </configuration>
