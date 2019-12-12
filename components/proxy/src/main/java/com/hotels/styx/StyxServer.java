@@ -49,6 +49,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
+import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.shutdownLogging;
 import static com.hotels.styx.startup.CoreMetrics.registerCoreMetrics;
 import static io.netty.util.ResourceLeakDetector.Level.DISABLED;
 import static java.lang.Runtime.getRuntime;
@@ -278,6 +279,7 @@ public final class StyxServer extends AbstractService {
     protected void doStop() {
         this.phase2Services.stopAsync().awaitStopped();
         this.phase1Services.stopAsync().awaitStopped();
+        shutdownLogging(true);
     }
 
     private void printBanner() {
