@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -119,25 +119,6 @@ public final class LOGBackConfigurer {
         } catch (JoranException e) {
             throw new IllegalArgumentException("exception while initializing LOGBack", e);
         }
-    }
-
-    /**
-     * Shut down LOGBack.
-     * This isn't strictly necessary, but recommended for shutting down
-     * logback in a scenario where the host VM stays alive (for example, when
-     * shutting down an application in a J2EE environment).
-     *
-     * @param uninstallJULBridge should an attempt be made to uninstall the JUL bridge
-     */
-    public static void shutdownLogging(boolean uninstallJULBridge) {
-        ContextSelector selector = ContextSelectorStaticBinder.getSingleton().getContextSelector();
-        LoggerContext loggerContext = selector.getLoggerContext();
-        String loggerContextName = loggerContext.getName();
-        LoggerContext context = selector.detachLoggerContext(loggerContextName);
-        if (uninstallJULBridge) {
-            SLF4JBridgeHandler.uninstall();
-        }
-        context.stop();
     }
 
 

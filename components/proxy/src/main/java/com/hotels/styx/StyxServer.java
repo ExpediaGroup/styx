@@ -49,7 +49,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
-import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.shutdownLogging;
 import static com.hotels.styx.startup.CoreMetrics.registerCoreMetrics;
 import static io.netty.util.ResourceLeakDetector.Level.DISABLED;
 import static java.lang.Runtime.getRuntime;
@@ -279,7 +278,6 @@ public final class StyxServer extends AbstractService {
     protected void doStop() {
         this.phase2Services.stopAsync().awaitStopped();
         this.phase1Services.stopAsync().awaitStopped();
-        shutdownLogging(true);
     }
 
     private void printBanner() {
@@ -372,13 +370,13 @@ public final class StyxServer extends AbstractService {
 
         @Override
         public void failure(Service service) {
-            LOG.warn("Failed to start service={} cause={}", service, service.failureCause());
+            LOG.error("Failed to start service={} cause={}", service, service.failureCause());
             styxServer.notifyFailed(service.failureCause());
         }
 
         @Override
         public void stopped() {
-            LOG.warn("Stopped phase 2 services");
+            LOG.info("Stopped phase 2 services");
         }
     }
 
@@ -396,13 +394,13 @@ public final class StyxServer extends AbstractService {
 
         @Override
         public void failure(Service service) {
-            LOG.warn("Failed to start service={} cause={}", service, service.failureCause());
+            LOG.error("Failed to start service={} cause={}", service, service.failureCause());
             styxServer.notifyFailed(service.failureCause());
         }
 
         @Override
         public void stopped() {
-            LOG.warn("Stopped");
+            LOG.info("Stopped phase 1 services.");
             styxServer.notifyStopped();
         }
     }
