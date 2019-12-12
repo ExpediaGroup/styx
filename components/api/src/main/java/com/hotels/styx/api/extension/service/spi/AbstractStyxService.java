@@ -82,8 +82,7 @@ public abstract class AbstractStyxService implements StyxService {
                         LOGGER.info("Started {}", name);
                     });
         } else {
-            LOGGER.info("Starting {} failed", name);
-            throw new IllegalStateException(format("Start called in %s state", status.get()));
+            throw new IllegalStateException(format("Start '%s' called in %s state", name, status.get()));
         }
     }
 
@@ -100,8 +99,7 @@ public abstract class AbstractStyxService implements StyxService {
                         LOGGER.info("Stopped {}", name);
                     });
         } else {
-            LOGGER.info("Stoppig {} failed", name);
-            throw new IllegalStateException(format("Stop called in %s state", status.get()));
+            throw new IllegalStateException(format("Service '%s' stopped in %s state", name, status.get()));
         }
     }
 

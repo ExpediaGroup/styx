@@ -89,8 +89,8 @@ public final class ProxyServerBuilder {
         return responseBuilder.header(styxInfoHeaderName, responseInfoFormat.format(request));
     }
 
-    public ProxyServerBuilder handler(HttpHandler handlerFactory) {
-        this.handler = handlerFactory;
+    public ProxyServerBuilder handler(HttpHandler handler) {
+        this.handler = handler;
         return this;
     }
 
