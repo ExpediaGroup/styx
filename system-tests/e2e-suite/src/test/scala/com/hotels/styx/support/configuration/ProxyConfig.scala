@@ -29,7 +29,8 @@ case class ProxyConfig(connectors: Connectors = Connectors(HttpConnectorConfig()
                        requestTimeoutMillis: Int = proxyServerDefaults.requestTimeoutMillis(),
                        keepAliveTimeoutMillis: Int = proxyServerDefaults.keepAliveTimeoutMillis(),
                        maxConnectionsCount: Int = proxyServerDefaults.maxConnectionsCount(),
-                       clientWorkerThreadsCount: Int = 1) {
+                       clientWorkerThreadsCount: Int = 1,
+                       compressResponses: Boolean = proxyServerDefaults.compressResponses()) {
 }
 
 

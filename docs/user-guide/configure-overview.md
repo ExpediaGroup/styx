@@ -17,6 +17,8 @@ using environment variables with the same name as the property.
 jvmRouteName: "${jvm.route:noJvmRouteSet}"
 
 proxy:
+  # Compress response if the client supports it. Supported formats: gzip, deflate (zlib)
+  compressResponses: true
   connectors:
     http:
       # Port for accessing the proxy server over HTTP.

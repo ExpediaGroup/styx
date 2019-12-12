@@ -28,6 +28,7 @@ public class NettyServerConfigTest {
     public void shouldCreateServerConfiguration() {
         String yaml = "" +
                 "proxy:\n" +
+                "  compressResponses: true\n" +
                 "  connectors:\n" +
                 "      http:\n" +
                 "        port: 8080\n" +
@@ -48,6 +49,7 @@ public class NettyServerConfigTest {
                 .certificateKeyFile("example")
                 .build();
         assertThat(httpsConnectorConfig(serverConfig), is(httpsConfig));
+        assertThat(serverConfig.compressResponses(), is(true));
     }
 
     private HttpsConnectorConfig httpsConnectorConfig(NettyServerConfig serverConfig) {
