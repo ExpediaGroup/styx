@@ -79,9 +79,7 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
                 this.producer = new FlowControllingHttpContentProducer(ctx);
                 Flux<ByteBuf> contentObservable = Flux.create(sink -> {
                     ctx.channel().config().setAutoRead(false);
-                    sink.onRequest(n -> {
-                        ctx.channel().read();
-                    });
+                    sink.onRequest(n -> ctx.channel().read());
                     this.producer.subscriptionStart(sink);
                 });
 
