@@ -36,6 +36,9 @@ import com.hotels.styx.support.threadCount
 import com.hotels.styx.support.wait
 import io.kotlintest.IsolationMode
 import io.kotlintest.Spec
+import io.kotlintest.TestCase
+import io.kotlintest.TestResult
+import io.kotlintest.TestStatus
 import io.kotlintest.eventually
 import io.kotlintest.matchers.beGreaterThan
 import io.kotlintest.matchers.beLessThan
@@ -45,10 +48,12 @@ import io.kotlintest.matchers.withClue
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
+import org.slf4j.LoggerFactory
 import java.nio.charset.StandardCharsets.UTF_8
 import kotlin.system.measureTimeMillis
 
 class HostProxySpec : FeatureSpec() {
+    val LOGGER = LoggerFactory.getLogger("Styx-Tests")
 
     // Enforce one instance for the test spec.
     // Run the tests sequentially:
@@ -63,6 +68,22 @@ class HostProxySpec : FeatureSpec() {
         styxServer.stop()
         mockServer.stop()
         testServer.stop()
+    }
+
+    override fun afterTest(testCase: TestCase, result: TestResult) {
+        super.afterTest(testCase, result)
+
+        when (result.status) {
+            TestStatus.Error -> {
+                LOGGER.info("HostProxySpec: Error: Styx server : {}", styxServer().metrics())
+                LOGGER.info("HostProxySpec: Error: Test server : {}", testServer().metrics())
+            }
+            TestStatus.Failure -> {
+                LOGGER.info("HostProxySpec: Failure: Styx server : {}", styxServer().metrics())
+                LOGGER.info("HostProxySpec: Failure: Test server : {}", testServer().metrics())
+            }
+            else -> { }
+        }
     }
 
     init {
@@ -214,7 +235,6 @@ class HostProxySpec : FeatureSpec() {
                         it["routing.objects.hostProxy.connectionspool.connections-terminated"]!!.get("value") shouldBe 1
                     }
                 }
-
             }
         }
 
