@@ -267,12 +267,19 @@ public final class StyxServer extends AbstractService {
         printBanner();
         CompletableFuture.runAsync(() -> {
             // doStart should return quicly. Therefore offload waiting on a separate thread:
-            this.phase1Services.addListener(new Phase1ServerStartListener(this));
+            this.phase1Services.addListener(new Phase1ServerStatusListener(this));
             this.phase1Services.startAsync().awaitHealthy();
 
-            this.phase2Services.addListener(new ServerStartListener(this));
+            this.phase2Services.addListener(new Phase2ServerStatusListener(this));
             this.phase2Services.startAsync();
         });
+    }
+
+    @Override
+    protected void doStop() {
+        this.phase2Services.stopAsync().awaitStopped();
+        this.phase1Services.stopAsync().awaitStopped();
+        shutdownLogging(true);
     }
 
     private void printBanner() {
@@ -284,13 +291,6 @@ public final class StyxServer extends AbstractService {
             LOG.debug("Could not display banner: ", ignored);
             LOG.info("Starting styx");
         }
-    }
-
-    @Override
-    protected void doStop() {
-        this.phase1Services.stopAsync();
-        this.phase2Services.stopAsync();
-        shutdownLogging(true);
     }
 
     private static Service toGuavaService(StyxService styxService) {
@@ -352,10 +352,10 @@ public final class StyxServer extends AbstractService {
         }
     }
 
-    private class ServerStartListener extends ServiceManager.Listener {
+    private class Phase2ServerStatusListener extends ServiceManager.Listener {
         private final StyxServer styxServer;
 
-        ServerStartListener(StyxServer styxServer) {
+        Phase2ServerStatusListener(StyxServer styxServer) {
             this.styxServer = styxServer;
         }
 
@@ -378,15 +378,14 @@ public final class StyxServer extends AbstractService {
 
         @Override
         public void stopped() {
-            LOG.warn("Stopped");
-            styxServer.notifyStopped();
+            LOG.warn("Stopped phase 2 services");
         }
     }
 
-    private class Phase1ServerStartListener extends ServiceManager.Listener {
+    private class Phase1ServerStatusListener extends ServiceManager.Listener {
         private final StyxServer styxServer;
 
-        Phase1ServerStartListener(StyxServer styxServer) {
+        Phase1ServerStatusListener(StyxServer styxServer) {
             this.styxServer = styxServer;
         }
 
