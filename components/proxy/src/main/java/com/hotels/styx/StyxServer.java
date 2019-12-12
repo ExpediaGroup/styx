@@ -79,6 +79,10 @@ public final class StyxServer extends AbstractService {
     private final HttpServer httpsServer;
     private final HttpServer adminServer;
 
+    private final ServiceManager phase1Services;
+    private final ServiceManager phase2Services;
+    private final Stopwatch stopwatch;
+
     public static void main(String[] args) {
         try {
             StyxServer styxServer = createStyxServer(args);
@@ -154,20 +158,8 @@ public final class StyxServer extends AbstractService {
         }
     }
 
-    private final ServiceManager phase1Services;
-    private final ServiceManager phase2Services;
-
-    private final Stopwatch stopwatch;
-
     public StyxServer(StyxServerComponents config) {
         this(config, null);
-    }
-
-    private static HttpServer httpServer(StyxServerComponents config, ConnectorConfig connectorConfig, HttpHandler styxDataPlane) {
-        return new ProxyServerBuilder(config.environment())
-                .handler(styxDataPlane)
-                .connectorConfig(connectorConfig)
-                .build();
     }
 
     public StyxServer(StyxServerComponents components, Stopwatch stopwatch) {
@@ -191,25 +183,7 @@ public final class StyxServer extends AbstractService {
 
         adminServer = createAdminServer(components);
         services.add(adminServer);
-        services.add(toGuavaService(new AbstractStyxService("Plugins manager") {
-            @Override
-            public CompletableFuture<Void> startService() {
-                return CompletableFuture.runAsync(() -> initialisePlugins(components.plugins()));
-            }
-
-            @Override
-            protected CompletableFuture<Void> stopService() {
-                return CompletableFuture.runAsync(() -> {
-                    for (NamedPlugin plugin : components.plugins()) {
-                        try {
-                            plugin.styxStopping();
-                        } catch (Exception e) {
-                            LOG.error("Error stopping plugin '{}'", plugin.name(), e);
-                        }
-                    }
-                });
-            }
-        }));
+        services.add(toGuavaService(new PluginsManager("Styx-Plugins-Manager", components)));
         services.add(toGuavaService(new ServiceProviderMonitor("Styx-Service-Monitor", components.servicesDatabase())));
         components.services().values().forEach(it -> services.add(toGuavaService(it)));
         this.phase1Services = new ServiceManager(services);
@@ -249,6 +223,13 @@ public final class StyxServer extends AbstractService {
 
     public InetSocketAddress adminHttpAddress() {
         return adminServer.httpAddress();
+    }
+
+    private static HttpServer httpServer(StyxServerComponents config, ConnectorConfig connectorConfig, HttpHandler styxDataPlane) {
+        return new ProxyServerBuilder(config.environment())
+                .handler(styxDataPlane)
+                .connectorConfig(connectorConfig)
+                .build();
     }
 
     private static void initialisePlugins(Iterable<NamedPlugin> plugins) {
@@ -342,6 +323,33 @@ public final class StyxServer extends AbstractService {
         return new AdminServerBuilder(components)
                 .backendServicesRegistry(registry != null ? registry : new MemoryBackedRegistry<>())
                 .build();
+    }
+
+    private class PluginsManager extends AbstractStyxService {
+        private final StyxServerComponents components;
+
+        public PluginsManager(String name, StyxServerComponents components) {
+            super(name);
+            this.components = components;
+        }
+
+        @Override
+        public CompletableFuture<Void> startService() {
+            return CompletableFuture.runAsync(() -> initialisePlugins(components.plugins()));
+        }
+
+        @Override
+        protected CompletableFuture<Void> stopService() {
+            return CompletableFuture.runAsync(() -> {
+                for (NamedPlugin plugin : components.plugins()) {
+                    try {
+                        plugin.styxStopping();
+                    } catch (Exception e) {
+                        LOG.error("Error stopping plugin '{}'", plugin.name(), e);
+                    }
+                }
+            });
+        }
     }
 
     private class ServerStartListener extends ServiceManager.Listener {
