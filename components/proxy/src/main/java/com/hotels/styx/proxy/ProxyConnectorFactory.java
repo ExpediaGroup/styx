@@ -19,7 +19,7 @@ import com.codahale.metrics.Histogram;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder;
-import com.hotels.styx.server.HttpConnectorConfig;
+import com.hotels.styx.server.ConnectorConfig;
 import com.hotels.styx.server.HttpErrorStatusListener;
 import com.hotels.styx.server.HttpsConnectorConfig;
 import com.hotels.styx.server.RequestStatsCollector;
@@ -83,17 +83,12 @@ class ProxyConnectorFactory implements ServerConnectorFactory {
     }
 
     @Override
-    public ServerConnector create(HttpConnectorConfig config) {
-        return new ProxyConnector(config, serverConfig, metrics, errorStatusListener, unwiseCharacters, responseEnhancer, requestTracking);
-    }
-
-    @Override
-    public ServerConnector create(HttpsConnectorConfig config) {
+    public ServerConnector create(ConnectorConfig config) {
         return new ProxyConnector(config, serverConfig, metrics, errorStatusListener, unwiseCharacters, responseEnhancer, requestTracking);
     }
 
     private static final class ProxyConnector implements ServerConnector {
-        private final HttpConnectorConfig config;
+        private final ConnectorConfig config;
         private final NettyServerConfig serverConfig;
         private final MetricRegistry metrics;
         private final HttpErrorStatusListener httpErrorStatusListener;
@@ -105,7 +100,7 @@ class ProxyConnectorFactory implements ServerConnectorFactory {
         private final ResponseEnhancer responseEnhancer;
         private final RequestTracker requestTracker;
 
-        private ProxyConnector(HttpConnectorConfig config,
+        private ProxyConnector(ConnectorConfig config,
                                NettyServerConfig serverConfig,
                                MetricRegistry metrics,
                                HttpErrorStatusListener errorStatusListener,

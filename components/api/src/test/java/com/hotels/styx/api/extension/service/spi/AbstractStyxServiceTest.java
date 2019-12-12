@@ -89,7 +89,7 @@ public class AbstractStyxServiceTest {
         Exception e = assertThrows(IllegalStateException.class, () -> service.start());
         assertThat(service.status(), is(STARTING));
         assertThat(started1st.isDone(), is(false));
-        assertEquals("Start called in STARTING state", e.getMessage());
+        assertEquals("Start 'derived-service' called in STARTING state", e.getMessage());
     }
 
     @Test
@@ -175,7 +175,7 @@ public class AbstractStyxServiceTest {
         assertThat(stopped.isCompletedExceptionally(), is(true));
 
         Exception e = assertThrows(IllegalStateException.class, () -> service.stop());
-        assertEquals("Stop called in FAILED state", e.getMessage());
+        assertEquals("Service 'derived-service' stopped in FAILED state", e.getMessage());
     }
 
 

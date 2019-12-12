@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ public class ServerProtocolDistributionRecorder extends ChannelDuplexHandler {
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
         if (msg instanceof HttpResponse) {
-            responses.get(((HttpResponse) msg).getStatus()).mark();
+            responses.get(((HttpResponse) msg).status()).mark();
         }
 
         super.write(ctx, msg, promise);

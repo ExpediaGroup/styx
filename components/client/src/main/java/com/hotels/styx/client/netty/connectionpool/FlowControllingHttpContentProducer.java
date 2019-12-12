@@ -57,6 +57,7 @@ class FlowControllingHttpContentProducer {
 
     private final Queue<ByteBuf> readQueue = new ConcurrentLinkedDeque<>();
     private final AtomicLong requested = new AtomicLong(0);
+
     private final AtomicLong receivedChunks = new AtomicLong(0);
     private final AtomicLong receivedBytes = new AtomicLong(0);
     private final AtomicLong emittedChunks = new AtomicLong(0);
