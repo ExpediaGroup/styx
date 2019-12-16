@@ -18,6 +18,7 @@ package com.hotels.styx.admin
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
+import com.hotels.styx.NettyExecutor
 import com.hotels.styx.admin.handlers.ServiceProviderHandler
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest.get
@@ -776,5 +777,5 @@ class OriginsFileCompatibilitySpec : FunSpec() {
 }
 
 private val client: StyxHttpClient = StyxHttpClient.Builder()
-        .threadSettings("styx-client", 0)
+        .executor(NettyExecutor.create("styx-client", 0))
         .build()

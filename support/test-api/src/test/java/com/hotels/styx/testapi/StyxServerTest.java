@@ -76,6 +76,7 @@ public class StyxServerTest {
                 .dynamicPort());
 
         secureOriginServer = new WireMockServer(wireMockConfig()
+                .dynamicPort()
                 .dynamicHttpsPort()
         );
 

@@ -47,13 +47,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 
 import static ch.qos.logback.classic.Level.ERROR;
-import static ch.qos.logback.classic.Level.INFO;
 import static com.google.common.util.concurrent.Service.State.FAILED;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.configuration.Configuration.EMPTY_CONFIGURATION;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
-import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static io.netty.util.ResourceLeakDetector.Level.DISABLED;
 import static java.lang.System.clearProperty;
@@ -228,18 +226,6 @@ public class StyxServerTest {
             assertThat(styxServer.state(), is(FAILED));
         } finally {
             stopIfRunning(styxServer);
-        }
-    }
-
-    @Test
-    public void startsFromMain() {
-        try {
-            setProperty("STYX_HOME", fixturesHome());
-            StyxServer.main(new String[0]);
-
-            eventually(() -> assertThat(log.log(), hasItem(loggingEvent(INFO, "Started Styx server in \\d+ ms"))));
-        } finally {
-            clearProperty("STYX_HOME");
         }
     }
 
