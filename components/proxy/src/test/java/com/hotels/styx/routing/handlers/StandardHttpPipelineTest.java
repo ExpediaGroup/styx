@@ -43,9 +43,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static rx.RxReactiveStreams.toObservable;
 
 public class StandardHttpPipelineTest {
     @Test
@@ -167,7 +165,7 @@ public class StandardHttpPipelineTest {
         assertThat(response.status(), is(OK));
 
         assertThrows(IllegalStateException.class,
-                () -> toObservable(responseObservable).toBlocking().first());
+                () -> Mono.from(responseObservable).block());
     }
 
     @ParameterizedTest
@@ -180,7 +178,7 @@ public class StandardHttpPipelineTest {
 
         Eventual<LiveHttpResponse> responseObservable = pipeline.handle(get("/").build(), HttpInterceptorContext.create());
         assertThrows(IllegalStateException.class,
-                () -> toObservable(responseObservable).toBlocking().first());
+                () -> Mono.from(responseObservable).block());
     }
 
     private static Stream<Arguments> multipleSubscriptionInterceptors() {

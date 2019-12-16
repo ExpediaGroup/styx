@@ -20,6 +20,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.ContentOverflowException;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponseStatus;
@@ -51,11 +52,10 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.TooLongFrameException;
+import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
+import reactor.core.publisher.BaseSubscriber;
 import reactor.core.publisher.Flux;
-import rx.Observable;
-import rx.Subscriber;
-import rx.Subscription;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
@@ -87,7 +87,6 @@ import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
-import static rx.RxReactiveStreams.toObservable;
 
 /**
  * Passes request to HTTP Pipeline.
@@ -265,25 +264,29 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         // the same call stack as "onLegitimateRequest" handler. This happens when a plugin
         // generates a response.
         try {
-            Observable<LiveHttpResponse> responseObservable = toObservable(httpPipeline.handle(v11Request, newInterceptorContext(ctx)));
-            subscription = responseObservable
-                    .subscribe(new Subscriber<LiveHttpResponse>() {
-                                   @Override
-                                   public void onCompleted() {
-                                       eventProcessor.submit(new ResponseObservableCompletedEvent(ctx, request.id()));
-                                   }
+            Eventual<LiveHttpResponse> responseEventual = httpPipeline.handle(v11Request, newInterceptorContext(ctx));
+            responseEventual.subscribe(new BaseSubscriber<LiveHttpResponse>() {
+                @Override
+                public void hookOnSubscribe(Subscription s) {
+                    subscription = s;
+                    s.request(1);
+                }
 
-                                   @Override
-                                   public void onError(Throwable cause) {
-                                       eventProcessor.submit(new ResponseObservableErrorEvent(ctx, cause, request.id()));
-                                   }
+                @Override
+                public void hookOnComplete() {
+                   eventProcessor.submit(new ResponseObservableCompletedEvent(ctx, request.id()));
+                }
 
-                                   @Override
-                                   public void onNext(LiveHttpResponse response) {
-                                       eventProcessor.submit(new ResponseReceivedEvent(response, ctx));
-                                   }
-                               }
-                    );
+                @Override
+                public void hookOnError(Throwable cause) {
+                   eventProcessor.submit(new ResponseObservableErrorEvent(ctx, cause, request.id()));
+                }
+
+                @Override
+                public void hookOnNext(LiveHttpResponse response) {
+                   eventProcessor.submit(new ResponseReceivedEvent(response, ctx));
+                }
+            });
 
             return WAITING_FOR_RESPONSE;
         } catch (Throwable cause) {
@@ -628,7 +631,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
 
     private void cancelSubscription() {
         if (subscription != null) {
-            subscription.unsubscribe();
+            subscription.cancel();
         }
     }
 

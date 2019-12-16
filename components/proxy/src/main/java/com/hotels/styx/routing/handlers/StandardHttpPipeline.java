@@ -15,23 +15,20 @@
  */
 package com.hotels.styx.routing.handlers;
 
-import static java.util.Collections.emptyList;
-import static java.util.Objects.requireNonNull;
-import static rx.Observable.create;
-import static rx.RxReactiveStreams.toObservable;
-import static rx.RxReactiveStreams.toPublisher;
-
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-
 import com.hotels.styx.server.track.RequestTracker;
-import rx.Observable;
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
+
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static java.util.Collections.emptyList;
+import static java.util.Objects.requireNonNull;
 
 /**
  * The pipeline consists of a chain of interceptors followed by a handler.
@@ -99,21 +96,27 @@ class StandardHttpPipeline implements HttpHandler {
 
             requestTracker.markRequestAsSent(request);
 
-            return new Eventual<>(toPublisher(toObservable(client.handle(request, this.context))
-                    .compose(StandardHttpPipeline::sendErrorOnDoubleSubscription)));
+            return new Eventual<>(new SingleSubscriptionPublisher(client.handle(request, this.context)));
         }
     }
 
-    private static Observable<LiveHttpResponse> sendErrorOnDoubleSubscription(Observable<LiveHttpResponse> original) {
-        AtomicInteger subscriptionCounter = new AtomicInteger();
+    private static final class SingleSubscriptionPublisher implements Publisher<LiveHttpResponse> {
 
-        return create(subscriber -> {
+        private AtomicInteger subscriptionCounter = new AtomicInteger();
+        private Publisher<LiveHttpResponse> original;
+
+        public SingleSubscriptionPublisher(Publisher<LiveHttpResponse> original) {
+            this.original = original;
+        }
+
+        @Override
+        public void subscribe(Subscriber<? super LiveHttpResponse> subscriber) {
             if (subscriptionCounter.incrementAndGet() > 1) {
                 subscriber.onError(new IllegalStateException("Response already subscribed. Additional subscriptions forbidden."));
             } else {
                 original.subscribe(subscriber);
             }
-        });
+        }
     }
 
 }
