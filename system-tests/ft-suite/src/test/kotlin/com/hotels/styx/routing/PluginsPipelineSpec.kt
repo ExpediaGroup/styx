@@ -87,9 +87,7 @@ class PluginsPipelineSpec : FeatureSpec() {
                     httpPipeline:
                       type: InterceptorPipeline
                       config:
-                          pipeline:
-                            - plugin-a
-                            - plugin-c
+                          pipeline: plugin-a, plugin-c
                           handler:
                             type: StaticResponseHandler
                             config:

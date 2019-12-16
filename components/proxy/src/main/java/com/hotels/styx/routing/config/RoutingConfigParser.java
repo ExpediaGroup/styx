@@ -25,7 +25,10 @@ import static java.util.Optional.ofNullable;
 /**
  * Parses routing config objects from Yaml file.
  */
-public class RoutingConfigParser {
+public final class RoutingConfigParser {
+
+    private RoutingConfigParser() {
+    }
 
     public static StyxObjectConfiguration toRoutingConfigNode(JsonNode jsonNode) {
         if (jsonNode.getNodeType() == JsonNodeType.STRING) {
