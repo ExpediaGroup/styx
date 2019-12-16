@@ -332,6 +332,37 @@ public class Schema {
 
     }
 
+    /**
+     * Or field type is an alternative of two possible types.
+     */
+    public static class OrField implements FieldType {
+        private final FieldType alt1;
+        private final FieldType alt2;
+
+        public OrField(FieldType alt1, FieldType alt2) {
+            this.alt1 = alt1;
+            this.alt2 = alt2;
+        }
+
+        @Override
+        public void validate(List<String> parents, JsonNode parent, JsonNode value, Function<String, FieldType> typeExtensions) {
+            try {
+                alt1.validate(parents, parent, value, typeExtensions);
+            } catch (SchemaValidationException e) {
+                try {
+                    alt2.validate(parents, parent, value, typeExtensions);
+                } catch (SchemaValidationException e2) {
+                    throw new SchemaValidationException(message(parents, describe(), value));
+                }
+            }
+        }
+
+        @Override
+        public String describe() {
+            return format("OR(%s, %s)", alt1.describe(), alt2.describe());
+        }
+    }
+
     public Builder newBuilder() {
         return new Builder(this);
     }

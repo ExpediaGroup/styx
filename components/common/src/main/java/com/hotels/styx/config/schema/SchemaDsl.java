@@ -145,6 +145,14 @@ public final class SchemaDsl {
         return new Schema.RoutingObjectSpec();
     }
 
+    /**
+     * An alternative of two different types.
+     *
+     * @return A FieldType instance.
+     */
+    public static Schema.FieldType or(Schema.FieldType alt1, Schema.FieldType alt2) {
+        return new Schema.OrField(alt1, alt2);
+    }
 
 
     /**

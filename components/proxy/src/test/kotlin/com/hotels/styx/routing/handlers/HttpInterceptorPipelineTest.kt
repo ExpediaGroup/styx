@@ -25,6 +25,7 @@ import com.hotels.styx.routing.mockObject
 import com.hotels.styx.routing.ref
 import com.hotels.styx.routing.routeLookup
 import com.hotels.styx.routing.routingObjectDef
+import com.hotels.styx.wait
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import io.kotlintest.specs.FeatureSpec
@@ -113,6 +114,34 @@ class HttpInterceptorPipelineTest : FeatureSpec({
             handler.handle(hwaRequest, null)
                     .toMono()
                     .block()
+                    .let {
+                        it!!.headers("X-Test-Header") shouldBe (listOf("B", "A"))
+                    }
+        }
+
+        scenario("it builds an interceptor pipeline from comma separated list of plugin names") {
+            val context = RoutingObjectFactoryContext(
+                    plugins = listOf(
+                            namedPlugin("interceptor1", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "A").build() }) }),
+                            namedPlugin("interceptor2", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "B").build() }) })))
+
+            val handler = HttpInterceptorPipeline.Factory().build(
+                    listOf("config"),
+                    context.get(),
+                    routingObjectDef("""
+                      type: InterceptorPipeline
+                      config:
+                        pipeline: 'interceptor1, interceptor2'
+                        handler:
+                          name: MyHandler
+                          type: StaticResponseHandler
+                          config:
+                            status: 200
+                            content: hello
+                    """.trimIndent()))
+
+            handler.handle(hwaRequest, null)
+                    .wait()
                     .let {
                         it!!.headers("X-Test-Header") shouldBe (listOf("B", "A"))
                     }
