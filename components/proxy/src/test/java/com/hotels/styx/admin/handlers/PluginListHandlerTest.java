@@ -16,11 +16,12 @@
 package com.hotels.styx.admin.handlers;
 
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.configstore.ConfigStore;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
@@ -42,13 +43,8 @@ public class PluginListHandlerTest {
         two.setEnabled(false);
         three.setEnabled(false);
 
-        Iterable<NamedPlugin> plugins = asList(one, two, three, four);
-
-        ConfigStore configStore = new ConfigStore();
-
-        plugins.forEach(plugin -> configStore.set("plugins." + plugin.name(), plugin));
-
-        PluginListHandler handler = new PluginListHandler(configStore);
+        List<NamedPlugin> plugins = asList(one, two, three, four);
+        PluginListHandler handler = new PluginListHandler(plugins);
 
         HttpResponse response = Mono.from(handler.handle(get("/").build(), HttpInterceptorContext.create())).block();
 

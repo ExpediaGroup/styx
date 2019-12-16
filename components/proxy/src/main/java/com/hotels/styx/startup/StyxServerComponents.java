@@ -122,7 +122,7 @@ public class StyxServerComponents {
                 builder.additionalServices
         );
 
-        this.plugins.forEach(plugin -> this.environment.configStore().set("plugins." + plugin.name(), plugin));
+        this.plugins.forEach(plugin -> this.environment.plugins().add(plugin));
 
         this.environment.configuration().get("routingObjects", JsonNode.class)
                 .map(StyxServerComponents::readComponents)

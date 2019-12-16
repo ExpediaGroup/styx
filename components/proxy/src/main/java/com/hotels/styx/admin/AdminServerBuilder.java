@@ -32,7 +32,6 @@ import com.hotels.styx.admin.handlers.OriginsHandler;
 import com.hotels.styx.admin.handlers.OriginsInventoryHandler;
 import com.hotels.styx.admin.handlers.PingHandler;
 import com.hotels.styx.admin.handlers.PluginListHandler;
-import com.hotels.styx.admin.handlers.PluginToggleHandler;
 import com.hotels.styx.admin.handlers.ProviderListHandler;
 import com.hotels.styx.admin.handlers.RoutingObjectHandler;
 import com.hotels.styx.admin.handlers.ServiceProviderHandler;
@@ -52,7 +51,6 @@ import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.common.http.handler.HttpAggregator;
 import com.hotels.styx.common.http.handler.HttpMethodFilteringHandler;
 import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
-import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.db.StyxObjectStore;
@@ -165,16 +163,6 @@ public class AdminServerBuilder {
         httpRouter.aggregate("/admin/tasks/origins/reload", new HttpMethodFilteringHandler(POST, new OriginsReloadCommandHandler(backendServicesRegistry)));
         httpRouter.aggregate("/admin/tasks/origins", new HttpMethodFilteringHandler(POST, new OriginsCommandHandler(environment.eventBus())));
 
-        httpRouter.aggregate("/admin/tasks/plugin/", new PluginToggleHandler(environment.configStore()));
-
-        // Plugins Handler
-        environment.configStore().watchAll("plugins", NamedPlugin.class)
-                .forEach(entry -> {
-                    NamedPlugin namedPlugin = entry.value();
-                    extensionEndpoints("plugins", namedPlugin.name(), namedPlugin.adminInterfaceHandlers())
-                            .forEach(route -> httpRouter.stream(route.path(), route.handler()));
-                });
-
         providerDatabase.entrySet().forEach(record -> {
             String root = "providers";
             String extensionName = record.getKey();
@@ -186,7 +174,7 @@ public class AdminServerBuilder {
 
         httpRouter.aggregate("/admin/providers", new ProviderListHandler(providerDatabase));
 
-        httpRouter.aggregate("/admin/plugins", new PluginListHandler(environment.configStore()));
+        httpRouter.aggregate("/admin/plugins", new PluginListHandler(environment.plugins()));
 
         return httpRouter;
     }

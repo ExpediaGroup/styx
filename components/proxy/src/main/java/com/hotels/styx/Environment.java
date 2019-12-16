@@ -20,12 +20,14 @@ import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.common.format.DefaultHttpMessageFormatter;
 import com.hotels.styx.common.format.HttpMessageFormatter;
-import com.hotels.styx.configstore.ConfigStore;
 import com.hotels.styx.proxy.HttpErrorStatusCauseLogger;
 import com.hotels.styx.proxy.HttpErrorStatusMetrics;
+import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpErrorStatusListener;
 import com.hotels.styx.server.ServerEnvironment;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
@@ -36,7 +38,7 @@ import static java.util.Objects.requireNonNull;
 public final class Environment implements com.hotels.styx.api.Environment {
     private final Version version;
     private final EventBus eventBus;
-    private final ConfigStore configStore;
+    private final List<NamedPlugin> plugins;
     private final StyxConfig configuration;
     private final HttpErrorStatusListener httpErrorStatusListener;
     private final ServerEnvironment serverEnvironment;
@@ -44,7 +46,7 @@ public final class Environment implements com.hotels.styx.api.Environment {
 
     private Environment(Builder builder) {
         this.eventBus = firstNonNull(builder.eventBus, () -> new EventBus("Styx"));
-        this.configStore = new ConfigStore();
+        this.plugins = new ArrayList<>();
 
         this.configuration = builder.configuration;
         this.version = firstNonNull(builder.version, Version::newVersion);
@@ -65,8 +67,8 @@ public final class Environment implements com.hotels.styx.api.Environment {
         return eventBus;
     }
 
-    public ConfigStore configStore() {
-        return configStore;
+    public List<NamedPlugin> plugins() {
+        return plugins;
     }
 
     public Version buildInfo() {
