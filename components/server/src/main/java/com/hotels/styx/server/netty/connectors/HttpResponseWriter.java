@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.server.netty.connectors;
 
+import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.Buffers;
 import com.hotels.styx.api.LiveHttpResponse;
 import io.netty.buffer.ByteBuf;
@@ -22,10 +23,10 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.DefaultHttpContent;
+import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.Subscriber;
-import rx.Subscription;
+import reactor.core.publisher.BaseSubscriber;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -79,14 +80,20 @@ class HttpResponseWriter {
                 }
             });
 
-            Subscription subscriber = toObservable(response.body()).map(Buffers::toByteBuf).subscribe(new Subscriber<ByteBuf>() {
+            response.body().subscribe(new BaseSubscriber<Buffer>() {
                 @Override
-                public void onStart() {
-                    request(1);
+                public void hookOnSubscribe(Subscription subscription) {
+                    future.handle((ignore, cause) -> {
+                        if (future.isCompletedExceptionally() && cause instanceof CancellationException) {
+                            subscription.cancel();
+                        }
+                        return null;
+                    });
+                    subscription.request(1);
                 }
 
                 @Override
-                public void onCompleted() {
+                public void hookOnComplete() {
                     if (!future.isDone()) {
                         nettyWriteAndFlush(EMPTY_LAST_CONTENT).addListener((ChannelFutureListener) this::onWriteEmptyLastChunkOutcome);
                         contentCompleted.set(true);
@@ -95,7 +102,7 @@ class HttpResponseWriter {
                 }
 
                 @Override
-                public void onError(Throwable cause) {
+                public void hookOnError(Throwable cause) {
                     LOGGER.warn("Content observable error. Written content bytes {}/{} (ackd/sent). Write events {}/{} (ackd/writes). Exception={}",
                             new Object[]{
                                     contentBytesAcked.get(),
@@ -108,7 +115,8 @@ class HttpResponseWriter {
                 }
 
                 @Override
-                public void onNext(ByteBuf byteBuf) {
+                public void hookOnNext(Buffer buffer) {
+                    ByteBuf byteBuf = Buffers.toByteBuf(buffer);
                     if (future.isDone()) {
                         byteBuf.release();
                     } else {
@@ -127,7 +135,7 @@ class HttpResponseWriter {
                         completeIfAllSent(future);
                     } else if (!future.isDone()) {
                         // Suppress messages if future has already failed, or completed for other reason:
-                        unsubscribe();
+                        cancel();
                         LOGGER.warn("Write error. Written content bytes {}/{} (ackd/sent). Write events {}/{} (ackd/writes), Exception={}", new Object[]{
                                 contentBytesAcked.get(),
                                 contentBytesWritten.get(),
@@ -142,16 +150,8 @@ class HttpResponseWriter {
                 private void onWriteEmptyLastChunkOutcome(ChannelFuture writeOp) {
                     writeOpsAcked.incrementAndGet();
                     completeIfAllSent(future);
-                    unsubscribe();
+                    cancel();
                 }
-
-            });
-
-            future.handle((ignore, cause) -> {
-                if (future.isCompletedExceptionally() && cause instanceof CancellationException) {
-                    subscriber.unsubscribe();
-                }
-                return null;
             });
 
             return future;
