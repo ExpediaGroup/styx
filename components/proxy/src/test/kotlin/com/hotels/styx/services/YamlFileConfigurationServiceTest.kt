@@ -61,7 +61,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
         tempDir.deleteRecursively()
     }
 
-    private fun with(service: YamlFileConfigurationService, action: (YamlFileConfigurationService) -> Unit) {
+    private fun withService(service: StyxService, action: (StyxService) -> Unit) {
         try {
             action(service)
         } finally {
@@ -84,7 +84,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                       - { id: "app-02", host: "localhost:9091" }
                     """.trimIndent())
 
-                with(YamlFileConfigurationService(
+                withService(YamlFileConfigurationService(
                         "dc-us-west",
                         routeDb,
                         OriginsConfigConverter(serviceDb, RoutingObjectFactoryContext(objectStore = routeDb).get(), "origins-cookie"),
@@ -110,7 +110,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                         .start(wait = false)
                         .service
 
-                with(service) {
+                withService(service) {
                     writeOrigins("""
                         ---
                         - id: "app"
@@ -641,7 +641,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
 
             test("Recovers when the file becomes availabe again") {
 
-                println("Writing origins file now")
+                LOGGER.info("Writing origins file now")
                 writeOrigins("""
                     ---
                     - id: "appC"
@@ -657,7 +657,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                     objects.size shouldBe 4
 
                     objects.entries.forEach {
-                        println("entry key: ${it.key}")
+                        LOGGER.info("entry key: ${it.key}")
                     }
 
                     objects["appC.appC-01"].should(beRoutingObject("HostProxy", setOf(lbGroupTag("appC"), "source=origins-provider")))

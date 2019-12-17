@@ -33,6 +33,7 @@ import com.hotels.styx.admin.handlers.OriginsInventoryHandler;
 import com.hotels.styx.admin.handlers.PingHandler;
 import com.hotels.styx.admin.handlers.PluginListHandler;
 import com.hotels.styx.admin.handlers.PluginToggleHandler;
+import com.hotels.styx.admin.handlers.ProviderListHandler;
 import com.hotels.styx.admin.handlers.RoutingObjectHandler;
 import com.hotels.styx.admin.handlers.ServiceProviderHandler;
 import com.hotels.styx.admin.handlers.StartupConfigHandler;
@@ -121,7 +122,7 @@ public class AdminServerBuilder {
 
         return new NettyServerBuilderSpec("Admin", environment.serverEnvironment(), new WebServerConnectorFactory())
                 .toNettyServerBuilder(adminServerConfig)
-                .handlerFactory(() -> adminEndpoints(styxConfig, startupConfig))
+                .handler(adminEndpoints(styxConfig, startupConfig))
                 .build();
     }
 
@@ -180,10 +181,13 @@ public class AdminServerBuilder {
             StyxService styxService = record.getValue().component4();
 
             extensionEndpoints(root, extensionName, styxService.adminInterfaceHandlers(adminPath(root, extensionName)))
-                    .forEach(route -> httpRouter.stream(route.path, route.handler()));
+                    .forEach(route -> httpRouter.stream(route.path(), route.handler()));
         });
 
+        httpRouter.aggregate("/admin/providers", new ProviderListHandler(providerDatabase));
+
         httpRouter.aggregate("/admin/plugins", new PluginListHandler(environment.configStore()));
+
         return httpRouter;
     }
 
@@ -206,6 +210,7 @@ public class AdminServerBuilder {
         builder.add(link("Startup Configuration", "/admin/configuration/startup"));
         builder.add(link("JVM", "/admin/jvm?pretty"));
         builder.add(link("Plugins", "/admin/plugins"));
+        builder.add(link("Providers", "/admin/providers"));
 
         if (configVersion(styxConfig) == ROUTING_CONFIG_V1) {
             builder.add(link("Dashboard", "/admin/dashboard/index.html"))
@@ -241,9 +246,18 @@ public class AdminServerBuilder {
         return list;
     }
 
-    private static String adminPath(String root, String name) {
+    public static String adminPath(String root, String name) {
         return String.format("/admin/%s/%s", root, name);
     }
+
+    public static String adminEndpointPath(String root, String name, String relativePath) {
+        return adminPath(root, name) + "/" + dropFirstForwardSlash(relativePath);
+    }
+
+    private static String dropFirstForwardSlash(String key) {
+        return key.length() > 0 && key.charAt(0) == '/' ? key.substring(1) : key;
+    }
+
 
     private static List<AdminEndpointRoute> extensionAdminEndpointRoutes(String root, String name, Map<String, HttpHandler> endpoints) {
         return mapToList(endpoints, (relativePath, handler) ->
@@ -283,14 +297,6 @@ public class AdminServerBuilder {
             super(adminEndpointPath(root, name, relativePath), handler);
             this.root = root;
             this.name = name;
-        }
-
-        static String adminEndpointPath(String root, String name, String relativePath) {
-            return adminPath(root, name) + "/" + dropFirstForwardSlash(relativePath);
-        }
-
-        static String dropFirstForwardSlash(String key) {
-            return key.length() > 0 && key.charAt(0) == '/' ? key.substring(1) : key;
         }
 
         String linkLabel() {

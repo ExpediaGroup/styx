@@ -20,12 +20,10 @@ import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
-import com.hotels.styx.common.CompletableFutures;
+import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
-
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static rx.Observable.timer;
 
 public class AsyncResponsePluginFactory implements PluginFactory {
     @Override
@@ -48,8 +46,9 @@ public class AsyncResponsePluginFactory implements PluginFactory {
         }
 
         private static CompletableFuture<LiveHttpResponse> processAsynchronously(LiveHttpResponse response, int delayMillis) {
-            return CompletableFutures.fromSingleObservable(timer(delayMillis, MILLISECONDS)
-                    .map(x -> response));
+            return Mono.delay(Duration.ofMillis(delayMillis))
+                    .map(x -> response)
+                    .toFuture();
         }
     }
 }

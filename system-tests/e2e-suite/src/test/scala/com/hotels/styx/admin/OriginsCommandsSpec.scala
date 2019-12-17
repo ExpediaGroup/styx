@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Millis, Seconds, Span}
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration._
 
@@ -45,6 +46,7 @@ class OriginsCommandsSpec extends FeatureSpec
   info("I want to be able to enable or disable an origin")
   info("So I can deploy to it or work on it.")
 
+  private val LOGGER = LoggerFactory.getLogger(classOf[OriginsCommandsSpec])
   val origin1 = configureAndStart("appOne", "appOne-01")
   val origin2 = configureAndStart("appTwo", "appTwo-01")
 
@@ -76,8 +78,8 @@ class OriginsCommandsSpec extends FeatureSpec
 
   override protected def afterAll() = {
     val response = get(styxServer.adminURL("/admin/origins/status"))
-    println("after test: " + response.bodyAs(UTF_8))
-    println("Styx metrics: " + getStyxMetricsSnapshot)
+    LOGGER.info("after test: " + response.bodyAs(UTF_8))
+    LOGGER.info("Styx metrics: " + getStyxMetricsSnapshot)
 
     origin1.stop()
     origin2.stop()

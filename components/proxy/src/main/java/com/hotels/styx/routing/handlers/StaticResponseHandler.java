@@ -62,8 +62,8 @@ public class StaticResponseHandler implements RoutingObject {
 
     public StaticResponseHandler(int status, String text, HttpHeaders headers) {
         this.status = status;
-        this.text = text;
-        this.headers = headers;
+        this.text = text != null ? text : "";
+        this.headers = headers != null ? headers : new HttpHeaders.Builder().build();
     }
 
     @Override

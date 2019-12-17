@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import com.hotels.styx.support.DownloadClient._
 import com.hotels.styx.support.configuration.{HttpBackend, ImplicitOriginConversions, Origins, StyxConfig}
 import com.hotels.styx.support.{DownloadClient, NettyOrigins, TestClientSupport}
 import org.scalatest.concurrent.Eventually
-import org.scalatest.{BeforeAndAfterAll, SequentialNestedSuiteExecution, Matchers}
+import org.scalatest.{BeforeAndAfterAll, Matchers, SequentialNestedSuiteExecution}
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -143,12 +143,9 @@ class LongDownloadsSpec extends org.scalatest.fixture.WordSpec
 
   def logResults(results: Seq[DownloadAck]): Unit = {
     LOGGER.info("Results size: %d".format(results.size))
-    for (
-      (result, i) <- results.zipWithIndex
-    ) {
+    for ((result, i) <- results.zipWithIndex) {
       LOGGER.info("client %d: bytes received: %d".format(i + 1, result.bytesReceived))
     }
-
   }
 }
 
@@ -162,10 +159,11 @@ object SharedOrigins extends NettyOrigins {
   private def newBigFile(filename: String): File = {
     val tmpDir: File = Files.createTempDir
     val tmpFile: String = tmpDir.toPath.resolve(filename).toString
+    val logger = LoggerFactory.getLogger("com.hotels.styx.proxy.resiliency.SharedOrigins")
 
     val file: RandomAccessFile = new RandomAccessFile(tmpFile, "rwd")
     try {
-      println(s"Creating file $tmpFile of size $FIFTY_MB bytes.")
+        logger.info(s"Creating file $tmpFile of size $FIFTY_MB bytes.")
       file.setLength(FIFTY_MB)
     } finally {
       if (file != null) file.close()

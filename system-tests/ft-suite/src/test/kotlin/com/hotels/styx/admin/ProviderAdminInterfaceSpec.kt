@@ -23,6 +23,7 @@ import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.adminHostHeader
 import com.hotels.styx.support.wait
 import io.kotlintest.Spec
+import io.kotlintest.matchers.string.shouldContain
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
 import java.nio.charset.StandardCharsets.UTF_8
@@ -82,6 +83,13 @@ class ProviderAdminInterfaceSpec : FeatureSpec() {
                 styxServer.adminRequest("/admin/providers/mySecondMonitor/status")
                         .bodyAs(UTF_8)
                         .shouldBe("""{ name: "HealthCheckMonitoringService" status: "RUNNING" }""")
+            }
+
+            scenario ("Provider list page contains links for each provider endpoint") {
+                val body = styxServer.adminRequest("/admin/providers")
+                        .bodyAs(UTF_8)
+                body shouldContain "/admin/providers/myMonitor/status"
+                body shouldContain "/admin/providers/mySecondMonitor/status"
             }
         }
     }

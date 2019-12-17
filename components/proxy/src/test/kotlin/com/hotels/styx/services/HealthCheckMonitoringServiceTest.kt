@@ -33,11 +33,13 @@ import io.kotlintest.specs.FeatureSpec
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import org.slf4j.LoggerFactory
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
 class HealthCheckMonitoringServiceTest : FeatureSpec({
+    val LOGGER = LoggerFactory.getLogger(HealthCheckMonitoringServiceTest::class.java)
 
     fun createdTag(tag: String) = tag.matches("created:.*".toRegex())
 
@@ -217,7 +219,7 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
         scenario("Re-tag an active object") {
             reTag(setOf(lbGroupTag("aaa"), "state=active", "healthCheck=on;probes-FAIL:0"), ObjectActive(1))
                     .let {
-                        println("new tags: " + it)
+                        LOGGER.info("new tags: " + it)
 
                         it.shouldContainExactlyInAnyOrder(
                                 lbGroupTag("aaa"),
@@ -229,7 +231,7 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
         scenario("Re-tag an unreachable object") {
             reTag(setOf(lbGroupTag("aaa"), "state=unreachable", "healthCheck=on;probes-OK:0"), ObjectActive(1))
                     .let {
-                        println("new tags: " + it)
+                        LOGGER.info("new tags: " + it)
 
                         it.shouldContainExactlyInAnyOrder(
                                 lbGroupTag("aaa"),
@@ -241,7 +243,7 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
         scenario("Re-tag a failed active object as unreachable") {
             reTag(setOf(lbGroupTag("aaa"), "state=active", "healthCheck=on;probes-FAIL:1"), ObjectUnreachable(0))
                     .let {
-                        println("new tags: " + it)
+                        LOGGER.info("new tags: " + it)
 
                         it.shouldContainExactlyInAnyOrder(
                                 lbGroupTag("aaa"),
@@ -253,7 +255,7 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
         scenario("Re-tag a successful unreachable object as active") {
             reTag(setOf(lbGroupTag("aaa"), "state=unreachable", "healthCheck=on;probes-OK:1"), ObjectActive(0))
                     .let {
-                        println("new tags: " + it)
+                        LOGGER.info("new tags: " + it)
 
                         it.shouldContainExactlyInAnyOrder(
                                 lbGroupTag("aaa"),

@@ -30,6 +30,7 @@ import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
 import com.hotels.styx.{DefaultStyxConfiguration, MockServer, StyxProxySpec}
 import org.scalatest.FunSpec
+import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
 
 import scala.concurrent.duration._
@@ -38,6 +39,8 @@ class BigFileDownloadSpec extends FunSpec
   with StyxProxySpec
   with DefaultStyxConfiguration {
   val fileServer = new MockServer(0)
+
+  private val LOGGER = LoggerFactory.getLogger(classOf[BigFileDownloadSpec])
 
   val myClient: StyxHttpClient = new StyxHttpClient.Builder()
     .connectTimeout(1000, MILLISECONDS)
@@ -62,8 +65,8 @@ class BigFileDownloadSpec extends FunSpec
 
   override protected def afterAll(): Unit = {
     fileServer.stopAsync().awaitTerminated()
-    println("BigFileDownloadSpec: Origin received requests: " + fileServer.requestQueue)
-    println("Metrics after the test:", styxServer.metricsSnapshot)
+    LOGGER.info("BigFileDownloadSpec: Origin received requests: " + fileServer.requestQueue)
+    LOGGER.info("Metrics after the test:", styxServer.metricsSnapshot)
     super.afterAll()
   }
 
@@ -85,14 +88,14 @@ class BigFileDownloadSpec extends FunSpec
           .body(body => body
                       .map(buf => { bodyLength = bodyLength + buf.size() ; buf })
                       .drop()
-                      .doOnEnd( x => println("body consumed!")))
+                      .doOnEnd( x => LOGGER.info("body consumed!")))
           .build()
           .aggregate(100)).block()
 
       assert(response.status() == OK)
       val actualContentSize = bodyLength
 
-      println("Actual content size was: " + actualContentSize)
+      LOGGER.info("Actual content size was: " + actualContentSize)
       actualContentSize should be(ONE_HUNDRED_MB)
     }
   }
@@ -104,7 +107,7 @@ class BigFileDownloadSpec extends FunSpec
 
     val file: RandomAccessFile = new RandomAccessFile(tmpFile, "rwd")
     try {
-      println(s"Creating file $tmpFile of size $ONE_HUNDRED_MB bytes.")
+      LOGGER.info(s"Creating file $tmpFile of size $ONE_HUNDRED_MB bytes.")
       file.setLength(ONE_HUNDRED_MB)
     } finally {
       if (file != null) file.close()

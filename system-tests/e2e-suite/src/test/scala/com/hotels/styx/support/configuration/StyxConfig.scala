@@ -57,7 +57,7 @@ sealed trait StyxBaseConfig {
 }
 
 object StyxBaseConfig {
-  val defaultLogbackXml = ResourcePaths.fixturesHome(this.getClass, "/conf/logback/logback.xml")
+  val defaultLogbackXml = ResourcePaths.fixturesHome(this.getClass, "/logback.xml")
 }
 
 case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),
@@ -84,6 +84,7 @@ case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),
       .setNioAcceptorBacklog(proxyConfig.nioAcceptorBacklog)
       .setRequestTimeoutMillis(proxyConfig.requestTimeoutMillis)
       .setClientWorkerThreadsCount(proxyConfig.clientWorkerThreadsCount)
+      .setCompressResponses(proxyConfig.compressResponses)
 
     val styxConfig = newStyxConfig(this.yamlText,
       proxyConfigBuilder,

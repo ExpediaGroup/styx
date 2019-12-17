@@ -18,6 +18,8 @@ package com.hotels.styx.api.extension.service.spi;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -45,11 +47,14 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
  * for implementing a StyxSerive interface.
  */
 public abstract class AbstractStyxService implements StyxService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractStyxService.class);
+
     private final String name;
     private final AtomicReference<StyxServiceStatus> status = new AtomicReference<>(CREATED);
 
     public AbstractStyxService(String name) {
         this.name = name;
+        LOGGER.info("Created {}", name);
     }
 
     public StyxServiceStatus status() {
@@ -67,13 +72,17 @@ public abstract class AbstractStyxService implements StyxService {
     @Override
     public CompletableFuture<Void> start() {
         boolean changed = status.compareAndSet(CREATED, STARTING);
+        LOGGER.info("Starting {}", name);
 
         if (changed) {
             return startService()
                     .exceptionally(failWithMessage("Service failed to start."))
-                    .thenAccept(na -> status.compareAndSet(STARTING, RUNNING));
+                    .thenAccept(na -> {
+                        status.compareAndSet(STARTING, RUNNING);
+                        LOGGER.info("Started {}", name);
+                    });
         } else {
-            throw new IllegalStateException(format("Start called in %s state", status.get()));
+            throw new IllegalStateException(format("Start '%s' called in %s state", name, status.get()));
         }
     }
 
@@ -81,12 +90,16 @@ public abstract class AbstractStyxService implements StyxService {
     public CompletableFuture<Void> stop() {
         boolean changed = status.compareAndSet(RUNNING, STOPPING);
 
+        LOGGER.info("Stopping {} failed", name);
         if (changed) {
             return stopService()
                     .exceptionally(failWithMessage("Service failed to stop."))
-                    .thenAccept(na -> status.compareAndSet(STOPPING, STOPPED));
+                    .thenAccept(na -> {
+                        status.compareAndSet(STOPPING, STOPPED);
+                        LOGGER.info("Stopped {}", name);
+                    });
         } else {
-            throw new IllegalStateException(format("Stop called in %s state", status.get()));
+            throw new IllegalStateException(format("Service '%s' stopped in %s state", name, status.get()));
         }
     }
 

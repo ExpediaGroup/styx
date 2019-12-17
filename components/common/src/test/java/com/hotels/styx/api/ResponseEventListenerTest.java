@@ -36,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ResponseEventListenerTest {
     private AtomicBoolean cancelled;
+    private AtomicBoolean headers;
     private AtomicReference<Throwable> responseError;
     private AtomicReference<Throwable> contentError;
     private AtomicReference<LiveHttpResponse> completed;
@@ -44,6 +45,7 @@ public class ResponseEventListenerTest {
     @BeforeEach
     public void setUp() {
         cancelled = new AtomicBoolean();
+        headers = new AtomicBoolean();
         responseError = new AtomicReference<>();
         contentError = new AtomicReference<>();
         completed = new AtomicReference<>();
@@ -57,6 +59,7 @@ public class ResponseEventListenerTest {
 
         Flux<LiveHttpResponse> listener = ResponseEventListener.from(publisher)
                 .whenCancelled(() -> cancelled.set(true))
+                .whenHeadersComplete(() -> headers.set(true))
                 .whenResponseError(cause -> responseError.set(cause))
                 .whenContentError(cause -> contentError.set(cause))
                 .whenCompleted(response -> completed.set(response))
@@ -67,6 +70,7 @@ public class ResponseEventListenerTest {
                 .consumeNextWith(LiveHttpMessage::consume)
                 .then(() -> {
                     assertFalse(cancelled.get());
+                    assertTrue(headers.get());
                     assertNull(responseError.get());
                     assertNull(contentError.get());
                     assertEquals(theResponse,  completed.get());
@@ -81,6 +85,7 @@ public class ResponseEventListenerTest {
 
         Flux<LiveHttpResponse> listener = ResponseEventListener.from(publisher)
                 .whenCancelled(() -> cancelled.set(true))
+                .whenHeadersComplete(() -> headers.set(true))
                 .whenFinished(() -> finished.set(true))
                 .apply();
 
@@ -89,6 +94,7 @@ public class ResponseEventListenerTest {
                 .thenCancel()
                 .verify();
 
+        assertFalse(headers.get());
         assertTrue(cancelled.get());
         assertTrue(finished.get());
     }

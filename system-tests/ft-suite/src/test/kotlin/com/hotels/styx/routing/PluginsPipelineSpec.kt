@@ -23,6 +23,7 @@ import com.hotels.styx.support.proxyHttpHostHeader
 import com.hotels.styx.support.wait
 import io.kotlintest.matchers.collections.shouldContainInOrder
 import io.kotlintest.specs.FeatureSpec
+import org.slf4j.LoggerFactory
 import java.lang.ClassLoader.getSystemClassLoader
 import java.nio.file.Files
 import java.nio.file.Path
@@ -30,6 +31,7 @@ import java.nio.file.Paths
 
 
 class PluginsPipelineSpec : FeatureSpec() {
+    private val LOGGER = LoggerFactory.getLogger(PluginsPipelineSpec::class.java)
 
     init {
         val tempPluginsDir = createTempDir(suffix = "-${this.javaClass.simpleName}")
@@ -85,9 +87,7 @@ class PluginsPipelineSpec : FeatureSpec() {
                     httpPipeline:
                       type: InterceptorPipeline
                       config:
-                          pipeline:
-                            - plugin-a
-                            - plugin-c
+                          pipeline: plugin-a, plugin-c
                           handler:
                             type: StaticResponseHandler
                             config:
@@ -95,7 +95,7 @@ class PluginsPipelineSpec : FeatureSpec() {
                               content: "Hello, world!"
                         """.trimIndent())
 
-                println("Proxy http address: ${styxServer().proxyHttpHostHeader()}")
+                LOGGER.info("Proxy http address: ${styxServer().proxyHttpHostHeader()}")
 
                 val response = client.send(get("/")
                         .header(HOST, styxServer().proxyHttpHostHeader())
@@ -116,7 +116,7 @@ class PluginsPipelineSpec : FeatureSpec() {
                 .resolve(module)
                 .resolve("target");
 
-        println("jarLocation($module): $parent")
+        LOGGER.info("jarLocation($module): $parent")
 
         return Files.list(parent)
                 .filter({ file -> file.toString().endsWith(".jar") })

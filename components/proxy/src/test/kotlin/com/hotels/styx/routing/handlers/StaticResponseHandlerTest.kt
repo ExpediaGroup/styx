@@ -16,16 +16,19 @@
 package com.hotels.styx.routing.handlers
 
 import com.hotels.styx.api.HttpResponseStatus.CREATED
+import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.routing.RoutingObjectFactoryContext
 import com.hotels.styx.routing.routingObjectDef
 import com.hotels.styx.server.HttpInterceptorContext
+import com.hotels.styx.wait
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 import reactor.core.publisher.toMono
+import java.nio.charset.StandardCharsets.UTF_8
 
 
-class StaticResponseHandlerTest: StringSpec({
+class StaticResponseHandlerTest : StringSpec({
     val context = RoutingObjectFactoryContext().get()
 
     val config = routingObjectDef("""
@@ -36,13 +39,24 @@ class StaticResponseHandlerTest: StringSpec({
                   content: "secure"
           """.trimIndent())
 
-    "builds static response handler" {
+    "Builds static response handler." {
         val handler = StaticResponseHandler.Factory().build(listOf(), context, config)
 
         handler.handle(LiveHttpRequest.get("/foo").build(), HttpInterceptorContext.create())
                 .toMono()
                 .block()!!
                 .status() shouldBe (CREATED)
+    }
+
+    "Content defaults to an empty string." {
+        val handler = StaticResponseHandler(200, null, null)
+
+        val response = handler
+                .handle(LiveHttpRequest.get("/foo").build(), HttpInterceptorContext.create())
+                .wait()!!
+
+        response.status() shouldBe (OK)
+        response.bodyAs(UTF_8) shouldBe ""
     }
 
 })

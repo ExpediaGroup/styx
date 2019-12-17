@@ -23,11 +23,9 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.client.{ValueMatchingStrategy, WireMock}
-import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpResponseStatus._
-import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration._
 import com.hotels.styx.utils.StubOriginHeader.STUB_ORIGIN_INFO
@@ -40,8 +38,6 @@ class HealthCheckSpec extends FunSpec
   with StyxProxySpec
   with StyxClientSupplier
   with SequentialNestedSuiteExecution {
-
-  val logback = fixturesHome(this.getClass, "/conf/logback/logback-debug-stdout.xml")
 
   val httpApp = FakeHttpServer.HttpStartupConfig(
     appId = "httpApp",
@@ -74,8 +70,7 @@ class HealthCheckSpec extends FunSpec
       |      port: 0
       |services:
       |  factories: {}
-    """.stripMargin,
-    logbackXmlLocation = logback)
+    """.stripMargin)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -114,22 +109,12 @@ class HealthCheckSpec extends FunSpec
     }
   }
 
-  private def httpRequest(path: String) = get(styxServer.routerURL(path)).build()
-
-  private def valueMatchingStrategy(matches: String) = {
-    val matchingStrategy = new ValueMatchingStrategy()
-    matchingStrategy.setMatches(matches)
-    matchingStrategy
-  }
-
   private def originResponse(appId: String) = aResponse
     .withStatus(OK.code())
     .withHeader(STUB_ORIGIN_INFO.toString, appId)
     .withBody("Hello, World!")
 
   private def activeOrigins(response: String, appId: String) = originStatuses(response, appId, "activeOrigins")
-
-  private def inactiveOrigins(response: String, appId: String) = originStatuses(response, appId, "inactiveOrigins")
 
   private def originStatuses(response: String, appId: String, state: String): Seq[String] = {
     val tree0 = mapper.readTree(response).get(appId)

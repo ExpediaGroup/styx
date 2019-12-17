@@ -123,7 +123,6 @@ class RoutingObjectHandlerTest : FeatureSpec({
                     .toMono()
                     .block()
                     .let {
-                        println(it!!.bodyAs(UTF_8))
                         it.status() shouldBe CREATED
                     }
 

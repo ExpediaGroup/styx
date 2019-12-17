@@ -16,15 +16,15 @@
 package com.hotels.styx.client.netty.connectionpool;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.exceptions.ResponseTimeoutException;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.netty.ConsumerDisconnectedException;
 import com.hotels.styx.common.StateMachine;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.ReferenceCountUtil;
+import org.reactivestreams.Subscriber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.Subscriber;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -41,7 +41,7 @@ import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpCon
 import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.TERMINATED;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
-import static rx.internal.operators.BackpressureUtils.getAndAddRequest;
+import static reactor.core.publisher.Operators.addCap;
 
 class FlowControllingHttpContentProducer {
     private static final Logger LOGGER = LoggerFactory.getLogger(FlowControllingHttpContentProducer.class);
@@ -56,7 +56,8 @@ class FlowControllingHttpContentProducer {
     private final Runnable delayedTearDownAction;
 
     private final Queue<ByteBuf> readQueue = new ConcurrentLinkedDeque<>();
-    private final AtomicLong requested = new AtomicLong(Long.MAX_VALUE);
+    private final AtomicLong requested = new AtomicLong(0);
+
     private final AtomicLong receivedChunks = new AtomicLong(0);
     private final AtomicLong receivedBytes = new AtomicLong(0);
     private final AtomicLong emittedChunks = new AtomicLong(0);
@@ -208,7 +209,7 @@ class FlowControllingHttpContentProducer {
     private ProducerState contentSubscribedInBufferingCompleted(ContentSubscribedEvent event) {
         this.contentSubscriber = event.subscriber;
         if (readQueue.size() == 0) {
-            this.contentSubscriber.onCompleted();
+            this.contentSubscriber.onComplete();
             this.onCompleteAction.run();
             return COMPLETED;
         }
@@ -218,7 +219,7 @@ class FlowControllingHttpContentProducer {
         if (readQueue.size() > 0) {
             return EMITTING_BUFFERED_CONTENT;
         } else {
-            this.contentSubscriber.onCompleted();
+            this.contentSubscriber.onComplete();
             this.onCompleteAction.run();
             return COMPLETED;
         }
@@ -296,7 +297,7 @@ class FlowControllingHttpContentProducer {
         if (readQueue.size() > 0) {
             return EMITTING_BUFFERED_CONTENT;
         } else {
-            this.contentSubscriber.onCompleted();
+            this.contentSubscriber.onComplete();
             this.onCompleteAction.run();
             return COMPLETED;
         }
@@ -321,11 +322,21 @@ class FlowControllingHttpContentProducer {
         // Don't `askForMore`. The response is fully received already.
 
         if (readQueue.size() == 0) {
-            this.contentSubscriber.onCompleted();
+            this.contentSubscriber.onComplete();
             this.onCompleteAction.run();
             return COMPLETED;
         } else {
             return EMITTING_BUFFERED_CONTENT;
+        }
+    }
+
+    private static long getAndAddRequest(AtomicLong requested, long n) {
+        while (true) {
+            long current = requested.get();
+            long next = addCap(current, n);
+            if (requested.compareAndSet(current, next)) {
+                return current;
+            }
         }
     }
 

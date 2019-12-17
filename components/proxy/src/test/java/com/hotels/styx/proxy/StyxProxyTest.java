@@ -36,6 +36,8 @@ import com.hotels.styx.server.netty.ServerConnector;
 import com.hotels.styx.server.netty.WebServerConnectorFactory;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -47,6 +49,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class StyxProxyTest extends SSLSetup {
+    private static final Logger LOGGER = LoggerFactory.getLogger(StyxProxyTest.class);
     final HttpClient client = new StyxHttpClient.Builder()
             .build();
 
@@ -64,7 +67,7 @@ public class StyxProxyTest extends SSLSetup {
     @Test
     public void startsAndStopsAServer() {
         HttpServer server = new NettyServerBuilder()
-                .setHttpConnector(connector(0))
+                .setProtocolConnector(connector(0))
                 .build();
 
         server.startAsync().awaitRunning();
@@ -80,8 +83,8 @@ public class StyxProxyTest extends SSLSetup {
         StandardHttpRouter handler = new StandardHttpRouter();
 
         HttpServer server = NettyServerBuilder.newBuilder()
-                .setHttpConnector(connector(0))
-                .handlerFactory(() -> new HttpInterceptorPipeline(
+                .setProtocolConnector(connector(0))
+                .handler(new HttpInterceptorPipeline(
                         ImmutableList.of(echoInterceptor),
                         (request, context) -> new HttpAggregator(new StandardHttpRouter()).handle(request, context),
                         false))
@@ -115,13 +118,13 @@ public class StyxProxyTest extends SSLSetup {
     @Test
     public void startsServerWithBothHttpAndHttpsConnectors() throws IOException {
         HttpServer server = NettyServerBuilder.newBuilder()
-                .setHttpConnector(connector(0))
+                .setProtocolConnector(connector(0))
                 .build();
 
         server.startAsync().awaitRunning();
         assertThat("Server should be running", server.isRunning());
 
-        System.out.println("server is running: " + server.isRunning());
+        LOGGER.info("server is running: " + server.isRunning());
 
         HttpResponse clearResponse = get("http://localhost:8080/search?q=fanta");
         assertThat(clearResponse.bodyAs(UTF_8), containsString("Response from http Connector"));

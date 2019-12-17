@@ -49,6 +49,7 @@ public class NettyServerConfig {
     private int requestTimeoutMs = 12000;
     private int keepAliveTimeoutMillis = 12000;
     private int maxConnectionsCount = 512;
+    private boolean compressResponses;
 
     private final Optional<HttpConnectorConfig> httpConnectorConfig;
     private final Optional<HttpsConnectorConfig> httpsConnectorConfig;
@@ -78,7 +79,7 @@ public class NettyServerConfig {
 
         this.httpConnectorConfig = Optional.ofNullable(builder.httpConnectorConfig);
         this.httpsConnectorConfig = Optional.ofNullable(builder.httpsConnectorConfig);
-
+        this.compressResponses = builder.compressResponses;
         this.connectors = connectorsIterable();
     }
 
@@ -180,6 +181,15 @@ public class NettyServerConfig {
     }
 
     /**
+     * Whether responses should be compressed.
+     *
+     * @return true if response compression is enabled
+     */
+    public boolean compressResponses() {
+        return compressResponses;
+    }
+
+    /**
      * Builder.
      *
      * @param <T> the type of the Builder
@@ -197,6 +207,7 @@ public class NettyServerConfig {
         protected Integer maxConnectionsCount;
         protected HttpConnectorConfig httpConnectorConfig;
         protected HttpsConnectorConfig httpsConnectorConfig;
+        protected boolean compressResponses;
 
         public Builder httpPort(int port) {
             return (T) setHttpConnector(new HttpConnectorConfig(port));
@@ -270,6 +281,12 @@ public class NettyServerConfig {
         @JsonProperty("maxConnectionsCount")
         public T setMaxConnectionsCount(Integer maxConnectionsCount) {
             this.maxConnectionsCount = maxConnectionsCount;
+            return (T) this;
+        }
+
+        @JsonProperty("compressResponses")
+        public T setCompressResponses(boolean compressResponses) {
+            this.compressResponses = compressResponses;
             return (T) this;
         }
 

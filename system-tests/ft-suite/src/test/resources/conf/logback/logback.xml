@@ -6,15 +6,17 @@
     </encoder>
   </appender>
 
-  <logger name="org.apache" level="WARN"/>
+  <logger name="Styx-Tests" level="INFO"/>
+  <logger name="com.hotels.styx.http-messages.inbound" level="INFO"/>
+  <logger name="com.hotels.styx.http-messages.outbound" level="INFO"/>
+
   <logger name="io.netty" level="WARN"/>
   <logger name="com.hotels.styx.proxy.backends.file.FileChangeMonitor" level="INFO"/>
-
   <logger name="com.hotels.styx.proxy.HttpErrorStatusCauseLogger" level="OFF"/>
   <logger name="com.hotels.styx.server.netty.connectors.HttpPipelineHandler" level="OFF"/>
   <logger name="com.hotels.styx.servers.MockOriginServer" level="OFF"/>
 
-  <root level="DEBUG">
+  <root level="OFF">
     <appender-ref ref="CONSOLE"/>
   </root>
 </configuration>

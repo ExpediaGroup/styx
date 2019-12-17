@@ -32,7 +32,6 @@ import com.hotels.styx.infrastructure.RegistryServiceAdapter;
 import com.hotels.styx.proxy.ProxyServerConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpConnectorConfig;
-import com.hotels.styx.startup.ProxyServerSetUp;
 import com.hotels.styx.startup.StyxServerComponents;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import io.netty.util.ResourceLeakDetector;
@@ -40,18 +39,18 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
-import java.lang.reflect.Field;
-import java.nio.file.Paths;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 
 import static ch.qos.logback.classic.Level.ERROR;
 import static ch.qos.logback.classic.Level.INFO;
 import static com.google.common.util.concurrent.Service.State.FAILED;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.configuration.Configuration.EMPTY_CONFIGURATION;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
@@ -62,8 +61,10 @@ import static java.lang.System.currentTimeMillis;
 import static java.lang.System.setProperty;
 import static java.util.Collections.emptyList;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -77,7 +78,7 @@ public class StyxServerTest {
     @BeforeEach
     public void setUp() {
         log = new LoggingTestSupport(StyxServer.class);
-        pssLog = new LoggingTestSupport(ProxyServerSetUp.class);
+        pssLog = new LoggingTestSupport(StyxServer.class);
     }
 
     @AfterEach
@@ -115,6 +116,42 @@ public class StyxServerTest {
             styxServer.stopAsync().awaitTerminated();
             verify(pluginMock1).styxStopping();
             verify(pluginMock2).styxStopping();
+        } finally {
+            stopIfRunning(styxServer);
+        }
+    }
+
+    @Test
+    public void serverDoesNotStartUntilPluginsAreStarted() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
+
+        StyxServer styxServer = styxServerWithPlugins(ImmutableMap.of(
+                "slowlyStartingPlugin", new Plugin() {
+                    @Override
+                    public void styxStarting() {
+                        try {
+                            latch.await();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    @Override
+                    public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request1, Chain chain) {
+                        return Eventual.of(response(OK).build());
+                    }
+                }
+        ));
+
+        try {
+            styxServer.startAsync();
+
+            Thread.sleep(10);
+            assertThat(styxServer.proxyHttpAddress(), nullValue());
+
+            latch.countDown();
+
+            eventually(() -> assertThat(styxServer.proxyHttpAddress().getPort(), is(greaterThan(0))));
         } finally {
             stopIfRunning(styxServer);
         }

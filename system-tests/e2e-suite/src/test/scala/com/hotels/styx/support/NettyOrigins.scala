@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ trait NettyOrigins {
   def customResponseWebServer(port: Int, responseHandler: CustomResponseHandler): HttpServer = {
     val server: HttpServer = new NettyServerBuilder()
       .name("Netty test origin")
-      .setHttpConnector(new NettyHttpServerConnector(port, responseHandler))
+      .setProtocolConnector(new NettyHttpServerConnector(port, responseHandler))
       .build()
     server
 

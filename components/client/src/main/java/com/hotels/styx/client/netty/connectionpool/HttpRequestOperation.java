@@ -132,7 +132,7 @@ public class HttpRequestOperation {
         requestTime = System.currentTimeMillis();
         executeCount.incrementAndGet();
 
-        Flux<LiveHttpResponse> responseFlux = Flux.<LiveHttpResponse>create(sink -> {
+        Flux<LiveHttpResponse> responseFlux = Flux.create(sink -> {
             if (nettyConnection.isConnected()) {
                 RequestBodyChunkSubscriber bodyChunkSubscriber = new RequestBodyChunkSubscriber(request, nettyConnection);
                 requestRequestBodyChunkSubscriber.set(bodyChunkSubscriber);

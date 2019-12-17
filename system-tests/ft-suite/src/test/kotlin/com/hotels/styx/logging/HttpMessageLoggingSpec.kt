@@ -31,7 +31,7 @@ class HttpMessageLoggingSpec : FeatureSpec() {
 
     init {
         feature("Styx request/response logging") {
-            styxServer.restart()
+            styxServer.restart(loggingConfig = null)
 
             scenario("Logger should hide cookies and headers") {
 

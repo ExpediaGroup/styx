@@ -36,6 +36,9 @@ import com.hotels.styx.support.threadCount
 import com.hotels.styx.support.wait
 import io.kotlintest.IsolationMode
 import io.kotlintest.Spec
+import io.kotlintest.TestCase
+import io.kotlintest.TestResult
+import io.kotlintest.TestStatus
 import io.kotlintest.eventually
 import io.kotlintest.matchers.beGreaterThan
 import io.kotlintest.matchers.beLessThan
@@ -45,10 +48,12 @@ import io.kotlintest.matchers.withClue
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
+import org.slf4j.LoggerFactory
 import java.nio.charset.StandardCharsets.UTF_8
 import kotlin.system.measureTimeMillis
 
 class HostProxySpec : FeatureSpec() {
+    val LOGGER = LoggerFactory.getLogger("Styx-Tests")
 
     // Enforce one instance for the test spec.
     // Run the tests sequentially:
@@ -65,8 +70,26 @@ class HostProxySpec : FeatureSpec() {
         testServer.stop()
     }
 
+    override fun afterTest(testCase: TestCase, result: TestResult) {
+        super.afterTest(testCase, result)
+
+        when (result.status) {
+            TestStatus.Error -> {
+                LOGGER.info("HostProxySpec: Error: Styx server : {}", styxServer().metrics())
+                LOGGER.info("HostProxySpec: Error: Test server : {}", testServer().metrics())
+            }
+            TestStatus.Failure -> {
+                LOGGER.info("HostProxySpec: Failure: Styx server : {}", styxServer().metrics())
+                LOGGER.info("HostProxySpec: Failure: Test server : {}", testServer().metrics())
+            }
+            else -> { }
+        }
+    }
+
     init {
-        feature("Executor thread pool") {
+        // There are other tests that set the JVM system property io.netty.eventLoopThreads=16,
+        // thus potentially affecting and breaking this test.
+        feature("!Executor thread pool") {
             scenario("Runs on StyxHttpClient global thread pool") {
                 testServer.restart()
                 styxServer.restart()
@@ -85,7 +108,9 @@ class HostProxySpec : FeatureSpec() {
                     styxServer().removeRoutingObject("hostProxy")
                 }
 
-                threadCount("Styx-Client-Global") shouldBe 2
+                withClue("Thread count") {
+                    threadCount("Styx-Client-Global") shouldBe 2
+                }
             }
         }
 
@@ -210,7 +235,6 @@ class HostProxySpec : FeatureSpec() {
                         it["routing.objects.hostProxy.connectionspool.connections-terminated"]!!.get("value") shouldBe 1
                     }
                 }
-
             }
         }
 

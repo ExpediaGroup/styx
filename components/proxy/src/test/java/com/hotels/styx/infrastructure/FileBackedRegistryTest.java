@@ -52,7 +52,8 @@ public class FileBackedRegistryTest {
         originalContent = "... origins file ...".getBytes(UTF_8);
         newContent = "... new file ...".getBytes(UTF_8);
         backendService = new BackendService.Builder().build();
-        listener = mock(Registry.ChangeListener.class, withSettings().verboseLogging());
+        listener = mock(Registry.ChangeListener.class);
+        listener = mock(Registry.ChangeListener.class);
     }
 
     @Test

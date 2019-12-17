@@ -31,6 +31,7 @@ import com.hotels.styx.api.plugins.spi.Plugin
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.startup.StyxServerComponents
+import org.slf4j.LoggerFactory
 import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Path
@@ -56,21 +57,21 @@ val defaultServerConfig = """
         http:
           port: 0""".trimIndent()
 
+val LOGGER = LoggerFactory.getLogger(StyxServerProvider::class.java)
+
+private val logConfigPath = ResourcePaths.fixturesHome(StyxServerProvider::class.java, "/logback.xml")
+
 class StyxServerProvider(
         val defaultConfig: String = defaultServerConfig,
         val defaultAdditionalRoutingObjects: Map<String, RoutingObjectFactory> = mapOf(),
         val defaultAdditionalPlugins: Map<String, Plugin> = mapOf(),
-        val loggingConfig: Path? = null,
+        val defaultLoggingConfig: Path? = logConfigPath,
         val validateConfig: Boolean = true) {
     val serverRef: AtomicReference<StyxServer?> = AtomicReference()
 
     operator fun invoke() = get()
 
     fun get(): StyxServer {
-        if (!started()) {
-            restart()
-        }
-
         return serverRef.get()!!
     }
 
@@ -80,6 +81,18 @@ class StyxServerProvider(
             configuration: String = this.defaultConfig,
             additionalRoutingObjects: Map<String, RoutingObjectFactory> = this.defaultAdditionalRoutingObjects,
             additionalPlugins: Map<String, Plugin> = this.defaultAdditionalPlugins,
+            loggingConfig: Path? = this.defaultLoggingConfig,
+            validateConfig: Boolean = this.validateConfig): StyxServerProvider {
+        restartAsync(configuration, additionalRoutingObjects, additionalPlugins, loggingConfig, validateConfig)
+        serverRef.get()?.awaitRunning()
+        return this
+    }
+
+    fun restartAsync(
+            configuration: String = this.defaultConfig,
+            additionalRoutingObjects: Map<String, RoutingObjectFactory> = this.defaultAdditionalRoutingObjects,
+            additionalPlugins: Map<String, Plugin> = this.defaultAdditionalPlugins,
+            loggingConfig: Path? = this.defaultLoggingConfig,
             validateConfig: Boolean = this.validateConfig): StyxServerProvider {
         if (started()) {
             stop()
@@ -90,20 +103,24 @@ class StyxServerProvider(
                 .additionalRoutingObjects(additionalRoutingObjects)
                 .plugins(additionalPlugins)
 
+        LOGGER.info("restarted with logging config: $loggingConfig")
         components = if (loggingConfig != null) components.loggingSetUp(loggingConfig.toString()) else components
 
         val newServer = StyxServer(components.build())
-        newServer.startAsync()?.awaitRunning()
-
+        newServer.startAsync()
         serverRef.set(newServer)
+
         return this
     }
 
+
     fun stop() {
-        val oldServer = serverRef.get()
-        if (oldServer?.isRunning ?: false) {
-            oldServer!!.stopAsync().awaitTerminated()
-        }
+        serverRef.getAndSet(null)
+                ?.let {
+                    if (it.isRunning()) {
+                        it.stopAsync().awaitTerminated()
+                    }
+                }
     }
 }
 
@@ -118,7 +135,7 @@ fun StyxServerProvider.adminRequest(endpoint: String, debug: Boolean = false): H
 fun CompletableFuture<HttpResponse>.wait(debug: Boolean = false) = this.toMono()
         .doOnNext {
             if (debug) {
-                println("${it.status()} - ${it.headers()} - ${it.bodyAs(UTF_8)}")
+                LOGGER.debug("${it.status()} - ${it.headers()} - ${it.bodyAs(UTF_8)}")
             }
         }
         .block()
@@ -164,7 +181,7 @@ fun StyxServer.newRoutingObject(name: String, routingObject: String): HttpRespon
             .wait()
 
     if (response?.status() != CREATED) {
-        println("Object $name was not created. Response from server: ${response?.status()} - '${response?.bodyAs(UTF_8)}'")
+        LOGGER.debug("Object $name was not created. Response from server: ${response?.status()} - '${response?.bodyAs(UTF_8)}'")
     }
 
     return response?.status() ?: HttpResponseStatus.statusWithCode(666)
@@ -178,37 +195,37 @@ fun StyxServer.removeRoutingObject(name: String): HttpResponseStatus {
             .wait()
 
     if (response?.status() != OK) {
-        println("Object $name was not removed. Response from server: ${response?.status()} - '${response?.bodyAs(UTF_8)}'")
+        LOGGER.debug("Object $name was not removed. Response from server: ${response?.status()} - '${response?.bodyAs(UTF_8)}'")
     }
 
     return response?.status() ?: HttpResponseStatus.statusWithCode(666)
 }
 
 fun StyxServer.routingObject(name: String, debug: Boolean = false): Optional<String> = StyxHttpClient.Builder().build()
-            .send(HttpRequest.get("/admin/routing/objects/$name")
-                    .header(HOST, this.adminHostHeader())
-                    .build())
-            .wait(debug)!!
-            .let {
-                if (it.status() == OK) {
-                    Optional.of(it.bodyAs(UTF_8))
-                } else {
-                    Optional.empty()
-                }
+        .send(HttpRequest.get("/admin/routing/objects/$name")
+                .header(HOST, this.adminHostHeader())
+                .build())
+        .wait(debug)!!
+        .let {
+            if (it.status() == OK) {
+                Optional.of(it.bodyAs(UTF_8))
+            } else {
+                Optional.empty()
             }
+        }
 
 fun StyxServer.routingObjects(debug: Boolean = false): Optional<String> = StyxHttpClient.Builder().build()
-            .send(HttpRequest.get("/admin/routing/objects")
-                    .header(HOST, this.adminHostHeader())
-                    .build())
-            .wait(debug)!!
-            .let {
-                if (it.status() == OK) {
-                    Optional.of(it.bodyAs(UTF_8))
-                } else {
-                    Optional.empty()
-                }
+        .send(HttpRequest.get("/admin/routing/objects")
+                .header(HOST, this.adminHostHeader())
+                .build())
+        .wait(debug)!!
+        .let {
+            if (it.status() == OK) {
+                Optional.of(it.bodyAs(UTF_8))
+            } else {
+                Optional.empty()
             }
+        }
 
 fun threadCount(namePattern: String) = Thread.getAllStackTraces().keys
         .map { it.name }

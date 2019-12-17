@@ -38,6 +38,7 @@ public class ResponseEventListener {
     private Consumer<Throwable> contentErrorAction = cause -> { };
     private Consumer<LiveHttpResponse> onCompletedAction = r -> { };
     private Runnable cancelAction = () -> { };
+    private Runnable onHeaders = () -> { };
     private Runnable whenFinishedAction = () -> { };
 
     private volatile State state = INITIAL;
@@ -70,6 +71,11 @@ public class ResponseEventListener {
         return this;
     }
 
+    public ResponseEventListener whenHeadersComplete(Runnable action) {
+        this.onHeaders = requireNonNull(action);
+        return this;
+    }
+
     /**
      * Executes an action when the response terminates for any reason, normally,
      * abnormally, or due to cancellation.
@@ -89,6 +95,7 @@ public class ResponseEventListener {
                     switch (state) {
                         case INITIAL:
                             if (event instanceof MessageHeaders) {
+                                onHeaders.run();
                                 state = STREAMING;
                             } else if (event instanceof MessageCancelled) {
                                 cancelAction.run();

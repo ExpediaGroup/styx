@@ -21,18 +21,20 @@ import io.kotlintest.eventually
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 
 class FileMonitoringServiceTest : StringSpec() {
+    val LOGGER = LoggerFactory.getLogger(FileMonitoringServiceTest::class.java)
 
     val tempDir = createTempDir(suffix = "-${this.javaClass.simpleName}")
     val monitoredFile = File("${tempDir.absolutePath}/config.yml")
 
     override fun beforeSpec(spec: Spec) {
-        println("Temp directory: " + tempDir.absolutePath)
+        LOGGER.info("Temp directory: " + tempDir.absolutePath)
     }
 
     override fun beforeTest(testCase: TestCase) {

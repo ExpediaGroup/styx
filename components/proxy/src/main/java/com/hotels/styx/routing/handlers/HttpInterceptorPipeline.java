@@ -35,6 +35,7 @@ import com.hotels.styx.routing.config.StyxObjectReference;
 import com.hotels.styx.server.track.CurrentRequestTracker;
 import com.hotels.styx.server.track.RequestTracker;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -44,6 +45,7 @@ import static com.hotels.styx.config.schema.SchemaDsl.field;
 import static com.hotels.styx.config.schema.SchemaDsl.list;
 import static com.hotels.styx.config.schema.SchemaDsl.object;
 import static com.hotels.styx.config.schema.SchemaDsl.optional;
+import static com.hotels.styx.config.schema.SchemaDsl.or;
 import static com.hotels.styx.config.schema.SchemaDsl.routingObject;
 import static com.hotels.styx.config.schema.SchemaDsl.string;
 import static com.hotels.styx.routing.config.RoutingConfigParser.toRoutingConfigNode;
@@ -59,7 +61,7 @@ import static java.util.stream.StreamSupport.stream;
  */
 public class HttpInterceptorPipeline implements RoutingObject {
     public static final Schema.FieldType SCHEMA = object(
-            optional("pipeline", list(string())),
+            optional("pipeline", or(string(), list(string()))),
             field("handler", routingObject())
     );
 
@@ -103,12 +105,6 @@ public class HttpInterceptorPipeline implements RoutingObject {
                     context.requestTracking());
         }
 
-        private static List<StyxObjectConfiguration> styxHttpPipeline(JsonNode pipeline) {
-            return stream(pipeline.spliterator(), false)
-                    .map(RoutingConfigParser::toRoutingConfigNode)
-                    .collect(Collectors.toList());
-        }
-
         private static List<HttpInterceptor> getHttpInterceptors(
                 List<String> parents,
                 Map<String, NamedPlugin> plugins,
@@ -130,6 +126,22 @@ public class HttpInterceptorPipeline implements RoutingObject {
                         }
                     })
                     .collect(Collectors.toList());
+        }
+
+        private static List<StyxObjectConfiguration> styxHttpPipeline(JsonNode pipeline) {
+            if (pipeline.isTextual()) {
+                String[] names = pipeline.textValue().split(",");
+                return Arrays.stream(names)
+                        .map(String::trim)
+                        .filter(it -> !it.isEmpty())
+                        .map(StyxObjectReference::new)
+                        .collect(Collectors.toList());
+
+            } else {
+                return stream(pipeline.spliterator(), false)
+                        .map(RoutingConfigParser::toRoutingConfigNode)
+                        .collect(Collectors.toList());
+            }
         }
 
         private static void ensureValidPluginReferences(List<String> parents, Map<String, NamedPlugin> plugins, List<StyxObjectConfiguration> interceptors) {

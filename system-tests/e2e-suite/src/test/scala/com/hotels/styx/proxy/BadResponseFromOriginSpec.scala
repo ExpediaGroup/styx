@@ -39,6 +39,7 @@ import io.netty.handler.codec.http._
 import org.hamcrest.MatcherAssert.assertThat
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration._
 
@@ -49,6 +50,7 @@ class BadResponseFromOriginSpec extends FunSpec
   with TestClientSupport
   with Eventually {
 
+  private val LOGGER = LoggerFactory.getLogger(classOf[BadResponseFromOriginSpec])
   val (originOne, originOneServer) = originAndCustomResponseWebServer("NettyOrigin")
 
   override protected def beforeAll() = {
@@ -65,7 +67,7 @@ class BadResponseFromOriginSpec extends FunSpec
     originOneServer.stopAsync().awaitTerminated()
     // This test is failing intermittently. Print the metrics snapshot in case it fails,
     // to offer insight into what is going wrong:
-    println("Styx metrics after BadResponseFromOriginSpec: " + styxServer.metricsSnapshot)
+    LOGGER.info("Styx metrics after BadResponseFromOriginSpec: " + styxServer.metricsSnapshot)
     super.afterAll()
   }
 
@@ -121,9 +123,9 @@ class BadResponseFromOriginSpec extends FunSpec
 
   def response200OkWithoutWaitingForFullRequest(messageBody: String): (ChannelHandlerContext, Any) => Unit = {
     (ctx: ChannelHandlerContext, msg: scala.Any) => {
-      println("origin received: " + msg)
+      LOGGER.info("origin received: " + msg)
       if (msg.isInstanceOf[io.netty.handler.codec.http.HttpRequest]) {
-        println("response 200 sent")
+        LOGGER.info("response 200 sent")
         val response = new DefaultHttpResponse(HTTP_1_1, OK)
         response.headers().set(TRANSFER_ENCODING, CHUNKED)
         ctx.writeAndFlush(response)
