@@ -165,6 +165,14 @@ public class AdminServerBuilder {
         httpRouter.aggregate("/admin/tasks/origins", new HttpMethodFilteringHandler(POST, new OriginsCommandHandler(environment.eventBus())));
 
         httpRouter.aggregate("/admin/tasks/plugin/", new PluginToggleHandler(environment.plugins()));
+
+        // Plugins Handler
+        environment.plugins()
+                .forEach(namedPlugin -> {
+                    extensionEndpoints("plugins", namedPlugin.name(), namedPlugin.adminInterfaceHandlers())
+                            .forEach(route -> httpRouter.stream(route.path(), route.handler()));
+                });
+
         providerDatabase.entrySet().forEach(record -> {
             String root = "providers";
             String extensionName = record.getKey();
