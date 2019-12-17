@@ -34,6 +34,11 @@ import reactor.core.publisher.Flux;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+/**
+ * Routes admin requests to the admin endpoints of each {@link com.hotels.styx.api.extension.service.spi.StyxService}
+ * in the Provider {@link ObjectStore}, and to the index page that organizes and lists these endpoints.
+ * This handler registers as a watcher on the store, and will keep the endpoint list up to date as the store data changes.
+ */
 public class ProviderRoutingHandler implements WebServiceHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(ProviderRoutingHandler.class);
@@ -43,9 +48,13 @@ public class ProviderRoutingHandler implements WebServiceHandler {
     private final ReadWriteLock routerLock = new ReentrantReadWriteLock();
     private UrlPatternRouter router;
 
+    /**
+     * Create a new handler for the given provider ojbect store.
+     * @param providerDb the provider object store
+     */
     public ProviderRoutingHandler(StyxObjectStore<ProviderObjectRecord> providerDb) {
         Flux.from(providerDb.watch()).subscribe(
-                db -> refreshRoutes(db),
+                this::refreshRoutes,
                 error -> LOG.error("Error in providerDB subscription", error));
     }
 
@@ -70,7 +79,7 @@ public class ProviderRoutingHandler implements WebServiceHandler {
         }
     }
 
-    private UrlPatternRouter buildRouter(ObjectStore<ProviderObjectRecord> db) {
+    private static UrlPatternRouter buildRouter(ObjectStore<ProviderObjectRecord> db) {
         UrlPatternRouter.Builder routeBuilder = new UrlPatternRouter.Builder()
                 .get("/admin/" + ADMIN_ROOT, new ProviderListHandler(db));
         db.entrySet().forEach(entry -> {
@@ -85,11 +94,11 @@ public class ProviderRoutingHandler implements WebServiceHandler {
         return routeBuilder.build();
     }
 
-    private String providerPath(String providerName) {
+    private static String providerPath(String providerName) {
         return adminPath(ADMIN_ROOT, providerName);
     }
 
-    private String endpointPath(String providerName, String endpointRelativePath) {
+    private static String endpointPath(String providerName, String endpointRelativePath) {
         return adminEndpointPath(ADMIN_ROOT, providerName, endpointRelativePath);
     }
 }
