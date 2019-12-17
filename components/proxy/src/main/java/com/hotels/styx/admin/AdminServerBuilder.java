@@ -32,6 +32,7 @@ import com.hotels.styx.admin.handlers.OriginsHandler;
 import com.hotels.styx.admin.handlers.OriginsInventoryHandler;
 import com.hotels.styx.admin.handlers.PingHandler;
 import com.hotels.styx.admin.handlers.PluginListHandler;
+import com.hotels.styx.admin.handlers.PluginToggleHandler;
 import com.hotels.styx.admin.handlers.ProviderListHandler;
 import com.hotels.styx.admin.handlers.RoutingObjectHandler;
 import com.hotels.styx.admin.handlers.ServiceProviderHandler;
@@ -163,6 +164,7 @@ public class AdminServerBuilder {
         httpRouter.aggregate("/admin/tasks/origins/reload", new HttpMethodFilteringHandler(POST, new OriginsReloadCommandHandler(backendServicesRegistry)));
         httpRouter.aggregate("/admin/tasks/origins", new HttpMethodFilteringHandler(POST, new OriginsCommandHandler(environment.eventBus())));
 
+        httpRouter.aggregate("/admin/tasks/plugin/", new PluginToggleHandler(environment.plugins()));
         providerDatabase.entrySet().forEach(record -> {
             String root = "providers";
             String extensionName = record.getKey();

@@ -289,6 +289,43 @@ public class StyxServerTest {
                 containsString("/admin/plugins/plugin-baz")));
     }
 
+    @Test
+    public void addsEndpointLinksToPluginPage() {
+        setUpStyxAndPluginWithAdminPages(ImmutableMap.of(
+                "adminPage1", (request, ctx) -> Eventual.of(LiveHttpResponse.response().build()),
+                "adminPage2", (request, ctx) -> Eventual.of(LiveHttpResponse.response().build())
+        ));
+
+        HttpResponse response = doAdminRequest("/admin/plugins/plugin-with-admin-pages");
+        assertThat(response.status(), is(OK));
+        assertThat(response.bodyAs(UTF_8), allOf(
+                containsString("/admin/plugins/plugin-with-admin-pages/adminPage1"),
+                containsString("/admin/plugins/plugin-with-admin-pages/adminPage2")));
+    }
+
+    @Test
+    public void exposesAdminEndpoints() {
+        setUpStyxAndPluginWithAdminPages(ImmutableMap.of(
+                "adminPage1", (request, ctx) -> Eventual.of(LiveHttpResponse.response().header("AdminPage1", "yes").build()),
+                "adminPage2", (request, ctx) -> Eventual.of(LiveHttpResponse.response().header("AdminPage2", "yes").build())
+        ));
+
+        HttpResponse response = doAdminRequest("/admin/plugins/plugin-with-admin-pages/adminPage1");
+        assertThat(response.status(), is(OK));
+        assertThat(response.header("AdminPage1"), isValue("yes"));
+
+        response = doAdminRequest("/admin/plugins/plugin-with-admin-pages/adminPage2");
+        assertThat(response.status(), is(OK));
+        assertThat(response.header("AdminPage2"), isValue("yes"));
+    }
+
+    private void setUpStyxAndPluginWithAdminPages(Map<String, HttpHandler> adminInterfaceHandlers) {
+        styxServer = new StyxServer.Builder()
+                .addRoute("/", originServer1.port())
+                .addPlugin("plugin-with-admin-pages", mockPlugin(adminInterfaceHandlers))
+                .start();
+    }
+
     private void setUpStyxAndPlugins(String... pluginNames) {
         StyxServer.Builder builder = new StyxServer.Builder()
                 .addRoute("/", originServer1.port());
