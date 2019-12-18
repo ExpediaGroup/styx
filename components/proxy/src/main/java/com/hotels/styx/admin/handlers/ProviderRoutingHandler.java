@@ -31,9 +31,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 /**
  * Routes admin requests to the admin endpoints of each {@link com.hotels.styx.api.extension.service.spi.StyxService}
  * in the Provider {@link ObjectStore}, and to the index page that organizes and lists these endpoints.
@@ -64,8 +61,7 @@ public class ProviderRoutingHandler implements WebServiceHandler {
 
     private void refreshRoutes(ObjectStore<ProviderObjectRecord> db) {
         LOG.info("Refreshing provider admin endpoint routes");
-        UrlPatternRouter newRouter = buildRouter(db);
-        router = newRouter;
+        router = buildRouter(db);
     }
 
     private static UrlPatternRouter buildRouter(ObjectStore<ProviderObjectRecord> db) {
