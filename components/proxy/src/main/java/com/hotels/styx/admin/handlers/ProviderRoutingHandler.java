@@ -45,11 +45,10 @@ public class ProviderRoutingHandler implements WebServiceHandler {
     private static final int MEGABYTE = 1024 * 1024;
     private static final String ADMIN_ROOT = "providers";
 
-    private final ReadWriteLock routerLock = new ReentrantReadWriteLock();
-    private UrlPatternRouter router;
+    private volatile UrlPatternRouter router;
 
     /**
-     * Create a new handler for the given provider ojbect store.
+     * Create a new handler for the given provider object store.
      * @param providerDb the provider object store
      */
     public ProviderRoutingHandler(StyxObjectStore<ProviderObjectRecord> providerDb) {
@@ -60,23 +59,13 @@ public class ProviderRoutingHandler implements WebServiceHandler {
 
     @Override
     public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-        routerLock.readLock().lock();
-        try {
-            return router.handle(request, context);
-        } finally {
-            routerLock.readLock().unlock();
-        }
+        return router.handle(request, context);
     }
 
     private void refreshRoutes(ObjectStore<ProviderObjectRecord> db) {
         LOG.info("Refreshing provider admin endpoint routes");
         UrlPatternRouter newRouter = buildRouter(db);
-        routerLock.writeLock().lock();
-        try {
-            router = newRouter;
-        } finally {
-            routerLock.writeLock().unlock();
-        }
+        router = newRouter;
     }
 
     private static UrlPatternRouter buildRouter(ObjectStore<ProviderObjectRecord> db) {
