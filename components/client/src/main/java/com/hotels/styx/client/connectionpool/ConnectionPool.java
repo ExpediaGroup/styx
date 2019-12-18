@@ -92,6 +92,14 @@ public interface ConnectionPool extends Closeable {
          * @return
          */
         int connectionsInEstablishment();
+
+        /**
+         * Time (in milliseconds) between the headers of a request being sent on a connection, and the first byte of
+         * the response content (not the headers) being received.
+         *
+         * @return
+         */
+        long timeToFirstByteMs(); // TODO: This is an interface change - should it default to 0?
     }
 
     /**

@@ -120,6 +120,9 @@ public class StubConnectionPool implements ConnectionPool, Comparable<Connection
             public int connectionsInEstablishment() {
                 return 0;
             }
+
+            @Override
+            public long timeToFirstByteMs() { return 0; }
         };
     }
 

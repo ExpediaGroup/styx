@@ -15,6 +15,8 @@
  */
 package com.hotels.styx.client.connectionpool;
 
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.SlidingWindowReservoir;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import com.hotels.styx.api.extension.Origin;
@@ -30,9 +32,12 @@ import java.time.Duration;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
+import static com.google.common.base.Suppliers.memoizeWithExpiration;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -162,6 +167,7 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
     }
 
     public boolean returnConnection(Connection connection) {
+        stats.recordTimeToFirstByte(connection.getTimeToFirstByteMillis());
         borrowedCount.decrementAndGet();
         if (connection.isConnected()) {
             if (active) {
@@ -223,6 +229,11 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
 
     @VisibleForTesting
     private class ConnectionPoolStats implements Stats {
+
+        final Histogram timeToFirstByteHistogram = new Histogram(new SlidingWindowReservoir(50));
+        private final Supplier<Long> ttfbSupplier = () -> (long) timeToFirstByteHistogram.getSnapshot().getMean();
+        private final Supplier<Long> memoizedTtfbSupplier = memoizeWithExpiration(ttfbSupplier::get, 5, MILLISECONDS)::get;
+
         @Override
         public int availableConnectionCount() {
             return availableConnections.size();
@@ -263,6 +274,18 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
             return connectionsInEstablishment.get();
         }
 
+        @Override
+        public long timeToFirstByteMs() {
+            return memoizedTtfbSupplier.get();
+        }
+
+        public void recordTimeToFirstByte(long msValue) {
+            if (msValue < 0) {
+                LOG.warn("illegal time to first byte registered {}", msValue);
+            } else {
+                timeToFirstByteHistogram.update(msValue);
+            }
+        }
 
         @Override
         public String toString() {
