@@ -25,9 +25,9 @@ import com.hotels.styx.api.WebServiceHandler;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import org.slf4j.Logger;
-import rx.Observable;
-import rx.Subscriber;
-import rx.schedulers.Schedulers;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.concurrent.ExecutorService;
 
@@ -44,7 +44,6 @@ import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.slf4j.LoggerFactory.getLogger;
-import static rx.RxReactiveStreams.toPublisher;
 
 /**
  * Handler for the origins reloading command.
@@ -62,29 +61,29 @@ public class OriginsReloadCommandHandler implements WebServiceHandler {
 
     @Override
     public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-        return new Eventual<>(toPublisher(Observable.<HttpResponse>create(this::reload)
-                .subscribeOn(Schedulers.from(executor))));
+        return new Eventual<>(Flux.create(this::reload)
+                .subscribeOn(Schedulers.fromExecutor(executor)));
     }
 
-    private void reload(Subscriber<? super HttpResponse> subscriber) {
+    private void reload(FluxSink<? super HttpResponse> subscriber) {
         backendServicesRegistry.reload()
-                .handle((result, exception) -> {
-                    if (exception == null) {
-                        if (result.outcome() == RELOADED) {
-                            subscriber.onNext(okResponse("Origins reloaded successfully.\n"));
-                            subscriber.onCompleted();
-                        } else if (result.outcome() == UNCHANGED) {
-                            subscriber.onNext(okResponse(format("Origins were not reloaded because %s.\n", result.message())));
-                            subscriber.onCompleted();
-                        } else {
-                            subscriber.onError(mapError(result));
-                        }
+            .handle((result, exception) -> {
+                if (exception == null) {
+                    if (result.outcome() == RELOADED) {
+                        subscriber.next(okResponse("Origins reloaded successfully.\n"));
+                        subscriber.complete();
+                    } else if (result.outcome() == UNCHANGED) {
+                        subscriber.next(okResponse(format("Origins were not reloaded because %s.\n", result.message())));
+                        subscriber.complete();
                     } else {
-                        subscriber.onNext(errorResponse(exception));
-                        subscriber.onCompleted();
+                        subscriber.error(mapError(result));
                     }
-                    return null;
-                });
+                } else {
+                    subscriber.next(errorResponse(exception));
+                    subscriber.complete();
+                }
+                return null;
+            });
     }
 
     private Throwable mapError(Registry.ReloadResult result) {
