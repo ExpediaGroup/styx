@@ -20,7 +20,6 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.WebServiceHandler;
-import com.hotels.styx.configstore.ConfigStore;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 
 import java.util.List;
@@ -39,16 +38,14 @@ import static java.util.stream.Collectors.joining;
  * Returns a simple HTML page with a list of plugins, split into enabled and disabled.
  */
 public class PluginListHandler implements WebServiceHandler {
-    private final ConfigStore configStore;
+    private final List<NamedPlugin> plugins;
 
-    public PluginListHandler(ConfigStore configStore) {
-        this.configStore = requireNonNull(configStore);
+    public PluginListHandler(List<NamedPlugin> plugins) {
+        this.plugins = requireNonNull(plugins);
     }
 
     @Override
     public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-        List<NamedPlugin> plugins = configStore.valuesStartingWith("plugins", NamedPlugin.class);
-
         Stream<NamedPlugin> enabled = plugins.stream().filter(NamedPlugin::enabled);
         Stream<NamedPlugin> disabled = plugins.stream().filter(plugin -> !plugin.enabled());
 

@@ -52,7 +52,6 @@ import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.common.http.handler.HttpAggregator;
 import com.hotels.styx.common.http.handler.HttpMethodFilteringHandler;
 import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
-import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.db.StyxObjectStore;
@@ -165,12 +164,11 @@ public class AdminServerBuilder {
         httpRouter.aggregate("/admin/tasks/origins/reload", new HttpMethodFilteringHandler(POST, new OriginsReloadCommandHandler(backendServicesRegistry)));
         httpRouter.aggregate("/admin/tasks/origins", new HttpMethodFilteringHandler(POST, new OriginsCommandHandler(environment.eventBus())));
 
-        httpRouter.aggregate("/admin/tasks/plugin/", new PluginToggleHandler(environment.configStore()));
+        httpRouter.aggregate("/admin/tasks/plugin/", new PluginToggleHandler(environment.plugins()));
 
         // Plugins Handler
-        environment.configStore().watchAll("plugins", NamedPlugin.class)
-                .forEach(entry -> {
-                    NamedPlugin namedPlugin = entry.value();
+        environment.plugins()
+                .forEach(namedPlugin -> {
                     extensionEndpoints("plugins", namedPlugin.name(), namedPlugin.adminInterfaceHandlers())
                             .forEach(route -> httpRouter.stream(route.path(), route.handler()));
                 });
@@ -186,7 +184,7 @@ public class AdminServerBuilder {
 
         httpRouter.aggregate("/admin/providers", new ProviderListHandler(providerDatabase));
 
-        httpRouter.aggregate("/admin/plugins", new PluginListHandler(environment.configStore()));
+        httpRouter.aggregate("/admin/plugins", new PluginListHandler(environment.plugins()));
 
         return httpRouter;
     }

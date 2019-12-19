@@ -18,7 +18,6 @@ package com.hotels.styx.admin.handlers;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
-import com.hotels.styx.configstore.ConfigStore;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -53,10 +52,7 @@ public class PluginToggleHandlerTest {
 
         List<NamedPlugin> plugins = asList(initiallyEnabled, initiallyDisabled);
 
-        ConfigStore configStore = new ConfigStore();
-        plugins.forEach(plugin -> configStore.set("plugins." + plugin.name(), plugin));
-
-        handler = new PluginToggleHandler(configStore);
+        handler = new PluginToggleHandler(plugins);
     }
 
     @Test
