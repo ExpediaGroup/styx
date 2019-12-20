@@ -185,11 +185,11 @@ public final class MockOriginServer {
     }
 
     public int port() {
-        return mockServer.httpAddress().getPort();
+        return mockServer.inetAddress().getPort();
     }
 
     public int adminPort() {
-        return adminServer.httpAddress().getPort();
+        return adminServer.inetAddress().getPort();
     }
 
     public boolean isRunning() {

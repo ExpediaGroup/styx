@@ -192,14 +192,13 @@ public final class StyxServer extends AbstractService {
         StyxConfig styxConfig = components.environment().configuration();
         httpServer = styxConfig.proxyServerConfig()
                 .httpConnectorConfig()
-                .map(it -> httpServer(components, it, httpHandler))
+                .map(it -> httpServer(components.environment(), it, httpHandler))
                 .orElse(null);
 
         httpsServer = styxConfig.proxyServerConfig()
                 .httpsConnectorConfig()
-                .map(it -> httpServer(components, it, httpHandler))
+                .map(it -> httpServer(components.environment(), it, httpHandler))
                 .orElse(null);
-
 
         ArrayList<Service> services2 = new ArrayList<>();
 
@@ -211,22 +210,22 @@ public final class StyxServer extends AbstractService {
 
     public InetSocketAddress proxyHttpAddress() {
         return Optional.ofNullable(httpServer)
-                .map(HttpServer::httpAddress)
+                .map(HttpServer::inetAddress)
                 .orElse(null);
     }
 
     public InetSocketAddress proxyHttpsAddress() {
         return Optional.ofNullable(httpsServer)
-                .map(HttpServer::httpAddress)
+                .map(HttpServer::inetAddress)
                 .orElse(null);
     }
 
     public InetSocketAddress adminHttpAddress() {
-        return adminServer.httpAddress();
+        return adminServer.inetAddress();
     }
 
-    private static HttpServer httpServer(StyxServerComponents config, ConnectorConfig connectorConfig, HttpHandler styxDataPlane) {
-        return new ProxyServerBuilder(config.environment())
+    private static HttpServer httpServer(Environment environment, ConnectorConfig connectorConfig, HttpHandler styxDataPlane) {
+        return new ProxyServerBuilder(environment)
                 .handler(styxDataPlane)
                 .connectorConfig(connectorConfig)
                 .build();
