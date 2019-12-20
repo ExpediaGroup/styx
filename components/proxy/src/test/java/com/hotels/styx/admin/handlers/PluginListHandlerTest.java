@@ -57,4 +57,22 @@ public class PluginListHandlerTest {
                 "<a href='/admin/plugins/two'>two</a><br />" +
                 "<a href='/admin/plugins/three'>three</a><br />"));
     }
+
+    @Test
+    public void showsLoadedPlugins() {
+        NamedPlugin one = namedPlugin("one", PASS_THROUGH);
+        NamedPlugin two = namedPlugin("two", PASS_THROUGH);
+
+        List<NamedPlugin> plugins = asList(one, two);
+        PluginListHandler handler = new PluginListHandler(plugins);
+
+        HttpResponse response = Mono.from(
+                handler.handle(get("/").build(),
+                        HttpInterceptorContext.create())).block();
+        assertThat(response.status(), is(OK));
+        assertThat(response.bodyAs(UTF_8), is("" +
+                "<h3>Loaded</h3>" +
+                "<a href='/admin/plugins/one'>one</a><br />" +
+                "<a href='/admin/plugins/two'>two</a><br />"));
+    }
 }
