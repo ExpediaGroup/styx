@@ -79,23 +79,23 @@ class MockServer(id: String, val port: Int) extends AbstractIdleService with Htt
 
   override def startUp(): Unit = {
     server.startAsync().awaitRunning()
-    logger.info("mock server started on port " + server.httpAddress().getPort)
+    logger.info("mock server started on port " + server.inetAddress().getPort)
   }
 
   override def shutDown(): Unit = {
+    logger.info(s"mock server running on port ${server.inetAddress().getPort} stopping")
     server.stopAsync().awaitTerminated()
-    logger.info(s"mock server running on port ${server.httpAddress().getPort} stopped")
   }
 
-  override def httpAddress(): InetSocketAddress = {
-    server.httpAddress()
+  override def inetAddress(): InetSocketAddress = {
+    server.inetAddress()
   }
 
   private def connectorOnFreePort: ServerConnector = {
     new WebServerConnectorFactory().create(new HttpConnectorConfig(0))
   }
 
-  def httpPort() = Option(server.httpAddress()).map(_.getPort).getOrElse(0)
+  def httpPort() = Option(server.inetAddress()).map(_.getPort).getOrElse(0)
 
   def origin = newOriginBuilder("localhost", httpPort()).id(id).build()
 

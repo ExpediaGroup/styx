@@ -92,7 +92,7 @@ public class StyxProxyTest extends SSLSetup {
         server.startAsync().awaitRunning();
         assertThat("Server should be running", server.isRunning());
 
-        HttpResponse secureResponse = get("http://localhost:" + server.httpAddress().getPort());
+        HttpResponse secureResponse = get("http://localhost:" + server.inetAddress().getPort());
         assertThat(secureResponse.bodyAs(UTF_8), containsString("Response from http connector"));
 
         server.stopAsync().awaitTerminated();
