@@ -16,6 +16,7 @@
 package com.hotels.styx.proxy;
 
 import com.hotels.styx.Environment;
+import com.hotels.styx.ServerExecutor;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
@@ -23,14 +24,10 @@ import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.server.ConnectorConfig;
 import com.hotels.styx.server.HttpErrorStatusListener;
 import com.hotels.styx.server.HttpServer;
-import com.hotels.styx.server.ServerEventLoopFactory;
 import com.hotels.styx.server.netty.NettyServerBuilder;
-import com.hotels.styx.server.netty.NettyServerConfig;
-import com.hotels.styx.server.netty.eventloop.PlatformAwareServerEventLoopFactory;
 import org.slf4j.Logger;
 
 import static com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder.ENCODE_UNWISECHARS;
-import static com.hotels.styx.server.netty.eventloop.ServerEventLoopFactories.memoize;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -49,6 +46,8 @@ public final class ProxyServerBuilder {
 
     private HttpHandler handler;
     private ConnectorConfig connectorConfig;
+    private ServerExecutor bossExecutor;
+    private ServerExecutor workerExecutor;
 
     public ProxyServerBuilder(Environment environment) {
         this.serverConfig = environment.configuration().proxyServerConfig();
@@ -60,16 +59,13 @@ public final class ProxyServerBuilder {
         this.styxInfoHeaderName = environment.styxConfig().styxHeaderConfig().styxInfoHeaderName();
     }
 
-    private ServerEventLoopFactory serverEventLoopFactory(String name, NettyServerConfig serverConfig) {
-        return memoize(new PlatformAwareServerEventLoopFactory(name, serverConfig.bossThreadsCount(), serverConfig.workerThreadsCount()));
-    }
-
     public HttpServer build() {
         LOG.info("connectors={} name={}", this.serverConfig.connectors(), "Proxy");
 
-        HttpServer builder = NettyServerBuilder.newBuilder()
+        return NettyServerBuilder.newBuilder()
                 .setMetricsRegistry(this.metricRegistry)
-                .setServerEventLoopFactory(serverEventLoopFactory("Proxy", this.serverConfig))
+                .bossExecutor(bossExecutor)
+                .workerExecutor(workerExecutor)
                 .setProtocolConnector(
                         new ProxyConnectorFactory(
                                 this.serverConfig,
@@ -81,8 +77,6 @@ public final class ProxyServerBuilder {
                                 .create(connectorConfig))
                 .handler(handler)
                 .build();
-
-        return builder;
     }
 
     private LiveHttpResponse.Transformer addInfoHeader(LiveHttpResponse.Transformer responseBuilder, LiveHttpRequest request) {
@@ -96,6 +90,16 @@ public final class ProxyServerBuilder {
 
     public ProxyServerBuilder connectorConfig(ConnectorConfig connectorConfig) {
         this.connectorConfig = connectorConfig;
+        return this;
+    }
+
+    public ProxyServerBuilder bossExecutor(ServerExecutor executor) {
+        this.bossExecutor = executor;
+        return this;
+    }
+
+    public ProxyServerBuilder workerExecutor(ServerExecutor executor) {
+        this.workerExecutor = executor;
         return this;
     }
 }

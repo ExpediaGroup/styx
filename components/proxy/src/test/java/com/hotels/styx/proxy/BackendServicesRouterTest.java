@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.proxy;
 
+import com.hotels.styx.ClientExecutor;
 import com.hotels.styx.Environment;
-import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
@@ -27,8 +27,6 @@ import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
-import com.hotels.styx.ClientEventLoopFactory;
-import com.hotels.styx.PlatformAwareClientEventLoopGroupFactory;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -69,8 +67,7 @@ public class BackendServicesRouterTest {
 
     private Environment environment;
 
-    private ClientEventLoopFactory factory = new PlatformAwareClientEventLoopGroupFactory("x", 0);
-    private NettyExecutor executor = NettyExecutor.create("x", 0);
+    private ClientExecutor executor = ClientExecutor.create("x", 1);
 
     @AfterAll
     public void tearDown() {

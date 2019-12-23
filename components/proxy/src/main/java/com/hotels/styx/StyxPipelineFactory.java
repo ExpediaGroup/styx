@@ -46,7 +46,7 @@ public class StyxPipelineFactory {
     private final Environment environment;
     private final Map<String, StyxService> services;
     private final List<NamedPlugin> plugins;
-    private final NettyExecutor executor;
+    private final ClientExecutor executor;
 
 
     public StyxPipelineFactory(
@@ -54,7 +54,7 @@ public class StyxPipelineFactory {
             Environment environment,
             Map<String, StyxService> services,
             List<NamedPlugin> plugins,
-            NettyExecutor executor) {
+            ClientExecutor executor) {
         this.builtinRoutingObjects = requireNonNull(builtinRoutingObjects);
         this.environment = requireNonNull(environment);
         this.services = requireNonNull(services);

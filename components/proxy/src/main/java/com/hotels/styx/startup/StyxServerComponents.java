@@ -21,8 +21,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.AsyncEventBus;
+import com.hotels.styx.ClientExecutor;
 import com.hotels.styx.Environment;
-import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.StartupConfig;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.Version;
@@ -78,7 +78,7 @@ public class StyxServerComponents {
     private final Map<String, RoutingObjectFactory> routingObjectFactories;
 
     private static final Logger LOGGER = getLogger(StyxServerComponents.class);
-    private final NettyExecutor executor;
+    private final ClientExecutor executor;
 
     private StyxServerComponents(Builder builder) {
         StyxConfig styxConfig = requireNonNull(builder.styxConfig);
@@ -92,7 +92,7 @@ public class StyxServerComponents {
         this.environment = newEnvironment(styxConfig, builder.metricRegistry);
         builder.loggingSetUp.setUp(environment);
 
-        this.executor = NettyExecutor.create("Styx", environment.configuration().proxyServerConfig().clientWorkerThreadsCount());
+        this.executor = ClientExecutor.create("Styx-Client-Worker", environment.configuration().proxyServerConfig().clientWorkerThreadsCount());
 
         // TODO In further refactoring, we will probably want this loading to happen outside of this constructor call,
         //  so that it doesn't delay the admin server from starting up
@@ -184,7 +184,7 @@ public class StyxServerComponents {
     }
 
 
-    public NettyExecutor executor() {
+    public ClientExecutor clientExecutor() {
         return this.executor;
     }
 

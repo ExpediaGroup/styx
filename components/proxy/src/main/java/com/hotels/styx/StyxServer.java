@@ -77,7 +77,6 @@ public final class StyxServer extends AbstractService {
 
     private final HttpServer httpServer;
     private final HttpServer httpsServer;
-//    private final HttpServer http2Server;
     private final HttpServer adminServer;
 
     private final ServiceManager phase1Services;
@@ -175,7 +174,7 @@ public final class StyxServer extends AbstractService {
                 components.environment(),
                 components.services(),
                 components.plugins(),
-                components.executor())
+                components.clientExecutor())
                 .create();
 
         // Startup phase 1: start plugins, control plane providers, and other services:
@@ -199,11 +198,6 @@ public final class StyxServer extends AbstractService {
                 .httpsConnectorConfig()
                 .map(it -> httpServer(components.environment(), it, httpHandler))
                 .orElse(null);
-
-//        http2Server = styxConfig.proxyServerConfig()
-//                .httpsConnectorConfig()
-//                .map(it -> httpServer(components.environment(), it, httpHandler))
-//                .orElse(null);
 
         ArrayList<Service> services2 = new ArrayList<>();
 
@@ -233,6 +227,8 @@ public final class StyxServer extends AbstractService {
         return new ProxyServerBuilder(environment)
                 .handler(styxDataPlane)
                 .connectorConfig(connectorConfig)
+                .bossExecutor(ServerExecutor.create("Proxy-Boss", environment.configuration().proxyServerConfig().bossThreadsCount()))
+                .workerExecutor(ServerExecutor.create("Proxy-Worker", environment.configuration().proxyServerConfig().workerThreadsCount()))
                 .build();
     }
 

@@ -17,7 +17,7 @@ package com.hotels.styx.routing.handlers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
-import com.hotels.styx.NettyExecutor;
+import com.hotels.styx.ClientExecutor;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
@@ -100,7 +100,7 @@ public class ProxyToBackend implements RoutingObject {
             OriginStatsFactory originStatsFactory = new CachingOriginStatsFactory(context.environment().metricRegistry());
 
             Connection.Factory connectionFactory = new NettyConnectionFactory.Builder()
-                    .executor(NettyExecutor.create("Styx", clientWorkerThreadsCount))
+                    .executor(ClientExecutor.create("Styx", clientWorkerThreadsCount))
                     .httpRequestOperationFactory(
                             httpRequestOperationFactoryBuilder()
                                     .flowControlEnabled(true)

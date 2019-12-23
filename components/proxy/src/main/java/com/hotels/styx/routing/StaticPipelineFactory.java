@@ -16,8 +16,8 @@
 package com.hotels.styx.routing;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.hotels.styx.ClientExecutor;
 import com.hotels.styx.Environment;
-import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
@@ -38,7 +38,7 @@ public class StaticPipelineFactory {
     private final Environment environment;
     private final Registry<BackendService> registry;
     private final Iterable<NamedPlugin> plugins;
-    private final NettyExecutor executor;
+    private final ClientExecutor executor;
     private final boolean trackRequests;
 
     @VisibleForTesting
@@ -46,7 +46,7 @@ public class StaticPipelineFactory {
                           Environment environment,
                           Registry<BackendService> registry,
                           Iterable<NamedPlugin> plugins,
-                          NettyExecutor executor,
+                          ClientExecutor executor,
                           boolean trackRequests) {
         this.clientFactory = requireNonNull(clientFactory);
         this.environment = requireNonNull(environment);
@@ -59,7 +59,7 @@ public class StaticPipelineFactory {
     public StaticPipelineFactory(Environment environment,
                                  Registry<BackendService> registry,
                                  Iterable<NamedPlugin> plugins,
-                                 NettyExecutor executor,
+                                 ClientExecutor executor,
                                  boolean trackRequests) {
         this(createClientFactory(environment), environment, registry, plugins, executor, trackRequests);
     }

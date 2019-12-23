@@ -16,8 +16,8 @@
 package com.hotels.styx.routing;
 
 import com.google.common.collect.ImmutableList;
+import com.hotels.styx.ClientExecutor;
 import com.hotels.styx.Environment;
-import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.extension.service.BackendService;
@@ -56,7 +56,7 @@ public class StaticPipelineBuilderTest {
     private Registry<BackendService> registry;
 
 
-    private final NettyExecutor executor = NettyExecutor.create("Styx", 0);
+    private final ClientExecutor executor = ClientExecutor.create("Styx", 0);
 
     @AfterAll
     public void tearDown() {

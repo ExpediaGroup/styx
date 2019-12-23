@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.proxy;
 
+import com.hotels.styx.ClientExecutor;
 import com.hotels.styx.Environment;
-import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
@@ -67,12 +67,12 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
 
     private final BackendServiceClientFactory clientFactory;
     private final Environment environment;
-    private final NettyExecutor executor;
+    private final ClientExecutor executor;
     private final ConcurrentMap<String, ProxyToClientPipeline> routes;
 
     public BackendServicesRouter(BackendServiceClientFactory clientFactory,
                                  Environment environment,
-                                 NettyExecutor executor) {
+                                 ClientExecutor executor) {
         this.clientFactory = requireNonNull(clientFactory);
         this.environment = requireNonNull(environment);
         this.executor = requireNonNull(executor);

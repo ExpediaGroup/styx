@@ -17,7 +17,7 @@ package com.hotels.styx.client;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.net.HostAndPort;
-import com.hotels.styx.NettyExecutor;
+import com.hotels.styx.ClientExecutor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
@@ -179,7 +179,7 @@ public final class StyxHttpClient implements HttpClient {
      * Builder for {@link StyxHttpClient}.
      */
     public static class Builder {
-        private static final NettyExecutor NETTY_EXECUTOR = NettyExecutor.create("client", 0);
+        private static final ClientExecutor NETTY_EXECUTOR = ClientExecutor.create("client", 0);
 
         private int connectTimeoutMillis = 1000;
         private int maxResponseSize = 1024 * 100;
@@ -188,7 +188,7 @@ public final class StyxHttpClient implements HttpClient {
         private TlsSettings tlsSettings;
         private boolean isHttps;
         private String userAgent;
-        private NettyExecutor executor = NETTY_EXECUTOR;
+        private ClientExecutor executor = NETTY_EXECUTOR;
 
         public Builder() {
         }
@@ -318,7 +318,7 @@ public final class StyxHttpClient implements HttpClient {
             return new Builder(this);
         }
 
-        public Builder executor(NettyExecutor executor) {
+        public Builder executor(ClientExecutor executor) {
             this.executor = executor;
             return this;
         }

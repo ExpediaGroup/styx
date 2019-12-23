@@ -15,34 +15,33 @@
  */
 package com.hotels.styx.server.netty;
 
+import com.hotels.styx.ServerExecutor;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.server.HttpServer;
-import com.hotels.styx.server.ServerEventLoopFactory;
-import com.hotels.styx.server.netty.eventloop.PlatformAwareServerEventLoopFactory;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 
 import static com.google.common.base.Objects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.LiveHttpResponse.response;
-import static com.hotels.styx.server.netty.eventloop.ServerEventLoopFactories.memoize;
 
 /**
  * A builder of {@link NettyServer} instances.
  */
 public final class NettyServerBuilder {
     private final ChannelGroup channelGroup = new DefaultChannelGroup(ImmediateEventExecutor.INSTANCE);
-    private ServerEventLoopFactory serverEventLoopFactory;
 
     private String host;
     private MetricRegistry metricRegistry;
-    private String name = "styx";
     private ServerConnector httpConnector;
     private HttpHandler handler = (request, context) -> Eventual.of(response(NOT_FOUND).build());
+    private ServerExecutor bossExecutor;
+    private ServerExecutor workerExecutor;
 
     public static NettyServerBuilder newBuilder() {
         return new NettyServerBuilder();
@@ -57,11 +56,6 @@ public final class NettyServerBuilder {
         return this;
     }
 
-    public NettyServerBuilder name(String name) {
-        this.name = name;
-        return this;
-    }
-
     public NettyServerBuilder setMetricsRegistry(MetricRegistry metricRegistry) {
         this.metricRegistry = metricRegistry;
         return this;
@@ -71,13 +65,22 @@ public final class NettyServerBuilder {
         return this.metricRegistry;
     }
 
-    public NettyServerBuilder setServerEventLoopFactory(ServerEventLoopFactory serverEventLoopFactory) {
-        this.serverEventLoopFactory = serverEventLoopFactory;
+    public NettyServerBuilder bossExecutor(ServerExecutor executor) {
+        this.bossExecutor = checkNotNull(executor, "boss executor");
         return this;
     }
 
-    ServerEventLoopFactory serverEventLoopFactory() {
-        return firstNonNull(this.serverEventLoopFactory, memoize(new PlatformAwareServerEventLoopFactory(name, 1, 1)));
+    public NettyServerBuilder workerExecutor(ServerExecutor executor) {
+        this.workerExecutor = checkNotNull(executor, "worker executor");
+        return this;
+    }
+
+    public ServerExecutor bossExecutor() {
+        return this.bossExecutor;
+    }
+
+    public ServerExecutor workerExecutor() {
+        return this.workerExecutor;
     }
 
     public ChannelGroup channelGroup() {
@@ -104,7 +107,11 @@ public final class NettyServerBuilder {
 
     public HttpServer build() {
         checkArgument(httpConnector != null, "Must configure a protocol connector");
+        checkArgument(workerExecutor != null, "Must configure a worker executor");
 
+        if (bossExecutor == null) {
+            bossExecutor = ServerExecutor.create("Server-Boss", 1);
+        }
         return new NettyServer(this);
     }
 }
