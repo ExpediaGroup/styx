@@ -40,7 +40,7 @@ class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplie
 
     val resp1 = decodedRequest(get(styxServer.adminURL("/admin/plugins")).build())
     resp1.status() should be(OK)
-    resp1.bodyAs(UTF_8) should include("<h3>Enabled</h3><a href='/admin/plugins/pluginUnderTest'>pluginUnderTest</a><br /><h3>Disabled</h3>")
+    resp1.bodyAs(UTF_8) should include("<h3>Loaded</h3><a href='/admin/plugins/pluginUnderTest'>pluginUnderTest</a><br />")
 
     val resp2 = decodedRequest(get(styxServer.routerURL("/")).build())
     resp2.status() should be(OK)
