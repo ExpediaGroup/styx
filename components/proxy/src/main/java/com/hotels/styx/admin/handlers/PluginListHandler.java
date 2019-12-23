@@ -70,7 +70,7 @@ public class PluginListHandler implements WebServiceHandler {
         return format("<a href='/admin/plugins/%s'>%s</a><br />", name, name);
     }
 
-    private boolean existDisabledPlugins(){
+    private boolean existDisabledPlugins() {
         return plugins.stream().anyMatch(it -> !it.enabled());
     }
 }
