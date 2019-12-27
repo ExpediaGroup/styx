@@ -16,11 +16,13 @@
 package com.hotels.styx.http;
 
 import com.google.common.io.Files;
+import com.google.common.util.concurrent.Service;
+import com.hotels.styx.IStyxServer;
+import com.hotels.styx.StyxServers;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.client.StyxHttpClient;
-import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.handlers.StaticFileHandler;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -44,7 +46,8 @@ import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 public class StaticFileOnRealServerIT {
     private final HttpClient client = new StyxHttpClient.Builder().build();
 
-    private HttpServer webServer;
+    private IStyxServer webServer;
+    private Service guavaService;
     private File dir;
     private String serverEndpoint;
 
@@ -56,7 +59,8 @@ public class StaticFileOnRealServerIT {
     public void startServer() {
         dir = Files.createTempDir();
         webServer = createHttpServer(0, new StaticFileHandler(dir));
-        webServer.startAsync().awaitRunning();
+        guavaService = StyxServers.toGuavaService(webServer);
+        guavaService.startAsync().awaitRunning();
         serverEndpoint = toHostAndPort(webServer.inetAddress());
     }
 
@@ -64,7 +68,7 @@ public class StaticFileOnRealServerIT {
     @AfterAll
     public void stopServer() {
         dir.delete();
-        webServer.stopAsync().awaitTerminated();
+        guavaService.stopAsync().awaitTerminated();
     }
 
     @Test

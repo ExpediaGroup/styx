@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.server;
 
+import com.hotels.styx.IStyxServer;
 import com.hotels.styx.ServerExecutor;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.server.netty.NettyServerBuilder;
@@ -30,7 +31,7 @@ public class HttpServers {
      * @param port
      * @return {@link com.hotels.styx.server.HttpServer} object
      */
-    public static HttpServer createHttpServer(int port, HttpHandler handler) {
+    public static IStyxServer createHttpServer(int port, HttpHandler handler) {
         return NettyServerBuilder.newBuilder()
                 .setProtocolConnector(new WebServerConnectorFactory().create(new HttpConnectorConfig(port)))
                 .handler(handler)
@@ -47,7 +48,7 @@ public class HttpServers {
      *
      * @return {@link com.hotels.styx.server.HttpServer} object
      */
-    public static HttpServer createHttpServer(String name, HttpConnectorConfig httpConnectorConfig, HttpHandler handler) {
+    public static IStyxServer createHttpServer(String name, HttpConnectorConfig httpConnectorConfig, HttpHandler handler) {
         return NettyServerBuilder.newBuilder()
                 .setProtocolConnector(new WebServerConnectorFactory().create(httpConnectorConfig))
                 .handler(handler)
@@ -64,7 +65,7 @@ public class HttpServers {
      *
      * @return {@link com.hotels.styx.server.HttpServer} object
      */
-    public static HttpServer createHttpsServer(String name, HttpsConnectorConfig httpsConnectorConfig, HttpHandler handler) {
+    public static IStyxServer createHttpsServer(String name, HttpsConnectorConfig httpsConnectorConfig, HttpHandler handler) {
         return NettyServerBuilder.newBuilder()
                 .setProtocolConnector(new WebServerConnectorFactory().create(httpsConnectorConfig))
                 .handler(handler)

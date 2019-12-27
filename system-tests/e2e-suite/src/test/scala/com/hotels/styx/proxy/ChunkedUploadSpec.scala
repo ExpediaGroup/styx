@@ -322,12 +322,4 @@ class ChunkedUploadSpec extends FunSpec
       })
   }
 
-  def originAndWebServer(appId: String, originId: String) = {
-    val serverPort = freePort()
-    val origin = newOriginBuilder("localhost", serverPort).applicationId("app").id("app1").build()
-    val server = createHttpServer(serverPort, new HttpAggregator(new ContentDigestHandler(origin)))
-    server.startAsync().awaitRunning()
-
-    origin -> server
-  }
 }

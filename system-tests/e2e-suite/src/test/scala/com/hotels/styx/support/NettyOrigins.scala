@@ -15,9 +15,12 @@
  */
 package com.hotels.styx.support
 
+import java.net.InetSocketAddress
+import java.util.concurrent.{Executor, TimeUnit}
 import java.util.concurrent.atomic.AtomicReference
 
-import com.hotels.styx.ServerExecutor
+import com.google.common.util.concurrent.Service
+import com.hotels.styx.{IStyxServer, ServerExecutor, StyxServers}
 import com.hotels.styx.api.HttpHandler
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.Id._
@@ -52,11 +55,40 @@ trait NettyOrigins {
   val customResponseHandler = new CustomResponseHandler()
 
   def customResponseWebServer(port: Int, responseHandler: CustomResponseHandler): HttpServer = {
-    val server: HttpServer = new NettyServerBuilder()
+    val server: IStyxServer = new NettyServerBuilder()
       .setProtocolConnector(new NettyHttpServerConnector(port, responseHandler))
       .workerExecutor(ServerExecutor.create("Netty Test Origin", 1))
       .build()
-    server
+
+    new HttpServer {
+      /**
+       * Return http endpoint
+       */
+
+      val guavaService = StyxServers.toGuavaService(server)
+
+      override def inetAddress(): InetSocketAddress = server.inetAddress()
+
+      override def startAsync(): Service = guavaService.startAsync()
+
+      override def isRunning: Boolean = guavaService.isRunning
+
+      override def state(): Service.State = guavaService.state()
+
+      override def stopAsync(): Service = guavaService.stopAsync()
+
+      override def awaitRunning(): Unit = guavaService.awaitRunning()
+
+      override def awaitRunning(timeout: Long, unit: TimeUnit): Unit = guavaService.awaitRunning(timeout, unit)
+
+      override def awaitTerminated(): Unit = guavaService.awaitTerminated()
+
+      override def awaitTerminated(timeout: Long, unit: TimeUnit): Unit = guavaService.awaitTerminated(timeout, unit)
+
+      override def failureCause(): Throwable = guavaService.failureCause()
+
+      override def addListener(listener: Service.Listener, executor: Executor): Unit = guavaService.addListener(listener, executor)
+    }
 
   }
 
