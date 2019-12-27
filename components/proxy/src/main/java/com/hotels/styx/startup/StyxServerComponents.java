@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.AsyncEventBus;
 import com.hotels.styx.ClientExecutor;
 import com.hotels.styx.Environment;
+import com.hotels.styx.IStyxServer;
 import com.hotels.styx.StartupConfig;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.Version;
@@ -41,7 +42,7 @@ import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.RouteRefLookup.RouteDbRefLookup;
-import com.hotels.styx.routing.handlers.StyxObjectRecord;
+import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
 import org.slf4j.Logger;
 
@@ -53,6 +54,7 @@ import static com.hotels.styx.StartupConfig.newStartupConfigBuilder;
 import static com.hotels.styx.Version.readVersionFrom;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
 import static com.hotels.styx.routing.config.Builtins.BUILTIN_HANDLER_FACTORIES;
+import static com.hotels.styx.routing.config.Builtins.BUILTIN_SERVER_FACTORIES;
 import static com.hotels.styx.routing.config.Builtins.BUILTIN_SERVICE_PROVIDER_FACTORIES;
 import static com.hotels.styx.routing.config.Builtins.INTERCEPTOR_FACTORIES;
 import static com.hotels.styx.startup.ServicesLoader.SERVICES_FROM_CONFIG;
@@ -73,9 +75,9 @@ public class StyxServerComponents {
     private final List<NamedPlugin> plugins;
     private final StyxObjectStore<RoutingObjectRecord> routeObjectStore = new StyxObjectStore<>();
     private final StyxObjectStore<StyxObjectRecord<StyxService>> providerObjectStore = new StyxObjectStore<>();
+    private final StyxObjectStore<StyxObjectRecord<IStyxServer>> serverObjectStore = new StyxObjectStore<>();
     private final RoutingObjectFactory.Context routingObjectContext;
     private final StartupConfig startupConfig;
-    private final Map<String, RoutingObjectFactory> routingObjectFactories;
 
     private static final Logger LOGGER = getLogger(StyxServerComponents.class);
     private final ClientExecutor executor;
@@ -84,7 +86,7 @@ public class StyxServerComponents {
         StyxConfig styxConfig = requireNonNull(builder.styxConfig);
 
         this.startupConfig = builder.startupConfig == null ? newStartupConfigBuilder().build() : builder.startupConfig;
-        this.routingObjectFactories = new ImmutableMap.Builder<String, RoutingObjectFactory>()
+        Map<String, RoutingObjectFactory> routingObjectFactories = new ImmutableMap.Builder<String, RoutingObjectFactory>()
                 .putAll(BUILTIN_HANDLER_FACTORIES)
                 .putAll(builder.additionalRoutingObjectFactories)
                 .build();
@@ -104,7 +106,7 @@ public class StyxServerComponents {
                 new RouteDbRefLookup(this.routeObjectStore),
                 environment,
                 routeObjectStore,
-                this.routingObjectFactories,
+                routingObjectFactories,
                 plugins,
                 INTERCEPTOR_FACTORIES,
                 false);
@@ -132,16 +134,20 @@ public class StyxServerComponents {
                 .map(StyxServerComponents::readComponents)
                 .orElse(ImmutableMap.of())
                 .forEach((name, definition) -> {
-                    LOGGER.warn("Starting provider: " + name + ": " + definition);
-
-                    // Build provider object
+                    LOGGER.warn("Loading provider: " + name + ": " + definition);
                     StyxService provider = Builtins.build(name, definition, providerObjectStore, BUILTIN_SERVICE_PROVIDER_FACTORIES, routingObjectContext);
-
-                    // Create a provider object record
                     StyxObjectRecord<StyxService> record = new StyxObjectRecord<>(definition.type(), ImmutableSet.copyOf(definition.tags()), definition.config(), provider);
-
-                    // Insert provider object record into database
                     providerObjectStore.insert(name, record);
+                });
+
+        this.environment.configuration().get("servers", JsonNode.class)
+                .map(StyxServerComponents::readComponents)
+                .orElse(ImmutableMap.of())
+                .forEach((name, definition) -> {
+                    LOGGER.warn("Loading styx server: " + name + ": " + definition);
+                    IStyxServer provider = Builtins.buildServer(name, definition, serverObjectStore, BUILTIN_SERVER_FACTORIES, routingObjectContext);
+                    StyxObjectRecord<IStyxServer> record = new StyxObjectRecord<>(definition.type(), ImmutableSet.copyOf(definition.tags()), definition.config(), provider);
+                    serverObjectStore.insert(name, record);
                 });
     }
 
@@ -177,6 +183,10 @@ public class StyxServerComponents {
 
     public StyxObjectStore<StyxObjectRecord<StyxService>> servicesDatabase() {
         return this.providerObjectStore;
+    }
+
+    public StyxObjectStore<StyxObjectRecord<IStyxServer>> serversDatabase() {
+        return this.serverObjectStore;
     }
 
     public RoutingObjectFactory.Context routingObjectFactoryContext() {

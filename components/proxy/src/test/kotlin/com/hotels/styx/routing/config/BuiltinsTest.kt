@@ -26,7 +26,7 @@ import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.routing.RoutingObjectFactoryContext
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
-import com.hotels.styx.routing.handlers.ProviderObjectRecord
+import com.hotels.styx.ProviderObjectRecord
 import com.hotels.styx.routing.handlers.RouteRefLookup
 import com.hotels.styx.server.HttpInterceptorContext
 import com.hotels.styx.serviceproviders.ServiceProviderFactory

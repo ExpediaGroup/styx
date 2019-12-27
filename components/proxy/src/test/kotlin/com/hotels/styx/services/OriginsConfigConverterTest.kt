@@ -21,7 +21,7 @@ import com.hotels.styx.lbGroupTag
 import com.hotels.styx.routing.RoutingObjectFactoryContext
 import com.hotels.styx.routing.config.Builtins.INTERCEPTOR_PIPELINE
 import com.hotels.styx.routing.db.StyxObjectStore
-import com.hotels.styx.routing.handlers.ProviderObjectRecord
+import com.hotels.styx.ProviderObjectRecord
 import com.hotels.styx.services.OriginsConfigConverter.Companion.deserialiseOrigins
 import com.hotels.styx.services.OriginsConfigConverter.Companion.loadBalancingGroup
 import com.hotels.styx.stateTag

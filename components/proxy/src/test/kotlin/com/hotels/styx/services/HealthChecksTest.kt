@@ -26,7 +26,7 @@ import com.hotels.styx.api.extension.service.spi.StyxService
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
-import com.hotels.styx.routing.handlers.ProviderObjectRecord
+import com.hotels.styx.ProviderObjectRecord
 import com.hotels.styx.routing.handlers.StaticResponseHandler
 import io.kotlintest.matchers.boolean.shouldBeFalse
 import io.kotlintest.matchers.boolean.shouldBeTrue

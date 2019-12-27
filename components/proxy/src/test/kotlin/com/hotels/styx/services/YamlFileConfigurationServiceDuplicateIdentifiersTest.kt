@@ -17,7 +17,7 @@ package com.hotels.styx.services
 
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
-import com.hotels.styx.routing.handlers.ProviderObjectRecord
+import com.hotels.styx.ProviderObjectRecord
 import com.hotels.styx.services.YamlFileConfigurationServiceTest.OriginsServiceConfiguration
 import com.hotels.styx.support.matchers.LoggingTestSupport
 import io.kotlintest.Spec

@@ -16,7 +16,7 @@
 package com.hotels.styx.serviceproviders;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.hotels.styx.api.extension.service.spi.StyxService;
+import com.hotels.styx.IStyxServer;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.StyxObjectRecord;
@@ -26,7 +26,7 @@ import com.hotels.styx.StyxObjectRecord;
  * until read from configuration.
  *
  */
-public interface ServiceProviderFactory {
+public interface StyxServerFactory {
     /**
      * Create a service provider instance.
      *
@@ -37,5 +37,5 @@ public interface ServiceProviderFactory {
      *
      * @return Styx service instance
      */
-    StyxService create(String name, RoutingObjectFactory.Context context, JsonNode serviceConfiguration, StyxObjectStore<StyxObjectRecord<StyxService>> serviceDb);
+    IStyxServer create(String name, RoutingObjectFactory.Context context, JsonNode serviceConfiguration, StyxObjectStore<StyxObjectRecord<IStyxServer>> serviceDb);
 }

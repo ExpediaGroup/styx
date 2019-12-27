@@ -83,6 +83,7 @@ public final class StyxServer extends AbstractService {
     private final ServiceManager phase1Services;
     private final ServiceManager phase2Services;
     private final Stopwatch stopwatch;
+    private final StyxServerComponents components;
 
     public static void main(String[] args) {
         try {
@@ -165,6 +166,7 @@ public final class StyxServer extends AbstractService {
 
     public StyxServer(StyxServerComponents components, Stopwatch stopwatch) {
         this.stopwatch = stopwatch;
+        this.components = components;
 
         registerCoreMetrics(components.environment().buildInfo(), components.environment().metricRegistry());
 
@@ -179,12 +181,11 @@ public final class StyxServer extends AbstractService {
                 .create();
 
         // Startup phase 1: start plugins, control plane providers, and other services:
-        ArrayList<Service> services = new ArrayList<>();
-
+       ArrayList<Service> services = new ArrayList<>();
         adminServer = createAdminServer(components);
         services.add(toGuavaService(adminServer));
-        services.add(toGuavaService(new PluginsManager("Styx-Plugins-Manager", components)));
-        services.add(toGuavaService(new ServiceProviderMonitor("Styx-Service-Monitor", components.servicesDatabase())));
+        services.add(toGuavaService(new PluginsManager("Sty§x-Plugins-Manager", components)));
+        services.add(toGuavaService(new ServiceProviderMonitor<>("Styx-Service-Monitor", components.servicesDatabase())));
         components.services().values().forEach(it -> services.add(toGuavaService(it)));
         this.phase1Services = new ServiceManager(services);
 
@@ -205,7 +206,16 @@ public final class StyxServer extends AbstractService {
         Optional.ofNullable(httpServer).map(StyxServers::toGuavaService).ifPresent(services2::add);
         Optional.ofNullable(httpsServer).map(StyxServers::toGuavaService).ifPresent(services2::add);
 
+        services2.add(toGuavaService(new ServiceProviderMonitor<>("Styx-Server-Monitor", components.serversDatabase())));
+
         this.phase2Services = new ServiceManager(services2);
+    }
+
+    public InetSocketAddress serverAddress(String name) {
+        return components.serversDatabase()
+                .get(name)
+                .map(it -> it.component4().inetAddress())
+                .orElse(null);
     }
 
     public InetSocketAddress proxyHttpAddress() {

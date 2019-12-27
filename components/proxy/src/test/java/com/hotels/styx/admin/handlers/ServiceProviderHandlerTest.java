@@ -22,7 +22,7 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.routing.db.StyxObjectStore;
-import com.hotels.styx.routing.handlers.StyxObjectRecord;
+import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.apache.commons.lang.StringUtils;
 import org.junit.jupiter.api.Test;

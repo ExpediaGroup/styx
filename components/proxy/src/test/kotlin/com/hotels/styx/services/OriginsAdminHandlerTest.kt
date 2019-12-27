@@ -35,8 +35,8 @@ import com.hotels.styx.routing.RoutingMetadataDecorator
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.Builtins.HEALTH_CHECK_MONITOR
 import com.hotels.styx.routing.db.StyxObjectStore
-import com.hotels.styx.routing.handlers.ProviderObjectRecord
-import com.hotels.styx.routing.handlers.StyxObjectRecord
+import com.hotels.styx.ProviderObjectRecord
+import com.hotels.styx.StyxObjectRecord
 import com.hotels.styx.routing.mockObject
 import com.hotels.styx.server.HttpInterceptorContext
 import com.hotels.styx.sourceTag

@@ -46,7 +46,7 @@ import com.hotels.styx.routing.config.StyxObjectDefinition
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.HostProxy.HostProxyConfiguration
 import com.hotels.styx.routing.handlers.LoadBalancingGroup
-import com.hotels.styx.routing.handlers.ProviderObjectRecord
+import com.hotels.styx.ProviderObjectRecord
 import org.slf4j.LoggerFactory
 
 internal class OriginsConfigConverter(

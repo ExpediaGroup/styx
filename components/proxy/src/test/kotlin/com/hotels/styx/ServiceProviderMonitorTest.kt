@@ -17,7 +17,6 @@ package com.hotels.styx
 
 import com.hotels.styx.api.extension.service.spi.StyxService
 import com.hotels.styx.routing.db.StyxObjectStore
-import com.hotels.styx.routing.handlers.ProviderObjectRecord
 import com.hotels.styx.services.record
 import io.kotlintest.specs.FeatureSpec
 import io.mockk.mockk

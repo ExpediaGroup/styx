@@ -16,6 +16,7 @@
 package com.hotels.styx.routing.config;
 
 import com.google.common.collect.ImmutableMap;
+import com.hotels.styx.IStyxServer;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.extension.service.spi.StyxService;
@@ -30,9 +31,10 @@ import com.hotels.styx.routing.handlers.PathPrefixRouter;
 import com.hotels.styx.routing.handlers.ProxyToBackend;
 import com.hotels.styx.routing.handlers.RouteRefLookup;
 import com.hotels.styx.routing.handlers.StaticResponseHandler;
-import com.hotels.styx.routing.handlers.StyxObjectRecord;
+import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.routing.interceptors.RewriteInterceptor;
 import com.hotels.styx.serviceproviders.ServiceProviderFactory;
+import com.hotels.styx.serviceproviders.StyxServerFactory;
 import com.hotels.styx.services.HealthCheckMonitoringService;
 import com.hotels.styx.services.HealthCheckMonitoringServiceFactory;
 import com.hotels.styx.services.YamlFileConfigurationService;
@@ -81,6 +83,9 @@ public final class Builtins {
     public static final ImmutableMap<String, Schema.FieldType> BUILTIN_SERVICE_PROVIDER_SCHEMAS =
             ImmutableMap.of(HEALTH_CHECK_MONITOR, HealthCheckMonitoringService.SCHEMA,
                     YAML_FILE_CONFIGURATION_SERVICE, YamlFileConfigurationService.SCHEMA);
+
+    public static final ImmutableMap<String, StyxServerFactory> BUILTIN_SERVER_FACTORIES = ImmutableMap.of();
+    public static final ImmutableMap<String, Schema.FieldType> BUILTIN_SERVER_SCHEMAS = ImmutableMap.of();
 
     public static final RouteRefLookup DEFAULT_REFERENCE_LOOKUP = reference -> (request, ctx) ->
             Eventual.of(response(NOT_FOUND)
@@ -183,5 +188,29 @@ public final class Builtins {
         checkArgument(constructor != null, format("Unknown service provider type '%s' for '%s' provider", providerDef.type(), providerDef.name()));
 
         return constructor.create(name, context, providerDef.config(), serviceDb);
+    }
+
+    /**
+     * Builds a Styx server.
+     *
+     * Styx server is a service that can accept incoming traffic from the client hosts.
+     *
+     * @param name Styx service name
+     * @param serverDef Styx service object configuration
+     * @param factories Service provider factories by name
+     * @param context Routing object factory context
+     *
+     * @return a Styx service
+     */
+    public static IStyxServer buildServer(
+            String name,
+            StyxObjectDefinition serverDef,
+            StyxObjectStore<StyxObjectRecord<IStyxServer>> serverDb,
+            Map<String, StyxServerFactory> factories,
+            RoutingObjectFactory.Context context) {
+        StyxServerFactory constructor = factories.get(serverDef.type());
+        checkArgument(constructor != null, format("Unknown server type '%s' for '%s' provider", serverDef.type(), serverDef.name()));
+
+        return constructor.create(name, context, serverDef.config(), serverDb);
     }
 }

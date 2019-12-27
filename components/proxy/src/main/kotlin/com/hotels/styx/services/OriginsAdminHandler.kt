@@ -30,7 +30,7 @@ import com.hotels.styx.infrastructure.configuration.json.mixins.ErrorResponseMix
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.Builtins.HEALTH_CHECK_MONITOR
 import com.hotels.styx.routing.db.StyxObjectStore
-import com.hotels.styx.routing.handlers.ProviderObjectRecord
+import com.hotels.styx.ProviderObjectRecord
 import java.nio.charset.StandardCharsets.UTF_8
 
 /**
