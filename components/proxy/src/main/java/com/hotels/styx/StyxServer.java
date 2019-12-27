@@ -29,10 +29,11 @@ import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.config.schema.SchemaValidationException;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
-import com.hotels.styx.proxy.ProxyServerBuilder;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.ConnectorConfig;
 import com.hotels.styx.server.HttpServer;
+import com.hotels.styx.server.netty.NettyServerBuilder;
+import com.hotels.styx.server.netty.ServerConnector;
 import com.hotels.styx.startup.StyxServerComponents;
 import io.netty.util.ResourceLeakDetector;
 import org.jetbrains.annotations.NotNull;
@@ -50,6 +51,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.shutdownLogging;
+import static com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder.ENCODE_UNWISECHARS;
 import static com.hotels.styx.startup.CoreMetrics.registerCoreMetrics;
 import static io.netty.util.ResourceLeakDetector.Level.DISABLED;
 import static java.lang.Runtime.getRuntime;
@@ -224,11 +226,24 @@ public final class StyxServer extends AbstractService {
     }
 
     private static HttpServer httpServer(Environment environment, ConnectorConfig connectorConfig, HttpHandler styxDataPlane) {
-        return new ProxyServerBuilder(environment)
-                .handler(styxDataPlane)
-                .connectorConfig(connectorConfig)
+        CharSequence styxInfoHeaderName = environment.configuration().styxHeaderConfig().styxInfoHeaderName();
+        ResponseInfoFormat responseInfoFormat = new ResponseInfoFormat(environment);
+
+        ServerConnector proxyConnector = new ProxyConnectorFactory(
+                environment.configuration().proxyServerConfig(),
+                environment.metricRegistry(),
+                environment.errorListener(),
+                environment.configuration().get(ENCODE_UNWISECHARS).orElse(""),
+                (builder, request) -> builder.header(styxInfoHeaderName, responseInfoFormat.format(request)),
+                environment.configuration().get("requestTracking", Boolean.class).orElse(false))
+                .create(connectorConfig);
+
+        return NettyServerBuilder.newBuilder()
+                .setMetricsRegistry(environment.metricRegistry())
                 .bossExecutor(ServerExecutor.create("Proxy-Boss", environment.configuration().proxyServerConfig().bossThreadsCount()))
                 .workerExecutor(ServerExecutor.create("Proxy-Worker", environment.configuration().proxyServerConfig().workerThreadsCount()))
+                .setProtocolConnector(proxyConnector)
+                .handler(styxDataPlane)
                 .build();
     }
 

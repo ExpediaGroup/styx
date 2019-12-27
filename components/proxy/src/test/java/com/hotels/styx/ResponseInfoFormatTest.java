@@ -13,10 +13,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.proxy;
+package com.hotels.styx;
 
-import com.hotels.styx.Environment;
-import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
