@@ -21,8 +21,9 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.WebServiceHandler;
+import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.routing.db.StyxObjectStore;
-import com.hotels.styx.routing.handlers.ProviderObjectRecord;
+import com.hotels.styx.routing.handlers.StyxObjectRecord;
 
 import java.util.stream.Collectors;
 
@@ -54,13 +55,13 @@ public class ProviderListHandler implements WebServiceHandler {
 
     private static final String TITLE = "List of Providers";
 
-    private final StyxObjectStore<ProviderObjectRecord> providerDb;
+    private final StyxObjectStore<StyxObjectRecord<StyxService>> providerDb;
 
     /**
      * Create a new handler linked to a provider object store.
      * @param providerDb the provider store.
      */
-    public ProviderListHandler(StyxObjectStore<ProviderObjectRecord> providerDb) {
+    public ProviderListHandler(StyxObjectStore<StyxObjectRecord<StyxService>> providerDb) {
         this.providerDb = providerDb;
     }
 
@@ -76,7 +77,7 @@ public class ProviderListHandler implements WebServiceHandler {
                 .build());
     }
 
-    private static String htmlForProvider(String name, ProviderObjectRecord provider) {
+    private static String htmlForProvider(String name, StyxObjectRecord<StyxService> provider) {
         String endpointList = provider.getStyxService()
                 .adminInterfaceHandlers(adminPath("providers", name))
                 .keySet()

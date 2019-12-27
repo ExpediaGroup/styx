@@ -57,7 +57,7 @@ import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.db.StyxObjectStore;
-import com.hotels.styx.routing.handlers.ProviderObjectRecord;
+import com.hotels.styx.routing.handlers.StyxObjectRecord;
 import com.hotels.styx.server.AdminHttpRouter;
 import com.hotels.styx.server.handlers.ClassPathResourceHandler;
 import com.hotels.styx.server.netty.NettyServerBuilder;
@@ -96,7 +96,7 @@ public class AdminServerBuilder {
     private final Configuration configuration;
     private final RoutingObjectFactory.Context routingObjectFactoryContext;
     private final StyxObjectStore<RoutingObjectRecord> routeDatabase;
-    private final StyxObjectStore<ProviderObjectRecord> providerDatabase;
+    private final StyxObjectStore<StyxObjectRecord<StyxService>> providerDatabase;
     private final StartupConfig startupConfig;
 
     private Registry<BackendService> backendServicesRegistry;

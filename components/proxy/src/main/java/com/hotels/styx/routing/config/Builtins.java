@@ -27,10 +27,10 @@ import com.hotels.styx.routing.handlers.HostProxy;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
 import com.hotels.styx.routing.handlers.LoadBalancingGroup;
 import com.hotels.styx.routing.handlers.PathPrefixRouter;
-import com.hotels.styx.routing.handlers.ProviderObjectRecord;
 import com.hotels.styx.routing.handlers.ProxyToBackend;
 import com.hotels.styx.routing.handlers.RouteRefLookup;
 import com.hotels.styx.routing.handlers.StaticResponseHandler;
+import com.hotels.styx.routing.handlers.StyxObjectRecord;
 import com.hotels.styx.routing.interceptors.RewriteInterceptor;
 import com.hotels.styx.serviceproviders.ServiceProviderFactory;
 import com.hotels.styx.services.HealthCheckMonitoringService;
@@ -176,7 +176,7 @@ public final class Builtins {
     public static StyxService build(
             String name,
             StyxObjectDefinition providerDef,
-            StyxObjectStore<ProviderObjectRecord> serviceDb,
+            StyxObjectStore<StyxObjectRecord<StyxService>> serviceDb,
             Map<String, ServiceProviderFactory> factories,
             RoutingObjectFactory.Context context) {
         ServiceProviderFactory constructor = factories.get(providerDef.type());

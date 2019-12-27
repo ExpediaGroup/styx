@@ -16,22 +16,33 @@
 package com.hotels.styx.services
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.hotels.styx.*
+import com.hotels.styx.ErrorResponse
+import com.hotels.styx.HEALTHCHECK_FAILING
+import com.hotels.styx.STATE_ACTIVE
+import com.hotels.styx.STATE_INACTIVE
+import com.hotels.styx.STATE_UNREACHABLE
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpResponseStatus
 import com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST
 import com.hotels.styx.api.HttpResponseStatus.NOT_FOUND
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
+import com.hotels.styx.api.extension.service.spi.StyxService
+import com.hotels.styx.healthCheckTag
 import com.hotels.styx.infrastructure.configuration.json.mixins.ErrorResponseMixin
+import com.hotels.styx.lbGroupTag
 import com.hotels.styx.routing.RoutingMetadataDecorator
 import com.hotels.styx.routing.RoutingObjectRecord
-import com.hotels.styx.routing.config.Builtins
 import com.hotels.styx.routing.config.Builtins.HEALTH_CHECK_MONITOR
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.ProviderObjectRecord
+import com.hotels.styx.routing.handlers.StyxObjectRecord
 import com.hotels.styx.routing.mockObject
 import com.hotels.styx.server.HttpInterceptorContext
+import com.hotels.styx.sourceTag
+import com.hotels.styx.stateTag
+import com.hotels.styx.targetTag
+import com.hotels.styx.wait
 import io.kotlintest.matchers.collections.shouldContain
 import io.kotlintest.matchers.string.shouldStartWith
 import io.kotlintest.shouldBe
@@ -45,7 +56,7 @@ class OriginsAdminHandlerTest : FeatureSpec({
     val mapper = ObjectMapper().addMixIn(ErrorResponse::class.java, ErrorResponseMixin::class.java)
 
     val store = StyxObjectStore<RoutingObjectRecord>()
-    val serviceDb = StyxObjectStore<ProviderObjectRecord>()
+    val serviceDb = StyxObjectStore<StyxObjectRecord<StyxService>>()
     val mockObject = RoutingMetadataDecorator(mockObject())
     val handler = OriginsAdminHandler("/base/path", "testProvider", store, serviceDb)
 

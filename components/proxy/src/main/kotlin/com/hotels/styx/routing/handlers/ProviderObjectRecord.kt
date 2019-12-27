@@ -16,13 +16,18 @@
 package com.hotels.styx.routing.handlers
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.hotels.styx.IStyxServer
 import com.hotels.styx.api.extension.service.spi.StyxService
 
 /**
  * A routing object and its associated configuration metadata.
  */
-internal data class ProviderObjectRecord(
+internal data class StyxObjectRecord<T : StyxService>(
         val type: String,
         val tags: Set<String>,
         val config: JsonNode,
-        val styxService: StyxService)
+        val styxService: T)
+
+internal typealias ProviderObjectRecord = StyxObjectRecord<StyxService>
+
+
