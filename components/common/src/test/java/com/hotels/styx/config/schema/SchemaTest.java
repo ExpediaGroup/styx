@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.config.schema;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -37,6 +38,7 @@ import static com.hotels.styx.config.schema.SchemaDsl.map;
 import static com.hotels.styx.config.schema.SchemaDsl.object;
 import static com.hotels.styx.config.schema.SchemaDsl.opaque;
 import static com.hotels.styx.config.schema.SchemaDsl.optional;
+import static com.hotels.styx.config.schema.SchemaDsl.or;
 import static com.hotels.styx.config.schema.SchemaDsl.schema;
 import static com.hotels.styx.config.schema.SchemaDsl.string;
 import static com.hotels.styx.config.schema.SchemaDsl.union;
@@ -448,7 +450,7 @@ public class SchemaTest {
 
         Exception e = assertThrows(SchemaValidationException.class,
                 () -> list(object(field("a", integer()), field("b", integer())))
-                    .validate(ImmutableList.of("myList"), root, root.get("myList"), NO_EXTENSIONS));
+                        .validate(ImmutableList.of("myList"), root, root.get("myList"), NO_EXTENSIONS));
         assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'myList' should be LIST\\(OBJECT\\(a, b\\)\\), but it is OBJECT"));
     }
 
@@ -769,4 +771,25 @@ public class SchemaTest {
         assertThat(e.getMessage(), matchesPattern("Discriminator attribute 'type' must be a string \\(but it is not\\)"));
     }
 
+    @Test
+    void or_validatesTwoAlternativeTypes() throws JsonProcessingException {
+
+        JsonNode root = YAML_MAPPER.readTree(""
+                + "  pipeline: 'plug1, plug2' \n"
+                + "  pipeline2: \n"
+                + "    - plug2 \n"
+                + "    - plug2 \n"
+                + "  pipeline3: 83490\n"
+        );
+
+        Schema.FieldType myOr = or(list(string()), string());
+
+        myOr.validate(ImmutableList.of("pipeline"), root, root.get("pipeline"), NO_EXTENSIONS);
+        myOr.validate(ImmutableList.of("pipeline2"), root, root.get("pipeline2"), NO_EXTENSIONS);
+
+        Exception e = assertThrows(SchemaValidationException.class,
+                () -> myOr.validate(ImmutableList.of("pipeline3"), root, root.get("pipeline3"), NO_EXTENSIONS));
+
+        assertEquals("Unexpected field type. Field 'pipeline3' should be OR(LIST(STRING), STRING), but it is NUMBER", e.getMessage());
+    }
 }

@@ -67,7 +67,7 @@ public class StyxProxyTest extends SSLSetup {
     @Test
     public void startsAndStopsAServer() {
         HttpServer server = new NettyServerBuilder()
-                .setHttpConnector(connector(0))
+                .setProtocolConnector(connector(0))
                 .build();
 
         server.startAsync().awaitRunning();
@@ -83,8 +83,8 @@ public class StyxProxyTest extends SSLSetup {
         StandardHttpRouter handler = new StandardHttpRouter();
 
         HttpServer server = NettyServerBuilder.newBuilder()
-                .setHttpConnector(connector(0))
-                .handlerFactory(() -> new HttpInterceptorPipeline(
+                .setProtocolConnector(connector(0))
+                .handler(new HttpInterceptorPipeline(
                         ImmutableList.of(echoInterceptor),
                         (request, context) -> new HttpAggregator(new StandardHttpRouter()).handle(request, context),
                         false))
@@ -118,7 +118,7 @@ public class StyxProxyTest extends SSLSetup {
     @Test
     public void startsServerWithBothHttpAndHttpsConnectors() throws IOException {
         HttpServer server = NettyServerBuilder.newBuilder()
-                .setHttpConnector(connector(0))
+                .setProtocolConnector(connector(0))
                 .build();
 
         server.startAsync().awaitRunning();

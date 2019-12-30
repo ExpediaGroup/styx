@@ -32,8 +32,8 @@ public class HttpServers {
     public static HttpServer createHttpServer(int port, HttpHandler handler) {
         return NettyServerBuilder.newBuilder()
                 .name("NettyServer")
-                .setHttpConnector(new WebServerConnectorFactory().create(new HttpConnectorConfig(port)))
-                .handlerFactory(() -> handler)
+                .setProtocolConnector(new WebServerConnectorFactory().create(new HttpConnectorConfig(port)))
+                .handler(handler)
                 .build();
     }
 
@@ -49,8 +49,8 @@ public class HttpServers {
     public static HttpServer createHttpServer(String name, HttpConnectorConfig httpConnectorConfig, HttpHandler handler) {
         return NettyServerBuilder.newBuilder()
                 .name(name)
-                .setHttpConnector(new WebServerConnectorFactory().create(httpConnectorConfig))
-                .handlerFactory(() -> handler)
+                .setProtocolConnector(new WebServerConnectorFactory().create(httpConnectorConfig))
+                .handler(handler)
                 .build();
     }
 
@@ -66,8 +66,8 @@ public class HttpServers {
     public static HttpServer createHttpsServer(String name, HttpsConnectorConfig httpsConnectorConfig, HttpHandler handler) {
         return NettyServerBuilder.newBuilder()
                 .name(name)
-                .setHttpsConnector(new WebServerConnectorFactory().create(httpsConnectorConfig))
-                .handlerFactory(() -> handler)
+                .setProtocolConnector(new WebServerConnectorFactory().create(httpsConnectorConfig))
+                .handler(handler)
                 .build();
     }
 

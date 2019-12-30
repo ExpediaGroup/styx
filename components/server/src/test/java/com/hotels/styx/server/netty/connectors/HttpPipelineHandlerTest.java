@@ -46,9 +46,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import reactor.core.publisher.EmitterProcessor;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import rx.Observable;
-import rx.subjects.PublishSubject;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
@@ -101,11 +101,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
-import static rx.RxReactiveStreams.toPublisher;
 
 public class HttpPipelineHandlerTest {
     private final HttpHandler respondingHandler = (request, context) -> Eventual.of(response(OK).build());
-    private final HttpHandler doNotRespondHandler = (request, context) -> new Eventual<>(toPublisher(Observable.never()));
+    private final HttpHandler doNotRespondHandler = (request, context) -> new Eventual<>(Mono.never());
 
     private HttpErrorStatusListener errorListener;
     private CodaHaleMetricRegistry metrics;
@@ -119,8 +118,8 @@ public class HttpPipelineHandlerTest {
     });
 
     private ChannelHandlerContext ctx;
-    private PublishSubject<LiveHttpResponse> responseObservable;
-    private PublishSubject<LiveHttpResponse> responseObservable2;
+    private EmitterProcessor<LiveHttpResponse> responseObservable;
+    private EmitterProcessor<LiveHttpResponse> responseObservable2;
     private CompletableFuture<Void> writerFuture;
     private HttpResponseWriter responseWriter;
     private HttpPipelineHandler handler;
@@ -145,7 +144,7 @@ public class HttpPipelineHandlerTest {
         statsCollector = mock(RequestStatsCollector.class);
         errorListener = mock(HttpErrorStatusListener.class);
         ctx = mockCtx();
-        responseObservable = PublishSubject.create();
+        responseObservable = EmitterProcessor.create();
         responseUnsubscribed = new AtomicBoolean(false);
 
         writerFuture = new CompletableFuture<>();
@@ -158,7 +157,7 @@ public class HttpPipelineHandlerTest {
                 .thenReturn(responseWriter);
 
         pipeline = mock(HttpHandler.class);
-        when(pipeline.handle(nullable(LiveHttpRequest.class), nullable(HttpInterceptor.Context.class))).thenReturn(new Eventual<>(toPublisher(responseObservable.doOnUnsubscribe(() -> responseUnsubscribed.set(true)))));
+        when(pipeline.handle(nullable(LiveHttpRequest.class), nullable(HttpInterceptor.Context.class))).thenReturn(new Eventual<>(Flux.from(responseObservable.doOnCancel(() -> responseUnsubscribed.set(true)))));
 
         request = get("/foo").id("REQUEST-1-ID").build();
         response = response().build();
@@ -171,7 +170,7 @@ public class HttpPipelineHandlerTest {
     }
 
     private void setUpFor2Requests() throws Exception {
-        responseObservable2 = PublishSubject.create();
+        responseObservable2 = EmitterProcessor.create();
         responseUnsubscribed2 = new AtomicBoolean(false);
         response2 = response().build();
 
@@ -187,8 +186,8 @@ public class HttpPipelineHandlerTest {
 
         pipeline = mock(HttpHandler.class);
         when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class)))
-                .thenReturn(new Eventual<>(toPublisher(responseObservable.doOnUnsubscribe(() -> responseUnsubscribed.set(true)))))
-                .thenReturn(new Eventual<>(toPublisher(responseObservable2.doOnUnsubscribe(() -> responseUnsubscribed2.set(true)))));
+                .thenReturn(new Eventual<>(responseObservable.doOnCancel(() -> responseUnsubscribed.set(true))))
+                .thenReturn(new Eventual<>(responseObservable2.doOnCancel(() -> responseUnsubscribed2.set(true))));
 
         request2 = get("/bar").id("REQUEST-2-ID").build();
 
@@ -198,31 +197,6 @@ public class HttpPipelineHandlerTest {
     @AfterEach
     public void tearDown() {
         logger.stop();
-    }
-
-    private HttpPipelineHandler createHandler(HttpHandler pipeline) throws Exception {
-        metrics = new CodaHaleMetricRegistry();
-        HttpPipelineHandler handler = handlerWithMocks(pipeline)
-                .responseWriterFactory(responseWriterFactory)
-                .build();
-
-        handler.channelActive(ctx);
-
-        return handler;
-    }
-
-    private void setupHandlerTo(State targetState) throws Exception {
-        handler = createHandler(pipeline);
-
-        if (targetState == WAITING_FOR_RESPONSE) {
-            handler.channelRead0(ctx, request);
-            assertThat(handler.state(), is(WAITING_FOR_RESPONSE));
-        } else if (targetState == SENDING_RESPONSE) {
-            handler.channelRead0(ctx, request);
-            assertThat(handler.state(), is(WAITING_FOR_RESPONSE));
-            responseObservable.onNext(response);
-            assertThat(handler.state(), is(SENDING_RESPONSE));
-        }
     }
 
     @Test
@@ -323,7 +297,7 @@ public class HttpPipelineHandlerTest {
         handler.channelInactive(ctx);
 
         // ... only after that the response observable completes:
-        responseObservable.onCompleted();
+        responseObservable.onComplete();
 
         // ... then treat it like a successfully sent response:
         writerFuture.complete(null);
@@ -407,7 +381,7 @@ public class HttpPipelineHandlerTest {
         verify(statsCollector).onRequest(request.id());
 
         responseObservable.onNext(response);
-        responseObservable.onCompleted();
+        responseObservable.onComplete();
         assertThat(handler.state(), is(SENDING_RESPONSE));
 
         writerFuture.complete(null);
@@ -429,7 +403,7 @@ public class HttpPipelineHandlerTest {
         // Response arrives, together with response onComplete event.
         // The response onComplete arrives *before* response has been written.
         responseObservable.onNext(response);
-        responseObservable.onCompleted();
+        responseObservable.onComplete();
         assertThat(handler.state(), is(SENDING_RESPONSE));
 
         // Receive second request while still sending previous response.
@@ -461,7 +435,7 @@ public class HttpPipelineHandlerTest {
         // Response arrives, together with response onComplete event.
         // The response onComplete arrives *before* response has been written.
         responseObservable.onNext(response);
-        responseObservable.onCompleted();
+        responseObservable.onComplete();
         assertThat(handler.state(), is(SENDING_RESPONSE));
         verify(responseWriter).write(any(LiveHttpResponse.class));
 
@@ -493,7 +467,7 @@ public class HttpPipelineHandlerTest {
 
         // Response arrives.
         responseObservable.onNext(response);
-        responseObservable.onCompleted();
+        responseObservable.onComplete();
         assertThat(handler.state(), is(SENDING_RESPONSE));
         verify(responseWriter).write(nullable(LiveHttpResponse.class));
 
@@ -549,7 +523,7 @@ public class HttpPipelineHandlerTest {
         verify(statsCollector).onRequest(oneShotRequest.id());
 
         responseObservable.onNext(response);
-        responseObservable.onCompleted();
+        responseObservable.onComplete();
         assertThat(handler.state(), is(SENDING_RESPONSE));
 
         writerFuture.complete(null);
@@ -885,7 +859,7 @@ public class HttpPipelineHandlerTest {
         handler.channelRead0(ctx, request2);
         assertThat(handler.state(), is(WAITING_FOR_RESPONSE));
 
-        responseObservable.onCompleted();
+        responseObservable.onComplete();
         assertThat(handler.state(), is(WAITING_FOR_RESPONSE));
     }
 
@@ -908,7 +882,7 @@ public class HttpPipelineHandlerTest {
         responseObservable2.onNext(response2);
         assertThat(handler.state(), is(SENDING_RESPONSE));
 
-        responseObservable.onCompleted();
+        responseObservable.onComplete();
         assertThat(handler.state(), is(SENDING_RESPONSE));
     }
 
@@ -953,18 +927,6 @@ public class HttpPipelineHandlerTest {
         assertTrue(logger.lastMessage().getMessage().contains("ongoingResponse=null"));
     }
 
-    private static HttpResponseWriterFactory responseWriterFactory(CompletableFuture<Void> future) {
-        HttpResponseWriterFactory writerFactory = mock(HttpResponseWriterFactory.class);
-        HttpResponseWriter responseWriter = mock(HttpResponseWriter.class);
-        when(writerFactory.create(any(ChannelHandlerContext.class))).thenReturn(responseWriter);
-        when(responseWriter.write(any(LiveHttpResponse.class))).thenReturn(future);
-        return writerFactory;
-    }
-
-    private static void activateChannel(ChannelHandlerContext ctx) {
-        when(ctx.channel().isActive()).thenReturn(true);
-    }
-
     @Test
     public void cancelsOngoingRequestWhenSpuriousRequestArrivesInWaitingForResponseState() throws Exception {
         // - writes EMPTY_LAST_CONTENT and closes the channel
@@ -996,6 +958,31 @@ public class HttpPipelineHandlerTest {
                 loggingEvent(INFO, "SSL handshake failure from incoming connection .*")));
     }
 
+    private void setupHandlerTo(State targetState) throws Exception {
+        handler = createHandler(pipeline);
+
+        if (targetState == WAITING_FOR_RESPONSE) {
+            handler.channelRead0(ctx, request);
+            assertThat(handler.state(), is(WAITING_FOR_RESPONSE));
+        } else if (targetState == SENDING_RESPONSE) {
+            handler.channelRead0(ctx, request);
+            assertThat(handler.state(), is(WAITING_FOR_RESPONSE));
+            responseObservable.onNext(response);
+            assertThat(handler.state(), is(SENDING_RESPONSE));
+        }
+    }
+
+    private HttpPipelineHandler createHandler(HttpHandler pipeline) throws Exception {
+        metrics = new CodaHaleMetricRegistry();
+        HttpPipelineHandler handler = handlerWithMocks(pipeline)
+                .responseWriterFactory(responseWriterFactory)
+                .build();
+
+        handler.channelActive(ctx);
+
+        return handler;
+    }
+
     private HttpPipelineHandler.Builder handlerWithMocks() {
         return handlerWithMocks(pipeline);
     }
@@ -1006,6 +993,18 @@ public class HttpPipelineHandlerTest {
                 .responseEnhancer(responseEnhancer)
                 .progressListener(statsCollector)
                 .metricRegistry(metrics);
+    }
+
+    private static HttpResponseWriterFactory responseWriterFactory(CompletableFuture<Void> future) {
+        HttpResponseWriterFactory writerFactory = mock(HttpResponseWriterFactory.class);
+        HttpResponseWriter responseWriter = mock(HttpResponseWriter.class);
+        when(writerFactory.create(any(ChannelHandlerContext.class))).thenReturn(responseWriter);
+        when(responseWriter.write(any(LiveHttpResponse.class))).thenReturn(future);
+        return writerFactory;
+    }
+
+    private static void activateChannel(ChannelHandlerContext ctx) {
+        when(ctx.channel().isActive()).thenReturn(true);
     }
 
     private static ChannelHandlerContext mockCtx() {

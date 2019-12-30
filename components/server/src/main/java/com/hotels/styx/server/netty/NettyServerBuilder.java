@@ -15,10 +15,9 @@
  */
 package com.hotels.styx.server.netty;
 
-import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.Eventual;
+import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.ServerEventLoopFactory;
 import com.hotels.styx.server.netty.eventloop.PlatformAwareServerEventLoopFactory;
@@ -26,16 +25,11 @@ import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Supplier;
-
 import static com.google.common.base.Objects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.Lists.newCopyOnWriteArrayList;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.server.netty.eventloop.ServerEventLoopFactories.memoize;
-import static java.util.Arrays.asList;
 
 /**
  * A builder of {@link NettyServer} instances.
@@ -47,10 +41,8 @@ public final class NettyServerBuilder {
     private String host;
     private MetricRegistry metricRegistry;
     private String name = "styx";
-    private Optional<ServerConnector> httpConnector = Optional.empty();
-    private Optional<ServerConnector> httpsConnector = Optional.empty();
-    private final List<Runnable> startupActions = newCopyOnWriteArrayList();
-    private Supplier<HttpHandler> handlerFactory = () -> (request, context) -> Eventual.of(LiveHttpResponse.response(NOT_FOUND).build());
+    private ServerConnector httpConnector;
+    private HttpHandler handler = (request, context) -> Eventual.of(response(NOT_FOUND).build());
 
     public static NettyServerBuilder newBuilder() {
         return new NettyServerBuilder();
@@ -92,44 +84,26 @@ public final class NettyServerBuilder {
         return this.channelGroup;
     }
 
-    public NettyServerBuilder handlerFactory(Supplier<HttpHandler> handlerFactory) {
-        this.handlerFactory = handlerFactory;
+    public NettyServerBuilder handler(HttpHandler handler) {
+        this.handler = handler;
         return this;
     }
 
-    Supplier<HttpHandler> handlerFactory() {
-        return this.handlerFactory;
+    HttpHandler handler() {
+        return this.handler;
     }
 
-    public NettyServerBuilder setHttpConnector(ServerConnector connector) {
-        this.httpConnector = Optional.of(connector);
+    public NettyServerBuilder setProtocolConnector(ServerConnector connector) {
+        this.httpConnector = connector;
         return this;
     }
 
-    public NettyServerBuilder setHttpsConnector(ServerConnector connector) {
-        this.httpsConnector = Optional.of(connector);
-        return this;
-    }
-
-    Optional<ServerConnector> httpConnector() {
+    ServerConnector protocolConnector() {
         return httpConnector;
     }
 
-    Optional<ServerConnector> httpsConnector() {
-        return httpsConnector;
-    }
-
-    public NettyServerBuilder doOnStartUp(Runnable... startupActions) {
-        this.startupActions.addAll(asList(startupActions));
-        return this;
-    }
-
-    Iterable<Runnable> startupActions() {
-        return startupActions;
-    }
-
     public HttpServer build() {
-        checkArgument(httpConnector.isPresent() || httpsConnector.isPresent(), "Must configure at least one connector");
+        checkArgument(httpConnector != null, "Must configure a protocol connector");
 
         return new NettyServer(this);
     }
