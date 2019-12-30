@@ -15,21 +15,18 @@
  */
 package com.hotels.styx.admin
 
-import com.github.tomakehurst.wiremock.client.WireMock
-import com.hotels.styx.api.HttpHeaderNames
+import com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE
 import com.hotels.styx.api.HttpHeaderNames.HOST
-import com.hotels.styx.api.HttpHeaderValues
+import com.hotels.styx.api.HttpHeaderValues.APPLICATION_JSON
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponse
-import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.HttpResponseStatus.NOT_FOUND
-
+import com.hotels.styx.api.HttpResponseStatus.OK
+import com.hotels.styx.api.extension.service.spi.AbstractStyxService
 import com.hotels.styx.client.StyxHttpClient
-import com.hotels.styx.server.HttpConnectorConfig
-import com.hotels.styx.servers.MockOriginServer
+import com.hotels.styx.routing.handlers.ProviderObjectRecord
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.adminHostHeader
-import com.hotels.styx.support.adminRequest
 import com.hotels.styx.support.wait
 import io.kotlintest.Spec
 import io.kotlintest.eventually
@@ -38,13 +35,10 @@ import io.kotlintest.matchers.string.shouldNotContain
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
-import java.io.File
+import io.mockk.mockk
 import java.nio.charset.StandardCharsets.UTF_8
 
 class ProviderAdminInterfaceSpec : FeatureSpec() {
-    val tempDir = createTempDir(suffix = "-${this.javaClass.simpleName}")
-    val originsFile = File(tempDir, "origins.yml")
-
     val styxServer = StyxServerProvider(
             defaultConfig = """
                 ---
@@ -79,14 +73,6 @@ class ProviderAdminInterfaceSpec : FeatureSpec() {
                       healthyThreshold: 3
                       unhealthyThreshold: 2
 
-                  originsFileLoader:
-                    type: YamlFileConfigurationService
-                    config:
-                      originsFile: ${originsFile.absolutePath}
-                      ingressObject: pathPrefixRouter
-                      monitor: True
-                      pollInterval: PT0.1S 
-
                 httpPipeline:
                   type: StaticResponseHandler
                   config:
@@ -94,21 +80,7 @@ class ProviderAdminInterfaceSpec : FeatureSpec() {
                 """.trimIndent()
             )
 
-    val mockServer = MockOriginServer.create("appA", "appA-01", 0, HttpConnectorConfig(0))
-            .start()
-            .stub(WireMock.get(WireMock.urlMatching("/.*")), WireMock.aResponse()
-                    .withStatus(200)
-                    .withBody("appA-01"))
-
     init {
-        val originsFileContent = """
-                - id: appA
-                  path: "/"
-                  origins:
-                  - { id: "appA-01", host: "localhost:${mockServer.port()}" } 
-            """.trimIndent()
-        originsFile.writeText(originsFileContent)
-
         styxServer.restart()
 
         feature("Provider admin interface endpoints") {
@@ -127,103 +99,49 @@ class ProviderAdminInterfaceSpec : FeatureSpec() {
                         .bodyAs(UTF_8)
                 body shouldContain "/admin/providers/myMonitor/status"
                 body shouldContain "/admin/providers/mySecondMonitor/status"
-                body shouldNotContain "/admin/providers/appA-monitor/status"
-                body shouldNotContain "/admin/providers/appB-monitor/status"
             }
         }
 
-        feature("Backcompat healthcheck service endpoints are listed on the Providers admin interface") {
+        feature("Endpoints for dynamically added Styx services are available in the Admin interface") {
 
-            scenario("Endpoints are registered after server start") {
-                val originsFileContent = """
-                - id: appA
-                  path: "/"
-                  healthCheck:
-                    uri: "http://www/check/me"
-                  origins:
-                  - { id: "appA-01", host: "localhost:${mockServer.port()}" } 
-            """.trimIndent()
-                originsFile.writeText(originsFileContent)
-                styxServer.restart()
+            scenario("Additional endpoints are listed on the Providers admin interface") {
 
-                eventually(5.seconds, AssertionError::class.java) {
+                styxServer.components().servicesDatabase().insert("mockService",
+                        ProviderObjectRecord("MockService", setOf(), mockk(), MockService("mockService")))
+
+                eventually(1.seconds, AssertionError::class.java) {
                     val body = styxServer.adminRequest("/admin/providers")
                             .bodyAs(UTF_8)
-                    body shouldContain "/admin/providers/appA-monitor/status"
+                    body shouldContain "/admin/providers/myMonitor/status"
+                    body shouldContain "/admin/providers/mySecondMonitor/status"
+                    body shouldContain "/admin/providers/mockService/status"
                 }
             }
 
-            scenario("The new endpoint returns status information after server restart") {
-                Thread.sleep(5000)
-                val response = styxServer.adminRequest("/admin/providers/appA-monitor/status")
+            scenario("The new admin endpoint returns status information without server restart") {
+                val response = styxServer.adminRequest("/admin/providers/mockService/status")
                 response.status() shouldBe OK
-                response.header(HttpHeaderNames.CONTENT_TYPE).get().toLowerCase() shouldBe HttpHeaderValues.APPLICATION_JSON.toString().toLowerCase()
-                response.bodyAs(UTF_8) shouldBe "{ name: \"HealthCheckMonitoringService\" status: \"RUNNING\" }"
+                response.header(CONTENT_TYPE).get().toLowerCase() shouldBe APPLICATION_JSON.toString().toLowerCase()
+                response.bodyAs(UTF_8) shouldBe "{ name: \"mockService\" status: \"CREATED\" }"
             }
 
-            scenario("Additional endpoints are listed on the Providers admin interface after origin file update") {
-                val originsFileContent = """
-                - id: appA
-                  path: "/"
-                  healthCheck:
-                    uri: "http://www/check/me"
-                  origins:
-                  - { id: "appA-01", host: "localhost:${mockServer.port()}" } 
-                - id: appB
-                  path: "/"
-                  healthCheck:
-                    uri: "http://www/check/me"
-                  origins:
-                  - { id: "appB-01", host: "localhost:${mockServer.port()}" } 
-            """.trimIndent()
-                originsFile.writeText(originsFileContent)
+            scenario("Endpoints for dynamically removed Styx services are not listed in the Admin interface") {
 
-                eventually(5.seconds, AssertionError::class.java) {
+                styxServer.components().servicesDatabase().remove("mockService")
+
+                eventually(1.seconds, AssertionError::class.java) {
                     val body = styxServer.adminRequest("/admin/providers")
                             .bodyAs(UTF_8)
-                    body shouldContain "/admin/providers/appA-monitor/status"
-                    body shouldContain "/admin/providers/appB-monitor/status"
-                }
-            }
-
-            scenario("The new endpoint returns status information without server restart") {
-                val response = styxServer.adminRequest("/admin/providers/appB-monitor/status")
-                response.status() shouldBe OK
-                response.header(HttpHeaderNames.CONTENT_TYPE).get().toLowerCase() shouldBe HttpHeaderValues.APPLICATION_JSON.toString().toLowerCase()
-                response.bodyAs(UTF_8) shouldBe "{ name: \"HealthCheckMonitoringService\" status: \"RUNNING\" }"
-            }
-
-            scenario("Non-used endpoints are not listed on the Providers admin interface after origins file update") {
-                val originsFileContent = """
-                - id: appB
-                  path: "/"
-                  origins:
-                  - { id: "appB-01", host: "localhost:${mockServer.port()}" } 
-                - id: appC
-                  path: "/"
-                  healthCheck:
-                    uri: "http://www/check/me"
-                  origins:
-                  - { id: "appC-01", host: "localhost:${mockServer.port()}" } 
-            """.trimIndent()
-                originsFile.writeText(originsFileContent)
-
-                eventually(5.seconds, AssertionError::class.java) {
-                    val body = styxServer.adminRequest("/admin/providers")
-                            .bodyAs(UTF_8)
-                    body shouldNotContain "/admin/providers/appA-monitor/status"
-                    body shouldNotContain "/admin/providers/appB-monitor/status"
-                    body shouldContain "/admin/providers/appC-monitor/status"
+                    body shouldContain "/admin/providers/myMonitor/status"
+                    body shouldContain "/admin/providers/mySecondMonitor/status"
+                    body shouldNotContain "/admin/providers/mockService/status"
                 }
 
             }
 
-            scenario("The removed endpoints return are not found, and return the Admin index page") {
-                val responseA = styxServer.adminRequest("/admin/providers/appA-monitor/status")
-                responseA.status() shouldBe NOT_FOUND
-
-                val responseB = styxServer.adminRequest("/admin/providers/appB-monitor/status")
-                responseB.status() shouldBe NOT_FOUND
+            scenario("The removed endpoint returns HTTP NOT_FOUND status") {
+                val response = styxServer.adminRequest("/admin/providers/mockService/status")
+                response.status() shouldBe NOT_FOUND
             }
         }
 
@@ -239,6 +157,7 @@ class ProviderAdminInterfaceSpec : FeatureSpec() {
 
     override fun afterSpec(spec: Spec) {
         styxServer.stop()
-        mockServer.stop()
     }
+
+    class MockService(name: String) : AbstractStyxService(name)
 }

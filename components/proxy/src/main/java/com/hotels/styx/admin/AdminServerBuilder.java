@@ -176,7 +176,7 @@ public class AdminServerBuilder {
 
         httpRouter.aggregate("/admin/plugins", new PluginListHandler(environment.configStore()));
 
-        ProviderRoutingHandler providerHandler = new ProviderRoutingHandler(providerDatabase);
+        ProviderRoutingHandler providerHandler = new ProviderRoutingHandler("/admin/providers", providerDatabase);
         httpRouter.aggregate("/admin/providers", providerHandler);
         httpRouter.aggregate("/admin/providers/", providerHandler);
 

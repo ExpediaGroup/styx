@@ -15,9 +15,6 @@
  */
 package com.hotels.styx.admin.handlers;
 
-import static com.hotels.styx.admin.AdminServerBuilder.adminPath;
-import static com.hotels.styx.admin.AdminServerBuilder.adminEndpointPath;
-
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
@@ -40,15 +37,18 @@ public class ProviderRoutingHandler implements WebServiceHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(ProviderRoutingHandler.class);
     private static final int MEGABYTE = 1024 * 1024;
-    private static final String ADMIN_ROOT = "providers";
 
+    private final String pathPrefix;
     private volatile UrlPatternRouter router;
 
     /**
-     * Create a new handler for the given provider object store.
+     * Create a new handler for the given provider object store, with provider admin URLs mounted
+     * under the path "pathPrefix/providerName".
+     * @param pathPrefix the path prefix added to each provider admin URL
      * @param providerDb the provider object store
      */
-    public ProviderRoutingHandler(StyxObjectStore<ProviderObjectRecord> providerDb) {
+    public ProviderRoutingHandler(String pathPrefix, StyxObjectStore<ProviderObjectRecord> providerDb) {
+        this.pathPrefix = pathPrefix;
         Flux.from(providerDb.watch()).subscribe(
                 this::refreshRoutes,
                 error -> LOG.error("Error in providerDB subscription", error));
@@ -64,26 +64,17 @@ public class ProviderRoutingHandler implements WebServiceHandler {
         router = buildRouter(db);
     }
 
-    private static UrlPatternRouter buildRouter(ObjectStore<ProviderObjectRecord> db) {
-        UrlPatternRouter.Builder routeBuilder = new UrlPatternRouter.Builder()
-                .get("/admin/" + ADMIN_ROOT, new ProviderListHandler(db));
+    private UrlPatternRouter buildRouter(ObjectStore<ProviderObjectRecord> db) {
+        UrlPatternRouter.Builder routeBuilder = new UrlPatternRouter.Builder(pathPrefix)
+                .get("", new ProviderListHandler(db));
         db.entrySet().forEach(entry -> {
                 String providerName = entry.getKey();
-                entry.getValue().getStyxService().adminInterfaceHandlers(providerPath(providerName))
+                entry.getValue().getStyxService().adminInterfaceHandlers(pathPrefix + "/" + providerName)
                         .forEach((relPath, handler) ->
-                            routeBuilder.get(endpointPath(providerName, relPath), new HttpStreamer(MEGABYTE, handler))
+                            routeBuilder.get(providerName + "/" + relPath, new HttpStreamer(MEGABYTE, handler))
                         );
         });
 
-
         return routeBuilder.build();
-    }
-
-    private static String providerPath(String providerName) {
-        return adminPath(ADMIN_ROOT, providerName);
-    }
-
-    private static String endpointPath(String providerName, String endpointRelativePath) {
-        return adminEndpointPath(ADMIN_ROOT, providerName, endpointRelativePath);
     }
 }

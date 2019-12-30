@@ -67,7 +67,8 @@ class StyxServerProvider(
         val defaultAdditionalPlugins: Map<String, Plugin> = mapOf(),
         val defaultLoggingConfig: Path? = logConfigPath,
         val validateConfig: Boolean = true) {
-    val serverRef: AtomicReference<StyxServer?> = AtomicReference()
+    private val serverRef: AtomicReference<StyxServer?> = AtomicReference()
+    private val componentsRef: AtomicReference<StyxServerComponents?> = AtomicReference()
 
     operator fun invoke() = get()
 
@@ -77,6 +78,13 @@ class StyxServerProvider(
         }
 
         return serverRef.get()!!
+    }
+
+    fun components(): StyxServerComponents {
+        if (!started()) {
+            restart()
+        }
+        return componentsRef.get()!!
     }
 
     fun started() = (serverRef.get() == null) || serverRef.get()!!.isRunning
@@ -91,18 +99,20 @@ class StyxServerProvider(
             stop()
         }
 
-        var components = StyxServerComponents.Builder()
+        var componentsBuilder = StyxServerComponents.Builder()
                 .styxConfig(StyxConfig.fromYaml(configuration, validateConfig))
                 .additionalRoutingObjects(additionalRoutingObjects)
                 .plugins(additionalPlugins)
 
         LOGGER.info("restarted with logging config: $loggingConfig")
-        components = if (loggingConfig != null) components.loggingSetUp(loggingConfig.toString()) else components
+        componentsBuilder = if (loggingConfig != null) componentsBuilder.loggingSetUp(loggingConfig.toString()) else componentsBuilder
 
-        val newServer = StyxServer(components.build())
+        val components = componentsBuilder.build()
+        val newServer = StyxServer(components)
         newServer.startAsync()?.awaitRunning()
 
         serverRef.set(newServer)
+        componentsRef.set(components)
         return this
     }
 
