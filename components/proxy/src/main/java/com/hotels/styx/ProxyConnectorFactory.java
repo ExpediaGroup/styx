@@ -62,7 +62,8 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Factory for proxy connectors.
  */
-class ProxyConnectorFactory implements ServerConnectorFactory {
+// TODO: Could we make it non-public?
+public class ProxyConnectorFactory implements ServerConnectorFactory {
     private final MetricRegistry metrics;
     private final HttpErrorStatusListener errorStatusListener;
     private final NettyServerConfig serverConfig;
@@ -70,7 +71,7 @@ class ProxyConnectorFactory implements ServerConnectorFactory {
     private final ResponseEnhancer responseEnhancer;
     private final boolean requestTracking;
 
-    ProxyConnectorFactory(NettyServerConfig serverConfig,
+    public ProxyConnectorFactory(NettyServerConfig serverConfig,
                           MetricRegistry metrics,
                           HttpErrorStatusListener errorStatusListener,
                           String unwiseCharacters,

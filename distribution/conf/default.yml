@@ -36,61 +36,55 @@ admin:
     enabled: true
     expirationMillis: 10000
 
-# * Will use empty configuration by default *
-#
-#configuration:
-#  factory: {class: "<Your_ConfigurationFactory>"}
-#
-#  context:
-#    resolver:
-#      factory: {class: "<Your_ConfigurationContextResolverFactory>"}
+routingObjects:
+  h2Handler:
+    type: StaticResponseHandler
+    config:
 
-services:
-  factories:
-    backendServiceRegistry:
-      class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry$Factory"
-      config:
-        originsFile: "${originsFile:classpath:conf/origins.yml}"
-#    graphite:
-#      enabled: false
-#      class: "com.hotels.styx.metrics.reporting.graphite.GraphiteReporterServiceFactory"
-#      config:
-#        prefix: "app-instance-identifying-prefix"
-#        host: "some-ip"
-#        port: 2003
-#        intervalMillis: 15000
-    jmx:
-      class: "com.hotels.styx.metrics.reporting.jmx.JmxReporterServiceFactory"
-      config:
-        domain: "com.hotels.styx"
+servers:
+  h1Server:
+    type: HttpServer
+    config:
+      port: 8080
+      listener: h1Handler
 
-retrypolicy:
-  policy:
-    factory:
-      class: "com.hotels.styx.client.retry.RetryPolicyFactory"
-      config: {count: 2}
+      tlsSettings:
+        sslProvider: OPENSSL # Also supports JDK
+        certificateFile: ${STYX_HOME:classpath:}/conf/tls/testCredentials.crt
+        certificateKeyFile: ${STYX_HOME:classpath:}/conf/tls/testCredentials.key
+        sessionTimeoutMillis: 300000
+        sessionCacheSize: 20000
 
-loadBalancing:
-  strategy:
-    factory: {class: "com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy$Factory"}
+      maxInitialLength: 4096
+      maxHeaderSize: 8192
+      maxChunkSize: 8192
 
-# Allow and Encode the list of unwise chars.
-#url:
-#  encoding:
-#    unwiseCharactersToEncode: ""
+      requestTimeoutMillis: 12000
+      keepAliveTimeoutMillis: 12000
+      maxConnectionsCount: 4096
 
-#originRestrictionCookie: yourCookieNameHere
+      bossThreadsCount: 1
+      workerThreadsCount: 0
 
-### Uncomment the config below to test out Styx's plugin feature:
-#
-#plugins:
-#  active: demo
-#  all:
-#    demo:
-#      factory:
-#        class: "com.hotels.styx.startup.extensions.DemoPlugin$Factory"
-#        classPath: "${STYX_HOME:}"
-#      config:
-#        adminText: "this is the admin page"
-#        responseHeaderValue: "this is the response header value"
+  h2Server:
+    type: Http2Server
+    config:
+      port: 8443
+      listener: h2Handler
 
+      maxInitialLength: 4096
+      maxHeaderSize: 8192
+      maxChunkSize: 8192
+
+      requestTimeoutMillis: 12000
+      keepAliveTimeoutMillis: 12000
+      maxConnectionsCount: 4096
+
+      bossThreadsCount: 1
+      workerThreadsCount: 0
+
+  admin:
+    type: HttpServer
+    config:
+      port: 9000
+      listener: adminHandler

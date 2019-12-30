@@ -33,6 +33,8 @@ import com.hotels.styx.routing.handlers.RouteRefLookup;
 import com.hotels.styx.routing.handlers.StaticResponseHandler;
 import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.routing.interceptors.RewriteInterceptor;
+import com.hotels.styx.servers.StyxHttpServer;
+import com.hotels.styx.servers.StyxHttpServerFactory;
 import com.hotels.styx.serviceproviders.ServiceProviderFactory;
 import com.hotels.styx.serviceproviders.StyxServerFactory;
 import com.hotels.styx.services.HealthCheckMonitoringService;
@@ -84,8 +86,13 @@ public final class Builtins {
             ImmutableMap.of(HEALTH_CHECK_MONITOR, HealthCheckMonitoringService.SCHEMA,
                     YAML_FILE_CONFIGURATION_SERVICE, YamlFileConfigurationService.SCHEMA);
 
-    public static final ImmutableMap<String, StyxServerFactory> BUILTIN_SERVER_FACTORIES = ImmutableMap.of();
-    public static final ImmutableMap<String, Schema.FieldType> BUILTIN_SERVER_SCHEMAS = ImmutableMap.of();
+    public static final ImmutableMap<String, StyxServerFactory> BUILTIN_SERVER_FACTORIES = ImmutableMap.of(
+            "HttpServer", new StyxHttpServerFactory()
+    );
+
+    public static final ImmutableMap<String, Schema.FieldType> BUILTIN_SERVER_SCHEMAS = ImmutableMap.of(
+            "HttpServer", StyxHttpServer.SCHEMA
+    );
 
     public static final RouteRefLookup DEFAULT_REFERENCE_LOOKUP = reference -> (request, ctx) ->
             Eventual.of(response(NOT_FOUND)

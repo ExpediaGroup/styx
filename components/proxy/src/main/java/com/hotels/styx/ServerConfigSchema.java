@@ -36,6 +36,7 @@ import static com.hotels.styx.config.schema.SchemaDsl.string;
 import static com.hotels.styx.config.schema.SchemaDsl.union;
 import static com.hotels.styx.config.validator.DocumentFormat.newDocument;
 import static com.hotels.styx.routing.config.Builtins.BUILTIN_HANDLER_SCHEMAS;
+import static com.hotels.styx.routing.config.Builtins.BUILTIN_SERVER_SCHEMAS;
 import static com.hotels.styx.routing.config.Builtins.BUILTIN_SERVICE_PROVIDER_SCHEMAS;
 import static com.hotels.styx.routing.config.Builtins.INTERCEPTOR_SCHEMAS;
 
@@ -115,6 +116,7 @@ final class ServerConfigSchema {
                                     field("factories", map(object(opaque())))
                             )),
                             optional("providers", map(routingObject())),
+                            optional("servers", map(routingObject())),
                             optional("url", object(
                                     field("encoding", object(
                                             field("unwiseCharactersToEncode", string())
@@ -163,6 +165,7 @@ final class ServerConfigSchema {
 
         BUILTIN_HANDLER_SCHEMAS.forEach(STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER::typeExtension);
         BUILTIN_SERVICE_PROVIDER_SCHEMAS.forEach(STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER::typeExtension);
+        BUILTIN_SERVER_SCHEMAS.forEach(STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER::typeExtension);
         INTERCEPTOR_SCHEMAS.forEach(STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER::typeExtension);
     }
 
