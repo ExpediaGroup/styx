@@ -129,7 +129,9 @@ public class UrlPatternRouter implements WebServiceHandler {
 
         private String addPrefix(String uriPattern) {
             StringBuilder path = new StringBuilder(pathPrefix);
-            if (uriPattern.length() > 0 && !uriPattern.startsWith("/")) path.append("/");
+            if (uriPattern.length() > 0 && !uriPattern.startsWith("/")) {
+                path.append("/");
+            }
             path.append(uriPattern);
             return path.toString();
         }
