@@ -1,11 +1,25 @@
 ---
 include: /styx/default-config/default.yml
 
-services:
-  factories:
-    backendServiceRegistry:
-      class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry$Factory"
-      config:
-        originsFile: "/styx/config/origins.yml"
-        monitor:
-          enabled: true
+routingObjects:
+  hello1:
+    type: StaticResponseHandler
+    config:
+      status: 200
+      content: "hello-1"
+
+  hello2:
+    type: StaticResponseHandler
+    config:
+      status: 200
+      content: "hello-2"
+
+
+httpPipeline: hello1
+
+servers:
+  http:
+    type: HttpServer
+    config:
+      port: 8081
+      handler: hello2

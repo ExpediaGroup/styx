@@ -181,7 +181,7 @@ public final class StyxServer extends AbstractService {
                 .create();
 
         // Startup phase 1: start plugins, control plane providers, and other services:
-       ArrayList<Service> services = new ArrayList<>();
+        ArrayList<Service> services = new ArrayList<>();
         adminServer = createAdminServer(components);
         services.add(toGuavaService(adminServer));
         services.add(toGuavaService(new PluginsManager("Sty§x-Plugins-Manager", components)));
