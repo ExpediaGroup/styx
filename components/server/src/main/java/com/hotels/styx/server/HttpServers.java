@@ -21,6 +21,8 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.server.netty.NettyServerBuilder;
 import com.hotels.styx.server.netty.WebServerConnectorFactory;
 
+import static com.hotels.styx.server.netty.SslContexts.newSSLContext;
+
 /**
  * Static utility methods for creating {@link com.hotels.styx.server.HttpServer} instances.
  */
@@ -33,7 +35,7 @@ public class HttpServers {
      */
     public static IStyxServer createHttpServer(int port, HttpHandler handler) {
         return NettyServerBuilder.newBuilder()
-                .setProtocolConnector(new WebServerConnectorFactory().create(new HttpConnectorConfig(port)))
+                .setProtocolConnector(new WebServerConnectorFactory().create(port, null))
                 .handler(handler)
                 .workerExecutor(ServerExecutor.create("NettyServer", 1))
                 .build();
@@ -50,7 +52,7 @@ public class HttpServers {
      */
     public static IStyxServer createHttpServer(String name, HttpConnectorConfig httpConnectorConfig, HttpHandler handler) {
         return NettyServerBuilder.newBuilder()
-                .setProtocolConnector(new WebServerConnectorFactory().create(httpConnectorConfig))
+                .setProtocolConnector(new WebServerConnectorFactory().create(httpConnectorConfig.port(), null))
                 .handler(handler)
                 .workerExecutor(ServerExecutor.create(name, 1))
                 .build();
@@ -60,14 +62,14 @@ public class HttpServers {
      * Returns a new {@link com.hotels.styx.server.HttpServer} object, using secure HTTPS protocol.
      *
      * @param name - Name of the server and associated IO thread.
-     * @param httpsConnectorConfig - HTTPS endpoint configuration.
+     * @param config - HTTPS endpoint configuration.
      * @param handler - Request handler.
      *
      * @return {@link com.hotels.styx.server.HttpServer} object
      */
-    public static IStyxServer createHttpsServer(String name, HttpsConnectorConfig httpsConnectorConfig, HttpHandler handler) {
+    public static IStyxServer createHttpsServer(String name, HttpsConnectorConfig config, HttpHandler handler) {
         return NettyServerBuilder.newBuilder()
-                .setProtocolConnector(new WebServerConnectorFactory().create(httpsConnectorConfig))
+                .setProtocolConnector(new WebServerConnectorFactory().create(config.port(), newSSLContext(config)))
                 .handler(handler)
                 .workerExecutor(ServerExecutor.create(name, 1))
                 .build();

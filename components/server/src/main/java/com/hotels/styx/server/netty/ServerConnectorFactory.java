@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.server.netty;
 
-import com.hotels.styx.server.ConnectorConfig;
+import io.netty.handler.ssl.SslContext;
 
 /**
  * Connector factory.
@@ -24,9 +24,10 @@ public interface ServerConnectorFactory {
     /**
      * Create an HTTP server connector.
      *
-     * @param config configuration
+     * @param port server port
+     * @param sslContext SSL Context
      * @return server connector
      */
-    ServerConnector create(ConnectorConfig config);
+    ServerConnector create(int port, SslContext sslContext);
 
 }

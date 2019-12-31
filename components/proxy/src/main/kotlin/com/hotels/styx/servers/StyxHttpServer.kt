@@ -31,10 +31,10 @@ import com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder.ENCODE_UNWI
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.config.StyxObjectReference
 import com.hotels.styx.routing.db.StyxObjectStore
-import com.hotels.styx.server.HttpConnectorConfig
 import com.hotels.styx.server.netty.NettyServerBuilder
 import com.hotels.styx.server.netty.connectors.ResponseEnhancer
 import com.hotels.styx.serviceproviders.StyxServerFactory
+import io.netty.handler.ssl.SslContext
 import org.slf4j.LoggerFactory
 
 object StyxHttpServer {
@@ -121,6 +121,8 @@ class StyxHttpServerFactory : StyxServerFactory {
 
         val serviceName = "Http-Server(localhost-${config.port})"
 
+        val sslContext: SslContext? = null
+
         val server = NettyServerBuilder()
                 .setMetricsRegistry(environment.metricRegistry())
                 .setProtocolConnector(
@@ -131,7 +133,7 @@ class StyxHttpServerFactory : StyxServerFactory {
                                 environment.configuration().get(ENCODE_UNWISECHARS).orElse(""),
                                 ResponseEnhancer { builder, request -> builder.header(styxInfoHeaderName, responseInfoFormat.format(request)) },
                                 false)
-                                .create(HttpConnectorConfig(config.port)))
+                                .create(config.port, sslContext))
                 .workerExecutor(ServerExecutor.create(serviceName, 0))
                 .handler(handler)
                 .build();

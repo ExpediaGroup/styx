@@ -55,7 +55,7 @@ class MockServer(id: String, val port: Int) extends AbstractIdleService with Htt
   }
   val requestQueue: BlockingQueue[LiveHttpRequest] = new LinkedBlockingQueue
   val server = NettyServerBuilder.newBuilder()
-      .setProtocolConnector(new WebServerConnectorFactory().create(new HttpConnectorConfig(port)))
+      .setProtocolConnector(new WebServerConnectorFactory().create(port, null))
       .workerExecutor(ServerExecutor.create("MockServer", 1))
       .handler(router)
     .build()
@@ -93,7 +93,7 @@ class MockServer(id: String, val port: Int) extends AbstractIdleService with Htt
   }
 
   private def connectorOnFreePort: ServerConnector = {
-    new WebServerConnectorFactory().create(new HttpConnectorConfig(0))
+    new WebServerConnectorFactory().create(0, null)
   }
 
   def httpPort() = Option(server.inetAddress()).map(_.getPort).getOrElse(0)

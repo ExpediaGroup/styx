@@ -21,9 +21,7 @@ import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.proxy.HttpCompressor;
 import com.hotels.styx.proxy.ServerProtocolDistributionRecorder;
 import com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder;
-import com.hotels.styx.server.ConnectorConfig;
 import com.hotels.styx.server.HttpErrorStatusListener;
-import com.hotels.styx.server.HttpsConnectorConfig;
 import com.hotels.styx.server.RequestStatsCollector;
 import com.hotels.styx.server.netty.NettyServerConfig;
 import com.hotels.styx.server.netty.ServerConnector;
@@ -51,9 +49,6 @@ import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import org.slf4j.Logger;
 
-import java.util.Optional;
-
-import static com.hotels.styx.server.netty.SslContexts.newSSLContext;
 import static io.netty.handler.timeout.IdleState.ALL_IDLE;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -86,12 +81,11 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
     }
 
     @Override
-    public ServerConnector create(ConnectorConfig config) {
-        return new ProxyConnector(config, serverConfig, metrics, errorStatusListener, unwiseCharacters, responseEnhancer, requestTracking);
+    public ServerConnector create(int port, SslContext sslContext) {
+        return new ProxyConnector(port, serverConfig, metrics, errorStatusListener, unwiseCharacters, responseEnhancer, requestTracking, sslContext);
     }
 
     private static final class ProxyConnector implements ServerConnector {
-        private final ConnectorConfig config;
         private final NettyServerConfig serverConfig;
         private final MetricRegistry metrics;
         private final HttpErrorStatusListener httpErrorStatusListener;
@@ -99,19 +93,22 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
         private final ExcessConnectionRejector excessConnectionRejector;
         private final RequestStatsCollector requestStatsCollector;
         private final ConfigurableUnwiseCharsEncoder unwiseCharEncoder;
-        private final Optional<SslContext> sslContext;
+        private final SslContext sslContext;
         private final ResponseEnhancer responseEnhancer;
         private final RequestTracker requestTracker;
+        private final int port;
 
-        private ProxyConnector(ConnectorConfig config,
+        // CHECKSTYLE:OFF
+        private ProxyConnector(int port,
                                NettyServerConfig serverConfig,
                                MetricRegistry metrics,
                                HttpErrorStatusListener errorStatusListener,
                                String unwiseCharacters,
                                ResponseEnhancer responseEnhancer,
-                               boolean requestTracking) {
+                               boolean requestTracking,
+                               SslContext sslContext) {
+            this.port = port;
             this.responseEnhancer = requireNonNull(responseEnhancer);
-            this.config = requireNonNull(config);
             this.serverConfig = requireNonNull(serverConfig);
             this.metrics = requireNonNull(metrics);
             this.httpErrorStatusListener = requireNonNull(errorStatusListener);
@@ -119,30 +116,30 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
             this.requestStatsCollector = new RequestStatsCollector(metrics.scope("requests"));
             this.excessConnectionRejector = new ExcessConnectionRejector(new DefaultChannelGroup(GlobalEventExecutor.INSTANCE), serverConfig.maxConnectionsCount());
             this.unwiseCharEncoder = new ConfigurableUnwiseCharsEncoder(unwiseCharacters);
-            if (isHttps()) {
-                this.sslContext = Optional.of(newSSLContext((HttpsConnectorConfig) config, metrics));
-            } else {
-                this.sslContext = Optional.empty();
-            }
+
+            this.sslContext = sslContext;
+
             this.requestTracker = requestTracking ? CurrentRequestTracker.INSTANCE : RequestTracker.NO_OP;
         }
+        // CHECKSTYLE:ON
+
 
         @Override
         public String type() {
-            return config.type();
+            return sslContext == null ? "http" : "https";
         }
 
         @Override
         public int port() {
-            return config.port();
+            return port;
         }
 
         @Override
         public void configure(Channel channel, HttpHandler httpPipeline) {
-            sslContext.ifPresent(ssl -> {
-                SslHandler sslHandler = ssl.newHandler(channel.alloc());
+            if (sslContext != null) {
+                SslHandler sslHandler = sslContext.newHandler(channel.alloc());
                 channel.pipeline().addLast(sslHandler);
-            });
+            }
 
             channel.pipeline()
                     .addLast("connection-throttler", excessConnectionRejector)
@@ -159,7 +156,7 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
 
                     .addLast("keep-alive-handler", new IdleTransactionConnectionCloser(metrics))
 
-                    .addLast("server-protocol-distribution-recorder", new ServerProtocolDistributionRecorder(metrics, sslContext.isPresent()))
+                    .addLast("server-protocol-distribution-recorder", new ServerProtocolDistributionRecorder(metrics, sslContext != null))
 
                     .addLast("styx-decoder", requestTranslator())
 
@@ -168,7 +165,7 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
                             .errorStatusListener(httpErrorStatusListener)
                             .progressListener(requestStatsCollector)
                             .metricRegistry(metrics)
-                            .secure(sslContext.isPresent())
+                            .secure(sslContext != null)
                             .requestTracker(requestTracker)
                             .build());
 
@@ -183,10 +180,6 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
                     .flowControlEnabled(true)
                     .unwiseCharEncoder(unwiseCharEncoder)
                     .build();
-        }
-
-        private boolean isHttps() {
-            return "https".equals(config.type());
         }
 
         private static class IdleTransactionConnectionCloser extends ChannelDuplexHandler {

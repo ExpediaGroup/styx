@@ -107,7 +107,7 @@ public class StyxProxyTest extends SSLSetup {
     }
 
     private ServerConnector connector(HttpConnectorConfig config) {
-        return new WebServerConnectorFactory().create(config);
+        return new WebServerConnectorFactory().create(config.port(), null);
     }
 
     @Disabled

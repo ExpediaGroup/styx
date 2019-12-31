@@ -16,17 +16,11 @@
 package com.hotels.styx.server.netty;
 
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.server.ConnectorConfig;
-import com.hotels.styx.server.HttpsConnectorConfig;
 import com.hotels.styx.server.netty.codec.NettyToStyxRequestDecoder;
 import com.hotels.styx.server.netty.connectors.HttpPipelineHandler;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslHandler;
-
-import static com.hotels.styx.server.netty.SslContexts.newSSLContext;
-import static java.util.Objects.requireNonNull;
 
 /**
  * Creates connectors for web servers.
@@ -34,31 +28,33 @@ import static java.util.Objects.requireNonNull;
 public class WebServerConnectorFactory implements ServerConnectorFactory {
 
     @Override
-    public ServerConnector create(ConnectorConfig config) {
-        return new WebServerConnector(config);
+    public ServerConnector create(int port, SslContext sslContext) {
+        return new WebServerConnector(port, sslContext);
     }
 
     private static final class WebServerConnector implements ServerConnector {
-        private final ConnectorConfig config;
+        private final int port;
+        private final SslContext sslContext;
 
-        private WebServerConnector(ConnectorConfig config) {
-            this.config = requireNonNull(config);
+        private WebServerConnector(int port, SslContext sslContext) {
+            this.port = port;
+            this.sslContext = sslContext;
         }
 
         @Override
         public String type() {
-            return config.type();
+            return this.sslContext == null ? "http" : "https";
         }
 
         @Override
         public int port() {
-            return config.port();
+            return this.port;
         }
 
         @Override
         public void configure(Channel channel, HttpHandler httpHandler) {
-            if (isHttps()) {
-                channel.pipeline().addLast(sslHandler(channel));
+            if (this.sslContext != null) {
+                channel.pipeline().addLast(sslContext.newHandler(channel.alloc()));
             }
 
             channel.pipeline()
@@ -67,16 +63,6 @@ public class WebServerConnectorFactory implements ServerConnectorFactory {
                             .flowControlEnabled(true)
                             .build())
                     .addLast(new HttpPipelineHandler.Builder(httpHandler).build());
-        }
-
-        private SslHandler sslHandler(Channel channel) {
-            SslContext sslContext = newSSLContext((HttpsConnectorConfig) config);
-
-            return sslContext.newHandler(channel.alloc());
-        }
-
-        private boolean isHttps() {
-            return "https".equals(config.type());
         }
     }
 }

@@ -128,7 +128,7 @@ public class AdminServerBuilder {
 
         // TODO: Sort this out:
         //  - but the connectors could be http, https, or both:
-        adminServerConfig.httpConnectorConfig().ifPresent(it -> builder.setProtocolConnector(new WebServerConnectorFactory().create(it)));
+        adminServerConfig.httpConnectorConfig().ifPresent(it -> builder.setProtocolConnector(new WebServerConnectorFactory().create(it.port(), null)));
 
         return builder.build();
     }

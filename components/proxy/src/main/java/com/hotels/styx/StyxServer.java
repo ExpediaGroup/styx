@@ -30,9 +30,11 @@ import com.hotels.styx.config.schema.SchemaValidationException;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.ConnectorConfig;
+import com.hotels.styx.server.HttpsConnectorConfig;
 import com.hotels.styx.server.netty.NettyServerBuilder;
 import com.hotels.styx.server.netty.ServerConnector;
 import com.hotels.styx.startup.StyxServerComponents;
+import io.netty.handler.ssl.SslContext;
 import io.netty.util.ResourceLeakDetector;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -51,6 +53,7 @@ import static com.hotels.styx.StyxServers.toGuavaService;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.shutdownLogging;
 import static com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder.ENCODE_UNWISECHARS;
+import static com.hotels.styx.server.netty.SslContexts.newSSLContext;
 import static com.hotels.styx.startup.CoreMetrics.registerCoreMetrics;
 import static io.netty.util.ResourceLeakDetector.Level.DISABLED;
 import static java.lang.Runtime.getRuntime;
@@ -238,6 +241,11 @@ public final class StyxServer extends AbstractService {
         CharSequence styxInfoHeaderName = environment.configuration().styxHeaderConfig().styxInfoHeaderName();
         ResponseInfoFormat responseInfoFormat = new ResponseInfoFormat(environment);
 
+        SslContext sslContext = null;
+        if (connectorConfig instanceof HttpsConnectorConfig) {
+            sslContext = newSSLContext((HttpsConnectorConfig) connectorConfig);
+        }
+
         ServerConnector proxyConnector = new ProxyConnectorFactory(
                 environment.configuration().proxyServerConfig(),
                 environment.metricRegistry(),
@@ -245,7 +253,7 @@ public final class StyxServer extends AbstractService {
                 environment.configuration().get(ENCODE_UNWISECHARS).orElse(""),
                 (builder, request) -> builder.header(styxInfoHeaderName, responseInfoFormat.format(request)),
                 environment.configuration().get("requestTracking", Boolean.class).orElse(false))
-                .create(connectorConfig);
+                .create(connectorConfig.port(), sslContext);
 
         return NettyServerBuilder.newBuilder()
                 .setMetricsRegistry(environment.metricRegistry())
