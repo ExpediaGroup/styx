@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@ public class OriginMetrics implements OriginStats {
     private final Meter requestSuccessMeter;
     private final Meter requestErrorMeter;
     private final Timer requestLatency;
+    private final Timer timeToFirstByte;
     private final Meter status200OkMeter;
     private final Meter errorsCatchAll;
 
@@ -60,7 +61,7 @@ public class OriginMetrics implements OriginStats {
      * Constructor.
      *
      * @param applicationMetrics application metrics
-     * @param origin             an origin
+     * @param originId           an origin
      */
     public OriginMetrics(ApplicationMetrics applicationMetrics, String originId) {
         this.applicationMetrics = requireNonNull(applicationMetrics);
@@ -72,6 +73,7 @@ public class OriginMetrics implements OriginStats {
         this.requestSuccessMeter = this.registry.meter(name(this.requestMetricPrefix, "success-rate"));
         this.requestErrorMeter = this.registry.meter(name(this.requestMetricPrefix, "error-rate"));
         this.requestLatency = this.registry.timer(name(this.requestMetricPrefix, "latency"));
+        this.timeToFirstByte = this.registry.timer(name(this.requestMetricPrefix, "time-to-first-byte"));
         this.status200OkMeter = this.registry.meter(name(this.requestMetricPrefix, "response", statusCodeName(200)));
         this.errorsCatchAll = this.registry.meter(name(this.requestMetricPrefix, "response.status.5xx"));
 
@@ -81,7 +83,8 @@ public class OriginMetrics implements OriginStats {
     /**
      * Create a new OriginMetrics.
      *
-     * @param origin         an origin
+     * @param appId          application ID
+     * @param originId       an origin
      * @param metricRegistry a metrics registry
      * @return a new OriginMetrics
      */
@@ -132,6 +135,11 @@ public class OriginMetrics implements OriginStats {
     @Override
     public AggregateTimer requestLatencyTimer() {
         return new AggregateTimer(requestLatency, applicationMetrics.requestLatencyTimer());
+    }
+
+    @Override
+    public AggregateTimer timeToFirstByteTimer() {
+        return new AggregateTimer(timeToFirstByte, applicationMetrics.requestTimeToFirstByteTimer());
     }
 
     private int httpStatusCodeClass(int code) {

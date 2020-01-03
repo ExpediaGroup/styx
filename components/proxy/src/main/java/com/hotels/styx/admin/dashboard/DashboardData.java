@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -298,30 +298,38 @@ public class DashboardData {
      * Requests-related data.
      */
     public final class Requests {
-        private final SuccessRate successRate;
-        private final ErrorRate errorRate;
-        private final Latency latency;
+        private final MeterData successRate;
+        private final MeterData errorRate;
+        private final TimerData latency;
+        private final TimerData timeToFirstByte;
 
         private Requests(String prefix) {
-            successRate = new SuccessRate(metrics.meter(prefix + ".requests.success-rate"));
-            errorRate = new ErrorRate(metrics.meter(prefix + ".requests.error-rate"));
-            latency = new Latency(metrics.timer(prefix + ".requests.latency"));
+            successRate = new MeterData(metrics.meter(prefix + ".requests.success-rate"));
+            errorRate = new MeterData(metrics.meter(prefix + ".requests.error-rate"));
+            latency = new TimerData(metrics.timer(prefix + ".requests.latency"));
+            timeToFirstByte = new TimerData(metrics.timer(prefix + ".requests.time-to-first-byte"));
         }
 
         @JsonProperty("successRate")
-        public SuccessRate successRate() {
+        public MeterData successRate() {
             return successRate;
         }
 
         @JsonProperty("errorRate")
-        public ErrorRate errorRate() {
+        public MeterData errorRate() {
             return errorRate;
         }
 
         @JsonProperty("latency")
-        public Latency latency() {
+        public TimerData latency() {
             latency.updateSnapshot();
             return latency;
+        }
+
+        @JsonProperty("timeToFirstByte")
+        public TimerData timeToFirstByte() {
+            timeToFirstByte.updateSnapshot();
+            return timeToFirstByte;
         }
 
         @JsonProperty("errorPercentage")
@@ -335,41 +343,10 @@ public class DashboardData {
     /**
      * Success data.
      */
-    public static final class SuccessRate {
+    public static final class MeterData {
         private final Meter meter;
 
-        private SuccessRate(Meter meter) {
-            this.meter = meter;
-        }
-
-        @JsonProperty("count")
-        public long count() {
-            return meter.getCount();
-        }
-
-        @JsonProperty("m1")
-        public double m1Rate() {
-            return meter.getOneMinuteRate();
-        }
-
-        @JsonProperty("m15")
-        public double m15Rate() {
-            return meter.getFifteenMinuteRate();
-        }
-
-        @JsonProperty("mean")
-        public double meanRate() {
-            return meter.getMeanRate();
-        }
-    }
-
-    /**
-     * Error data.
-     */
-    public static final class ErrorRate {
-        private final Meter meter;
-
-        private ErrorRate(Meter meter) {
+        private MeterData(Meter meter) {
             this.meter = meter;
         }
 
@@ -397,13 +374,13 @@ public class DashboardData {
     /**
      * Latency.
      */
-    public static final class Latency {
+    public static final class TimerData {
         private static final double DURATION_FACTOR = 1.0 / MILLISECONDS.toNanos(1);
 
         private final Timer timer;
         private volatile Snapshot snapshot;
 
-        private Latency(Timer timer) {
+        private TimerData(Timer timer) {
             this.timer = timer;
         }
 

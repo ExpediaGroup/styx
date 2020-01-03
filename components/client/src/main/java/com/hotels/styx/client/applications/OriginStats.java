@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -33,9 +33,14 @@ public interface OriginStats {
     void requestError();
 
     /**
-     * Starts request latency timer.
+     * Returns a request latency timer.
      */
     AggregateTimer requestLatencyTimer();
+
+    /**
+     * Returns a time-to-first-byte timer.
+     */
+    AggregateTimer timeToFirstByteTimer();
 
     /**
      * records a response with a status code.

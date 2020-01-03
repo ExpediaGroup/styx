@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -48,21 +48,21 @@ public final class AggregateTimer {
         }
     }
 
-    private final Timer requestLatency;
-    private final Timer applicationLatency;
+    private final Timer requestTimer;
+    private final Timer applicationTimer;
 
     /**
      * Constructor.
      *
-     * @param requestLatency a timer
-     * @param applicationLatency a timer
+     * @param requestTimer a timer
+     * @param applicationTimer a timer
      */
-    public AggregateTimer(Timer requestLatency, Timer applicationLatency) {
-        this.requestLatency = requestLatency;
-        this.applicationLatency = applicationLatency;
+    public AggregateTimer(Timer requestTimer, Timer applicationTimer) {
+        this.requestTimer = requestTimer;
+        this.applicationTimer = applicationTimer;
     }
 
     public Stopper time() {
-        return new Stopper(requestLatency.time(), applicationLatency.time());
+        return new Stopper(requestTimer.time(), applicationTimer.time());
     }
 }

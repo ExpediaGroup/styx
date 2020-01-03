@@ -69,7 +69,6 @@ The server side metrics scopes are illustrated in a diagram below:
 * Timer starts when request arrives, timer stops when the response
   from origin is fully written to the socket.
 
-
 ### TCP connection level metrics (`connections` scope)
 
 **connections.eventloop.`<thread>`.registered-channel-count**
@@ -189,6 +188,14 @@ The origin side metrics scopes are illustrated in a diagram below:
 * A latency distribution of requests to origin.
 * Measured as time to last byte.
 * Timer started when request is sent, and stopped when the last content
+  byte is received.
+
+**origins.`<backend>`.requests.time-to-first-byte**  
+**origins.`<backend>`.`<origin>`.requests.time-to-first-byte**
+
+* A latency distribution of requests to origin.
+* Measured as time to first content byte.
+* Timer started when request is sent, and stopped when the first content
   byte is received.
 
 **origins.`<backend>`.`<origin>`.status**

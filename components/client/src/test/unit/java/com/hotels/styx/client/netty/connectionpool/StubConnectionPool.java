@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ public class StubConnectionPool implements ConnectionPool, Comparable<Connection
     private final Origin origin;
 
     private int busyConnectionCount = 0;
-    private long timeToFirstByte = 0;
     private int maxConnectionsPerHost = 1;
     private int availableConnections = 0;
     private final ConnectionPoolSettings settings;
@@ -120,9 +119,6 @@ public class StubConnectionPool implements ConnectionPool, Comparable<Connection
             public int connectionsInEstablishment() {
                 return 0;
             }
-
-            @Override
-            public long timeToFirstByteMs() { return 0; }
         };
     }
 
@@ -141,11 +137,6 @@ public class StubConnectionPool implements ConnectionPool, Comparable<Connection
         return this;
     }
 
-    public StubConnectionPool withTimeToFirstByte(long timeToFirstByte) {
-        this.timeToFirstByte = timeToFirstByte;
-        return this;
-    }
-
     public StubConnectionPool withMaxConnectionsPerHost(int maxConnectionsPerHost) {
         this.maxConnectionsPerHost = maxConnectionsPerHost;
         return this;
@@ -158,7 +149,7 @@ public class StubConnectionPool implements ConnectionPool, Comparable<Connection
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(origin, busyConnectionCount, pendingConnectionCount, timeToFirstByte);
+        return Objects.hashCode(origin, busyConnectionCount, pendingConnectionCount);
     }
 
     @Override
@@ -172,8 +163,7 @@ public class StubConnectionPool implements ConnectionPool, Comparable<Connection
         StubConnectionPool other = (StubConnectionPool) obj;
         return Objects.equal(this.origin, other.origin) &&
                 Objects.equal(this.busyConnectionCount, other.busyConnectionCount) &&
-                Objects.equal(this.pendingConnectionCount, other.pendingConnectionCount) &&
-                Objects.equal(this.timeToFirstByte, other.timeToFirstByte);
+                Objects.equal(this.pendingConnectionCount, other.pendingConnectionCount);
     }
 
     @Override
@@ -182,7 +172,6 @@ public class StubConnectionPool implements ConnectionPool, Comparable<Connection
                 .add("origin", origin)
                 .add("busyConnections", busyConnectionCount)
                 .add("pendingConnections", pendingConnectionCount)
-                .add("timeToFirstByte", timeToFirstByte)
                 .toString();
     }
 }

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -92,14 +92,6 @@ public interface ConnectionPool extends Closeable {
          * @return
          */
         int connectionsInEstablishment();
-
-        /**
-         * Time (in milliseconds) between the headers of a request being sent on a connection, and the first byte of
-         * the response content (not the headers) being received.
-         *
-         * @return
-         */
-        long timeToFirstByteMs(); // TODO: This is an interface change - should it default to 0?
     }
 
     /**

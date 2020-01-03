@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -48,8 +48,7 @@ public class StatsReportingConnectionPoolTest {
                 "origins.generic-app.backend-01.connectionspool.connections-in-establishment",
                 "origins.generic-app.backend-01.connectionspool.connection-failures",
                 "origins.generic-app.backend-01.connectionspool.connections-closed",
-                "origins.generic-app.backend-01.connectionspool.connections-terminated",
-                "origins.generic-app.backend-01.connectionspool.time-to-first-byte-ms"
+                "origins.generic-app.backend-01.connectionspool.connections-terminated"
         ));
         pool.close();
         assertThat(metricRegistry.getNames(), is(empty()));

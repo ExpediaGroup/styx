@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -91,7 +91,6 @@ class StatsReportingConnectionPool implements ConnectionPool {
         scopedRegistry.register("connections-closed", (Gauge<Integer>) () -> (int) stats.closedConnections());
         scopedRegistry.register("connections-terminated", (Gauge<Integer>) () -> (int) stats.terminatedConnections());
         scopedRegistry.register("connections-in-establishment", (Gauge<Integer>) () -> (int) stats.connectionsInEstablishment());
-        scopedRegistry.register("time-to-first-byte-ms", (Gauge<Long>) () -> (long) stats.timeToFirstByteMs());
     }
 
     private void registerMetrics() {
