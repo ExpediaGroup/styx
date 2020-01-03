@@ -194,6 +194,7 @@
           <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
           <junitxml>.</junitxml>
           <filereports>WDF TestSuite.txt</filereports>
+          <stdout>T</stdout>>
           <systemProperties>
             <io.netty.leakDetectionLevel>ADVANCED</io.netty.leakDetectionLevel>
           </systemProperties>

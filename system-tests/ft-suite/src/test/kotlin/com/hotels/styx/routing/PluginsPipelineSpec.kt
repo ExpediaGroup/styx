@@ -21,6 +21,7 @@ import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.proxyHttpHostHeader
 import com.hotels.styx.support.wait
+import io.kotlintest.Spec
 import io.kotlintest.matchers.collections.shouldContainInOrder
 import io.kotlintest.specs.FeatureSpec
 import org.slf4j.LoggerFactory
@@ -134,4 +135,8 @@ class PluginsPipelineSpec : FeatureSpec() {
         return Paths.get(getSystemClassLoader().getResource("")!!.getFile());
     }
 
+    override fun afterSpec(spec: Spec) {
+        styxServer.stop()
+        super.afterSpec(spec)
+    }
 }

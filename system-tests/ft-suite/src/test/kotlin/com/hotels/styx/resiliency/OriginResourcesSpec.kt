@@ -50,7 +50,7 @@ class OriginResourcesSpec : StringSpec() {
                     .withStatus(200)
                     .withBody("mock-server-01"))
 
-
+    val initialThreadcount = threadCount("Styx-Client-Worker")
     init {
         "Client thread pool configuration" {
             val clientThreadCount = run {
@@ -67,7 +67,7 @@ class OriginResourcesSpec : StringSpec() {
             }
 
             // From the static configuration below
-            clientThreadCount shouldBe 3
+            clientThreadCount-initialThreadcount shouldBe 3
         }
 
         "Uses the same thread pool for reloaded origins" {
