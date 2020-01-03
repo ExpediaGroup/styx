@@ -319,7 +319,7 @@ public class RequestsToOriginMetricsCollectorTest {
         assertThat(grabSentBytes(channel).isPresent(), is(true));
         assertThat(timer.getCount(), is(0L));
 
-        ByteBuf response = httpResponseAsBuf(INTERNAL_SERVER_ERROR, STOCK_BODY).retain();
+        ByteBuf response = httpResponseAsBuf(OK, STOCK_BODY).retain();
         int len = response.writerIndex() - response.readerIndex();
 
         //
