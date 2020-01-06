@@ -90,25 +90,50 @@ public class UrlPatternRouter implements WebServiceHandler {
      */
     public static class Builder {
         private final List<RouteDescriptor> alternatives = new LinkedList<>();
+        private final String pathPrefix;
+
+        public Builder() {
+            this("");
+        }
+
+        /**
+         * The pathPrefix will be prepended to the URI patterns provided in the get/post/...
+         * methods.
+         * @param pathPrefix path prefix.
+         */
+        public Builder(String pathPrefix) {
+            this.pathPrefix = pathPrefix.endsWith("/")
+                    ? pathPrefix.substring(pathPrefix.length() - 1)
+                    : pathPrefix;
+        }
 
         public Builder get(String uriPattern, WebServiceHandler handler) {
-            alternatives.add(new RouteDescriptor(GET, uriPattern, handler));
+            alternatives.add(new RouteDescriptor(GET, addPrefix(uriPattern), handler));
             return this;
         }
 
         public Builder post(String uriPattern, WebServiceHandler handler) {
-            alternatives.add(new RouteDescriptor(POST, uriPattern, handler));
+            alternatives.add(new RouteDescriptor(POST, addPrefix(uriPattern), handler));
             return this;
         }
 
         public Builder put(String uriPattern, WebServiceHandler handler) {
-            alternatives.add(new RouteDescriptor(PUT, uriPattern, handler));
+            alternatives.add(new RouteDescriptor(PUT, addPrefix(uriPattern), handler));
             return this;
         }
 
         public Builder delete(String uriPattern, WebServiceHandler handler) {
-            alternatives.add(new RouteDescriptor(DELETE, uriPattern, handler));
+            alternatives.add(new RouteDescriptor(DELETE, addPrefix(uriPattern), handler));
             return this;
+        }
+
+        private String addPrefix(String uriPattern) {
+            StringBuilder path = new StringBuilder(pathPrefix);
+            if (uriPattern.length() > 0 && !uriPattern.startsWith("/")) {
+                path.append("/");
+            }
+            path.append(uriPattern);
+            return path.toString();
         }
 
         public UrlPatternRouter build() {

@@ -33,7 +33,7 @@ import com.hotels.styx.admin.handlers.OriginsInventoryHandler;
 import com.hotels.styx.admin.handlers.PingHandler;
 import com.hotels.styx.admin.handlers.PluginListHandler;
 import com.hotels.styx.admin.handlers.PluginToggleHandler;
-import com.hotels.styx.admin.handlers.ProviderListHandler;
+import com.hotels.styx.admin.handlers.ProviderRoutingHandler;
 import com.hotels.styx.admin.handlers.RoutingObjectHandler;
 import com.hotels.styx.admin.handlers.ServiceProviderHandler;
 import com.hotels.styx.admin.handlers.StartupConfigHandler;
@@ -48,7 +48,6 @@ import com.hotels.styx.api.WebServiceHandler;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
-import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.common.http.handler.HttpAggregator;
 import com.hotels.styx.common.http.handler.HttpMethodFilteringHandler;
 import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
@@ -173,18 +172,11 @@ public class AdminServerBuilder {
                             .forEach(route -> httpRouter.stream(route.path(), route.handler()));
                 });
 
-        providerDatabase.entrySet().forEach(record -> {
-            String root = "providers";
-            String extensionName = record.getKey();
-            StyxService styxService = record.getValue().component4();
-
-            extensionEndpoints(root, extensionName, styxService.adminInterfaceHandlers(adminPath(root, extensionName)))
-                    .forEach(route -> httpRouter.stream(route.path(), route.handler()));
-        });
-
-        httpRouter.aggregate("/admin/providers", new ProviderListHandler(providerDatabase));
-
         httpRouter.aggregate("/admin/plugins", new PluginListHandler(environment.plugins()));
+
+        ProviderRoutingHandler providerHandler = new ProviderRoutingHandler("/admin/providers", providerDatabase);
+        httpRouter.aggregate("/admin/providers", providerHandler);
+        httpRouter.aggregate("/admin/providers/", providerHandler);
 
         return httpRouter;
     }
