@@ -53,8 +53,10 @@ class FileBasedOriginsFileChangeMonitorSpec: StringSpec() {
                     .header(HOST, styxServer().proxyHttpHostHeader())
                     .build()
 
-            client.send(reqToApp01).wait().status() shouldBe OK
-            client.send(reqToApp02).wait().status() shouldBe BAD_GATEWAY
+            eventually(3.seconds, AssertionError::class.java) {
+                client.send(reqToApp01).wait().status() shouldBe OK
+                client.send(reqToApp02).wait().status() shouldBe BAD_GATEWAY
+            }
 
             writeConfig(styxOriginsFile, configTemplate.format("appv2", "/app02/", mockServer.port()))
 
