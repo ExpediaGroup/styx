@@ -107,7 +107,7 @@ class StatsReportingConnectionPool implements ConnectionPool {
         MetricRegistry scopedRegistry = getMetricScope(connectionPool);
         asList("busy-connections", "pending-connections", "available-connections", "ttfb",
                 "connection-attempts", "connection-failures", "connections-closed", "connections-terminated",
-                "connections-in-establishment", "time-to-first-byte-ms")
+                "connections-in-establishment")
                 .forEach(scopedRegistry::deregister);
     }
 
