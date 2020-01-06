@@ -49,8 +49,9 @@ public class PluginListHandler implements WebServiceHandler {
         Stream<NamedPlugin> enabled = plugins.stream().filter(NamedPlugin::enabled);
         Stream<NamedPlugin> disabled = plugins.stream().filter(plugin -> !plugin.enabled());
 
-        String output = section("Enabled", enabled)
-                + section("Disabled", disabled);
+        boolean needsIncludeDisabledPlugins = existDisabledPlugins();
+        String output = section(needsIncludeDisabledPlugins ? "Enabled" : "Loaded", enabled)
+                + (needsIncludeDisabledPlugins ? section("Disabled", disabled) : "");
 
         return Eventual.of(response(OK)
                 .body(output, UTF_8)
@@ -67,5 +68,9 @@ public class PluginListHandler implements WebServiceHandler {
 
     private static String pluginLink(String name) {
         return format("<a href='/admin/plugins/%s'>%s</a><br />", name, name);
+    }
+
+    private boolean existDisabledPlugins() {
+        return plugins.stream().anyMatch(it -> !it.enabled());
     }
 }
