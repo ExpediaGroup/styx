@@ -125,9 +125,6 @@ class ProviderAdminInterfaceSpec : FeatureSpec() {
 
             scenario("Additional endpoints are listed on the Providers admin interface") {
 
-//                styxServer.components().servicesDatabase().insert("mockService",
-//                        ProviderObjectRecord("MockService", setOf(), mockk(), MockService("mockService")))
-
                 writeOriginsFile(Pair("appA", false), Pair("appB", true))
 
                 eventually(1.seconds, AssertionError::class.java) {
@@ -151,7 +148,6 @@ class ProviderAdminInterfaceSpec : FeatureSpec() {
 
             scenario("Endpoints for dynamically removed Styx services are not listed in the Admin interface") {
 
-//                styxServer.components().servicesDatabase().remove("mockService")
                 writeOriginsFile(Pair("appA", false))
 
                 eventually(1.seconds, AssertionError::class.java) {
