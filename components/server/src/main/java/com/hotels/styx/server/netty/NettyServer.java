@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 package com.hotels.styx.server.netty;
 
 import com.hotels.styx.IStyxServer;
-import com.hotels.styx.ServerExecutor;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
 import io.netty.bootstrap.ServerBootstrap;
@@ -56,8 +56,8 @@ final class NettyServer extends AbstractStyxService implements IStyxServer {
     private final HttpHandler handler;
     private final ServerConnector serverConnector;
     private final String host;
-    private final ServerExecutor bossExecutor;
-    private final ServerExecutor workerExecutor;
+    private final NettyExecutor bossExecutor;
+    private final NettyExecutor workerExecutor;
 
     private volatile Callable<?> stopper;
     private volatile InetSocketAddress address;
@@ -95,7 +95,7 @@ final class NettyServer extends AbstractStyxService implements IStyxServer {
         ServerBootstrap b = new ServerBootstrap();
 
         b.group(bossExecutor.eventLoopGroup(), workerExecutor.eventLoopGroup())
-                .channel(bossExecutor.getEventLoopClass())
+                .channel(bossExecutor.serverEventLoopClass())
                 .option(SO_BACKLOG, 1024)
                 .option(SO_REUSEADDR, true)
                 .childOption(SO_REUSEADDR, true)
@@ -152,10 +152,10 @@ final class NettyServer extends AbstractStyxService implements IStyxServer {
     }
 
     private class Stopper implements Callable<Void> {
-        private final ServerExecutor bossGroup;
-        private final ServerExecutor workerGroup;
+        private final NettyExecutor bossGroup;
+        private final NettyExecutor workerGroup;
 
-        public Stopper(ServerExecutor bossGroup, ServerExecutor workerGroup) {
+        public Stopper(NettyExecutor bossGroup, NettyExecutor workerGroup) {
             this.bossGroup = bossGroup;
             this.workerGroup = workerGroup;
         }
@@ -169,7 +169,7 @@ final class NettyServer extends AbstractStyxService implements IStyxServer {
             return null;
         }
 
-        private Future<?> shutdownEventExecutorGroup(ServerExecutor eventExecutorGroup) {
+        private Future<?> shutdownEventExecutorGroup(NettyExecutor eventExecutorGroup) {
             return eventExecutorGroup.eventLoopGroup().shutdownGracefully(10, 1000, MILLISECONDS);
         }
     }

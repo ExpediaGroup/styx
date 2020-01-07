@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hotels.styx.admin
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
-import com.hotels.styx.ClientExecutor
+import com.hotels.styx.NettyExecutor
 import com.hotels.styx.admin.handlers.ServiceProviderHandler
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest.get
@@ -777,5 +777,5 @@ class OriginsFileCompatibilitySpec : FunSpec() {
 }
 
 private val client: StyxHttpClient = StyxHttpClient.Builder()
-        .executor(ClientExecutor.create("styx-client", 0))
+        .executor(NettyExecutor.create("styx-client", 0))
         .build()

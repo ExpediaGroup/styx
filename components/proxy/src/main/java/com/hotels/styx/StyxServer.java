@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -257,8 +257,8 @@ public final class StyxServer extends AbstractService {
 
         return NettyServerBuilder.newBuilder()
                 .setMetricsRegistry(environment.metricRegistry())
-                .bossExecutor(ServerExecutor.create("Proxy-Boss", environment.configuration().proxyServerConfig().bossThreadsCount()))
-                .workerExecutor(ServerExecutor.create("Proxy-Worker", environment.configuration().proxyServerConfig().workerThreadsCount()))
+                .bossExecutor(NettyExecutor.create("Proxy-Boss", environment.configuration().proxyServerConfig().bossThreadsCount()))
+                .workerExecutor(NettyExecutor.create("Proxy-Worker", environment.configuration().proxyServerConfig().workerThreadsCount()))
                 .setProtocolConnector(proxyConnector)
                 .handler(styxDataPlane)
                 .build();

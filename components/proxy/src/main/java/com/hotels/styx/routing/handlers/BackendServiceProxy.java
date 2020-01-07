@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 package com.hotels.styx.routing.handlers;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.hotels.styx.ClientExecutor;
 import com.hotels.styx.Environment;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
@@ -56,7 +56,7 @@ public class BackendServiceProxy implements RoutingObject {
             BackendServiceClientFactory serviceClientFactory,
             Registry<BackendService> registry,
             Environment environment,
-            ClientExecutor executor) {
+            NettyExecutor executor) {
         BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment, executor);
         registry.addListener(router);
         handler = new RouteHandlerAdapter(router);
@@ -105,7 +105,7 @@ public class BackendServiceProxy implements RoutingObject {
                                 join(".", append(fullName, "backendProvider")), provider));
             }
 
-            return new BackendServiceProxy(serviceClientFactory, registry, environment, ClientExecutor.create("BackendServiceProxy", 0));
+            return new BackendServiceProxy(serviceClientFactory, registry, environment, NettyExecutor.create("BackendServiceProxy", 0));
         }
     }
 

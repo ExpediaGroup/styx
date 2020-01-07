@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package com.hotels.styx.routing.handlers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
-import com.hotels.styx.ClientExecutor;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
@@ -100,7 +100,7 @@ public class ProxyToBackend implements RoutingObject {
             OriginStatsFactory originStatsFactory = new CachingOriginStatsFactory(context.environment().metricRegistry());
 
             Connection.Factory connectionFactory = new NettyConnectionFactory.Builder()
-                    .executor(ClientExecutor.create("Styx", clientWorkerThreadsCount))
+                    .executor(NettyExecutor.create("Styx", clientWorkerThreadsCount))
                     .httpRequestOperationFactory(
                             httpRequestOperationFactoryBuilder()
                                     .flowControlEnabled(true)

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.proxy;
 
-import com.hotels.styx.ClientExecutor;
 import com.hotels.styx.Environment;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
@@ -67,12 +67,12 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
 
     private final BackendServiceClientFactory clientFactory;
     private final Environment environment;
-    private final ClientExecutor executor;
+    private final NettyExecutor executor;
     private final ConcurrentMap<String, ProxyToClientPipeline> routes;
 
     public BackendServicesRouter(BackendServiceClientFactory clientFactory,
                                  Environment environment,
-                                 ClientExecutor executor) {
+                                 NettyExecutor executor) {
         this.clientFactory = requireNonNull(clientFactory);
         this.environment = requireNonNull(environment);
         this.executor = requireNonNull(executor);

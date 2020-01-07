@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,9 +19,10 @@ import com.codahale.metrics.json.MetricsModule;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.Environment;
 import com.hotels.styx.IStyxServer;
-import com.hotels.styx.ServerExecutor;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.StartupConfig;
 import com.hotels.styx.StyxConfig;
+import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.admin.dashboard.DashboardData;
 import com.hotels.styx.admin.dashboard.DashboardDataSupplier;
 import com.hotels.styx.admin.handlers.CurrentRequestsHandler;
@@ -57,7 +58,6 @@ import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.db.StyxObjectStore;
-import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.server.AdminHttpRouter;
 import com.hotels.styx.server.handlers.ClassPathResourceHandler;
 import com.hotels.styx.server.netty.NettyServerBuilder;
@@ -120,10 +120,11 @@ public class AdminServerBuilder {
         StyxConfig styxConfig = environment.configuration();
         AdminServerConfig adminServerConfig = styxConfig.adminServerConfig();
 
+        NettyExecutor executor = NettyExecutor.create("Admin-Boss", adminServerConfig.bossThreadsCount());
         NettyServerBuilder builder = NettyServerBuilder.newBuilder()
                 .setMetricsRegistry(environment.metricRegistry())
-                .bossExecutor(ServerExecutor.create("Admin-Boss", adminServerConfig.bossThreadsCount()))
-                .workerExecutor(ServerExecutor.create("Admin-Worker", adminServerConfig.workerThreadsCount()))
+                .bossExecutor(executor)
+                .workerExecutor(NettyExecutor.create("Admin-Worker", adminServerConfig.workerThreadsCount()))
                 .handler(adminEndpoints(styxConfig, startupConfig));
 
         // TODO: Sort this out:

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hotels.styx.proxy;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Service;
 import com.hotels.styx.IStyxServer;
-import com.hotels.styx.ServerExecutor;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.StyxServers;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
@@ -57,8 +57,8 @@ public class StyxProxyTest extends SSLSetup {
     public void startsAndStopsAServer() {
         Service server = StyxServers.toGuavaService(new NettyServerBuilder()
                 .setProtocolConnector(connector(0))
-                .bossExecutor(ServerExecutor.create("Test-Server-Boss", 1))
-                .workerExecutor(ServerExecutor.create("Test-Server-Worker", 0))
+                .bossExecutor(NettyExecutor.create("Test-Server-Boss", 1))
+                .workerExecutor(NettyExecutor.create("Test-Server-Worker", 0))
                 .build());
 
         server.startAsync().awaitRunning();
@@ -75,8 +75,8 @@ public class StyxProxyTest extends SSLSetup {
 
         IStyxServer styxServer = newBuilder()
                 .setProtocolConnector(connector(0))
-                .bossExecutor(ServerExecutor.create("Test-Server-Boss", 1))
-                .workerExecutor(ServerExecutor.create("Test-Server-Worker", 0))
+                .bossExecutor(NettyExecutor.create("Test-Server-Boss", 1))
+                .workerExecutor(NettyExecutor.create("Test-Server-Worker", 0))
                 .handler(new HttpInterceptorPipeline(
                         ImmutableList.of(echoInterceptor),
                         (request, context) -> new HttpAggregator(new StandardHttpRouter()).handle(request, context),

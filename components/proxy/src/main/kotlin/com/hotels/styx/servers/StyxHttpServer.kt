@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@ package com.hotels.styx.servers
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.hotels.styx.IStyxServer
+import com.hotels.styx.NettyExecutor
 import com.hotels.styx.ProxyConnectorFactory
 import com.hotels.styx.ResponseInfoFormat
-import com.hotels.styx.ServerExecutor
 import com.hotels.styx.StyxObjectRecord
 import com.hotels.styx.api.HttpHandler
 import com.hotels.styx.config.schema.SchemaDsl.`object`
@@ -134,7 +134,7 @@ class StyxHttpServerFactory : StyxServerFactory {
                                 ResponseEnhancer { builder, request -> builder.header(styxInfoHeaderName, responseInfoFormat.format(request)) },
                                 false)
                                 .create(config.port, sslContext))
-                .workerExecutor(ServerExecutor.create(serviceName, 0))
+                .workerExecutor(NettyExecutor.create(serviceName, 0))
                 .handler(handler)
                 .build();
 

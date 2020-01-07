@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.proxy;
 
-import com.hotels.styx.ClientExecutor;
 import com.hotels.styx.Environment;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
@@ -67,7 +67,7 @@ public class BackendServicesRouterTest {
 
     private Environment environment;
 
-    private ClientExecutor executor = ClientExecutor.create("x", 1);
+    private NettyExecutor executor = NettyExecutor.create("x", 1);
 
     @AfterAll
     public void tearDown() {

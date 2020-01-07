@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.client.netty.connectionpool;
 
-import com.hotels.styx.ClientExecutor;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.exceptions.OriginUnreachableException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.TlsSettings;
@@ -53,7 +53,7 @@ public class NettyConnectionFactory implements Connection.Factory {
     private final boolean sendSni;
     private final Optional<String> sniHost;
     private final HttpRequestOperationFactory httpRequestOperationFactory;
-    private final ClientExecutor executor;
+    private final NettyExecutor executor;
     private Bootstrap bootstrap;
 
     private NettyConnectionFactory(Builder builder) {
@@ -94,7 +94,7 @@ public class NettyConnectionFactory implements Connection.Factory {
         if (bootstrap == null) {
             bootstrap = new Bootstrap();
             bootstrap.group(executor.eventLoopGroup())
-                    .channel(executor.getEventLoopClass())
+                    .channel(executor.clientEventLoopClass())
                     .handler(new Initializer())
                     .option(TCP_NODELAY, true)
                     .option(SO_KEEPALIVE, true)
@@ -116,14 +116,14 @@ public class NettyConnectionFactory implements Connection.Factory {
      * Builder.
      */
     public static final class Builder {
-        private static final ClientExecutor NETTY_EXECUTOR = ClientExecutor.create("Netty-Executor", 0);
+        private static final NettyExecutor NETTY_EXECUTOR = NettyExecutor.create("Netty-Executor", 0);
 
         private HttpRequestOperationFactory httpRequestOperationFactory = httpRequestOperationFactoryBuilder().build();
         private HttpConfig httpConfig = defaultHttpConfig();
         private TlsSettings tlsSettings;
-        private ClientExecutor executor = NETTY_EXECUTOR;
+        private NettyExecutor executor = NETTY_EXECUTOR;
 
-        public Builder executor(ClientExecutor executor) {
+        public Builder executor(NettyExecutor executor) {
             this.executor = executor;
             return this;
         }

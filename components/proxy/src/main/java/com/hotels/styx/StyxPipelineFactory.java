@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ public class StyxPipelineFactory {
     private final Environment environment;
     private final Map<String, StyxService> services;
     private final List<NamedPlugin> plugins;
-    private final ClientExecutor executor;
+    private final NettyExecutor executor;
 
 
     public StyxPipelineFactory(
@@ -54,7 +54,7 @@ public class StyxPipelineFactory {
             Environment environment,
             Map<String, StyxService> services,
             List<NamedPlugin> plugins,
-            ClientExecutor executor) {
+            NettyExecutor executor) {
         this.builtinRoutingObjects = requireNonNull(builtinRoutingObjects);
         this.environment = requireNonNull(environment);
         this.services = requireNonNull(services);

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 package com.hotels.styx.routing;
 
 import com.google.common.collect.ImmutableList;
-import com.hotels.styx.ClientExecutor;
 import com.hotels.styx.Environment;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.extension.service.BackendService;
@@ -56,7 +56,7 @@ public class StaticPipelineBuilderTest {
     private Registry<BackendService> registry;
 
 
-    private final ClientExecutor executor = ClientExecutor.create("Styx", 0);
+    private final NettyExecutor executor = NettyExecutor.create("Styx", 0);
 
     @AfterAll
     public void tearDown() {

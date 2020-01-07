@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 package com.hotels.styx.server.netty;
 
 import com.hotels.styx.IStyxServer;
-import com.hotels.styx.ServerExecutor;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.MetricRegistry;
@@ -40,8 +40,8 @@ public final class NettyServerBuilder {
     private MetricRegistry metricRegistry;
     private ServerConnector httpConnector;
     private HttpHandler handler = (request, context) -> Eventual.of(response(NOT_FOUND).build());
-    private ServerExecutor bossExecutor;
-    private ServerExecutor workerExecutor;
+    private NettyExecutor bossExecutor;
+    private NettyExecutor workerExecutor;
 
     public static NettyServerBuilder newBuilder() {
         return new NettyServerBuilder();
@@ -65,21 +65,21 @@ public final class NettyServerBuilder {
         return this.metricRegistry;
     }
 
-    public NettyServerBuilder bossExecutor(ServerExecutor executor) {
+    public NettyServerBuilder bossExecutor(NettyExecutor executor) {
         this.bossExecutor = checkNotNull(executor, "boss executor");
         return this;
     }
 
-    public NettyServerBuilder workerExecutor(ServerExecutor executor) {
+    public NettyServerBuilder workerExecutor(NettyExecutor executor) {
         this.workerExecutor = checkNotNull(executor, "worker executor");
         return this;
     }
 
-    public ServerExecutor bossExecutor() {
+    public NettyExecutor bossExecutor() {
         return this.bossExecutor;
     }
 
-    public ServerExecutor workerExecutor() {
+    public NettyExecutor workerExecutor() {
         return this.workerExecutor;
     }
 
@@ -110,7 +110,7 @@ public final class NettyServerBuilder {
         checkArgument(workerExecutor != null, "Must configure a worker executor");
 
         if (bossExecutor == null) {
-            bossExecutor = ServerExecutor.create("Server-Boss", 1);
+            bossExecutor = NettyExecutor.create("Server-Boss", 1);
         }
         return new NettyServer(this);
     }

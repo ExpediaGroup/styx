@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.util.concurrent.{Executor, TimeUnit}
 import java.util.concurrent.atomic.AtomicReference
 
 import com.google.common.util.concurrent.Service
-import com.hotels.styx.{IStyxServer, ServerExecutor, StyxServers}
+import com.hotels.styx.{IStyxServer, NettyExecutor, StyxServers}
 import com.hotels.styx.api.HttpHandler
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.Id._
@@ -57,7 +57,7 @@ trait NettyOrigins {
   def customResponseWebServer(port: Int, responseHandler: CustomResponseHandler): HttpServer = {
     val server: IStyxServer = new NettyServerBuilder()
       .setProtocolConnector(new NettyHttpServerConnector(port, responseHandler))
-      .workerExecutor(ServerExecutor.create("Netty Test Origin", 1))
+      .workerExecutor(NettyExecutor.create("Netty Test Origin", 1))
       .build()
 
     new HttpServer {
