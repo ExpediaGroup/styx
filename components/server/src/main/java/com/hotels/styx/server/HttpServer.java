@@ -27,6 +27,6 @@ public interface HttpServer extends Service {
     /**
      * Return http endpoint.
      */
-    InetSocketAddress httpAddress();
+    InetSocketAddress inetAddress();
 
 }

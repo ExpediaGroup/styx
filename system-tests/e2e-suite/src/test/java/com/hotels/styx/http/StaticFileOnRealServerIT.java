@@ -57,7 +57,7 @@ public class StaticFileOnRealServerIT {
         dir = Files.createTempDir();
         webServer = createHttpServer(0, new StaticFileHandler(dir));
         webServer.startAsync().awaitRunning();
-        serverEndpoint = toHostAndPort(webServer.httpAddress());
+        serverEndpoint = toHostAndPort(webServer.inetAddress());
     }
 
 

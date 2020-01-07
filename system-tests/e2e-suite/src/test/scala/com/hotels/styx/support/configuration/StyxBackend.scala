@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ trait ImplicitOriginConversions {
     port = server.port())
 
   implicit def httpServer2Origin(httpServer: HttpServer): Origin = Origin(
-    host = "localhost", port = httpServer.httpAddress().getPort
+    host = "localhost", port = httpServer.inetAddress().getPort
   )
 
   implicit def java2ScalaOrigin(origin: com.hotels.styx.api.extension.Origin): Origin = Origin.fromJava(origin)
