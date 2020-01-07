@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.db.StyxObjectStore;
-import com.hotels.styx.routing.handlers.ProviderObjectRecord;
+import com.hotels.styx.routing.handlers.StyxObjectRecord;
 
 /**
  * A generic factory that can be implemented to create objects whose type is not known
@@ -37,5 +37,5 @@ public interface ServiceProviderFactory {
      *
      * @return Styx service instance
      */
-    StyxService create(String name, RoutingObjectFactory.Context context, JsonNode serviceConfiguration, StyxObjectStore<ProviderObjectRecord> serviceDb);
+    StyxService create(String name, RoutingObjectFactory.Context context, JsonNode serviceConfiguration, StyxObjectStore<StyxObjectRecord<StyxService>> serviceDb);
 }

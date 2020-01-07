@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,41 +16,42 @@
 package com.hotels.styx;
 
 import com.hotels.styx.api.extension.service.spi.AbstractStyxService
+import com.hotels.styx.api.extension.service.spi.StyxService
 import com.hotels.styx.routing.db.StyxObjectStore
-import com.hotels.styx.routing.handlers.ProviderObjectRecord
+import com.hotels.styx.routing.handlers.StyxObjectRecord
 import org.slf4j.LoggerFactory.getLogger
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicReference
 
 
-internal class ServiceProviderMonitor(name: String, val serviceProviderDatabase: StyxObjectStore<ProviderObjectRecord>) : AbstractStyxService(name) {
+internal class ServiceProviderMonitor<T: StyxObjectRecord<out StyxService>>(name: String, val servicesDatabase: StyxObjectStore<T>) : AbstractStyxService(name) {
 
     companion object {
         private val LOG = getLogger(ServiceProviderMonitor::class.java)
     }
 
-    private val services = AtomicReference<Map<String, ProviderObjectRecord>>()
+    private val services = AtomicReference<Map<String, T>>()
 
     override fun startService(): CompletableFuture<Void> = CompletableFuture.runAsync {
-                services.set(serviceProviderDatabase
-                        .entrySet()
-                        .map { it.key to it.value }
-                        .toMap())
+        services.set(servicesDatabase
+                .entrySet()
+                .map { it.key to it.value }
+                .toMap())
 
-                services.get()
-                        .forEach { name, record ->
-                            val service = record.styxService
-                            service.start()
-                                    .thenAccept { LOG.debug("Service '{}/{}' started", record.type, name) }
-                        }
-            }
+        services.get()
+                .forEach { name, record ->
+                    val service = record.styxService
+                    service.start()
+                            .thenAccept { LOG.debug("Service '{}/{}' started", record.type, name) }
+                }
+    }
 
     override fun stopService(): CompletableFuture<Void> = CompletableFuture.runAsync {
-                services.get()
-                        .forEach { name, record ->
-                            val service = record.styxService
-                            service.stop()
-                                    .thenAccept { LOG.debug("Service '{}/{}' stopped", record.type, name) }
-                        }
-            }
+        services.get()
+                .forEach { name, record ->
+                    val service = record.styxService
+                    service.stop()
+                            .thenAccept { LOG.debug("Service '{}/{}' stopped", record.type, name) }
+                }
+    }
 }

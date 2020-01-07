@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -40,8 +40,8 @@ import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.routing.db.StyxObjectStore;
-import com.hotels.styx.routing.handlers.ProviderObjectRecord;
 import com.hotels.styx.routing.handlers.RouteRefLookup.RouteDbRefLookup;
+import com.hotels.styx.routing.handlers.StyxObjectRecord;
 import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
@@ -74,7 +74,7 @@ public class StyxServerComponents {
     private final Map<String, StyxService> services;
     private final List<NamedPlugin> plugins;
     private final StyxObjectStore<RoutingObjectRecord> routeObjectStore = new StyxObjectStore<>();
-    private final StyxObjectStore<ProviderObjectRecord> providerObjectStore = new StyxObjectStore<>();
+    private final StyxObjectStore<StyxObjectRecord<StyxService>> providerObjectStore = new StyxObjectStore<>();
     private final EventLoopGroup eventLoopGroup;
     private final Class<? extends SocketChannel> nettySocketChannelClass;
     private final RoutingObjectFactory.Context routingObjectContext;
@@ -146,7 +146,7 @@ public class StyxServerComponents {
                     StyxService provider = Builtins.build(name, definition, providerObjectStore, BUILTIN_SERVICE_PROVIDER_FACTORIES, routingObjectContext);
 
                     // Create a provider object record
-                    ProviderObjectRecord record = new ProviderObjectRecord(definition.type(), ImmutableSet.copyOf(definition.tags()), definition.config(), provider);
+                    StyxObjectRecord<StyxService> record = new StyxObjectRecord<>(definition.type(), ImmutableSet.copyOf(definition.tags()), definition.config(), provider);
 
                     // Insert provider object record into database
                     providerObjectStore.insert(name, record);
@@ -183,7 +183,7 @@ public class StyxServerComponents {
         return this.routeObjectStore;
     }
 
-    public StyxObjectStore<ProviderObjectRecord> servicesDatabase() {
+    public StyxObjectStore<StyxObjectRecord<StyxService>> servicesDatabase() {
         return this.providerObjectStore;
     }
 

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,9 +21,10 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.WebServiceHandler;
 import com.hotels.styx.api.configuration.ObjectStore;
+import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.common.http.handler.HttpStreamer;
 import com.hotels.styx.routing.db.StyxObjectStore;
-import com.hotels.styx.routing.handlers.ProviderObjectRecord;
+import com.hotels.styx.routing.handlers.StyxObjectRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
@@ -47,7 +48,7 @@ public class ProviderRoutingHandler implements WebServiceHandler {
      * @param pathPrefix the path prefix added to each provider admin URL
      * @param providerDb the provider object store
      */
-    public ProviderRoutingHandler(String pathPrefix, StyxObjectStore<ProviderObjectRecord> providerDb) {
+    public ProviderRoutingHandler(String pathPrefix, StyxObjectStore<StyxObjectRecord<StyxService>> providerDb) {
         this.pathPrefix = pathPrefix;
         Flux.from(providerDb.watch()).subscribe(
                 this::refreshRoutes,
@@ -59,12 +60,12 @@ public class ProviderRoutingHandler implements WebServiceHandler {
         return router.handle(request, context);
     }
 
-    private void refreshRoutes(ObjectStore<ProviderObjectRecord> db) {
+    private void refreshRoutes(ObjectStore<StyxObjectRecord<StyxService>> db) {
         LOG.info("Refreshing provider admin endpoint routes");
         router = buildRouter(db);
     }
 
-    private UrlPatternRouter buildRouter(ObjectStore<ProviderObjectRecord> db) {
+    private UrlPatternRouter buildRouter(ObjectStore<StyxObjectRecord<StyxService>> db) {
         UrlPatternRouter.Builder routeBuilder = new UrlPatternRouter.Builder(pathPrefix)
                 .get("", new ProviderListHandler(db));
         db.entrySet().forEach(entry -> {
