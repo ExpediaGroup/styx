@@ -29,6 +29,9 @@ import com.hotels.styx.support.testClient
 import com.hotels.styx.support.wait
 import io.kotlintest.Spec
 import io.kotlintest.eventually
+import io.kotlintest.matchers.doubles.shouldBeGreaterThan
+import io.kotlintest.matchers.numerics.shouldBeGreaterThan
+import io.kotlintest.matchers.numerics.shouldBeInRange
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FunSpec
@@ -97,6 +100,15 @@ class MetricsSpec : FunSpec() {
                             .first { (name, _) -> name.contains("connectionspool".toRegex()) }
 
                     name shouldBe "origins.appA.appA-01.connectionspool.available-connections"
+                }
+            }
+
+            test("time-to-first-byte metrics are reported") {
+                styxServer().metrics().let {
+                    (it["origins.appA.appA-01.requests.time-to-first-byte"]!!["count"] as Int) shouldBeGreaterThan 0
+                    (it["origins.appA.appA-01.requests.time-to-first-byte"]!!["mean"] as Double) shouldBeGreaterThan 0.0
+                    (it["origins.requests.time-to-first-byte"]!!["count"] as Int) shouldBeGreaterThan 0
+                    (it["origins.requests.time-to-first-byte"]!!["mean"] as Double) shouldBeGreaterThan 0.0
                 }
             }
         }

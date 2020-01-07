@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -302,6 +302,41 @@ public class RequestsToOriginMetricsCollectorTest {
         channel.writeInbound(response.slice(100, len - 100));
         assertThat(timer.getCount(), is(1L));
     }
+
+    @Test
+    public void timeToFirstByteHistogramUpdatedWhenFirstContentChunkReceived() {
+
+        Timer timer = this.metricRegistry.timer(name(ORIGIN_METRIC_PREFIX, "requests.time-to-first-byte"));
+        assertThat(timer.getCount(), is(0L));
+
+        EmbeddedChannel channel = buildEmbeddedChannel();
+
+        //
+        // Send out a HttpRequest in outbound direction, towards origins:
+        //
+        HttpRequest request = httpRequest(GET, "http://www.hotels.com/foo/bar/request");
+        channel.writeOutbound(request);
+        assertThat(grabSentBytes(channel).isPresent(), is(true));
+        assertThat(timer.getCount(), is(0L));
+
+        ByteBuf response = httpResponseAsBuf(OK, STOCK_BODY).retain();
+        int len = response.writerIndex() - response.readerIndex();
+
+        //
+        // Send the response in two chunks. The timer is updated immediately when
+        // the first chunk is received:
+        //
+        channel.writeInbound(response.slice(0, 100));
+        assertThat(timer.getCount(), is(1L));
+
+        //
+        // Send the next chunk. Demonstrate that timer remains unchanged. This is to ensure
+        // it doesn't get recorded twice:
+        //
+        channel.writeInbound(response.slice(100, len - 100));
+        assertThat(timer.getCount(), is(1L));
+    }
+
 
     @Test
     public void response100ContinueUpdatesInformationalMeterOnly() {

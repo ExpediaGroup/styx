@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -64,13 +64,6 @@ public interface Connection extends Closeable {
      * @return the endpoint for this connection
      */
     Origin getOrigin();
-
-    /**
-     * Returns time to first byte in milliseconds.
-     *
-     * @return time to first byte in milliseconds
-     */
-    long getTimeToFirstByteMillis();
 
     /**
      * Register a listener connection state events.

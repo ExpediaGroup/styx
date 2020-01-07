@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hotels.styx.client.applications.OriginStats;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
+import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 import org.slf4j.Logger;
@@ -38,6 +39,9 @@ class RequestsToOriginMetricsCollector extends ChannelDuplexHandler {
 
     private final OriginStats originStats;
     private volatile AggregateTimer.Stopper requestLatencyTiming;
+    private volatile AggregateTimer.Stopper timeToFirstByteTiming;
+    private volatile boolean firstContentChunkReceived;
+
 
     /**
      * Constructs a new instance.
@@ -62,6 +66,11 @@ class RequestsToOriginMetricsCollector extends ChannelDuplexHandler {
             updateHttpResponseCounters(code);
         }
 
+        if (msg instanceof HttpContent && !firstContentChunkReceived) {
+            stopAndRecordTimeToFirstByte();
+            firstContentChunkReceived = true;
+        }
+
         if (msg instanceof LastHttpContent) {
             stopAndRecordLatency();
         }
@@ -73,6 +82,8 @@ class RequestsToOriginMetricsCollector extends ChannelDuplexHandler {
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
         if (msg instanceof io.netty.handler.codec.http.HttpRequest) {
             requestLatencyTiming = originStats.requestLatencyTimer().time();
+            timeToFirstByteTiming = originStats.timeToFirstByteTimer().time();
+            firstContentChunkReceived = false;
         }
         super.write(ctx, msg, promise);
     }
@@ -93,6 +104,7 @@ class RequestsToOriginMetricsCollector extends ChannelDuplexHandler {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         stopAndRecordLatency();
+        stopAndRecordTimeToFirstByte();
         super.exceptionCaught(ctx, cause);
     }
 
@@ -104,6 +116,14 @@ class RequestsToOriginMetricsCollector extends ChannelDuplexHandler {
             requestLatencyTiming.stopAndRecord();
         } else {
             LOG.warn("Attempted to stop timer and record latency when no timing had begun");
+        }
+    }
+
+    private void stopAndRecordTimeToFirstByte() {
+        if (timeToFirstByteTiming != null) {
+            timeToFirstByteTiming.stopAndRecord();
+        } else {
+            LOG.warn("Attempted to stop timer and record time-to-first-byte when no timing had begun");
         }
     }
 }
