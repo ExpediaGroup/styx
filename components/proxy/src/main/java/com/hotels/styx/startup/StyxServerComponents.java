@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.AsyncEventBus;
 import com.hotels.styx.Environment;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.StartupConfig;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.Version;
@@ -30,7 +31,6 @@ import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
-import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupFactory;
 import com.hotels.styx.common.format.SanitisedHttpHeaderFormatter;
 import com.hotels.styx.common.format.SanitisedHttpMessageFormatter;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
@@ -43,8 +43,6 @@ import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.RouteRefLookup.RouteDbRefLookup;
 import com.hotels.styx.routing.handlers.StyxObjectRecord;
 import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
 import org.slf4j.Logger;
 
 import java.util.HashMap;
@@ -75,13 +73,12 @@ public class StyxServerComponents {
     private final List<NamedPlugin> plugins;
     private final StyxObjectStore<RoutingObjectRecord> routeObjectStore = new StyxObjectStore<>();
     private final StyxObjectStore<StyxObjectRecord<StyxService>> providerObjectStore = new StyxObjectStore<>();
-    private final EventLoopGroup eventLoopGroup;
-    private final Class<? extends SocketChannel> nettySocketChannelClass;
     private final RoutingObjectFactory.Context routingObjectContext;
     private final StartupConfig startupConfig;
     private final Map<String, RoutingObjectFactory> routingObjectFactories;
 
     private static final Logger LOGGER = getLogger(StyxServerComponents.class);
+    private final NettyExecutor executor;
 
     private StyxServerComponents(Builder builder) {
         StyxConfig styxConfig = requireNonNull(builder.styxConfig);
@@ -95,12 +92,7 @@ public class StyxServerComponents {
         this.environment = newEnvironment(styxConfig, builder.metricRegistry);
         builder.loggingSetUp.setUp(environment);
 
-        PlatformAwareClientEventLoopGroupFactory factory = new PlatformAwareClientEventLoopGroupFactory(
-                "Styx",
-                environment.configuration().proxyServerConfig().clientWorkerThreadsCount());
-
-        this.eventLoopGroup = factory.newClientWorkerEventLoopGroup();
-        this.nettySocketChannelClass = factory.clientSocketChannelClass();
+        this.executor = NettyExecutor.create("Styx-Client-Worker", environment.configuration().proxyServerConfig().clientWorkerThreadsCount());
 
         // TODO In further refactoring, we will probably want this loading to happen outside of this constructor call,
         //  so that it doesn't delay the admin server from starting up
@@ -191,12 +183,9 @@ public class StyxServerComponents {
         return this.routingObjectContext;
     }
 
-    public EventLoopGroup eventLoopGroup() {
-        return this.eventLoopGroup;
-    }
 
-    public Class<? extends SocketChannel> nettySocketChannelClass() {
-        return this.nettySocketChannelClass;
+    public NettyExecutor clientExecutor() {
+        return this.executor;
     }
 
     public StartupConfig startupConfig() {

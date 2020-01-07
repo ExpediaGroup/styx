@@ -18,5 +18,6 @@
   <logger name="com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder" level="INFO"/>
   <logger name="com.hotels.styx.server.netty.connectors.HttpPipelineHandler" level="INFO"/>
   <logger name="com.hotels.styx.proxy.HttpErrorStatusCauseLogger" level="INFO"/>
+  <logger name="com.hotels.styx.server.netty.connectors.HttpPipelineHandler" level="INFO"/>
 
 </configuration>

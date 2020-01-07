@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hotels.styx.admin
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
+import com.hotels.styx.NettyExecutor
 import com.hotels.styx.admin.handlers.ServiceProviderHandler
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE
 import com.hotels.styx.api.HttpHeaderNames.HOST
@@ -68,7 +69,13 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                   connectors:
                     http:
                       port: 0
-        
+
+                request-logging:
+                  inbound:
+                    enabled: true
+                  outbound:
+                    enabled: true
+
                 providers:
                   originsFileLoader:
                     type: YamlFileConfigurationService
@@ -97,7 +104,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
             styxServer.restart()
 
             test("It populates forwarding path from the origins yaml file") {
-                println("Object database: " + dumpObjectDatabase())
+                LOGGER.info("Object database: " + dumpObjectDatabase())
 
                 eventually(2.seconds, AssertionError::class.java) {
                     client.send(get("/1")
@@ -785,4 +792,6 @@ class OriginsFileCompatibilitySpec : FunSpec() {
     }
 }
 
-private val client: StyxHttpClient = StyxHttpClient.Builder().build()
+private val client: StyxHttpClient = StyxHttpClient.Builder()
+        .executor(NettyExecutor.create("styx-client", 0))
+        .build()

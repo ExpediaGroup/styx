@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.ContentOverflowException;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
@@ -73,6 +72,7 @@ import static com.hotels.styx.api.HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE;
 import static com.hotels.styx.api.HttpResponseStatus.REQUEST_TIMEOUT;
 import static com.hotels.styx.api.HttpResponseStatus.SERVICE_UNAVAILABLE;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.server.HttpErrorStatusListener.IGNORE_ERROR_STATUS;
 import static com.hotels.styx.server.RequestProgressListener.IGNORE_REQUEST_PROGRESS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
@@ -264,7 +264,9 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         // the same call stack as "onLegitimateRequest" handler. This happens when a plugin
         // generates a response.
         try {
-            Eventual<LiveHttpResponse> responseEventual = httpPipeline.handle(v11Request, newInterceptorContext(ctx));
+            Eventual<LiveHttpResponse> responseEventual = httpPipeline.handle(
+                    v11Request,
+                    new HttpInterceptorContext(this.secure, remoteAddress(ctx)));
             responseEventual.subscribe(new BaseSubscriber<LiveHttpResponse>() {
                 @Override
                 public void hookOnSubscribe(Subscription s) {
@@ -299,10 +301,6 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
             }
             return TERMINATED;
         }
-    }
-
-    private HttpInterceptor.Context newInterceptorContext(ChannelHandlerContext ctx) {
-        return new HttpInterceptorContext(this.secure, remoteAddress(ctx));
     }
 
     private State onResponseReceived(LiveHttpResponse response, ChannelHandlerContext ctx) {
@@ -498,7 +496,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         cancelSubscription();
         statsSink.onTerminate(ongoingRequest.id());
         tracker.endTrack(ongoingRequest);
-        responseWriterFactory.create(ctx).write(LiveHttpResponse.response(INTERNAL_SERVER_ERROR).build())
+        responseWriterFactory.create(ctx).write(response(INTERNAL_SERVER_ERROR).build())
                 .handle((dontCare, ignore) -> ctx.close());
         return TERMINATED;
     }
@@ -515,8 +513,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         String message = status.code() >= 500 ? "Site temporarily unavailable." : status.description();
 
         return responseEnhancer.enhance(
-                LiveHttpResponse
-                        .response(status)
+                response(status)
                         .body(new ByteStream(Flux.just(new Buffer(message, UTF_8))))
                         .build()
                         .newBuilder(), request)

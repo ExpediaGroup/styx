@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package com.hotels.styx.routing.handlers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
@@ -32,7 +33,6 @@ import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.client.connectionpool.ExpiringConnectionFactory;
 import com.hotels.styx.client.connectionpool.SimpleConnectionPoolFactory;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
-import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupFactory;
 import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
@@ -99,10 +99,8 @@ public class ProxyToBackend implements RoutingObject {
 
             OriginStatsFactory originStatsFactory = new CachingOriginStatsFactory(context.environment().metricRegistry());
 
-            PlatformAwareClientEventLoopGroupFactory factory = new PlatformAwareClientEventLoopGroupFactory("Styx", clientWorkerThreadsCount);
-
             Connection.Factory connectionFactory = new NettyConnectionFactory.Builder()
-                    .nettyEventLoop(factory.newClientWorkerEventLoopGroup(), factory.clientSocketChannelClass())
+                    .executor(NettyExecutor.create("Styx", clientWorkerThreadsCount))
                     .httpRequestOperationFactory(
                             httpRequestOperationFactoryBuilder()
                                     .flowControlEnabled(true)

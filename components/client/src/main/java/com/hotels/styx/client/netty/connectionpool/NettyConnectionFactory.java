@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.client.netty.connectionpool;
 
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.exceptions.OriginUnreachableException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.TlsSettings;
@@ -23,14 +24,12 @@ import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
 import com.hotels.styx.client.HttpConfig;
 import com.hotels.styx.client.HttpRequestOperationFactory;
-import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupFactory;
 import com.hotels.styx.client.ssl.SslContextFactory;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.EventLoopGroup;
 import io.netty.handler.ssl.SslContext;
 import reactor.core.publisher.Mono;
 
@@ -48,24 +47,17 @@ import static java.util.Objects.requireNonNull;
  * A connection factory that creates connections using netty.
  */
 public class NettyConnectionFactory implements Connection.Factory {
-    private static final PlatformAwareClientEventLoopGroupFactory FACTORY = new PlatformAwareClientEventLoopGroupFactory(
-            "Styx-Client-Global",
-            0);
-    private static final Class<? extends Channel> GLOBAL_CLIENT_EVENT_LOOP_CLASS = FACTORY.clientSocketChannelClass();
-    private static final EventLoopGroup GLOBAL_CLIENT_EVENT_LOOP = FACTORY.newClientWorkerEventLoopGroup();
 
     private final HttpConfig httpConfig;
     private final SslContext sslContext;
     private final boolean sendSni;
     private final Optional<String> sniHost;
     private final HttpRequestOperationFactory httpRequestOperationFactory;
+    private final NettyExecutor executor;
     private Bootstrap bootstrap;
-    private EventLoopGroup eventLoopGroup;
-    private Class<? extends Channel> clientSocketChannelClass;
 
     private NettyConnectionFactory(Builder builder) {
-        this.clientSocketChannelClass = requireNonNull(builder.channelClass);
-        this.eventLoopGroup = requireNonNull(builder.eventLoopGroup);
+        this.executor = requireNonNull(builder.executor);
         this.httpConfig = requireNonNull(builder.httpConfig);
         this.sslContext = builder.tlsSettings == null ? null : SslContextFactory.get(builder.tlsSettings);
         this.httpRequestOperationFactory = requireNonNull(builder.httpRequestOperationFactory);
@@ -101,8 +93,8 @@ public class NettyConnectionFactory implements Connection.Factory {
     private synchronized void bootstrap(ConnectionSettings connectionSettings) {
         if (bootstrap == null) {
             bootstrap = new Bootstrap();
-            bootstrap.group(eventLoopGroup)
-                    .channel(clientSocketChannelClass)
+            bootstrap.group(executor.eventLoopGroup())
+                    .channel(executor.clientEventLoopClass())
                     .handler(new Initializer())
                     .option(TCP_NODELAY, true)
                     .option(SO_KEEPALIVE, true)
@@ -124,15 +116,15 @@ public class NettyConnectionFactory implements Connection.Factory {
      * Builder.
      */
     public static final class Builder {
+        private static final NettyExecutor NETTY_EXECUTOR = NettyExecutor.create("Netty-Executor", 0);
+
         private HttpRequestOperationFactory httpRequestOperationFactory = httpRequestOperationFactoryBuilder().build();
         private HttpConfig httpConfig = defaultHttpConfig();
         private TlsSettings tlsSettings;
-        private EventLoopGroup eventLoopGroup = GLOBAL_CLIENT_EVENT_LOOP;
-        private Class<? extends Channel> channelClass = GLOBAL_CLIENT_EVENT_LOOP_CLASS;
+        private NettyExecutor executor = NETTY_EXECUTOR;
 
-        public Builder nettyEventLoop(EventLoopGroup eventLoopGroup, Class<? extends Channel> channelClass) {
-            this.eventLoopGroup = requireNonNull(eventLoopGroup);
-            this.channelClass = requireNonNull(channelClass);
+        public Builder executor(NettyExecutor executor) {
+            this.executor = executor;
             return this;
         }
 
