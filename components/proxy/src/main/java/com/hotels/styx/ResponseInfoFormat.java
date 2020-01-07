@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,9 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.proxy;
-
-import com.hotels.styx.Environment;
+package com.hotels.styx;
 
 import static com.hotels.styx.StyxConfig.NO_JVM_ROUTE_SET;
 import com.hotels.styx.api.LiveHttpRequest;
@@ -23,7 +21,7 @@ import com.hotels.styx.api.LiveHttpRequest;
 /**
  * Formats response info into a string.
  */
-public class ResponseInfoFormat {
+class ResponseInfoFormat {
     private final String format;
 
     ResponseInfoFormat(Environment environment) {
