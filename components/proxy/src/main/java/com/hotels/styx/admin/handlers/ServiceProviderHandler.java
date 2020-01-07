@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -27,9 +27,10 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.WebServiceHandler;
+import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.routing.db.StyxObjectStore;
-import com.hotels.styx.routing.handlers.ProviderObjectRecord;
+import com.hotels.styx.routing.handlers.StyxObjectRecord;
 import org.slf4j.Logger;
 
 import java.util.List;
@@ -62,7 +63,7 @@ public class ServiceProviderHandler implements WebServiceHandler {
 
     private final UrlPatternRouter urlRouter;
 
-    public ServiceProviderHandler(StyxObjectStore<ProviderObjectRecord> providerDatabase) {
+    public ServiceProviderHandler(StyxObjectStore<StyxObjectRecord<StyxService>> providerDatabase) {
         urlRouter = new UrlPatternRouter.Builder()
                 .get("/admin/service/providers", (request, context) -> {
                     try {
@@ -108,7 +109,7 @@ public class ServiceProviderHandler implements WebServiceHandler {
         return YAML_MAPPER.copy();
     }
 
-    private static String serialise(String name, ProviderObjectRecord record) {
+    private static String serialise(String name, StyxObjectRecord<StyxService> record) {
         List<String> tags = ImmutableList.copyOf(record.getTags());
         StyxObjectDefinition objectDef =
                 new StyxObjectDefinition(name, record.getType(), tags, record.getConfig());
