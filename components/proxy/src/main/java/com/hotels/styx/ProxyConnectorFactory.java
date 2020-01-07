@@ -13,11 +13,13 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.proxy;
+package com.hotels.styx;
 
 import com.codahale.metrics.Histogram;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.proxy.HttpCompressor;
+import com.hotels.styx.proxy.ServerProtocolDistributionRecorder;
 import com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder;
 import com.hotels.styx.server.ConnectorConfig;
 import com.hotels.styx.server.HttpErrorStatusListener;
