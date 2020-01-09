@@ -60,6 +60,7 @@ class MockServer(id: String, val port: Int) extends AbstractIdleService with Htt
       .workerExecutor(NettyExecutor.create("MockServer", 1))
       .handler(router)
     .build()
+  val guavaService = StyxServers.toGuavaService(server)
 
   def takeRequest(): LiveHttpRequest = {
     requestQueue.poll
@@ -79,13 +80,13 @@ class MockServer(id: String, val port: Int) extends AbstractIdleService with Htt
   }
 
   override def startUp(): Unit = {
-    server.startAsync().awaitRunning()
+    guavaService.startAsync().awaitRunning()
     logger.info("mock server started on port " + server.inetAddress().getPort)
   }
 
   override def shutDown(): Unit = {
     logger.info(s"mock server running on port ${server.inetAddress().getPort} stopping")
-    server.stopAsync().awaitTerminated()
+    guavaService.stopAsync().awaitTerminated()
   }
 
   override def inetAddress(): InetSocketAddress = {

@@ -17,6 +17,9 @@ package com.hotels.styx.proxy;
 
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.NettyExecutor;
+import com.google.common.util.concurrent.Service;
+import com.hotels.styx.InetServer;
+import com.hotels.styx.StyxServers;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
@@ -27,7 +30,6 @@ import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.common.http.handler.HttpAggregator;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
 import com.hotels.styx.server.HttpConnectorConfig;
-import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.StandardHttpRouter;
 import com.hotels.styx.server.netty.NettyServerBuilder;
 import com.hotels.styx.server.netty.ServerConnector;
@@ -41,6 +43,7 @@ import java.io.IOException;
 
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.common.StyxFutures.await;
+import static com.hotels.styx.server.netty.NettyServerBuilder.newBuilder;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -52,11 +55,11 @@ public class StyxProxyTest extends SSLSetup {
 
     @Test
     public void startsAndStopsAServer() {
-        HttpServer server = new NettyServerBuilder()
+        Service server = StyxServers.toGuavaService(new NettyServerBuilder()
                 .setProtocolConnector(connector(0))
                 .bossExecutor(NettyExecutor.create("Test-Server-Boss", 1))
                 .workerExecutor(NettyExecutor.create("Test-Server-Worker", 0))
-                .build();
+                .build());
 
         server.startAsync().awaitRunning();
         assertThat("Server should be running", server.isRunning());
@@ -70,7 +73,7 @@ public class StyxProxyTest extends SSLSetup {
         HttpInterceptor echoInterceptor = (request, chain) -> textResponse("Response from http connector");
         StandardHttpRouter handler = new StandardHttpRouter();
 
-        HttpServer server = NettyServerBuilder.newBuilder()
+        InetServer styxServer = newBuilder()
                 .setProtocolConnector(connector(0))
                 .bossExecutor(NettyExecutor.create("Test-Server-Boss", 1))
                 .workerExecutor(NettyExecutor.create("Test-Server-Worker", 0))
@@ -79,10 +82,13 @@ public class StyxProxyTest extends SSLSetup {
                         (request, context) -> new HttpAggregator(new StandardHttpRouter()).handle(request, context),
                         false))
                 .build();
+
+        Service server = StyxServers.toGuavaService(styxServer);
+
         server.startAsync().awaitRunning();
         assertThat("Server should be running", server.isRunning());
 
-        HttpResponse secureResponse = get("http://localhost:" + server.inetAddress().getPort());
+        HttpResponse secureResponse = get("http://localhost:" + styxServer.inetAddress().getPort());
         assertThat(secureResponse.bodyAs(UTF_8), containsString("Response from http connector"));
 
         server.stopAsync().awaitTerminated();
@@ -107,9 +113,9 @@ public class StyxProxyTest extends SSLSetup {
     @Disabled
     @Test
     public void startsServerWithBothHttpAndHttpsConnectors() throws IOException {
-        HttpServer server = NettyServerBuilder.newBuilder()
+        Service server = StyxServers.toGuavaService(newBuilder()
                 .setProtocolConnector(connector(0))
-                .build();
+                .build());
 
         server.startAsync().awaitRunning();
         assertThat("Server should be running", server.isRunning());

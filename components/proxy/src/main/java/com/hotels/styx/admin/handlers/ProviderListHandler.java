@@ -16,14 +16,14 @@
 package com.hotels.styx.admin.handlers;
 
 
+import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.WebServiceHandler;
-import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.api.configuration.ObjectStore;
-import com.hotels.styx.routing.handlers.StyxObjectRecord;
+import com.hotels.styx.api.extension.service.spi.StyxService;
 
 import java.util.stream.Collectors;
 

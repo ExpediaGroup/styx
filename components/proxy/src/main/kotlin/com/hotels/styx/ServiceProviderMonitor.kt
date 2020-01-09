@@ -18,7 +18,6 @@ package com.hotels.styx;
 import com.hotels.styx.api.extension.service.spi.AbstractStyxService
 import com.hotels.styx.api.extension.service.spi.StyxService
 import com.hotels.styx.routing.db.StyxObjectStore
-import com.hotels.styx.routing.handlers.StyxObjectRecord
 import org.slf4j.LoggerFactory.getLogger
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicReference

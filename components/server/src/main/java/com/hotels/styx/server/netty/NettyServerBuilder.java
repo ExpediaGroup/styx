@@ -16,10 +16,10 @@
 package com.hotels.styx.server.netty;
 
 import com.hotels.styx.NettyExecutor;
+import com.hotels.styx.InetServer;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.MetricRegistry;
-import com.hotels.styx.server.HttpServer;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.util.concurrent.ImmediateEventExecutor;
@@ -105,7 +105,7 @@ public final class NettyServerBuilder {
         return httpConnector;
     }
 
-    public HttpServer build() {
+    public InetServer build() {
         checkArgument(httpConnector != null, "Must configure a protocol connector");
         checkArgument(workerExecutor != null, "Must configure a worker executor");
 
