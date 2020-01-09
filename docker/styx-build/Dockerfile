@@ -10,12 +10,14 @@ WORKDIR ${APP_HOME}
 
 RUN yum install -y java-1.8.0-openjdk-devel \
     && yum install -y git \
+    && yum install -y bash-completion \
     && yum install -y docker \
     && yum install -y wget \
     && yum install -y make \
     && wget ${MVN_URL} \
     && tar -C /opt/ -zxvf apache-maven-${MVN_VERSION}-bin.tar.gz \
-    && rm apache-maven-${MVN_VERSION}-bin.tar.gz
+    && rm apache-maven-${MVN_VERSION}-bin.tar.gz \
+    && source /etc/bash_completion.d/git
 
 ENV PATH=/opt/apache-maven-${MVN_VERSION}/bin:$PATH
 ENV JAVA_HOME=/etc/alternatives/java_sdk
