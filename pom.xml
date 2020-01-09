@@ -164,7 +164,7 @@
 
     <!-- non apache plugin versions and configurations, please sort alphabetically -->
     <build-helper-maven-plugin.version>1.9.1</build-helper-maven-plugin.version>
-    <jacoco-maven-plugin.version>0.7.5.201505241946</jacoco-maven-plugin.version>
+    <jacoco-maven-plugin.version>0.8.5</jacoco-maven-plugin.version>
 
     <!-- code quality -->
     <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
@@ -677,14 +677,6 @@
           <artifactId>scala-maven-plugin</artifactId>
           <version>3.2.1</version>
           <executions>
-            <execution>
-              <id>scala-compile-first</id>
-              <phase>process-resources</phase>
-              <goals>
-                <goal>add-source</goal>
-                <goal>compile</goal>
-              </goals>
-            </execution>
             <execution>
               <id>scala-test-compile</id>
               <phase>process-test-resources</phase>
