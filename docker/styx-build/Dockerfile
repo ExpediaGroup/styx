@@ -17,7 +17,7 @@ RUN yum install -y java-1.8.0-openjdk-devel \
     && tar -C /opt/ -zxvf apache-maven-${MVN_VERSION}-bin.tar.gz \
     && rm apache-maven-${MVN_VERSION}-bin.tar.gz
 
-ENV PATH=/opt/apache-maven-3.6.3/bin:$PATH
+ENV PATH=/opt/apache-maven-${MVN_VERSION}/bin:$PATH
 ENV JAVA_HOME=/etc/alternatives/java_sdk
 
 
