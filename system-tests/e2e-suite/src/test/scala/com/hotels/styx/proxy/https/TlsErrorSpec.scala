@@ -101,8 +101,7 @@ class TlsErrorSpec extends FunSpec
       }
 
       val message =
-        """SSL handshake failure from incoming connection cause="Client requested protocol """ +
-          s"""TLSv1.1 not enabled or not supported", serverAddress=.*:$serverPort, clientAddress=.*"""
+        """SSL handshake failure from incoming connection cause=".*TLSv1.1.*"""
 
       eventually(timeout(3 seconds)) {
         assertThat(log.log(), hasItem(loggingEvent(INFO, message)))
