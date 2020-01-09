@@ -179,7 +179,7 @@ public final class StyxHttpClient implements HttpClient {
      * Builder for {@link StyxHttpClient}.
      */
     public static class Builder {
-        private static final NettyExecutor NETTY_EXECUTOR = NettyExecutor.create("client", 0);
+        private static final NettyExecutor DEFAULT_EXECUTOR = NettyExecutor.create("Styx-Client", 0);
 
         private int connectTimeoutMillis = 1000;
         private int maxResponseSize = 1024 * 100;
@@ -188,7 +188,7 @@ public final class StyxHttpClient implements HttpClient {
         private TlsSettings tlsSettings;
         private boolean isHttps;
         private String userAgent;
-        private NettyExecutor executor = NETTY_EXECUTOR;
+        private NettyExecutor executor = DEFAULT_EXECUTOR;
 
         public Builder() {
         }

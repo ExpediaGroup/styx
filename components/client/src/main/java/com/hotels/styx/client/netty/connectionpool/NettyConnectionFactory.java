@@ -116,12 +116,12 @@ public class NettyConnectionFactory implements Connection.Factory {
      * Builder.
      */
     public static final class Builder {
-        private static final NettyExecutor NETTY_EXECUTOR = NettyExecutor.create("Netty-Executor", 0);
+        private static final NettyExecutor DEFAULT_EXECUTOR = NettyExecutor.create("Netty-Executor", 0);
 
         private HttpRequestOperationFactory httpRequestOperationFactory = httpRequestOperationFactoryBuilder().build();
         private HttpConfig httpConfig = defaultHttpConfig();
         private TlsSettings tlsSettings;
-        private NettyExecutor executor = NETTY_EXECUTOR;
+        private NettyExecutor executor = DEFAULT_EXECUTOR;
 
         public Builder executor(NettyExecutor executor) {
             this.executor = executor;
