@@ -28,8 +28,8 @@ import static java.util.stream.Collectors.joining;
 import static org.slf4j.LoggerFactory.getLogger;
 
 public class LoggingTestSupport {
-    private final Logger logger;
-    private final ListAppender<ILoggingEvent> appender;
+    public final Logger logger;
+    public final ListAppender<ILoggingEvent> appender;
 
     public LoggingTestSupport(Class<?> classUnderTest) {
         this(logger(classUnderTest));

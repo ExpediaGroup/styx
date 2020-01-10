@@ -18,6 +18,7 @@ package com.hotels.styx;
 import com.codahale.metrics.Histogram;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.proxy.HttpCompressor;
 import com.hotels.styx.proxy.ServerProtocolDistributionRecorder;
 import com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder;
@@ -69,24 +70,27 @@ class ProxyConnectorFactory implements ServerConnectorFactory {
     private final String unwiseCharacters;
     private final ResponseEnhancer responseEnhancer;
     private final boolean requestTracking;
+    private final HttpMessageFormatter httpMessageFormatter;
 
     ProxyConnectorFactory(NettyServerConfig serverConfig,
                           MetricRegistry metrics,
                           HttpErrorStatusListener errorStatusListener,
                           String unwiseCharacters,
                           ResponseEnhancer responseEnhancer,
-                          boolean requestTracking) {
+                          boolean requestTracking,
+                          HttpMessageFormatter httpMessageFormatter) {
         this.serverConfig = requireNonNull(serverConfig);
         this.metrics = requireNonNull(metrics);
         this.errorStatusListener = requireNonNull(errorStatusListener);
         this.unwiseCharacters = requireNonNull(unwiseCharacters);
         this.responseEnhancer = requireNonNull(responseEnhancer);
         this.requestTracking = requestTracking;
+        this.httpMessageFormatter = httpMessageFormatter;
     }
 
     @Override
     public ServerConnector create(ConnectorConfig config) {
-        return new ProxyConnector(config, serverConfig, metrics, errorStatusListener, unwiseCharacters, responseEnhancer, requestTracking);
+        return new ProxyConnector(config, serverConfig, metrics, errorStatusListener, unwiseCharacters, responseEnhancer, requestTracking, httpMessageFormatter);
     }
 
     private static final class ProxyConnector implements ServerConnector {
@@ -101,6 +105,7 @@ class ProxyConnectorFactory implements ServerConnectorFactory {
         private final Optional<SslContext> sslContext;
         private final ResponseEnhancer responseEnhancer;
         private final RequestTracker requestTracker;
+        private final HttpMessageFormatter httpMessageFormatter;
 
         private ProxyConnector(ConnectorConfig config,
                                NettyServerConfig serverConfig,
@@ -108,7 +113,8 @@ class ProxyConnectorFactory implements ServerConnectorFactory {
                                HttpErrorStatusListener errorStatusListener,
                                String unwiseCharacters,
                                ResponseEnhancer responseEnhancer,
-                               boolean requestTracking) {
+                               boolean requestTracking,
+                               HttpMessageFormatter httpMessageFormatter) {
             this.responseEnhancer = requireNonNull(responseEnhancer);
             this.config = requireNonNull(config);
             this.serverConfig = requireNonNull(serverConfig);
@@ -124,6 +130,7 @@ class ProxyConnectorFactory implements ServerConnectorFactory {
                 this.sslContext = Optional.empty();
             }
             this.requestTracker = requestTracking ? CurrentRequestTracker.INSTANCE : RequestTracker.NO_OP;
+            this.httpMessageFormatter = httpMessageFormatter;
         }
 
         @Override
@@ -181,6 +188,7 @@ class ProxyConnectorFactory implements ServerConnectorFactory {
             return new NettyToStyxRequestDecoder.Builder()
                     .flowControlEnabled(true)
                     .unwiseCharEncoder(unwiseCharEncoder)
+                    .httpMessageFormatter(httpMessageFormatter)
                     .build();
         }
 

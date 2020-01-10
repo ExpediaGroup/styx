@@ -15,17 +15,21 @@
  */
 package com.hotels.styx.logging
 
-import ch.qos.logback.classic.Level.INFO
+import ch.qos.logback.classic.Level.*
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest
+import com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST
+import com.hotels.styx.client.BadHttpResponseException
 import com.hotels.styx.client.StyxHttpClient
-import com.hotels.styx.support.StyxServerProvider
+import com.hotels.styx.proxy.HttpErrorStatusCauseLogger
+import com.hotels.styx.support.*
 import com.hotels.styx.support.matchers.LoggingTestSupport
-import com.hotels.styx.support.proxyHttpHostHeader
-import com.hotels.styx.support.shouldContain
-import com.hotels.styx.support.wait
 import io.kotlintest.Spec
+import io.kotlintest.matchers.string.shouldContain
+import io.kotlintest.matchers.string.shouldNotContain
+import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
+import kotlin.test.assertFailsWith
 
 class HttpMessageLoggingSpec : FeatureSpec() {
 
@@ -52,10 +56,105 @@ class HttpMessageLoggingSpec : FeatureSpec() {
                 logger.log().shouldContain(INFO, expectedRequest)
                 logger.log().shouldContain(INFO, expectedResponse)
             }
+
+            scenario("Requests with badly-formed headers should hide sensitive cookies and headers when logged") {
+
+                httpErrorLogger.logger.level = ERROR
+                httpErrorLogger.appender.list.clear()
+
+                val response = client.send(HttpRequest.get("/a/path")
+                        .header(HOST, styxServer().proxyHttpHostHeader())
+                        .header("header1", "h1")
+                        .header("header2", "h2")
+                        .header("cookie", "cookie1=c1;cookie2=c2")
+                        .header("badheader", "with\u0000nullchar")
+                        .build())
+                        .wait()!!
+
+                response.status() shouldBe BAD_REQUEST
+
+                val event = httpErrorLogger.log().first()
+                event.level shouldBe ERROR
+
+                var t = event.throwableProxy
+                while (t != null) {
+                    anySensitiveHeadersAreHidden(t.message)
+                    t = t.cause
+                }
+            }
+
+            scenario("Requests with badly-formed cookies should hide sensitive cookies and headers when logged") {
+
+                httpErrorLogger.logger.level = ERROR
+                httpErrorLogger.appender.list.clear()
+
+                val response = client.send(HttpRequest.get("/a/path")
+                        .header(HOST, styxServer().proxyHttpHostHeader())
+                        .header("header1", "h1")
+                        .header("header2", "h2")
+                        .header("cookie", "cookie1=c1;cookie2=c2;badcookie=bad\u0000bad")
+                        .build())
+                        .wait()!!
+
+                response.status() shouldBe BAD_REQUEST
+
+                val event = httpErrorLogger.log().first()
+                event.level shouldBe ERROR
+
+                var t = event.throwableProxy
+                while (t != null) {
+                    anySensitiveHeadersAreHidden(t.message)
+                    t = t.cause
+                }
+            }
+
+            scenario("Responses with badly-formed headers should hide sensitive cookies and headers when logged") {
+
+                rootLogger.appender.list.clear()
+                rootLogger.logger.level = DEBUG
+
+                var exception: Throwable? = assertFailsWith<BadHttpResponseException> {
+                    client.send(HttpRequest.get("/bad/path")
+                            .header(HOST, styxServer().proxyHttpHostHeader())
+                            .header("header1", "h1")
+                            .header("header2", "h2")
+                            .header("cookie", "cookie1=c1;cookie2=c2")
+                            .build())
+                            .wait()
+                }
+
+                while (exception != null) {
+                    anySensitiveHeadersAreHidden(exception.message ?: "")
+                    exception = exception.cause
+                }
+
+                rootLogger.log().forEach {
+                    anySensitiveHeadersAreHidden(it.message)
+                    var t = it.throwableProxy
+                    while (t != null) {
+                        anySensitiveHeadersAreHidden(t.message)
+                        t = t.cause
+                    }
+                }
+            }
         }
     }
 
-    val logger = LoggingTestSupport("com.hotels.styx.http-messages.inbound")
+    private fun anySensitiveHeadersAreHidden(msg: String) {
+        msg shouldNotContain "header1=h1"
+        msg shouldNotContain "cookie1=c1"
+        if (msg.contains("header2=h2")) {
+            msg shouldContain "header1=****"
+        }
+        if (msg.contains("cookie2=c2")) {
+            msg shouldContain "cookie1=****"
+        }
+    }
+
+    private val logger = LoggingTestSupport("com.hotels.styx.http-messages.inbound")
+    private val httpErrorLogger = LoggingTestSupport(HttpErrorStatusCauseLogger::class.java)
+    private val rootLogger = LoggingTestSupport("ROOT")
+
 
     val client: StyxHttpClient = StyxHttpClient.Builder().build()
 
@@ -87,6 +186,15 @@ class HttpMessageLoggingSpec : FeatureSpec() {
 
         routingObjects:
           root:
+            type: PathPrefixRouter
+            config:
+              routes:
+                - prefix: /
+                  destination: default
+                - prefix: /bad
+                  destination: bad
+                  
+          default:
             type: StaticResponseHandler
             config:
               status: 200
@@ -98,6 +206,21 @@ class HttpMessageLoggingSpec : FeatureSpec() {
                   value: "h2" 
                 - name: "cookie"
                   value: "cookie1=c1;cookie2=c2"
+
+          bad:
+            type: StaticResponseHandler
+            config:
+              status: 200
+              content: ""
+              headers:
+                - name: "header1"
+                  value: "h1"
+                - name: "header2"
+                  value: "h2" 
+                - name: "cookie"
+                  value: "cookie1=c1;cookie2=c2"
+                - name: "badheader"
+                  value: "bad\u0000bad" 
 
         httpPipeline: root
       """.trimIndent())

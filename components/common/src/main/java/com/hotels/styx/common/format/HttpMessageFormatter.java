@@ -19,6 +19,7 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import io.netty.handler.codec.http.HttpObject;
 
 /**
  * A common interface for formatting requests and responses.
@@ -32,5 +33,7 @@ public interface HttpMessageFormatter {
     String formatResponse(HttpResponse response);
 
     String formatResponse(LiveHttpResponse response);
+
+    String formatNettyMessage(HttpObject message);
 
 }

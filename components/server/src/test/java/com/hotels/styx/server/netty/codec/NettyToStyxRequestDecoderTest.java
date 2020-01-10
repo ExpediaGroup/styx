@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,6 +21,9 @@ import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.HttpHeader;
 import com.hotels.styx.api.HttpMethod;
 import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.common.format.HttpMessageFormatter;
+import com.hotels.styx.common.format.SanitisedHttpHeaderFormatter;
+import com.hotels.styx.common.format.SanitisedHttpMessageFormatter;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.UniqueIdSupplier;
 import io.netty.buffer.ByteBuf;
@@ -28,6 +31,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.DecoderException;
+import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultHttpRequest;
@@ -46,6 +50,7 @@ import rx.Subscriber;
 import rx.observers.TestSubscriber;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 
 import static com.google.common.base.Charsets.US_ASCII;
@@ -68,7 +73,9 @@ import static io.netty.handler.codec.http.HttpMethod.POST;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -108,6 +115,27 @@ public class NettyToStyxRequestDecoderTest {
         String badUri = "/no5_such3_file7.pl?\"><script>alert(73541);</script>56519<script>alert(1)</script>0e134";
         Exception e = assertThrows(DecoderException.class, () -> send(httpRequest(GET, badUri)));
         assertEquals(BadRequestException.class, e.getCause().getClass());
+    }
+
+    @Test
+    public void sanitisesHeadersInBadRequestException() throws Throwable {
+        FullHttpRequest originalRequest = newHttpRequest("/uri");
+        HttpHeaders originalRequestHeaders = originalRequest.headers();
+        originalRequestHeaders.add("Foo", "foo");
+        originalRequestHeaders.add("secret-header", "secret");
+        originalRequestHeaders.add("Cookie", "Bar=bar;secret-cookie=secret");
+        originalRequest.setDecoderResult(DecoderResult.failure(new Exception("It just didn't work")));
+
+        Exception e = assertThrows(DecoderException.class, () -> decode(originalRequest));
+
+        assertEquals(BadRequestException.class, e.getCause().getClass());
+        String breMsg = e.getCause().getMessage();
+        assertThat(breMsg, containsString("Foo=foo"));
+        assertThat(breMsg, containsString("secret-header=****"));
+        assertThat(breMsg, containsString("Bar=bar"));
+        assertThat(breMsg, containsString("secret-cookie=****"));
+        assertThat(breMsg, not(containsString("secret-header=secret")));
+        assertThat(breMsg, not(containsString("secret-cookie=secret")));
     }
 
     @Test
@@ -391,8 +419,12 @@ public class NettyToStyxRequestDecoderTest {
 
     private LiveHttpRequest decode(HttpRequest request) {
         HttpRequestRecorder requestRecorder = new HttpRequestRecorder();
+        HttpMessageFormatter formatter = new SanitisedHttpMessageFormatter(new SanitisedHttpHeaderFormatter(
+                Arrays.asList("secret-header"), Arrays.asList("secret-cookie")
+        ));
         EmbeddedChannel channel = new EmbeddedChannel(new NettyToStyxRequestDecoder.Builder()
                 .uniqueIdSupplier(uniqueIdSupplier)
+                .httpMessageFormatter(formatter)
                 .build(), requestRecorder);
         channel.writeInbound(request);
         return requestRecorder.styxRequest;

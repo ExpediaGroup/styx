@@ -24,6 +24,8 @@ import com.hotels.styx.api.HttpVersion;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Url;
+import io.netty.handler.codec.http.HttpObject;
+import io.netty.handler.codec.http.LastHttpContent;
 
 import static java.util.Objects.requireNonNull;
 
@@ -79,6 +81,31 @@ public class SanitisedHttpMessageFormatter implements HttpMessageFormatter {
                 response.headers());
     }
 
+    @Override
+    public String formatNettyMessage(HttpObject message) {
+        if (message == null) {
+            return NULL;
+        } else if (message instanceof io.netty.handler.codec.http.HttpRequest) {
+            return formatNettyRequest((io.netty.handler.codec.http.HttpRequest) message);
+        } else if (message instanceof LastHttpContent) {
+            return formatNettyContent((LastHttpContent) message);
+        } else {
+            return message.toString();
+        }
+    }
+
+    private String formatNettyRequest(io.netty.handler.codec.http.HttpRequest request) {
+        return "{version=" + request.protocolVersion()
+                + ", method=" + request.method()
+                + ", uri=" + request.uri()
+                + ", headers=[" + sanitisedHttpHeaderFormatter.format(convertToStyxHeaders(request.headers())) + "]}";
+    }
+
+    private String formatNettyContent(LastHttpContent content) {
+        return "{data=" + content.content()
+                + ", trailingHeaders=[" + sanitisedHttpHeaderFormatter.format(convertToStyxHeaders(content.trailingHeaders())) + "]}";
+    }
+
     private String formatRequest(HttpVersion version, HttpMethod method, Url url, Object id, HttpHeaders headers) {
         return "{version=" + version
             + ", method=" + method
@@ -93,4 +120,11 @@ public class SanitisedHttpMessageFormatter implements HttpMessageFormatter {
             + ", headers=[" + sanitisedHttpHeaderFormatter.format(headers) + "]}";
     }
 
+    private HttpHeaders convertToStyxHeaders(io.netty.handler.codec.http.HttpHeaders nettyHeaders) {
+        HttpHeaders.Builder styxHeaders = new HttpHeaders.Builder();
+        nettyHeaders.names().forEach(name -> {
+                    styxHeaders.add(name, nettyHeaders.getAll(name));
+                });
+        return styxHeaders.build();
+    }
 }
