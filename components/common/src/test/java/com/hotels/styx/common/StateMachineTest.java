@@ -57,6 +57,7 @@ public class StateMachineTest {
 
     @Test
     public void handlesInappropriateEvents() {
+        @SuppressWarnings("unchecked")
         BiFunction<State, Object, State> inappropriateEventHandler = mock(BiFunction.class);
         when(inappropriateEventHandler.apply(any(State.class), any(Object.class))).thenReturn(EXPECTED_RESULT);
 
@@ -72,6 +73,7 @@ public class StateMachineTest {
 
     @Test
     public void performsStateTransitions() {
+        @SuppressWarnings("unchecked")
         Function<TestEvent, State> mapper = mock(Function.class);
         when(mapper.apply(any(TestEvent.class))).thenReturn(EXPECTED_RESULT);
 
