@@ -40,7 +40,8 @@ public final class StateMachine<S> {
 
     private volatile S currentState;
 
-    private StateMachine(S initialState, Map<Key<S>, Function<Object, S>> transitions, BiFunction<S, Object, S> inappropriateEventHandler, StateChangeListener<S> stateChangeListener) {
+	private StateMachine(S initialState, Map<Key<S>, Function<Object, S>> transitions,
+			BiFunction<S, Object, S> inappropriateEventHandler, StateChangeListener<S> stateChangeListener) {
         this.currentState = requireNonNull(initialState);
         this.transitions = requireNonNull(transitions);
         this.inappropriateEventHandler = requireNonNull(inappropriateEventHandler);
