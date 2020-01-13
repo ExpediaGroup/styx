@@ -50,4 +50,9 @@ public class DefaultHttpMessageFormatter implements HttpMessageFormatter {
     public String formatNettyMessage(HttpObject message) {
         return message == null ? null : message.toString();
     }
+
+    @Override
+    public Throwable wrap(Throwable t) {
+        return t;
+    }
 }

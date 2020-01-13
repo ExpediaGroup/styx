@@ -36,4 +36,6 @@ public interface HttpMessageFormatter {
 
     String formatNettyMessage(HttpObject message);
 
+    Throwable wrap(Throwable t);
+
 }

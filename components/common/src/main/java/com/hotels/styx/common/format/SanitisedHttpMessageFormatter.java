@@ -94,6 +94,11 @@ public class SanitisedHttpMessageFormatter implements HttpMessageFormatter {
         }
     }
 
+    @Override
+    public Throwable wrap(Throwable t) {
+        return t == null ? null : new SanitisingThrowableProxy(t, sanitisedHttpHeaderFormatter);
+    }
+
     private String formatNettyRequest(io.netty.handler.codec.http.HttpRequest request) {
         return "{version=" + request.protocolVersion()
                 + ", method=" + request.method()
