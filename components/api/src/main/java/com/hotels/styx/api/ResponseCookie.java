@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -86,6 +86,7 @@ public final class ResponseCookie {
     public static Set<ResponseCookie> decode(List<String> headerValues) {
         return headerValues.stream()
                 .map(ClientCookieDecoder.LAX::decode)
+                .filter(Objects::nonNull)
                 .map(ResponseCookie::convert)
                 .collect(Collectors.toSet());
     }

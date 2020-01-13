@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,9 +22,10 @@ import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
+import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.common.http.handler.HttpContentHandler;
 import com.hotels.styx.routing.db.StyxObjectStore;
-import com.hotels.styx.routing.handlers.ProviderObjectRecord;
+import com.hotels.styx.routing.handlers.StyxObjectRecord;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
@@ -46,10 +47,10 @@ public class ProviderListHandlerTest {
     public void showsEndpointsForAllConfiguredProviders() throws JsonProcessingException {
         JsonNode config = new ObjectMapper().readTree("{\"setting1\" : \"A\", \"setting2\" : \"A\"}");
 
-        StyxObjectStore<ProviderObjectRecord> store = new StyxObjectStore<>();
-        store.insert("Service-A1", new ProviderObjectRecord("ServiceA", new HashSet<>(), config, new SampleServiceA("Service-A-1")));
-        store.insert("Service-A2", new ProviderObjectRecord("ServiceA", new HashSet<>(), config, new SampleServiceA("Service-A-2")));
-        store.insert("Service-B", new ProviderObjectRecord("ServiceB", new HashSet<>(), config, new SampleServiceB("Service-B")));
+        StyxObjectStore<StyxObjectRecord<StyxService>> store = new StyxObjectStore<>();
+        store.insert("Service-A1", new StyxObjectRecord<>("ServiceA", new HashSet<>(), config, new SampleServiceA("Service-A-1")));
+        store.insert("Service-A2", new StyxObjectRecord<>("ServiceA", new HashSet<>(), config, new SampleServiceA("Service-A-2")));
+        store.insert("Service-B", new StyxObjectRecord<>("ServiceB", new HashSet<>(), config, new SampleServiceB("Service-B")));
 
         ProviderListHandler handler = new ProviderListHandler(store);
 

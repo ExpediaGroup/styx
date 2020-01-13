@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -185,11 +185,11 @@ public final class MockOriginServer {
     }
 
     public int port() {
-        return mockServer.httpAddress().getPort();
+        return mockServer.inetAddress().getPort();
     }
 
     public int adminPort() {
-        return adminServer.httpAddress().getPort();
+        return adminServer.inetAddress().getPort();
     }
 
     public boolean isRunning() {

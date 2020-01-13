@@ -103,6 +103,11 @@ public class LiveHttpResponseTest {
         assertThat(response.headers(), is(emptyIterable()));
         assertThat(bytesToString(response.body()), is(""));
     }
+    @Test
+    public void badSetCookieHeaderDoesNotNpe() throws Exception {
+        LiveHttpResponse response = response().header("Set-cookie","").build();
+        assertThat(response.cookies().size(), is(0));
+    }
 
     @Test
     public void createsResponseWithMinimalInformation() throws Exception {

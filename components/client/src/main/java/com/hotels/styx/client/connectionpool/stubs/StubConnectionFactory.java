@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -62,11 +62,6 @@ public class StubConnectionFactory implements Connection.Factory {
         @Override
         public Origin getOrigin() {
             return this.origin;
-        }
-
-        @Override
-        public long getTimeToFirstByteMillis() {
-            return 0;
         }
 
         @Override

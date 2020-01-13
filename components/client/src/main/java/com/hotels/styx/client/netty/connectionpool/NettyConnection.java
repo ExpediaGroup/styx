@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import io.netty.util.AttributeKey;
 import reactor.core.publisher.Flux;
 
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static java.util.Objects.requireNonNull;
@@ -40,7 +39,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * A connection using a netty channel.
  */
-public class NettyConnection implements Connection, TimeToFirstByteListener {
+public class NettyConnection implements Connection {
     private static final AttributeKey<Object> CLOSED_BY_STYX = AttributeKey.newInstance("CLOSED_BY_STYX");
     private static final int IGNORED_PORT_NUMBER = -1;
 
@@ -48,7 +47,6 @@ public class NettyConnection implements Connection, TimeToFirstByteListener {
     private final Channel channel;
     private final HttpRequestOperationFactory requestOperationFactory;
 
-    private volatile long timeToFirstByteMs;
     private final Announcer<Listener> listeners = Announcer.to(Listener.class);
 
 
@@ -68,7 +66,6 @@ public class NettyConnection implements Connection, TimeToFirstByteListener {
         this.origin = requireNonNull(origin);
         this.channel = requireNonNull(channel);
         this.requestOperationFactory = requestOperationFactory;
-        this.channel.pipeline().addLast(new TimeToFirstByteHandler(this));
         this.channel.closeFuture().addListener(future ->
                 listeners.announce().connectionClosed(NettyConnection.this));
         addChannelHandlers(channel, httpConfig, sslContext, sendSni, sniHost.orElse(origin.host()));
@@ -116,11 +113,6 @@ public class NettyConnection implements Connection, TimeToFirstByteListener {
     }
 
     @Override
-    public long getTimeToFirstByteMillis() {
-        return this.timeToFirstByteMs;
-    }
-
-    @Override
     public void addConnectionListener(Listener listener) {
         this.listeners.addListener(listener);
     }
@@ -131,11 +123,6 @@ public class NettyConnection implements Connection, TimeToFirstByteListener {
             channel.attr(CLOSED_BY_STYX).set(true);
             channel.close();
         }
-    }
-
-    @Override
-    public void notifyTimeToFirstByte(long timeToFirstByte, TimeUnit timeUnit) {
-        this.timeToFirstByteMs = timeUnit.toMillis(timeToFirstByte);
     }
 
     @Override

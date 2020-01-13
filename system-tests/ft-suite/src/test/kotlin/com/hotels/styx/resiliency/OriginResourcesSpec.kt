@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ class OriginResourcesSpec : StringSpec() {
                     .withStatus(200)
                     .withBody("mock-server-01"))
 
-
+    val initialThreadcount = threadCount("Styx-Client-Worker")
     init {
         "Client thread pool configuration" {
             val clientThreadCount = run {
@@ -67,7 +67,7 @@ class OriginResourcesSpec : StringSpec() {
             }
 
             // From the static configuration below
-            clientThreadCount shouldBe 3
+            clientThreadCount-initialThreadcount shouldBe 3
         }
 
         "Uses the same thread pool for reloaded origins" {

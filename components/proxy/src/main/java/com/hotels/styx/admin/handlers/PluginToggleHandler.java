@@ -24,10 +24,10 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.WebServiceHandler;
-import com.hotels.styx.configstore.ConfigStore;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import org.slf4j.Logger;
 
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -56,18 +56,17 @@ public class PluginToggleHandler implements WebServiceHandler {
     private static final Logger LOGGER = getLogger(PluginToggleHandler.class);
 
     private static final Pattern URL_PATTERN = Pattern.compile(".*/([^/]+)/enabled/?");
-    private static final int MAX_CONTENT_SIZE = PluginEnabledState.maxContentBytes();
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
 
-    private final ConfigStore configStore;
+    private final List<NamedPlugin> plugins;
 
     /**
      * Construct an instance given the plugins that you want to be able to enable and disable.
      *
-     * @param configStore config store
+     * @param plugins List of all plugins
      */
-    public PluginToggleHandler(ConfigStore configStore) {
-        this.configStore = requireNonNull(configStore);
+    public PluginToggleHandler(List<NamedPlugin> plugins) {
+        this.plugins = requireNonNull(plugins);
     }
 
     @Override
@@ -190,7 +189,7 @@ public class PluginToggleHandler implements WebServiceHandler {
     }
 
     private NamedPlugin plugin(String pluginName) {
-        return configStore.get("plugins." + pluginName, NamedPlugin.class)
+        return plugins.stream().filter(p -> p.name().equals(pluginName)).findFirst()
                 .orElseThrow(() -> new PluginNotFoundException("No such plugin: pluginName=" + pluginName));
     }
 

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -169,12 +169,14 @@ public class DashboardDataTest {
         metricRegistry.meter("origins.app.requests.success-rate").mark(123);
         metricRegistry.meter("origins.app.requests.error-rate").mark(111);
         metricRegistry.timer("origins.app.requests.latency").update(1000, MILLISECONDS);
+        metricRegistry.timer("origins.app.requests.time-to-first-byte").update(500, MILLISECONDS);
 
         DashboardData.Requests requests = newDashboardData().downstream().firstBackend().requests();
 
         assertThat(requests.successRate().count(), is(123L));
         assertThat(requests.errorRate().count(), is(111L));
         assertThat(requests.latency().p50(), is(closeTo(1000.0, 5)));
+        assertThat(requests.timeToFirstByte().p50(), is(closeTo(500.0, 5)));
     }
 
     @Test
@@ -259,12 +261,14 @@ public class DashboardDataTest {
         metricRegistry.meter("origins.app.app-01.requests.success-rate").mark(123);
         metricRegistry.meter("origins.app.app-01.requests.error-rate").mark(111);
         metricRegistry.timer("origins.app.app-01.requests.latency").update(1000, MILLISECONDS);
+        metricRegistry.timer("origins.app.app-01.requests.time-to-first-byte").update(500, MILLISECONDS);
 
         DashboardData.Requests requests = newDashboardData().downstream().firstBackend().firstOrigin().requests();
 
         assertThat(requests.successRate().count(), is(123L));
         assertThat(requests.errorRate().count(), is(111L));
         assertThat(requests.latency().p50(), is(closeTo(1000.0, 5)));
+        assertThat(requests.timeToFirstByte().p50(), is(closeTo(500.0, 5)));
         assertThat(requests.errorPercentage(), is(closeTo(47.0, 0.5)));
     }
 

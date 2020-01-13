@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ public class ApplicationMetrics {
     private final MetricRegistry applicationMetrics;
     private final MetricRegistry requestScope;
     private final Timer requestLatencyTimer;
+    private final Timer requestTimeToFirstByteTimer;
     private final Meter requestSuccessMeter;
     private final Meter requestErrorMeter;
     private final Meter status200OkMeter;
@@ -52,6 +53,7 @@ public class ApplicationMetrics {
 
         this.requestScope = this.applicationMetrics.scope("requests");
         this.requestLatencyTimer = this.requestScope.timer("latency");
+        this.requestTimeToFirstByteTimer = this.requestScope.timer("time-to-first-byte");
         this.requestSuccessMeter = this.requestScope.meter("success-rate");
         this.requestErrorMeter = this.requestScope.meter("error-rate");
         this.status200OkMeter = this.requestScope.meter(name("response", statusCodeName(200)));
@@ -73,12 +75,17 @@ public class ApplicationMetrics {
     }
 
     /**
-     * Starts request latency timer.
-     *
-     * @return timer context for request latency
+     * Returns request latency timer.
      */
     public Timer requestLatencyTimer() {
         return requestLatencyTimer;
+    }
+
+    /**
+     * Returns request time-to-first-byte timer.
+     */
+    public Timer requestTimeToFirstByteTimer() {
+        return requestTimeToFirstByteTimer;
     }
 
     /**

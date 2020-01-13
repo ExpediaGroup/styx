@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,7 +19,10 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
 import com.hotels.styx.admin.handlers.ServiceProviderHandler
+import com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE
 import com.hotels.styx.api.HttpHeaderNames.HOST
+import com.hotels.styx.api.HttpHeaderValues.APPLICATION_JSON
+import com.hotels.styx.api.HttpHeaderValues.HTML
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.*
 import com.hotels.styx.api.RequestCookie.requestCookie
@@ -603,6 +606,19 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                             validateHealthCheckMonitor(monitor)
                         }
             }
+
+            test("Health checking service status returned from its admin endpoint") {
+                client.send(get("/admin/providers/appB-monitor/status")
+                        .header(HOST, styxServer().adminHostHeader())
+                        .build())
+                        .wait().let {
+                            it!!.status() shouldBe OK
+                            it.header(CONTENT_TYPE).get().toLowerCase() shouldBe APPLICATION_JSON.toString().toLowerCase()
+                            // TODO: This name should probably change.
+                            it.bodyAs(UTF_8) shouldBe "{ name: \"HealthCheckMonitoringService\" status: \"RUNNING\" }"
+                        }
+            }
+
 
             test("Starts sending traffic to an unhealthy origin again when health checks are disabled") {
                 writeOrigins("""

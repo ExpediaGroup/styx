@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,11 +13,13 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.proxy;
+package com.hotels.styx;
 
 import com.codahale.metrics.Histogram;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.proxy.HttpCompressor;
+import com.hotels.styx.proxy.ServerProtocolDistributionRecorder;
 import com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder;
 import com.hotels.styx.server.ConnectorConfig;
 import com.hotels.styx.server.HttpErrorStatusListener;

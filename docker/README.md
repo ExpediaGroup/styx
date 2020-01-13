@@ -12,7 +12,7 @@ To build the docker image:
 To run the image:
 
     docker run -it -v /var/run/docker.sock:/var/run/docker.sock styxbuild
-    docker run -it -v /var/run/docker.sock:/var/run/docker.sock  -v /Users/$USER/.m2:/root/.m2  styxbuild:latest
+    docker run -it -v /var/run/docker.sock:/var/run/docker.sock  -v /Users/$USER/.m2:/root/.m2 -v `pwd`:/build styxbuild:latest
     
 Note, mounting a `docker.sock` is only necessary for building a Styx Docker
 image inside the build container.

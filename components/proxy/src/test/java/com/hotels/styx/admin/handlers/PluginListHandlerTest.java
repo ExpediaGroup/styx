@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@
 package com.hotels.styx.admin.handlers;
 
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.configstore.ConfigStore;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
@@ -42,13 +43,8 @@ public class PluginListHandlerTest {
         two.setEnabled(false);
         three.setEnabled(false);
 
-        Iterable<NamedPlugin> plugins = asList(one, two, three, four);
-
-        ConfigStore configStore = new ConfigStore();
-
-        plugins.forEach(plugin -> configStore.set("plugins." + plugin.name(), plugin));
-
-        PluginListHandler handler = new PluginListHandler(configStore);
+        List<NamedPlugin> plugins = asList(one, two, three, four);
+        PluginListHandler handler = new PluginListHandler(plugins);
 
         HttpResponse response = Mono.from(handler.handle(get("/").build(), HttpInterceptorContext.create())).block();
 
@@ -60,5 +56,23 @@ public class PluginListHandlerTest {
                 "<h3>Disabled</h3>" +
                 "<a href='/admin/plugins/two'>two</a><br />" +
                 "<a href='/admin/plugins/three'>three</a><br />"));
+    }
+
+    @Test
+    public void showsLoadedPlugins() {
+        NamedPlugin one = namedPlugin("one", PASS_THROUGH);
+        NamedPlugin two = namedPlugin("two", PASS_THROUGH);
+
+        List<NamedPlugin> plugins = asList(one, two);
+        PluginListHandler handler = new PluginListHandler(plugins);
+
+        HttpResponse response = Mono.from(
+                handler.handle(get("/").build(),
+                        HttpInterceptorContext.create())).block();
+        assertThat(response.status(), is(OK));
+        assertThat(response.bodyAs(UTF_8), is("" +
+                "<h3>Loaded</h3>" +
+                "<a href='/admin/plugins/one'>one</a><br />" +
+                "<a href='/admin/plugins/two'>two</a><br />"));
     }
 }

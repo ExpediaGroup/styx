@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -92,7 +92,7 @@ public class StyxProxyTest extends SSLSetup {
         server.startAsync().awaitRunning();
         assertThat("Server should be running", server.isRunning());
 
-        HttpResponse secureResponse = get("http://localhost:" + server.httpAddress().getPort());
+        HttpResponse secureResponse = get("http://localhost:" + server.inetAddress().getPort());
         assertThat(secureResponse.bodyAs(UTF_8), containsString("Response from http connector"));
 
         server.stopAsync().awaitTerminated();

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ public class StaticFileOnRealServerIT {
         dir = Files.createTempDir();
         webServer = createHttpServer(0, new StaticFileHandler(dir));
         webServer.startAsync().awaitRunning();
-        serverEndpoint = toHostAndPort(webServer.httpAddress());
+        serverEndpoint = toHostAndPort(webServer.inetAddress());
     }
 
 

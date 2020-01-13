@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -29,10 +29,14 @@ import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.config.schema.SchemaValidationException;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
-import com.hotels.styx.proxy.ProxyServerBuilder;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.ConnectorConfig;
 import com.hotels.styx.server.HttpServer;
+import com.hotels.styx.server.ServerEventLoopFactory;
+import com.hotels.styx.server.netty.NettyServerBuilder;
+import com.hotels.styx.server.netty.NettyServerConfig;
+import com.hotels.styx.server.netty.ServerConnector;
+import com.hotels.styx.server.netty.eventloop.PlatformAwareServerEventLoopFactory;
 import com.hotels.styx.startup.StyxServerComponents;
 import io.netty.util.ResourceLeakDetector;
 import org.jetbrains.annotations.NotNull;
@@ -50,6 +54,8 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.shutdownLogging;
+import static com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder.ENCODE_UNWISECHARS;
+import static com.hotels.styx.server.netty.eventloop.ServerEventLoopFactories.memoize;
 import static com.hotels.styx.startup.CoreMetrics.registerCoreMetrics;
 import static io.netty.util.ResourceLeakDetector.Level.DISABLED;
 import static java.lang.Runtime.getRuntime;
@@ -192,14 +198,13 @@ public final class StyxServer extends AbstractService {
         StyxConfig styxConfig = components.environment().configuration();
         httpServer = styxConfig.proxyServerConfig()
                 .httpConnectorConfig()
-                .map(it -> httpServer(components, it, httpHandler))
+                .map(it -> httpServer(components.environment(), it, httpHandler))
                 .orElse(null);
 
         httpsServer = styxConfig.proxyServerConfig()
                 .httpsConnectorConfig()
-                .map(it -> httpServer(components, it, httpHandler))
+                .map(it -> httpServer(components.environment(), it, httpHandler))
                 .orElse(null);
-
 
         ArrayList<Service> services2 = new ArrayList<>();
 
@@ -211,24 +216,43 @@ public final class StyxServer extends AbstractService {
 
     public InetSocketAddress proxyHttpAddress() {
         return Optional.ofNullable(httpServer)
-                .map(HttpServer::httpAddress)
+                .map(HttpServer::inetAddress)
                 .orElse(null);
     }
 
     public InetSocketAddress proxyHttpsAddress() {
         return Optional.ofNullable(httpsServer)
-                .map(HttpServer::httpAddress)
+                .map(HttpServer::inetAddress)
                 .orElse(null);
     }
 
     public InetSocketAddress adminHttpAddress() {
-        return adminServer.httpAddress();
+        return adminServer.inetAddress();
     }
 
-    private static HttpServer httpServer(StyxServerComponents config, ConnectorConfig connectorConfig, HttpHandler styxDataPlane) {
-        return new ProxyServerBuilder(config.environment())
+    // This function will be removed in near future:
+    private static ServerEventLoopFactory serverEventLoopFactory(String name, NettyServerConfig serverConfig) {
+        return memoize(new PlatformAwareServerEventLoopFactory(name, serverConfig.bossThreadsCount(), serverConfig.workerThreadsCount()));
+    }
+
+    private static HttpServer httpServer(Environment environment, ConnectorConfig connectorConfig, HttpHandler styxDataPlane) {
+        CharSequence styxInfoHeaderName = environment.configuration().styxHeaderConfig().styxInfoHeaderName();
+        ResponseInfoFormat responseInfoFormat = new ResponseInfoFormat(environment);
+
+        ServerConnector proxyConnector = new ProxyConnectorFactory(
+                environment.configuration().proxyServerConfig(),
+                environment.metricRegistry(),
+                environment.errorListener(),
+                environment.configuration().get(ENCODE_UNWISECHARS).orElse(""),
+                (builder, request) -> builder.header(styxInfoHeaderName, responseInfoFormat.format(request)),
+                environment.configuration().get("requestTracking", Boolean.class).orElse(false))
+                .create(connectorConfig);
+
+        return NettyServerBuilder.newBuilder()
+                .setMetricsRegistry(environment.metricRegistry())
+                .setServerEventLoopFactory(serverEventLoopFactory("Proxy", environment.configuration().proxyServerConfig()))
+                .setProtocolConnector(proxyConnector)
                 .handler(styxDataPlane)
-                .connectorConfig(connectorConfig)
                 .build();
     }
 
