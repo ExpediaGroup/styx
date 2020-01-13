@@ -15,16 +15,15 @@
  */
 package com.hotels.styx.common.content;
 
-import com.hotels.styx.common.content.ConsumerDisconnectedException;
-import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
 public class ConsumerDisconnectedExceptionTest {
     @Test
     public void rendersStringRepresentation() throws Exception {
         ConsumerDisconnectedException exception = new ConsumerDisconnectedException("foobar", "blah");
-        MatcherAssert.assertThat(exception.toString(), is("com.hotels.styx.common.content.ConsumerDisconnectedException: foobar producerState=blah"));
+        assertThat(exception.toString(), is("com.hotels.styx.common.content.ConsumerDisconnectedException: foobar producerState=blah"));
     }
 }

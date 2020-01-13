@@ -56,7 +56,6 @@ public class FlowControllingHttpContentProducer {
     private final Runnable onCompleteAction;
     private final Consumer<Throwable> onTerminateAction;
     private final Runnable delayedTearDownAction;
-    private Logger logger = LOGGER;
 
     private final Queue<ByteBuf> readQueue = new ConcurrentLinkedDeque<>();
     private final AtomicLong requested = new AtomicLong(0);

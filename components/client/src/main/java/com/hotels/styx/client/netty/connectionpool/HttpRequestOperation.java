@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -72,17 +72,6 @@ public class HttpRequestOperation {
     private final boolean requestLoggingEnabled;
     private volatile long requestTime;
     private final HttpRequestMessageLogger httpRequestMessageLogger;
-
-    /**
-     * Constructs an instance with flow-control disabled and a default response time (1s).
-     *
-     * @param request            HTTP request
-     * @param originStatsFactory OriginStats factory
-     */
-    @VisibleForTesting
-    public HttpRequestOperation(LiveHttpRequest request, OriginStatsFactory originStatsFactory, SanitisedHttpMessageFormatter sanitisedHttpMessageFormatter) {
-        this(request, originStatsFactory, DEFAULT_RESPONSE_TIMEOUT_MILLIS, false, false, sanitisedHttpMessageFormatter);
-    }
 
     /**
      * Constructs an instance.

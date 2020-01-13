@@ -42,7 +42,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.collect.Iterables.size;
@@ -63,10 +62,11 @@ import static java.util.stream.StreamSupport.stream;
  * This implementation is {@link Sharable}.
  */
 public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<HttpObject> {
-    public static final long TEARDOWN_DELAY = 5000L;
+
+    private static final long TEARDOWN_DELAY = 60000L;
+
     private final UniqueIdSupplier uniqueIdSupplier;
     private final UnwiseCharsEncoder unwiseCharEncoder;
-    private final AtomicBoolean requestCompleted = new AtomicBoolean(false);
     private Optional<FlowControllingHttpContentProducer> producer = Optional.empty();
 
     private NettyToStyxRequestDecoder(Builder builder) {
