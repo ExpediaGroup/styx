@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -41,10 +41,9 @@ import io.netty.handler.codec.http.HttpResponse;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import reactor.core.publisher.BaseSubscriber;
 import reactor.core.publisher.Flux;
-import rx.Observable;
-import rx.Subscriber;
-import rx.observers.TestSubscriber;
+import reactor.test.StepVerifier;
 
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
@@ -76,7 +75,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static rx.RxReactiveStreams.toObservable;
 
 public class NettyToStyxRequestDecoderTest {
     private final UniqueIdSupplier uniqueIdSupplier = fixedUniqueIdSupplier("1");
@@ -101,7 +99,6 @@ public class NettyToStyxRequestDecoderTest {
     public void throwsBadRequestExceptionOnInvalidRequests() throws Throwable {
         Exception e = assertThrows(DecoderException.class, () -> channel.writeInbound(perturb(httpRequestAsBuf(GET, "http://foo.com/"))));
         assertThat(e.getCause().getMessage(), matchesPattern("Error while decoding request.*\\R.*"));
-        assertEquals(BadRequestException.class, e.getCause().getClass());
     }
 
     @Test
@@ -162,20 +159,20 @@ public class NettyToStyxRequestDecoderTest {
         channel.writeInbound(contentChunkTwo);
         channel.writeInbound(contentChunkThree);
 
-        String content = subscribeAndRead(request.body());
+        String content = subscribeAndRead(request.body(), channel);
         assertThat(content, is("content chunk 1 content chunk 2 content chunk 3"));
     }
 
     @Test
-    public void completesContentObservableWhenLastHttpContentIsSeen() {
+    public void completesWhenThereIsNoMoreContentAndSubscriptionOccurs() {
         channel.writeInbound(chunkedRequestHeaders);
-        LiveHttpRequest request = (LiveHttpRequest) channel.readInbound();
-
-        TestSubscriber<?> contentSubscriber = subscribeTo(request.body());
-        assertThat(contentSubscriber.getOnCompletedEvents().size(), is(0));
+        LiveHttpRequest request = channel.readInbound();
 
         channel.writeInbound(EMPTY_LAST_CONTENT);
-        assertThat(contentSubscriber.getOnCompletedEvents().size(), is(1));
+
+        StepVerifier.create(request.body())
+                .then(channel::runPendingTasks)
+                .verifyComplete();
     }
 
     @Test
@@ -334,17 +331,11 @@ public class NettyToStyxRequestDecoderTest {
         return new DefaultHttpContent(copiedBuffer(content, UTF_8));
     }
 
-
-    private TestSubscriber<Buffer> subscribeTo(ByteStream contentStream) {
-        TestSubscriber<Buffer> subscriber = new TestSubscriber<>();
-        toObservable(contentStream).subscribe(subscriber);
-        return subscriber;
-    }
-
-    private String subscribeAndRead(ByteStream content) throws InterruptedException {
+    private String subscribeAndRead(ByteStream content, EmbeddedChannel channel) throws InterruptedException {
         CountDownLatch bodyCompletedLatch = new CountDownLatch(1);
 
         StringBuilder contentBuilder = subscribeToContent(content, bodyCompletedLatch);
+        channel.runPendingTasks();
         bodyCompletedLatch.await();
 
         return contentBuilder.toString();
@@ -352,20 +343,15 @@ public class NettyToStyxRequestDecoderTest {
 
     private static StringBuilder subscribeToContent(ByteStream contentStream, CountDownLatch onCompleteLatch) {
         StringBuilder builder = new StringBuilder();
-        toObservable(contentStream).subscribe(new Subscriber<Buffer>() {
+        contentStream.subscribe(new BaseSubscriber<Buffer>() {
             @Override
-            public void onCompleted() {
+            public void hookOnComplete() {
                 // no-op
                 onCompleteLatch.countDown();
             }
 
             @Override
-            public void onError(Throwable e) {
-                // no-op
-            }
-
-            @Override
-            public void onNext(Buffer buffer) {
+            public void hookOnNext(Buffer buffer) {
                 builder.append(new String(buffer.content(), UTF_8));
             }
         });

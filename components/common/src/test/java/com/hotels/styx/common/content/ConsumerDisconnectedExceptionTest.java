@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,19 +13,18 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.client.netty;
+package com.hotels.styx.common.content;
 
+import com.hotels.styx.common.content.ConsumerDisconnectedException;
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
 public class ConsumerDisconnectedExceptionTest {
     @Test
     public void rendersStringRepresentation() throws Exception {
         ConsumerDisconnectedException exception = new ConsumerDisconnectedException("foobar", "blah");
-        assertThat(exception.toString(), is("com.hotels.styx.client.netty.ConsumerDisconnectedException: foobar producerState=blah"));
+        MatcherAssert.assertThat(exception.toString(), is("com.hotels.styx.common.content.ConsumerDisconnectedException: foobar producerState=blah"));
     }
-
-
 }

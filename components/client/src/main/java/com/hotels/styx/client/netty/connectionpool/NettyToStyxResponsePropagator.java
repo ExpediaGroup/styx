@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package com.hotels.styx.client.netty.connectionpool;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Buffer;
-import com.hotels.styx.api.Buffers;
 import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
@@ -26,6 +25,8 @@ import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.BadHttpResponseException;
 import com.hotels.styx.client.StyxClientException;
+import com.hotels.styx.common.content.ContentPublisher;
+import com.hotels.styx.common.content.FlowControllingHttpContentProducer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.channel.ChannelHandlerContext;
@@ -36,8 +37,6 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.timeout.IdleStateEvent;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
-import org.slf4j.Logger;
 import reactor.core.publisher.FluxSink;
 
 import java.util.Optional;
@@ -51,14 +50,12 @@ import static io.netty.util.ReferenceCountUtil.retain;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.StreamSupport.stream;
-import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * A netty channel handler that reads from a channel and pass the message to a {@link Subscriber}.
  */
 final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
     public static final String NAME = NettyToStyxResponsePropagator.class.getSimpleName();
-    private static final Logger LOGGER = getLogger(NettyToStyxResponsePropagator.class);
 
     private final AtomicBoolean responseCompleted = new AtomicBoolean(false);
     private final FluxSink<LiveHttpResponse> sink;
@@ -95,9 +92,8 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
     private RuntimeException toStyxException(Throwable cause) {
         if (cause instanceof OutOfMemoryError) {
             return new StyxClientException("Styx Client out of memory. " + cause.getMessage(), cause);
-        } else {
-            return new BadHttpResponseException(origin, cause);
         }
+        return new BadHttpResponseException(origin, cause);
     }
 
     @Override
@@ -127,7 +123,6 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
             ctx.channel().config().setAutoRead(false);
             ctx.channel().read();
 
-            // Can be started with flow controlling disabled
             EventLoop eventLoop = ctx.channel().eventLoop();
 
             Publisher<Buffer> contentPublisher = new ContentPublisher(eventLoop, producer);
@@ -225,63 +220,6 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
                     .build();
         } catch (IllegalArgumentException e) {
             throw new BadHttpResponseException(origin, e);
-        }
-    }
-
-    private static final class BufferSubscriber implements Subscriber<ByteBuf> {
-
-        private final Subscriber<? super Buffer> actual;
-
-        public BufferSubscriber(Subscriber<? super Buffer> actual) {
-            this.actual = actual;
-        }
-
-        @Override
-        public void onSubscribe(Subscription s) {
-            actual.onSubscribe(s);
-        }
-
-        @Override
-        public void onNext(ByteBuf byteBuf) {
-            actual.onNext(Buffers.fromByteBuf(byteBuf));
-        }
-
-        @Override
-        public void onError(Throwable t) {
-            actual.onError(t);
-        }
-
-        @Override
-        public void onComplete() {
-            actual.onComplete();
-        }
-    }
-
-    private static final class ContentPublisher implements Publisher<Buffer> {
-
-        private final EventLoop eventLoop;
-        private final FlowControllingHttpContentProducer contentProducer;
-
-        public ContentPublisher(EventLoop eventLoop, FlowControllingHttpContentProducer contentProducer) {
-            this.eventLoop = eventLoop;
-            this.contentProducer = contentProducer;
-        }
-
-        @Override
-        public void subscribe(Subscriber<? super Buffer> subscriber) {
-            BufferSubscriber bufferSubscriber = new BufferSubscriber(subscriber);
-            eventLoop.submit(() -> contentProducer.onSubscribed(bufferSubscriber));
-            subscriber.onSubscribe(new Subscription() {
-                @Override
-                public void request(long n) {
-                    eventLoop.submit(() -> contentProducer.request(n));
-                }
-
-                @Override
-                public void cancel() {
-                    eventLoop.submit(contentProducer::unsubscribe);
-                }
-            });
         }
     }
 }

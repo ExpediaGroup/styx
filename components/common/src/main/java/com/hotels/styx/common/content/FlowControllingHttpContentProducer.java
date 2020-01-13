@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,12 +13,11 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.client.netty.connectionpool;
+package com.hotels.styx.common.content;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.client.netty.ConsumerDisconnectedException;
 import com.hotels.styx.common.StateMachine;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.ReferenceCountUtil;
@@ -33,17 +32,20 @@ import java.util.function.Consumer;
 import java.util.function.LongUnaryOperator;
 
 import static com.google.common.base.Objects.toStringHelper;
-import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.BUFFERING;
-import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.BUFFERING_COMPLETED;
-import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.COMPLETED;
-import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.EMITTING_BUFFERED_CONTENT;
-import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.STREAMING;
-import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.TERMINATED;
+import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.BUFFERING;
+import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.BUFFERING_COMPLETED;
+import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.COMPLETED;
+import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.EMITTING_BUFFERED_CONTENT;
+import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.STREAMING;
+import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.TERMINATED;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static reactor.core.publisher.Operators.addCap;
 
-class FlowControllingHttpContentProducer {
+/**
+ * A FSM that controls the flow of content chunks in accordance with the Reactive Streams specification.
+ */
+public class FlowControllingHttpContentProducer {
     private static final Logger LOGGER = LoggerFactory.getLogger(FlowControllingHttpContentProducer.class);
     private static final int MAX_DEPTH = 1;
 
@@ -54,6 +56,7 @@ class FlowControllingHttpContentProducer {
     private final Runnable onCompleteAction;
     private final Consumer<Throwable> onTerminateAction;
     private final Runnable delayedTearDownAction;
+    private Logger logger = LOGGER;
 
     private final Queue<ByteBuf> readQueue = new ConcurrentLinkedDeque<>();
     private final AtomicLong requested = new AtomicLong(0);
@@ -79,7 +82,7 @@ class FlowControllingHttpContentProducer {
         TERMINATED
     }
 
-    FlowControllingHttpContentProducer(
+    public FlowControllingHttpContentProducer(
             Runnable askForMore,
             Runnable onCompleteAction,
             Consumer<Throwable> onTerminateAction,
@@ -90,7 +93,7 @@ class FlowControllingHttpContentProducer {
         this.onCompleteAction = requireNonNull(onCompleteAction);
         this.onTerminateAction = requireNonNull(onTerminateAction);
         this.delayedTearDownAction = requireNonNull(delayedTearDownAction);
-        this.origin = requireNonNull(origin);
+        this.origin = origin;
 
         this.stateMachine = new StateMachine.Builder<ProducerState>()
                 .initialState(BUFFERING)
@@ -382,23 +385,23 @@ class FlowControllingHttpContentProducer {
     /*
      * Event injector methods:
      */
-    void newChunk(ByteBuf content) {
+    public void newChunk(ByteBuf content) {
         stateMachine.handle(new ContentChunkEvent(content));
     }
 
-    void lastHttpContent() {
+    public void lastHttpContent() {
         stateMachine.handle(new ContentEndEvent());
     }
 
-    void channelException(Throwable cause) {
+    public void channelException(Throwable cause) {
         stateMachine.handle(new ChannelExceptionEvent(cause));
     }
 
-    void channelInactive(Throwable cause) {
+    public void channelInactive(Throwable cause) {
         stateMachine.handle(new ChannelInactiveEvent(cause));
     }
 
-    void tearDownResources() {
+    public void tearDownResources() {
         stateMachine.handle(new DelayedTearDownEvent(new ResponseTimeoutException(origin,
                 "channelClosed",
                 receivedBytes(),
@@ -407,11 +410,11 @@ class FlowControllingHttpContentProducer {
                 emittedChunks())));
     }
 
-    void request(long n) {
+    public void request(long n) {
         stateMachine.handle(new RxBackpressureRequestEvent(n));
     }
 
-    void onSubscribed(Subscriber<? super ByteBuf> subscriber) {
+    public void onSubscribed(Subscriber<? super ByteBuf> subscriber) {
         if (inSubscribedState()) {
             LOGGER.warn(warningMessage("Secondary content subscription"));
         }
@@ -422,23 +425,23 @@ class FlowControllingHttpContentProducer {
         return state() == COMPLETED || state() == STREAMING || state() == EMITTING_BUFFERED_CONTENT || state() == TERMINATED;
     }
 
-    void unsubscribe() {
+    public void unsubscribe() {
         stateMachine.handle(new UnsubscribeEvent());
     }
 
-    long emittedBytes() {
+    public long emittedBytes() {
         return emittedBytes.get();
     }
 
-    long emittedChunks() {
+    public long emittedChunks() {
         return emittedChunks.get();
     }
 
-    long receivedBytes() {
+    public long receivedBytes() {
         return receivedBytes.get();
     }
 
-    long receivedChunks() {
+    public long receivedChunks() {
         return receivedChunks.get();
     }
 

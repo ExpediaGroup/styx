@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,11 +13,10 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.client.netty.connectionpool;
+package com.hotels.styx.common.content;
 
 import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.exceptions.TransportLostException;
-import com.hotels.styx.client.netty.ConsumerDisconnectedException;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -35,12 +34,12 @@ import java.util.function.Consumer;
 import static ch.qos.logback.classic.Level.WARN;
 import static com.google.common.base.Charsets.UTF_8;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
-import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.BUFFERING;
-import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.BUFFERING_COMPLETED;
-import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.COMPLETED;
-import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.EMITTING_BUFFERED_CONTENT;
-import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.STREAMING;
-import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.TERMINATED;
+import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.BUFFERING;
+import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.BUFFERING_COMPLETED;
+import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.COMPLETED;
+import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.EMITTING_BUFFERED_CONTENT;
+import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.STREAMING;
+import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.TERMINATED;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static org.hamcrest.MatcherAssert.assertThat;
