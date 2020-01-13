@@ -21,6 +21,9 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
+/**
+ * A publisher to wrap the FlowControllingHttpContentProducer FSM and perform subscription operations via a Netty EventLoop.
+ */
 public final class ContentPublisher implements Publisher<Buffer> {
 
     private final EventLoop eventLoop;
