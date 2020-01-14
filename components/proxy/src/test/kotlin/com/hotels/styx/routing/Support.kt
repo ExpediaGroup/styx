@@ -24,6 +24,7 @@ import com.hotels.styx.api.HttpResponse
 import com.hotels.styx.api.HttpResponse.response
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
+import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.api.WebServiceHandler
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.proxy.plugin.NamedPlugin
@@ -84,6 +85,14 @@ fun CompletableFuture<HttpResponse>.wait(debug: Boolean = false) = this.toMono()
         .doOnNext {
             if (debug) {
                 LOGGER.debug("${it.status()} - ${it.headers()} - ${it.bodyAs(UTF_8)}")
+            }
+        }
+        .block()
+
+fun CompletableFuture<LiveHttpResponse>.wait(debug: Boolean = false) = this.toMono()
+        .doOnNext {
+            if (debug) {
+                LOGGER.debug("${it.status()} - ${it.headers()}")
             }
         }
         .block()

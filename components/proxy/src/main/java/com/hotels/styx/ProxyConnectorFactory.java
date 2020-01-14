@@ -62,7 +62,6 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Factory for proxy connectors.
  */
-// TODO: Could we make it non-public?
 public class ProxyConnectorFactory implements ServerConnectorFactory {
     private final MetricRegistry metrics;
     private final HttpErrorStatusListener errorStatusListener;
