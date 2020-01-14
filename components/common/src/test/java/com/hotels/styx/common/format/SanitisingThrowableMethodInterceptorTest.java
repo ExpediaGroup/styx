@@ -1,5 +1,6 @@
 package com.hotels.styx.common.format;
 
+import net.sf.cglib.proxy.Enhancer;
 import org.junit.jupiter.api.Test;
 
 import static java.util.Arrays.asList;
@@ -9,7 +10,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.core.StringEndsWith.endsWith;
 
-class SanitisingThrowableProxyTest {
+class SanitisingThrowableMethodInterceptorTest {
 
     SanitisedHttpHeaderFormatter formatter = new SanitisedHttpHeaderFormatter(
             emptyList(), asList("secret-cookie", "private-cookie")
@@ -34,7 +35,7 @@ class SanitisingThrowableProxyTest {
     @Test
     public void messagesWithNoCookiesAreNotChanged() {
         Exception e = exception("This does not contain any cookies.");
-        SanitisingThrowableProxy proxy = new SanitisingThrowableProxy(e, formatter);
+        Throwable proxy = (Throwable) Enhancer.create(e.getClass(), new SanitisingThrowableMethodInterceptor(e, formatter));
 
         String prefix = "java.lang.Exception: ";
         assertThat(proxy.getMessage(), equalTo(prefix + e.getMessage()));
@@ -45,7 +46,7 @@ class SanitisingThrowableProxyTest {
     @Test
     public void messagesWithUnrecognizedCookiesAreNotChanged() {
         Exception e = exception("Some cookies: cookie1=c1;cookie2=c2");
-        SanitisingThrowableProxy proxy = new SanitisingThrowableProxy(e, formatter);
+        Throwable proxy = (Throwable) Enhancer.create(e.getClass(), new SanitisingThrowableMethodInterceptor(e, formatter));
         assertThat(proxy.getMessage(), endsWith(e.getMessage()));
         assertThat(proxy.getLocalizedMessage(), endsWith(e.getLocalizedMessage()));
         assertThat(proxy.toString(), endsWith(e.toString()));
@@ -54,7 +55,7 @@ class SanitisingThrowableProxyTest {
     @Test
     public void messagesWithRecognizedCookiesAreSanitized() {
         Exception e = exception("Some cookies: cookie1=c1;secret-cookie=secret;cookie2=c2;private-cookie=private");
-        SanitisingThrowableProxy proxy = new SanitisingThrowableProxy(e, formatter);
+        Throwable proxy = (Throwable) Enhancer.create(e.getClass(), new SanitisingThrowableMethodInterceptor(e, formatter));
         assertThat(proxy.getMessage(), containsString("cookie1=c1"));
         assertThat(proxy.getMessage(), containsString("cookie2=c2"));
         assertThat(proxy.getMessage(), containsString("secret-cookie=****"));
@@ -65,7 +66,7 @@ class SanitisingThrowableProxyTest {
     public void exceptionCausesAreSanitized() {
         Exception inner = exception("Inner: cookie1=c1;secret-cookie=secret");
         Exception outer = exception("Outer: cookie2=c2;private-cookie=private", inner);
-        SanitisingThrowableProxy outerProxy = new SanitisingThrowableProxy(outer, formatter);
+        Throwable outerProxy = (Throwable) Enhancer.create(outer.getClass(), new SanitisingThrowableMethodInterceptor(outer, formatter));
         assertThat(outerProxy.getMessage(), containsString("cookie2=c2"));
         assertThat(outerProxy.getMessage(), containsString("private-cookie=****"));
         assertThat(outerProxy.getCause().getMessage(), containsString("cookie1=c1"));
@@ -75,14 +76,14 @@ class SanitisingThrowableProxyTest {
     @Test
     public void nullMessagesAreAllowed() {
         Exception e = exception(null);
-        SanitisingThrowableProxy proxy = new SanitisingThrowableProxy(e, formatter);
+        Throwable proxy = (Throwable) Enhancer.create(e.getClass(), new SanitisingThrowableMethodInterceptor(e, formatter));
         assertThat(proxy.getMessage(), equalTo("java.lang.Exception: null"));
     }
 
     @Test
     public void messagesWithInvalidCookiesAreSanitized() {
         Exception e = exception("Some cookies: cookie1=c1;secret-cookie=secret;bad-cookie=bad\u0000bad;private-cookie=private");
-        SanitisingThrowableProxy proxy = new SanitisingThrowableProxy(e, formatter);
+        Throwable proxy = (Throwable) Enhancer.create(e.getClass(), new SanitisingThrowableMethodInterceptor(e, formatter));
         assertThat(proxy.getMessage(), containsString("cookie1=c1"));
         assertThat(proxy.getMessage(), containsString("bad-cookie=bad\u0000bad"));
         assertThat(proxy.getMessage(), containsString("secret-cookie=****"));

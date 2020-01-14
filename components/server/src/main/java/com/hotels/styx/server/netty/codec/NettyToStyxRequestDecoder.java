@@ -83,6 +83,8 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
             String formattedHttpObject = httpMessageFormatter.formatNettyMessage(httpObject);
             throw new BadRequestException("Error while decoding request: " + formattedHttpObject,
                     httpMessageFormatter.wrap(httpObject.getDecoderResult().cause()));
+//                    httpObject.getDecoderResult().cause());
+//                    new Throwable(httpObject.getDecoderResult().cause()));
         }
 
         try {

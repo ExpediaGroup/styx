@@ -1,7 +1,12 @@
 package com.hotels.styx.common.format;
 
-import java.io.PrintStream;
-import java.io.PrintWriter;
+import net.sf.cglib.proxy.Enhancer;
+import net.sf.cglib.proxy.MethodInterceptor;
+import net.sf.cglib.proxy.MethodProxy;
+
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -10,7 +15,7 @@ import java.util.regex.Pattern;
  * Wraps a {@link Throwable} so that the message can be modified to sanitize the values of any recognised cookies.
  * Any cause is similarly wrapped before being returned.
  */
-public class SanitisingThrowableProxy extends Throwable {
+public class SanitisingThrowableMethodInterceptor implements MethodInterceptor {
 
     private static final ConcurrentHashMap<String, Pattern> COOKIE_NAME_PATTERN_CACHE = new ConcurrentHashMap<>();
     private static Pattern cookieNamePattern(String cookieName) {
@@ -21,13 +26,29 @@ public class SanitisingThrowableProxy extends Throwable {
     private final SanitisedHttpHeaderFormatter formatter;
 
     /**
-     * Wrap a throwable, using the given {@link SanitisedHttpHeaderFormatter} to recognise and sanitise cookie values.
-     * @param throwable the throwable to wrap
+     * Enhance a throwable, using the given {@link SanitisedHttpHeaderFormatter} to recognise and sanitise cookie values.
      * @param formatter provides the sanitising logic
      */
-    public SanitisingThrowableProxy(Throwable throwable, SanitisedHttpHeaderFormatter formatter) {
+    public SanitisingThrowableMethodInterceptor(Throwable throwable, SanitisedHttpHeaderFormatter formatter) {
         this.throwable = throwable;
         this.formatter = formatter;
+    }
+
+    @Override
+    public Object intercept(Object obj, java.lang.reflect.Method method, Object[] args,
+                            MethodProxy proxy) throws Throwable {
+        switch (method.getName()) {
+            case "getMessage":
+                return getMessage();
+            case "getLocalizedMessage":
+                return getLocalizedMessage();
+            case "toString":
+                return toString();
+            case "getCause":
+                return getCause();
+            default:
+                return proxy.invoke(throwable, args);
+        }
     }
 
     private String sanitiseCookies(String message) {
@@ -49,66 +70,21 @@ public class SanitisingThrowableProxy extends Throwable {
                 .orElse(message);
     }
 
-    /**
-     * Returns the class of the wrapped Throwable.
-     * @return the class of the wrapped Throwable.
-     */
-    public Class<? extends Throwable> delegateClass() {
-        return throwable.getClass();
-    }
-
-    @Override
-    public String getMessage() {
+    public String getMessage() throws Throwable {
         return throwable.getClass().getName() + ": " + sanitiseCookies(throwable.getMessage());
     }
 
-    @Override
-    public String getLocalizedMessage() {
+    public String getLocalizedMessage() throws Throwable {
         return throwable.getClass().getName() + ": " + sanitiseCookies(throwable.getLocalizedMessage());
     }
 
-    @Override
-    public synchronized Throwable getCause() {
+    public synchronized Throwable getCause() throws Throwable {
         Throwable cause = throwable.getCause();
-        return cause == null ? null : new SanitisingThrowableProxy(cause, formatter);
+        return cause == null ? null : (Throwable) Enhancer.create(cause.getClass(), new SanitisingThrowableMethodInterceptor(cause, formatter));
     }
 
-    @Override
-    public synchronized Throwable initCause(Throwable cause) {
-        return throwable.initCause(cause);
-    }
-
-    @Override
     public String toString() {
         return "Sanitized: " + throwable.toString();
-    }
-
-    @Override
-    public void printStackTrace() {
-        printStackTrace(System.err);
-    }
-
-    @Override
-    public void printStackTrace(PrintStream s) {
-        throwable.printStackTrace(s);
-    }
-
-    @Override
-    public void printStackTrace(PrintWriter s) {
-        throwable.printStackTrace(s);
-    }
-
-    @Override
-    public synchronized Throwable fillInStackTrace() {
-        if (throwable != null) {
-            throwable.fillInStackTrace();
-        }
-        return this;
-    }
-
-    @Override
-    public StackTraceElement[] getStackTrace() {
-        return throwable.getStackTrace();
     }
 }
 
