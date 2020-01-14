@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -57,6 +57,7 @@ public class StateMachineTest {
 
     @Test
     public void handlesInappropriateEvents() {
+        @SuppressWarnings("unchecked")
         BiFunction<State, Object, State> inappropriateEventHandler = mock(BiFunction.class);
         when(inappropriateEventHandler.apply(any(State.class), any(Object.class))).thenReturn(EXPECTED_RESULT);
 
@@ -72,6 +73,7 @@ public class StateMachineTest {
 
     @Test
     public void performsStateTransitions() {
+        @SuppressWarnings("unchecked")
         Function<TestEvent, State> mapper = mock(Function.class);
         when(mapper.apply(any(TestEvent.class))).thenReturn(EXPECTED_RESULT);
 
