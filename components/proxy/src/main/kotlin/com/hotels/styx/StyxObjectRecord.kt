@@ -27,6 +27,6 @@ data class StyxObjectRecord<T: StyxService>(
         val config: JsonNode,
         val styxService: T)
 
-typealias ProviderObjectRecord = StyxObjectRecord<StyxService>
+internal typealias ProviderObjectRecord = StyxObjectRecord<StyxService>
 
-typealias ServerObjectRecord = StyxObjectRecord<InetServer>
+internal typealias ServerObjectRecord = StyxObjectRecord<InetServer>

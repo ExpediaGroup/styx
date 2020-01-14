@@ -63,7 +63,6 @@ final class NettyServer extends AbstractStyxService implements InetServer {
     private volatile InetSocketAddress address;
 
     NettyServer(NettyServerBuilder nettyServerBuilder) {
-        // Ideally host:port as a service name:
         super("");
         this.host = nettyServerBuilder.host();
         this.channelGroup = requireNonNull(nettyServerBuilder.channelGroup());
@@ -163,7 +162,8 @@ final class NettyServer extends AbstractStyxService implements InetServer {
         @Override
         public Void call() {
             channelGroup.close().awaitUninterruptibly();
-            // TODO: Mikko: check why the return value is never used:
+            // Note: The return values from the shutdown methods is ignored.
+            //       Not sure why.
             shutdownEventExecutorGroup(bossGroup);
             shutdownEventExecutorGroup(workerGroup);
             return null;
