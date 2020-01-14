@@ -21,17 +21,15 @@ import com.hotels.styx.NettyExecutor
 import com.hotels.styx.ProxyConnectorFactory
 import com.hotels.styx.ResponseInfoFormat
 import com.hotels.styx.StyxObjectRecord
-import com.hotels.styx.api.HttpHandler
-import com.hotels.styx.config.schema.SchemaDsl.`object`
-import com.hotels.styx.config.schema.SchemaDsl.field
-import com.hotels.styx.config.schema.SchemaDsl.integer
-import com.hotels.styx.config.schema.SchemaDsl.string
+import com.hotels.styx.config.schema.SchemaDsl.*
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig
+import com.hotels.styx.proxy.ProxyServerConfig
 import com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder.ENCODE_UNWISECHARS
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.config.StyxObjectReference
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.server.HttpConnectorConfig
+import com.hotels.styx.server.HttpsConnectorConfig
 import com.hotels.styx.server.netty.NettyServerBuilder
 import com.hotels.styx.server.netty.connectors.ResponseEnhancer
 import com.hotels.styx.serviceproviders.StyxServerFactory
@@ -41,21 +39,20 @@ object StyxHttpServer {
     @JvmField
     val SCHEMA = `object`(
             field("port", integer()),
-            field("handler", string())
+            field("handler", string()),
+            optional("tlsSettings", `object`(
+                    optional("sslProvider", string()),
+                    optional("certificateFile", string()),
+                    optional("certificateKeyFile", string()),
+                    optional("sessionTimeoutMillis", integer()),
+                    optional("sessionCacheSize", integer()),
+                    optional("cipherSuites", list(string())),
+                    optional("protocols", list(string()))
+            )),
 
-//                optional("tlsSettings", `object`(
-//                        optional("sslProvider", string()),
-//                        optional("certificateFile", string()),
-//                        optional("certificateKeyFile", string()),
-//                        optional("sessionTimeoutMillis", integer()),
-//                        optional("sessionCacheSize", integer()),
-//                        optional("cipherSuites", list(string())),
-//                        optional("protocols", list(string()))
-//                )),
-
-//                optional("maxInitialLength", integer()),
-//                optional("maxHeaderSize", integer()),
-//                optional("maxChunkSize", integer()),
+            optional("maxInitialLength", integer()),
+            optional("maxHeaderSize", integer()),
+            optional("maxChunkSize", integer())
 //
 //                optional("requestTimeoutMillis", integer()),
 //                optional("keepAliveTimeoutMillis", integer()),
@@ -68,32 +65,26 @@ object StyxHttpServer {
     internal val LOGGER = LoggerFactory.getLogger(StyxHttpServer::class.java)
 }
 
-/*
- *  TODO: some fields can be optional:
- */
-//data class StyxHttpServerTlsSettings(
-//        val sslProvider: String,
-//        val certificateFile: String,
-//        val certificateKeyFile: String,
-//        val sessionTimeoutMillis: Int,
-//        val sessionCacheSize: Int,
-//        val cipherSuites: List<String>,
-//        val protocols: List<String>
-//)
+private data class StyxHttpServerTlsSettings(
+        val certificateFile: String,
+        val certificateKeyFile: String,
+        val sslProvider: String = "JDK",
+        val sessionTimeoutMillis: Int = 300000,
+        val sessionCacheSize: Int = 0,
+        val cipherSuites: List<String> = listOf(),
+        val protocols: List<String> = listOf()
+)
 
-/*
- *  TODO: What's the best way to deal with optional values?
- */
-data class StyxHttpServerConfiguration(
+
+private data class StyxHttpServerConfiguration(
         val port: Int,
-        val handler: String
+        val handler: String,
+        val tlsSettings: StyxHttpServerTlsSettings?,
 
-//        val tlsSettings: StyxHttpServerTlsSettings?,
+        val maxInitialLength: Int = 4096,
+        val maxHeaderSize: Int = 8192,
+        val maxChunkSize: Int = 8192
 
-//        val maxInitialLength: Int?,
-//        val maxHeaderSize: Int?,
-//        val maxChunkSize: Int?,
-//
 //        val requestTimeoutMillis: Int?,
 //        val keepAliveTimeoutMillis: Int?,
 //        val maxConnectionsCount: Int?,
@@ -102,40 +93,52 @@ data class StyxHttpServerConfiguration(
 //        val workerThreadsCount: Int?
 )
 
-class StyxHttpServerFactory : StyxServerFactory {
+internal class StyxHttpServerFactory : StyxServerFactory {
+    private fun serverConfig(configuration: JsonNode) = JsonNodeConfig(configuration).`as`(StyxHttpServerConfiguration::class.java)
+
     override fun create(name: String, context: RoutingObjectFactory.Context, configuration: JsonNode, serverDb: StyxObjectStore<StyxObjectRecord<InetServer>>): InetServer {
+        val config = serverConfig(configuration)
 
-        val config = JsonNodeConfig(configuration).`as`(StyxHttpServerConfiguration::class.java)
-
-        val handlerName = StyxObjectReference(config.handler)
-
-        val handler = HttpHandler { request, ctx ->
-            context.refLookup()
-                    .apply(handlerName)
-                    .handle(request, ctx)
-        }
         val environment = context.environment()
+        val proxyServerConfig = ProxyServerConfig.Builder()
+                .setMaxInitialLength(config.maxInitialLength)
+                .setMaxHeaderSize(config.maxHeaderSize)
+                .setMaxChunkSize(config.maxChunkSize)
+                .build()
 
-        val styxInfoHeaderName = environment.configuration().styxHeaderConfig().styxInfoHeaderName()
-        val responseInfoFormat = ResponseInfoFormat(environment)
-
-        val serviceName = "Http-Server(localhost-${config.port})"
-
-        val server = NettyServerBuilder()
+        return NettyServerBuilder()
                 .setMetricsRegistry(environment.metricRegistry())
                 .setProtocolConnector(
                         ProxyConnectorFactory(
-                                environment.configuration().proxyServerConfig(),
+                                proxyServerConfig,
                                 environment.metricRegistry(),
                                 environment.errorListener(),
                                 environment.configuration().get(ENCODE_UNWISECHARS).orElse(""),
-                                ResponseEnhancer { builder, request -> builder.header(styxInfoHeaderName, responseInfoFormat.format(request)) },
+                                ResponseEnhancer { builder, request ->
+                                    builder.header(
+                                            environment.configuration().styxHeaderConfig().styxInfoHeaderName(),
+                                            ResponseInfoFormat(environment).format(request))
+                                },
                                 false)
-                                .create(HttpConnectorConfig(config.port)))
-                .workerExecutor(NettyExecutor.create(serviceName, 0))
-                .handler(handler)
+                                .create(
+                                        if (config.tlsSettings == null) {
+                                            HttpConnectorConfig(config.port)
+                                        } else {
+                                            HttpsConnectorConfig.Builder()
+                                                    .port(config.port)
+                                                    .sslProvider(config.tlsSettings.sslProvider)
+                                                    .certificateFile(config.tlsSettings.certificateFile)
+                                                    .certificateKeyFile(config.tlsSettings.certificateKeyFile)
+                                                    .cipherSuites(config.tlsSettings.cipherSuites)
+                                                    .protocols(*config.tlsSettings.protocols.toTypedArray())
+                                                    .build()
+                                        }))
+                .workerExecutor(NettyExecutor.create("Http-Server(localhost-${config.port})", 0))
+                .handler({ request, ctx ->
+                    context.refLookup()
+                            .apply(StyxObjectReference(config.handler))
+                            .handle(request, ctx)
+                })
                 .build();
-
-        return server
     }
 }

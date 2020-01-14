@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.routing
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.hotels.styx.Environment
 import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpHandler
@@ -46,6 +47,8 @@ import java.nio.charset.StandardCharsets.UTF_8
 import java.util.concurrent.CompletableFuture
 
 fun routingObjectDef(text: String) = YamlConfig(text).`as`(StyxObjectDefinition::class.java)
+
+fun configBlock(text: String) = YamlConfig(text).`as`(JsonNode::class.java)
 
 internal data class RoutingObjectFactoryContext(
         val routeRefLookup: RouteRefLookup = DEFAULT_REFERENCE_LOOKUP,
