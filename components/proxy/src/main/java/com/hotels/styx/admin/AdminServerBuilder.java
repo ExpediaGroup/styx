@@ -19,6 +19,7 @@ import com.codahale.metrics.json.MetricsModule;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.Environment;
 import com.hotels.styx.NettyExecutor;
+import com.hotels.styx.InetServer;
 import com.hotels.styx.StartupConfig;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.admin.dashboard.DashboardData;
@@ -56,9 +57,8 @@ import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.db.StyxObjectStore;
-import com.hotels.styx.routing.handlers.StyxObjectRecord;
+import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.server.AdminHttpRouter;
-import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.handlers.ClassPathResourceHandler;
 import com.hotels.styx.server.netty.NettyServerBuilder;
 import com.hotels.styx.server.netty.WebServerConnectorFactory;
@@ -115,7 +115,7 @@ public class AdminServerBuilder {
         return this;
     }
 
-    public HttpServer build() {
+    public InetServer build() {
         LOG.info("event bus that will be used is {}", environment.eventBus());
         StyxConfig styxConfig = environment.configuration();
         AdminServerConfig adminServerConfig = styxConfig.adminServerConfig();

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import com.hotels.styx.routing.RoutingObjectFactoryContext
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.PathPrefixRouter
-import com.hotels.styx.routing.handlers.ProviderObjectRecord
+import com.hotels.styx.ProviderObjectRecord
 import io.kotlintest.Matcher
 import io.kotlintest.MatcherResult
 import io.kotlintest.Spec

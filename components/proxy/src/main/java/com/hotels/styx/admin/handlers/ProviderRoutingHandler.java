@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.admin.handlers;
 
+import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
@@ -24,7 +25,6 @@ import com.hotels.styx.api.configuration.ObjectStore;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.common.http.handler.HttpStreamer;
 import com.hotels.styx.routing.db.StyxObjectStore;
-import com.hotels.styx.routing.handlers.StyxObjectRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;

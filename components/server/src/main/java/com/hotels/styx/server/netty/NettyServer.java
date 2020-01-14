@@ -15,10 +15,10 @@
  */
 package com.hotels.styx.server.netty;
 
-import com.google.common.util.concurrent.AbstractService;
 import com.hotels.styx.NettyExecutor;
+import com.hotels.styx.InetServer;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.server.HttpServer;
+import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
@@ -32,6 +32,7 @@ import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Throwables.propagate;
 import static io.netty.channel.ChannelOption.ALLOCATOR;
@@ -47,7 +48,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * NettyServer.
  */
-final class NettyServer extends AbstractService implements HttpServer {
+final class NettyServer extends AbstractStyxService implements InetServer {
     private static final Logger LOGGER = getLogger(NettyServer.class);
 
     private final ChannelGroup channelGroup;
@@ -62,6 +63,7 @@ final class NettyServer extends AbstractService implements HttpServer {
     private volatile InetSocketAddress address;
 
     NettyServer(NettyServerBuilder nettyServerBuilder) {
+        super("");
         this.host = nettyServerBuilder.host();
         this.channelGroup = requireNonNull(nettyServerBuilder.channelGroup());
         this.handler = requireNonNull(nettyServerBuilder.handler());
@@ -84,8 +86,10 @@ final class NettyServer extends AbstractService implements HttpServer {
     }
 
     @Override
-    protected void doStart() {
+    protected CompletableFuture<Void> startService() {
         LOGGER.info("starting services");
+
+        CompletableFuture<Void> serviceFuture = new CompletableFuture<>();
 
         ServerBootstrap b = new ServerBootstrap();
 
@@ -115,24 +119,28 @@ final class NettyServer extends AbstractService implements HttpServer {
                         address = (InetSocketAddress) channel.localAddress();
                         LOGGER.info("server connector {} bound successfully on port {} socket port {}", new Object[]{serverConnector.getClass(), port, address});
                         stopper = new Stopper(bossExecutor, workerExecutor);
-                        notifyStarted();
+                        serviceFuture.complete(null);
                     } else {
                         LOGGER.warn("Failed to start service={} cause={}", this, future.cause());
-                        notifyFailed(mapToBetterException(future.cause(), port));
+                        serviceFuture.completeExceptionally(mapToBetterException(future.cause(), port));
                     }
                 });
+
+        return serviceFuture;
     }
 
     @Override
-    protected void doStop() {
-        try {
-            if (stopper != null) {
-                stopper.call();
-                address = null;
+    protected CompletableFuture<Void> stopService() {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                if (stopper != null) {
+                    stopper.call();
+                    address = null;
+                }
+            } catch (Exception e) {
+                throw propagate(e);
             }
-        } catch (Exception e) {
-            throw propagate(e);
-        }
+        });
     }
 
     private Throwable mapToBetterException(Throwable cause, int port) {
@@ -154,9 +162,10 @@ final class NettyServer extends AbstractService implements HttpServer {
         @Override
         public Void call() {
             channelGroup.close().awaitUninterruptibly();
+            // Note: The return values from the shutdown methods is ignored.
+            //       Not sure why.
             shutdownEventExecutorGroup(bossGroup);
             shutdownEventExecutorGroup(workerGroup);
-            notifyStopped();
             return null;
         }
 
