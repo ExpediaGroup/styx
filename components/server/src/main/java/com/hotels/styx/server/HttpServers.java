@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.server;
 
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.server.netty.NettyServerBuilder;
 import com.hotels.styx.server.netty.WebServerConnectorFactory;
@@ -31,9 +32,9 @@ public class HttpServers {
      */
     public static HttpServer createHttpServer(int port, HttpHandler handler) {
         return NettyServerBuilder.newBuilder()
-                .name("NettyServer")
                 .setProtocolConnector(new WebServerConnectorFactory().create(new HttpConnectorConfig(port)))
                 .handler(handler)
+                .workerExecutor(NettyExecutor.create("NettyServer", 1))
                 .build();
     }
 
@@ -48,9 +49,9 @@ public class HttpServers {
      */
     public static HttpServer createHttpServer(String name, HttpConnectorConfig httpConnectorConfig, HttpHandler handler) {
         return NettyServerBuilder.newBuilder()
-                .name(name)
                 .setProtocolConnector(new WebServerConnectorFactory().create(httpConnectorConfig))
                 .handler(handler)
+                .workerExecutor(NettyExecutor.create(name, 1))
                 .build();
     }
 
@@ -65,9 +66,9 @@ public class HttpServers {
      */
     public static HttpServer createHttpsServer(String name, HttpsConnectorConfig httpsConnectorConfig, HttpHandler handler) {
         return NettyServerBuilder.newBuilder()
-                .name(name)
                 .setProtocolConnector(new WebServerConnectorFactory().create(httpsConnectorConfig))
                 .handler(handler)
+                .workerExecutor(NettyExecutor.create(name, 1))
                 .build();
     }
 

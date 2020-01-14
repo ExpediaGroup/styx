@@ -127,7 +127,7 @@ public class HostProxy implements RoutingObject {
         if (active) {
             return new Eventual<>(
                     ResponseEventListener.from(client.sendRequest(request))
-                            .whenCancelled(() -> originMetrics.requestCancelled())
+                            .whenCancelled(originMetrics::requestCancelled)
                             .apply());
         } else {
             return Eventual.error(new IllegalStateException(errorMessage));
@@ -283,6 +283,7 @@ public class HostProxy implements RoutingObject {
                 OriginStatsFactory originStatsFactory,
                 long connectionExpiration) {
 
+            // Uses the default executor for now:
             NettyConnectionFactory factory = new NettyConnectionFactory.Builder()
                     .httpRequestOperationFactory(
                             httpRequestOperationFactoryBuilder()

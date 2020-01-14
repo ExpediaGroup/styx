@@ -16,6 +16,7 @@
 package com.hotels.styx.proxy;
 
 import com.google.common.collect.ImmutableList;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
@@ -24,14 +25,11 @@ import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.common.http.handler.HttpAggregator;
-import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.StandardHttpRouter;
 import com.hotels.styx.server.netty.NettyServerBuilder;
-import com.hotels.styx.server.netty.NettyServerBuilderSpec;
-import com.hotels.styx.server.netty.NettyServerConfig;
 import com.hotels.styx.server.netty.ServerConnector;
 import com.hotels.styx.server.netty.WebServerConnectorFactory;
 import org.junit.jupiter.api.Disabled;
@@ -43,7 +41,6 @@ import java.io.IOException;
 
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.common.StyxFutures.await;
-import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -53,21 +50,12 @@ public class StyxProxyTest extends SSLSetup {
     final HttpClient client = new StyxHttpClient.Builder()
             .build();
 
-    public static void main(String[] args) {
-        NettyServerConfig config = new YamlConfig(newResource("classpath:default.yaml"))
-                .get("proxy", NettyServerConfig.class).get();
-
-        HttpServer server = new NettyServerBuilderSpec()
-                .toNettyServerBuilder(config)
-                .build();
-
-        server.startAsync().awaitRunning();
-    }
-
     @Test
     public void startsAndStopsAServer() {
         HttpServer server = new NettyServerBuilder()
                 .setProtocolConnector(connector(0))
+                .bossExecutor(NettyExecutor.create("Test-Server-Boss", 1))
+                .workerExecutor(NettyExecutor.create("Test-Server-Worker", 0))
                 .build();
 
         server.startAsync().awaitRunning();
@@ -84,6 +72,8 @@ public class StyxProxyTest extends SSLSetup {
 
         HttpServer server = NettyServerBuilder.newBuilder()
                 .setProtocolConnector(connector(0))
+                .bossExecutor(NettyExecutor.create("Test-Server-Boss", 1))
+                .workerExecutor(NettyExecutor.create("Test-Server-Worker", 0))
                 .handler(new HttpInterceptorPipeline(
                         ImmutableList.of(echoInterceptor),
                         (request, context) -> new HttpAggregator(new StandardHttpRouter()).handle(request, context),

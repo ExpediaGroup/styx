@@ -18,6 +18,7 @@ package com.hotels.styx.admin;
 import com.codahale.metrics.json.MetricsModule;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.Environment;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.StartupConfig;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.admin.dashboard.DashboardData;
@@ -59,7 +60,7 @@ import com.hotels.styx.routing.handlers.StyxObjectRecord;
 import com.hotels.styx.server.AdminHttpRouter;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.handlers.ClassPathResourceHandler;
-import com.hotels.styx.server.netty.NettyServerBuilderSpec;
+import com.hotels.styx.server.netty.NettyServerBuilder;
 import com.hotels.styx.server.netty.WebServerConnectorFactory;
 import com.hotels.styx.server.track.CurrentRequestTracker;
 import com.hotels.styx.startup.StyxServerComponents;
@@ -119,10 +120,18 @@ public class AdminServerBuilder {
         StyxConfig styxConfig = environment.configuration();
         AdminServerConfig adminServerConfig = styxConfig.adminServerConfig();
 
-        return new NettyServerBuilderSpec("Admin", environment.serverEnvironment(), new WebServerConnectorFactory())
-                .toNettyServerBuilder(adminServerConfig)
-                .handler(adminEndpoints(styxConfig, startupConfig))
-                .build();
+        NettyExecutor executor = NettyExecutor.create("Admin-Boss", adminServerConfig.bossThreadsCount());
+        NettyServerBuilder builder = NettyServerBuilder.newBuilder()
+                .setMetricsRegistry(environment.metricRegistry())
+                .bossExecutor(executor)
+                .workerExecutor(NettyExecutor.create("Admin-Worker", adminServerConfig.workerThreadsCount()))
+                .handler(adminEndpoints(styxConfig, startupConfig));
+
+        // Currently admin server cannot be started over TLS protocol.
+        // This appears to be an existing issue that needs rectifying.
+        adminServerConfig.httpConnectorConfig().ifPresent(it -> builder.setProtocolConnector(new WebServerConnectorFactory().create(it)));
+
+        return builder.build();
     }
 
     private HttpHandler adminEndpoints(StyxConfig styxConfig, StartupConfig startupConfig) {

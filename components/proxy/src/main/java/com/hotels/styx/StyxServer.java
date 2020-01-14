@@ -32,11 +32,8 @@ import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.ConnectorConfig;
 import com.hotels.styx.server.HttpServer;
-import com.hotels.styx.server.ServerEventLoopFactory;
 import com.hotels.styx.server.netty.NettyServerBuilder;
-import com.hotels.styx.server.netty.NettyServerConfig;
 import com.hotels.styx.server.netty.ServerConnector;
-import com.hotels.styx.server.netty.eventloop.PlatformAwareServerEventLoopFactory;
 import com.hotels.styx.startup.StyxServerComponents;
 import io.netty.util.ResourceLeakDetector;
 import org.jetbrains.annotations.NotNull;
@@ -55,7 +52,6 @@ import java.util.concurrent.CompletableFuture;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.shutdownLogging;
 import static com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder.ENCODE_UNWISECHARS;
-import static com.hotels.styx.server.netty.eventloop.ServerEventLoopFactories.memoize;
 import static com.hotels.styx.startup.CoreMetrics.registerCoreMetrics;
 import static io.netty.util.ResourceLeakDetector.Level.DISABLED;
 import static java.lang.Runtime.getRuntime;
@@ -180,8 +176,7 @@ public final class StyxServer extends AbstractService {
                 components.environment(),
                 components.services(),
                 components.plugins(),
-                components.eventLoopGroup(),
-                components.nettySocketChannelClass())
+                components.clientExecutor())
                 .create();
 
         // Startup phase 1: start plugins, control plane providers, and other services:
@@ -230,11 +225,6 @@ public final class StyxServer extends AbstractService {
         return adminServer.inetAddress();
     }
 
-    // This function will be removed in near future:
-    private static ServerEventLoopFactory serverEventLoopFactory(String name, NettyServerConfig serverConfig) {
-        return memoize(new PlatformAwareServerEventLoopFactory(name, serverConfig.bossThreadsCount(), serverConfig.workerThreadsCount()));
-    }
-
     private static HttpServer httpServer(Environment environment, ConnectorConfig connectorConfig, HttpHandler styxDataPlane) {
         CharSequence styxInfoHeaderName = environment.configuration().styxHeaderConfig().styxInfoHeaderName();
         ResponseInfoFormat responseInfoFormat = new ResponseInfoFormat(environment);
@@ -250,7 +240,8 @@ public final class StyxServer extends AbstractService {
 
         return NettyServerBuilder.newBuilder()
                 .setMetricsRegistry(environment.metricRegistry())
-                .setServerEventLoopFactory(serverEventLoopFactory("Proxy", environment.configuration().proxyServerConfig()))
+                .bossExecutor(NettyExecutor.create("Proxy-Boss", environment.configuration().proxyServerConfig().bossThreadsCount()))
+                .workerExecutor(NettyExecutor.create("Proxy-Worker", environment.configuration().proxyServerConfig().workerThreadsCount()))
                 .setProtocolConnector(proxyConnector)
                 .handler(styxDataPlane)
                 .build();

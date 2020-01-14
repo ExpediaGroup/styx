@@ -16,18 +16,15 @@
 package com.hotels.styx.server.netty;
 
 import com.google.common.util.concurrent.AbstractService;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.server.HttpServer;
-import com.hotels.styx.server.ServerEventLoopFactory;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.ServerChannel;
 import io.netty.channel.group.ChannelGroup;
-import io.netty.util.concurrent.EventExecutorGroup;
 import io.netty.util.concurrent.Future;
 import org.slf4j.Logger;
 
@@ -54,11 +51,12 @@ final class NettyServer extends AbstractService implements HttpServer {
     private static final Logger LOGGER = getLogger(NettyServer.class);
 
     private final ChannelGroup channelGroup;
-    private final ServerEventLoopFactory serverEventLoopFactory;
 
     private final HttpHandler handler;
     private final ServerConnector serverConnector;
     private final String host;
+    private final NettyExecutor bossExecutor;
+    private final NettyExecutor workerExecutor;
 
     private volatile Callable<?> stopper;
     private volatile InetSocketAddress address;
@@ -66,9 +64,10 @@ final class NettyServer extends AbstractService implements HttpServer {
     NettyServer(NettyServerBuilder nettyServerBuilder) {
         this.host = nettyServerBuilder.host();
         this.channelGroup = requireNonNull(nettyServerBuilder.channelGroup());
-        this.serverEventLoopFactory = requireNonNull(nettyServerBuilder.serverEventLoopFactory(), "serverEventLoopFactory cannot be null");
         this.handler = requireNonNull(nettyServerBuilder.handler());
         this.serverConnector = nettyServerBuilder.protocolConnector();
+        this.bossExecutor = nettyServerBuilder.bossExecutor();
+        this.workerExecutor = nettyServerBuilder.workerExecutor();
     }
 
     @Override
@@ -89,12 +88,9 @@ final class NettyServer extends AbstractService implements HttpServer {
         LOGGER.info("starting services");
 
         ServerBootstrap b = new ServerBootstrap();
-        EventLoopGroup bossGroup = serverEventLoopFactory.newBossEventLoopGroup();
-        EventLoopGroup workerGroup = serverEventLoopFactory.newWorkerEventLoopGroup();
-        Class<? extends ServerChannel> channelType = serverEventLoopFactory.serverChannelClass();
 
-        b.group(bossGroup, workerGroup)
-                .channel(channelType)
+        b.group(bossExecutor.eventLoopGroup(), workerExecutor.eventLoopGroup())
+                .channel(bossExecutor.serverEventLoopClass())
                 .option(SO_BACKLOG, 1024)
                 .option(SO_REUSEADDR, true)
                 .childOption(SO_REUSEADDR, true)
@@ -118,7 +114,7 @@ final class NettyServer extends AbstractService implements HttpServer {
                         channelGroup.add(channel);
                         address = (InetSocketAddress) channel.localAddress();
                         LOGGER.info("server connector {} bound successfully on port {} socket port {}", new Object[]{serverConnector.getClass(), port, address});
-                        stopper = new Stopper(bossGroup, workerGroup);
+                        stopper = new Stopper(bossExecutor, workerExecutor);
                         notifyStarted();
                     } else {
                         LOGGER.warn("Failed to start service={} cause={}", this, future.cause());
@@ -147,10 +143,10 @@ final class NettyServer extends AbstractService implements HttpServer {
     }
 
     private class Stopper implements Callable<Void> {
-        private final EventLoopGroup bossGroup;
-        private final EventLoopGroup workerGroup;
+        private final NettyExecutor bossGroup;
+        private final NettyExecutor workerGroup;
 
-        public Stopper(EventLoopGroup bossGroup, EventLoopGroup workerGroup) {
+        public Stopper(NettyExecutor bossGroup, NettyExecutor workerGroup) {
             this.bossGroup = bossGroup;
             this.workerGroup = workerGroup;
         }
@@ -164,8 +160,8 @@ final class NettyServer extends AbstractService implements HttpServer {
             return null;
         }
 
-        private Future<?> shutdownEventExecutorGroup(EventExecutorGroup eventExecutorGroup) {
-            return eventExecutorGroup.shutdownGracefully(10, 1000, MILLISECONDS);
+        private Future<?> shutdownEventExecutorGroup(NettyExecutor eventExecutorGroup) {
+            return eventExecutorGroup.eventLoopGroup().shutdownGracefully(10, 1000, MILLISECONDS);
         }
     }
 }
