@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.common.format;
 
-import net.sf.cglib.proxy.Enhancer;
 import org.junit.jupiter.api.Test;
 
 import static java.util.Arrays.asList;
@@ -50,7 +49,7 @@ class SanitisingThrowableMethodInterceptorTest {
     @Test
     public void messagesWithNoCookiesAreNotChanged() {
         Exception e = exception("This does not contain any cookies.");
-        Throwable proxy = (Throwable) Enhancer.create(e.getClass(), new SanitisingThrowableMethodInterceptor(e, formatter));
+        Throwable proxy = SanitisingThrowableFactory.instance().create(e, formatter);
 
         String prefix = "java.lang.Exception: ";
         assertThat(proxy.getMessage(), equalTo(prefix + e.getMessage()));
@@ -61,7 +60,7 @@ class SanitisingThrowableMethodInterceptorTest {
     @Test
     public void messagesWithUnrecognizedCookiesAreNotChanged() {
         Exception e = exception("Some cookies: cookie1=c1;cookie2=c2");
-        Throwable proxy = (Throwable) Enhancer.create(e.getClass(), new SanitisingThrowableMethodInterceptor(e, formatter));
+        Throwable proxy = SanitisingThrowableFactory.instance().create(e, formatter);
         assertThat(proxy.getMessage(), endsWith(e.getMessage()));
         assertThat(proxy.getLocalizedMessage(), endsWith(e.getLocalizedMessage()));
         assertThat(proxy.toString(), endsWith(e.toString()));
@@ -70,7 +69,7 @@ class SanitisingThrowableMethodInterceptorTest {
     @Test
     public void messagesWithRecognizedCookiesAreSanitized() {
         Exception e = exception("Some cookies: cookie1=c1;secret-cookie=secret;cookie2=c2;private-cookie=private");
-        Throwable proxy = (Throwable) Enhancer.create(e.getClass(), new SanitisingThrowableMethodInterceptor(e, formatter));
+        Throwable proxy = SanitisingThrowableFactory.instance().create(e, formatter);
         assertThat(proxy.getMessage(), containsString("cookie1=c1"));
         assertThat(proxy.getMessage(), containsString("cookie2=c2"));
         assertThat(proxy.getMessage(), containsString("secret-cookie=****"));
@@ -81,7 +80,7 @@ class SanitisingThrowableMethodInterceptorTest {
     public void exceptionCausesAreSanitized() {
         Exception inner = exception("Inner: cookie1=c1;secret-cookie=secret");
         Exception outer = exception("Outer: cookie2=c2;private-cookie=private", inner);
-        Throwable outerProxy = (Throwable) Enhancer.create(outer.getClass(), new SanitisingThrowableMethodInterceptor(outer, formatter));
+        Throwable outerProxy = SanitisingThrowableFactory.instance().create(outer, formatter);
         assertThat(outerProxy.getMessage(), containsString("cookie2=c2"));
         assertThat(outerProxy.getMessage(), containsString("private-cookie=****"));
         assertThat(outerProxy.getCause().getMessage(), containsString("cookie1=c1"));
@@ -91,14 +90,14 @@ class SanitisingThrowableMethodInterceptorTest {
     @Test
     public void nullMessagesAreAllowed() {
         Exception e = exception(null);
-        Throwable proxy = (Throwable) Enhancer.create(e.getClass(), new SanitisingThrowableMethodInterceptor(e, formatter));
+        Throwable proxy = SanitisingThrowableFactory.instance().create(e, formatter);
         assertThat(proxy.getMessage(), equalTo("java.lang.Exception: null"));
     }
 
     @Test
     public void messagesWithInvalidCookiesAreSanitized() {
         Exception e = exception("Some cookies: cookie1=c1;secret-cookie=secret;bad-cookie=bad\u0000bad;private-cookie=private");
-        Throwable proxy = (Throwable) Enhancer.create(e.getClass(), new SanitisingThrowableMethodInterceptor(e, formatter));
+        Throwable proxy = SanitisingThrowableFactory.instance().create(e, formatter);
         assertThat(proxy.getMessage(), containsString("cookie1=c1"));
         assertThat(proxy.getMessage(), containsString("bad-cookie=bad\u0000bad"));
         assertThat(proxy.getMessage(), containsString("secret-cookie=****"));

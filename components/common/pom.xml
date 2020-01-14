@@ -17,12 +17,6 @@
   <dependencies>
 
     <dependency>
-      <groupId>cglib</groupId>
-      <artifactId>cglib</artifactId>
-      <version>3.2.4</version>
-    </dependency>
-
-    <dependency>
       <groupId>com.hotels.styx</groupId>
       <artifactId>styx-api</artifactId>
     </dependency>
@@ -70,6 +64,11 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>cglib</groupId>
+      <artifactId>cglib</artifactId>
     </dependency>
 
     <dependency>

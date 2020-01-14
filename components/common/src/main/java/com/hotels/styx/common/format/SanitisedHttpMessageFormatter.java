@@ -26,9 +26,6 @@ import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Url;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.LastHttpContent;
-import net.sf.cglib.proxy.Enhancer;
-
-import java.lang.reflect.Proxy;
 
 import static java.util.Objects.requireNonNull;
 
@@ -99,7 +96,7 @@ public class SanitisedHttpMessageFormatter implements HttpMessageFormatter {
 
     @Override
     public Throwable wrap(Throwable t) {
-        return t == null ? null : (Throwable) Enhancer.create(t.getClass(), new SanitisingThrowableMethodInterceptor(t, sanitisedHttpHeaderFormatter));
+        return t == null ? null : SanitisingThrowableFactory.instance().create(t, sanitisedHttpHeaderFormatter);
     }
 
     private String formatNettyRequest(io.netty.handler.codec.http.HttpRequest request) {

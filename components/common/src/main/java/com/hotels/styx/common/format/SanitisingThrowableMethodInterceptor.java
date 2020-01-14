@@ -15,13 +15,9 @@
  */
 package com.hotels.styx.common.format;
 
-import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -42,6 +38,7 @@ public class SanitisingThrowableMethodInterceptor implements MethodInterceptor {
 
     /**
      * Enhance a throwable, using the given {@link SanitisedHttpHeaderFormatter} to recognise and sanitise cookie values.
+     * @param throwable the target throwable to enhance
      * @param formatter provides the sanitising logic
      */
     public SanitisingThrowableMethodInterceptor(Throwable throwable, SanitisedHttpHeaderFormatter formatter) {
@@ -61,6 +58,9 @@ public class SanitisingThrowableMethodInterceptor implements MethodInterceptor {
                 return toString();
             case "getCause":
                 return getCause();
+            case "fillInStackTrace":
+                return obj; // don't replace the stack trace in the original exception.
+
             default:
                 return proxy.invoke(throwable, args);
         }
@@ -85,17 +85,17 @@ public class SanitisingThrowableMethodInterceptor implements MethodInterceptor {
                 .orElse(message);
     }
 
-    public String getMessage() throws Throwable {
+    public String getMessage() {
         return throwable.getClass().getName() + ": " + sanitiseCookies(throwable.getMessage());
     }
 
-    public String getLocalizedMessage() throws Throwable {
+    public String getLocalizedMessage() {
         return throwable.getClass().getName() + ": " + sanitiseCookies(throwable.getLocalizedMessage());
     }
 
-    public synchronized Throwable getCause() throws Throwable {
+    public Throwable getCause() {
         Throwable cause = throwable.getCause();
-        return cause == null ? null : (Throwable) Enhancer.create(cause.getClass(), new SanitisingThrowableMethodInterceptor(cause, formatter));
+        return cause == null ? null : SanitisingThrowableFactory.instance().create(cause, formatter);
     }
 
     public String toString() {

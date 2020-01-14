@@ -118,6 +118,7 @@
     <reactive-streams.version>1.0.2</reactive-streams.version>
     <reactor.version>3.3.0.RELEASE</reactor.version>
     <pcollections.version>3.0.3</pcollections.version>
+    <cglib.version>3.3.0</cglib.version>
 
     <!--Kotlin -->
     <kotlin.version>1.3.21</kotlin.version>
@@ -331,6 +332,12 @@
         <groupId>com.fasterxml.jackson.module</groupId>
         <artifactId>jackson-module-kotlin</artifactId>
         <version>${jackson-module-kotlin.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>cglib</groupId>
+        <artifactId>cglib</artifactId>
+        <version>${cglib.version}</version>
       </dependency>
 
       <!-- Metrics -->
