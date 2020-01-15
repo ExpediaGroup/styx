@@ -22,7 +22,8 @@ import com.hotels.styx.api.LiveHttpRequest;
  * Formats response info into a string.
  */
 
-// TODO: Should be package private, but it is shared by com.hotels.styx.servers.StyxHttpServer.kt
+// This can be make package private after we'll deprecate the old proxy server. But at the moment
+// this has to be public because it is shared with com.hotels.styx.servers.StyxHttpServer.kt
 public class ResponseInfoFormat {
     private final String format;
 
