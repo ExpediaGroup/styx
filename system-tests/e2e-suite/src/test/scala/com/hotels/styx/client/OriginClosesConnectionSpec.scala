@@ -31,7 +31,6 @@ import com.hotels.styx.server.netty.connectors.HttpPipelineHandler
 import com.hotels.styx.support.NettyOrigins
 import com.hotels.styx.support.configuration.{BackendService, HttpBackend, Origins}
 import com.hotels.styx.support.matchers.LoggingTestSupport
-import com.hotels.styx.support.observables.ImplicitRxConversions
 import com.hotels.styx.{DefaultStyxConfiguration, StyxClientSupplier, StyxProxySpec}
 import io.netty.buffer.Unpooled._
 import io.netty.channel.ChannelFutureListener.CLOSE
@@ -52,8 +51,7 @@ class OriginClosesConnectionSpec extends FunSuite
   with DefaultStyxConfiguration
   with NettyOrigins
   with StyxClientSupplier
-  with Eventually
-  with ImplicitRxConversions {
+  with Eventually {
 
   var loggingSupport: LoggingTestSupport = _
   val (originOne, originOneServer) = originAndCustomResponseWebServer("NettyOrigin")

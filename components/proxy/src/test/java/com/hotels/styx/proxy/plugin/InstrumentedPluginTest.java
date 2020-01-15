@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import com.hotels.styx.support.api.SimpleEnvironment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
-import rx.observers.TestSubscriber;
+import reactor.test.StepVerifier;
 
 import static com.hotels.styx.api.Eventual.error;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
@@ -47,7 +47,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static rx.RxReactiveStreams.toObservable;
 
 public class InstrumentedPluginTest {
     private static final String SOME_EXCEPTION = formattedExceptionName(SomeException.class);
@@ -144,7 +143,7 @@ public class InstrumentedPluginTest {
             throw new SomeException();
         });
 
-        assertThatObservableHasErrorOnly(PluginException.class,
+        assertThatEventualHasErrorOnly(PluginException.class,
                 plugin.intercept(someRequest, chain));
 
         verify(chain, never()).proceed(any(LiveHttpRequest.class));
@@ -159,7 +158,7 @@ public class InstrumentedPluginTest {
         InstrumentedPlugin plugin = instrumentedPlugin("immediateException", (request, chain) ->
                 error(new SomeException()));
 
-        assertThatObservableHasErrorOnly(PluginException.class,
+        assertThatEventualHasErrorOnly(PluginException.class,
                 plugin.intercept(someRequest, chain));
 
         verify(chain, never()).proceed(any(LiveHttpRequest.class));
@@ -175,7 +174,7 @@ public class InstrumentedPluginTest {
                 chain.proceed(request)
                         .flatMap(response -> error(new SomeException())));
 
-        assertThatObservableHasErrorOnly(PluginException.class,
+        assertThatEventualHasErrorOnly(PluginException.class,
                 plugin.intercept(someRequest, request -> aResponse(OK)));
 
         assertThat(metricRegistry.meter("plugins.observableError.response.status.500").getCount(), is(1L));
@@ -189,7 +188,7 @@ public class InstrumentedPluginTest {
 
         InstrumentedPlugin plugin = instrumentedPlugin("passThrough", PASS_THROUGH);
 
-        assertThatObservableHasErrorOnly(SomeException.class,
+        assertThatEventualHasErrorOnly(SomeException.class,
                 plugin.intercept(someRequest, chain));
 
         assertThat(metricRegistry.meter("plugins.passThrough.exception." + SOME_EXCEPTION).getCount(), is(0L));
@@ -200,14 +199,10 @@ public class InstrumentedPluginTest {
         return Eventual.of(response(status).build());
     }
 
-    private static <T> void assertThatObservableHasErrorOnly(Class<? extends Throwable> type, Eventual<T> observable) {
-        TestSubscriber<T> testSubscriber = new TestSubscriber<>();
-
-        toObservable(observable).subscribe(testSubscriber);
-
-        testSubscriber.awaitTerminalEvent();
-        testSubscriber.assertNoValues();
-        testSubscriber.assertError(type);
+    private static <T> void assertThatEventualHasErrorOnly(Class<? extends Throwable> type, Eventual<T> eventual) {
+        StepVerifier.create(eventual)
+                .expectError(type)
+                .verify();
     }
 
     private static LiveHttpResponse responseWithNewStatusCode(LiveHttpResponse response, HttpResponseStatus newStatus) {
