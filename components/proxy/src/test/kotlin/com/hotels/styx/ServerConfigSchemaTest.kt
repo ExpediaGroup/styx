@@ -48,7 +48,7 @@ class ServerConfigSchemaTest : DescribeSpec({
         }
 
 
-        it("Detects a missing mandatory 'proxy' configuration.") {
+        it("An optional 'proxy' field can be absent.") {
             validateServerConfiguration(yamlConfig("""
                   admin:
                     connectors:
@@ -60,7 +60,7 @@ class ServerConfigSchemaTest : DescribeSpec({
                       backendServiceRegistry:
                         class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry${'$'}Factory"
                         config: {originsFile: "${'$'}{originsFile:classpath:conf/origins.yml}"}
-            """.trimIndent())) shouldBe (Optional.of("Missing a mandatory field 'proxy'"))
+            """.trimIndent())) shouldBe (Optional.empty())
         }
 
         it("Detects a missing mandatory `admin' configuration.") {

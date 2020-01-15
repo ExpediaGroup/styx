@@ -33,11 +33,6 @@ class ServerObjectSpec : FeatureSpec() {
     val styxServer = StyxServerProvider(
             defaultConfig = """
                 ---
-                proxy:
-                  connectors:
-                    http:
-                      port: 0
-        
                 admin:
                   connectors:
                     http:
@@ -72,11 +67,6 @@ class ServerObjectSpec : FeatureSpec() {
                         certificateFile: $crtFile
                         certificateKeyFile: $keyFile
                         sslProvider: JDK
-
-                httpPipeline:
-                  type: StaticResponseHandler
-                  config:
-                    status: 200
                 """.trimIndent())
 
     override fun afterSpec(spec: Spec) {

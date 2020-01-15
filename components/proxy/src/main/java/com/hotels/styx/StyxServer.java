@@ -170,9 +170,10 @@ public final class StyxServer extends AbstractService {
 
         registerCoreMetrics(components.environment().buildInfo(), components.environment().metricRegistry());
 
-        // The plugins are loaded, but not initialised.
-        // And therefore not able to accept traffic.
-        HttpHandler httpHandler = new StyxPipelineFactory(
+        // The plugins are loaded, but not initialised. And therefore not able to accept traffic.
+        // This handler is for the "old" proxy servers, that are started from proxy.connectors configuration.
+        // The new `HttpServer` object (https://github.com/HotelsDotCom/styx/pull/591) doesn't use it.
+        HttpHandler handlerForOldProxyServer = new StyxPipelineFactory(
                 components.routingObjectFactoryContext(),
                 components.environment(),
                 components.services(),
@@ -193,12 +194,12 @@ public final class StyxServer extends AbstractService {
         StyxConfig styxConfig = components.environment().configuration();
         httpServer = styxConfig.proxyServerConfig()
                 .httpConnectorConfig()
-                .map(it -> httpServer(components.environment(), it, httpHandler))
+                .map(it -> httpServer(components.environment(), it, handlerForOldProxyServer))
                 .orElse(null);
 
         httpsServer = styxConfig.proxyServerConfig()
                 .httpsConnectorConfig()
-                .map(it -> httpServer(components.environment(), it, httpHandler))
+                .map(it -> httpServer(components.environment(), it, handlerForOldProxyServer))
                 .orElse(null);
 
         ArrayList<Service> services2 = new ArrayList<>();

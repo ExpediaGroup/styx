@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -59,8 +59,7 @@ final class ServerConfigSchema {
                         optional("sessionCacheSize", integer()),
                         optional("cipherSuites", list(string())),
                         optional("protocols", list(string()))
-                )),
-                atLeastOne("http", "https")
+                ))
         );
 
         Schema.FieldType logFormatSchema = object(
@@ -71,7 +70,7 @@ final class ServerConfigSchema {
 
         STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER = newDocument()
                     .rootSchema(object(
-                            field("proxy", object(
+                            optional("proxy", object(
                                     optional("compressResponses", bool()),
                                     field("connectors", serverConnectorsSchema),
                                     optional("bossThreadsCount", integer()),
