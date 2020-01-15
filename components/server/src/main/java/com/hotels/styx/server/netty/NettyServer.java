@@ -15,8 +15,10 @@
  */
 package com.hotels.styx.server.netty;
 
+import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.InetServer;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
 import io.netty.bootstrap.ServerBootstrap;
@@ -30,17 +32,21 @@ import org.slf4j.Logger;
 
 import java.net.BindException;
 import java.net.InetSocketAddress;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Throwables.propagate;
+import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static io.netty.channel.ChannelOption.ALLOCATOR;
 import static io.netty.channel.ChannelOption.SO_BACKLOG;
 import static io.netty.channel.ChannelOption.SO_KEEPALIVE;
 import static io.netty.channel.ChannelOption.SO_REUSEADDR;
 import static io.netty.channel.ChannelOption.TCP_NODELAY;
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -70,6 +76,18 @@ final class NettyServer extends AbstractStyxService implements InetServer {
         this.serverConnector = nettyServerBuilder.protocolConnector();
         this.bossExecutor = nettyServerBuilder.bossExecutor();
         this.workerExecutor = nettyServerBuilder.workerExecutor();
+    }
+
+    @Override
+    public Map<String, HttpHandler> adminInterfaceHandlers(String namespace) {
+        return ImmutableMap.of(
+                "port", (request, response) -> Eventual.of(
+                        response(OK)
+                                .disableCaching()
+                                .body(format("%d", this.address.getPort()), UTF_8)
+                                .build()
+                                .stream()
+                ));
     }
 
     @Override

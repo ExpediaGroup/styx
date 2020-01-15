@@ -48,7 +48,7 @@ public class ProviderRoutingHandler implements WebServiceHandler {
      * @param pathPrefix the path prefix added to each provider admin URL
      * @param providerDb the provider object store
      */
-    public ProviderRoutingHandler(String pathPrefix, StyxObjectStore<StyxObjectRecord<StyxService>> providerDb) {
+    public ProviderRoutingHandler(String pathPrefix, StyxObjectStore<? extends StyxObjectRecord<? extends StyxService>> providerDb) {
         this.pathPrefix = pathPrefix;
         Flux.from(providerDb.watch()).subscribe(
                 this::refreshRoutes,
@@ -68,6 +68,7 @@ public class ProviderRoutingHandler implements WebServiceHandler {
     private UrlPatternRouter buildRouter(ObjectStore<StyxObjectRecord<StyxService>> db) {
         UrlPatternRouter.Builder routeBuilder = new UrlPatternRouter.Builder(pathPrefix)
                 .get("", new ProviderListHandler(db));
+
         db.entrySet().forEach(entry -> {
                 String providerName = entry.getKey();
                 entry.getValue().getStyxService().adminInterfaceHandlers(pathPrefix + "/" + providerName)
