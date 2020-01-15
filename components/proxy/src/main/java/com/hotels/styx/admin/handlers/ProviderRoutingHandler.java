@@ -60,12 +60,12 @@ public class ProviderRoutingHandler implements WebServiceHandler {
         return router.handle(request, context);
     }
 
-    private void refreshRoutes(ObjectStore<StyxObjectRecord<StyxService>> db) {
+    private void refreshRoutes(ObjectStore<? extends StyxObjectRecord<? extends StyxService>> db) {
         LOG.info("Refreshing provider admin endpoint routes");
         router = buildRouter(db);
     }
 
-    private UrlPatternRouter buildRouter(ObjectStore<StyxObjectRecord<StyxService>> db) {
+    private UrlPatternRouter buildRouter(ObjectStore<? extends StyxObjectRecord<? extends StyxService>> db) {
         UrlPatternRouter.Builder routeBuilder = new UrlPatternRouter.Builder(pathPrefix)
                 .get("", new ProviderListHandler(db));
 
