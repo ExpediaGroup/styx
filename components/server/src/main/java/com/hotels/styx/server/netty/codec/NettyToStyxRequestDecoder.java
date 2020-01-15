@@ -22,7 +22,7 @@ import com.hotels.styx.api.HttpVersion;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.Url;
 import com.hotels.styx.api.exceptions.TransportException;
-import com.hotels.styx.common.content.ContentPublisher;
+import com.hotels.styx.common.content.FlowControllingPublisher;
 import com.hotels.styx.common.content.FlowControllingHttpContentProducer;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.UniqueIdSupplier;
@@ -85,10 +85,12 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
                 ctx.channel().config().setAutoRead(false);
                 ctx.channel().read();
 
-                Publisher<Buffer> contentPublisher = new ContentPublisher(ctx.channel().eventLoop(), getNewContentProducer(ctx));
+                this.producer = Optional.of(createProducer(ctx));
+                Publisher<Buffer> contentPublisher = new FlowControllingPublisher(
+                        ctx.channel().eventLoop(),
+                        this.producer.get());
 
-                HttpRequest request = (HttpRequest) msg;
-                LiveHttpRequest styxRequest = toStyxRequest(request, contentPublisher);
+                LiveHttpRequest styxRequest = toStyxRequest((HttpRequest) msg, contentPublisher);
                 out.add(styxRequest);
 
             }
@@ -100,7 +102,6 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
                 if (msg instanceof LastHttpContent) {
                     getContentProducer(ctx).lastHttpContent();
                 }
-
             }
         } catch (BadRequestException ex) {
             throw ex;
@@ -121,11 +122,6 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         getContentProducer(ctx).channelException(toStyxException(cause));
         super.exceptionCaught(ctx, cause);
-    }
-
-    private FlowControllingHttpContentProducer getNewContentProducer(ChannelHandlerContext ctx) {
-        this.producer = Optional.of(createProducer(ctx));
-        return this.producer.get();
     }
 
     private FlowControllingHttpContentProducer getContentProducer(ChannelHandlerContext ctx) {

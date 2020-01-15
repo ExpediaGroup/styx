@@ -16,6 +16,8 @@
 package com.hotels.styx.common.content;
 
 import com.hotels.styx.api.Buffer;
+import com.hotels.styx.api.Buffers;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.EventLoop;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
@@ -24,12 +26,12 @@ import org.reactivestreams.Subscription;
 /**
  * A publisher to wrap the FlowControllingHttpContentProducer FSM and perform subscription operations via a Netty EventLoop.
  */
-public final class ContentPublisher implements Publisher<Buffer> {
+public final class FlowControllingPublisher implements Publisher<Buffer> {
 
     private final EventLoop eventLoop;
     private final FlowControllingHttpContentProducer contentProducer;
 
-    public ContentPublisher(EventLoop eventLoop, FlowControllingHttpContentProducer contentProducer) {
+    public FlowControllingPublisher(EventLoop eventLoop, FlowControllingHttpContentProducer contentProducer) {
         this.eventLoop = eventLoop;
         this.contentProducer = contentProducer;
     }
@@ -49,5 +51,34 @@ public final class ContentPublisher implements Publisher<Buffer> {
                 eventLoop.submit(contentProducer::unsubscribe);
             }
         });
+    }
+
+    private static class BufferSubscriber implements Subscriber<ByteBuf> {
+
+        private final Subscriber<? super Buffer> actual;
+
+        public BufferSubscriber(Subscriber<? super Buffer> actual) {
+            this.actual = actual;
+        }
+
+        @Override
+        public void onSubscribe(Subscription s) {
+            actual.onSubscribe(s);
+        }
+
+        @Override
+        public void onNext(ByteBuf byteBuf) {
+            actual.onNext(Buffers.fromByteBuf(byteBuf));
+        }
+
+        @Override
+        public void onError(Throwable t) {
+            actual.onError(t);
+        }
+
+        @Override
+        public void onComplete() {
+            actual.onComplete();
+        }
     }
 }

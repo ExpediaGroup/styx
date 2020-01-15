@@ -44,6 +44,12 @@ import static reactor.core.publisher.Operators.addCap;
 
 /**
  * A FSM that controls the flow of content chunks in accordance with the Reactive Streams specification.
+ * Specifically, it:
+ *   1. Enforces the ordering of reactive events.
+ *   2. Handles incoming content stream from the network
+ *   3. Handles reactive subscription, cancel, and back pressure
+ *   4. Is not thread safe.
+ *   5. Relies on external scheduler to serialise events.
  */
 public class FlowControllingHttpContentProducer {
     private static final Logger LOGGER = LoggerFactory.getLogger(FlowControllingHttpContentProducer.class);

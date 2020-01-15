@@ -25,7 +25,7 @@ import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.BadHttpResponseException;
 import com.hotels.styx.client.StyxClientException;
-import com.hotels.styx.common.content.ContentPublisher;
+import com.hotels.styx.common.content.FlowControllingPublisher;
 import com.hotels.styx.common.content.FlowControllingHttpContentProducer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
@@ -125,7 +125,7 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
 
             EventLoop eventLoop = ctx.channel().eventLoop();
 
-            Publisher<Buffer> contentPublisher = new ContentPublisher(eventLoop, producer);
+            Publisher<Buffer> contentPublisher = new FlowControllingPublisher(eventLoop, producer);
 
             if ("close".equalsIgnoreCase(nettyResponse.headers().get(CONNECTION))) {
                 toBeClosed = true;
