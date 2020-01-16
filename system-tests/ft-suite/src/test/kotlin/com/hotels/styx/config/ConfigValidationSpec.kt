@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,9 +23,7 @@ import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import io.kotlintest.specs.StringSpec
 
-class ConfigValidationSpec : StringSpec() {
-
-    init {
+class ConfigValidationSpec : StringSpec({
         "Config is validated on startup" {
             val e = shouldThrow<SchemaValidationException> {
                 StyxServer(StyxServerComponents.Builder()
@@ -35,8 +33,6 @@ class ConfigValidationSpec : StringSpec() {
                         .build())
             }
 
-            e.message shouldBe("Missing a mandatory field 'proxy'")
+            e.message shouldBe("Missing a mandatory field 'admin'")
         }
-    }
-
-}
+    })

@@ -55,13 +55,13 @@ public class ProviderListHandler implements WebServiceHandler {
 
     private static final String TITLE = "List of Providers";
 
-    private final ObjectStore<StyxObjectRecord<StyxService>> providerDb;
+    private final ObjectStore<? extends StyxObjectRecord<? extends StyxService>> providerDb;
 
     /**
      * Create a new handler linked to a provider object store.
      * @param providerDb the provider store.
      */
-    public ProviderListHandler(ObjectStore<StyxObjectRecord<StyxService>> providerDb) {
+    public ProviderListHandler(ObjectStore<? extends StyxObjectRecord<? extends StyxService>> providerDb) {
         this.providerDb = providerDb;
     }
 
@@ -77,7 +77,7 @@ public class ProviderListHandler implements WebServiceHandler {
                 .build());
     }
 
-    private static String htmlForProvider(String name, StyxObjectRecord<StyxService> provider) {
+    private static String htmlForProvider(String name, StyxObjectRecord<? extends StyxService> provider) {
         String endpointList = provider.getStyxService()
                 .adminInterfaceHandlers(adminPath("providers", name))
                 .keySet()

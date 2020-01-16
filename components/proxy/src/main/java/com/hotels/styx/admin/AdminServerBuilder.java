@@ -97,6 +97,7 @@ public class AdminServerBuilder {
     private final RoutingObjectFactory.Context routingObjectFactoryContext;
     private final StyxObjectStore<RoutingObjectRecord> routeDatabase;
     private final StyxObjectStore<StyxObjectRecord<StyxService>> providerDatabase;
+    private final StyxObjectStore<StyxObjectRecord<InetServer>> serverDatabase;
     private final StartupConfig startupConfig;
 
     private Registry<BackendService> backendServicesRegistry;
@@ -108,6 +109,7 @@ public class AdminServerBuilder {
         this.providerDatabase = requireNonNull(serverComponents.servicesDatabase());
         this.configuration = this.environment.configuration();
         this.startupConfig = serverComponents.startupConfig();
+        this.serverDatabase = requireNonNull(serverComponents.serversDatabase());
     }
 
     public AdminServerBuilder backendServicesRegistry(Registry<BackendService> backendServicesRegistry) {
@@ -187,6 +189,10 @@ public class AdminServerBuilder {
         ProviderRoutingHandler providerHandler = new ProviderRoutingHandler("/admin/providers", providerDatabase);
         httpRouter.aggregate("/admin/providers", providerHandler);
         httpRouter.aggregate("/admin/providers/", providerHandler);
+
+        ProviderRoutingHandler serverHandler = new ProviderRoutingHandler("/admin/servers", serverDatabase);
+        httpRouter.aggregate("/admin/servers", serverHandler);
+        httpRouter.aggregate("/admin/servers/", serverHandler);
 
         return httpRouter;
     }
