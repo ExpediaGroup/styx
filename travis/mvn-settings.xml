@@ -1,4 +1,12 @@
 <settings>
+    <mirrors>
+        <mirror>
+            <id>maven-central-mirror</id>
+            <name>Maven central mirror</name>
+            <url>https://maven-central.storage-download.googleapis.com/maven2/</url>
+            <mirrorOf>central</mirrorOf>
+        </mirror>
+    </mirrors>
     <servers>
         <server>
             <id>central</id>
@@ -15,10 +23,10 @@
         <profile>
             <id>sonatype-oss-release</id>
             <properties>
-                <gpg.executable>gpg2</gpg.executable>
                 <gpg.defaultKeyring>false</gpg.defaultKeyring>
                 <gpg.publicKeyring>${env.GPG_DIR}/pubring.gpg</gpg.publicKeyring>
                 <gpg.secretKeyring>${env.GPG_DIR}/secring.gpg</gpg.secretKeyring>
+                <gpg.executable>${env.GPG_EXECUTABLE}</gpg.executable>
                 <gpg.keyname>${env.GPG_KEY_NAME}</gpg.keyname>
                 <gpg.passphrase>${env.GPG_PASSPHRASE}</gpg.passphrase>
             </properties>
