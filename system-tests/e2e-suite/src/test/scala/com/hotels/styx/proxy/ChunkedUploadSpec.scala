@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -322,12 +322,4 @@ class ChunkedUploadSpec extends FunSpec
       })
   }
 
-  def originAndWebServer(appId: String, originId: String) = {
-    val serverPort = freePort()
-    val origin = newOriginBuilder("localhost", serverPort).applicationId("app").id("app1").build()
-    val server = createHttpServer(serverPort, new HttpAggregator(new ContentDigestHandler(origin)))
-    server.startAsync().awaitRunning()
-
-    origin -> server
-  }
 }

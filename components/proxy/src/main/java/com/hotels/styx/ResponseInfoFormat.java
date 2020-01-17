@@ -21,10 +21,13 @@ import com.hotels.styx.api.LiveHttpRequest;
 /**
  * Formats response info into a string.
  */
-class ResponseInfoFormat {
+
+// This can be make package private after we'll deprecate the old proxy server. But at the moment
+// this has to be public because it is shared with com.hotels.styx.servers.StyxHttpServer.kt
+public class ResponseInfoFormat {
     private final String format;
 
-    ResponseInfoFormat(Environment environment) {
+    public ResponseInfoFormat(Environment environment) {
         String releaseTag = environment.buildInfo().releaseTag();
         String jvmRoute = environment.configuration().get("jvmRouteName").orElse(NO_JVM_ROUTE_SET);
 

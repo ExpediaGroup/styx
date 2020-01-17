@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package com.hotels.styx.proxy;
 
 import com.hotels.styx.Environment;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
@@ -43,8 +44,6 @@ import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitorFactory;
 import com.hotels.styx.client.healthcheck.UrlRequestHealthCheck;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.server.HttpRouter;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
 import org.slf4j.Logger;
 
 import java.util.Map;
@@ -68,18 +67,15 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
 
     private final BackendServiceClientFactory clientFactory;
     private final Environment environment;
-    private final EventLoopGroup nettyEventLoopGroup;
-    private final Class<? extends SocketChannel> socketChannelClass;
+    private final NettyExecutor executor;
     private final ConcurrentMap<String, ProxyToClientPipeline> routes;
 
     public BackendServicesRouter(BackendServiceClientFactory clientFactory,
                                  Environment environment,
-                                 EventLoopGroup nettyEventLoopGroup,
-                                 Class<? extends SocketChannel> socketChannelClass) {
+                                 NettyExecutor executor) {
         this.clientFactory = requireNonNull(clientFactory);
         this.environment = requireNonNull(environment);
-        this.nettyEventLoopGroup = requireNonNull(nettyEventLoopGroup);
-        this.socketChannelClass = requireNonNull(socketChannelClass);
+        this.executor = requireNonNull(executor);
 
         this.routes = new ConcurrentSkipListMap<>(
                 comparingInt(String::length).reversed()
@@ -184,7 +180,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
             long connectionExpiration) {
 
         Connection.Factory factory = new NettyConnectionFactory.Builder()
-                .nettyEventLoop(nettyEventLoopGroup, socketChannelClass)
+                .executor(executor)
                 .httpRequestOperationFactory(
                         httpRequestOperationFactoryBuilder()
                                 .flowControlEnabled(true)

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -101,8 +101,7 @@ class TlsErrorSpec extends FunSpec
       }
 
       val message =
-        """SSL handshake failure from incoming connection cause="Client requested protocol """ +
-          s"""TLSv1.1 not enabled or not supported", serverAddress=.*:$serverPort, clientAddress=.*"""
+        """SSL handshake failure from incoming connection cause=".*TLSv1.1.*"""
 
       eventually(timeout(3 seconds)) {
         assertThat(log.log(), hasItem(loggingEvent(INFO, message)))

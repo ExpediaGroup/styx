@@ -24,7 +24,8 @@ import com.hotels.styx.api._
 import com.hotels.styx.api.extension.Origin.newOriginBuilder
 import com.hotels.styx.common.http.handler.{HttpAggregator, NotFoundHandler}
 import com.hotels.styx.server.netty.{NettyServerBuilder, ServerConnector, WebServerConnectorFactory}
-import com.hotels.styx.server.{HttpConnectorConfig, HttpServer}
+import com.hotels.styx.server.HttpServer
+import com.hotels.styx.support.configuration.HttpConnectorConfig
 
 class RequestRecordingHandler(val requestQueue: BlockingQueue[LiveHttpRequest], val delegate: HttpHandler) extends HttpHandler {
   override def handle(request: LiveHttpRequest, context: HttpInterceptor.Context): Eventual[LiveHttpResponse] = {
@@ -55,10 +56,11 @@ class MockServer(id: String, val port: Int) extends AbstractIdleService with Htt
   }
   val requestQueue: BlockingQueue[LiveHttpRequest] = new LinkedBlockingQueue
   val server = NettyServerBuilder.newBuilder()
-      .name("MockServer")
-      .setProtocolConnector(new WebServerConnectorFactory().create(new HttpConnectorConfig(port)))
+      .setProtocolConnector(new WebServerConnectorFactory().create(HttpConnectorConfig(port).asJava))
+      .workerExecutor(NettyExecutor.create("MockServer", 1))
       .handler(router)
     .build()
+  val guavaService = StyxServers.toGuavaService(server)
 
   def takeRequest(): LiveHttpRequest = {
     requestQueue.poll
@@ -78,13 +80,13 @@ class MockServer(id: String, val port: Int) extends AbstractIdleService with Htt
   }
 
   override def startUp(): Unit = {
-    server.startAsync().awaitRunning()
+    guavaService.startAsync().awaitRunning()
     logger.info("mock server started on port " + server.inetAddress().getPort)
   }
 
   override def shutDown(): Unit = {
     logger.info(s"mock server running on port ${server.inetAddress().getPort} stopping")
-    server.stopAsync().awaitTerminated()
+    guavaService.stopAsync().awaitTerminated()
   }
 
   override def inetAddress(): InetSocketAddress = {
@@ -92,7 +94,7 @@ class MockServer(id: String, val port: Int) extends AbstractIdleService with Htt
   }
 
   private def connectorOnFreePort: ServerConnector = {
-    new WebServerConnectorFactory().create(new HttpConnectorConfig(0))
+    new WebServerConnectorFactory().create(HttpConnectorConfig(0).asJava)
   }
 
   def httpPort() = Option(server.inetAddress()).map(_.getPort).getOrElse(0)

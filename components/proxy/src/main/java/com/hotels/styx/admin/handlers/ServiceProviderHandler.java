@@ -30,7 +30,7 @@ import com.hotels.styx.api.WebServiceHandler;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.routing.db.StyxObjectStore;
-import com.hotels.styx.routing.handlers.StyxObjectRecord;
+import com.hotels.styx.StyxObjectRecord;
 import org.slf4j.Logger;
 
 import java.util.List;

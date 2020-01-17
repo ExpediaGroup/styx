@@ -63,7 +63,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Factory for proxy connectors.
  */
-class ProxyConnectorFactory implements ServerConnectorFactory {
+public class ProxyConnectorFactory implements ServerConnectorFactory {
     private final MetricRegistry metrics;
     private final HttpErrorStatusListener errorStatusListener;
     private final NettyServerConfig serverConfig;
@@ -72,7 +72,7 @@ class ProxyConnectorFactory implements ServerConnectorFactory {
     private final boolean requestTracking;
     private final HttpMessageFormatter httpMessageFormatter;
 
-    ProxyConnectorFactory(NettyServerConfig serverConfig,
+    public ProxyConnectorFactory(NettyServerConfig serverConfig,
                           MetricRegistry metrics,
                           HttpErrorStatusListener errorStatusListener,
                           String unwiseCharacters,

@@ -164,9 +164,8 @@
     <maven-surefire-plugin.version>3.0.0-M3</maven-surefire-plugin.version>
 
     <!-- non apache plugin versions and configurations, please sort alphabetically -->
-    <animal-sniffer-maven-plugin.version>1.0</animal-sniffer-maven-plugin.version>
     <build-helper-maven-plugin.version>1.9.1</build-helper-maven-plugin.version>
-    <jacoco-maven-plugin.version>0.7.5.201505241946</jacoco-maven-plugin.version>
+    <jacoco-maven-plugin.version>0.8.5</jacoco-maven-plugin.version>
 
     <!-- code quality -->
     <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
@@ -686,14 +685,6 @@
           <version>3.2.1</version>
           <executions>
             <execution>
-              <id>scala-compile-first</id>
-              <phase>process-resources</phase>
-              <goals>
-                <goal>add-source</goal>
-                <goal>compile</goal>
-              </goals>
-            </execution>
-            <execution>
               <id>scala-test-compile</id>
               <phase>process-test-resources</phase>
               <goals>
@@ -846,18 +837,6 @@
               </configuration>
             </execution>
           </executions>
-        </plugin>
-
-        <plugin>
-          <groupId>org.codehaus.mojo</groupId>
-          <artifactId>animal-sniffer-maven-plugin</artifactId>
-          <configuration>
-            <signature>
-              <groupId>org.codehaus.mojo.signature</groupId>
-              <artifactId>java17</artifactId>
-              <version>${animal-sniffer-maven-plugin.version}</version>
-            </signature>
-          </configuration>
         </plugin>
 
         <plugin>

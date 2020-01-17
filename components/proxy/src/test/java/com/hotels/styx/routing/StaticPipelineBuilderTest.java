@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,20 +17,20 @@ package com.hotels.styx.routing;
 
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.Environment;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.AbstractRegistry;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.plugins.spi.Plugin;
-import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupFactory;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpInterceptorContext;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletableFuture;
@@ -46,17 +46,22 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
+@TestInstance(PER_CLASS)
 public class StaticPipelineBuilderTest {
 
     private Environment environment;
     private BackendServiceClientFactory clientFactory;
     private Registry<BackendService> registry;
 
-    private final PlatformAwareClientEventLoopGroupFactory factory = new PlatformAwareClientEventLoopGroupFactory("Styx", 0);
-    private final EventLoopGroup eventLoopGroup = factory.newClientWorkerEventLoopGroup();
-    private final Class<? extends SocketChannel> socketChannelClass = factory.clientSocketChannelClass();
 
+    private final NettyExecutor executor = NettyExecutor.create("Styx", 0);
+
+    @AfterAll
+    public void tearDown() {
+        executor.shut();
+    }
 
     @BeforeEach
     public void staticPipelineBuilderTest() {
@@ -68,7 +73,7 @@ public class StaticPipelineBuilderTest {
 
     @Test
     public void buildsInterceptorPipelineForBackendServices() throws Exception {
-        HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, ImmutableList.of(), eventLoopGroup, socketChannelClass, false).build();
+        HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, ImmutableList.of(), executor, false).build();
         LiveHttpResponse response = Mono.from(handler.handle(get("/foo").build(), HttpInterceptorContext.create())).block();
         assertThat(response.status(), is(OK));
     }
@@ -80,7 +85,7 @@ public class StaticPipelineBuilderTest {
                 interceptor("Test-B", appendResponseHeader("X-From-Plugin", "B"))
         );
 
-        HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, plugins, eventLoopGroup, socketChannelClass, false).build();
+        HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, plugins, executor, false).build();
 
         LiveHttpResponse response = Mono.from(handler.handle(get("/foo").build(), HttpInterceptorContext.create())).block();
         assertThat(response.status(), is(OK));

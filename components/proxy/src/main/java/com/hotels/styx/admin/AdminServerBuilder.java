@@ -18,6 +18,8 @@ package com.hotels.styx.admin;
 import com.codahale.metrics.json.MetricsModule;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.Environment;
+import com.hotels.styx.NettyExecutor;
+import com.hotels.styx.InetServer;
 import com.hotels.styx.StartupConfig;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.admin.dashboard.DashboardData;
@@ -55,11 +57,10 @@ import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.db.StyxObjectStore;
-import com.hotels.styx.routing.handlers.StyxObjectRecord;
+import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.server.AdminHttpRouter;
-import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.handlers.ClassPathResourceHandler;
-import com.hotels.styx.server.netty.NettyServerBuilderSpec;
+import com.hotels.styx.server.netty.NettyServerBuilder;
 import com.hotels.styx.server.netty.WebServerConnectorFactory;
 import com.hotels.styx.server.track.CurrentRequestTracker;
 import com.hotels.styx.startup.StyxServerComponents;
@@ -96,6 +97,7 @@ public class AdminServerBuilder {
     private final RoutingObjectFactory.Context routingObjectFactoryContext;
     private final StyxObjectStore<RoutingObjectRecord> routeDatabase;
     private final StyxObjectStore<StyxObjectRecord<StyxService>> providerDatabase;
+    private final StyxObjectStore<StyxObjectRecord<InetServer>> serverDatabase;
     private final StartupConfig startupConfig;
 
     private Registry<BackendService> backendServicesRegistry;
@@ -107,6 +109,7 @@ public class AdminServerBuilder {
         this.providerDatabase = requireNonNull(serverComponents.servicesDatabase());
         this.configuration = this.environment.configuration();
         this.startupConfig = serverComponents.startupConfig();
+        this.serverDatabase = requireNonNull(serverComponents.serversDatabase());
     }
 
     public AdminServerBuilder backendServicesRegistry(Registry<BackendService> backendServicesRegistry) {
@@ -114,15 +117,23 @@ public class AdminServerBuilder {
         return this;
     }
 
-    public HttpServer build() {
+    public InetServer build() {
         LOG.info("event bus that will be used is {}", environment.eventBus());
         StyxConfig styxConfig = environment.configuration();
         AdminServerConfig adminServerConfig = styxConfig.adminServerConfig();
 
-        return new NettyServerBuilderSpec("Admin", environment.serverEnvironment(), new WebServerConnectorFactory())
-                .toNettyServerBuilder(adminServerConfig)
-                .handler(adminEndpoints(styxConfig, startupConfig))
-                .build();
+        NettyExecutor executor = NettyExecutor.create("Admin-Boss", adminServerConfig.bossThreadsCount());
+        NettyServerBuilder builder = NettyServerBuilder.newBuilder()
+                .setMetricsRegistry(environment.metricRegistry())
+                .bossExecutor(executor)
+                .workerExecutor(NettyExecutor.create("Admin-Worker", adminServerConfig.workerThreadsCount()))
+                .handler(adminEndpoints(styxConfig, startupConfig));
+
+        // Currently admin server cannot be started over TLS protocol.
+        // This appears to be an existing issue that needs rectifying.
+        adminServerConfig.httpConnectorConfig().ifPresent(it -> builder.setProtocolConnector(new WebServerConnectorFactory().create(it)));
+
+        return builder.build();
     }
 
     private HttpHandler adminEndpoints(StyxConfig styxConfig, StartupConfig startupConfig) {
@@ -178,6 +189,10 @@ public class AdminServerBuilder {
         ProviderRoutingHandler providerHandler = new ProviderRoutingHandler("/admin/providers", providerDatabase);
         httpRouter.aggregate("/admin/providers", providerHandler);
         httpRouter.aggregate("/admin/providers/", providerHandler);
+
+        ProviderRoutingHandler serverHandler = new ProviderRoutingHandler("/admin/servers", serverDatabase);
+        httpRouter.aggregate("/admin/servers", serverHandler);
+        httpRouter.aggregate("/admin/servers/", serverHandler);
 
         return httpRouter;
     }

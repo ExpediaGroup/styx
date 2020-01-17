@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,22 +15,24 @@
  */
 package com.hotels.styx.routing
 
-import io.kotlintest.matchers.string.shouldContain
+import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 import io.mockk.mockk
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter.ISO_DATE_TIME
+
+private const val CREATED_STRING = "created:"
+private const val TIMESTAMP_START_POSITION = CREATED_STRING.length
 
 class RoutingObjectRecordTest : StringSpec({
     "Creates with timestamp" {
         val createdTag= RoutingObjectRecord.create("A", setOf("b"), mockk(), mockk())
                 .tags
-                .filter { it.startsWith("created") }
+                .filter { it.startsWith(CREATED_STRING) }
+                .map { it.substring(TIMESTAMP_START_POSITION) }
                 .first()
 
-        if (createdTag.contains(".")) { // just to keep the regexes clear
-            createdTag.shouldContain("created:20[0-9]{2}-[0-9]{1,2}-[0-9]{1,2}T[0-9]{1,2}:[0-9]{1,2}:[0-9]{1,2}.[0-9]{1,3}$".toRegex())
-        } else {
-            createdTag.shouldContain("created:20[0-9]{2}-[0-9]{1,2}-[0-9]{1,2}T[0-9]{1,2}:[0-9]{1,2}:[0-9]{1,2}$".toRegex())
+        LocalDateTime.parse(createdTag, ISO_DATE_TIME).format(ISO_DATE_TIME).shouldBe(createdTag);
 
-        }
     }
 })

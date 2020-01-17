@@ -26,17 +26,12 @@ import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
 import com.hotels.styx.api.extension.service.spi.Registry;
-import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.config.schema.SchemaValidationException;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.ConnectorConfig;
-import com.hotels.styx.server.HttpServer;
-import com.hotels.styx.server.ServerEventLoopFactory;
 import com.hotels.styx.server.netty.NettyServerBuilder;
-import com.hotels.styx.server.netty.NettyServerConfig;
 import com.hotels.styx.server.netty.ServerConnector;
-import com.hotels.styx.server.netty.eventloop.PlatformAwareServerEventLoopFactory;
 import com.hotels.styx.startup.StyxServerComponents;
 import io.netty.util.ResourceLeakDetector;
 import org.jetbrains.annotations.NotNull;
@@ -52,10 +47,10 @@ import java.util.ArrayList;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hotels.styx.StyxServers.toGuavaService;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.shutdownLogging;
 import static com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder.ENCODE_UNWISECHARS;
-import static com.hotels.styx.server.netty.eventloop.ServerEventLoopFactories.memoize;
 import static com.hotels.styx.startup.CoreMetrics.registerCoreMetrics;
 import static io.netty.util.ResourceLeakDetector.Level.DISABLED;
 import static java.lang.Runtime.getRuntime;
@@ -81,13 +76,14 @@ public final class StyxServer extends AbstractService {
         LOG.debug("Real resource leak detection level = {}", ResourceLeakDetector.getLevel());
     }
 
-    private final HttpServer httpServer;
-    private final HttpServer httpsServer;
-    private final HttpServer adminServer;
+    private final InetServer httpServer;
+    private final InetServer httpsServer;
+    private final InetServer adminServer;
 
     private final ServiceManager phase1Services;
     private final ServiceManager phase2Services;
     private final Stopwatch stopwatch;
+    private final StyxServerComponents components;
 
     public static void main(String[] args) {
         try {
@@ -170,27 +166,27 @@ public final class StyxServer extends AbstractService {
 
     public StyxServer(StyxServerComponents components, Stopwatch stopwatch) {
         this.stopwatch = stopwatch;
+        this.components = components;
 
         registerCoreMetrics(components.environment().buildInfo(), components.environment().metricRegistry());
 
-        // The plugins are loaded, but not initialised.
-        // And therefore not able to accept traffic.
-        HttpHandler httpHandler = new StyxPipelineFactory(
+        // The plugins are loaded, but not initialised. And therefore not able to accept traffic.
+        // This handler is for the "old" proxy servers, that are started from proxy.connectors configuration.
+        // The new `HttpServer` object (https://github.com/HotelsDotCom/styx/pull/591) doesn't use it.
+        HttpHandler handlerForOldProxyServer = new StyxPipelineFactory(
                 components.routingObjectFactoryContext(),
                 components.environment(),
                 components.services(),
                 components.plugins(),
-                components.eventLoopGroup(),
-                components.nettySocketChannelClass())
+                components.clientExecutor())
                 .create();
 
         // Startup phase 1: start plugins, control plane providers, and other services:
         ArrayList<Service> services = new ArrayList<>();
-
         adminServer = createAdminServer(components);
-        services.add(adminServer);
-        services.add(toGuavaService(new PluginsManager("Styx-Plugins-Manager", components)));
-        services.add(toGuavaService(new ServiceProviderMonitor("Styx-Service-Monitor", components.servicesDatabase())));
+        services.add(toGuavaService(adminServer));
+        services.add(toGuavaService(new PluginsManager("Sty§x-Plugins-Manager", components)));
+        services.add(toGuavaService(new ServiceProviderMonitor<>("Styx-Service-Monitor", components.servicesDatabase())));
         components.services().values().forEach(it -> services.add(toGuavaService(it)));
         this.phase1Services = new ServiceManager(services);
 
@@ -198,31 +194,40 @@ public final class StyxServer extends AbstractService {
         StyxConfig styxConfig = components.environment().configuration();
         httpServer = styxConfig.proxyServerConfig()
                 .httpConnectorConfig()
-                .map(it -> httpServer(components.environment(), it, httpHandler))
+                .map(it -> httpServer(components.environment(), it, handlerForOldProxyServer))
                 .orElse(null);
 
         httpsServer = styxConfig.proxyServerConfig()
                 .httpsConnectorConfig()
-                .map(it -> httpServer(components.environment(), it, httpHandler))
+                .map(it -> httpServer(components.environment(), it, handlerForOldProxyServer))
                 .orElse(null);
 
         ArrayList<Service> services2 = new ArrayList<>();
 
-        Optional.ofNullable(httpServer).ifPresent(services2::add);
-        Optional.ofNullable(httpsServer).ifPresent(services2::add);
+        Optional.ofNullable(httpServer).map(StyxServers::toGuavaService).ifPresent(services2::add);
+        Optional.ofNullable(httpsServer).map(StyxServers::toGuavaService).ifPresent(services2::add);
+
+        services2.add(toGuavaService(new ServiceProviderMonitor<>("Styx-Server-Monitor", components.serversDatabase())));
 
         this.phase2Services = new ServiceManager(services2);
     }
 
+    public InetSocketAddress serverAddress(String name) {
+        return components.serversDatabase()
+                .get(name)
+                .map(it -> it.component4().inetAddress())
+                .orElse(null);
+    }
+
     public InetSocketAddress proxyHttpAddress() {
         return Optional.ofNullable(httpServer)
-                .map(HttpServer::inetAddress)
+                .map(InetServer::inetAddress)
                 .orElse(null);
     }
 
     public InetSocketAddress proxyHttpsAddress() {
         return Optional.ofNullable(httpsServer)
-                .map(HttpServer::inetAddress)
+                .map(InetServer::inetAddress)
                 .orElse(null);
     }
 
@@ -230,12 +235,7 @@ public final class StyxServer extends AbstractService {
         return adminServer.inetAddress();
     }
 
-    // This function will be removed in near future:
-    private static ServerEventLoopFactory serverEventLoopFactory(String name, NettyServerConfig serverConfig) {
-        return memoize(new PlatformAwareServerEventLoopFactory(name, serverConfig.bossThreadsCount(), serverConfig.workerThreadsCount()));
-    }
-
-    private static HttpServer httpServer(Environment environment, ConnectorConfig connectorConfig, HttpHandler styxDataPlane) {
+    private static InetServer httpServer(Environment environment, ConnectorConfig connectorConfig, HttpHandler styxDataPlane) {
         CharSequence styxInfoHeaderName = environment.configuration().styxHeaderConfig().styxInfoHeaderName();
         ResponseInfoFormat responseInfoFormat = new ResponseInfoFormat(environment);
 
@@ -251,7 +251,8 @@ public final class StyxServer extends AbstractService {
 
         return NettyServerBuilder.newBuilder()
                 .setMetricsRegistry(environment.metricRegistry())
-                .setServerEventLoopFactory(serverEventLoopFactory("Proxy", environment.configuration().proxyServerConfig()))
+                .bossExecutor(NettyExecutor.create("Proxy-Boss", environment.configuration().proxyServerConfig().bossThreadsCount()))
+                .workerExecutor(NettyExecutor.create("Proxy-Worker", environment.configuration().proxyServerConfig().workerThreadsCount()))
                 .setProtocolConnector(proxyConnector)
                 .handler(styxDataPlane)
                 .build();
@@ -318,31 +319,7 @@ public final class StyxServer extends AbstractService {
         }
     }
 
-    private static Service toGuavaService(StyxService styxService) {
-        return new AbstractService() {
-            @Override
-            protected void doStart() {
-                styxService.start()
-                        .thenAccept(x -> notifyStarted())
-                        .exceptionally(e -> {
-                            notifyFailed(e);
-                            return null;
-                        });
-            }
-
-            @Override
-            protected void doStop() {
-                styxService.stop()
-                        .thenAccept(x -> notifyStopped())
-                        .exceptionally(e -> {
-                            notifyFailed(e);
-                            return null;
-                        });
-            }
-        };
-    }
-
-    private static HttpServer createAdminServer(StyxServerComponents components) {
+    private static InetServer createAdminServer(StyxServerComponents components) {
         Registry<BackendService> registry = (Registry<BackendService>) components.services().get("backendServiceRegistry");
 
         return new AdminServerBuilder(components)
