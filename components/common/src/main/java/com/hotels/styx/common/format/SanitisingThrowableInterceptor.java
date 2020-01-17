@@ -15,9 +15,11 @@
  */
 package com.hotels.styx.common.format;
 
-import net.sf.cglib.proxy.MethodInterceptor;
-import net.sf.cglib.proxy.MethodProxy;
+import net.bytebuddy.implementation.bind.annotation.AllArguments;
+import net.bytebuddy.implementation.bind.annotation.Origin;
+import net.bytebuddy.implementation.bind.annotation.RuntimeType;
 
+import java.lang.reflect.Method;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,44 +28,36 @@ import java.util.regex.Pattern;
  * Wraps a {@link Throwable} so that the message can be modified to sanitize the values of any recognised cookies.
  * Any cause is similarly wrapped before being returned.
  */
-public class SanitisingThrowableMethodInterceptor implements MethodInterceptor {
+public class SanitisingThrowableInterceptor {
 
     private static final ConcurrentHashMap<String, Pattern> COOKIE_NAME_PATTERN_CACHE = new ConcurrentHashMap<>();
     private static Pattern cookieNamePattern(String cookieName) {
         return COOKIE_NAME_PATTERN_CACHE.computeIfAbsent(cookieName, name -> Pattern.compile(name + "\\s*="));
     }
 
-    private final Throwable throwable;
+    private final Throwable target;
     private final SanitisedHttpHeaderFormatter formatter;
 
     /**
      * Enhance a throwable, using the given {@link SanitisedHttpHeaderFormatter} to recognise and sanitise cookie values.
-     * @param throwable the target throwable to enhance
+     * @param target the target throwable to enhance
      * @param formatter provides the sanitising logic
      */
-    public SanitisingThrowableMethodInterceptor(Throwable throwable, SanitisedHttpHeaderFormatter formatter) {
-        this.throwable = throwable;
+    public SanitisingThrowableInterceptor(Throwable target, SanitisedHttpHeaderFormatter formatter) {
+        this.target = target;
         this.formatter = formatter;
     }
 
-    @Override
-    public Object intercept(Object obj, java.lang.reflect.Method method, Object[] args,
-                            MethodProxy proxy) throws Throwable {
-        switch (method.getName()) {
-            case "getMessage":
-                return getMessage();
-            case "getLocalizedMessage":
-                return getLocalizedMessage();
-            case "toString":
-                return toString();
-            case "getCause":
-                return getCause();
-            case "fillInStackTrace":
-                return obj; // don't replace the stack trace in the original exception.
-
-            default:
-                return proxy.invoke(throwable, args);
-        }
+    /**
+     * Default method interceptor, to delegate all other method calls to the target.
+     * @param method the method being proxied
+     * @param args the arguments of the method being proxied
+     * @return the response from the target object
+     * @throws Exception if the target method throws an exception
+     */
+    @RuntimeType
+    public Object intercept(@Origin Method method, @AllArguments Object[] args) throws Exception {
+        return method.invoke(target, args);
     }
 
     private String sanitiseCookies(String message) {
@@ -86,20 +80,24 @@ public class SanitisingThrowableMethodInterceptor implements MethodInterceptor {
     }
 
     public String getMessage() {
-        return throwable.getClass().getName() + ": " + sanitiseCookies(throwable.getMessage());
+        return target.getClass().getName() + ": " + sanitiseCookies(target.getMessage());
     }
 
     public String getLocalizedMessage() {
-        return throwable.getClass().getName() + ": " + sanitiseCookies(throwable.getLocalizedMessage());
+        return target.getClass().getName() + ": " + sanitiseCookies(target.getLocalizedMessage());
     }
 
     public Throwable getCause() {
-        Throwable cause = throwable.getCause();
+        Throwable cause = target.getCause();
         return cause == null ? null : SanitisingThrowableFactory.instance().create(cause, formatter);
     }
 
+    public Throwable fillInStackTrace() {
+        return target;
+    }
+
     public String toString() {
-        return "Sanitized: " + throwable.toString();
+        return "Sanitized: " + target.toString();
     }
 }
 

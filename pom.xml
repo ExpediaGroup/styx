@@ -335,11 +335,11 @@
       </dependency>
 
       <dependency>
-        <groupId>cglib</groupId>
-        <artifactId>cglib</artifactId>
-        <version>${cglib.version}</version>
+        <groupId>net.bytebuddy</groupId>
+        <artifactId>byte-buddy</artifactId>
+        <version>1.10.6</version>
       </dependency>
-
+      
       <!-- Metrics -->
       <dependency>
         <groupId>io.dropwizard.metrics</groupId>

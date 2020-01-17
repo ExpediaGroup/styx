@@ -22,25 +22,19 @@ import static java.util.Collections.emptyList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.core.StringEndsWith.endsWith;
 
-class SanitisingThrowableMethodInterceptorTest {
+class SanitisingThrowableInterceptorTest {
 
     SanitisedHttpHeaderFormatter formatter = new SanitisedHttpHeaderFormatter(
             emptyList(), asList("secret-cookie", "private-cookie")
     );
 
-    Exception exception(String msg) {
+    static Exception throwAndReturn(Exception ex) {
         try {
-            throw new Exception(msg);
-        } catch (Exception e) {
-            return e;
-        }
-    }
-
-    Exception exception(String msg, Exception cause) {
-        try {
-            throw new Exception(msg, cause);
+            throw ex;
         } catch (Exception e) {
             return e;
         }
@@ -48,7 +42,7 @@ class SanitisingThrowableMethodInterceptorTest {
 
     @Test
     public void messagesWithNoCookiesAreNotChanged() {
-        Exception e = exception("This does not contain any cookies.");
+        Exception e = throwAndReturn(new Exception("This does not contain any cookies."));
         Throwable proxy = SanitisingThrowableFactory.instance().create(e, formatter);
 
         String prefix = "java.lang.Exception: ";
@@ -59,7 +53,7 @@ class SanitisingThrowableMethodInterceptorTest {
 
     @Test
     public void messagesWithUnrecognizedCookiesAreNotChanged() {
-        Exception e = exception("Some cookies: cookie1=c1;cookie2=c2");
+        Exception e = throwAndReturn(new Exception("Some cookies: cookie1=c1;cookie2=c2"));
         Throwable proxy = SanitisingThrowableFactory.instance().create(e, formatter);
         assertThat(proxy.getMessage(), endsWith(e.getMessage()));
         assertThat(proxy.getLocalizedMessage(), endsWith(e.getLocalizedMessage()));
@@ -68,7 +62,7 @@ class SanitisingThrowableMethodInterceptorTest {
 
     @Test
     public void messagesWithRecognizedCookiesAreSanitized() {
-        Exception e = exception("Some cookies: cookie1=c1;secret-cookie=secret;cookie2=c2;private-cookie=private");
+        Exception e = throwAndReturn(new Exception("Some cookies: cookie1=c1;secret-cookie=secret;cookie2=c2;private-cookie=private"));
         Throwable proxy = SanitisingThrowableFactory.instance().create(e, formatter);
         assertThat(proxy.getMessage(), containsString("cookie1=c1"));
         assertThat(proxy.getMessage(), containsString("cookie2=c2"));
@@ -78,8 +72,8 @@ class SanitisingThrowableMethodInterceptorTest {
 
     @Test
     public void exceptionCausesAreSanitized() {
-        Exception inner = exception("Inner: cookie1=c1;secret-cookie=secret");
-        Exception outer = exception("Outer: cookie2=c2;private-cookie=private", inner);
+        Exception inner = throwAndReturn(new Exception("Inner: cookie1=c1;secret-cookie=secret"));
+        Exception outer = throwAndReturn(new Exception("Outer: cookie2=c2;private-cookie=private", inner));
         Throwable outerProxy = SanitisingThrowableFactory.instance().create(outer, formatter);
         assertThat(outerProxy.getMessage(), containsString("cookie2=c2"));
         assertThat(outerProxy.getMessage(), containsString("private-cookie=****"));
@@ -89,18 +83,46 @@ class SanitisingThrowableMethodInterceptorTest {
 
     @Test
     public void nullMessagesAreAllowed() {
-        Exception e = exception(null);
+        Exception e = throwAndReturn(new Exception((String) null));
         Throwable proxy = SanitisingThrowableFactory.instance().create(e, formatter);
         assertThat(proxy.getMessage(), equalTo("java.lang.Exception: null"));
     }
 
     @Test
+    public void exceptionsWithNoDefaultConstructorAreNotProxied() {
+        Exception e = throwAndReturn(new NoDefaultConstructorException("Ooops, no default constructor"));
+        Throwable notProxy = SanitisingThrowableFactory.instance().create(e, formatter);
+        assertThat(notProxy.getMessage(), equalTo("Ooops, no default constructor"));
+        assertThat(notProxy.getClass().getSuperclass(), not(instanceOf(NoDefaultConstructorException.class))); // i.e. not proxied.
+    }
+
+    @Test
+    public void exceptionsOfFinalClassAreNotProxied() {
+        Exception e = throwAndReturn(new FinalClassException());
+        Throwable notProxy = SanitisingThrowableFactory.instance().create(e, formatter);
+        assertThat(notProxy.getMessage(), equalTo("This is a final class."));
+        assertThat(notProxy.getClass().getSuperclass(), not(instanceOf(FinalClassException.class))); // i.e. not proxied.
+    }
+
+    @Test
     public void messagesWithInvalidCookiesAreSanitized() {
-        Exception e = exception("Some cookies: cookie1=c1;secret-cookie=secret;bad-cookie=bad\u0000bad;private-cookie=private");
+        Exception e = throwAndReturn(new Exception("Some cookies: cookie1=c1;secret-cookie=secret;bad-cookie=bad\u0000bad;private-cookie=private"));
         Throwable proxy = SanitisingThrowableFactory.instance().create(e, formatter);
         assertThat(proxy.getMessage(), containsString("cookie1=c1"));
         assertThat(proxy.getMessage(), containsString("bad-cookie=bad\u0000bad"));
         assertThat(proxy.getMessage(), containsString("secret-cookie=****"));
         assertThat(proxy.getMessage(), containsString("private-cookie=****"));
+    }
+
+    static class NoDefaultConstructorException extends Exception {
+        NoDefaultConstructorException(String msg) {
+            super(msg);
+        }
+    }
+
+    static final class FinalClassException extends Exception {
+        FinalClassException() {
+            super("This is a final class.");
+        }
     }
 }
