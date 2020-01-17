@@ -15,7 +15,9 @@
  */
 package com.hotels.styx.logging
 
-import ch.qos.logback.classic.Level.*
+import ch.qos.logback.classic.Level.INFO
+import ch.qos.logback.classic.Level.ERROR
+import ch.qos.logback.classic.Level.DEBUG
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST
