@@ -90,7 +90,7 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
 
     @Override
     public ServerConnector create(ConnectorConfig config) {
-        return new ProxyConnector(config, serverConfig, metrics, errorStatusListener, unwiseCharacters, responseEnhancer, requestTracking, httpMessageFormatter);
+        return new ProxyConnector(config, this);
     }
 
     private static final class ProxyConnector implements ServerConnector {
@@ -107,30 +107,23 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
         private final RequestTracker requestTracker;
         private final HttpMessageFormatter httpMessageFormatter;
 
-        private ProxyConnector(ConnectorConfig config,
-                               NettyServerConfig serverConfig,
-                               MetricRegistry metrics,
-                               HttpErrorStatusListener errorStatusListener,
-                               String unwiseCharacters,
-                               ResponseEnhancer responseEnhancer,
-                               boolean requestTracking,
-                               HttpMessageFormatter httpMessageFormatter) {
-            this.responseEnhancer = requireNonNull(responseEnhancer);
+        private ProxyConnector(ConnectorConfig config, ProxyConnectorFactory factory) {
             this.config = requireNonNull(config);
-            this.serverConfig = requireNonNull(serverConfig);
-            this.metrics = requireNonNull(metrics);
-            this.httpErrorStatusListener = requireNonNull(errorStatusListener);
+            this.responseEnhancer = requireNonNull(factory.responseEnhancer);
+            this.serverConfig = requireNonNull(factory.serverConfig);
+            this.metrics = requireNonNull(factory.metrics);
+            this.httpErrorStatusListener = requireNonNull(factory.errorStatusListener);
             this.channelStatsHandler = new ChannelStatisticsHandler(metrics);
             this.requestStatsCollector = new RequestStatsCollector(metrics.scope("requests"));
             this.excessConnectionRejector = new ExcessConnectionRejector(new DefaultChannelGroup(GlobalEventExecutor.INSTANCE), serverConfig.maxConnectionsCount());
-            this.unwiseCharEncoder = new ConfigurableUnwiseCharsEncoder(unwiseCharacters);
+            this.unwiseCharEncoder = new ConfigurableUnwiseCharsEncoder(factory.unwiseCharacters);
             if (isHttps()) {
                 this.sslContext = Optional.of(newSSLContext((HttpsConnectorConfig) config, metrics));
             } else {
                 this.sslContext = Optional.empty();
             }
-            this.requestTracker = requestTracking ? CurrentRequestTracker.INSTANCE : RequestTracker.NO_OP;
-            this.httpMessageFormatter = httpMessageFormatter;
+            this.requestTracker = factory.requestTracking ? CurrentRequestTracker.INSTANCE : RequestTracker.NO_OP;
+            this.httpMessageFormatter = factory.httpMessageFormatter;
         }
 
         @Override
