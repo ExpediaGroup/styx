@@ -21,11 +21,11 @@ import com.hotels.styx.api.RequestCookie;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -39,12 +39,12 @@ public class SanitisedHttpHeaderFormatter {
     private final List<String> cookiesToHide;
 
     public SanitisedHttpHeaderFormatter(List<String> headersToHide, List<String> cookiesToHide) {
-        this.headersToHide = new ArrayList<>(requireNonNull(headersToHide));
-        this.cookiesToHide = new ArrayList<>(requireNonNull(cookiesToHide));
+        this.headersToHide = unmodifiableList(new ArrayList<>(requireNonNull(headersToHide)));
+        this.cookiesToHide = unmodifiableList(new ArrayList<>(requireNonNull(cookiesToHide)));
     }
 
     public List<String> cookiesToHide() {
-        return new ArrayList<>(cookiesToHide);
+        return cookiesToHide;
     }
 
     public String format(HttpHeaders headers) {

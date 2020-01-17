@@ -29,25 +29,43 @@ import java.lang.reflect.Constructor;
 
 import static net.bytebuddy.TypeCache.Sort.SOFT;
 
+/**
+ * Factory for wrapping a {@link Throwable} in a dynamic proxy that sanitizes its message to hide sensitive cookie
+ * information. The supplied Throwable must be non-final, and must have a no-args constructor. The proxy-intercepted
+ * methods are handled by an instance of {@link SanitisingThrowableInterceptor}
+ */
 public class SanitisingThrowableFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(SanitisingThrowableFactory.class);
 
     private static final SanitisingThrowableFactory INSTANCE = new SanitisingThrowableFactory();
 
+    /**
+     * Return the singleton instance of this factory.
+     * @return the singleton instance.
+     */
     public static SanitisingThrowableFactory instance() {
         return INSTANCE;
     }
 
-    private TypeCache<String> typeCache = new TypeCache<>(SOFT);
+    private final TypeCache<String> typeCache = new TypeCache<>(SOFT);
 
     private SanitisingThrowableFactory() { /* Just making this private */ }
 
+    /**
+     * Wrap a {@link Throwable} in a dynamic proxy that sanitizes its message to hide sensitive cookie
+     * information. The supplied Throwable must be non-final, and must have a no-args constructor. If the proxy
+     * cannot be created for any reason (including that it is proxying a final class, or one without a no-args constructor),
+     * then a warning is logged and the unproxied Throwable is returned back to the caller.
+     * @param target the Throwable to be proxied
+     * @param formatter hides the sensitive cookies.
+     * @return the proxied Throwable, or the supplied Target if it cannot be proxied.
+     */
     public Throwable create(Throwable target, SanitisedHttpHeaderFormatter formatter) {
 
         Class<?> clazz = target.getClass();
         try {
-            Constructor defaultConstructor = clazz.getConstructor();
+            Constructor<?> defaultConstructor = clazz.getConstructor();
 
             Class<?> proxyClass = typeCache.findOrInsert(getClass().getClassLoader(), clazz.getName(), () ->
                     new ByteBuddy()
@@ -63,10 +81,9 @@ public class SanitisingThrowableFactory {
                             .load(getClass().getClassLoader())
                             .getLoaded());
 
-            Throwable proxy = (Throwable) proxyClass
+            return (Throwable) proxyClass
                     .getConstructor(SanitisingThrowableInterceptor.class)
                     .newInstance(new SanitisingThrowableInterceptor(target, formatter));
-            return proxy;
         } catch (Exception e) {
             LOG.warn("Unable to proxy throwable class {} - {}", clazz, e.toString()); // No need to log stack trace here
         }

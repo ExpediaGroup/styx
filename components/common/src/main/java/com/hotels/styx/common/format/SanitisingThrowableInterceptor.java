@@ -25,7 +25,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Wraps a {@link Throwable} so that the message can be modified to sanitize the values of any recognised cookies.
+ * Intercepts methods of a {@link Throwable} so that the message can be modified to sanitize the values of any recognised cookies.
  * Any cause is similarly wrapped before being returned.
  */
 public class SanitisingThrowableInterceptor {
