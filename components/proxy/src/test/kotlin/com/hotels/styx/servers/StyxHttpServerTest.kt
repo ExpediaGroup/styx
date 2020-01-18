@@ -49,7 +49,9 @@ import io.kotlintest.specs.FeatureSpec
 import reactor.core.publisher.Flux
 import reactor.core.publisher.toFlux
 import reactor.core.publisher.toMono
+import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets.UTF_8
+import java.util.zip.GZIPInputStream
 
 class StyxHttpServerTest : FeatureSpec({
     feature("HTTP request handling") {
@@ -107,6 +109,72 @@ class StyxHttpServerTest : FeatureSpec({
         } finally {
             guavaServer.stopAsync().awaitTerminated()
         }
+    }
+
+    feature("Response compression") {
+
+        val serverConfig = configBlock("""
+                port: 0
+                handler: aHandler
+                compressResponses: true
+              """.trimIndent())
+
+        val server = StyxHttpServerFactory().create("test-01", routingContext, serverConfig, db)
+        val guavaServer = toGuavaService(server)
+        guavaServer.startAsync().awaitRunning()
+
+        scenario("Responses are compressed if accept-encoding is set to gzip") {
+            StyxHttpClient.Builder().build().send(get("/blah")
+                    .header(HOST, "localhost:${server.inetAddress().port}")
+                    .header("accept-encoding", "7z, gzip")
+                    .build())
+                    .wait()!!
+                    .let {
+                        it.status() shouldBe OK
+                        it.header("content-encoding").get() shouldBe "gzip"
+                        ungzip(it.body(), UTF_8) shouldBe "Hello, test!"
+                    }
+        }
+
+        scenario("Does not compress response if accept-encoding not sent") {
+            StyxHttpClient.Builder().build().send(get("/blah")
+                    .header(HOST, "localhost:${server.inetAddress().port}")
+                    .build())
+                    .wait()!!
+                    .let {
+                        it.status() shouldBe OK
+                        it.header("content-encoding").isPresent shouldBe false
+                        it.bodyAs(UTF_8) shouldBe "Hello, test!"
+                    }
+        }
+
+        scenario("Does not compress response if accept-encoding unsupported") {
+            StyxHttpClient.Builder().build().send(get("/blah")
+                    .header(HOST, "localhost:${server.inetAddress().port}")
+                    .header("accept-encoding", "7z")
+                    .build())
+                    .wait()!!
+                    .let {
+                        it.status() shouldBe OK
+                        it.header("content-encoding").isPresent shouldBe false
+                        it.bodyAs(UTF_8) shouldBe "Hello, test!"
+                    }
+        }
+
+        scenario("Does not compress response if response content-encoding is already set") {
+            StyxHttpClient.Builder().build().send(get("/compressed")
+                    .header(HOST, "localhost:${server.inetAddress().port}")
+                    .header("accept-encoding", "gzip")
+                    .build())
+                    .wait()!!
+                    .let {
+                        it.status() shouldBe OK
+                        it.header("content-encoding").get() shouldBe "gzip"
+                        it.bodyAs(UTF_8) shouldBe "Hello, test!" // Just as the server sent it
+                    }
+        }
+
+        guavaServer.stopAsync().awaitTerminated()
     }
 
     feature("Max initial line length") {
@@ -302,12 +370,25 @@ private fun createConnection(port: Int) = NettyConnectionFactory.Builder()
 
 private val response = HttpResponse.response(OK)
         .header("source", "secure")
+        .header("content-type", "text/plain")
         .body("Hello, test!", UTF_8)
+        .build()
+
+private val compressedResponse = HttpResponse.response(OK)
+        .header("source", "secure")
+        .header("content-type", "text/plain")
+        .header("content-encoding", "gzip")
+        .body("Hello, test!", UTF_8) // Not actually compressed, just claims to be, which is all we want.
         .build()
 
 private val routingContext = RoutingObjectFactoryContext(
         routeRefLookup = routeLookup {
-            ref("aHandler" to RoutingObject { _, _ -> Eventual.of(response.stream()) })
+            ref("aHandler" to RoutingObject { request, _ ->
+                when(request.url().toString()) {
+                    "/compressed" -> Eventual.of(compressedResponse.stream())
+                    else -> Eventual.of(response.stream())
+                }
+            })
 
             ref("aggregator" to RoutingObject { request, _ ->
                 request
@@ -316,6 +397,8 @@ private val routingContext = RoutingObjectFactoryContext(
             })
         })
         .get()
+
+private fun ungzip(content: ByteArray, charset: Charset): String = GZIPInputStream(content.inputStream()).bufferedReader(charset).use { it.readText() }
 
 private val db = StyxObjectStore<StyxObjectRecord<InetServer>>()
 
