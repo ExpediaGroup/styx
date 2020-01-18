@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import io.netty.handler.codec.http.HttpObject;
 
 /**
  * A common interface for formatting requests and responses.
@@ -32,5 +33,9 @@ public interface HttpMessageFormatter {
     String formatResponse(HttpResponse response);
 
     String formatResponse(LiveHttpResponse response);
+
+    String formatNettyMessage(HttpObject message);
+
+    Throwable wrap(Throwable t);
 
 }

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.HttpVersion;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.Url;
+import com.hotels.styx.common.format.DefaultHttpMessageFormatter;
+import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.UniqueIdSupplier;
 import io.netty.buffer.ByteBuf;
@@ -64,18 +66,23 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
     private final UniqueIdSupplier uniqueIdSupplier;
     private final boolean flowControlEnabled;
     private final UnwiseCharsEncoder unwiseCharEncoder;
+    private HttpMessageFormatter httpMessageFormatter;
+
     private FlowControllingHttpContentProducer producer;
 
     private NettyToStyxRequestDecoder(Builder builder) {
         this.uniqueIdSupplier = builder.uniqueIdSupplier;
         this.flowControlEnabled = builder.flowControlEnabled;
         this.unwiseCharEncoder = builder.unwiseCharEncoder;
+        this.httpMessageFormatter = builder.httpMessageFormatter;
     }
 
     @Override
     protected void decode(ChannelHandlerContext ctx, HttpObject httpObject, List<Object> out) throws Exception {
         if (httpObject.getDecoderResult().isFailure()) {
-            throw new BadRequestException("Error while decoding request: " + httpObject, httpObject.getDecoderResult().cause());
+            String formattedHttpObject = httpMessageFormatter.formatNettyMessage(httpObject);
+            throw new BadRequestException("Error while decoding request: " + formattedHttpObject,
+                    httpMessageFormatter.wrap(httpObject.getDecoderResult().cause()));
         }
 
         try {
@@ -251,6 +258,7 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
         private boolean flowControlEnabled;
         private UniqueIdSupplier uniqueIdSupplier = UUID_VERSION_ONE_SUPPLIER;
         private UnwiseCharsEncoder unwiseCharEncoder = IGNORE;
+        private HttpMessageFormatter httpMessageFormatter = new DefaultHttpMessageFormatter();
 
         public Builder uniqueIdSupplier(UniqueIdSupplier uniqueIdSupplier) {
             this.uniqueIdSupplier = requireNonNull(uniqueIdSupplier);
@@ -264,6 +272,11 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
 
         public Builder unwiseCharEncoder(UnwiseCharsEncoder unwiseCharEncoder) {
             this.unwiseCharEncoder = requireNonNull(unwiseCharEncoder);
+            return this;
+        }
+
+        public Builder httpMessageFormatter(HttpMessageFormatter httpMessageFormatter) {
+            this.httpMessageFormatter = httpMessageFormatter;
             return this;
         }
 

@@ -124,7 +124,8 @@ internal class StyxHttpServerFactory : StyxServerFactory {
                                             environment.configuration().styxHeaderConfig().styxInfoHeaderName(),
                                             ResponseInfoFormat(environment).format(request))
                                 },
-                                false)
+                                false,
+                                environment.httpMessageFormatter())
                                 .create(
                                         if (config.tlsSettings == null) {
                                             HttpConnectorConfig(config.port)
