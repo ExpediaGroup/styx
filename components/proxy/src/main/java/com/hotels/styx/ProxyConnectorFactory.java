@@ -148,20 +148,11 @@ class ProxyConnectorFactory implements ServerConnectorFactory {
                     .addLast("channel-activity-event-constrainer", new ChannelActivityEventConstrainer())
                     .addLast("idle-handler", new IdleStateHandler(serverConfig.requestTimeoutMillis(), 0, serverConfig.keepAliveTimeoutMillis(), MILLISECONDS))
                     .addLast("channel-stats", channelStatsHandler)
-
-                    // Http Server Codec
                     .addLast("http-server-codec", new HttpServerCodec(serverConfig.maxInitialLength(), serverConfig.maxHeaderSize(), serverConfig.maxChunkSize(), true))
-
-                    // idle-handler and timeout-handler must be before aggregator. Otherwise
-                    // timeout handler cannot see the incoming HTTP chunks.
                     .addLast("timeout-handler", new RequestTimeoutHandler())
-
                     .addLast("keep-alive-handler", new IdleTransactionConnectionCloser(metrics))
-
                     .addLast("server-protocol-distribution-recorder", new ServerProtocolDistributionRecorder(metrics, sslContext.isPresent()))
-
-                    .addLast("styx-decoder", requestTranslator())
-
+                    .addLast("styx-decoder", requestTranslator(serverConfig.keepAliveTimeoutMillis()))
                     .addLast("proxy", new HttpPipelineHandler.Builder(httpPipeline)
                             .responseEnhancer(responseEnhancer)
                             .errorStatusListener(httpErrorStatusListener)
@@ -177,9 +168,10 @@ class ProxyConnectorFactory implements ServerConnectorFactory {
         }
 
 
-        private NettyToStyxRequestDecoder requestTranslator() {
+        private NettyToStyxRequestDecoder requestTranslator(int inactivityTimeoutMs) {
             return new NettyToStyxRequestDecoder.Builder()
                     .unwiseCharEncoder(unwiseCharEncoder)
+                    .inactivityTimeoutMs(inactivityTimeoutMs)
                     .build();
         }
 

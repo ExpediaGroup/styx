@@ -22,8 +22,8 @@ import com.hotels.styx.api.HttpVersion;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.Url;
 import com.hotels.styx.api.exceptions.TransportException;
-import com.hotels.styx.common.content.FlowControllingPublisher;
 import com.hotels.styx.common.content.FlowControllingHttpContentProducer;
+import com.hotels.styx.common.content.FlowControllingPublisher;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.UniqueIdSupplier;
 import io.netty.buffer.ByteBuf;
@@ -52,7 +52,6 @@ import static com.hotels.styx.server.netty.codec.UnwiseCharsEncoder.IGNORE;
 import static io.netty.util.ReferenceCountUtil.retain;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.StreamSupport.stream;
 
 /**
@@ -63,15 +62,16 @@ import static java.util.stream.StreamSupport.stream;
  */
 public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<HttpObject> {
 
-    private static final long TEARDOWN_DELAY = 60000L;
-
+    private static final long DEFAULT_INACTIVITY_TIMEOUT_MS = 60000L;
     private final UniqueIdSupplier uniqueIdSupplier;
     private final UnwiseCharsEncoder unwiseCharEncoder;
+    private final long inactivityTimeoutMs;
     private Optional<FlowControllingHttpContentProducer> producer = Optional.empty();
 
     private NettyToStyxRequestDecoder(Builder builder) {
         this.uniqueIdSupplier = builder.uniqueIdSupplier;
         this.unwiseCharEncoder = builder.unwiseCharEncoder;
+        this.inactivityTimeoutMs = builder.inactivityTimeoutMs;
     }
 
     @Override
@@ -138,16 +138,9 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
                 () -> ctx.channel().read(),
                 () -> ctx.channel().config().setAutoRead(true),
                 cause -> { },
-                () -> scheduleResourcesTearDown(ctx),
                 format("%s, %s", loggingPrefix, ""),
-                null);
-    }
-
-    private void scheduleResourcesTearDown(ChannelHandlerContext ctx) {
-        ctx.channel().eventLoop().schedule(
-                () -> producer.ifPresent(FlowControllingHttpContentProducer::tearDownResources),
-                TEARDOWN_DELAY,
-                MILLISECONDS);
+                null,
+                inactivityTimeoutMs);
     }
 
     private Throwable toStyxException(Throwable cause) {
@@ -210,6 +203,7 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
     public static final class Builder {
         private UniqueIdSupplier uniqueIdSupplier = UUID_VERSION_ONE_SUPPLIER;
         private UnwiseCharsEncoder unwiseCharEncoder = IGNORE;
+        private long inactivityTimeoutMs = DEFAULT_INACTIVITY_TIMEOUT_MS;
 
         public Builder uniqueIdSupplier(UniqueIdSupplier uniqueIdSupplier) {
             this.uniqueIdSupplier = requireNonNull(uniqueIdSupplier);
@@ -218,6 +212,11 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
 
         public Builder unwiseCharEncoder(UnwiseCharsEncoder unwiseCharEncoder) {
             this.unwiseCharEncoder = requireNonNull(unwiseCharEncoder);
+            return this;
+        }
+
+        public Builder inactivityTimeoutMs(long inactivityTimeoutMs) {
+            this.inactivityTimeoutMs = inactivityTimeoutMs;
             return this;
         }
 

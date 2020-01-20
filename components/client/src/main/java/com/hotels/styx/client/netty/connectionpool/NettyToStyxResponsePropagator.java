@@ -20,7 +20,6 @@ import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.BadHttpResponseException;
@@ -48,7 +47,6 @@ import static com.hotels.styx.api.LiveHttpResponse.response;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONNECTION;
 import static io.netty.util.ReferenceCountUtil.retain;
 import static java.lang.String.format;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.StreamSupport.stream;
 
 /**
@@ -102,13 +100,6 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
         getContentProducer(ctx).channelInactive(cause);
     }
 
-    private void scheduleResourcesTearDown(ChannelHandlerContext ctx) {
-        ctx.channel().eventLoop().schedule(
-                () -> contentProducer.ifPresent(FlowControllingHttpContentProducer::tearDownResources),
-                idleTimeoutMillis,
-                MILLISECONDS);
-    }
-
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
         FlowControllingHttpContentProducer producer = getContentProducer(ctx);
@@ -152,17 +143,8 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
 
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-        FlowControllingHttpContentProducer producer = getContentProducer(ctx);
-
         if (evt instanceof IdleStateEvent) {
-            producer.channelInactive(
-                    new ResponseTimeoutException(
-                            origin,
-                            "idleStateEvent",
-                            producer.receivedBytes(),
-                            producer.receivedChunks(),
-                            producer.emittedBytes(),
-                            producer.emittedChunks()));
+            getContentProducer(ctx).tearDownResources();
         } else {
             super.userEventTriggered(ctx, evt);
         }
@@ -186,9 +168,9 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
                     emitResponseCompleted();
                 },
                 this::emitResponseError,
-                () -> scheduleResourcesTearDown(ctx),
                 format("%s, %s", loggingPrefix, requestPrefix),
-                origin);
+                origin,
+                idleTimeoutMillis);
     }
 
     private void emitResponseCompleted() {

@@ -66,7 +66,6 @@ public class FlowControllingHttpContentProducerTest {
     private Runnable askForMore;
     private Runnable onCompleteAction;
     private Consumer<Throwable> onTerminateAction;
-    private Runnable tearDownAction;
     private ByteBuf contentChunk1;
     private ByteBuf contentChunk2;
     private TransportLostException transportLostCause = new TransportLostException(new InetSocketAddress(8080), newOriginBuilder("localhost", 8080).build());
@@ -78,28 +77,27 @@ public class FlowControllingHttpContentProducerTest {
         askForMore = mock(Runnable.class);
         onCompleteAction = mock(Runnable.class);
         onTerminateAction = mock(Consumer.class);
-        tearDownAction = mock(Runnable.class);
 
         producer = new FlowControllingHttpContentProducer(
                 askForMore,
                 onCompleteAction,
                 onTerminateAction,
-                tearDownAction,
                 "foobar",
-                newOriginBuilder("foohost", 12345).build());
+                newOriginBuilder("foohost", 12345).build(),
+                500);
 
         producer.request(initialCount);
     }
 
     @BeforeEach
-    public void setUp() throws Exception {
+    public void setUp() {
         contentChunk1 = copiedBuffer("aaa", UTF_8);
         contentChunk2 = copiedBuffer("bbb", UTF_8);
         logger = new LoggingTestSupport(FlowControllingHttpContentProducer.class);
     }
 
     @AfterEach
-    public void tearDown() throws Exception {
+    public void tearDown() {
         logger.stop();
     }
 
@@ -123,7 +121,7 @@ public class FlowControllingHttpContentProducerTest {
 
 
     @Test
-    public void transitionFromBufferingToBufferingCompletedState() throws Exception {
+    public void transitionFromBufferingToBufferingCompletedState() {
         // Last HTTP Content event will trigger a transition to BUFFERING_COMPLETED state
         setUpAndRequest(NO_BACKPRESSURE);
         assertThat(producer.state(), is(BUFFERING));
@@ -138,7 +136,7 @@ public class FlowControllingHttpContentProducerTest {
 
 
     @Test
-    public void handlesContentUnsubscriptionWhenStreaming() throws Exception {
+    public void handlesContentUnsubscriptionWhenStreaming() {
         // On Subscribe, transition from buffering to streaming state
         setUpAndRequest(0);
         assertThat(producer.state(), is(BUFFERING));
@@ -166,7 +164,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void handlesContentUnsubscriptionWhenEmitting() throws Exception {
+    public void handlesContentUnsubscriptionWhenEmitting() {
         // On Subscribe, transition from buffering to streaming state
         setUpAndRequest(0);
         assertThat(producer.state(), is(BUFFERING));
@@ -196,7 +194,7 @@ public class FlowControllingHttpContentProducerTest {
 
 
     @Test
-    public void channelExceptionInBufferingState() throws Exception {
+    public void channelExceptionInBufferingState() {
         // Releases buffered chunks when channelException triggers a transition to TERMINATED state.
 
         setUpAndRequest(NO_BACKPRESSURE);
@@ -218,7 +216,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void styxClosesChannelWhileInBufferingState() throws Exception {
+    public void styxClosesChannelWhileInBufferingState() {
         // Releases buffered chunks when channel closure triggers a transition to TERMINATED state.
 
         setUpAndRequest(NO_BACKPRESSURE);
@@ -240,7 +238,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void channelUnexpectedlyTerminatesInBufferingState() throws Exception {
+    public void channelUnexpectedlyTerminatesInBufferingState() {
         // Releases buffered chunks when channel closure triggers a transition to TERMINATED state.
 
         setUpAndRequest(NO_BACKPRESSURE);
@@ -290,7 +288,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void passesOnReceivedContentChunksInStreamingState() throws Exception {
+    public void passesOnReceivedContentChunksInStreamingState() {
         setUpAndRequest(NO_BACKPRESSURE);
         assertThat(producer.state(), is(BUFFERING));
 
@@ -304,7 +302,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void transitionsFromStreamingToCompletedStateWhenThereIsNoOutstandingEvents() throws Exception {
+    public void transitionsFromStreamingToCompletedStateWhenThereIsNoOutstandingEvents() {
         setUpAndRequest(NO_BACKPRESSURE);
         assertThat(producer.state(), is(BUFFERING));
 
@@ -320,7 +318,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void emitsIllegalStateExceptionWhenAdditionalContentSubscriptionOccursInCompletedState() throws Exception {
+    public void emitsIllegalStateExceptionWhenAdditionalContentSubscriptionOccursInCompletedState() {
         setUpAndRequest(NO_BACKPRESSURE);
 
         producer.onSubscribed(downstream);
@@ -340,7 +338,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void emitsIllegalStateExceptionWhenAdditionalContentSubscriptionOccursInTerminatedState() throws Exception {
+    public void emitsIllegalStateExceptionWhenAdditionalContentSubscriptionOccursInTerminatedState() {
         setUpAndRequest(NO_BACKPRESSURE);
 
         producer.onSubscribed(downstream);
@@ -358,7 +356,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void transitionsFromStreamingToEmittingBufferedContentWhenThereAreOutstandingEvents() throws Exception {
+    public void transitionsFromStreamingToEmittingBufferedContentWhenThereAreOutstandingEvents() {
         setUpAndRequest(0);
         assertThat(producer.state(), is(BUFFERING));
 
@@ -382,7 +380,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void honoursDownstreamBackPressureRequestsInStreamingState() throws Exception {
+    public void honoursDownstreamBackPressureRequestsInStreamingState() {
         setUpAndRequest(1);
 
         producer.onSubscribed(downstream);
@@ -413,7 +411,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void channelExceptionInStreamingState() throws Exception {
+    public void channelExceptionInStreamingState() {
         setUpAndRequest(0);
         assertThat(producer.state(), is(BUFFERING));
 
@@ -434,7 +432,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void styxClosesChannelInStreamingState() throws Exception {
+    public void styxClosesChannelInStreamingState() {
         setUpAndRequest(0);
         assertThat(producer.state(), is(BUFFERING));
 
@@ -457,7 +455,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void unexpectedChannelClosureInStreamingState() throws Exception {
+    public void unexpectedChannelClosureInStreamingState() {
         setUpAndRequest(0);
         assertThat(producer.state(), is(BUFFERING));
 
@@ -479,7 +477,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void releasesOfferedContentBufferInBufferingCompletedState() throws Exception {
+    public void releasesOfferedContentBufferInBufferingCompletedState() {
         setUpAndRequest(0);
 
         producer.newChunk(copiedBuffer("blah", UTF_8));
@@ -494,7 +492,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void transitionFromBufferingCompletedToEmittingBufferedContent() throws Exception {
+    public void transitionFromBufferingCompletedToEmittingBufferedContent() {
         setUpAndRequest(0);
 
         producer.newChunk(copiedBuffer("blah", UTF_8));
@@ -512,7 +510,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void replaysBufferedContentWhenDownstreamSubscribesInBufferingCompletedState() throws Exception {
+    public void replaysBufferedContentWhenDownstreamSubscribesInBufferingCompletedState() {
         setUpAndRequest(NO_BACKPRESSURE);
 
         producer.newChunk(copiedBuffer("blah", UTF_8));
@@ -530,7 +528,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void channelExceptionInBufferingCompletedState() throws Exception {
+    public void channelExceptionInBufferingCompletedState() {
         setUpAndRequest(NO_BACKPRESSURE);
 
         producer.newChunk(contentChunk1);
@@ -549,7 +547,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void unexpectedChannelClosureInBufferingCompletedState() throws Exception {
+    public void unexpectedChannelClosureInBufferingCompletedState() {
         setUpAndRequest(NO_BACKPRESSURE);
 
         producer.newChunk(contentChunk1);
@@ -572,7 +570,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void delayedTearDownInBufferingCompletedState() throws Exception {
+    public void tearDownInBufferingCompletedState() {
         setUpAndRequest(NO_BACKPRESSURE);
 
         producer.newChunk(contentChunk1);
@@ -583,7 +581,6 @@ public class FlowControllingHttpContentProducerTest {
         producer.channelInactive(transportLostCause);
         producer.tearDownResources();
 
-        verify(tearDownAction).run();
         assertThat(producer.state(), is(TERMINATED));
         verify(onCompleteAction, never()).run();
         ArgumentCaptor<ResponseTimeoutException> argumentCaptor = ArgumentCaptor.forClass(ResponseTimeoutException.class);
@@ -595,7 +592,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void releasesSpuriousContentChunksInEmittingBufferedContentState() throws Exception {
+    public void releasesSpuriousContentChunksInEmittingBufferedContentState() {
         setUpAndRequest(0);
 
         producer.onSubscribed(downstream);
@@ -614,7 +611,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void releasesSpuriousContentChunksInCompletedState() throws Exception {
+    public void releasesSpuriousContentChunksInCompletedState() {
         setUpAndRequest(NO_BACKPRESSURE);
 
         producer.onSubscribed(downstream);
@@ -633,7 +630,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void releasesSpuriousContentChunksInTerminatedState() throws Exception {
+    public void releasesSpuriousContentChunksInTerminatedState() {
         setUpAndRequest(NO_BACKPRESSURE);
 
         producer.newChunk(contentChunk1);
@@ -677,7 +674,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void ignoresAnyNewChunksInEmittingBufferedContentState() throws Exception {
+    public void ignoresAnyNewChunksInEmittingBufferedContentState() {
         setUpAndRequest(0);
 
         producer.onSubscribed(downstream);
@@ -704,7 +701,7 @@ public class FlowControllingHttpContentProducerTest {
 
 
     @Test
-    public void channelExceptionInEmittingBufferedContentState() throws Exception {
+    public void channelExceptionInEmittingBufferedContentState() {
         setUpAndRequest(0);
 
         producer.newChunk(copiedBuffer("blah", UTF_8));
@@ -725,7 +722,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void styxClosesChannelInEmittingBufferedContentState() throws Exception {
+    public void styxClosesChannelInEmittingBufferedContentState() {
         setUpAndRequest(0);
 
         producer.newChunk(copiedBuffer("blah", UTF_8));
@@ -746,7 +743,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void UnexpectedChannelClosureInEmittingBufferedContentState() throws Exception {
+    public void UnexpectedChannelClosureInEmittingBufferedContentState() {
         setUpAndRequest(0);
 
         producer.newChunk(copiedBuffer("blah", UTF_8));
@@ -767,7 +764,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void delayedTearDownInEmittingBufferedContentState() throws Exception {
+    public void tearDownInEmittingBufferedContentState() {
         setUpAndRequest(0);
 
         producer.newChunk(copiedBuffer("blah", UTF_8));
@@ -797,7 +794,7 @@ public class FlowControllingHttpContentProducerTest {
      *  4. notifySubscriber
      */
     @Test
-    public void ignoresContentChunksAndContentEndEventsInCompletedState() throws Exception {
+    public void ignoresContentChunksAndContentEndEventsInCompletedState() {
         setUpAndRequest(NO_BACKPRESSURE);
         producer.onSubscribed(downstream);
         producer.lastHttpContent();
@@ -815,7 +812,7 @@ public class FlowControllingHttpContentProducerTest {
 
 
     @Test
-    public void honoursDownstreamBackpressureRequestsInEmittingBufferedContentState() throws Exception {
+    public void honoursDownstreamBackpressureRequestsInEmittingBufferedContentState() {
         setUpAndRequest(0);
         assertThat(producer.state(), is(BUFFERING));
 
@@ -854,7 +851,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void providesNRequestedChunks() throws Exception {
+    public void providesNRequestedChunks() {
         setUpAndRequest(1);
 
         producer.onSubscribed(downstream);
@@ -894,7 +891,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void backpressureCanBeTurnedOffMidStream() throws Exception {
+    public void backpressureCanBeTurnedOffMidStream() {
         setUpAndRequest(1);
 
         producer.newChunk(copiedBuffer("chunk 1", UTF_8));
@@ -926,7 +923,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void backpressureCanBeTurnedBackOnMidStream() throws Exception {
+    public void backpressureCanBeTurnedBackOnMidStream() {
         setUpAndRequest(NO_BACKPRESSURE);
 
         producer.newChunk(copiedBuffer("chunk 1", UTF_8));
