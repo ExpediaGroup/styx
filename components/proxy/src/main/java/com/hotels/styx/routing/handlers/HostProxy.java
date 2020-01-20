@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -127,7 +127,7 @@ public class HostProxy implements RoutingObject {
         if (active) {
             return new Eventual<>(
                     ResponseEventListener.from(client.sendRequest(request))
-                            .whenCancelled(() -> originMetrics.requestCancelled())
+                            .whenCancelled(originMetrics::requestCancelled)
                             .apply());
         } else {
             return Eventual.error(new IllegalStateException(errorMessage));
@@ -283,6 +283,7 @@ public class HostProxy implements RoutingObject {
                 OriginStatsFactory originStatsFactory,
                 long connectionExpiration) {
 
+            // Uses the default executor for now:
             NettyConnectionFactory factory = new NettyConnectionFactory.Builder()
                     .httpRequestOperationFactory(
                             httpRequestOperationFactoryBuilder()

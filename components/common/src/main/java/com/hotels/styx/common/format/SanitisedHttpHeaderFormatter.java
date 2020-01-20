@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,11 +19,13 @@ import com.hotels.styx.api.HttpHeader;
 import com.hotels.styx.api.HttpHeaders;
 import com.hotels.styx.api.RequestCookie;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -37,8 +39,12 @@ public class SanitisedHttpHeaderFormatter {
     private final List<String> cookiesToHide;
 
     public SanitisedHttpHeaderFormatter(List<String> headersToHide, List<String> cookiesToHide) {
-        this.headersToHide = requireNonNull(headersToHide);
-        this.cookiesToHide = requireNonNull(cookiesToHide);
+        this.headersToHide = unmodifiableList(new ArrayList<>(requireNonNull(headersToHide)));
+        this.cookiesToHide = unmodifiableList(new ArrayList<>(requireNonNull(cookiesToHide)));
+    }
+
+    public List<String> cookiesToHide() {
+        return cookiesToHide;
     }
 
     public String format(HttpHeaders headers) {
@@ -69,12 +75,15 @@ public class SanitisedHttpHeaderFormatter {
     }
 
     private String formatCookieHeader(HttpHeader header) {
-        String cookies = RequestCookie.decode(header.value()).stream()
+        return header.name() + "=" + formatCookieHeaderValue(header.value());
+    }
+
+    String formatCookieHeaderValue(String value) {
+        return RequestCookie.decode(value).stream()
                 .map(this::hideOrFormatCookie)
                 .collect(Collectors.joining(";"));
-
-        return header.name() + "=" + cookies;
     }
+
 
     private String hideOrFormatCookie(RequestCookie cookie) {
         return shouldHideCookie(cookie)

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -52,20 +52,20 @@ public class MockOriginServerTest {
     private StyxHttpClient tlsClient;
 
     @BeforeEach
-    public void setUp() throws Exception {
+    public void setUp() {
         client = new StyxHttpClient.Builder().build();
         tlsClient = new StyxHttpClient.Builder().tlsSettings(new TlsSettings.Builder().build()).build();
         oldHostNameVerifier = disableHostNameVerification();
     }
 
     @AfterEach
-    public void tearDown() throws Exception {
+    public void tearDown() {
         server.stop();
         setDefaultHostnameVerifier(oldHostNameVerifier);
     }
 
     @Test
-    public void configuresEndpoints() throws Exception {
+    public void configuresEndpoints() {
         server = MockOriginServer.create("", "", 0, new HttpConnectorConfig(0))
                 .start()
                 .stub(WireMock.get(urlMatching("/.*")), aResponse()

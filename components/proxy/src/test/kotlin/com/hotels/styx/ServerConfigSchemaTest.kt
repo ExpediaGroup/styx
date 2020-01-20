@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ class ServerConfigSchemaTest : DescribeSpec({
         }
 
 
-        it("Detects a missing mandatory 'proxy' configuration.") {
+        it("An optional 'proxy' field can be absent.") {
             validateServerConfiguration(yamlConfig("""
                   admin:
                     connectors:
@@ -60,7 +60,7 @@ class ServerConfigSchemaTest : DescribeSpec({
                       backendServiceRegistry:
                         class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry${'$'}Factory"
                         config: {originsFile: "${'$'}{originsFile:classpath:conf/origins.yml}"}
-            """.trimIndent())) shouldBe (Optional.of("Missing a mandatory field 'proxy'"))
+            """.trimIndent())) shouldBe (Optional.empty())
         }
 
         it("Detects a missing mandatory `admin' configuration.") {
@@ -348,6 +348,39 @@ class ServerConfigSchemaTest : DescribeSpec({
                                   status: 200
                                   contentS: "Fallback"
                 """.trimIndent())) shouldBe Optional.of("Unexpected field: 'routingObjects[condition].config.fallback.config.handler.config.contentS'")
+        }
+    }
+
+    describe("Styx server objects") {
+        it("Accepts HttpServer objects") {
+            validateServerConfiguration(yamlConfig(minimalConfig + """
+                servers:
+                  myServer:
+                    type: HttpServer
+                    config:
+                      port: 8080
+                      handler: abc
+            """.trimIndent())) shouldBe Optional.empty()
+        }
+
+        it("Validates HttpServer objects - invalid port number") {
+            validateServerConfiguration(yamlConfig(minimalConfig + """
+                servers:
+                  myServer:
+                    type: HttpServer
+                    config:
+                      port: foobar
+            """.trimIndent())) shouldBe Optional.of("Unexpected field type. Field 'servers[myServer].config.port' should be INTEGER, but it is STRING")
+        }
+
+        it("Validates HttpServer objects - missing handler attribute") {
+            validateServerConfiguration(yamlConfig(minimalConfig + """
+                servers:
+                  myServer:
+                    type: HttpServer
+                    config:
+                      port: 8080
+            """.trimIndent())) shouldBe Optional.of("Missing a mandatory field 'servers[myServer].config.handler'")
         }
     }
 })

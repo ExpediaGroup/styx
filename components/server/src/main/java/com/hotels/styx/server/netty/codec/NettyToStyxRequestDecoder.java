@@ -24,6 +24,8 @@ import com.hotels.styx.api.Url;
 import com.hotels.styx.api.exceptions.TransportException;
 import com.hotels.styx.common.content.FlowControllingHttpContentProducer;
 import com.hotels.styx.common.content.FlowControllingPublisher;
+import com.hotels.styx.common.format.DefaultHttpMessageFormatter;
+import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.UniqueIdSupplier;
 import io.netty.buffer.ByteBuf;
@@ -65,19 +67,24 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
     private static final long DEFAULT_INACTIVITY_TIMEOUT_MS = 60000L;
     private final UniqueIdSupplier uniqueIdSupplier;
     private final UnwiseCharsEncoder unwiseCharEncoder;
+    private HttpMessageFormatter httpMessageFormatter;
+
     private final long inactivityTimeoutMs;
     private Optional<FlowControllingHttpContentProducer> producer = Optional.empty();
 
     private NettyToStyxRequestDecoder(Builder builder) {
         this.uniqueIdSupplier = builder.uniqueIdSupplier;
         this.unwiseCharEncoder = builder.unwiseCharEncoder;
+        this.httpMessageFormatter = builder.httpMessageFormatter;
         this.inactivityTimeoutMs = builder.inactivityTimeoutMs;
     }
 
     @Override
     protected void decode(ChannelHandlerContext ctx, HttpObject msg, List<Object> out) throws Exception {
         if (msg.getDecoderResult().isFailure()) {
-            throw new BadRequestException("Error while decoding request: " + msg, msg.getDecoderResult().cause());
+            String formattedHttpObject = httpMessageFormatter.formatNettyMessage(msg);
+            throw new BadRequestException("Error while decoding request: " + formattedHttpObject,
+                    httpMessageFormatter.wrap(msg.getDecoderResult().cause()));
         }
 
         try {
@@ -203,6 +210,7 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
     public static final class Builder {
         private UniqueIdSupplier uniqueIdSupplier = UUID_VERSION_ONE_SUPPLIER;
         private UnwiseCharsEncoder unwiseCharEncoder = IGNORE;
+        private HttpMessageFormatter httpMessageFormatter = new DefaultHttpMessageFormatter();
         private long inactivityTimeoutMs = DEFAULT_INACTIVITY_TIMEOUT_MS;
 
         public Builder uniqueIdSupplier(UniqueIdSupplier uniqueIdSupplier) {
@@ -212,6 +220,11 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
 
         public Builder unwiseCharEncoder(UnwiseCharsEncoder unwiseCharEncoder) {
             this.unwiseCharEncoder = requireNonNull(unwiseCharEncoder);
+            return this;
+        }
+
+        public Builder httpMessageFormatter(HttpMessageFormatter httpMessageFormatter) {
+            this.httpMessageFormatter = httpMessageFormatter;
             return this;
         }
 

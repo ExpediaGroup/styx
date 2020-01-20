@@ -15,9 +15,16 @@
   </properties>
 
   <dependencies>
+
     <dependency>
       <groupId>com.hotels.styx</groupId>
       <artifactId>styx-api</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-transport-native-epoll</artifactId>
+      <classifier>${netty-transport-native-epoll.classifier}</classifier>
     </dependency>
 
     <dependency>
@@ -63,6 +70,11 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>net.bytebuddy</groupId>
+      <artifactId>byte-buddy</artifactId>
     </dependency>
 
     <dependency>

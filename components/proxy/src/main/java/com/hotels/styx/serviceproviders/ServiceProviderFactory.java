@@ -19,7 +19,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.db.StyxObjectStore;
-import com.hotels.styx.routing.handlers.StyxObjectRecord;
+import com.hotels.styx.StyxObjectRecord;
 
 /**
  * A generic factory that can be implemented to create objects whose type is not known

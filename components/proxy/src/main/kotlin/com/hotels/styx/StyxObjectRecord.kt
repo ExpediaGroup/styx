@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.routing.handlers
+package com.hotels.styx
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.hotels.styx.api.extension.service.spi.StyxService
@@ -21,10 +21,12 @@ import com.hotels.styx.api.extension.service.spi.StyxService
 /**
  * A routing object and its associated configuration metadata.
  */
-internal data class StyxObjectRecord<T : StyxService>(
+data class StyxObjectRecord<T: StyxService>(
         val type: String,
         val tags: Set<String>,
         val config: JsonNode,
         val styxService: T)
 
 internal typealias ProviderObjectRecord = StyxObjectRecord<StyxService>
+
+internal typealias ServerObjectRecord = StyxObjectRecord<InetServer>

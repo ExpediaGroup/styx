@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -28,8 +28,6 @@ import com.hotels.styx.routing.StaticPipelineFactory;
 import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
 
 import java.util.List;
 import java.util.Map;
@@ -48,8 +46,7 @@ public class StyxPipelineFactory {
     private final Environment environment;
     private final Map<String, StyxService> services;
     private final List<NamedPlugin> plugins;
-    private final EventLoopGroup eventLoopGroup;
-    private final Class<? extends SocketChannel> nettySocketChannelClass;
+    private final NettyExecutor executor;
 
 
     public StyxPipelineFactory(
@@ -57,14 +54,12 @@ public class StyxPipelineFactory {
             Environment environment,
             Map<String, StyxService> services,
             List<NamedPlugin> plugins,
-            EventLoopGroup eventLoopGroup,
-            Class<? extends SocketChannel> nettySocketChannelClass) {
+            NettyExecutor executor) {
         this.builtinRoutingObjects = requireNonNull(builtinRoutingObjects);
         this.environment = requireNonNull(environment);
         this.services = requireNonNull(services);
         this.plugins = requireNonNull(plugins);
-        this.eventLoopGroup = requireNonNull(eventLoopGroup);
-        this.nettySocketChannelClass = requireNonNull(nettySocketChannelClass);
+        this.executor = requireNonNull(executor);
     }
 
     public HttpHandler create() {
@@ -90,8 +85,7 @@ public class StyxPipelineFactory {
                 environment,
                 registry != null ? registry : new MemoryBackedRegistry<>(),
                 plugins,
-                eventLoopGroup,
-                nettySocketChannelClass,
+                executor,
                 requestTracking)
                 .build();
     }
