@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package com.hotels.styx.api;
 
 import java.net.InetSocketAddress;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 
 /**
  * An interceptor can interact with a request before it is passed to the handler and/or the response from the handler
@@ -66,6 +67,13 @@ public interface HttpInterceptor {
          * @return address of the client that sent the request to Styx
          */
         Optional<InetSocketAddress> clientAddress();
+
+        /**
+         * Returns the netty executor which started handling the current request.
+         *
+         * @return returns the netty executor which started handling the current request
+         */
+        Executor executor();
     }
 
     /**

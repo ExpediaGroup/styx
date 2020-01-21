@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ import com.hotels.styx.server.HttpInterceptorContext;
 import org.junit.jupiter.api.Test;
 
 import java.net.InetSocketAddress;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import static com.google.common.net.HttpHeaders.X_FORWARDED_FOR;
 import static com.google.common.net.HttpHeaders.X_FORWARDED_PROTO;
@@ -101,7 +103,7 @@ public class RequestEnrichingInterceptorTest {
 
     private static class TestChain implements Chain {
         private final boolean secure;
-
+        private final Executor executor = Executors.newSingleThreadExecutor();
         TestChain(boolean secure) {
             this.secure = secure;
         }
@@ -113,7 +115,7 @@ public class RequestEnrichingInterceptorTest {
 
         @Override
         public HttpInterceptor.Context context() {
-            return new HttpInterceptorContext(secure, InetSocketAddress.createUnresolved("127.0.0.1", 80));
+            return new HttpInterceptorContext(secure, InetSocketAddress.createUnresolved("127.0.0.1", 80), executor);
         }
     }
 }

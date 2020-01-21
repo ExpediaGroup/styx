@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,10 +19,12 @@ import com.hotels.styx.api.HttpInterceptor;
 
 import java.net.InetSocketAddress;
 import java.util.Optional;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 class MockContext implements HttpInterceptor.Context {
     static final HttpInterceptor.Context MOCK_CONTEXT = new MockContext();
-
+    final Executor executor = Executors.newSingleThreadExecutor();
     @Override
     public void add(String key, Object value) {
 
@@ -41,5 +43,10 @@ class MockContext implements HttpInterceptor.Context {
     @Override
     public Optional<InetSocketAddress> clientAddress() {
         return Optional.empty();
+    }
+
+    @Override
+    public Executor executor() {
+        return this.executor;
     }
 }

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ import com.hotels.styx.api.configuration.ConfigurationContextResolver;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
+
+import java.util.concurrent.Executors;
 
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
@@ -67,7 +69,7 @@ public class ConfigurationContextResolverInterceptorTest {
     }
 
     private static class TestChain implements HttpInterceptor.Chain {
-        private final HttpInterceptor.Context context = new HttpInterceptorContext();
+        private final HttpInterceptor.Context context = new HttpInterceptorContext(false, null, Executors.newSingleThreadExecutor());
         private boolean proceedWasCalled;
 
         @Override

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import reactor.core.publisher.Mono;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -209,7 +210,7 @@ public class StandardHttpPipelineTest {
     }
 
     private LiveHttpResponse sendRequestTo(StandardHttpPipeline pipeline) {
-        HttpInterceptor.Context context = new HttpInterceptorContext(InetSocketAddress.createUnresolved("127.0.0.1", 0));
+        HttpInterceptor.Context context = new HttpInterceptorContext(false, InetSocketAddress.createUnresolved("127.0.0.1", 0), Executors.newSingleThreadExecutor());
 
         return Mono.from(pipeline.handle(get("/").build(), context)).block();
     }

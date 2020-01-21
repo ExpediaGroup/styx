@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -31,6 +31,8 @@ import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import reactor.core.publisher.Mono;
+
+import java.util.concurrent.Executors;
 
 import static ch.qos.logback.classic.Level.INFO;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
@@ -140,7 +142,7 @@ public class HttpMessageLoggingInterceptorTest {
 
             @Override
             public HttpInterceptor.Context context() {
-                return new HttpInterceptorContext(true);
+                return new HttpInterceptorContext(true, null, Executors.newSingleThreadExecutor());
             }
         };
     }
