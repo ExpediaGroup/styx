@@ -148,32 +148,6 @@ class StyxHttpServerTest : FeatureSpec({
                     }
         }
 
-        scenario("Does not compress response if accept-encoding unsupported") {
-            StyxHttpClient.Builder().build().send(get("/blah")
-                    .header(HOST, "localhost:${server.inetAddress().port}")
-                    .header("accept-encoding", "7z")
-                    .build())
-                    .wait()!!
-                    .let {
-                        it.status() shouldBe OK
-                        it.header("content-encoding").isPresent shouldBe false
-                        it.bodyAs(UTF_8) shouldBe "Hello, test!"
-                    }
-        }
-
-        scenario("Does not compress response if response content-encoding is already set") {
-            StyxHttpClient.Builder().build().send(get("/compressed")
-                    .header(HOST, "localhost:${server.inetAddress().port}")
-                    .header("accept-encoding", "gzip")
-                    .build())
-                    .wait()!!
-                    .let {
-                        it.status() shouldBe OK
-                        it.header("content-encoding").get() shouldBe "gzip"
-                        it.bodyAs(UTF_8) shouldBe "Hello, test!" // Just as the server sent it
-                    }
-        }
-
         guavaServer.stopAsync().awaitTerminated()
     }
 
