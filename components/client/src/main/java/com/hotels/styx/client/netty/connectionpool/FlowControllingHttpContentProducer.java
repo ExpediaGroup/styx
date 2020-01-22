@@ -95,12 +95,13 @@ class FlowControllingHttpContentProducer {
         this.stateMachine = new StateMachine.Builder<ProducerState>()
                 .initialState(BUFFERING)
 
+                .transition(BUFFERING, ContentSubscribedEvent.class, this::contentSubscribedInBuffering)
                 .transition(BUFFERING, RxBackpressureRequestEvent.class, this::rxBackpressureRequestInBuffering)
+
                 .transition(BUFFERING, ContentChunkEvent.class, this::contentChunkInBuffering)
+                .transition(BUFFERING, ContentEndEvent.class, this::contentEndEventWhileBuffering)
                 .transition(BUFFERING, ChannelInactiveEvent.class, this::releaseAndTerminate)
                 .transition(BUFFERING, ChannelExceptionEvent.class, this::releaseAndTerminate)
-                .transition(BUFFERING, ContentSubscribedEvent.class, this::contentSubscribedInBuffering)
-                .transition(BUFFERING, ContentEndEvent.class, this::contentEndEventWhileBuffering)
 
                 .transition(BUFFERING_COMPLETED, RxBackpressureRequestEvent.class, this::rxBackpressureRequestInBufferingCompleted)
                 .transition(BUFFERING_COMPLETED, ContentChunkEvent.class, this::spuriousContentChunkEvent)

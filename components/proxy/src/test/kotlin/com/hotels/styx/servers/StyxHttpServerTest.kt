@@ -16,6 +16,7 @@
 package com.hotels.styx.servers
 
 import com.hotels.styx.InetServer
+import com.hotels.styx.NettyExecutor
 import com.hotels.styx.StyxObjectRecord
 import com.hotels.styx.StyxServers.toGuavaService
 import com.hotels.styx.api.ByteStream
@@ -58,9 +59,11 @@ class StyxHttpServerTest : FeatureSpec({
         val serverConfig = configBlock("""
                 port: 0
                 handler: aHandler
+                workerExecutor: worker
+                bossExecutor: boss  
               """.trimIndent())
 
-        val server = StyxHttpServerFactory().create("test-01", routingContext, serverConfig, db)
+        val server = StyxHttpServerFactory().create("test-01", routingContext.get(), serverConfig, db)
         val guavaServer = toGuavaService(server)
 
         try {
@@ -90,7 +93,7 @@ class StyxHttpServerTest : FeatureSpec({
                   sslProvider: JDK
               """.trimIndent())
 
-        val server = StyxHttpServerFactory().create("test-01", routingContext, serverConfig, db)
+        val server = StyxHttpServerFactory().create("test-01", routingContext.get(), serverConfig, db)
         val guavaServer = toGuavaService(server)
 
         try {
@@ -158,7 +161,7 @@ class StyxHttpServerTest : FeatureSpec({
                 maxInitialLength: 100
               """.trimIndent())
 
-        val server = StyxHttpServerFactory().create("test-01", routingContext, serverConfig, db)
+        val server = StyxHttpServerFactory().create("test-01", routingContext.get(), serverConfig, db)
         val guavaServer = toGuavaService(server)
         guavaServer.startAsync().awaitRunning()
 
@@ -195,7 +198,7 @@ class StyxHttpServerTest : FeatureSpec({
                 maxHeaderSize: 1024
               """.trimIndent())
 
-        val server = StyxHttpServerFactory().create("test-01", routingContext, serverConfig, db)
+        val server = StyxHttpServerFactory().create("test-01", routingContext.get(), serverConfig, db)
         val guavaServer = toGuavaService(server)
         guavaServer.startAsync().awaitRunning()
 
@@ -235,7 +238,7 @@ class StyxHttpServerTest : FeatureSpec({
                 requestTimeoutMillis: 50
               """.trimIndent())
 
-            val server = StyxHttpServerFactory().create("test-01", routingContext, serverConfig, db)
+            val server = StyxHttpServerFactory().create("test-01", routingContext.get(), serverConfig, db)
             val guavaServer = toGuavaService(server)
 
             try {
@@ -270,7 +273,7 @@ class StyxHttpServerTest : FeatureSpec({
                 keepAliveTimeoutMillis: 500
               """.trimIndent())
 
-        val server = StyxHttpServerFactory().create("test-01", routingContext, serverConfig, db)
+        val server = StyxHttpServerFactory().create("test-01", routingContext.get(), serverConfig, db)
         val guavaServer = toGuavaService(server)
         guavaServer.startAsync().awaitRunning()
 
@@ -312,11 +315,9 @@ class StyxHttpServerTest : FeatureSpec({
                 port: 0
                 handler: aggregator
                 maxConnectionsCount: 2 
-                bossThreadsCount: 1
-                workerThreadsCount: 1
               """.trimIndent())
 
-        val server = StyxHttpServerFactory().create("test-01", routingContext, serverConfig, db)
+        val server = StyxHttpServerFactory().create("test-01", routingContext.get(), serverConfig, db)
         val guavaServer = toGuavaService(server)
         guavaServer.startAsync().awaitRunning()
 
@@ -335,7 +336,242 @@ class StyxHttpServerTest : FeatureSpec({
         guavaServer.stopAsync().awaitTerminated()
     }
 
+    feature("Uses named executor") {
+        val serverConfig = configBlock("""
+                port: 0
+                handler: aggregator
+                maxConnectionsCount: 2
+              """.trimIndent())
+
+        val server = StyxHttpServerFactory().create("test-01", routingContext.copy(executorObjectStore = executors).get(), serverConfig, db)
+        val guavaServer = toGuavaService(server)
+        guavaServer.startAsync().awaitRunning()
+
+        StyxHttpClient.Builder().build().send(get("/a/" + "b".repeat(95))
+                .header(HOST, "localhost:${server.inetAddress().port}")
+                .build())!!
+                .wait()!!
+                .let {
+                    it.status() shouldBe OK
+                }
+
+
+        println("Thread names: ${threadNames()}")
+
+        guavaServer.stopAsync().awaitTerminated()
+    }
+
 })
+
+/*
+Thread names: [
+Http-Server(localhost-0)-boss-4-Thread, 
+Http-Server(localhost-0)-worker-14-Thread, 
+Http-Server(localhost-0)-boss-14-Thread, 
+Http-Server(localhost-0)-worker-4-Thread, 
+Http-Server(localhost-0)-boss-10-Thread, 
+main, 
+Http-Server(localhost-0)-worker-6-Thread, 
+Http-Server(localhost-0)-boss-4-Thread, 
+Http-Server(localhost-0)-worker-11-Thread, 
+Styx-Client-6-Thread, 
+Styx-Client-0-Thread, 
+Http-Server(localhost-0)-worker-9-Thread, 
+Http-Server(localhost-0)-worker-12-Thread, 
+Styx-Client-7-Thread, 
+Monitor 
+Ctrl-Break, 
+Http-Server(localhost-0)-boss-13-Thread, 
+Http-Server(localhost-0)-worker-8-Thread
+Http-Server(localhost-0)-boss-1-Thread
+Http-Server(localhost-0)-worker-0-Thread
+Http-Server(localhost-0)-worker-2-Thread
+Http-Server(localhost-0)-boss-5-Thread
+Http-Server(localhost-0)-boss-9-Thread
+Http-Server(localhost-0)-boss-9-Thread
+Http-Server(localhost-0)-worker-0-Thread
+Http-Server(localhost-0)-boss-0-Thread
+Http-Server(localhost-0)-worker-14-Thread
+Http-Server(localhost-0)-boss-3-Thread
+Http-Server(localhost-0)-boss-8-Thread
+Http-Server(localhost-0)-worker-10-Thread
+Http-Server(localhost-0)-worker-13-Thread
+Http-Server(localhost-0)-boss-15-Thread
+Http-Server(localhost-0)-boss-7-Thread
+Http-Server(localhost-0)-boss-15-Thread
+Http-Server(localhost-0)-worker-2-Thread
+Http-Server(localhost-0)-worker-6-Thread
+Http-Server(localhost-0)-worker-7-Thread
+Http-Server(localhost-0)-boss-10-Thread
+Styx-Client-1-Thread
+Http-Server(localhost-0)-worker-11-Thread
+Http-Server(localhost-0)-boss-9-Thread
+Http-Server(localhost-0)-boss-5-Thread
+Http-Server(localhost-0)-boss-11-Thread
+Http-Server(localhost-0)-worker-2-Thread
+Http-Server(localhost-0)-boss-12-Thread
+Http-Server(localhost-0)-worker-13-Thread
+Http-Server(localhost-0)-boss-3-Thread
+Http-Server(localhost-0)-worker-7-Thread
+Http-Server(localhost-0)-boss-6-Thread
+Http-Server(localhost-0)-worker-7-Thread
+Netty-Executor-3-Thread
+Http-Server(localhost-0)-boss-0-Thread
+Http-Server(localhost-0)-worker-8-Thread
+Http-Server(localhost-0)-boss-14-Thread
+Http-Server(localhost-0)-worker-10-Thread
+Http-Server(localhost-0)-boss-7-Thread
+Http-Server(localhost-0)-worker-3-Thread
+Http-Server(localhost-0)-boss-15-Thread
+Http-Server(localhost-0)-boss-1-Thread
+Http-Server(localhost-0)-boss-2-Thread
+Common-Cleaner
+Http-Server(localhost-0)-boss-8-Thread
+Http-Server(localhost-0)-boss-12-Thread
+Http-Server(localhost-0)-boss-4-Thread
+Http-Server(localhost-0)-boss-6-Thread
+Http-Server(localhost-0)-worker-6-Thread
+Http-Server(localhost-0)-worker-4-Thread
+Http-Server(localhost-0)-boss-14-Thread
+Http-Server(localhost-0)-boss-11-Thread
+Http-Server(localhost-0)-boss-0-Thread
+Http-Server(localhost-0)-worker-8-Thread
+Http-Server(localhost-0)-worker-3-Thread
+Http-Server(localhost-0)-worker-4-Thread
+Http-Server(localhost-0)-worker-9-Thread
+Http-Server(localhost-0)-worker-2-Thread
+Reference Handler
+Http-Server(localhost-0)-worker-13-Thread
+Http-Server(localhost-0)-worker-2-Thread
+Http-Server(localhost-0)-worker-1-Thread
+Http-Server(localhost-0)-worker-7-Thread
+Http-Server(localhost-0)-boss-7-Thread
+Http-Server(localhost-0)-worker-6-Thread
+Http-Server(localhost-0)-worker-3-Thread
+Styx-Client-3-Thread
+Http-Server(localhost-0)-boss-8-Thread
+Http-Server(localhost-0)-worker-5-Thread
+Finalizer
+pool-1-thread-1
+Http-Server(localhost-0)-boss-4-Thread
+Http-Server(localhost-0)-worker-3-Thread
+Http-Server(localhost-0)-boss-13-Thread
+Http-Server(localhost-0)-worker-9-Thread
+Http-Server(localhost-0)-worker-5-Thread
+Http-Server(localhost-0)-boss-1-Thread
+Http-Server(localhost-0)-boss-2-Thread
+Http-Server(localhost-0)-boss-6-Thread
+Http-Server(localhost-0)-boss-7-Thread
+Http-Server(localhost-0)-worker-8-Thread
+Http-Server(localhost-0)-worker-1-Thread
+Http-Server(localhost-0)-worker-6-Thread
+Http-Server(localhost-0)-boss-14-Thread
+Http-Server(localhost-0)-boss-5-Thread
+Http-Server(localhost-0)-worker-15-Thread
+Styx-Client-4-Thread
+Http-Server(localhost-0)-boss-13-Thread
+Http-Server(localhost-0)-worker-15-Thread
+Http-Server(localhost-0)-boss-2-Thread
+Http-Server(localhost-0)-boss-11-Thread
+Http-Server(localhost-0)-boss-2-Thread
+Http-Server(localhost-0)-worker-13-Thread
+Http-Server(localhost-0)-boss-6-Thread
+Http-Server(localhost-0)-boss-13-Thread
+Http-Server(localhost-0)-boss-5-Thread
+Http-Server(localhost-0)-boss-12-Thread
+Http-Server(localhost-0)-boss-3-Thread
+Http-Server(localhost-0)-worker-1-Thread
+Http-Server(localhost-0)-worker-15-Thread
+Http-Server(localhost-0)-boss-10-Thread
+MY_TEST_CLIENT_BOSS-0-Thread
+Http-Server(localhost-0)-boss-1-Thread
+Http-Server(localhost-0)-worker-12-Thread
+Http-Server(localhost-0)-worker-11-Thread
+Http-Server(localhost-0)-boss-9-Thread
+Http-Server(localhost-0)-worker-0-Thread
+Http-Server(localhost-0)-worker-8-Thread
+Http-Server(localhost-0)-worker-10-Thread
+Http-Server(localhost-0)-boss-2-Thread
+Http-Server(localhost-0)-boss-4-Thread
+Http-Server(localhost-0)-boss-12-Thread
+Http-Server(localhost-0)-worker-11-Thread
+Http-Server(localhost-0)-boss-3-Thread
+Http-Server(localhost-0)-worker-12-Thread
+Netty-Executor-2-Thread
+Http-Server(localhost-0)-boss-5-Thread
+Http-Server(localhost-0)-boss-13-Thread
+Http-Server(localhost-0)-worker-12-Thread
+Http-Server(localhost-0)-worker-15-Thread
+Http-Server(localhost-0)-boss-8-Thread
+Http-Server(localhost-0)-boss-7-Thread
+Http-Server(localhost-0)-worker-10-Thread
+Http-Server(localhost-0)-worker-14-Thread
+Http-Server(localhost-0)-boss-0-Thread
+Http-Server(localhost-0)-worker-9-Thread
+Http-Server(localhost-0)-boss-12-Thread
+Http-Server(localhost-0)-worker-14-Thread
+Styx-Client-5-Thread
+pool-3-thread-1
+kotlintest-engine-0
+Styx-Client-2-Thread
+Http-Server(localhost-0)-boss-11-Thread
+Http-Server(localhost-0)-boss-8-Thread
+Http-Server(localhost-0)-boss-6-Thread
+Http-Server(localhost-0)-worker-3-Thread
+Http-Server(localhost-0)-worker-4-Thread
+Http-Server(localhost-0)-boss-9-Thread
+Http-Server(localhost-0)-worker-9-Thread
+Http-Server(localhost-0)-boss-10-Thread
+Attach Listener
+Http-Server(localhost-0)-worker-4-Thread
+Http-Server(localhost-0)-boss-15-Thread
+Netty-Executor-0-Thread
+Http-Server(localhost-0)-worker-15-Thread
+Http-Server(localhost-0)-boss-3-Thread
+globalEventExecutor-1-3
+Http-Server(localhost-0)-boss-0-Thread
+Http-Server(localhost-0)-boss-15-Thread
+Http-Server(localhost-0)-boss-1-Thread
+Http-Server(localhost-0)-worker-1-Thread
+Http-Server(localhost-0)-worker-13-Thread
+ForkJoinPool.commonPool-worker-3
+Http-Server(localhost-0)-worker-5-Thread
+Http-Server(localhost-0)-boss-0-Thread
+Http-Server(localhost-0)-worker-7-Thread
+Http-Server(localhost-0)-worker-5-Thread
+Http-Server(localhost-0)-boss-14-Thread
+Http-Server(localhost-0)-boss-11-Thread
+Signal Dispatcher
+Http-Server(localhost-0)-worker-5-Thread
+Http-Server(localhost-0)-worker-1-Thread
+pool-2-thread-1 @coroutine#33
+MY_TEST_CLIENT_WORKER-0-Thread
+Http-Server(localhost-0)-boss-10-Thread
+Http-Server(localhost-0)-worker-12-Thread
+Http-Server(localhost-0)-worker-11-Thread
+Http-Server(localhost-0)-worker-14-Thread
+Netty-Executor-1-Thread
+Http-Server(localhost-0)-worker-10-Thread]
+
+ */
+
+fun createExecutors(): StyxObjectStore<StyxObjectRecord<NettyExecutor>> = StyxObjectStore<StyxObjectRecord<NettyExecutor>>()
+            .let {
+                it.insert("worker", StyxObjectRecord("NettyExecutor", setOf(), configBlock("a: b"), NettyExecutor.create("MY_TEST_SERVER_WORKER", 1)))
+                it.insert("boss", StyxObjectRecord("NettyExecutor", setOf(), configBlock("a: b"), NettyExecutor.create("MY_TEST_SERVER_BOSS", 1)))
+                it
+            }
+
+fun threadCount(namePattern: String) = Thread.getAllStackTraces().keys
+        .map { it.name }
+        .filter { it.contains(namePattern) }
+        .count()
+
+fun threadNames() = Thread.getAllStackTraces().keys
+        .map { it.name }
+
+
+val executors = createExecutors()
 
 private fun createConnection(port: Int) = NettyConnectionFactory.Builder()
         .build()
@@ -369,8 +605,8 @@ private val routingContext = RoutingObjectFactoryContext(
                         .aggregate(1024)
                         .flatMap { Eventual.of(response.stream()) }
             })
-        })
-        .get()
+        },
+        executorObjectStore = executors)
 
 private fun ungzip(content: ByteArray, charset: Charset): String = GZIPInputStream(content.inputStream()).bufferedReader(charset).use { it.readText() }
 

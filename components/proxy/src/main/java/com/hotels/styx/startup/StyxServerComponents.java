@@ -53,6 +53,7 @@ import java.util.Map;
 import static com.hotels.styx.StartupConfig.newStartupConfigBuilder;
 import static com.hotels.styx.Version.readVersionFrom;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
+import static com.hotels.styx.routing.config.Builtins.BUILTIN_EXECUTOR_FACTORIES;
 import static com.hotels.styx.routing.config.Builtins.BUILTIN_HANDLER_FACTORIES;
 import static com.hotels.styx.routing.config.Builtins.BUILTIN_SERVER_FACTORIES;
 import static com.hotels.styx.routing.config.Builtins.BUILTIN_SERVICE_PROVIDER_FACTORIES;
@@ -76,6 +77,7 @@ public class StyxServerComponents {
     private final StyxObjectStore<RoutingObjectRecord> routeObjectStore = new StyxObjectStore<>();
     private final StyxObjectStore<StyxObjectRecord<StyxService>> providerObjectStore = new StyxObjectStore<>();
     private final StyxObjectStore<StyxObjectRecord<InetServer>> serverObjectStore = new StyxObjectStore<>();
+    private final StyxObjectStore<StyxObjectRecord<NettyExecutor>> executorObjectStore = new StyxObjectStore<>();
     private final RoutingObjectFactory.Context routingObjectContext;
     private final StartupConfig startupConfig;
 
@@ -102,6 +104,23 @@ public class StyxServerComponents {
                 ? loadPlugins(environment)
                 : loadPlugins(environment, builder.configuredPluginFactories);
 
+        this.services = mergeServices(
+                builder.servicesLoader.load(environment, routeObjectStore),
+                builder.additionalServices
+        );
+
+        this.plugins.forEach(plugin -> this.environment.plugins().add(plugin));
+
+        this.environment.configuration().get("executors", JsonNode.class)
+                .map(StyxServerComponents::readComponents)
+                .orElse(ImmutableMap.of())
+                .forEach((name, definition) -> {
+                    LOGGER.warn("Loading styx server: " + name + ": " + definition);
+                    NettyExecutor provider = Builtins.buildExecutor(name, definition, BUILTIN_EXECUTOR_FACTORIES);
+                    StyxObjectRecord<NettyExecutor> record = new StyxObjectRecord<>(definition.type(), ImmutableSet.copyOf(definition.tags()), definition.config(), provider);
+                    executorObjectStore.insert(name, record);
+                });
+
         this.routingObjectContext = new RoutingObjectFactory.Context(
                 new RouteDbRefLookup(this.routeObjectStore),
                 environment,
@@ -109,14 +128,8 @@ public class StyxServerComponents {
                 routingObjectFactories,
                 plugins,
                 INTERCEPTOR_FACTORIES,
-                false);
-
-        this.services = mergeServices(
-                builder.servicesLoader.load(environment, routeObjectStore),
-                builder.additionalServices
-        );
-
-        this.plugins.forEach(plugin -> this.environment.plugins().add(plugin));
+                false,
+                executorObjectStore);
 
         this.environment.configuration().get("routingObjects", JsonNode.class)
                 .map(StyxServerComponents::readComponents)

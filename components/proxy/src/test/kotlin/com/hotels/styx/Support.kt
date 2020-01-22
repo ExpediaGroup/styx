@@ -44,7 +44,6 @@ import io.mockk.every
 import io.mockk.mockk
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.toMono
-import java.lang.RuntimeException
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executor
@@ -60,8 +59,17 @@ internal data class RoutingObjectFactoryContext(
         val objectFactories: Map<String, RoutingObjectFactory> = BUILTIN_HANDLER_FACTORIES,
         val plugins: Iterable<NamedPlugin> = listOf(),
         val interceptorFactories: Map<String, HttpInterceptorFactory> = INTERCEPTOR_FACTORIES,
-        val requestTracking: Boolean = false) {
-    fun get() = RoutingObjectFactory.Context(routeRefLookup, environment, objectStore, objectFactories, plugins, INTERCEPTOR_FACTORIES, requestTracking)
+        val requestTracking: Boolean = false,
+        val executorObjectStore: StyxObjectStore<StyxObjectRecord<NettyExecutor>> = StyxObjectStore()) {
+    fun get() = RoutingObjectFactory.Context(
+            routeRefLookup,
+            environment,
+            objectStore,
+            objectFactories,
+            plugins,
+            INTERCEPTOR_FACTORIES,
+            requestTracking,
+            executorObjectStore)
 
 }
 

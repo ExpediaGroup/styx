@@ -60,7 +60,10 @@ object StyxHttpServer {
             optional("maxConnectionsCount", integer()),
 
             optional("bossThreadsCount", integer()),
-            optional("workerThreadsCount", integer())
+            optional("workerThreadsCount", integer()),
+
+            optional("bossExecutor", string()),
+            optional("workerExecutor", string())
     )
 
     internal val LOGGER = LoggerFactory.getLogger(StyxHttpServer::class.java)
@@ -92,7 +95,10 @@ private data class StyxHttpServerConfiguration(
         val maxConnectionsCount: Int = 512,
 
         val bossThreadsCount: Int = 0,
-        val workerThreadsCount: Int = 0
+        val workerThreadsCount: Int = 0,
+
+        val bossExecutor: String?,
+        val workerExecutor: String?
 )
 
 internal class StyxHttpServerFactory : StyxServerFactory {
@@ -102,6 +108,23 @@ internal class StyxHttpServerFactory : StyxServerFactory {
         val config = serverConfig(configuration)
 
         val environment = context.environment()
+
+        val bossExecutor = if (config.bossExecutor != null) {
+            context.executors().get(config.bossExecutor)
+                    .map { it.styxService }
+                    .orElseThrow()
+        } else {
+            NettyExecutor.create("Http-Server(localhost-${config.port})-boss", config.bossThreadsCount)
+        }
+
+        val workerExecutor = if (config.workerExecutor != null) {
+            context.executors().get(config.workerExecutor)
+                    .map { it.styxService }
+                    .orElseThrow()
+        } else {
+            NettyExecutor.create("Http-Server(localhost-${config.port})-worker", config.bossThreadsCount)
+        }
+
         val proxyServerConfig = ProxyServerConfig.Builder()
                 .setCompressResponses(config.compressResponses)
                 .setMaxInitialLength(config.maxInitialLength)
@@ -110,8 +133,6 @@ internal class StyxHttpServerFactory : StyxServerFactory {
                 .setRequestTimeoutMillis(config.requestTimeoutMillis)
                 .setKeepAliveTimeoutMillis(config.keepAliveTimeoutMillis)
                 .setMaxConnectionsCount(config.maxConnectionsCount)
-                .setBossThreadsCount(config.bossThreadsCount)
-                .setWorkerThreadsCount(config.workerThreadsCount)
                 .build()
 
         return NettyServerBuilder()
@@ -142,8 +163,8 @@ internal class StyxHttpServerFactory : StyxServerFactory {
                                                     .protocols(*config.tlsSettings.protocols.toTypedArray())
                                                     .build()
                                         }))
-                .workerExecutor(NettyExecutor.create("Http-Server(localhost-${config.port})", config.workerThreadsCount))
-                .bossExecutor(NettyExecutor.create("Http-Server(localhost-${config.port})", config.bossThreadsCount))
+                .workerExecutor(workerExecutor)
+                .bossExecutor(bossExecutor)
                 .handler({ request, ctx ->
                     context.refLookup()
                             .apply(StyxObjectReference(config.handler))
