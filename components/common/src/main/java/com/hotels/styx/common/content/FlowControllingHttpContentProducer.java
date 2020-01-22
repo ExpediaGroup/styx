@@ -83,7 +83,7 @@ public class FlowControllingHttpContentProducer {
 
     private volatile Subscriber<? super ByteBuf> contentSubscriber;
 
-    private final HashedWheelTimer timer = new HashedWheelTimer();
+    private static final HashedWheelTimer timer = new HashedWheelTimer();
     private Timeout timeout;
 
     enum ProducerState {
