@@ -80,7 +80,7 @@ private data class StyxHttpServerTlsSettings(
 private data class StyxHttpServerConfiguration(
         val port: Int,
         val handler: String,
-        val compressResponses: Boolean,
+        val compressResponses: Boolean = false,
         val tlsSettings: StyxHttpServerTlsSettings?,
 
         val maxInitialLength: Int = 4096,

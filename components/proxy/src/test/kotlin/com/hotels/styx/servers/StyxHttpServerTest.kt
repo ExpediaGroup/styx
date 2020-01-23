@@ -24,7 +24,7 @@ import com.hotels.styx.api.HttpHeaderNames.CONNECTION
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest.get
-import com.hotels.styx.api.HttpResponse
+import com.hotels.styx.api.HttpResponse.response
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE
 import com.hotels.styx.api.HttpResponseStatus.REQUEST_TIMEOUT
@@ -342,13 +342,13 @@ private fun createConnection(port: Int) = NettyConnectionFactory.Builder()
         .createConnection(newOriginBuilder("localhost", port).build(), ConnectionSettings(250))
         .block()!!
 
-private val response = HttpResponse.response(OK)
+private val response = response(OK)
         .header("source", "secure")
         .header("content-type", "text/plain")
         .body("Hello, test!", UTF_8)
         .build()
 
-private val compressedResponse = HttpResponse.response(OK)
+private val compressedResponse = response(OK)
         .header("source", "secure")
         .header("content-type", "text/plain")
         .header("content-encoding", "gzip")
