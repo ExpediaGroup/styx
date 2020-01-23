@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -43,7 +43,6 @@ import org.reactivestreams.Subscription
 import org.scalatest._
 import org.scalatest.mock.MockitoSugar
 import reactor.core.publisher.Mono
-import rx.observers.TestSubscriber
 
 import scala.util.Try
 
@@ -55,8 +54,6 @@ class BackendServiceClientSpec extends FunSuite with BeforeAndAfterAll with Matc
   var client: StyxBackendServiceClient = _
 
   val responseTimeout = 1000
-
-  var testSubscriber: TestSubscriber[LiveHttpResponse] = _
 
   override protected def beforeAll(): Unit = {
     originOneServer.start()
@@ -73,7 +70,6 @@ class BackendServiceClientSpec extends FunSuite with BeforeAndAfterAll with Matc
 
   before {
     originOneServer.reset()
-    testSubscriber = new TestSubscriber[LiveHttpResponse]()
 
     val backendService = new BackendService.Builder()
       .origins(webappOrigin)

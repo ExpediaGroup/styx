@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -34,7 +34,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import rx.subjects.PublishSubject;
+import reactor.core.publisher.EmitterProcessor;
+import reactor.core.publisher.Flux;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayDeque;
@@ -59,19 +60,18 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static rx.RxReactiveStreams.toPublisher;
 
 public class HttpResponseWriterTest {
     private LoggingTestSupport LOGGER;
 
-    private PublishSubject<Buffer> contentObservable;
+    private EmitterProcessor<Buffer> contentObservable;
     private Queue<ChannelWriteArguments> channelArgs;
     private AtomicBoolean channelRead;
 
     @BeforeEach
     public void setUp() {
         LOGGER = new LoggingTestSupport(HttpResponseWriter.class);
-        contentObservable = PublishSubject.create();
+        contentObservable = EmitterProcessor.create();
         channelArgs = new ArrayDeque<>();
         channelRead = new AtomicBoolean(false);
     }
@@ -94,7 +94,7 @@ public class HttpResponseWriterTest {
                         contentObservable.onNext(new Buffer("aaa", UTF_8));
                         assertThat(future.isDone(), is(false));
 
-                        contentObservable.onCompleted();
+                        contentObservable.onComplete();
                         assertThat(future.isDone(), is(true));
 
                         channelRead.set(true);
@@ -102,7 +102,7 @@ public class HttpResponseWriterTest {
                 }
         );
 
-        ch.writeInbound(response(OK).body(new ByteStream(toPublisher(contentObservable))).build());
+        ch.writeInbound(response(OK).body(new ByteStream(contentObservable)).build());
         assertThat(channelRead.get(), is(true));
     }
 
@@ -121,7 +121,7 @@ public class HttpResponseWriterTest {
                         contentObservable.onNext(new Buffer("aaa", UTF_8));
                         assertThat(future.isDone(), is(false));
 
-                        contentObservable.onCompleted();
+                        contentObservable.onComplete();
                         assertThat(future.isDone(), is(false));
 
                         writeAck(channelArgs);  // For response headers
@@ -134,7 +134,7 @@ public class HttpResponseWriterTest {
                 }
         );
 
-        ch.writeInbound(response(OK).body(new ByteStream(toPublisher(contentObservable))).build());
+        ch.writeInbound(response(OK).body(new ByteStream(contentObservable)).build());
         assertThat(channelRead.get(), is(true));
     }
 
@@ -178,7 +178,7 @@ public class HttpResponseWriterTest {
                         writeAck(channelArgs);  // For content chunk
                         assertThat(future.isDone(), is(false));
 
-                        contentObservable.onCompleted();
+                        contentObservable.onComplete();
                         writeError(channelArgs);  // For EMPTY_LAST_CHUNK
 
                         assertThat(future.isDone(), is(true));
@@ -189,7 +189,7 @@ public class HttpResponseWriterTest {
                 }
         );
 
-        ch.writeInbound(response(OK).body(new ByteStream(toPublisher(contentObservable))).build());
+        ch.writeInbound(response(OK).body(new ByteStream(contentObservable)).build());
         assertThat(channelRead.get(), is(true));
     }
 
@@ -212,7 +212,7 @@ public class HttpResponseWriterTest {
         );
 
         assertThrows(ExecutionException.class,
-                () -> ch.writeInbound(response(OK).body(new ByteStream(toPublisher(contentObservable))).build()));
+                () -> ch.writeInbound(response(OK).body(new ByteStream(contentObservable)).build()));
     }
 
 
@@ -232,7 +232,7 @@ public class HttpResponseWriterTest {
                         contentObservable.onNext(new Buffer("aaa", UTF_8));
                         assertThat(future.isDone(), is(false));
 
-                        contentObservable.onCompleted();
+                        contentObservable.onComplete();
                         assertThat(future.isDone(), is(false));
 
                         writeError(channelArgs);
@@ -244,7 +244,7 @@ public class HttpResponseWriterTest {
         );
 
         assertThrows(ExecutionException.class,
-                () -> ch.writeInbound(response(OK).body(new ByteStream(toPublisher(contentObservable))).build()));
+                () -> ch.writeInbound(response(OK).body(new ByteStream(contentObservable)).build()));
     }
 
     @Test
@@ -263,7 +263,7 @@ public class HttpResponseWriterTest {
                         writeAck(channelArgs);
                         assertThat(future.isDone(), is(false));
 
-                        contentObservable.onCompleted();
+                        contentObservable.onComplete();
                         assertThat(future.isDone(), is(false));
 
                         writeAck(channelArgs);
@@ -274,7 +274,7 @@ public class HttpResponseWriterTest {
                 }
         );
 
-        ch.writeInbound(response(OK).body(new ByteStream(toPublisher(contentObservable))).build());
+        ch.writeInbound(response(OK).body(new ByteStream(contentObservable)).build());
         assertThat(channelRead.get(), is(true));
 
         List<Object> writeEvents = writeEventsCollector.writeEvents();
@@ -310,7 +310,7 @@ public class HttpResponseWriterTest {
                 }
         );
 
-        ch.writeInbound(response(OK).body(new ByteStream(toPublisher(contentObservable.doOnUnsubscribe(() -> unsubscribed.set(true))))).build());
+        ch.writeInbound(response(OK).body(new ByteStream(contentObservable.doOnCancel(() -> unsubscribed.set(true)))).build());
         assertThat(channelRead.get(), is(true));
     }
 
@@ -336,7 +336,7 @@ public class HttpResponseWriterTest {
 
                         contentObservable.onNext(chunk1);
                         contentObservable.onNext(chunk2);
-                        contentObservable.onCompleted();
+                        contentObservable.onComplete();
 
                         assertThat(future.isDone(), is(true));
                         assertThat(toByteBuf(chunk1).refCnt(), is(0));
@@ -348,7 +348,7 @@ public class HttpResponseWriterTest {
         );
 
         LiveHttpResponse.Builder response = response(OK).cookies(responseCookie(",,,,", ",,,,").build());
-        ch.writeInbound(response.body(new ByteStream(toPublisher(contentObservable.doOnUnsubscribe(() -> unsubscribed.set(true))))).build());
+        ch.writeInbound(response.body(new ByteStream(contentObservable.doOnCancel(() -> unsubscribed.set(true)))).build());
         assertThat(channelRead.get(), is(true));
     }
 
@@ -378,7 +378,7 @@ public class HttpResponseWriterTest {
                 }
         );
 
-        ch.writeInbound(response(OK).body(new ByteStream(toPublisher(contentObservable))).build());
+        ch.writeInbound(response(OK).body(new ByteStream(contentObservable)).build());
 
         assertThat(LOGGER.lastMessage(), is(
                 loggingEvent(

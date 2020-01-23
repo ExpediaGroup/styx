@@ -29,7 +29,6 @@ import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values._
 import org.scalatest.FunSpec
 
-import scala.compat.java8.functionConverterImpls.AsJavaFunction
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 import scala.compat.java8.FutureConverters.CompletionStageOps
@@ -73,9 +72,6 @@ class AsyncRequestSpec extends FunSpec
   }
 }
 
-import rx.lang.scala.JavaConversions._
-import rx.lang.scala.schedulers._
-import com.hotels.styx.support.ImplicitScalaRxConversions.toJavaObservable
 import scala.compat.java8.FutureConverters.FutureOps
 import scala.compat.java8.FunctionConverters.asJavaFunction
 import scala.concurrent.ExecutionContext.Implicits.global
