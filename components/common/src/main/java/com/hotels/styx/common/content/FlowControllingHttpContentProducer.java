@@ -81,7 +81,7 @@ public class FlowControllingHttpContentProducer {
 
     private volatile Subscriber<? super ByteBuf> contentSubscriber;
 
-    private static final HashedWheelTimer timer = new HashedWheelTimer();
+    private static HashedWheelTimer timer = new HashedWheelTimer();
     private Timeout timeout;
 
     enum ProducerState {
@@ -106,9 +106,7 @@ public class FlowControllingHttpContentProducer {
         this.loggingPrefix = loggingPrefix;
         this.origin = origin;
 
-        TimerTask timerTask = timeout -> {
-            stateMachine.handle(new TearDownEvent(new RuntimeException("Inactive Subscriber")));
-        };
+        TimerTask timerTask = timeout -> stateMachine.handle(new TearDownEvent(new RuntimeException("Inactive Subscriber")));
         this.stateMachine = new StateMachine.Builder<ProducerState>()
                 .initialState(BUFFERING)
 
@@ -289,7 +287,6 @@ public class FlowControllingHttpContentProducer {
         contentSubscriber.onError(cause);
         onTerminateAction.accept(cause);
         return TERMINATED;
-
     }
 
     private ProducerState contentSubscribedEventWhileStreaming(ContentSubscribedEvent event) {

@@ -41,7 +41,9 @@ import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.
 import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.STREAMING;
 import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.TERMINATED;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
+import static io.netty.buffer.Unpooled.buffer;
 import static io.netty.buffer.Unpooled.copiedBuffer;
+import static io.netty.buffer.Unpooled.directBuffer;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
@@ -60,6 +62,7 @@ import static org.mockito.Mockito.verify;
 
 public class FlowControllingHttpContentProducerTest {
     private static final Long NO_BACKPRESSURE = Long.MAX_VALUE;
+    private static final int INACTIVITY_TIMEOUT_MS = 500;
     private Subscriber<? super ByteBuf> downstream;
     private Subscriber<? super ByteBuf> additionalSubscriber;
     private FlowControllingHttpContentProducer producer;
@@ -84,7 +87,7 @@ public class FlowControllingHttpContentProducerTest {
                 onTerminateAction,
                 "foobar",
                 newOriginBuilder("foohost", 12345).build(),
-                500);
+                INACTIVITY_TIMEOUT_MS);
 
         producer.request(initialCount);
     }
@@ -1090,7 +1093,67 @@ public class FlowControllingHttpContentProducerTest {
         verify(askForMore, times(3)).run();
     }
 
-    public <T> void assertException(Subscriber subscriber, Class<T> klass, String message) {
+    @Test
+    public void shouldPerformReleaseAndTerminateWhenTimeoutOccurs() throws InterruptedException {
+        setUpAndRequest(0);
+        assertEquals(BUFFERING, producer.state());
+
+        producer.onSubscribed(downstream);
+        producer.newChunk(contentChunk1);
+        producer.newChunk(contentChunk2);
+
+        assertEquals(STREAMING, producer.state());
+        assertEquals(1, contentChunk1.refCnt());
+        assertEquals(1, contentChunk2.refCnt());
+
+        Thread.sleep(INACTIVITY_TIMEOUT_MS*2);
+        verify(onTerminateAction).accept(isA(Throwable.class));
+        assertEquals(TERMINATED, producer.state());
+        assertEquals(0, contentChunk1.refCnt());
+        assertEquals(0, contentChunk2.refCnt());
+    }
+
+    @Test
+    public void shouldResetTimeoutWhenSubscriptionOccurs() throws InterruptedException {
+        setUpAndRequest(0);
+        assertEquals(BUFFERING, producer.state());
+
+        Thread.sleep(getPercentageOfValue(75, INACTIVITY_TIMEOUT_MS));
+        producer.onSubscribed(downstream);
+        Thread.sleep(getPercentageOfValue(75, INACTIVITY_TIMEOUT_MS));
+
+        assertEquals(STREAMING, producer.state());
+    }
+
+    @Test
+    public void shouldResetTimeoutWhenBackPressureTriggersStateChangeEvent() throws InterruptedException {
+        setUpAndRequest(0);
+
+        Thread.sleep(getPercentageOfValue(75, INACTIVITY_TIMEOUT_MS));
+        producer.request(1);
+        Thread.sleep(getPercentageOfValue(75, INACTIVITY_TIMEOUT_MS));
+
+        assertEquals(BUFFERING, producer.state());
+    }
+
+    @Test
+    public void shouldCancelTimeoutWhenStateIsCompleted() throws InterruptedException{
+        setUpAndRequest(0);
+
+        producer.lastHttpContent();
+        producer.onSubscribed(downstream);
+        assertEquals(COMPLETED, producer.state());
+
+        Thread.sleep(INACTIVITY_TIMEOUT_MS*2);
+        verify(onTerminateAction, never()).accept(isA(Throwable.class));
+        assertEquals(COMPLETED, producer.state());
+    }
+
+    private long getPercentageOfValue(int percentage, long value) {
+        return (value * percentage) / 100;
+    }
+
+    private <T> void assertException(Subscriber subscriber, Class<T> klass, String message) {
         ArgumentCaptor<Throwable> errorArg = ArgumentCaptor.forClass(Throwable.class);
         verify(subscriber, atLeast(1)).onError(errorArg.capture());
         assertThat(errorArg.getValue(), is(instanceOf(klass)));

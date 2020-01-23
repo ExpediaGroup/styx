@@ -127,7 +127,11 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        getContentProducer(ctx).channelException(toStyxException(cause));
+        if (cause instanceof TooLongFrameException) {
+            getContentProducer(ctx).channelException(new BadRequestException(cause.getMessage(), cause));
+        } else {
+            getContentProducer(ctx).channelException(cause);
+        }
         super.exceptionCaught(ctx, cause);
     }
 
@@ -148,13 +152,6 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
                 format("%s, %s", loggingPrefix, ""),
                 null,
                 inactivityTimeoutMs);
-    }
-
-    private Throwable toStyxException(Throwable cause) {
-        if (cause instanceof TooLongFrameException) {
-            return new BadRequestException(cause.getMessage(), cause);
-        }
-        return cause;
     }
 
     private LiveHttpRequest toStyxRequest(HttpRequest request, Publisher<Buffer> contentPublisher) {
