@@ -70,7 +70,7 @@ public class ProxyToBackend implements RoutingObject {
 
     @Override
     public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
-        return new Eventual<>(client.sendRequest(request));
+        return new Eventual<>(client.sendRequest(request, context));
     }
 
     /**

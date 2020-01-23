@@ -203,7 +203,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
 
     private HttpHandler newClientHandler(BackendService backendService, OriginsInventory originsInventory, OriginStatsFactory originStatsFactory) {
         BackendServiceClient client = clientFactory.createClient(backendService, originsInventory, originStatsFactory);
-        return (request, context) -> new Eventual<>(client.sendRequest(request));
+        return (request, context) -> new Eventual<>(client.sendRequest(request, context));
     }
 
     private static OriginHealthCheckFunction originHealthCheckFunction(

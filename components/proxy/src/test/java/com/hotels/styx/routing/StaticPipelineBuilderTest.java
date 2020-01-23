@@ -66,7 +66,7 @@ public class StaticPipelineBuilderTest {
     @BeforeEach
     public void staticPipelineBuilderTest() {
         environment = new Environment.Builder().build();
-        clientFactory = (backendService, originsInventory, originStatsFactory) -> request -> Mono.just(response(OK).build());
+        clientFactory = (backendService, originsInventory, originStatsFactory) -> (request, context) -> Mono.just(response(OK).build());
         registry = backendRegistry(newBackendServiceBuilder().origins(newOriginBuilder("localhost", 0).build())
                 .path("/foo").build());
     }

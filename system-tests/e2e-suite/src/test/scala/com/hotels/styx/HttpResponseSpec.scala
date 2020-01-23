@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import com.hotels.styx.client.StyxBackendServiceClient
 import com.hotels.styx.client.StyxBackendServiceClient._
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
+import com.hotels.styx.server.HttpInterceptorContext
 import com.hotels.styx.support.NettyOrigins
 import com.hotels.styx.support.configuration.{BackendService, ImplicitOriginConversions, Origins}
 import io.netty.buffer.Unpooled._
@@ -52,6 +53,8 @@ class HttpResponseSpec extends FunSuite
 
   val responseTimeout = 1000.millis
 
+  val context = HttpInterceptorContext.create()
+
   override protected def afterAll(): Unit = {
     originOneServer.stopAsync().awaitTerminated()
   }
@@ -76,7 +79,7 @@ class HttpResponseSpec extends FunSuite
   test("Determines response content length from server closing the connection.") {
     originRespondingWith(response200OkFollowedFollowedByServerConnectionClose("Test message body."))
 
-    val response = Mono.from(client.sendRequest(get("/foo/3").build()))
+    val response = Mono.from(client.sendRequest(get("/foo/3").build(), context))
       .flatMap(live => Mono.from(live.aggregate(10000)))
       .block()
 

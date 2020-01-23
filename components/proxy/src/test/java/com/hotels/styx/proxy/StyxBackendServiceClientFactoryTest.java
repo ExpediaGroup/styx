@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package com.hotels.styx.proxy;
 
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
@@ -61,6 +62,7 @@ public class StyxBackendServiceClientFactoryTest {
     private BackendService backendService;
     private String STICKY_COOKIE = "styx_origin_" + GENERIC_APP;
     private String ORIGINS_RESTRICTION_COOKIE = "styx-origins-restriction";
+    private HttpInterceptor.Context context = mock(HttpInterceptor.Context.class);
 
     @BeforeEach
     public void setUp() {
@@ -129,9 +131,9 @@ public class StyxBackendServiceClientFactoryTest {
         LiveHttpRequest requestx = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("x").toString())).build();
         LiveHttpRequest requesty = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("y").toString())).build();
 
-        LiveHttpResponse responsez = Mono.from(styxBackendServiceClient.sendRequest(requestz)).block();
-        LiveHttpResponse responsex = Mono.from(styxBackendServiceClient.sendRequest(requestx)).block();
-        LiveHttpResponse responsey = Mono.from(styxBackendServiceClient.sendRequest(requesty)).block();
+        LiveHttpResponse responsez = Mono.from(styxBackendServiceClient.sendRequest(requestz, context)).block();
+        LiveHttpResponse responsex = Mono.from(styxBackendServiceClient.sendRequest(requestx, context)).block();
+        LiveHttpResponse responsey = Mono.from(styxBackendServiceClient.sendRequest(requesty, context)).block();
 
         assertThat(responsex.header("X-Origin-Id").get(), is("x"));
         assertThat(responsey.header("X-Origin-Id").get(), is("y"));
@@ -174,9 +176,9 @@ public class StyxBackendServiceClientFactoryTest {
         LiveHttpRequest requestx = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("x").toString())).build();
         LiveHttpRequest requesty = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("y").toString())).build();
 
-        LiveHttpResponse responsez = Mono.from(styxBackendServiceClient.sendRequest(requestz)).block();
-        LiveHttpResponse responsex = Mono.from(styxBackendServiceClient.sendRequest(requestx)).block();
-        LiveHttpResponse responsey = Mono.from(styxBackendServiceClient.sendRequest(requesty)).block();
+        LiveHttpResponse responsez = Mono.from(styxBackendServiceClient.sendRequest(requestz, context)).block();
+        LiveHttpResponse responsex = Mono.from(styxBackendServiceClient.sendRequest(requestx, context)).block();
+        LiveHttpResponse responsey = Mono.from(styxBackendServiceClient.sendRequest(requesty, context)).block();
 
         assertThat(responsex.header("X-Origin-Id").get(), is("x"));
         assertThat(responsey.header("X-Origin-Id").get(), is("y"));

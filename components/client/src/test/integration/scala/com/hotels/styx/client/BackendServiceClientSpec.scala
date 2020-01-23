@@ -31,6 +31,7 @@ import com.hotels.styx.api.extension.{ActiveOrigins, Origin}
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient._
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy
+import com.hotels.styx.server.HttpInterceptorContext
 import com.hotels.styx.support.server.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies._
 import io.netty.buffer.Unpooled._
@@ -54,6 +55,8 @@ class BackendServiceClientSpec extends FunSuite with BeforeAndAfterAll with Matc
   var client: StyxBackendServiceClient = _
 
   val responseTimeout = 1000
+
+  val context = HttpInterceptorContext.create()
 
   override protected def beforeAll(): Unit = {
     originOneServer.start()
@@ -83,7 +86,7 @@ class BackendServiceClientSpec extends FunSuite with BeforeAndAfterAll with Matc
 
   test("Emits an HTTP response even when content observable remains un-subscribed.") {
     originOneServer.stub(urlStartingWith("/"), response200OkWithContentLengthHeader("Test message body."))
-    val response = Mono.from(client.sendRequest(get("/foo/1").build())).block()
+    val response = Mono.from(client.sendRequest(get("/foo/1").build(), context)).block()
     assert(response.status() == OK, s"\nDid not get response with 200 OK status.\n$response\n")
   }
 
@@ -91,7 +94,7 @@ class BackendServiceClientSpec extends FunSuite with BeforeAndAfterAll with Matc
   test("Emits an HTTP response containing Content-Length from persistent connection that stays open.") {
     originOneServer.stub(urlStartingWith("/"), response200OkWithContentLengthHeader("Test message body."))
 
-    val response = Mono.from(client.sendRequest(get("/foo/2").build()))
+    val response = Mono.from(client.sendRequest(get("/foo/2").build(), context))
       .flatMap((liveHttpResponse: LiveHttpResponse) => {
         Mono.from(liveHttpResponse.aggregate(10000))
       })
@@ -105,7 +108,7 @@ class BackendServiceClientSpec extends FunSuite with BeforeAndAfterAll with Matc
   ignore("Determines response content length from server closing the connection.") {
     // originRespondingWith(response200OkFollowedFollowedByServerConnectionClose("Test message body."))
 
-    val response = Mono.from(client.sendRequest(get("/foo/3").build()))
+    val response = Mono.from(client.sendRequest(get("/foo/3").build(), context))
       .flatMap((liveHttpResponse: LiveHttpResponse) => {
         Mono.from(liveHttpResponse.aggregate(10000))
       })
@@ -123,7 +126,7 @@ class BackendServiceClientSpec extends FunSuite with BeforeAndAfterAll with Matc
       .withFixedDelay(3000))
 
     val maybeResponse = Try {
-      Mono.from(client.sendRequest(get("/foo/4").build()))
+      Mono.from(client.sendRequest(get("/foo/4").build(), context))
         .doOnSubscribe((t: Subscription) => start.set(System.currentTimeMillis()))
         .block()
     }

@@ -62,7 +62,7 @@ public class BackendServicesRouterTest {
     private static final String APP_B = "appB";
 
     private final BackendServiceClientFactory serviceClientFactory =
-            (backendService, originsInventory, originStatsFactory) -> request -> responseWithOriginIdHeader(backendService);
+            (backendService, originsInventory, originStatsFactory) -> (request, context) -> responseWithOriginIdHeader(backendService);
     private HttpInterceptor.Context context = HttpInterceptorContext.create();
 
     private Environment environment;

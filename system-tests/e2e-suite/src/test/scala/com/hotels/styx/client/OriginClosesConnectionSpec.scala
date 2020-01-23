@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
+import com.hotels.styx.server.HttpInterceptorContext
 import com.hotels.styx.server.netty.connectors.HttpPipelineHandler
 import com.hotels.styx.support.NettyOrigins
 import com.hotels.styx.support.configuration.{BackendService, HttpBackend, Origins}
@@ -56,6 +57,7 @@ class OriginClosesConnectionSpec extends FunSuite
   var loggingSupport: LoggingTestSupport = _
   val (originOne, originOneServer) = originAndCustomResponseWebServer("NettyOrigin")
   val originHost: String = originOne.hostAndPortString()
+  val context = HttpInterceptorContext.create()
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -118,7 +120,7 @@ class OriginClosesConnectionSpec extends FunSuite
       get("/foo/3")
         .addHeader(HOST, originHost)
         .build()
-        .stream)
+        .stream, context)
 
     val response = Mono.from(clientResponse).block()
 
