@@ -131,8 +131,6 @@ class LoggingSpec extends FunSpec
     }
   }
 
-  import com.hotels.styx.support.ImplicitScalaRxConversions.toJavaObservable
-  import rx.lang.scala.JavaConversions.toScalaObservable
   import scala.compat.java8.FunctionConverters.asJavaFunction
 
 

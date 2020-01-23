@@ -20,7 +20,6 @@ import java.nio.charset.StandardCharsets.UTF_8
 import com.hotels.styx.api.HttpResponseStatus._
 import com.hotels.styx.api.Id.id
 import com.hotels.styx.api.LiveHttpRequest.get
-import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.extension.{ActiveOrigins, service}
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
@@ -37,7 +36,6 @@ import io.netty.handler.codec.http.HttpVersion._
 import io.netty.handler.codec.http._
 import org.scalatest._
 import reactor.core.publisher.Mono
-import rx.observers.TestSubscriber
 
 import scala.concurrent.duration._
 
@@ -54,15 +52,11 @@ class HttpResponseSpec extends FunSuite
 
   val responseTimeout = 1000.millis
 
-  var testSubscriber: TestSubscriber[LiveHttpResponse] = _
-
   override protected def afterAll(): Unit = {
     originOneServer.stopAsync().awaitTerminated()
   }
 
   before {
-    testSubscriber = new TestSubscriber[LiveHttpResponse]()
-
     val backendService = BackendService(
       origins = Origins(originOne),
       responseTimeout = responseTimeout)

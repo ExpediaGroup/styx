@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -33,9 +33,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
-import rx.Observable;
 
 import java.util.List;
 
@@ -120,7 +120,7 @@ public class NettyConnectionFactoryTest {
     }
 
     private List<HttpObject> sendRequestAndReceiveResponse(FullHttpRequest request, Channel channel) {
-        return list(channelRequestResponse(channel, request).toBlocking().toIterable());
+        return list(channelRequestResponse(channel, request).toIterable());
     }
 
     private <T> List<T> list(Iterable<T> iterable) {
@@ -128,15 +128,15 @@ public class NettyConnectionFactoryTest {
                 .collect(toList());
     }
 
-    private Observable<HttpObject> channelRequestResponse(Channel channel, FullHttpRequest request) {
-        return Observable.create(subscriber -> {
+    private Flux<HttpObject> channelRequestResponse(Channel channel, FullHttpRequest request) {
+        return Flux.create(sink -> {
             channel.pipeline().addLast(new SimpleChannelInboundHandler<HttpObject>() {
                 @Override
                 protected void channelRead0(ChannelHandlerContext ctx, HttpObject msg) throws Exception {
-                    subscriber.onNext(msg);
+                    sink.next(msg);
 
                     if (msg instanceof LastHttpContent) {
-                        subscriber.onCompleted();
+                        sink.complete();
                     }
                 }
             });

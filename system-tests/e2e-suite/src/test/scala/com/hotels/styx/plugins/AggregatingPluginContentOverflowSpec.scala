@@ -16,6 +16,7 @@
 package com.hotels.styx.plugins
 
 import java.nio.charset.StandardCharsets.UTF_8
+import java.time.Duration
 
 import com.hotels.styx.MockServer.responseSupplier
 import com.hotels.styx.api.HttpRequest.get
@@ -26,11 +27,9 @@ import com.hotels.styx.{MockServer, StyxProxySpec}
 import com.hotels.styx.api.HttpResponseStatus._
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
-import rx.Observable
-import rx.lang.scala.JavaConversions._
 
+import reactor.core.publisher.Flux
 import scala.concurrent.duration._
-import rx.RxReactiveStreams.toPublisher
 
 class AggregatingPluginContentOverflowSpec extends FunSpec
   with StyxProxySpec
@@ -63,16 +62,16 @@ class AggregatingPluginContentOverflowSpec extends FunSpec
 
       mockServer.stub("/body", responseSupplier(
         () => {
-          LiveHttpResponse.response(OK).body(new ByteStream(toPublisher(toJavaObservable(
-                        delay(500.millis,
+          LiveHttpResponse.response(OK).body(new ByteStream(
+                        delay(Duration.ofMillis(500),
                           Seq(
                             buf("a" * 1000),
                             buf("b" * 1000),
                             buf("c" * 1000),
                             buf("d" * 1000),
                             buf("e" * 1000),
-                            buf("f" * 1000))))
-                        .asInstanceOf[Observable[Buffer]]))).build()
+                            buf("f" * 1000)))
+                        )).build()
         }))
 
       val request = get(styxServer.routerURL("/body"))
@@ -91,12 +90,11 @@ class AggregatingPluginContentOverflowSpec extends FunSpec
 
   def buf(string: String): Buffer = new Buffer(string, UTF_8)
 
-  import rx.lang.scala.Observable
-
-  def delay(time: Duration, buffers: Seq[Buffer]) = {
-    Observable.interval(time)
-      .zip(Observable.from(buffers))
-      .map { case (i, buf) => buf }
+  def delay(time: Duration, buffers: Seq[Buffer]): Flux[Buffer] = {
+    val buffy: Array[Buffer] = buffers.toArray
+    val bufferFlux : Flux[Buffer] = Flux.fromArray(buffy)
+    Flux.interval(time)
+      .zipWith(bufferFlux)
+      .map(i => i.getT2)
   }
-
 }
