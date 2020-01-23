@@ -28,6 +28,7 @@ import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.ProviderObjectRecord
 import com.hotels.styx.routing.handlers.StaticResponseHandler
+import com.hotels.styx.server.HttpInterceptorContext
 import io.kotlintest.matchers.boolean.shouldBeFalse
 import io.kotlintest.matchers.boolean.shouldBeTrue
 import io.kotlintest.matchers.numerics.shouldBeGreaterThan
@@ -42,13 +43,15 @@ import kotlin.system.measureTimeMillis
 
 class HealthChecksTest : FeatureSpec({
 
+    val requestContext = HttpInterceptorContext.create()!!
+
     feature("Probe function") {
         val headers = HttpHeaders.Builder().build();
 
         scenario("Returns true when object is responsive") {
             val staticResponse = StaticResponseHandler(200, "Hello", headers)
 
-            urlProbe(get("/healthcheck.txt").build(), 1.seconds)
+            urlProbe(get("/healthcheck.txt").build(), 1.seconds, requestContext)
                     .invoke(staticResponse)
                     .toMono()
                     .block()!!.shouldBeTrue()
@@ -58,7 +61,7 @@ class HealthChecksTest : FeatureSpec({
             val neverRespond = NeverHandler()
 
             val duration = measureTimeMillis {
-                urlProbe(get("/healthcheck.txt").build(), 100.milliseconds)
+                urlProbe(get("/healthcheck.txt").build(), 100.milliseconds, requestContext)
                         .invoke(neverRespond)
                         .toMono()
                         .block()!!.shouldBeFalse()
@@ -70,7 +73,7 @@ class HealthChecksTest : FeatureSpec({
         scenario("Returns false when responds with 4xx error code") {
             val errorHandler = StaticResponseHandler(400, "Hello", headers)
 
-            urlProbe(get("/healthcheck.txt").build(), 100.milliseconds)
+            urlProbe(get("/healthcheck.txt").build(), 100.milliseconds, requestContext)
                     .invoke(errorHandler)
                     .toMono()
                     .block()!!.shouldBeFalse()
@@ -79,7 +82,7 @@ class HealthChecksTest : FeatureSpec({
         scenario("Returns false when responds with 5xx error code") {
             val errorHandler = StaticResponseHandler(500, "Hello", headers)
 
-            urlProbe(get("/healthcheck.txt").build(), 100.milliseconds)
+            urlProbe(get("/healthcheck.txt").build(), 100.milliseconds, requestContext)
                     .invoke(errorHandler)
                     .toMono()
                     .block()!!.shouldBeFalse()
