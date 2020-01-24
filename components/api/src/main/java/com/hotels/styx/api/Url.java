@@ -79,6 +79,15 @@ public final class Url implements Comparable<Url> {
     }
 
     /**
+     * The fragment part of the URL
+     *
+     * @return fragment, if present
+     */
+    public Optional<String> fragment() {
+        return Optional.ofNullable(fragment);
+    }
+
+    /**
      * The authority of the URL, e.g. host, host:port, user@host:port, etc.
      *
      * @return authority if present
