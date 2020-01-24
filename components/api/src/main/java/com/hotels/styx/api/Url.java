@@ -16,7 +16,6 @@
 package com.hotels.styx.api;
 
 import javax.annotation.concurrent.ThreadSafe;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -32,9 +31,7 @@ import java.util.regex.Pattern;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Throwables.propagate;
-import static com.hotels.styx.api.URLEncoder.encodePathSegment;
 import static java.lang.Integer.parseInt;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
@@ -44,8 +41,6 @@ import static java.util.Collections.emptySet;
  */
 @ThreadSafe
 public final class Url implements Comparable<Url> {
-    private static final String PATH_DELIMITER = "/";
-
     private final String scheme;
     private final Optional<Authority> authority;
     private final String path;
@@ -235,14 +230,6 @@ public final class Url implements Comparable<Url> {
      */
     public String encodedUri() {
         return toString();
-    }
-
-    private static CharSequence encodePathElement(String pathElement) {
-        try {
-            return encodePathSegment(pathElement, UTF_8.toString());
-        } catch (UnsupportedEncodingException ignore) {
-            return pathElement;
-        }
     }
 
     @Override
