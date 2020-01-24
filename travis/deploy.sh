@@ -38,8 +38,8 @@ mvn versions:set -DnewVersion=$TRAVIS_TAG
 mvn deploy --settings travis/mvn-settings.xml -B -U -P sonatype-oss-release,linux -DskipTests=true -Dmaven.test.skip=true
 #Deploy to dockerhub
 echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-mvn install -f distribution/pom.xml -B -U -P docker -Dstyxcore.docker.image=dlatorre/styx
-docker push dlatorre/styx
+mvn install -f distribution/pom.xml -B -U -P docker -Dstyxcore.docker.image=hotelsdotcom/styx
+docker push hotelsdotcom/styx
 
 #Prepare macosx bundle for github releases
 mvn install -B -U -P macosx,release -DskipTests=true -Dmaven.test.skip=true -Dgpg.skip=true
