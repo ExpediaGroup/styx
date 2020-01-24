@@ -86,6 +86,7 @@ class ExpiringConnectionSpec extends FunSpec
     Thread.sleep(2000)
 
     val response2 = Mono.from(pooledClient.sendRequest(request)).block()
+
     assertThat(response2.status(), is(OK))
 
     eventually(timeout(2.seconds)) {
