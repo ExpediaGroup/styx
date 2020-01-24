@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.proxyHttpHostHeader
+import com.hotels.styx.support.wait
 import io.kotlintest.Spec
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
@@ -39,10 +40,10 @@ class CompressionSpec : FeatureSpec() {
                         .build();
 
                 client.send(request)
-                        .toMono()
-                        .block()
+                        .wait()!!
                         .let {
-                            it!!.status() shouldBe (OK)
+                            it.status() shouldBe (OK)
+                            it.header("content-encoding").get() shouldBe "gzip"
                             ungzip(it.body()) shouldBe ("Hello from http server!")
                         }
             }
@@ -52,10 +53,10 @@ class CompressionSpec : FeatureSpec() {
                         .build();
 
                 client.send(request)
-                        .toMono()
-                        .block()
+                        .wait()!!
                         .let {
-                            it!!.status() shouldBe (OK)
+                            it.status() shouldBe (OK)
+                            it.header("content-encoding").isPresent shouldBe false
                             it.bodyAs(UTF_8) shouldBe ("Hello from http server!")
                         }
             }
@@ -67,10 +68,10 @@ class CompressionSpec : FeatureSpec() {
                         .build();
 
                 client.send(request)
-                        .toMono()
-                        .block()
+                        .wait()!!
                         .let {
-                            it!!.status() shouldBe (OK)
+                            it.status() shouldBe (OK)
+                            it.header("content-encoding").isPresent shouldBe false
                             it.bodyAs(UTF_8) shouldBe ("Hello from http server!")
                         }
             }
@@ -82,10 +83,10 @@ class CompressionSpec : FeatureSpec() {
                         .build();
 
                 client.send(request)
-                        .toMono()
-                        .block()
+                        .wait()!!
                         .let {
-                            it!!.status() shouldBe (OK)
+                            it.status() shouldBe (OK)
+                            it.header("content-encoding").get() shouldBe "gzip"
                             it.bodyAs(UTF_8) shouldBe ("Hello from http server!")
                         }
             }
@@ -99,10 +100,10 @@ class CompressionSpec : FeatureSpec() {
                         .build();
 
                 client.send(request)
-                        .toMono()
-                        .block()
+                        .wait()!!
                         .let {
-                            it!!.status() shouldBe (OK)
+                            it.status() shouldBe (OK)
+                            it.header("content-encoding").isPresent shouldBe false
                             it.bodyAs(UTF_8) shouldBe ("Hello from http server!")
                         }
             }
