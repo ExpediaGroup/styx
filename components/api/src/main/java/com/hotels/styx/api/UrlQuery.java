@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static com.google.common.base.Objects.toStringHelper;
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
@@ -33,7 +33,7 @@ import static java.util.stream.StreamSupport.stream;
 /**
  * Query part of a URL.
  */
-final class UrlQuery {
+public final class UrlQuery {
     private final List<Parameter> parameters;
     private final String encodedQuery;
 
@@ -62,7 +62,7 @@ final class UrlQuery {
                 .collect(toList());
     }
 
-    List<Parameter> parameters() {
+    public List<Parameter> parameters() {
         return parameters;
     }
 
@@ -71,11 +71,11 @@ final class UrlQuery {
      *
      * @return the names of all query parameters.
      */
-    Iterable<String> parameterNames() {
+    public Iterable<String> parameterNames() {
         return parameters().stream().map(Parameter::key).distinct().collect(toList());
     }
 
-    String encodedQuery() {
+    public String encodedQuery() {
         return encodedQuery;
     }
 
@@ -108,7 +108,7 @@ final class UrlQuery {
                 .toString();
     }
 
-    static class Parameter {
+    public static class Parameter {
         private final String key;
         private final String value;
 
