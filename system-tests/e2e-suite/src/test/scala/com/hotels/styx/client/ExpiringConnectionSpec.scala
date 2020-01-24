@@ -54,7 +54,7 @@ class ExpiringConnectionSpec extends FunSpec
 
     styxServer.setBackends(
       "/app1" -> HttpBackend("appOne", Origins(mockServer), responseTimeout = 5.seconds,
-        connectionPoolConfig = ConnectionPoolSettings(connectionExpirationSeconds = 1L))
+        connectionPoolConfig = ConnectionPoolSettings(connectionExpirationSeconds = 2L))
     )
 
     val backendService = new BackendService.Builder()
@@ -83,7 +83,7 @@ class ExpiringConnectionSpec extends FunSpec
       styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.connections-closed").get should be(0)
     }
 
-    Thread.sleep(1000)
+    Thread.sleep(2000)
 
     val response2 = Mono.from(pooledClient.sendRequest(request)).block()
     assertThat(response2.status(), is(OK))
