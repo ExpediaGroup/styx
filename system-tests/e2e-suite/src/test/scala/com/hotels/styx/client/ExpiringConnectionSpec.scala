@@ -25,7 +25,7 @@ import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
 import com.hotels.styx.support.backends.FakeHttpServer
-import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins}
+import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.server.UrlMatchingStrategies._
 import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
 import org.hamcrest.MatcherAssert._
@@ -40,6 +40,19 @@ class ExpiringConnectionSpec extends FunSpec
   with DefaultStyxConfiguration
   with StyxProxySpec
   with Eventually {
+
+  override lazy val styxConfig = StyxConfig(
+    yamlText =
+      """
+        |request-logging:
+        |  inbound:
+        |    enabled: True
+        |    longFormat: True
+        |  outbound:
+        |    enabled: True
+        |    longFormat: True
+        |""".stripMargin
+  )
 
   val mockServer = FakeHttpServer.HttpStartupConfig()
     .start()
