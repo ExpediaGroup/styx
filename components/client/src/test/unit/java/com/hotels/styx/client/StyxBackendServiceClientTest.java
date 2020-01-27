@@ -18,7 +18,6 @@ package com.hotels.styx.client;
 import com.google.common.net.HostAndPort;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
@@ -61,6 +60,7 @@ import static com.hotels.styx.api.RequestCookie.requestCookie;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
 import static com.hotels.styx.api.extension.service.StickySessionConfig.stickySessionDisabled;
+import static com.hotels.styx.support.Support.requestContext;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -109,7 +109,7 @@ public class StyxBackendServiceClientTest {
                         ))
                 .build();
 
-        LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ, mock(HttpInterceptor.Context.class))).block();
+        LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ, requestContext())).block();
 
         assertThat(response.status(), is(OK));
         verify(hostClient).sendRequest(eq(SOME_REQ));
@@ -129,7 +129,7 @@ public class StyxBackendServiceClientTest {
                 .retryPolicy(retryPolicy)
                 .build();
 
-        LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ, mock(HttpInterceptor.Context.class))).block();
+        LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ, requestContext())).block();
 
         ArgumentCaptor<RetryPolicy.Context> retryContext = ArgumentCaptor.forClass(RetryPolicy.Context.class);
         ArgumentCaptor<LoadBalancer> lbPreference = ArgumentCaptor.forClass(LoadBalancer.class);
@@ -168,7 +168,7 @@ public class StyxBackendServiceClientTest {
                 .retryPolicy(retryPolicy)
                 .build();
 
-        LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ, mock(HttpInterceptor.Context.class))).block();
+        LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ, requestContext())).block();
 
         ArgumentCaptor<RetryPolicy.Context> retryContext = ArgumentCaptor.forClass(RetryPolicy.Context.class);
         ArgumentCaptor<LoadBalancer> lbPreference = ArgumentCaptor.forClass(LoadBalancer.class);
@@ -209,7 +209,7 @@ public class StyxBackendServiceClientTest {
                 .retryPolicy(mockRetryPolicy(true, false))
                 .build();
 
-        StepVerifier.create(styxHttpClient.sendRequest(SOME_REQ, mock(HttpInterceptor.Context.class)))
+        StepVerifier.create(styxHttpClient.sendRequest(SOME_REQ, requestContext()))
                 .verifyError(OriginUnreachableException.class);
 
         InOrder ordered = inOrder(firstClient, secondClient, thirdClient);
@@ -238,7 +238,7 @@ public class StyxBackendServiceClientTest {
                         mockRetryPolicy(true, true, true, true))
                 .build();
 
-        StepVerifier.create(styxHttpClient.sendRequest(SOME_REQ, mock(HttpInterceptor.Context.class)))
+        StepVerifier.create(styxHttpClient.sendRequest(SOME_REQ, requestContext()))
                 .verifyError(NoAvailableHostsException.class);
 
         InOrder ordered = inOrder(firstClient, secondClient, thirdClient, fourthClient);
@@ -259,7 +259,7 @@ public class StyxBackendServiceClientTest {
                         mockLoadBalancer(Optional.of(remoteHost(SOME_ORIGIN, toHandler(hostClient), hostClient))))
                 .build();
 
-        LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ, mock(HttpInterceptor.Context.class))).block();
+        LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ, requestContext())).block();
 
         assertThat(response.status(), is(BAD_REQUEST));
         verify(hostClient).sendRequest(eq(SOME_REQ));
@@ -277,7 +277,7 @@ public class StyxBackendServiceClientTest {
                 )
                 .build();
 
-        LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ, mock(HttpInterceptor.Context.class))).block();
+        LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ, requestContext())).block();
 
         assertThat(response.status(), is(UNAUTHORIZED));
         verify(hostClient).sendRequest(eq(SOME_REQ));
@@ -295,7 +295,7 @@ public class StyxBackendServiceClientTest {
                 )
                 .build();
 
-        LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ, mock(HttpInterceptor.Context.class))).block();
+        LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ, requestContext())).block();
 
         assertThat(response.status(), is(INTERNAL_SERVER_ERROR));
         verify(hostClient).sendRequest(eq(SOME_REQ));
@@ -313,7 +313,7 @@ public class StyxBackendServiceClientTest {
                 )
                 .build();
 
-        LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ, mock(HttpInterceptor.Context.class))).block();
+        LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ, requestContext())).block();
         assertThat(response.status(), is(NOT_IMPLEMENTED));
         verify(hostClient).sendRequest(SOME_REQ);
         assertThat(metricRegistry.counter("origins.response.status.501").getCount(), is(1L));
@@ -334,7 +334,7 @@ public class StyxBackendServiceClientTest {
                 )
                 .build();
 
-        LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ, mock(HttpInterceptor.Context.class))).block();
+        LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ, requestContext())).block();
 
         assertThat(response.status(), is(OK));
 
@@ -356,7 +356,7 @@ public class StyxBackendServiceClientTest {
                 .metricsRegistry(metricRegistry)
                 .build();
 
-        StepVerifier.create(styxHttpClient.sendRequest(SOME_REQ, mock(HttpInterceptor.Context.class)))
+        StepVerifier.create(styxHttpClient.sendRequest(SOME_REQ, requestContext()))
                 .thenCancel()
                 .verify();
 
@@ -386,7 +386,7 @@ public class StyxBackendServiceClientTest {
                 get("/foo")
                         .cookies(requestCookie("styx_origin_" + Id.GENERIC_APP, "Origin-Y"))
                         .build(),
-                mock(HttpInterceptor.Context.class)))
+                requestContext()))
                 .block();
 
         assertThat(response.status(), is(OK));
@@ -413,7 +413,7 @@ public class StyxBackendServiceClientTest {
                 get("/foo")
                         .cookies(requestCookie("restrictedOrigin", "Origin-Y"))
                         .build(),
-                mock(HttpInterceptor.Context.class))).block();
+                requestContext())).block();
 
         assertThat(response.status(), is(OK));
 
@@ -441,7 +441,7 @@ public class StyxBackendServiceClientTest {
                                 requestCookie("styx_origin_" + Id.GENERIC_APP, "Origin-X")
                         )
                         .build(),
-                mock(HttpInterceptor.Context.class)))
+                requestContext()))
                 .block();
 
         assertThat(response.status(), is(OK));

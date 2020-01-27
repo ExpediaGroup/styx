@@ -21,7 +21,6 @@ import com.hotels.styx.api.HttpVersion;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.common.format.HttpMessageFormatter;
-import com.hotels.styx.server.HttpInterceptorContext;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -32,14 +31,13 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import reactor.core.publisher.Mono;
 
-import java.util.concurrent.Executors;
-
 import static ch.qos.logback.classic.Level.INFO;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.RequestCookie.requestCookie;
 import static com.hotels.styx.api.ResponseCookie.responseCookie;
+import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -142,7 +140,7 @@ public class HttpMessageLoggingInterceptorTest {
 
             @Override
             public HttpInterceptor.Context context() {
-                return new HttpInterceptorContext(true, null, Executors.newSingleThreadExecutor());
+                return requestContext(true);
             }
         };
     }

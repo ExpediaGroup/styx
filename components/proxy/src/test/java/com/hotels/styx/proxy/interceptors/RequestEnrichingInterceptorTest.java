@@ -21,12 +21,7 @@ import com.hotels.styx.api.HttpInterceptor.Chain;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.client.StyxHeaderConfig;
-import com.hotels.styx.server.HttpInterceptorContext;
 import org.junit.jupiter.api.Test;
-
-import java.net.InetSocketAddress;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 import static com.google.common.net.HttpHeaders.X_FORWARDED_FOR;
 import static com.google.common.net.HttpHeaders.X_FORWARDED_PROTO;
@@ -34,6 +29,7 @@ import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.client.StyxHeaderConfig.REQUEST_ID_DEFAULT;
 import static com.hotels.styx.proxy.interceptors.RequestRecordingChain.requestRecordingChain;
+import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -103,7 +99,6 @@ public class RequestEnrichingInterceptorTest {
 
     private static class TestChain implements Chain {
         private final boolean secure;
-        private final Executor executor = Executors.newSingleThreadExecutor();
         TestChain(boolean secure) {
             this.secure = secure;
         }
@@ -115,7 +110,7 @@ public class RequestEnrichingInterceptorTest {
 
         @Override
         public HttpInterceptor.Context context() {
-            return new HttpInterceptorContext(secure, InetSocketAddress.createUnresolved("127.0.0.1", 80), executor);
+            return requestContext(secure);
         }
     }
 }

@@ -17,7 +17,6 @@ package com.hotels.styx.proxy;
 
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
-import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
@@ -49,6 +48,7 @@ import static com.hotels.styx.api.extension.service.BackendService.newBackendSer
 import static com.hotels.styx.api.extension.service.StickySessionConfig.newStickySessionConfigBuilder;
 import static com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder;
 import static com.hotels.styx.client.connectionpool.ConnectionPools.simplePoolFactory;
+import static com.hotels.styx.support.Support.requestContext;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -62,7 +62,6 @@ public class StyxBackendServiceClientFactoryTest {
     private BackendService backendService;
     private String STICKY_COOKIE = "styx_origin_" + GENERIC_APP;
     private String ORIGINS_RESTRICTION_COOKIE = "styx-origins-restriction";
-    private HttpInterceptor.Context context = mock(HttpInterceptor.Context.class);
 
     @BeforeEach
     public void setUp() {
@@ -131,9 +130,9 @@ public class StyxBackendServiceClientFactoryTest {
         LiveHttpRequest requestx = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("x").toString())).build();
         LiveHttpRequest requesty = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("y").toString())).build();
 
-        LiveHttpResponse responsez = Mono.from(styxBackendServiceClient.sendRequest(requestz, context)).block();
-        LiveHttpResponse responsex = Mono.from(styxBackendServiceClient.sendRequest(requestx, context)).block();
-        LiveHttpResponse responsey = Mono.from(styxBackendServiceClient.sendRequest(requesty, context)).block();
+        LiveHttpResponse responsez = Mono.from(styxBackendServiceClient.sendRequest(requestz, requestContext())).block();
+        LiveHttpResponse responsex = Mono.from(styxBackendServiceClient.sendRequest(requestx, requestContext())).block();
+        LiveHttpResponse responsey = Mono.from(styxBackendServiceClient.sendRequest(requesty, requestContext())).block();
 
         assertThat(responsex.header("X-Origin-Id").get(), is("x"));
         assertThat(responsey.header("X-Origin-Id").get(), is("y"));
@@ -176,9 +175,9 @@ public class StyxBackendServiceClientFactoryTest {
         LiveHttpRequest requestx = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("x").toString())).build();
         LiveHttpRequest requesty = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("y").toString())).build();
 
-        LiveHttpResponse responsez = Mono.from(styxBackendServiceClient.sendRequest(requestz, context)).block();
-        LiveHttpResponse responsex = Mono.from(styxBackendServiceClient.sendRequest(requestx, context)).block();
-        LiveHttpResponse responsey = Mono.from(styxBackendServiceClient.sendRequest(requesty, context)).block();
+        LiveHttpResponse responsez = Mono.from(styxBackendServiceClient.sendRequest(requestz, requestContext())).block();
+        LiveHttpResponse responsex = Mono.from(styxBackendServiceClient.sendRequest(requestx, requestContext())).block();
+        LiveHttpResponse responsey = Mono.from(styxBackendServiceClient.sendRequest(requesty, requestContext())).block();
 
         assertThat(responsex.header("X-Origin-Id").get(), is("x"));
         assertThat(responsey.header("X-Origin-Id").get(), is("y"));

@@ -24,6 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+import static java.net.InetSocketAddress.createUnresolved;
+
 public final class Support {
 
     private Support() {
@@ -32,7 +34,11 @@ public final class Support {
     private static final Executor GLOBAL_EXECUTOR = Executors.newSingleThreadExecutor();
 
     public static HttpInterceptor.Context requestContext() {
-        return new HttpInterceptorContext(false, null, GLOBAL_EXECUTOR);
+        return new HttpInterceptorContext(false, createUnresolved("127.0.0.1", 80), GLOBAL_EXECUTOR);
+    }
+
+    public static HttpInterceptor.Context requestContext(boolean secure) {
+        return new HttpInterceptorContext(secure, createUnresolved("127.0.0.1", 80), GLOBAL_EXECUTOR);
     }
 
     private static final class HttpInterceptorContext implements HttpInterceptor.Context {
