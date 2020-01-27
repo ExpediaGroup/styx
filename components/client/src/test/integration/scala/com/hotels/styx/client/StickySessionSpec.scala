@@ -32,12 +32,12 @@ import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
-import com.hotels.styx.server.HttpInterceptorContext
 import com.hotels.styx.support.server.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{BeforeAndAfter, FunSuite, Matchers}
 import reactor.core.publisher.Mono
+import com.hotels.styx.support.Support.requestContext
 
 import scala.collection.JavaConverters._
 
@@ -57,8 +57,6 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
   val StickySessionDisabled = new StickySessionConfig.Builder()
     .enabled(false)
     .build()
-
-  val context = HttpInterceptorContext.create()
 
   before {
     server1.start
@@ -111,7 +109,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
     val request: LiveHttpRequest = LiveHttpRequest.get("/")
       .build
 
-    val response = Mono.from(client.sendRequest(request, context)).block()
+    val response = Mono.from(client.sendRequest(request, requestContext())).block()
     response.status() should be(OK)
     val cookie = response.cookie("styx_origin_app").get()
     cookie.value() should fullyMatch regex "app-0[12]"
@@ -131,7 +129,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
     val request: LiveHttpRequest = get("/")
       .build
 
-    val response = Mono.from(client.sendRequest(request, context)).block()
+    val response = Mono.from(client.sendRequest(request, requestContext())).block()
     response.status() should be(OK)
     response.cookies().asScala should have size (0)
   }
@@ -145,9 +143,9 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
       .cookies(requestCookie("styx_origin_app", "app-02"))
       .build
 
-    val response1 = Mono.from(client.sendRequest(request, context)).block()
-    val response2 = Mono.from(client.sendRequest(request, context)).block()
-    val response3 = Mono.from(client.sendRequest(request, context)).block()
+    val response1 = Mono.from(client.sendRequest(request, requestContext())).block()
+    val response2 = Mono.from(client.sendRequest(request, requestContext())).block()
+    val response3 = Mono.from(client.sendRequest(request, requestContext())).block()
 
     response1.header("Stub-Origin-Info").get() should be(s"APP-localhost:${server2.port}")
     response2.header("Stub-Origin-Info").get() should be(s"APP-localhost:${server2.port}")
@@ -167,9 +165,9 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
       .build()
 
 
-    val response1 = Mono.from(client.sendRequest(request, context)).block()
-    val response2 = Mono.from(client.sendRequest(request, context)).block()
-    val response3 = Mono.from(client.sendRequest(request, context)).block()
+    val response1 = Mono.from(client.sendRequest(request, requestContext())).block()
+    val response2 = Mono.from(client.sendRequest(request, requestContext())).block()
+    val response3 = Mono.from(client.sendRequest(request, requestContext())).block()
 
     response1.header("Stub-Origin-Info").get() should be(s"APP-localhost:${server2.port}")
     response2.header("Stub-Origin-Info").get() should be(s"APP-localhost:${server2.port}")
@@ -185,7 +183,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
       .cookies(requestCookie("styx_origin_app", "h3"))
       .build
 
-    val response = Mono.from(client.sendRequest(request, context)).block()
+    val response = Mono.from(client.sendRequest(request, requestContext())).block()
 
     response.status() should be(OK)
     response.cookies().asScala should have size (1)

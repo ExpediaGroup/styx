@@ -172,7 +172,13 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
                 .build();
     }
 
-    private Flux<LiveHttpResponse> retry(LiveHttpRequest request, RetryPolicyContext retryContext, List<RemoteHost> previousOrigins, int attempt, Throwable cause, HttpInterceptor.Context context) {
+    private Flux<LiveHttpResponse> retry(
+            LiveHttpRequest request,
+            RetryPolicyContext retryContext,
+            List<RemoteHost> previousOrigins,
+            int attempt,
+            Throwable cause,
+            HttpInterceptor.Context context) {
         LoadBalancer.Preferences lbContext = new LoadBalancer.Preferences() {
             @Override
             public Optional<String> preferredOrigins() {

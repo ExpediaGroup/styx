@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@ package com.hotels.styx.admin.handlers;
 
 import com.hotels.styx.StartupConfig;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.server.HttpInterceptorContext;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import static com.hotels.styx.StartupConfig.newStartupConfigBuilder;
+import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
@@ -40,7 +40,7 @@ public class StartupConfigHandlerTest {
 
         StartupConfigHandler handler = new StartupConfigHandler(startupConfig);
 
-        HttpResponse response = Mono.from(handler.handle(get("/").build(), HttpInterceptorContext.create())).block();
+        HttpResponse response = Mono.from(handler.handle(get("/").build(), requestContext())).block();
 
         assertThat(response.status(), is(OK));
         assertThat(response.bodyAs(UTF_8), matchesRegex("<html><body>" +

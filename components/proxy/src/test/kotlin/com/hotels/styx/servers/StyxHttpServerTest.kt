@@ -34,12 +34,12 @@ import com.hotels.styx.client.ConnectionSettings
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory
 import com.hotels.styx.routing.RoutingObject
-import com.hotels.styx.routing.RoutingObjectFactoryContext
-import com.hotels.styx.routing.configBlock
+import com.hotels.styx.RoutingObjectFactoryContext
+import com.hotels.styx.configBlock
 import com.hotels.styx.routing.db.StyxObjectStore
-import com.hotels.styx.routing.ref
-import com.hotels.styx.routing.routeLookup
-import com.hotels.styx.routing.wait
+import com.hotels.styx.ref
+import com.hotels.styx.routeLookup
+import com.hotels.styx.wait
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import io.kotlintest.eventually
 import io.kotlintest.matchers.boolean.shouldBeTrue

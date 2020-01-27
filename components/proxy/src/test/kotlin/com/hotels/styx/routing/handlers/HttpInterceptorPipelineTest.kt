@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,13 +18,13 @@ package com.hotels.styx.routing.handlers
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin
-import com.hotels.styx.routing.RoutingObjectFactoryContext
+import com.hotels.styx.RoutingObjectFactoryContext
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.interceptors.RewriteInterceptor
-import com.hotels.styx.routing.mockObject
-import com.hotels.styx.routing.ref
-import com.hotels.styx.routing.routeLookup
-import com.hotels.styx.routing.routingObjectDef
+import com.hotels.styx.mockObject
+import com.hotels.styx.ref
+import com.hotels.styx.routeLookup
+import com.hotels.styx.routingObjectDef
 import com.hotels.styx.wait
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow

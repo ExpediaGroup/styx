@@ -21,16 +21,16 @@ import com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse.response
-import com.hotels.styx.routing.RoutingObjectFactoryContext
+import com.hotels.styx.RoutingObjectFactoryContext
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.routing.config.RoutingObjectFactory
-import com.hotels.styx.routing.handle
-import com.hotels.styx.routing.mockObject
-import com.hotels.styx.routing.mockObjectFactory
-import com.hotels.styx.routing.ref
-import com.hotels.styx.routing.routeLookup
-import com.hotels.styx.routing.routingObjectDef
-import com.hotels.styx.server.HttpInterceptorContext
+import com.hotels.styx.handle
+import com.hotels.styx.mockObject
+import com.hotels.styx.mockObjectFactory
+import com.hotels.styx.ref
+import com.hotels.styx.requestContext
+import com.hotels.styx.routeLookup
+import com.hotels.styx.routingObjectDef
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import io.kotlintest.specs.FeatureSpec
@@ -38,12 +38,9 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import reactor.core.publisher.toMono
-import java.util.concurrent.Executors
 
 
 class ConditionRouterConfigTest : FeatureSpec({
-    fun httpsContext() = HttpInterceptorContext(true, null, Executors.newSingleThreadExecutor())
-    fun httpContext() =  HttpInterceptorContext.create()
     val request = LiveHttpRequest.get("/foo").build()
 
     val context = RoutingObjectFactoryContext(
@@ -78,7 +75,7 @@ class ConditionRouterConfigTest : FeatureSpec({
         scenario("Builds an instance with fallback handler") {
             val router = ConditionRouter.Factory().build(listOf(), context.get(), config)
 
-            router.handle(request, httpsContext())
+            router.handle(request, requestContext(secure = true))
                     .toMono()
                     .block()!!
                     .status() shouldBe (OK)
@@ -87,7 +84,7 @@ class ConditionRouterConfigTest : FeatureSpec({
         scenario("Builds condition router instance routes") {
             val router = ConditionRouter.Factory().build(listOf(), context.get(), config)
 
-            router.handle(request, httpContext())
+            router.handle(request, requestContext())
                     .toMono()
                     .block()!!
                     .status()
@@ -106,7 +103,7 @@ class ConditionRouterConfigTest : FeatureSpec({
                 fallback: fallbackHandler
             """.trimIndent()))
 
-            router.handle(request, httpContext())
+            router.handle(request, requestContext())
                     .toMono()
                     .block()!!
                     .header("source").get() shouldBe ("fallback")
@@ -124,7 +121,7 @@ class ConditionRouterConfigTest : FeatureSpec({
                 """.trimIndent())
             )
 
-            router.handle(request, httpsContext())
+            router.handle(request, requestContext(secure = true))
                     .toMono()
                     .block()!!
                     .header("source").get() shouldBe ("secure")
@@ -249,7 +246,7 @@ class ConditionRouterConfigTest : FeatureSpec({
                           content: "secure"
                 """.trimIndent()))
 
-            router.handle(request, httpContext())
+            router.handle(request, requestContext())
                     .toMono()
                     .block()!!
                     .status() shouldBe (BAD_GATEWAY)

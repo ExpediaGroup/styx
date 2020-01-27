@@ -27,7 +27,7 @@ import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
-import com.hotels.styx.server.HttpInterceptorContext
+import com.hotels.styx.support.Support.requestContext
 import com.hotels.styx.server.netty.connectors.HttpPipelineHandler
 import com.hotels.styx.support.NettyOrigins
 import com.hotels.styx.support.configuration.{BackendService, HttpBackend, Origins}
@@ -57,7 +57,6 @@ class OriginClosesConnectionSpec extends FunSuite
   var loggingSupport: LoggingTestSupport = _
   val (originOne, originOneServer) = originAndCustomResponseWebServer("NettyOrigin")
   val originHost: String = originOne.hostAndPortString()
-  val context = HttpInterceptorContext.create()
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -120,7 +119,7 @@ class OriginClosesConnectionSpec extends FunSuite
       get("/foo/3")
         .addHeader(HOST, originHost)
         .build()
-        .stream, context)
+        .stream, requestContext())
 
     val response = Mono.from(clientResponse).block()
 

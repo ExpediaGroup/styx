@@ -25,6 +25,7 @@ import java.util.concurrent.Executors;
 class MockContext implements HttpInterceptor.Context {
     static final HttpInterceptor.Context MOCK_CONTEXT = new MockContext();
     final Executor executor = Executors.newSingleThreadExecutor();
+
     @Override
     public void add(String key, Object value) {
 

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,13 +20,13 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.server.HttpInterceptorContext;
 import com.hotels.styx.server.HttpRouter;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
+import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
@@ -49,7 +49,7 @@ public class RouteHandlerAdapterTest {
         HttpRouter router = mock(HttpRouter.class);
         when(router.route(any(LiveHttpRequest.class), any(HttpInterceptor.Context.class))).thenReturn(Optional.of(pipeline));
 
-        LiveHttpResponse response = Mono.from(new RouteHandlerAdapter(router).handle(request, HttpInterceptorContext.create())).block();
+        LiveHttpResponse response = Mono.from(new RouteHandlerAdapter(router).handle(request, requestContext())).block();
 
         assertThat(response.status(), is(OK));
     }

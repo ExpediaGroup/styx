@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package com.hotels.styx.routing.handlers
 import com.hotels.styx.api.HttpResponseStatus.CREATED
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
-import com.hotels.styx.routing.RoutingObjectFactoryContext
-import com.hotels.styx.routing.routingObjectDef
-import com.hotels.styx.server.HttpInterceptorContext
+import com.hotels.styx.RoutingObjectFactoryContext
+import com.hotels.styx.requestContext
+import com.hotels.styx.routingObjectDef
 import com.hotels.styx.wait
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
@@ -42,7 +42,7 @@ class StaticResponseHandlerTest : StringSpec({
     "Builds static response handler." {
         val handler = StaticResponseHandler.Factory().build(listOf(), context, config)
 
-        handler.handle(LiveHttpRequest.get("/foo").build(), HttpInterceptorContext.create())
+        handler.handle(LiveHttpRequest.get("/foo").build(), requestContext())
                 .toMono()
                 .block()!!
                 .status() shouldBe (CREATED)
@@ -52,7 +52,7 @@ class StaticResponseHandlerTest : StringSpec({
         val handler = StaticResponseHandler(200, null, null)
 
         val response = handler
-                .handle(LiveHttpRequest.get("/foo").build(), HttpInterceptorContext.create())
+                .handle(LiveHttpRequest.get("/foo").build(), requestContext())
                 .wait()!!
 
         response.status() shouldBe (OK)

@@ -22,10 +22,10 @@ import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.client.BackendServiceClient
 import com.hotels.styx.proxy.BackendServiceClientFactory
-import com.hotels.styx.routing.RoutingObjectFactoryContext
-import com.hotels.styx.routing.routeLookup
-import com.hotels.styx.routing.routingObjectDef
-import com.hotels.styx.server.HttpInterceptorContext
+import com.hotels.styx.RoutingObjectFactoryContext
+import com.hotels.styx.requestContext
+import com.hotels.styx.routeLookup
+import com.hotels.styx.routingObjectDef
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import io.kotlintest.specs.StringSpec
@@ -58,7 +58,7 @@ class ProxyToBackendTest : StringSpec({
     "builds ProxyToBackend handler" {
         val handler = ProxyToBackend.Factory.build(listOf(), context, config, clientFactory());
 
-        handler.handle(LiveHttpRequest.get("/foo").build(), HttpInterceptorContext.create())
+        handler.handle(LiveHttpRequest.get("/foo").build(), requestContext())
                 .toMono()
                 .block()!!
                 .status() shouldBe (OK)

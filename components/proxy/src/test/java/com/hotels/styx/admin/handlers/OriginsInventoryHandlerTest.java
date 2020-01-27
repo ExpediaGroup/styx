@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.OriginsSnapshot;
 import com.hotels.styx.api.extension.RemoteHost;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetricSupplier;
-import com.hotels.styx.server.HttpInterceptorContext;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
@@ -37,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
@@ -67,7 +67,7 @@ public class OriginsInventoryHandlerTest {
 
         eventBus.post(new OriginsSnapshot(APP_ID, pool(activeOrigins), pool(inactiveOrigins), pool(disabledOrigins)));
 
-        HttpResponse response = Mono.from(handler.handle(get("/").build(), HttpInterceptorContext.create())).block();
+        HttpResponse response = Mono.from(handler.handle(get("/").build(), requestContext())).block();
         assertThat(response.bodyAs(UTF_8).split("\n").length, is(1));
 
         Map<Id, OriginsSnapshot> output = deserialiseJson(response.bodyAs(UTF_8));
@@ -91,7 +91,7 @@ public class OriginsInventoryHandlerTest {
 
         eventBus.post(new OriginsSnapshot(APP_ID, pool(emptySet()), pool(emptySet()), pool(disabledOrigins)));
 
-        HttpResponse response = Mono.from(handler.handle(get("/?pretty=1").build(), HttpInterceptorContext.create())).block();
+        HttpResponse response = Mono.from(handler.handle(get("/?pretty=1").build(), requestContext())).block();
         assertThat(body(response).replace("\r\n", "\n"),
                 matchesRegex("\\{\n" +
                         "  \"" + APP_ID + "\" : \\{\n" +
@@ -113,7 +113,7 @@ public class OriginsInventoryHandlerTest {
     public void returnsEmptyObjectWhenNoOrigins() {
         OriginsInventoryHandler handler = new OriginsInventoryHandler(new EventBus());
 
-        HttpResponse response = Mono.from(handler.handle(get("/").build(), HttpInterceptorContext.create())).block();
+        HttpResponse response = Mono.from(handler.handle(get("/").build(), requestContext())).block();
 
         assertThat(response.bodyAs(UTF_8), is("{}"));
     }

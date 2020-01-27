@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hotels.styx.routing
 import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.LiveHttpResponse
+import com.hotels.styx.handle
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
 import io.mockk.every

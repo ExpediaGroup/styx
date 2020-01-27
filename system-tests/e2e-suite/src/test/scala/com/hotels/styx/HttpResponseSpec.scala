@@ -37,7 +37,7 @@ import io.netty.handler.codec.http.HttpVersion._
 import io.netty.handler.codec.http._
 import org.scalatest._
 import reactor.core.publisher.Mono
-
+import com.hotels.styx.support.Support.requestContext
 import scala.concurrent.duration._
 
 class HttpResponseSpec extends FunSuite
@@ -52,8 +52,6 @@ class HttpResponseSpec extends FunSuite
   var client: StyxBackendServiceClient = _
 
   val responseTimeout = 1000.millis
-
-  val context = HttpInterceptorContext.create()
 
   override protected def afterAll(): Unit = {
     originOneServer.stopAsync().awaitTerminated()
@@ -79,7 +77,7 @@ class HttpResponseSpec extends FunSuite
   test("Determines response content length from server closing the connection.") {
     originRespondingWith(response200OkFollowedFollowedByServerConnectionClose("Test message body."))
 
-    val response = Mono.from(client.sendRequest(get("/foo/3").build(), context))
+    val response = Mono.from(client.sendRequest(get("/foo/3").build(), requestContext()))
       .flatMap(live => Mono.from(live.aggregate(10000)))
       .block()
 

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,12 +20,12 @@ import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.WebServiceHandler;
-import com.hotels.styx.server.HttpInterceptorContext;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -49,7 +49,7 @@ public class HttpAggregatorTest {
                         .handle(LiveHttpRequest.post("/")
                                         .body(ByteStream.from("ABCDEF", UTF_8))
                                         .build(),
-                                HttpInterceptorContext.create()))
+                                requestContext()))
                 .block();
 
         assertThat(result.get(), is("ABCDEF"));

@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
@@ -161,7 +162,7 @@ public class StandardHttpPipelineTest {
 
         StandardHttpPipeline pipeline = new StandardHttpPipeline(handler);
 
-        Eventual<LiveHttpResponse> responseObservable = pipeline.handle(get("/").build(), HttpInterceptorContext.create());
+        Eventual<LiveHttpResponse> responseObservable = pipeline.handle(get("/").build(), requestContext());
         LiveHttpResponse response = Mono.from(responseObservable).block();
         assertThat(response.status(), is(OK));
 
@@ -177,7 +178,7 @@ public class StandardHttpPipelineTest {
         List<HttpInterceptor> interceptors = singletonList(interceptor);
         StandardHttpPipeline pipeline = new StandardHttpPipeline(interceptors, handler, RequestTracker.NO_OP);
 
-        Eventual<LiveHttpResponse> responseObservable = pipeline.handle(get("/").build(), HttpInterceptorContext.create());
+        Eventual<LiveHttpResponse> responseObservable = pipeline.handle(get("/").build(), requestContext());
         assertThrows(IllegalStateException.class,
                 () -> Mono.from(responseObservable).block());
     }

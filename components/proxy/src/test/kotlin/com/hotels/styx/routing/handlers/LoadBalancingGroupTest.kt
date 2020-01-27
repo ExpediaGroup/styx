@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,12 +22,12 @@ import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.configuration.ObjectStore
 import com.hotels.styx.api.exceptions.NoAvailableHostsException
 import com.hotels.styx.lbGroupTag
-import com.hotels.styx.routing.RoutingObjectFactoryContext
+import com.hotels.styx.RoutingObjectFactoryContext
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
-import com.hotels.styx.routing.handle
-import com.hotels.styx.routing.routingObjectDef
-import com.hotels.styx.server.HttpInterceptorContext
+import com.hotels.styx.handle
+import com.hotels.styx.requestContext
+import com.hotels.styx.routingObjectDef
 import io.kotlintest.IsolationMode
 import io.kotlintest.eventually
 import io.kotlintest.matchers.numerics.shouldBeGreaterThan
@@ -215,7 +215,7 @@ internal fun Publisher<ObjectStore<RoutingObjectRecord>>.waitUntil(duration: Dur
         .blockFirst(duration)
 
 
-internal fun HttpHandler.call(request: HttpRequest, maxContentBytes: Int = 100000) = this.handle(request.stream(), HttpInterceptorContext.create())
+internal fun HttpHandler.call(request: HttpRequest, maxContentBytes: Int = 100000) = this.handle(request.stream(), requestContext())
         .flatMap { it.aggregate(maxContentBytes) }
         .toMono()
         .block()

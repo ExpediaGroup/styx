@@ -18,7 +18,7 @@ package com.hotels.styx.services
 import com.hotels.styx.STATE_ACTIVE
 import com.hotels.styx.STATE_UNREACHABLE
 import com.hotels.styx.lbGroupTag
-import com.hotels.styx.routing.RoutingObjectFactoryContext
+import com.hotels.styx.RoutingObjectFactoryContext
 import com.hotels.styx.routing.config.Builtins.INTERCEPTOR_PIPELINE
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.ProviderObjectRecord

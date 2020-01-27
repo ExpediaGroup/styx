@@ -47,8 +47,12 @@ public final class HttpInterceptorContext implements HttpInterceptor.Context {
         this.executor = executor;
     }
 
-    // TODO deprecate
+    /**
+     * @deprecated use the constructor instead.
+     * @return
+     */
     @VisibleForTesting
+    @Deprecated
     public static HttpInterceptor.Context create() {
         return new HttpInterceptorContext(false, null, Executors.newSingleThreadExecutor());
     }

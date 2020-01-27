@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.api.LiveHttpResponse.response
-import com.hotels.styx.routing.routingObjectDef
+import com.hotels.styx.routingObjectDef
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 import reactor.core.publisher.toMono

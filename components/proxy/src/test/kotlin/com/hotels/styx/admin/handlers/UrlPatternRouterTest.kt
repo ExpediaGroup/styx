@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import com.hotels.styx.api.HttpResponseStatus.CREATED
 import com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR
 import com.hotels.styx.api.HttpResponseStatus.NO_CONTENT
 import com.hotels.styx.api.HttpResponseStatus.OK
-import com.hotels.styx.server.HttpInterceptorContext
+import com.hotels.styx.requestContext
 import com.hotels.styx.support.matchers.LoggingTestSupport
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
@@ -102,7 +102,7 @@ class UrlPatternRouterTest : FeatureSpec({
 
     feature("Request routing") {
         scenario("GET requests") {
-            val response1 = router.handle(HttpRequest.get("/admin/apps/234").build(), HttpInterceptorContext.create())
+            val response1 = router.handle(HttpRequest.get("/admin/apps/234").build(), requestContext())
                     .toMono()
                     .block()
 
@@ -110,7 +110,7 @@ class UrlPatternRouterTest : FeatureSpec({
             response1.header("appId") shouldBe Optional.of("234")
             response1.header("originId") shouldBe Optional.empty()
 
-            val response2 = router.handle(HttpRequest.get("/admin/apps/234/origin/123").build(), HttpInterceptorContext.create())
+            val response2 = router.handle(HttpRequest.get("/admin/apps/234/origin/123").build(), requestContext())
                     .toMono()
                     .block()
 
@@ -120,7 +120,7 @@ class UrlPatternRouterTest : FeatureSpec({
         }
 
         scenario("POST requests") {
-            val response1 = router.handle(HttpRequest.post("/admin/apps/234").build(), HttpInterceptorContext.create())
+            val response1 = router.handle(HttpRequest.post("/admin/apps/234").build(), requestContext())
                     .toMono()
                     .block()
 
@@ -128,7 +128,7 @@ class UrlPatternRouterTest : FeatureSpec({
             response1.header("appId") shouldBe Optional.of("234")
             response1.header("originId") shouldBe Optional.empty()
 
-            val response2 = router.handle(HttpRequest.post("/admin/apps/234/origin/123").build(), HttpInterceptorContext.create())
+            val response2 = router.handle(HttpRequest.post("/admin/apps/234/origin/123").build(), requestContext())
                     .toMono()
                     .block()
 
@@ -138,7 +138,7 @@ class UrlPatternRouterTest : FeatureSpec({
         }
 
         scenario("PUT requests") {
-            val response1 = router.handle(HttpRequest.put("/admin/apps/234").build(), HttpInterceptorContext.create())
+            val response1 = router.handle(HttpRequest.put("/admin/apps/234").build(), requestContext())
                     .toMono()
                     .block()
 
@@ -146,7 +146,7 @@ class UrlPatternRouterTest : FeatureSpec({
             response1.header("appId") shouldBe Optional.of("234")
             response1.header("originId") shouldBe Optional.empty()
 
-            val response2 = router.handle(HttpRequest.put("/admin/apps/234/origin/123").build(), HttpInterceptorContext.create())
+            val response2 = router.handle(HttpRequest.put("/admin/apps/234/origin/123").build(), requestContext())
                     .toMono()
                     .block()
 
@@ -156,7 +156,7 @@ class UrlPatternRouterTest : FeatureSpec({
         }
 
         scenario("DELETE requests") {
-            val response1 = router.handle(HttpRequest.delete("/admin/apps/234").build(), HttpInterceptorContext.create())
+            val response1 = router.handle(HttpRequest.delete("/admin/apps/234").build(), requestContext())
                     .toMono()
                     .block()
 
@@ -164,7 +164,7 @@ class UrlPatternRouterTest : FeatureSpec({
             response1.header("appId") shouldBe Optional.of("234")
             response1.header("originId") shouldBe Optional.empty()
 
-            val response2 = router.handle(HttpRequest.delete("/admin/apps/234/origin/123").build(), HttpInterceptorContext.create())
+            val response2 = router.handle(HttpRequest.delete("/admin/apps/234/origin/123").build(), requestContext())
                     .toMono()
                     .block()
 
@@ -184,7 +184,7 @@ class UrlPatternRouterTest : FeatureSpec({
                     .post("/admin/apps/:appId/:originId") { request, context -> throw RuntimeException("Something went wrong") }
                     .build()
 
-            val response = router.handle(post("/admin/apps/appx/appx-01").build(), HttpInterceptorContext.create())
+            val response = router.handle(post("/admin/apps/appx/appx-01").build(), requestContext())
                     .toMono()
                     .block()
 
@@ -206,7 +206,7 @@ class UrlPatternRouterTest : FeatureSpec({
                     }
                     .build()
 
-            val response = router.handle(post("/admin/apps/appx/appx-01").build(), HttpInterceptorContext.create())
+            val response = router.handle(post("/admin/apps/appx/appx-01").build(), requestContext())
                     .toMono()
                     .block()
 

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,16 +21,16 @@ import com.hotels.styx.api.LiveHttpRequest.get
 import com.hotels.styx.common.Pair.pair
 import com.hotels.styx.config.schema.SchemaValidationException
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
-import com.hotels.styx.routing.RoutingObjectFactoryContext
+import com.hotels.styx.RoutingObjectFactoryContext
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.config.Builtins
 import com.hotels.styx.routing.config.Builtins.BUILTIN_HANDLER_SCHEMAS
 import com.hotels.styx.routing.config.StyxObjectReference
-import com.hotels.styx.routing.handle
-import com.hotels.styx.routing.mockObject
-import com.hotels.styx.routing.ref
-import com.hotels.styx.routing.routeLookup
-import com.hotels.styx.routing.routingObjectDef
+import com.hotels.styx.handle
+import com.hotels.styx.mockObject
+import com.hotels.styx.ref
+import com.hotels.styx.routeLookup
+import com.hotels.styx.routingObjectDef
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import io.kotlintest.specs.FeatureSpec
@@ -232,10 +232,10 @@ class PathPrefixRouterTest : FeatureSpec({
 
             val context = RoutingObjectFactoryContext(
                     objectFactories = mapOf(
-                                    "FirstTestHandler" to RoutingObjectFactory { _, _, _ -> child1 },
-                                    "SecondTestHandler" to RoutingObjectFactory { _, _, _ -> child2 }
-                            )
+                            "FirstTestHandler" to RoutingObjectFactory { _, _, _ -> child1 },
+                            "SecondTestHandler" to RoutingObjectFactory { _, _, _ -> child2 }
                     )
+            )
 
             val routingDef = routingObjectDef("""
                   type: PathPrefixRouter
@@ -266,10 +266,10 @@ class PathPrefixRouterTest : FeatureSpec({
 
             val context = RoutingObjectFactoryContext(
                     routeRefLookup = routeLookup {
-                                ref("destinationNameOne" to child1)
-                                ref("destinationNameTwo" to child2)
-                            }
-                    )
+                        ref("destinationNameOne" to child1)
+                        ref("destinationNameTwo" to child2)
+                    }
+            )
 
             val routingDef = routingObjectDef("""
                   type: PathPrefixRouter
