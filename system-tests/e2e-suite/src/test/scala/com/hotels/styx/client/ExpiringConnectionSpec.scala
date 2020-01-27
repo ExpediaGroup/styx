@@ -54,7 +54,7 @@ class ExpiringConnectionSpec extends FunSpec
 
     styxServer.setBackends(
       "/app1" -> HttpBackend("appOne", Origins(mockServer), responseTimeout = 5.seconds,
-        connectionPoolConfig = ConnectionPoolSettings(connectionExpirationSeconds = 2L))
+        connectionPoolConfig = ConnectionPoolSettings(connectionExpirationSeconds = 1L))
     )
 
     val backendService = new BackendService.Builder()
@@ -64,6 +64,10 @@ class ExpiringConnectionSpec extends FunSpec
     pooledClient = newHttpClientBuilder(backendService.id)
       .loadBalancer(roundRobinStrategy(activeOrigins(backendService)))
       .build
+  }
+
+  override protected def afterEach(): Unit = {
+    println("Metrics from ExpiringConnectionSpec: \n" + styxServer.metricsSnapshot)
   }
 
   override protected def afterAll(): Unit = {
