@@ -59,7 +59,7 @@ public class FlowControllingHttpContentProducer {
     private static final Logger LOGGER = LoggerFactory.getLogger(FlowControllingHttpContentProducer.class);
     private static final int MAX_DEPTH = 1;
 
-    private StateMachine<ProducerState> stateMachine;
+    private final StateMachine<ProducerState> stateMachine;
     private final String loggingPrefix;
 
     private final Runnable askForMore;

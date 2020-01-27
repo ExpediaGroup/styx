@@ -168,7 +168,7 @@ class HostProxySpec : FeatureSpec() {
                              connectionPool:
                                maxConnectionsPerHost: 2
                                maxPendingConnectionsPerHost: 10
-                               pendingConnectionTimeoutMillis: 10000
+                               pendingConnectionTimeoutMillis: 15000
                            """.trimIndent()) shouldBe CREATED
 
                 val requestFutures = (1..10).map { client.send(get("/").header(HOST, styxServer().proxyHttpHostHeader()).build()) }
