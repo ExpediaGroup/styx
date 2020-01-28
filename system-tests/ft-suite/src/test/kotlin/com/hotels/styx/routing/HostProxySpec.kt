@@ -90,7 +90,7 @@ class HostProxySpec : FeatureSpec() {
     init {
         // There are other tests that set the JVM system property io.netty.eventLoopThreads=16,
         // thus potentially affecting and breaking this test.
-        feature("!Executor thread pool") {
+ /*       feature("!Executor thread pool") {
             scenario("Runs on StyxHttpClient global thread pool") {
                 testServer.restart()
                 styxServer.restart()
@@ -156,7 +156,7 @@ class HostProxySpec : FeatureSpec() {
             }
         }
 
-
+*/
         feature("Connection pooling") {
             scenario("Pools connections") {
                 testServer.restart()
@@ -193,7 +193,7 @@ class HostProxySpec : FeatureSpec() {
                     }
                 }
             }
-
+/*
             scenario("Applies connection expiration settings") {
                 val connectinExpiryInSeconds = 1
                 testServer.restart()
@@ -237,10 +237,10 @@ class HostProxySpec : FeatureSpec() {
                         it["routing.objects.hostProxy.connectionspool.connections-terminated"]!!.get("value") shouldBe 1
                     }
                 }
-            }
+            }*/
         }
 
-
+/*
         feature("Metrics collecting") {
 
             scenario("Restart servers and configure hostProxy object") {
@@ -361,6 +361,7 @@ class HostProxySpec : FeatureSpec() {
                 }
             }
         }
+        */
     }
 
     private val styxServer = StyxServerProvider(
