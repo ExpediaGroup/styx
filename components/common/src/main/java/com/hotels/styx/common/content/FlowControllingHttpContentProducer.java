@@ -163,21 +163,25 @@ public class FlowControllingHttpContentProducer {
                     return state;
                 })
                 .onStateChange((oldState, newState, event) -> {
-                    LOGGER.debug("State change event: \n    " + event + "(" + oldState + " -> " + newState + ")");
-                    LOGGER.debug("Pending timeouts before cancellation: " + timer.pendingTimeouts());
-                    if (newState.equals(COMPLETED) || newState.equals(TERMINATED)) {
-                        LOGGER.debug("Timeout Cancelled: " + timeout);
-                        timeout.cancel();
-                    } else if (event instanceof RxBackpressureRequestEvent || event instanceof ContentSubscribedEvent) {
-                        timeout.cancel();
-                        LOGGER.debug("Timeout being replaced: " + timeout);
-                        timeout = timer.newTimeout(timerTask, inactivityTimeoutMs, MILLISECONDS);
-                        LOGGER.debug("New Timeout: " + timeout);
-                    }
-                    LOGGER.debug("Pending timeouts after cancellation: " + timer.pendingTimeouts());
+                    resetTimeoutIfNecessary(inactivityTimeoutMs, timerTask, oldState, newState, event);
                 }).build();
         timeout = timer.newTimeout(timerTask, inactivityTimeoutMs, MILLISECONDS);
         LOGGER.debug("Timeout created: " + timeout);
+    }
+
+    private void resetTimeoutIfNecessary(long inactivityTimeoutMs, TimerTask timerTask, ProducerState oldState, ProducerState newState, Object event) {
+        LOGGER.debug("State change event: \n    " + event + "(" + oldState + " -> " + newState + ")");
+        LOGGER.debug("Pending timeouts before cancellation: " + timer.pendingTimeouts());
+        if (newState.equals(COMPLETED) || newState.equals(TERMINATED)) {
+            LOGGER.debug("Timeout Cancelled: " + timeout);
+            timeout.cancel();
+        } else if (event instanceof RxBackpressureRequestEvent || event instanceof ContentSubscribedEvent) {
+            timeout.cancel();
+            LOGGER.debug("Timeout being replaced: " + timeout);
+            timeout = timer.newTimeout(timerTask, inactivityTimeoutMs, MILLISECONDS);
+            LOGGER.debug("New Timeout: " + timeout);
+        }
+        LOGGER.debug("Pending timeouts after cancellation: " + timer.pendingTimeouts());
     }
 
     /*
