@@ -23,7 +23,9 @@ import com.hotels.styx.support.server.FakeHttpServer;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
+import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpResponse;
@@ -42,12 +44,14 @@ import java.util.List;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
+import static com.hotels.styx.client.HttpConfig.newHttpConfigBuilder;
 import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
 import static com.hotels.styx.common.FreePorts.freePort;
 import static com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith;
 import static io.netty.handler.codec.http.HttpMethod.GET;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
+import static java.util.Collections.nCopies;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -55,6 +59,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
 @TestInstance(PER_CLASS)
@@ -64,6 +69,7 @@ public class NettyConnectionFactoryTest {
 
     private final NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder()
             .httpRequestOperationFactory(httpRequestOperationFactoryBuilder().build())
+            .httpConfig(newHttpConfigBuilder().setMaxHeadersSize(100).build())
             .build();
 
     private Origin healthyOrigin;
@@ -113,6 +119,18 @@ public class NettyConnectionFactoryTest {
         assertThat(response.getStatus(), is(OK));
     }
 
+    @Test
+    public void responseFailsIfItExceedsMaxHeaderSize() {
+        server.stub(urlStartingWith("/"), aResponse().withStatus(200).withHeader("AHEADER", String.join("", nCopies(100, "A"))));
+
+        assertThrows(TooLongFrameException.class, () ->
+                sendRequestAndReceiveResponse(
+                        requestToOrigin(),
+                        ((NettyConnection) connectionFactory.createConnection(healthyOrigin, connectionSettings).block()).channel())
+        );
+
+    }
+
     private FullHttpRequest requestToOrigin() {
         DefaultFullHttpRequest request = new DefaultFullHttpRequest(HTTP_1_1, GET, "/");
         request.headers().set(HOST, "localhost:" + server.port());
@@ -135,6 +153,12 @@ public class NettyConnectionFactoryTest {
                 protected void channelRead0(ChannelHandlerContext ctx, HttpObject msg) throws Exception {
                     sink.next(msg);
 
+                    if (msg instanceof DefaultHttpResponse) {
+                        DefaultHttpResponse response = (DefaultHttpResponse) msg;
+                        if (response.decoderResult().isFailure()) {
+                            sink.error(response.decoderResult().cause());
+                        }
+                    }
                     if (msg instanceof LastHttpContent) {
                         sink.complete();
                     }
