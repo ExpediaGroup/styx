@@ -287,7 +287,8 @@ public class HostProxy implements RoutingObject {
                                     tlsSettings,
                                     responseTimeoutMillis,
                                     maxHeaderSize,
-                                    theOrigin -> originMetrics, poolSettings.connectionExpirationSeconds()))
+                                    theOrigin -> originMetrics,
+                                    poolSettings.connectionExpirationSeconds()))
                     .connectionPoolSettings(poolSettings)
                     .metricRegistry(metricRegistry)
                     .build();
