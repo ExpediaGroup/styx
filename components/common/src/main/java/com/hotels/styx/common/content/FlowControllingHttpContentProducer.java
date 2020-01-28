@@ -106,7 +106,11 @@ public class FlowControllingHttpContentProducer {
         this.loggingPrefix = loggingPrefix;
         this.origin = origin;
 
-        TimerTask timerTask = timeout -> stateMachine.handle(new TearDownEvent(new RuntimeException("Inactive Subscriber")));
+        TimerTask timerTask = timeout -> {
+            LOGGER.debug("Timeout triggered: " + timeout);
+            LOGGER.debug("Pending timeouts when triggered: " + timer.pendingTimeouts());
+            stateMachine.handle(new TearDownEvent(new RuntimeException("Inactive Subscriber")));
+        };
         this.stateMachine = new StateMachine.Builder<ProducerState>()
                 .initialState(BUFFERING)
 
@@ -160,14 +164,20 @@ public class FlowControllingHttpContentProducer {
                 })
                 .onStateChange((oldState, newState, event) -> {
                     LOGGER.debug("State change event: \n    " + event + "(" + oldState + " -> " + newState + ")");
+                    LOGGER.debug("Pending timeouts before cancellation: " + timer.pendingTimeouts());
                     if (newState.equals(COMPLETED) || newState.equals(TERMINATED)) {
+                        LOGGER.debug("Timeout Cancelled: " + timeout);
                         timeout.cancel();
                     } else if (event instanceof RxBackpressureRequestEvent || event instanceof ContentSubscribedEvent) {
                         timeout.cancel();
+                        LOGGER.debug("Timeout being replaced: " + timeout);
                         timeout = timer.newTimeout(timerTask, inactivityTimeoutMs, MILLISECONDS);
+                        LOGGER.debug("New Timeout: " + timeout);
                     }
+                    LOGGER.debug("Pending timeouts after cancellation: " + timer.pendingTimeouts());
                 }).build();
         timeout = timer.newTimeout(timerTask, inactivityTimeoutMs, MILLISECONDS);
+        LOGGER.debug("Timeout created: " + timeout);
     }
 
     /*

@@ -81,9 +81,9 @@ class ExpiringConnectionSpec extends FunSpec
       .build
   }
 
-  override protected def afterEach(): Unit = {
-    println("Metrics from ExpiringConnectionSpec: \n" + styxServer.metricsSnapshot)
-  }
+//  override protected def afterEach(): Unit = {
+//    println("Metrics from ExpiringConnectionSpec: \n" + styxServer.metricsSnapshot)
+//  }
 
   override protected def afterAll(): Unit = {
     mockServer.stop()
