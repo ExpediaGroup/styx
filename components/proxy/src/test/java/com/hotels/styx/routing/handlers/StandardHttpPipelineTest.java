@@ -30,7 +30,6 @@ import reactor.core.publisher.Mono;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -211,7 +210,7 @@ public class StandardHttpPipelineTest {
     }
 
     private LiveHttpResponse sendRequestTo(StandardHttpPipeline pipeline) {
-        HttpInterceptor.Context context = new HttpInterceptorContext(false, InetSocketAddress.createUnresolved("127.0.0.1", 0), Executors.newSingleThreadExecutor());
+        HttpInterceptor.Context context = new HttpInterceptorContext(false, InetSocketAddress.createUnresolved("127.0.0.1", 0), Runnable::run);
 
         return Mono.from(pipeline.handle(get("/").build(), context)).block();
     }

@@ -48,7 +48,6 @@ import java.lang.RuntimeException
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executor
-import java.util.concurrent.Executors
 
 fun routingObjectDef(text: String) = YamlConfig(text).`as`(StyxObjectDefinition::class.java)
 
@@ -163,6 +162,4 @@ fun Eventual<LiveHttpResponse>.wait(maxBytes: Int = 100*1024, debug: Boolean = f
         }
         .block()
 
-val globalExecutor = Executors.newSingleThreadExecutor()
-
-fun requestContext(secure: Boolean = false, executor: Executor = globalExecutor) = HttpInterceptorContext(secure, null, executor)
+fun requestContext(secure: Boolean = false, executor: Executor = Executor { it.run() }) = HttpInterceptorContext(secure, null, executor)

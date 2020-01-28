@@ -20,11 +20,9 @@ import com.hotels.styx.api.HttpInterceptor;
 import java.net.InetSocketAddress;
 import java.util.Optional;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 class MockContext implements HttpInterceptor.Context {
     static final HttpInterceptor.Context MOCK_CONTEXT = new MockContext();
-    final Executor executor = Executors.newSingleThreadExecutor();
 
     @Override
     public void add(String key, Object value) {
@@ -48,6 +46,6 @@ class MockContext implements HttpInterceptor.Context {
 
     @Override
     public Executor executor() {
-        return this.executor;
+        return Runnable::run;
     }
 }

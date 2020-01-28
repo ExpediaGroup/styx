@@ -26,8 +26,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class AntlrMatcherTest {
 
-    private final HttpInterceptorContext contextHttps = new HttpInterceptorContext(true, null, Executors.newSingleThreadExecutor());
-    private final HttpInterceptorContext contextHttp = new HttpInterceptorContext(false, null, Executors.newSingleThreadExecutor());
+    private final HttpInterceptorContext contextHttps = new HttpInterceptorContext(true, null, Runnable::run);
+    private final HttpInterceptorContext contextHttp = new HttpInterceptorContext(false, null, Runnable::run);
 
     @Test
     public void matchesHttpProtocol() {
