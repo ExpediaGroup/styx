@@ -13,10 +13,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.routing
+package com.hotels.styx
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.hotels.styx.Environment
 import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpHandler
 import com.hotels.styx.api.HttpRequest
@@ -28,6 +27,8 @@ import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.api.WebServiceHandler
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.proxy.plugin.NamedPlugin
+import com.hotels.styx.routing.RoutingObject
+import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.Builtins.BUILTIN_HANDLER_FACTORIES
 import com.hotels.styx.routing.config.Builtins.DEFAULT_REFERENCE_LOOKUP
 import com.hotels.styx.routing.config.Builtins.INTERCEPTOR_FACTORIES
@@ -46,6 +47,7 @@ import reactor.core.publisher.toMono
 import java.lang.RuntimeException
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executor
 
 fun routingObjectDef(text: String) = YamlConfig(text).`as`(StyxObjectDefinition::class.java)
 
@@ -63,9 +65,9 @@ internal data class RoutingObjectFactoryContext(
 
 }
 
-fun WebServiceHandler.handle(request: HttpRequest) = this.handle(request, HttpInterceptorContext.create())
+fun WebServiceHandler.handle(request: HttpRequest) = this.handle(request, requestContext())
 
-fun HttpHandler.handle(request: HttpRequest, count: Int = 10000) = this.handle(request.stream(), HttpInterceptorContext.create())
+fun HttpHandler.handle(request: HttpRequest, count: Int = 10000) = this.handle(request.stream(), requestContext())
         .flatMap { it.aggregate(count) }
 
 // DSL for routing object database & object creation:
@@ -78,24 +80,6 @@ fun routeLookup(block: HashMap<StyxObjectReference, RoutingObject>.() -> Unit): 
     refLookup.block()
     return RouteRefLookup { refLookup[it] }
 }
-
-private val LOGGER = LoggerFactory.getLogger("ProxySupport")
-
-fun CompletableFuture<HttpResponse>.wait(debug: Boolean = false) = this.toMono()
-        .doOnNext {
-            if (debug) {
-                LOGGER.debug("${it.status()} - ${it.headers()} - ${it.bodyAs(UTF_8)}")
-            }
-        }
-        .block()
-
-fun CompletableFuture<LiveHttpResponse>.wait(debug: Boolean = false) = this.toMono()
-        .doOnNext {
-            if (debug) {
-                LOGGER.debug("${it.status()} - ${it.headers()}")
-            }
-        }
-        .block()
 
 /**
  * Creates a mock routing object with specified capturing behaviour for incoming HTTP requests.
@@ -149,3 +133,33 @@ fun failingMockObject() = mockk<RoutingObject> {
 fun mockObjectFactory(objects: List<RoutingObject>) = mockk<RoutingObjectFactory> {
     every { build(any(), any(), any()) } returnsMany objects
 }
+
+
+private val LOGGER = LoggerFactory.getLogger("ProxySupport")
+
+fun CompletableFuture<HttpResponse>.wait(debug: Boolean = false) = this.toMono()
+        .doOnNext {
+            if (debug) {
+                LOGGER.debug("${it.status()} - ${it.headers()} - ${it.bodyAs(UTF_8)}")
+            }
+        }
+        .block()
+
+fun CompletableFuture<LiveHttpResponse>.wait(debug: Boolean = false) = this.toMono()
+        .doOnNext {
+            if (debug) {
+                LOGGER.debug("${it.status()} - ${it.headers()}")
+            }
+        }
+        .block()
+
+fun Eventual<LiveHttpResponse>.wait(maxBytes: Int = 100*1024, debug: Boolean = false) = this.toMono()
+        .flatMap { it.aggregate(maxBytes).toMono() }
+        .doOnNext {
+            if (debug) {
+                LOGGER.info("${it.status()} - ${it.headers()} - ${it.bodyAs(UTF_8)}")
+            }
+        }
+        .block()
+
+fun requestContext(secure: Boolean = false, executor: Executor = Executor { it.run() }) = HttpInterceptorContext(secure, null, executor)

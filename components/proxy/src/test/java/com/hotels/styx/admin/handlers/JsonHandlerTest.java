@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hotels.styx.admin.handlers;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hotels.styx.api.Clock;
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.server.HttpInterceptorContext;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
@@ -26,6 +25,7 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.api.HttpRequest.get;
 import static java.lang.System.currentTimeMillis;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -107,7 +107,7 @@ public class JsonHandlerTest {
 
     private String responseFor(JsonHandler<?> handler, HttpRequest request) {
         return Mono.from(
-                handler.handle(request, HttpInterceptorContext.create())
+                handler.handle(request, requestContext())
                         .map(response -> response.bodyAs(UTF_8))
         ).block();
     }

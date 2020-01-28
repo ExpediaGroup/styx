@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,13 +19,13 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
-import com.hotels.styx.server.HttpInterceptorContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
 
+import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.api.HttpRequest.put;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
@@ -59,7 +59,7 @@ public class PluginToggleHandlerTest {
     public void enablesDisabledPlugin() {
         HttpRequest request = put("/foo/off/enabled").body("true", UTF_8).build();
 
-        HttpResponse response = Mono.from(handler.handle(request, HttpInterceptorContext.create())).block();
+        HttpResponse response = Mono.from(handler.handle(request, requestContext())).block();
 
         assertThat(response.status(), is(OK));
         assertThat(body(response), is("{\"message\":\"State of 'off' changed to 'enabled'\",\"plugin\":{\"name\":\"off\",\"state\":\"enabled\"}}"));
@@ -71,7 +71,7 @@ public class PluginToggleHandlerTest {
     public void disablesEnabledPlugin() {
         HttpRequest request = put("/foo/on/enabled").body("false", UTF_8).build();
 
-        HttpResponse response = Mono.from(handler.handle(request, HttpInterceptorContext.create())).block();
+        HttpResponse response = Mono.from(handler.handle(request, requestContext())).block();
 
         assertThat(response.status(), is(OK));
         assertThat(body(response), is("{\"message\":\"State of 'on' changed to 'disabled'\",\"plugin\":{\"name\":\"on\",\"state\":\"disabled\"}}"));
@@ -83,7 +83,7 @@ public class PluginToggleHandlerTest {
     public void notifiesWhenPluginAlreadyDisabled() {
         HttpRequest request = put("/foo/off/enabled").body("false", UTF_8).build();
 
-        HttpResponse response = Mono.from(handler.handle(request, HttpInterceptorContext.create())).block();
+        HttpResponse response = Mono.from(handler.handle(request, requestContext())).block();
 
         assertThat(response.status(), is(OK));
         assertThat(body(response), is("{\"message\":\"State of 'off' was already 'disabled'\",\"plugin\":{\"name\":\"off\",\"state\":\"disabled\"}}"));
@@ -95,7 +95,7 @@ public class PluginToggleHandlerTest {
     public void notifiesWhenPluginAlreadyEnabled() {
         HttpRequest request = put("/foo/on/enabled").body("true", UTF_8).build();
 
-        HttpResponse response = Mono.from(handler.handle(request, HttpInterceptorContext.create())).block();
+        HttpResponse response = Mono.from(handler.handle(request, requestContext())).block();
 
         assertThat(response.status(), is(OK));
         assertThat(body(response), is("{\"message\":\"State of 'on' was already 'enabled'\",\"plugin\":{\"name\":\"on\",\"state\":\"enabled\"}}"));
@@ -107,7 +107,7 @@ public class PluginToggleHandlerTest {
     public void saysBadRequestWhenUrlIsInvalid() {
         HttpRequest request = put("/foo//enabled").body("true", UTF_8).build();
 
-        HttpResponse response = Mono.from(handler.handle(request, HttpInterceptorContext.create())).block();
+        HttpResponse response = Mono.from(handler.handle(request, requestContext())).block();
 
         assertThat(response.status(), is(BAD_REQUEST));
         assertThat(body(response), is("Invalid URL"));
@@ -119,7 +119,7 @@ public class PluginToggleHandlerTest {
     public void saysBadRequestWhenNoStateSpecified() {
         HttpRequest request = put("/foo/on/enabled").build();
 
-        HttpResponse response = Mono.from(handler.handle(request, HttpInterceptorContext.create())).block();
+        HttpResponse response = Mono.from(handler.handle(request, requestContext())).block();
 
         assertThat(response.status(), is(BAD_REQUEST));
         assertThat(body(response), is("No such state: only 'true' and 'false' are valid."));
@@ -131,7 +131,7 @@ public class PluginToggleHandlerTest {
     public void saysBadRequestWhenPluginDoesNotExist() {
         HttpRequest request = put("/foo/nonexistent/enabled").body("true", UTF_8).build();
 
-        HttpResponse response = Mono.from(handler.handle(request, HttpInterceptorContext.create())).block();
+        HttpResponse response = Mono.from(handler.handle(request, requestContext())).block();
 
         assertThat(response.status(), is(NOT_FOUND));
         assertThat(body(response), is("No such plugin: pluginName=nonexistent"));
@@ -143,7 +143,7 @@ public class PluginToggleHandlerTest {
     public void saysBadRequestWhenValueIsInvalid() {
         HttpRequest request = put("/foo/off/enabled").body("invalid", UTF_8).build();
 
-        HttpResponse response = Mono.from(handler.handle(request, HttpInterceptorContext.create())).block();
+        HttpResponse response = Mono.from(handler.handle(request, requestContext())).block();
 
         assertThat(response.status(), is(BAD_REQUEST));
         assertThat(body(response), is("No such state: only 'true' and 'false' are valid."));

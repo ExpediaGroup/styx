@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
+import com.hotels.styx.support.Support.requestContext
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins}
 import com.hotels.styx.support.server.UrlMatchingStrategies._
@@ -74,7 +75,7 @@ class ExpiringConnectionSpec extends FunSpec
   it("Should expire connection after 1 second") {
     val request = get(styxServer.routerURL("/app1")).build()
 
-    val response1 = Mono.from(pooledClient.sendRequest(request)).block()
+    val response1 = Mono.from(pooledClient.sendRequest(request, requestContext())).block()
 
     assertThat(response1.status(), is(OK))
 
@@ -85,7 +86,7 @@ class ExpiringConnectionSpec extends FunSpec
 
     Thread.sleep(1000)
 
-    val response2 = Mono.from(pooledClient.sendRequest(request)).block()
+    val response2 = Mono.from(pooledClient.sendRequest(request, requestContext())).block()
     assertThat(response2.status(), is(OK))
 
     eventually(timeout(2.seconds)) {

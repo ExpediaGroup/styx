@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,13 +19,13 @@ import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.RequestCookie;
-import com.hotels.styx.server.HttpInterceptorContext;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.RequestCookie.requestCookie;
+import static com.hotels.styx.support.Support.requestContext;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -44,7 +44,7 @@ public class FunctionResolverTest {
 
     private final FunctionResolver functionResolver = new FunctionResolver(zeroArgumentFunctions, oneArgumentFunctions);
 
-    private final HttpInterceptor.Context context = HttpInterceptorContext.create();
+    private final HttpInterceptor.Context context = requestContext();
 
     @Test
     public void resolvesZeroArgumentFunctions() {

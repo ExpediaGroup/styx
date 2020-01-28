@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,16 +15,15 @@
  */
 package com.hotels.styx.admin.handlers;
 
-import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.server.HttpInterceptorContext;
 import com.hotels.styx.server.track.CurrentRequestTracker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
+import static com.hotels.styx.support.Support.requestContext;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -34,7 +33,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CurrentRequestsHandlerTest {
 
-    private final HttpInterceptor.Context ctx = HttpInterceptorContext.create();
     private LiveHttpRequest req1 = LiveHttpRequest.get("/requestId1").build();
 
     private CurrentRequestTracker tracker = new CurrentRequestTracker();
@@ -51,7 +49,7 @@ public class CurrentRequestsHandlerTest {
     public void testStackTrace() {
         Thread.currentThread().setName("Test-Thread");
         tracker.trackRequest(req1);
-        HttpResponse response = Mono.from(handler.handle(adminRequest, ctx)).block();
+        HttpResponse response = Mono.from(handler.handle(adminRequest, requestContext())).block();
         assertThat(response.bodyAs(UTF_8).contains("Test-Thread"), is(true));
     }
 
@@ -60,7 +58,7 @@ public class CurrentRequestsHandlerTest {
         Thread.currentThread().setName("Test-Thread-1");
         tracker.trackRequest(req1);
         tracker.markRequestAsSent(req1);
-        HttpResponse response = Mono.from(handler.handle(adminRequest, ctx)).block();
+        HttpResponse response = Mono.from(handler.handle(adminRequest, requestContext())).block();
         assertThat(response.bodyAs(UTF_8).contains("Request state: Waiting response from origin."), is(true));
     }
 
@@ -68,7 +66,7 @@ public class CurrentRequestsHandlerTest {
     public void testWithStackTrace() {
         Thread.currentThread().setName("Test-Thread");
         tracker.trackRequest(req1);
-        HttpResponse response = Mono.from(handler.handle(HttpRequest.get("/req?withStackTrace=true").build(), ctx)).block();
+        HttpResponse response = Mono.from(handler.handle(HttpRequest.get("/req?withStackTrace=true").build(), requestContext())).block();
 
         assertTrue(response.bodyAs(UTF_8).contains("Thread Info:"));
         assertTrue(response.bodyAs(UTF_8).contains("id=" + Thread.currentThread().getId() + " state"));
@@ -77,7 +75,7 @@ public class CurrentRequestsHandlerTest {
     @Test
     public void testWithoutStackTrace() {
         tracker.trackRequest(req1);
-        HttpResponse response = Mono.from(handler.handle(adminRequest, ctx)).block();
+        HttpResponse response = Mono.from(handler.handle(adminRequest, requestContext())).block();
 
         String body = response.bodyAs(UTF_8);
 

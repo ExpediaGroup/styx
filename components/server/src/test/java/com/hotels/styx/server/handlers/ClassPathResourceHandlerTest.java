@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,9 +15,7 @@
  */
 package com.hotels.styx.server.handlers;
 
-import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.server.HttpInterceptorContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -30,19 +28,19 @@ import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.FORBIDDEN;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.support.Support.requestContext;
 import static java.lang.System.lineSeparator;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class ClassPathResourceHandlerTest {
-    private final HttpInterceptor.Context context = HttpInterceptorContext.create();
 
     @Test
     void servesResourcesFromClassPath() {
         HttpResponse response = Mono.from(
                 new ClassPathResourceHandler("/admin/dashboard")
-                        .handle(get("/admin/dashboard/expected.txt").build(), context))
+                        .handle(get("/admin/dashboard/expected.txt").build(), requestContext()))
                 .block();
 
         assertThat(response.status(), is(OK));
@@ -53,7 +51,7 @@ class ClassPathResourceHandlerTest {
     void servesResourcesForCorrectlyPrefixedRequests() {
         HttpResponse response = Mono.from(
                 new ClassPathResourceHandler("/a/prefix/", "/admin/dashboard")
-                        .handle(get("/a/prefix/expected.txt").build(), context))
+                        .handle(get("/a/prefix/expected.txt").build(), requestContext()))
                 .block();
 
         assertThat(response.status(), is(OK));
@@ -64,7 +62,7 @@ class ClassPathResourceHandlerTest {
     void removesDuplicatePathSeparators() {
         HttpResponse response = Mono.from(
                 new ClassPathResourceHandler("/a/prefix/", "/admin/dashboard")
-                        .handle(get("/a/prefix/expected.txt").build(), context))
+                        .handle(get("/a/prefix/expected.txt").build(), requestContext()))
                 .block();
 
         assertThat(response.status(), is(OK));
@@ -74,7 +72,7 @@ class ClassPathResourceHandlerTest {
     void returns404IfResourceDoesNotExist() {
         HttpResponse response = Mono.from(
                 new ClassPathResourceHandler("/admin/dashboard")
-                        .handle(get("/admin/dashboard/unexpected.txt").build(), context))
+                        .handle(get("/admin/dashboard/unexpected.txt").build(), requestContext()))
                 .block();
 
         assertThat(response.status(), is(NOT_FOUND));
@@ -84,7 +82,7 @@ class ClassPathResourceHandlerTest {
     @MethodSource("forbiddenPaths")
     void returns403IfTryingToAccessResourcesOutsidePermittedRoot(String path) {
         HttpResponse response = Mono.from(new ClassPathResourceHandler("/admin/dashboard")
-                .handle(get(path).build(), context)).block();
+                .handle(get(path).build(), requestContext())).block();
 
         assertThat(response.status(), is(FORBIDDEN));
     }
@@ -94,7 +92,7 @@ class ClassPathResourceHandlerTest {
     void returnsForbiddenIfPrefixedRequestAttemptsToAccessResourcesOutsidePermittedRoot(String path) {
         HttpResponse response = Mono.from(
                 new ClassPathResourceHandler("/admin/dashboard", "/admin/dashboard")
-                        .handle(get(path).build(), context))
+                        .handle(get(path).build(), requestContext()))
                 .block();
 
         assertThat(response.status(), is(FORBIDDEN));

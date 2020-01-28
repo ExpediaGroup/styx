@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.proxy.plugin;
 
-import com.hotels.styx.api.Environment;
+import com.hotels.styx.Environment;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor.Chain;
 import com.hotels.styx.api.HttpResponseStatus;
@@ -25,7 +25,6 @@ import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginException;
-import com.hotels.styx.support.api.SimpleEnvironment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
@@ -60,7 +59,7 @@ public class InstrumentedPluginTest {
     public void setUp() {
         metricRegistry = new CodaHaleMetricRegistry();
 
-        environment = new SimpleEnvironment.Builder()
+        environment = new Environment.Builder()
                 .metricRegistry(metricRegistry)
                 .build();
 

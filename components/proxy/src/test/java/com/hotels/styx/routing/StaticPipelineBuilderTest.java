@@ -26,7 +26,6 @@ import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
-import com.hotels.styx.server.HttpInterceptorContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,6 +34,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletableFuture;
 
+import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
@@ -66,7 +66,7 @@ public class StaticPipelineBuilderTest {
     @BeforeEach
     public void staticPipelineBuilderTest() {
         environment = new Environment.Builder().build();
-        clientFactory = (backendService, originsInventory, originStatsFactory) -> request -> Mono.just(response(OK).build());
+        clientFactory = (backendService, originsInventory, originStatsFactory) -> (request, context) -> Mono.just(response(OK).build());
         registry = backendRegistry(newBackendServiceBuilder().origins(newOriginBuilder("localhost", 0).build())
                 .path("/foo").build());
     }
@@ -74,7 +74,7 @@ public class StaticPipelineBuilderTest {
     @Test
     public void buildsInterceptorPipelineForBackendServices() throws Exception {
         HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, ImmutableList.of(), executor, false).build();
-        LiveHttpResponse response = Mono.from(handler.handle(get("/foo").build(), HttpInterceptorContext.create())).block();
+        LiveHttpResponse response = Mono.from(handler.handle(get("/foo").build(), requestContext())).block();
         assertThat(response.status(), is(OK));
     }
 
@@ -87,7 +87,7 @@ public class StaticPipelineBuilderTest {
 
         HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, plugins, executor, false).build();
 
-        LiveHttpResponse response = Mono.from(handler.handle(get("/foo").build(), HttpInterceptorContext.create())).block();
+        LiveHttpResponse response = Mono.from(handler.handle(get("/foo").build(), requestContext())).block();
         assertThat(response.status(), is(OK));
         assertThat(response.headers("X-From-Plugin"), hasItems("B", "A"));
     }

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
@@ -160,7 +161,7 @@ public class StandardHttpPipelineTest {
 
         StandardHttpPipeline pipeline = new StandardHttpPipeline(handler);
 
-        Eventual<LiveHttpResponse> responseObservable = pipeline.handle(get("/").build(), HttpInterceptorContext.create());
+        Eventual<LiveHttpResponse> responseObservable = pipeline.handle(get("/").build(), requestContext());
         LiveHttpResponse response = Mono.from(responseObservable).block();
         assertThat(response.status(), is(OK));
 
@@ -176,7 +177,7 @@ public class StandardHttpPipelineTest {
         List<HttpInterceptor> interceptors = singletonList(interceptor);
         StandardHttpPipeline pipeline = new StandardHttpPipeline(interceptors, handler, RequestTracker.NO_OP);
 
-        Eventual<LiveHttpResponse> responseObservable = pipeline.handle(get("/").build(), HttpInterceptorContext.create());
+        Eventual<LiveHttpResponse> responseObservable = pipeline.handle(get("/").build(), requestContext());
         assertThrows(IllegalStateException.class,
                 () -> Mono.from(responseObservable).block());
     }
@@ -209,7 +210,7 @@ public class StandardHttpPipelineTest {
     }
 
     private LiveHttpResponse sendRequestTo(StandardHttpPipeline pipeline) {
-        HttpInterceptor.Context context = new HttpInterceptorContext(InetSocketAddress.createUnresolved("127.0.0.1", 0));
+        HttpInterceptor.Context context = new HttpInterceptorContext(false, InetSocketAddress.createUnresolved("127.0.0.1", 0), Runnable::run);
 
         return Mono.from(pipeline.handle(get("/").build(), context)).block();
     }

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,14 +16,14 @@
 package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpInterceptor.Chain;
+import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 
+import static com.hotels.styx.support.Support.requestContext;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.server.HttpInterceptorContext;
 
 /**
  * A handler that return whatever response returned from the passed in handler.
@@ -43,7 +43,7 @@ public final class ReturnResponseChain implements Chain {
     }
 
     public static ReturnResponseChain returnsResponse(LiveHttpResponse response) {
-        return new ReturnResponseChain(response, HttpInterceptorContext.create());
+        return new ReturnResponseChain(response, requestContext());
     }
 
     public static ReturnResponseChain returnsResponse(LiveHttpResponse response, HttpInterceptor.Context context) {

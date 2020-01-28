@@ -23,7 +23,6 @@ import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.StyxObjectRecord;
-import com.hotels.styx.server.HttpInterceptorContext;
 import org.apache.commons.lang.StringUtils;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
@@ -36,6 +35,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.HttpResponseStatus.NO_CONTENT;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
@@ -55,7 +55,7 @@ public class ServiceProviderHandlerTest {
         StyxObjectStore<StyxObjectRecord<StyxService>> store = createTestStore();
         ServiceProviderHandler handler = new ServiceProviderHandler(store);
         HttpRequest request = HttpRequest.get("/admin/service/providers").build();
-        HttpResponse response = Mono.from(handler.handle(request, HttpInterceptorContext.create())).block();
+        HttpResponse response = Mono.from(handler.handle(request, requestContext())).block();
 
         assertThat(response.status(), equalTo(OK));
 
@@ -74,7 +74,7 @@ public class ServiceProviderHandlerTest {
         StyxObjectStore<StyxObjectRecord<StyxService>> empty = new StyxObjectStore<>();
         ServiceProviderHandler handler = new ServiceProviderHandler(empty);
         HttpRequest request = HttpRequest.get("/admin/service/providers").build();
-        HttpResponse response = Mono.from(handler.handle(request, HttpInterceptorContext.create())).block();
+        HttpResponse response = Mono.from(handler.handle(request, requestContext())).block();
 
         assertThat(response.status(), equalTo(NO_CONTENT));
         assertFalse(response.contentLength().isPresent());
@@ -85,7 +85,7 @@ public class ServiceProviderHandlerTest {
         StyxObjectStore<StyxObjectRecord<StyxService>> store = createTestStore();
         ServiceProviderHandler handler = new ServiceProviderHandler(store);
         HttpRequest request = HttpRequest.get("/admin/service/provider/object2").build();
-        HttpResponse response = Mono.from(handler.handle(request, HttpInterceptorContext.create())).block();
+        HttpResponse response = Mono.from(handler.handle(request, requestContext())).block();
 
         assertThat(response.status(), equalTo(OK));
 
@@ -100,7 +100,7 @@ public class ServiceProviderHandlerTest {
         StyxObjectStore<StyxObjectRecord<StyxService>> store = createTestStore();
         ServiceProviderHandler handler = new ServiceProviderHandler(store);
         HttpRequest request = HttpRequest.get("/admin/service/provider/nonexistent").build();
-        HttpResponse response = Mono.from(handler.handle(request, HttpInterceptorContext.create())).block();
+        HttpResponse response = Mono.from(handler.handle(request, requestContext())).block();
 
         assertThat(response.status(), equalTo(NOT_FOUND));
     }
@@ -110,7 +110,7 @@ public class ServiceProviderHandlerTest {
         StyxObjectStore<StyxObjectRecord<StyxService>> empty = new StyxObjectStore<>();
         ServiceProviderHandler handler = new ServiceProviderHandler(empty);
         HttpRequest request = HttpRequest.get("/not/my/url").build();
-        HttpResponse response = Mono.from(handler.handle(request, HttpInterceptorContext.create())).block();
+        HttpResponse response = Mono.from(handler.handle(request, requestContext())).block();
 
         assertThat(response.status(), equalTo(NOT_FOUND));
     }

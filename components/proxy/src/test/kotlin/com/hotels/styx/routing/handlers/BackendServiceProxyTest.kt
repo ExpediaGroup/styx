@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -26,9 +26,9 @@ import com.hotels.styx.api.extension.service.spi.Registry
 import com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded
 import com.hotels.styx.client.BackendServiceClient
 import com.hotels.styx.proxy.BackendServiceClientFactory
-import com.hotels.styx.routing.RoutingObjectFactoryContext
-import com.hotels.styx.routing.routingObjectDef
-import com.hotels.styx.server.HttpInterceptorContext
+import com.hotels.styx.RoutingObjectFactoryContext
+import com.hotels.styx.requestContext
+import com.hotels.styx.routingObjectDef
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import io.kotlintest.specs.StringSpec
@@ -64,17 +64,17 @@ class BackendServiceProxyTest : StringSpec({
         val handler = BackendServiceProxy.Factory(environment, clientFactory(), services).build(listOf(), context, config)
         backendRegistry.reload()
 
-        handler.handle(hwaRequest, HttpInterceptorContext.create())
+        handler.handle(hwaRequest, requestContext())
                 .toMono()
                 .block()!!
                 .header("X-Backend-Service").get() shouldBe("hwa")
 
-        handler.handle(laRequest, HttpInterceptorContext.create())
+        handler.handle(laRequest, requestContext())
                 .toMono()
                 .block()!!
                 .header("X-Backend-Service").get() shouldBe("la")
 
-        handler.handle(baRequest, HttpInterceptorContext.create())
+        handler.handle(baRequest, requestContext())
                 .toMono()
                 .block()!!
                 .header("X-Backend-Service").get() shouldBe("ba")
@@ -111,7 +111,7 @@ class BackendServiceProxyTest : StringSpec({
 private fun clientFactory(): BackendServiceClientFactory = BackendServiceClientFactory {
         backendService, originsInventory, originStatsFactory ->
             BackendServiceClient {
-                request -> Mono.just(
+                request, context -> Mono.just(
                         LiveHttpResponse
                                 .response(OK)
                                 .addHeader("X-Backend-Service", backendService.id())

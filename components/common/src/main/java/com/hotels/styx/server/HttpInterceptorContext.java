@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,12 +15,14 @@
  */
 package com.hotels.styx.server;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.HttpInterceptor;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 
 /**
  * ConcurrentHashMap backed implementation of HttpInterceptor.Context.
@@ -30,6 +32,7 @@ public final class HttpInterceptorContext implements HttpInterceptor.Context {
 
     private final boolean secure;
     private final InetSocketAddress clientAddress;
+    private final Executor executor;
 
     /**
      * Construct a new instance.
@@ -37,39 +40,20 @@ public final class HttpInterceptorContext implements HttpInterceptor.Context {
      * @param secure true if the request was received via SSL
      * @param clientAddress address that request came from, or null if not-applicable
      */
-    public HttpInterceptorContext(boolean secure, InetSocketAddress clientAddress) {
+    public HttpInterceptorContext(boolean secure, InetSocketAddress clientAddress, Executor executor) {
         this.secure = secure;
         this.clientAddress = clientAddress; // intentionally nullable
+        this.executor = executor;
     }
 
     /**
-     * Construct a new instance.
-     *
-     * @param clientAddress address that request came from, or null if not-applicable
+     * @deprecated use the constructor instead.
+     * @return
      */
-    public HttpInterceptorContext(InetSocketAddress clientAddress) {
-        this(false, clientAddress);
-    }
-
-    /**
-     * Construct a new instance.
-     *
-     * @param secure true if the request was received via SSL
-     */
-    public HttpInterceptorContext(boolean secure) {
-        this(secure, null);
-    }
-
-    /**
-     * Construct a new instance.
-     */
-    public HttpInterceptorContext() {
-        this(false, null);
-    }
-
-    // TODO deprecate
+    @VisibleForTesting
+    @Deprecated
     public static HttpInterceptor.Context create() {
-        return new HttpInterceptorContext();
+        return new HttpInterceptorContext(false, null, Runnable::run);
     }
 
     @Override
@@ -90,5 +74,10 @@ public final class HttpInterceptorContext implements HttpInterceptor.Context {
     @Override
     public Optional<InetSocketAddress> clientAddress() {
         return Optional.ofNullable(clientAddress);
+    }
+
+    @Override
+    public Executor executor() {
+        return this.executor;
     }
 }

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import com.codahale.metrics.Gauge;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.server.HttpInterceptorContext;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
@@ -30,6 +29,7 @@ import reactor.core.publisher.Mono;
 import java.util.Optional;
 
 import static com.google.common.collect.Iterables.all;
+import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.admin.handlers.JVMMetricsHandlerTest.StringsContains.containsStrings;
 import static com.hotels.styx.api.HttpHeaderValues.APPLICATION_JSON;
 import static com.hotels.styx.api.HttpRequest.get;
@@ -88,7 +88,7 @@ public class JVMMetricsHandlerTest {
     }
 
     private HttpResponse call(HttpRequest request) {
-        return Mono.from(handler.handle(request, HttpInterceptorContext.create())).block();
+        return Mono.from(handler.handle(request, requestContext())).block();
     }
 
     static class StringsContains extends TypeSafeMatcher<String> {

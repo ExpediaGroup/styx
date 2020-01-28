@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,9 +24,9 @@ import com.hotels.styx.routing.RoutingMetadataDecorator
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.StyxObjectReference
 import com.hotels.styx.routing.db.StyxObjectStore
-import com.hotels.styx.routing.handle
+import com.hotels.styx.handle
+import com.hotels.styx.requestContext
 import com.hotels.styx.routing.handlers.RouteRefLookup.RouteDbRefLookup
-import com.hotels.styx.server.HttpInterceptorContext
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 import io.mockk.every
@@ -72,7 +72,7 @@ class RouteRefLookupTest : StringSpec({
         val response = RouteDbRefLookup(routeDb).apply(StyxObjectReference("handler1"))
                 .handle(LiveHttpRequest.post("/")
                         .body(ByteStream(probe.flux()))
-                        .build(), HttpInterceptorContext.create())
+                        .build(), requestContext())
                 .toMono()
                 .flatMap { it.aggregate(1000).toMono() }
                 .block()

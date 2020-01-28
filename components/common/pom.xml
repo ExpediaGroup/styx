@@ -85,6 +85,12 @@
 
     <dependency>
       <groupId>com.hotels.styx</groupId>
+      <artifactId>styx-api-testsupport</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.hotels.styx</groupId>
       <artifactId>styx-testsupport</artifactId>
       <scope>test</scope>
     </dependency>

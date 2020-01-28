@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{BeforeAndAfter, FunSuite, Matchers}
 import reactor.core.publisher.Mono
+import com.hotels.styx.support.Support.requestContext
 
 import scala.collection.JavaConverters._
 
@@ -108,7 +109,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
     val request: LiveHttpRequest = LiveHttpRequest.get("/")
       .build
 
-    val response = Mono.from(client.sendRequest(request)).block()
+    val response = Mono.from(client.sendRequest(request, requestContext())).block()
     response.status() should be(OK)
     val cookie = response.cookie("styx_origin_app").get()
     cookie.value() should fullyMatch regex "app-0[12]"
@@ -128,7 +129,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
     val request: LiveHttpRequest = get("/")
       .build
 
-    val response = Mono.from(client.sendRequest(request)).block()
+    val response = Mono.from(client.sendRequest(request, requestContext())).block()
     response.status() should be(OK)
     response.cookies().asScala should have size (0)
   }
@@ -142,9 +143,9 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
       .cookies(requestCookie("styx_origin_app", "app-02"))
       .build
 
-    val response1 = Mono.from(client.sendRequest(request)).block()
-    val response2 = Mono.from(client.sendRequest(request)).block()
-    val response3 = Mono.from(client.sendRequest(request)).block()
+    val response1 = Mono.from(client.sendRequest(request, requestContext())).block()
+    val response2 = Mono.from(client.sendRequest(request, requestContext())).block()
+    val response3 = Mono.from(client.sendRequest(request, requestContext())).block()
 
     response1.header("Stub-Origin-Info").get() should be(s"APP-localhost:${server2.port}")
     response2.header("Stub-Origin-Info").get() should be(s"APP-localhost:${server2.port}")
@@ -164,9 +165,9 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
       .build()
 
 
-    val response1 = Mono.from(client.sendRequest(request)).block()
-    val response2 = Mono.from(client.sendRequest(request)).block()
-    val response3 = Mono.from(client.sendRequest(request)).block()
+    val response1 = Mono.from(client.sendRequest(request, requestContext())).block()
+    val response2 = Mono.from(client.sendRequest(request, requestContext())).block()
+    val response3 = Mono.from(client.sendRequest(request, requestContext())).block()
 
     response1.header("Stub-Origin-Info").get() should be(s"APP-localhost:${server2.port}")
     response2.header("Stub-Origin-Info").get() should be(s"APP-localhost:${server2.port}")
@@ -182,7 +183,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
       .cookies(requestCookie("styx_origin_app", "h3"))
       .build
 
-    val response = Mono.from(client.sendRequest(request)).block()
+    val response = Mono.from(client.sendRequest(request, requestContext())).block()
 
     response.status() should be(OK)
     response.cookies().asScala should have size (1)
