@@ -10,6 +10,7 @@
   <logger name="io.netty" level="WARN"/>
   <logger name="com.hotels.styx.proxy.backends.file.FileChangeMonitor" level="INFO"/>
   <logger name="com.hotels.styx.client.netty.connectionpool.NettyConnection" level="DEBUG"/>
+  <logger name="com.hotels.styx.common.content.FlowControllingHttpContentProducer" level="DEBUG"/>
 
   <root level="INFO">
     <appender-ref ref="CONSOLE"/>
