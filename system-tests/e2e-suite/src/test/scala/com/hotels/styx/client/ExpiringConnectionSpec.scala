@@ -24,6 +24,7 @@ import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
+import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.server.UrlMatchingStrategies._
@@ -51,7 +52,8 @@ class ExpiringConnectionSpec extends FunSpec
         |  outbound:
         |    enabled: True
         |    longFormat: True
-        |""".stripMargin
+        |""".stripMargin,
+    logbackXmlLocation = fixturesHome(this.getClass, "/conf/logback/logback-debug-NettyConnection.xml")
   )
 
   val mockServer = FakeHttpServer.HttpStartupConfig()
