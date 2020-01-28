@@ -159,6 +159,7 @@ public class FlowControllingHttpContentProducer {
                     return state;
                 })
                 .onStateChange((oldState, newState, event) -> {
+                    LOGGER.debug("State change event: \n    " + event + "(" + oldState + " -> " + newState + ")");
                     if (newState.equals(COMPLETED) || newState.equals(TERMINATED)) {
                         timeout.cancel();
                     } else if (event instanceof RxBackpressureRequestEvent || event instanceof ContentSubscribedEvent) {

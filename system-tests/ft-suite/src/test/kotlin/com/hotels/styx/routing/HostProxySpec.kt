@@ -26,6 +26,7 @@ import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.server.HttpConnectorConfig
 import com.hotels.styx.servers.MockOriginServer
+import com.hotels.styx.support.ResourcePaths
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.metrics
 import com.hotels.styx.support.newRoutingObject
@@ -362,23 +363,28 @@ class HostProxySpec : FeatureSpec() {
         }
     }
 
-    private val styxServer = StyxServerProvider("""
-                                proxy:
-                                  connectors:
-                                    http:
-                                      port: 0
-                                  clientWorkerThreadsCount: 3
+    private val styxServer = StyxServerProvider(
+            defaultConfig="""
+                proxy:
+                  connectors:
+                    http:
+                      port: 0
+                  clientWorkerThreadsCount: 3
 
-                                admin:
-                                  connectors:
-                                    http:
-                                      port: 0
-                                      
-                                services:
-                                  factories: {}                                     
+                admin:
+                  connectors:
+                    http:
+                      port: 0
+                      
+                services:
+                  factories: {}                                     
 
-                                httpPipeline: hostProxy
-                              """.trimIndent())
+                httpPipeline: hostProxy
+                """.trimIndent(),
+            defaultLoggingConfig = ResourcePaths.fixturesHome(
+                    HostProxySpec::class.java,
+                    "/conf/logback/logback-debug-NettyConnection.xml")
+            )
 
     private val testServer = StyxServerProvider("""
                                 proxy:
