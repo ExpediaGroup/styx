@@ -12,12 +12,14 @@ deploy:
   script: travis/deploy.sh
   skip_cleanup: true
   on:
-    branch: master
+    branch: multiple-jdks
+    jdk: 8
 - provider: script
   script: travis/deploy.sh
   skip_cleanup: true
   on:
     tags: true
+    jdk: 8
 - provider: releases
   api_key: $GIT_TOKEN
   file_glob: true
