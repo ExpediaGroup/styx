@@ -1,4 +1,4 @@
-#!/bin/bash -xe
+#!/bin/bash
 #
 # Copyright (C) 2013-2020 Expedia Inc.
 #
@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-set -xe
+set -x
 function deployRelease() {
 
 RELEASE_VARS='GPG_PUBLIC_KEYS GPG_SECRET_KEYS GPG_KEY_NAME GPG_PASSPHRASE DOCKER_USERNAME DOCKER_PASSWORD SONATYPE_JIRA_USERNAME SONATYPE_JIRA_PASSWORD'
