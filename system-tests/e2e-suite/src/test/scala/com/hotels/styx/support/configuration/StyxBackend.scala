@@ -24,7 +24,6 @@ import com.hotels.styx.support.configuration.BackendsCommon.toOrigin
 import com.hotels.styx.support.server.FakeHttpServer
 
 import scala.collection.JavaConverters._
-import scala.compat.java8.OptionConverters._
 import scala.concurrent.duration.Duration
 
 trait ImplicitOriginConversions {
@@ -141,7 +140,7 @@ case class BackendService(appId: String = "generic-app",
                           healthCheckConfig: HealthCheckConfig = HealthCheckConfig(None),
                           stickySessionConfig: StickySessionConfig = StickySessionConfig(),
                           responseTimeout: Duration = 35.seconds,
-                          maxHeaderSize: Int = 1000,
+                          maxHeaderSize: Int = 8192,
                           tlsSettings: Option[TlsSettings] = None
                          ) {
   def asJava: extension.service.BackendService = {

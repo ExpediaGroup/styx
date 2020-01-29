@@ -167,7 +167,7 @@ public final class HttpConfig {
         /**
          * Set the maximum combined size of the HTTP headers in bytes.
          *
-         * @param maxHeaderSize maximum combined size of the HTTP headers
+         * @param maxHeaderSize maximum combined size of the HTTP headers. 0 means use the default value.
          * @return this builder
          */
         public Builder setMaxHeadersSize(int maxHeaderSize) {

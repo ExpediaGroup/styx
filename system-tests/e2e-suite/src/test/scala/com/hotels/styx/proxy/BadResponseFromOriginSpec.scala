@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -92,11 +92,10 @@ class BadResponseFromOriginSpec extends FunSpec
       response2.get.getStatus.code() should be(200)
     }
 
-    it("Responds with 502 Bad Gateway when Styx is unable to read response from origin.") {
+    it("Responds with 502 Bad Gateway when Styx is unable to read response from origin (maxHeaderSize exceeded).") {
       originRespondingWith(
         responseWithHeaders(
-          HttpHeader(CONTENT_LENGTH, "0"),
-          HttpHeader("Accept-Language", Random.alphanumeric.take(1000).mkString),
+          HttpHeader("Accept-Language", Random.alphanumeric.take(9000).mkString), // This will make the call fall with header too long
         ))
 
 
