@@ -9,13 +9,13 @@ cache:
   - "~/.m2/repository"
 deploy:
 - provider: script
-  script: travis/deploy.sh
+  script: chmod +x travis/deploy.sh && travis/deploy.sh
   skip_cleanup: true
   on:
     branch: multiple-jdks
     jdk: openjdk8
 - provider: script
-  script: travis/deploy.sh
+  script: chmod +x travis/deploy.sh && travis/deploy.sh
   skip_cleanup: true
   on:
     tags: true
