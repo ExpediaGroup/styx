@@ -24,6 +24,7 @@ import com.hotels.styx.api.Url;
 import com.hotels.styx.api.exceptions.TransportException;
 import com.hotels.styx.common.content.FlowControllingHttpContentProducer;
 import com.hotels.styx.common.content.FlowControllingPublisher;
+import com.hotels.styx.common.content.FlowControllerTimer;
 import com.hotels.styx.common.format.DefaultHttpMessageFormatter;
 import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.server.BadRequestException;
@@ -145,13 +146,14 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
     private FlowControllingHttpContentProducer createProducer(ChannelHandlerContext ctx) {
         String loggingPrefix = format("%s -> %s", ctx.channel().remoteAddress(), ctx.channel().localAddress());
 
-        return new FlowControllingHttpContentProducer(
+        FlowControllingHttpContentProducer producer = new FlowControllingHttpContentProducer(
                 () -> ctx.channel().read(),
                 () -> ctx.channel().config().setAutoRead(true),
                 cause -> { },
                 format("%s, %s", loggingPrefix, ""),
-                null,
-                inactivityTimeoutMs);
+                null);
+        new FlowControllerTimer(inactivityTimeoutMs, ctx.channel().eventLoop(), producer).checkActivity();
+        return producer;
     }
 
     private LiveHttpRequest toStyxRequest(HttpRequest request, Publisher<Buffer> contentPublisher) {

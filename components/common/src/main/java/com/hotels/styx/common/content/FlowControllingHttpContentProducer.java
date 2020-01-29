@@ -16,14 +16,11 @@
 package com.hotels.styx.common.content;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.hotels.styx.api.exceptions.ResponseTimeoutException;
+import com.hotels.styx.api.exceptions.ContentTimeoutException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.common.StateMachine;
 import io.netty.buffer.ByteBuf;
-import io.netty.util.HashedWheelTimer;
 import io.netty.util.ReferenceCountUtil;
-import io.netty.util.Timeout;
-import io.netty.util.TimerTask;
 import org.reactivestreams.Subscriber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +40,6 @@ import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.
 import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.TERMINATED;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static reactor.core.publisher.Operators.addCap;
 
 /**
@@ -80,9 +76,7 @@ public class FlowControllingHttpContentProducer {
     private final Origin origin;
 
     private volatile Subscriber<? super ByteBuf> contentSubscriber;
-
-    private static HashedWheelTimer timer = new HashedWheelTimer();
-    private Timeout timeout;
+    private volatile long lastActive = System.currentTimeMillis();
 
     enum ProducerState {
         BUFFERING,
@@ -98,19 +92,13 @@ public class FlowControllingHttpContentProducer {
             Runnable onCompleteAction,
             Consumer<Throwable> onTerminateAction,
             String loggingPrefix,
-            Origin origin,
-            long inactivityTimeoutMs) {
+            Origin origin) {
         this.askForMore = requireNonNull(askForMore);
         this.onCompleteAction = requireNonNull(onCompleteAction);
         this.onTerminateAction = requireNonNull(onTerminateAction);
         this.loggingPrefix = loggingPrefix;
         this.origin = origin;
 
-        TimerTask timerTask = timeout -> {
-            LOGGER.debug("Timeout triggered: " + timeout);
-            LOGGER.debug("Pending timeouts when triggered: " + timer.pendingTimeouts());
-            stateMachine.handle(new TearDownEvent(new RuntimeException("Inactive Subscriber")));
-        };
         this.stateMachine = new StateMachine.Builder<ProducerState>()
                 .initialState(BUFFERING)
 
@@ -157,31 +145,20 @@ public class FlowControllingHttpContentProducer {
                 .transition(TERMINATED, ContentChunkEvent.class, this::spuriousContentChunkEvent)
                 .transition(TERMINATED, ContentSubscribedEvent.class, this::contentSubscribedInTerminatedState)
                 .transition(TERMINATED, RxBackpressureRequestEvent.class, ev -> TERMINATED)
+                .transition(TERMINATED, TearDownEvent.class, ev -> TERMINATED)
 
                 .onInappropriateEvent((state, event) -> {
                     LOGGER.warn(warningMessage("Inappropriate event=" + event.getClass().getSimpleName()));
                     return state;
                 })
                 .onStateChange((oldState, newState, event) -> {
-                    resetTimeoutIfNecessary(inactivityTimeoutMs, timerTask, oldState, newState, event);
+                    if (newState.equals(COMPLETED) || newState.equals(TERMINATED)) {
+                        lastActive = 0;
+                    } else if (event instanceof RxBackpressureRequestEvent
+                            || event instanceof ContentSubscribedEvent) {
+                        lastActive = System.currentTimeMillis();
+                    }
                 }).build();
-        timeout = timer.newTimeout(timerTask, inactivityTimeoutMs, MILLISECONDS);
-        LOGGER.debug("Timeout created: " + timeout);
-    }
-
-    private void resetTimeoutIfNecessary(long inactivityTimeoutMs, TimerTask timerTask, ProducerState oldState, ProducerState newState, Object event) {
-        LOGGER.debug("State change event: \n    " + event + "(" + oldState + " -> " + newState + ")");
-        LOGGER.debug("Pending timeouts before cancellation: " + timer.pendingTimeouts());
-        if (newState.equals(COMPLETED) || newState.equals(TERMINATED)) {
-            LOGGER.debug("Timeout Cancelled: " + timeout);
-            timeout.cancel();
-        } else if (event instanceof RxBackpressureRequestEvent || event instanceof ContentSubscribedEvent) {
-            timeout.cancel();
-            LOGGER.debug("Timeout being replaced: " + timeout);
-            timeout = timer.newTimeout(timerTask, inactivityTimeoutMs, MILLISECONDS);
-            LOGGER.debug("New Timeout: " + timeout);
-        }
-        LOGGER.debug("Pending timeouts after cancellation: " + timer.pendingTimeouts());
     }
 
     /*
@@ -429,9 +406,10 @@ public class FlowControllingHttpContentProducer {
         stateMachine.handle(new ChannelInactiveEvent(cause));
     }
 
-    public void tearDownResources() {
-        stateMachine.handle(new TearDownEvent(new ResponseTimeoutException(origin,
-                "channelClosed",
+    public void tearDownResources(String message) {
+        stateMachine.handle(new TearDownEvent(new ContentTimeoutException(
+                origin,
+                message,
                 receivedBytes(),
                 receivedChunks(),
                 emittedBytes(),
@@ -471,6 +449,10 @@ public class FlowControllingHttpContentProducer {
 
     public long receivedChunks() {
         return receivedChunks.get();
+    }
+
+    public long lastActive() {
+        return lastActive;
     }
 
     /*

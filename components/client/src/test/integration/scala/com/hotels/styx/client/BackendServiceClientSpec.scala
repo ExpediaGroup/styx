@@ -23,7 +23,7 @@ import com.google.common.base.Charsets._
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest.get
 import com.hotels.styx.api.LiveHttpResponse
-import com.hotels.styx.api.exceptions.ResponseTimeoutException
+import com.hotels.styx.api.exceptions.ContentTimeoutException
 import com.hotels.styx.api.extension.Origin._
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.extension.service.BackendService
@@ -130,7 +130,7 @@ class BackendServiceClientSpec extends FunSuite with BeforeAndAfterAll with Matc
 
     val duration = System.currentTimeMillis() - start.get()
 
-    assert(maybeResponse.failed.get.isInstanceOf[ResponseTimeoutException], "- Client emitted an incorrect exception!")
+    assert(maybeResponse.failed.get.isInstanceOf[ContentTimeoutException], "- Client emitted an incorrect exception!")
     duration shouldBe responseTimeout.toLong +- 250
   }
 

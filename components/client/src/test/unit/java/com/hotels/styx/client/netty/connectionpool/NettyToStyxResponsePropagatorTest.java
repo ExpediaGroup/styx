@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package com.hotels.styx.client.netty.connectionpool;
 
 import com.google.common.base.Throwables;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.exceptions.ResponseTimeoutException;
+import com.hotels.styx.api.exceptions.ContentTimeoutException;
 import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.BadHttpResponseException;
@@ -143,7 +143,7 @@ public class NettyToStyxResponsePropagatorTest {
         StepVerifier.create(response.body())
                 .then(channel::runPendingTasks) // Execute onSubscribe in FSM
                 .then(() -> channel.pipeline().fireUserEventTriggered(ALL_IDLE_STATE_EVENT))
-                .expectError(ResponseTimeoutException.class)
+                .expectError(ContentTimeoutException.class)
                 .verify();
     }
 

@@ -15,11 +15,12 @@
  */
 package com.hotels.styx.common.content;
 
-import com.hotels.styx.api.exceptions.ResponseTimeoutException;
+import com.hotels.styx.api.exceptions.ContentTimeoutException;
 import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.EventLoop;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,9 +42,7 @@ import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.
 import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.STREAMING;
 import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.TERMINATED;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
-import static io.netty.buffer.Unpooled.buffer;
 import static io.netty.buffer.Unpooled.copiedBuffer;
-import static io.netty.buffer.Unpooled.directBuffer;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
@@ -73,6 +72,7 @@ public class FlowControllingHttpContentProducerTest {
     private ByteBuf contentChunk2;
     private TransportLostException transportLostCause = new TransportLostException(new InetSocketAddress(8080), newOriginBuilder("localhost", 8080).build());
     private LoggingTestSupport logger;
+    private EventLoop eventLoop;
 
     public void setUpAndRequest(long initialCount) {
         downstream = mock(Subscriber.class);
@@ -80,14 +80,14 @@ public class FlowControllingHttpContentProducerTest {
         askForMore = mock(Runnable.class);
         onCompleteAction = mock(Runnable.class);
         onTerminateAction = mock(Consumer.class);
+        eventLoop = mock(EventLoop.class);
 
         producer = new FlowControllingHttpContentProducer(
                 askForMore,
                 onCompleteAction,
                 onTerminateAction,
                 "foobar",
-                newOriginBuilder("foohost", 12345).build(),
-                INACTIVITY_TIMEOUT_MS);
+                newOriginBuilder("foohost", 12345).build());
 
         producer.request(initialCount);
     }
@@ -582,11 +582,11 @@ public class FlowControllingHttpContentProducerTest {
         assertThat(producer.state(), is(BUFFERING_COMPLETED));
 
         producer.channelInactive(transportLostCause);
-        producer.tearDownResources();
+        producer.tearDownResources("test teardown");
 
         assertThat(producer.state(), is(TERMINATED));
         verify(onCompleteAction, never()).run();
-        ArgumentCaptor<ResponseTimeoutException> argumentCaptor = ArgumentCaptor.forClass(ResponseTimeoutException.class);
+        ArgumentCaptor<ContentTimeoutException> argumentCaptor = ArgumentCaptor.forClass(ContentTimeoutException.class);
         verify(onTerminateAction).accept(argumentCaptor.capture());
         assertThat(argumentCaptor.getValue().getMessage(), containsString("bytesReceived=6"));
 
@@ -776,7 +776,7 @@ public class FlowControllingHttpContentProducerTest {
         assertThat(producer.state(), is(EMITTING_BUFFERED_CONTENT));
 
 
-        producer.tearDownResources();
+        producer.tearDownResources("test teardown");
 
         assertThat(producer.state(), is(TERMINATED));
         verify(onCompleteAction, never()).run();
@@ -785,7 +785,7 @@ public class FlowControllingHttpContentProducerTest {
         verify(downstream, never()).onNext(any());
         ArgumentCaptor<Throwable> errorArg = ArgumentCaptor.forClass(Throwable.class);
         verify(downstream, atLeast(1)).onError(errorArg.capture());
-        assertThat(errorArg.getValue(), is(instanceOf(ResponseTimeoutException.class)));
+        assertThat(errorArg.getValue(), is(instanceOf(ContentTimeoutException.class)));
     }
 
 
@@ -1091,62 +1091,6 @@ public class FlowControllingHttpContentProducerTest {
 
         producer.newChunk(contentChunk2);
         verify(askForMore, times(3)).run();
-    }
-
-    @Test
-    public void shouldPerformReleaseAndTerminateWhenTimeoutOccurs() throws InterruptedException {
-        setUpAndRequest(0);
-        assertEquals(BUFFERING, producer.state());
-
-        producer.onSubscribed(downstream);
-        producer.newChunk(contentChunk1);
-        producer.newChunk(contentChunk2);
-
-        assertEquals(STREAMING, producer.state());
-        assertEquals(1, contentChunk1.refCnt());
-        assertEquals(1, contentChunk2.refCnt());
-
-        Thread.sleep(INACTIVITY_TIMEOUT_MS*2);
-        verify(onTerminateAction).accept(isA(Throwable.class));
-        assertEquals(TERMINATED, producer.state());
-        assertEquals(0, contentChunk1.refCnt());
-        assertEquals(0, contentChunk2.refCnt());
-    }
-
-    @Test
-    public void shouldResetTimeoutWhenSubscriptionOccurs() throws InterruptedException {
-        setUpAndRequest(0);
-        assertEquals(BUFFERING, producer.state());
-
-        Thread.sleep(getPercentageOfValue(75, INACTIVITY_TIMEOUT_MS));
-        producer.onSubscribed(downstream);
-        Thread.sleep(getPercentageOfValue(75, INACTIVITY_TIMEOUT_MS));
-
-        assertEquals(STREAMING, producer.state());
-    }
-
-    @Test
-    public void shouldResetTimeoutWhenBackPressureTriggersStateChangeEvent() throws InterruptedException {
-        setUpAndRequest(0);
-
-        Thread.sleep(getPercentageOfValue(75, INACTIVITY_TIMEOUT_MS));
-        producer.request(1);
-        Thread.sleep(getPercentageOfValue(75, INACTIVITY_TIMEOUT_MS));
-
-        assertEquals(BUFFERING, producer.state());
-    }
-
-    @Test
-    public void shouldCancelTimeoutWhenStateIsCompleted() throws InterruptedException{
-        setUpAndRequest(0);
-
-        producer.lastHttpContent();
-        producer.onSubscribed(downstream);
-        assertEquals(COMPLETED, producer.state());
-
-        Thread.sleep(INACTIVITY_TIMEOUT_MS*2);
-        verify(onTerminateAction, never()).accept(isA(Throwable.class));
-        assertEquals(COMPLETED, producer.state());
     }
 
     private long getPercentageOfValue(int percentage, long value) {

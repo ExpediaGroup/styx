@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.exceptions.ResponseTimeoutException;
+import com.hotels.styx.api.exceptions.ContentTimeoutException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
@@ -90,11 +90,9 @@ public class StyxHttpClientTest {
      */
     @Test
     public void cannotBeModifiedAfterCreated() throws ExecutionException, InterruptedException {
-        StyxHttpClient.Builder builder = new StyxHttpClient.Builder().userAgent("v1");
-
-        StyxHttpClient client = builder.build();
-
-        builder.userAgent("v2");
+        StyxHttpClient client = new StyxHttpClient.Builder()
+                .userAgent("v1")
+                .build();
 
         assertThat(client.send(httpRequest).get().status(), is(OK));
         server.verify(
@@ -107,7 +105,7 @@ public class StyxHttpClientTest {
      * StyxHttpClient.Builder
      */
     @Test
-    public void requiresValidTlsSettins() {
+    public void requiresValidTlsSettings() {
         assertThrows(NullPointerException.class,
             () -> new StyxHttpClient.Builder()
                 .tlsSettings(null)
@@ -333,7 +331,7 @@ public class StyxHttpClientTest {
                             .header(HOST, hostString(server.port()))
                             .build())
                     .get(2, SECONDS));
-        assertEquals(ResponseTimeoutException.class, e.getCause().getClass());
+        assertEquals(ContentTimeoutException.class, e.getCause().getClass());
     }
 
     @Disabled

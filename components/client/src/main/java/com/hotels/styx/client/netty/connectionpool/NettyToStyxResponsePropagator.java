@@ -26,6 +26,7 @@ import com.hotels.styx.client.BadHttpResponseException;
 import com.hotels.styx.client.StyxClientException;
 import com.hotels.styx.common.content.FlowControllingPublisher;
 import com.hotels.styx.common.content.FlowControllingHttpContentProducer;
+import com.hotels.styx.common.content.FlowControllerTimer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.channel.ChannelHandlerContext;
@@ -144,7 +145,7 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
         if (evt instanceof IdleStateEvent) {
-            getContentProducer(ctx).tearDownResources();
+            getContentProducer(ctx).tearDownResources("idle timeout");
         } else {
             super.userEventTriggered(ctx, evt);
         }
@@ -161,7 +162,7 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
         String requestPrefix = request != null ? format("Request(method=%s, url=%s, id=%s)", request.method(), request.url(), request.id()) : "Request NA";
         String loggingPrefix = format("%s -> %s", ctx.channel().remoteAddress(), ctx.channel().localAddress());
 
-        return new FlowControllingHttpContentProducer(
+        FlowControllingHttpContentProducer producer = new FlowControllingHttpContentProducer(
                 () -> ctx.channel().read(),
                 () -> {
                     ctx.channel().config().setAutoRead(true);
@@ -169,8 +170,9 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
                 },
                 this::emitResponseError,
                 format("%s, %s", loggingPrefix, requestPrefix),
-                origin,
-                idleTimeoutMillis);
+                origin);
+        new FlowControllerTimer(idleTimeoutMillis, ctx.channel().eventLoop(), producer);
+        return producer;
     }
 
     private void emitResponseCompleted() {

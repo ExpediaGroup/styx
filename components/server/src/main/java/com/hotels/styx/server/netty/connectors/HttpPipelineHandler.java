@@ -28,7 +28,7 @@ import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.api.exceptions.OriginUnreachableException;
-import com.hotels.styx.api.exceptions.ResponseTimeoutException;
+import com.hotels.styx.api.exceptions.ContentTimeoutException;
 import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.PluginException;
@@ -106,7 +106,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
                     ContentOverflowException.class
             )
             .add(SERVICE_UNAVAILABLE, ResourceExhaustedException.class)
-            .add(GATEWAY_TIMEOUT, ResponseTimeoutException.class)
+            .add(GATEWAY_TIMEOUT, ContentTimeoutException.class)
             .add(INTERNAL_SERVER_ERROR, StyxClientException.class)
             .build();
 
