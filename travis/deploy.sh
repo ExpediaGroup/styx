@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 #
 # Copyright (C) 2013-2020 Expedia Inc.
 #
@@ -26,6 +26,7 @@ do
     fi
 done
 
+set -e
 export GPG_DIR="$(pwd)/gpg-temp"
 mkdir -p $GPG_DIR
 echo $GPG_PUBLIC_KEYS | base64 --decode >> ${GPG_DIR}/pubring.gpg
