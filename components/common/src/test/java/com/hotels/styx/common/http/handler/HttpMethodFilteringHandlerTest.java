@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,10 +19,10 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.WebServiceHandler;
-import com.hotels.styx.server.HttpInterceptorContext;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
+import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.api.HttpMethod.GET;
 import static com.hotels.styx.api.HttpMethod.POST;
 import static com.hotels.styx.api.HttpRequest.post;
@@ -52,7 +52,7 @@ public class HttpMethodFilteringHandlerTest {
         HttpMethodFilteringHandler post = new HttpMethodFilteringHandler(GET, handler);
 
         HttpRequest request = post("/some-uri").build();
-        HttpResponse response = Mono.from(post.handle(request, HttpInterceptorContext.create())).block();
+        HttpResponse response = Mono.from(post.handle(request, requestContext())).block();
 
         assertThat(response.status(), is(METHOD_NOT_ALLOWED));
     }

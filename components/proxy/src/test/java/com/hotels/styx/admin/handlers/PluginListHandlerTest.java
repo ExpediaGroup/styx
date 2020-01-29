@@ -17,12 +17,12 @@ package com.hotels.styx.admin.handlers;
 
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
-import com.hotels.styx.server.HttpInterceptorContext;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
 
+import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.plugins.spi.Plugin.PASS_THROUGH;
@@ -46,7 +46,7 @@ public class PluginListHandlerTest {
         List<NamedPlugin> plugins = asList(one, two, three, four);
         PluginListHandler handler = new PluginListHandler(plugins);
 
-        HttpResponse response = Mono.from(handler.handle(get("/").build(), HttpInterceptorContext.create())).block();
+        HttpResponse response = Mono.from(handler.handle(get("/").build(), requestContext())).block();
 
         assertThat(response.status(), is(OK));
         assertThat(response.bodyAs(UTF_8), is("" +
@@ -68,7 +68,7 @@ public class PluginListHandlerTest {
 
         HttpResponse response = Mono.from(
                 handler.handle(get("/").build(),
-                        HttpInterceptorContext.create())).block();
+                        requestContext())).block();
         assertThat(response.status(), is(OK));
         assertThat(response.bodyAs(UTF_8), is("" +
                 "<h3>Loaded</h3>" +

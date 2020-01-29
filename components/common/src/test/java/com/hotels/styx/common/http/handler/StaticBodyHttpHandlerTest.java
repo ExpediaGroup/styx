@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@ package com.hotels.styx.common.http.handler;
 
 
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.server.HttpInterceptorContext;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
+import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
@@ -34,7 +34,7 @@ public class StaticBodyHttpHandlerTest {
     public void respondsWithStaticBody() {
         StaticBodyHttpHandler handler = new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "foo", UTF_8);
 
-        HttpResponse response = Mono.from(handler.handle(get("/").build(), HttpInterceptorContext.create())).block();
+        HttpResponse response = Mono.from(handler.handle(get("/").build(), requestContext())).block();
 
         assertThat(response.status(), is(OK));
         assertThat(response.contentType(), isValue(PLAIN_TEXT_UTF_8.toString()));

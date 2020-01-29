@@ -266,7 +266,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         try {
             Eventual<LiveHttpResponse> responseEventual = httpPipeline.handle(
                     v11Request,
-                    new HttpInterceptorContext(this.secure, remoteAddress(ctx)));
+                    new HttpInterceptorContext(this.secure, remoteAddress(ctx), ctx.executor()));
             responseEventual.subscribe(new BaseSubscriber<LiveHttpResponse>() {
                 @Override
                 public void hookOnSubscribe(Subscription s) {

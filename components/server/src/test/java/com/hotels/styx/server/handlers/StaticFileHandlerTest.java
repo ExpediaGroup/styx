@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import com.google.common.io.Files;
 import com.google.common.net.MediaType;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.server.HttpInterceptorContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,6 +47,7 @@ import static com.google.common.net.MediaType.PNG;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
+import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.server.handlers.MediaTypes.ICON;
 import static com.hotels.styx.server.handlers.MediaTypes.MICROSOFT_ASF_VIDEO;
 import static com.hotels.styx.server.handlers.MediaTypes.MICROSOFT_MS_VIDEO;
@@ -184,6 +184,6 @@ public class StaticFileHandlerTest {
     }
 
     private LiveHttpResponse handle(LiveHttpRequest request) {
-        return Mono.from(handler.handle(request, new HttpInterceptorContext())).block();
+        return Mono.from(handler.handle(request, requestContext())).block();
     }
 }

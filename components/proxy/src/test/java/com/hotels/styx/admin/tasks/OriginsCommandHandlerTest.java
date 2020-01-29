@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import com.hotels.styx.client.OriginsCommandsListener;
 import com.hotels.styx.client.origincommands.DisableOrigin;
 import com.hotels.styx.client.origincommands.EnableOrigin;
 import com.hotels.styx.client.origincommands.GetOriginsInventorySnapshot;
-import com.hotels.styx.server.HttpInterceptorContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -39,6 +38,7 @@ import reactor.core.publisher.Mono;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
@@ -127,7 +127,7 @@ public class OriginsCommandHandlerTest {
 
     private HttpResponse post(String path) {
         HttpRequest request = HttpRequest.post(path).build();
-        return Mono.from(originsCommand.handle(request, HttpInterceptorContext.create())).block();
+        return Mono.from(originsCommand.handle(request, requestContext())).block();
     }
 
     static class RecordingOriginsCommandsListener implements OriginsCommandsListener {

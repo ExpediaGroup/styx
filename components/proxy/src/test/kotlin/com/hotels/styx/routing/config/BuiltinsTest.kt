@@ -23,12 +23,12 @@ import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.api.extension.service.spi.StyxService
 import com.hotels.styx.routing.RoutingObject
-import com.hotels.styx.routing.RoutingObjectFactoryContext
+import com.hotels.styx.RoutingObjectFactoryContext
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.ProviderObjectRecord
+import com.hotels.styx.requestContext
 import com.hotels.styx.routing.handlers.RouteRefLookup
-import com.hotels.styx.server.HttpInterceptorContext
 import com.hotels.styx.serviceproviders.ServiceProviderFactory
 import io.kotlintest.matchers.types.shouldBeInstanceOf
 import io.kotlintest.matchers.withClue
@@ -84,7 +84,7 @@ class BuiltinsTest : StringSpec({
 
         val handler = Builtins.build(listOf(), context.get(), StyxObjectReference("aHandler"))
 
-        handler.handle(get("/").build().stream(), HttpInterceptorContext.create())
+        handler.handle(get("/").build().stream(), requestContext())
                 .toMono()
                 .block()!!
                 .status() shouldBe (OK)
@@ -98,10 +98,10 @@ class BuiltinsTest : StringSpec({
 
         val handler = Builtins.build(listOf(), context.get(), StyxObjectReference("aHandler"))
 
-        handler.handle(get("/").build().stream(), HttpInterceptorContext.create()).toMono().block()
-        handler.handle(get("/").build().stream(), HttpInterceptorContext.create()).toMono().block()
-        handler.handle(get("/").build().stream(), HttpInterceptorContext.create()).toMono().block()
-        handler.handle(get("/").build().stream(), HttpInterceptorContext.create()).toMono().block()
+        handler.handle(get("/").build().stream(), requestContext()).toMono().block()
+        handler.handle(get("/").build().stream(), requestContext()).toMono().block()
+        handler.handle(get("/").build().stream(), requestContext()).toMono().block()
+        handler.handle(get("/").build().stream(), requestContext()).toMono().block()
 
         verify(exactly = 4) {
             referenceLookup.apply(StyxObjectReference("aHandler"))

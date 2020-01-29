@@ -27,6 +27,7 @@ import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.ProviderObjectRecord
+import com.hotels.styx.requestContext
 import com.hotels.styx.routing.handlers.StaticResponseHandler
 import io.kotlintest.matchers.boolean.shouldBeFalse
 import io.kotlintest.matchers.boolean.shouldBeTrue
@@ -48,7 +49,7 @@ class HealthChecksTest : FeatureSpec({
         scenario("Returns true when object is responsive") {
             val staticResponse = StaticResponseHandler(200, "Hello", headers)
 
-            urlProbe(get("/healthcheck.txt").build(), 1.seconds)
+            urlProbe(get("/healthcheck.txt").build(), 1.seconds, requestContext())
                     .invoke(staticResponse)
                     .toMono()
                     .block()!!.shouldBeTrue()
@@ -58,7 +59,7 @@ class HealthChecksTest : FeatureSpec({
             val neverRespond = NeverHandler()
 
             val duration = measureTimeMillis {
-                urlProbe(get("/healthcheck.txt").build(), 100.milliseconds)
+                urlProbe(get("/healthcheck.txt").build(), 100.milliseconds, requestContext())
                         .invoke(neverRespond)
                         .toMono()
                         .block()!!.shouldBeFalse()
@@ -70,7 +71,7 @@ class HealthChecksTest : FeatureSpec({
         scenario("Returns false when responds with 4xx error code") {
             val errorHandler = StaticResponseHandler(400, "Hello", headers)
 
-            urlProbe(get("/healthcheck.txt").build(), 100.milliseconds)
+            urlProbe(get("/healthcheck.txt").build(), 100.milliseconds, requestContext())
                     .invoke(errorHandler)
                     .toMono()
                     .block()!!.shouldBeFalse()
@@ -79,7 +80,7 @@ class HealthChecksTest : FeatureSpec({
         scenario("Returns false when responds with 5xx error code") {
             val errorHandler = StaticResponseHandler(500, "Hello", headers)
 
-            urlProbe(get("/healthcheck.txt").build(), 100.milliseconds)
+            urlProbe(get("/healthcheck.txt").build(), 100.milliseconds, requestContext())
                     .invoke(errorHandler)
                     .toMono()
                     .block()!!.shouldBeFalse()
@@ -126,20 +127,6 @@ internal fun StyxObjectStore<RoutingObjectRecord>.record(key: String, type: Stri
 internal fun StyxObjectStore<ProviderObjectRecord>.record(key: String, type: String, tags: Set<String>, config: JsonNode, styxService: StyxService) {
     insert(key, ProviderObjectRecord(type, tags, config, styxService))
 }
-
-internal fun <T> styxObjectStore(init: StyxObjectStore<T>.() -> Unit): StyxObjectStore<T> {
-    val db = StyxObjectStore<T>()
-    db.init()
-    return db
-}
-
-internal fun <T> styxObjectStoreOld(init: StyxObjectStore<T>.() -> Unit): StyxObjectStore<T> =
-    StyxObjectStore<T>()
-            .also{
-                it.init()
-            }
-
-
 
 class NeverHandler : RoutingObject {
     override fun handle(request: LiveHttpRequest, context: HttpInterceptor.Context): Eventual<LiveHttpResponse> = Eventual(Mono.never())

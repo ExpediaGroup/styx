@@ -24,7 +24,7 @@ import com.hotels.styx.api.extension.service.spi.StyxServiceStatus.RUNNING
 import com.hotels.styx.api.extension.service.spi.StyxServiceStatus.STOPPED
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig
 import com.hotels.styx.lbGroupTag
-import com.hotels.styx.routing.RoutingObjectFactoryContext
+import com.hotels.styx.RoutingObjectFactoryContext
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.PathPrefixRouter

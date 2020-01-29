@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package com.hotels.styx.client;
 
 import com.google.common.collect.ImmutableList;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.LiveHttpRequest;
@@ -34,7 +35,6 @@ import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.OriginStatsFactory.CachingOriginStatsFactory;
 import com.hotels.styx.client.retry.RetryNTimes;
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy;
-import com.hotels.styx.server.HttpInterceptorContext;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import reactor.core.publisher.Flux;
@@ -98,8 +98,8 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
     }
 
     @Override
-    public Publisher<LiveHttpResponse> sendRequest(LiveHttpRequest request) {
-        return sendRequest(rewriteUrl(request), new ArrayList<>(), 0);
+    public Publisher<LiveHttpResponse> sendRequest(LiveHttpRequest request, HttpInterceptor.Context context) {
+        return sendRequest(rewriteUrl(request), new ArrayList<>(), 0, context);
     }
 
     /**
@@ -136,7 +136,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
         return request.method().equals(HEAD);
     }
 
-    private Publisher<LiveHttpResponse> sendRequest(LiveHttpRequest request, List<RemoteHost> previousOrigins, int attempt) {
+    private Publisher<LiveHttpResponse> sendRequest(LiveHttpRequest request, List<RemoteHost> previousOrigins, int attempt, HttpInterceptor.Context context) {
         if (attempt >= MAX_RETRY_ATTEMPTS) {
             return Flux.error(new NoAvailableHostsException(this.id));
         }
@@ -147,7 +147,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
             List<RemoteHost> newPreviousOrigins = newArrayList(previousOrigins);
             newPreviousOrigins.add(remoteHost.get());
 
-            return ResponseEventListener.from(host.hostClient().handle(request, HttpInterceptorContext.create())
+            return ResponseEventListener.from(host.hostClient().handle(request, context)
                     .map(response -> addStickySessionIdentifier(response, host.origin())))
                     .whenResponseError(cause -> logError(request, cause))
                     .whenCancelled(() -> originStatsFactory.originStats(host.origin()).requestCancelled())
@@ -157,12 +157,12 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
                     .map(StyxBackendServiceClient::removeRedundantContentLengthHeader)
                     .onErrorResume(cause -> {
                         RetryPolicyContext retryContext = new RetryPolicyContext(this.id, attempt + 1, cause, request, previousOrigins);
-                        return retry(request, retryContext, newPreviousOrigins, attempt + 1, cause);
+                        return retry(request, retryContext, newPreviousOrigins, attempt + 1, cause, context);
                     })
                     .map(response -> addOriginId(host.id(), response));
         } else {
             RetryPolicyContext retryContext = new RetryPolicyContext(this.id, attempt + 1, null, request, previousOrigins);
-            return retry(request, retryContext, previousOrigins, attempt + 1, new NoAvailableHostsException(this.id));
+            return retry(request, retryContext, previousOrigins, attempt + 1, new NoAvailableHostsException(this.id), context);
         }
     }
 
@@ -172,7 +172,13 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
                 .build();
     }
 
-    private Flux<LiveHttpResponse> retry(LiveHttpRequest request, RetryPolicyContext retryContext, List<RemoteHost> previousOrigins, int attempt, Throwable cause) {
+    private Flux<LiveHttpResponse> retry(
+            LiveHttpRequest request,
+            RetryPolicyContext retryContext,
+            List<RemoteHost> previousOrigins,
+            int attempt,
+            Throwable cause,
+            HttpInterceptor.Context context) {
         LoadBalancer.Preferences lbContext = new LoadBalancer.Preferences() {
             @Override
             public Optional<String> preferredOrigins() {
@@ -188,7 +194,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
         };
 
         if (this.retryPolicy.evaluate(retryContext, loadBalancer, lbContext).shouldRetry()) {
-            return Flux.from(sendRequest(request, previousOrigins, attempt));
+            return Flux.from(sendRequest(request, previousOrigins, attempt, context));
         } else {
             return Flux.error(cause);
         }

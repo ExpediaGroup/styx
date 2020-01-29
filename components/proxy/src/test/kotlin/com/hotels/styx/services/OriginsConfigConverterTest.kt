@@ -15,13 +15,13 @@
  */
 package com.hotels.styx.services
 
+import com.hotels.styx.ProviderObjectRecord
 import com.hotels.styx.STATE_ACTIVE
 import com.hotels.styx.STATE_UNREACHABLE
 import com.hotels.styx.lbGroupTag
-import com.hotels.styx.routing.RoutingObjectFactoryContext
+import com.hotels.styx.RoutingObjectFactoryContext
 import com.hotels.styx.routing.config.Builtins.INTERCEPTOR_PIPELINE
 import com.hotels.styx.routing.db.StyxObjectStore
-import com.hotels.styx.ProviderObjectRecord
 import com.hotels.styx.services.OriginsConfigConverter.Companion.deserialiseOrigins
 import com.hotels.styx.services.OriginsConfigConverter.Companion.loadBalancingGroup
 import com.hotels.styx.stateTag
@@ -41,6 +41,7 @@ class OriginsConfigConverterTest : StringSpec({
             ---
             - id: "app"
               path: "/"
+              maxHeaderSize: 1000
               origins:
               - { id: "app1", host: "localhost:9090" }
               - { id: "app2", host: "localhost:9091" }
@@ -55,6 +56,7 @@ class OriginsConfigConverterTest : StringSpec({
                     it[0].tags().shouldContainExactlyInAnyOrder(lbGroupTag("app"), stateTag(STATE_ACTIVE))
                     it[0].type().shouldBe("HostProxy")
                     it[0].config().shouldNotBeNull()
+                    it[0].config()["maxHeaderSize"].intValue() shouldBe 1000
 
                     it[1].name() shouldBe "app.app2"
                     it[1].tags().shouldContainExactlyInAnyOrder(lbGroupTag("app"), stateTag(STATE_ACTIVE))

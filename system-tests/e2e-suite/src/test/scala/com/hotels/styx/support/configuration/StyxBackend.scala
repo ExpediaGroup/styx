@@ -81,7 +81,7 @@ class HttpBackend(override val appId: String,
                   override val healthCheckConfig: HealthCheckConfig,
                   override val stickySessionConfig: StickySessionConfig
                  ) extends StyxBackend {
-  override def toBackend(path: String) = BackendService(appId, path, origins, connectionPoolConfig, healthCheckConfig, stickySessionConfig, responseTimeout, None)
+  override def toBackend(path: String) = BackendService(appId, path, origins, connectionPoolConfig, healthCheckConfig, stickySessionConfig, responseTimeout, tlsSettings = None)
 
 }
 
@@ -110,7 +110,7 @@ class HttpsBackend(override val appId: String,
                    override val stickySessionConfig: StickySessionConfig,
                    val tlsSettings: TlsSettings
                   ) extends StyxBackend {
-  override def toBackend(path: String) = BackendService(appId, path, origins, connectionPoolConfig, healthCheckConfig, stickySessionConfig, responseTimeout, Some(tlsSettings))
+  override def toBackend(path: String) = BackendService(appId, path, origins, connectionPoolConfig, healthCheckConfig, stickySessionConfig, responseTimeout, tlsSettings = Some(tlsSettings))
 
 }
 
@@ -141,6 +141,7 @@ case class BackendService(appId: String = "generic-app",
                           healthCheckConfig: HealthCheckConfig = HealthCheckConfig(None),
                           stickySessionConfig: StickySessionConfig = StickySessionConfig(),
                           responseTimeout: Duration = 35.seconds,
+                          maxHeaderSize: Int = 8192,
                           tlsSettings: Option[TlsSettings] = None
                          ) {
   def asJava: extension.service.BackendService = {
@@ -153,6 +154,7 @@ case class BackendService(appId: String = "generic-app",
       .stickySessionConfig(stickySessionConfig.asJava)
       .responseTimeoutMillis(responseTimeout.toMillis.toInt)
       .https(tlsSettings.map(_.asJava).orNull)
+      .maxHeaderSize(maxHeaderSize)
       .build()
   }
 }

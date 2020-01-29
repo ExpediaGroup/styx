@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
 import com.hotels.styx.client.retry.RetryNTimes
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
 import com.hotels.styx.common.FreePorts.freePort
+import com.hotels.styx.support.Support.requestContext
 import com.hotels.styx.support.server.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies._
 import io.netty.channel.ChannelHandlerContext
@@ -133,7 +134,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .build
 
-    val response = Mono.from(client.sendRequest(get("/version.txt").build)).block()
+    val response = Mono.from(client.sendRequest(get("/version.txt").build, requestContext())).block()
     response.status() should be (OK)
   }
 
@@ -164,7 +165,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
 
     val request: LiveHttpRequest = get("/version.txt").build
 
-    val response = Mono.from(client.sendRequest(request)).block()
+    val response = Mono.from(client.sendRequest(request, requestContext())).block()
 
     val cookie = response.cookie("styx_origin_generic-app").get()
 

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,10 +15,6 @@
  */
 package com.hotels.styx.client;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import static com.google.common.base.MoreObjects.firstNonNull;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 
@@ -26,26 +22,24 @@ import static java.util.Collections.emptyList;
  * HTTP configuration settings, used to connect to origins.
  */
 public final class HttpConfig {
+
+    private static final int USE_DEFAULT_MAX_HEADER_SIZE = 0;
+    private static final int DEFAULT_MAX_HEADER_SIZE = 8192;
+
     private boolean compress;
     private final int maxInitialLength;
     private final int maxHeadersSize;
     private final int maxChunkSize;
-    private int maxContentLength = 65536;
-    private Iterable<ChannelOptionSetting> settings = emptyList();
+    private int maxContentLength;
+    private Iterable<ChannelOptionSetting> settings;
 
-    @JsonCreator
-    HttpConfig(@JsonProperty("maxChunkSize") Integer maxChunkSize,
-               @JsonProperty("maxHeaderSize") Integer maxHeadersSize,
-               @JsonProperty("maxInitialLength") Integer maxInitialLength) {
-        this.maxChunkSize = firstNonNull(maxChunkSize, 8192);
-        this.maxHeadersSize = firstNonNull(maxHeadersSize, 8192);
-        this.maxInitialLength = firstNonNull(maxInitialLength, 4096);
-    }
 
     private HttpConfig(Builder builder) {
         this.compress = builder.compress;
         this.maxInitialLength = builder.maxInitialLength;
-        this.maxHeadersSize = builder.maxHeadersSize;
+        this.maxHeadersSize = builder.maxHeadersSize == USE_DEFAULT_MAX_HEADER_SIZE
+                ? DEFAULT_MAX_HEADER_SIZE
+                : builder.maxHeadersSize;
         this.maxChunkSize = builder.maxChunkSize;
         this.maxContentLength = builder.maxContentLength;
         this.settings = builder.settings;
@@ -129,7 +123,7 @@ public final class HttpConfig {
     public static final class Builder {
         private boolean compress;
         private int maxInitialLength = 4096;
-        private int maxHeadersSize = 8192;
+        private int maxHeadersSize = DEFAULT_MAX_HEADER_SIZE;
         private int maxChunkSize = 8192;
         private int maxContentLength = 65536;
         private Iterable<ChannelOptionSetting> settings = emptyList();
@@ -173,7 +167,7 @@ public final class HttpConfig {
         /**
          * Set the maximum combined size of the HTTP headers in bytes.
          *
-         * @param maxHeaderSize maximum combined size of the HTTP headers
+         * @param maxHeaderSize maximum combined size of the HTTP headers. 0 means use the default value.
          * @return this builder
          */
         public Builder setMaxHeadersSize(int maxHeaderSize) {

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,11 +25,11 @@ import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingObject;
-import com.hotels.styx.server.HttpInterceptorContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
+import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
@@ -73,7 +73,7 @@ public class InterceptorPipelineBuilderTest {
     @Test
     public void buildsPipelineWithInterceptors() throws Exception {
         HttpHandler pipeline = new InterceptorPipelineBuilder(environment, plugins, handler, false).build();
-        LiveHttpResponse response = Mono.from(pipeline.handle(get("/foo").build(), HttpInterceptorContext.create())).block();
+        LiveHttpResponse response = Mono.from(pipeline.handle(get("/foo").build(), requestContext())).block();
 
         assertThat(response.header("plug1"), isValue("1"));
         assertThat(response.header("plug2"), isValue("1"));

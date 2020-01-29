@@ -20,6 +20,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.urlMatching
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest.get
+import com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY
 import com.hotels.styx.api.HttpResponseStatus.CREATED
 import com.hotels.styx.api.HttpResponseStatus.GATEWAY_TIMEOUT
 import com.hotels.styx.api.HttpResponseStatus.OK
@@ -154,6 +155,23 @@ class HostProxySpec : FeatureSpec() {
                             it.bodyAs(UTF_8) shouldBe "Hello - HTTPS"
                         }
             }
+
+            scenario("Applies max header size settings") {
+                val maxHeaderSize = 20
+                styxServer().newRoutingObject("hostProxy", """
+                           type: HostProxy
+                           config:
+                             host: ${testServer().proxyHttpHostHeader()}
+                             maxHeaderSize: $maxHeaderSize
+                           """.trimIndent()) shouldBe CREATED
+
+                client.send(get("/")
+                        .header(HOST, styxServer().proxyHttpHostHeader())
+                        .build())
+                        .wait()!!
+                        .status() shouldBe BAD_GATEWAY
+            }
+
         }
 
 */
@@ -426,7 +444,10 @@ class HostProxySpec : FeatureSpec() {
             .start()
             .stub(WireMock.get(urlMatching("/.*")), aResponse()
                     .withStatus(200)
-                    .withBody("mock-server-01"))
+                    .withBody("mock-server-01")
+                    .withHeader("HEADER", "RANDOMLONGVALUETOVERIFYMAXHEADERSIZE")
+            )
+
             .stub(WireMock.get(urlMatching("/slow/.*")), aResponse()
                     .withStatus(200)
                     .withFixedDelay(1500)

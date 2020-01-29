@@ -37,8 +37,8 @@ import com.hotels.styx.routing.config.Builtins.HEALTH_CHECK_MONITOR
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.ProviderObjectRecord
 import com.hotels.styx.StyxObjectRecord
-import com.hotels.styx.routing.mockObject
-import com.hotels.styx.server.HttpInterceptorContext
+import com.hotels.styx.mockObject
+import com.hotels.styx.requestContext
 import com.hotels.styx.sourceTag
 import com.hotels.styx.stateTag
 import com.hotels.styx.targetTag
@@ -74,7 +74,7 @@ class OriginsAdminHandlerTest : FeatureSpec({
     serviceDb.insert("hc.stopped", ProviderObjectRecord(HEALTH_CHECK_MONITOR, setOf(targetTag("app.origin.hc.stopped")), mockk(), mockHealthCheck(false)))
 
     fun getResponse(handler: OriginsAdminHandler, request: LiveHttpRequest) = handler
-            .handle(request, HttpInterceptorContext.create())
+            .handle(request, requestContext())
             .wait()
 
     fun expectFailure(request: HttpRequest, responseStatus: HttpResponseStatus, errorMessageCheck: (String?) -> Unit) {

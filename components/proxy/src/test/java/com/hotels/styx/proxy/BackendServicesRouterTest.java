@@ -27,7 +27,6 @@ import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
-import com.hotels.styx.server.HttpInterceptorContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,6 +37,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
+import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
@@ -62,8 +62,8 @@ public class BackendServicesRouterTest {
     private static final String APP_B = "appB";
 
     private final BackendServiceClientFactory serviceClientFactory =
-            (backendService, originsInventory, originStatsFactory) -> request -> responseWithOriginIdHeader(backendService);
-    private HttpInterceptor.Context context = HttpInterceptorContext.create();
+            (backendService, originsInventory, originStatsFactory) -> (request, context) -> responseWithOriginIdHeader(backendService);
+    private HttpInterceptor.Context context = requestContext();
 
     private Environment environment;
 

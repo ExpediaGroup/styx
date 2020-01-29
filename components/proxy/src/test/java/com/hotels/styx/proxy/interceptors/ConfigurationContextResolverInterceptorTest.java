@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,13 +22,13 @@ import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationContextResolver;
-import com.hotels.styx.server.HttpInterceptorContext;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
+import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.support.api.matchers.HttpStatusMatcher.hasStatus;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -51,7 +51,7 @@ public class ConfigurationContextResolverInterceptorTest {
 
         assertThat(Mono.from(responseObservable).block(), hasStatus(OK));
         assertThat(chain.proceedWasCalled, is(true));
-        assertThat(chain.context.get("config.context", Configuration.Context.class), is(context));
+        assertThat(chain.context().get("config.context", Configuration.Context.class), is(context));
     }
 
     private ConfigurationContextResolver configurationContextResolver(LiveHttpRequest request, Configuration.Context context) {
@@ -67,7 +67,7 @@ public class ConfigurationContextResolverInterceptorTest {
     }
 
     private static class TestChain implements HttpInterceptor.Chain {
-        private final HttpInterceptor.Context context = new HttpInterceptorContext();
+        private final HttpInterceptor.Context context = requestContext();
         private boolean proceedWasCalled;
 
         @Override

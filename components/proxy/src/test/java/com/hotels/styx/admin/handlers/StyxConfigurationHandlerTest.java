@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,12 +19,12 @@ import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.server.HttpInterceptorContext;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import java.io.File;
 
+import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -88,7 +88,7 @@ public class StyxConfigurationHandlerTest {
     }
 
     private static Eventual<HttpResponse> browseForCurrentConfiguration(String yaml, boolean pretty) {
-        return configurationBrowserHandler(yaml).handle(adminRequest(pretty), HttpInterceptorContext.create());
+        return configurationBrowserHandler(yaml).handle(adminRequest(pretty), requestContext());
     }
 
     private static HttpRequest adminRequest(boolean pretty) {

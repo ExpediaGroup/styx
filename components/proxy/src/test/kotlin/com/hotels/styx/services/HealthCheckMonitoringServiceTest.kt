@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,11 +18,11 @@ package com.hotels.styx.services
 import com.hotels.styx.STATE_INACTIVE
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.lbGroupTag
-import com.hotels.styx.routing.CaptureList
+import com.hotels.styx.CaptureList
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
-import com.hotels.styx.routing.failingMockObject
-import com.hotels.styx.routing.mockObject
+import com.hotels.styx.failingMockObject
+import com.hotels.styx.mockObject
 import io.kotlintest.matchers.collections.shouldContainAll
 import io.kotlintest.matchers.collections.shouldContainExactly
 import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder

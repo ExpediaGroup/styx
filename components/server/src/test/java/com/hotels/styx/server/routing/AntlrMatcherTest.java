@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,14 +18,16 @@ package com.hotels.styx.server.routing;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.Executors;
+
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class AntlrMatcherTest {
 
-    private final HttpInterceptorContext contextHttps = new HttpInterceptorContext(true);
-    private final HttpInterceptorContext contextHttp = new HttpInterceptorContext();
+    private final HttpInterceptorContext contextHttps = new HttpInterceptorContext(true, null, Runnable::run);
+    private final HttpInterceptorContext contextHttp = new HttpInterceptorContext(false, null, Runnable::run);
 
     @Test
     public void matchesHttpProtocol() {

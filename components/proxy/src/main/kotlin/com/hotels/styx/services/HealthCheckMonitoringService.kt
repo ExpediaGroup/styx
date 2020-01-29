@@ -32,6 +32,7 @@ import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.ProviderObjectRecord
+import com.hotels.styx.server.HttpInterceptorContext
 import com.hotels.styx.serviceproviders.ServiceProviderFactory
 import com.hotels.styx.services.HealthCheckMonitoringService.Companion.EXECUTOR
 import org.slf4j.LoggerFactory
@@ -53,7 +54,8 @@ internal class HealthCheckMonitoringService(
         private val period: Duration,
         activeThreshold: Int,
         inactiveThreshold: Int,
-        private val executor: ScheduledExecutorService) : AbstractStyxService("HealthCheckMonitoringService") {
+        private val executor: ScheduledExecutorService,
+        workerExecutor: NettyExecutor = healthCheckExecutor) : AbstractStyxService("HealthCheckMonitoringService") {
 
     companion object {
         @JvmField
@@ -71,7 +73,11 @@ internal class HealthCheckMonitoringService(
         internal val LOGGER = LoggerFactory.getLogger(HealthCheckMonitoringService::class.java)
     }
 
-    private val probe = urlProbe(HttpRequest.get(urlPath).build(), Duration.ofMillis(1000))
+    private val probe = urlProbe(
+            HttpRequest.get(urlPath).build(),
+            Duration.ofMillis(1000),
+            HttpInterceptorContext(false, null, workerExecutor.eventLoopGroup()))
+
     private val determineObjectState = healthCheckFunction(activeThreshold, inactiveThreshold)
     private val futureRef: AtomicReference<ScheduledFuture<*>> = AtomicReference()
 
@@ -165,6 +171,8 @@ internal data class HealthCheckConfiguration(
         @JsonProperty val healthyThreshod: Int,
         @JsonProperty val unhealthyThreshold: Int)
 
+private val healthCheckExecutor = NettyExecutor.create("HealthCheckMonitoringService-global", 1)
+
 internal class HealthCheckMonitoringServiceFactory : ServiceProviderFactory {
     override fun create(name: String, context: RoutingObjectFactory.Context, configuration: JsonNode, serviceDb: StyxObjectStore<ProviderObjectRecord>): StyxService {
         val config = JsonNodeConfig(configuration).`as`(HealthCheckConfiguration::class.java)
@@ -176,7 +184,8 @@ internal class HealthCheckMonitoringServiceFactory : ServiceProviderFactory {
                 Duration.ofMillis(config.intervalMillis),
                 config.healthyThreshod,
                 config.unhealthyThreshold,
-                EXECUTOR)
+                EXECUTOR,
+                healthCheckExecutor)
     }
 }
 

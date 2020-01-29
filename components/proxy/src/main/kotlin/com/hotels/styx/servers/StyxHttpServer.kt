@@ -40,6 +40,7 @@ object StyxHttpServer {
     val SCHEMA = `object`(
             field("port", integer()),
             field("handler", string()),
+            optional("compressResponses", bool()),
             optional("tlsSettings", `object`(
                     optional("sslProvider", string()),
                     optional("certificateFile", string()),
@@ -79,6 +80,7 @@ private data class StyxHttpServerTlsSettings(
 private data class StyxHttpServerConfiguration(
         val port: Int,
         val handler: String,
+        val compressResponses: Boolean = false,
         val tlsSettings: StyxHttpServerTlsSettings?,
 
         val maxInitialLength: Int = 4096,
@@ -101,6 +103,7 @@ internal class StyxHttpServerFactory : StyxServerFactory {
 
         val environment = context.environment()
         val proxyServerConfig = ProxyServerConfig.Builder()
+                .setCompressResponses(config.compressResponses)
                 .setMaxInitialLength(config.maxInitialLength)
                 .setMaxHeaderSize(config.maxHeaderSize)
                 .setMaxChunkSize(config.maxChunkSize)
