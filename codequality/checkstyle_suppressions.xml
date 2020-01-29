@@ -35,7 +35,7 @@
   <suppress checks="FileLength" files="HttpRequest.java"/>
   <suppress checks="MethodLength" files="ConnectionPoolFactory.java"/>
 
-  <suppress checks="ParameterNumber" files=".*StartupConfig.java|.*ProxyServiceSupplier.java"/>
+  <suppress checks="ParameterNumber" files=".*StartupConfig.java|.*ProxyServiceSupplier.java|.*HostProxy.java"/>
 
   <suppress checks="RegexpSingleline" files="LOGBackConfigurer.java"/>
 

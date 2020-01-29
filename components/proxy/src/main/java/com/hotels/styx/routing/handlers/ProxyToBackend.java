@@ -43,6 +43,7 @@ import com.hotels.styx.routing.config.StyxObjectDefinition;
 
 import java.util.List;
 
+import static com.hotels.styx.client.HttpConfig.newHttpConfigBuilder;
 import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
 import static com.hotels.styx.config.schema.SchemaDsl.field;
 import static com.hotels.styx.config.schema.SchemaDsl.object;
@@ -110,6 +111,7 @@ public class ProxyToBackend implements RoutingObject {
                                     .longFormat(longFormat)
                                     .build())
                     .tlsSettings(backendService.tlsSettings().orElse(null))
+                    .httpConfig(newHttpConfigBuilder().setMaxHeadersSize(backendService.maxHeaderSize()).build())
                     .build();
 
             ConnectionPoolSettings poolSettings = backendService.connectionPoolConfig();

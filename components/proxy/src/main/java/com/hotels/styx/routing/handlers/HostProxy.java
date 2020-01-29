@@ -49,6 +49,7 @@ import java.util.concurrent.CompletableFuture;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
+import static com.hotels.styx.client.HttpConfig.newHttpConfigBuilder;
 import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
 import static com.hotels.styx.config.schema.SchemaDsl.atLeastOne;
 import static com.hotels.styx.config.schema.SchemaDsl.bool;
@@ -103,6 +104,7 @@ public class HostProxy implements RoutingObject {
                             "connectionExpirationSeconds")
             )),
             optional("responseTimeoutMillis", integer()),
+            optional("maxHeaderSize", integer()),
             optional("metricPrefix", string())
     );
 
@@ -111,8 +113,10 @@ public class HostProxy implements RoutingObject {
     private final OriginMetrics originMetrics;
     private volatile boolean active = true;
 
-    @VisibleForTesting final String host;
-    @VisibleForTesting final int port;
+    @VisibleForTesting
+    final String host;
+    @VisibleForTesting
+    final int port;
 
     public HostProxy(String host, int port, StyxHostHttpClient client, OriginMetrics originMetrics) {
         this.host = requireNonNull(host);
@@ -149,6 +153,7 @@ public class HostProxy implements RoutingObject {
         private final ConnectionPoolSettings connectionPool;
         private final TlsSettings tlsSettings;
         private final int responseTimeoutMillis;
+        private final int maxHeaderSize;
         private final String metricPrefix;
 
         public HostProxyConfiguration(
@@ -156,11 +161,13 @@ public class HostProxy implements RoutingObject {
                 ConnectionPoolSettings connectionPool,
                 TlsSettings tlsSettings,
                 int responseTimeoutMillis,
+                int maxHeaderSize,
                 String metricPrefix) {
             this.host = host;
             this.connectionPool = connectionPool;
             this.tlsSettings = tlsSettings;
             this.responseTimeoutMillis = responseTimeoutMillis;
+            this.maxHeaderSize = maxHeaderSize;
             this.metricPrefix = metricPrefix;
         }
 
@@ -184,10 +191,16 @@ public class HostProxy implements RoutingObject {
             return responseTimeoutMillis;
         }
 
+        @JsonProperty("maxHeaderSize")
+        public int maxHeaderSize() {
+            return maxHeaderSize;
+        }
+
         @JsonProperty("metricPrefix")
         public String metricPrefix() {
             return metricPrefix;
         }
+
     }
 
     /**
@@ -197,6 +210,7 @@ public class HostProxy implements RoutingObject {
         private static final int DEFAULT_REQUEST_TIMEOUT = 60000;
         private static final int DEFAULT_TLS_PORT = 443;
         private static final int DEFAULT_HTTP_PORT = 80;
+        public static final int USE_DEFAULT_MAX_HEADER_SIZE = 0;
 
         @Override
         public RoutingObject build(List<String> fullName, Context context, StyxObjectDefinition configBlock) {
@@ -210,6 +224,8 @@ public class HostProxy implements RoutingObject {
 
             int responseTimeoutMillis = config.get("responseTimeoutMillis", Integer.class)
                     .orElse(DEFAULT_REQUEST_TIMEOUT);
+
+            int maxHeaderSize = config.get("maxHeaderSize", Integer.class).orElse(USE_DEFAULT_MAX_HEADER_SIZE);
 
             String metricPrefix = config.get("metricPrefix", String.class)
                     .orElse("routing.objects");
@@ -227,6 +243,7 @@ public class HostProxy implements RoutingObject {
                     poolSettings,
                     tlsSettings,
                     responseTimeoutMillis,
+                    maxHeaderSize,
                     metricPrefix,
                     objectName);
         }
@@ -250,6 +267,7 @@ public class HostProxy implements RoutingObject {
                 ConnectionPoolSettings poolSettings,
                 TlsSettings tlsSettings,
                 int responseTimeoutMillis,
+                int maxHeaderSize,
                 String metricPrefix,
                 String objectName) {
 
@@ -268,6 +286,7 @@ public class HostProxy implements RoutingObject {
                             connectionFactory(
                                     tlsSettings,
                                     responseTimeoutMillis,
+                                    maxHeaderSize,
                                     theOrigin -> originMetrics,
                                     poolSettings.connectionExpirationSeconds()))
                     .connectionPoolSettings(poolSettings)
@@ -280,6 +299,7 @@ public class HostProxy implements RoutingObject {
         private static Connection.Factory connectionFactory(
                 TlsSettings tlsSettings,
                 int responseTimeoutMillis,
+                int maxHeaderSize,
                 OriginStatsFactory originStatsFactory,
                 long connectionExpiration) {
 
@@ -293,6 +313,7 @@ public class HostProxy implements RoutingObject {
                                     .build()
                     )
                     .tlsSettings(tlsSettings)
+                    .httpConfig(newHttpConfigBuilder().setMaxHeadersSize(maxHeaderSize).build())
                     .build();
 
             if (connectionExpiration > 0) {

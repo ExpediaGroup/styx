@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import static java.util.Objects.requireNonNull;
  */
 public final class BackendService implements Identifiable {
     public static final int DEFAULT_RESPONSE_TIMEOUT_MILLIS = 1000;
+    public static final int USE_DEFAULT_MAX_HEADER_SIZE = 0;
 
     /**
      * A protocol used for the backend service. This can be either HTTP or HTTPS.
@@ -61,6 +62,7 @@ public final class BackendService implements Identifiable {
     private final StickySessionConfig stickySessionConfig;
     private final List<RewriteConfig> rewrites;
     private final int responseTimeoutMillis;
+    private final int maxHeaderSize;
     private final TlsSettings tlsSettings;
 
     /**
@@ -94,6 +96,7 @@ public final class BackendService implements Identifiable {
                 ? DEFAULT_RESPONSE_TIMEOUT_MILLIS
                 : builder.responseTimeoutMillis;
         this.tlsSettings = builder.tlsSettings;
+        this.maxHeaderSize = builder.maxHeaderSize;
 
         checkThatOriginsAreDistinct(origins);
         checkArgument(responseTimeoutMillis >= 0, "Request timeout must be greater than or equal to zero");
@@ -142,6 +145,10 @@ public final class BackendService implements Identifiable {
         return this.responseTimeoutMillis;
     }
 
+    public int maxHeaderSize() {
+        return this.maxHeaderSize;
+    }
+
     public Optional<TlsSettings> tlsSettings() {
         return Optional.ofNullable(this.tlsSettings);
     }
@@ -161,7 +168,8 @@ public final class BackendService implements Identifiable {
     @Override
     public int hashCode() {
         return Objects.hash(id, path, connectionPoolSettings, origins,
-                healthCheckConfig, stickySessionConfig, rewrites, responseTimeoutMillis);
+                healthCheckConfig, stickySessionConfig, rewrites,
+                responseTimeoutMillis, maxHeaderSize);
     }
 
     @Override
@@ -181,7 +189,8 @@ public final class BackendService implements Identifiable {
                 && Objects.equals(this.stickySessionConfig, other.stickySessionConfig)
                 && Objects.equals(this.rewrites, other.rewrites)
                 && Objects.equals(this.tlsSettings, other.tlsSettings)
-                && Objects.equals(this.responseTimeoutMillis, other.responseTimeoutMillis);
+                && Objects.equals(this.responseTimeoutMillis, other.responseTimeoutMillis)
+                && Objects.equals(this.maxHeaderSize, other.maxHeaderSize);
     }
 
     @Override
@@ -213,7 +222,8 @@ public final class BackendService implements Identifiable {
         private StickySessionConfig stickySessionConfig = stickySessionDisabled();
         private HealthCheckConfig healthCheckConfig;
         private List<RewriteConfig> rewrites = emptyList();
-        public int responseTimeoutMillis = DEFAULT_RESPONSE_TIMEOUT_MILLIS;
+        private int responseTimeoutMillis = DEFAULT_RESPONSE_TIMEOUT_MILLIS;
+        private int maxHeaderSize = USE_DEFAULT_MAX_HEADER_SIZE;
         private TlsSettings tlsSettings;
 
         public Builder() {
@@ -228,6 +238,7 @@ public final class BackendService implements Identifiable {
             this.healthCheckConfig = backendService.healthCheckConfig;
             this.rewrites = backendService.rewrites;
             this.responseTimeoutMillis = backendService.responseTimeoutMillis;
+            this.maxHeaderSize = backendService.maxHeaderSize;
             this.tlsSettings = backendService.tlsSettings().orElse(null);
         }
 
@@ -281,6 +292,18 @@ public final class BackendService implements Identifiable {
          */
         public Builder responseTimeoutMillis(int timeout) {
             this.responseTimeoutMillis = timeout;
+            return this;
+        }
+
+        /**
+         * Sets the response max header size in bytes.
+         * 0 means use the default.
+         *
+         * @param maxHeaderSize
+         * @return
+         */
+        public Builder maxHeaderSize(int maxHeaderSize) {
+            this.maxHeaderSize = maxHeaderSize;
             return this;
         }
 

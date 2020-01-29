@@ -21,7 +21,9 @@ import com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PRO
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
-import com.hotels.styx.*
+import com.hotels.styx.ProviderObjectRecord
+import com.hotels.styx.STATE_ACTIVE
+import com.hotels.styx.STATE_UNREACHABLE
 import com.hotels.styx.api.extension.Origin
 import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings
@@ -33,6 +35,7 @@ import com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSo
 import com.hotels.styx.infrastructure.configuration.json.ObjectMappers
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML
+import com.hotels.styx.lbGroupTag
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.Builtins
 import com.hotels.styx.routing.config.Builtins.HEALTH_CHECK_MONITOR
@@ -46,7 +49,8 @@ import com.hotels.styx.routing.config.StyxObjectDefinition
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.HostProxy.HostProxyConfiguration
 import com.hotels.styx.routing.handlers.LoadBalancingGroup
-import com.hotels.styx.ProviderObjectRecord
+import com.hotels.styx.stateTag
+import com.hotels.styx.targetTag
 import org.slf4j.LoggerFactory
 
 internal class OriginsConfigConverter(
@@ -158,6 +162,7 @@ internal class OriginsConfigConverter(
                         app.connectionPoolConfig(),
                         app.tlsSettings().orElse(null),
                         app.responseTimeoutMillis(),
+                        app.maxHeaderSize(),
                         origin,
                         "origins"));
         }
@@ -220,6 +225,7 @@ internal class OriginsConfigConverter(
         private fun hostProxyConfig(poolSettings: ConnectionPoolSettings,
                                     tlsSettings: TlsSettings?,
                                     responseTimeout: Int,
+                                    maxHeaderSize: Int,
                                     origin: Origin,
                                     metricsPrefix: String): JsonNode = MAPPER.valueToTree(
                 HostProxyConfiguration(
@@ -227,6 +233,7 @@ internal class OriginsConfigConverter(
                         poolSettings,
                         tlsSettings,
                         responseTimeout,
+                        maxHeaderSize,
                         metricsPrefix))
     }
 }

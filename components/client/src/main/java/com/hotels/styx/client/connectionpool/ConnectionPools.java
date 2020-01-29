@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
+import static com.hotels.styx.client.HttpConfig.newHttpConfigBuilder;
 import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
 import static java.lang.String.format;
 
@@ -90,6 +91,7 @@ public final class ConnectionPools {
 
     public static ConnectionPool.Factory simplePoolFactory(BackendService backendService, MetricRegistry metricRegistry) {
         NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder()
+                .httpConfig(newHttpConfigBuilder().setMaxHeadersSize(backendService.maxHeaderSize()).build())
                 .httpRequestOperationFactory(
                         httpRequestOperationFactoryBuilder()
                                 .responseTimeoutMillis(backendService.responseTimeoutMillis())
