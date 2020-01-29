@@ -24,6 +24,7 @@ import com.hotels.styx.support.configuration.BackendsCommon.toOrigin
 import com.hotels.styx.support.server.FakeHttpServer
 
 import scala.collection.JavaConverters._
+import scala.compat.java8.OptionConverters._
 import scala.concurrent.duration.Duration
 
 trait ImplicitOriginConversions {
