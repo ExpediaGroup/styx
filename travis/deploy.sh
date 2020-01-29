@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 #
 # Copyright (C) 2013-2020 Expedia Inc.
 #
@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
 set -x
 function deployRelease() {
 
@@ -26,7 +27,6 @@ do
     fi
 done
 
-set -e
 export GPG_DIR="$(pwd)/gpg-temp"
 mkdir -p $GPG_DIR
 echo $GPG_PUBLIC_KEYS | base64 --decode >> ${GPG_DIR}/pubring.gpg
