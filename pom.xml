@@ -166,6 +166,7 @@
     <!-- non apache plugin versions and configurations, please sort alphabetically -->
     <build-helper-maven-plugin.version>1.9.1</build-helper-maven-plugin.version>
     <jacoco-maven-plugin.version>0.8.5</jacoco-maven-plugin.version>
+    <nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
 
     <!-- code quality -->
     <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>

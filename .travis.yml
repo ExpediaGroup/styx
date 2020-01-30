@@ -9,15 +9,17 @@ cache:
   - "~/.m2/repository"
 deploy:
 - provider: script
-  script: travis/deploy.sh
+  script: chmod +x travis/deploy.sh && travis/deploy.sh
   skip_cleanup: true
   on:
-    branch: master
+    branch: multiple-jdks
+    jdk: openjdk8
 - provider: script
-  script: travis/deploy.sh
+  script: chmod +x travis/deploy.sh && travis/deploy.sh
   skip_cleanup: true
   on:
     tags: true
+    jdk: openjdk8
 - provider: releases
   api_key: $GIT_TOKEN
   file_glob: true
