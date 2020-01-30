@@ -33,7 +33,7 @@ import static java.util.stream.StreamSupport.stream;
 /**
  * Query part of a URL.
  */
-public final class UrlQuery {
+final class UrlQuery {
     private final List<Parameter> parameters;
     private final String encodedQuery;
 
@@ -62,7 +62,7 @@ public final class UrlQuery {
                 .collect(toList());
     }
 
-    public List<Parameter> parameters() {
+    List<Parameter> parameters() {
         return parameters;
     }
 
@@ -71,11 +71,11 @@ public final class UrlQuery {
      *
      * @return the names of all query parameters.
      */
-    public Iterable<String> parameterNames() {
+    Iterable<String> parameterNames() {
         return parameters().stream().map(Parameter::key).distinct().collect(toList());
     }
 
-    public String encodedQuery() {
+    String encodedQuery() {
         return encodedQuery;
     }
 
@@ -108,7 +108,7 @@ public final class UrlQuery {
                 .toString();
     }
 
-    public static class Parameter {
+    static class Parameter {
         private final String key;
         private final String value;
 

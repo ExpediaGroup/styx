@@ -16,6 +16,9 @@
 package com.hotels.styx.api;
 
 import javax.annotation.concurrent.ThreadSafe;
+
+import com.google.common.annotations.VisibleForTesting;
+
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -164,12 +167,8 @@ public final class Url implements Comparable<Url> {
         }
     }
 
-    /**
-     * The query part of the URL.
-     *
-     * @return query
-     */
-    public Optional<UrlQuery> query() {
+    @VisibleForTesting
+    Optional<UrlQuery> query() {
         return this.query;
     }
 
