@@ -54,7 +54,6 @@ class ExpiringConnectionSpec extends FunSpec
         |    enabled: True
         |    longFormat: True
         |""".stripMargin,
-    logbackXmlLocation = fixturesHome(this.getClass, "/conf/logback/logback-debug-NettyConnection.xml")
   )
 
   val mockServer = FakeHttpServer.HttpStartupConfig()
@@ -82,9 +81,9 @@ class ExpiringConnectionSpec extends FunSpec
       .build
   }
 
-//  override protected def afterEach(): Unit = {
-//    println("Metrics from ExpiringConnectionSpec: \n" + styxServer.metricsSnapshot)
-//  }
+  override protected def afterEach(): Unit = {
+    println("Metrics from ExpiringConnectionSpec: \n" + styxServer.metricsSnapshot)
+  }
 
   override protected def afterAll(): Unit = {
     mockServer.stop()
