@@ -76,7 +76,7 @@ public class FlowControllingHttpContentProducer {
     private final Origin origin;
 
     private volatile Subscriber<? super ByteBuf> contentSubscriber;
-    private volatile long lastActive;
+    private volatile long lastActive = System.currentTimeMillis();
 
     enum ProducerState {
         BUFFERING,
@@ -150,12 +150,15 @@ public class FlowControllingHttpContentProducer {
                 .onInappropriateEvent((state, event) -> {
                     LOGGER.warn(warningMessage("Inappropriate event=" + event.getClass().getSimpleName()));
                     return state;
+                })
+                .onStateChange((oldState, newState, event) -> {
+                    if (newState.equals(COMPLETED) || newState.equals(TERMINATED)) {
+                        lastActive = 0;
+                    } else if (event instanceof RxBackpressureRequestEvent
+                            || event instanceof ContentSubscribedEvent) {
+                        lastActive = System.currentTimeMillis();
+                    }
                 }).build();
-        touchLastActive();
-    }
-
-    private void touchLastActive() {
-        lastActive = System.currentTimeMillis();
     }
 
     /*
@@ -165,7 +168,6 @@ public class FlowControllingHttpContentProducer {
         // This can occur before the actual content subscribe event. This occurs if the subscriber
         // has called request() before having subscribed to the content observable. In this
         // case just initialise the request count with requested N value.
-        touchLastActive();
         requested.compareAndSet(Long.MAX_VALUE, 0);
         getAndAddRequest(requested, event.n());
 
@@ -205,9 +207,9 @@ public class FlowControllingHttpContentProducer {
         // This can occur before the actual content subscribe event. This occurs if the subscriber
         // has called request() before actually having subscribed to the content observable. In this
         // case just initialise the request count with requested N value.
-        touchLastActive();
         requested.compareAndSet(Long.MAX_VALUE, 0);
         getAndAddRequest(requested, event.n());
+
         return this.state();
     }
 
@@ -445,16 +447,12 @@ public class FlowControllingHttpContentProducer {
         return receivedBytes.get();
     }
 
-    long receivedChunks() {
+    public long receivedChunks() {
         return receivedChunks.get();
     }
 
-    long lastActive() {
+    public long lastActive() {
         return lastActive;
-    }
-
-    long requested() {
-        return requested.get();
     }
 
     /*
@@ -473,7 +471,6 @@ public class FlowControllingHttpContentProducer {
         LongUnaryOperator incrementIfBackpressureEnabled = current -> current == Long.MAX_VALUE ? current : current + 1;
 
         while (requested.getAndUpdate(decrementIfBackpressureEnabled) > 0) {
-            touchLastActive();
             ByteBuf value = this.readQueue.poll();
             if (value == null) {
                 requested.getAndUpdate(incrementIfBackpressureEnabled);
@@ -483,7 +480,6 @@ public class FlowControllingHttpContentProducer {
             emittedChunks.incrementAndGet();
             downstream.onNext(value);
         }
-        touchLastActive();
     }
 
     @VisibleForTesting
