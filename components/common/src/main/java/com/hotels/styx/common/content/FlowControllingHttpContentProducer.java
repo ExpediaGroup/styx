@@ -116,7 +116,7 @@ public class FlowControllingHttpContentProducer {
                 .transition(BUFFERING_COMPLETED, ChannelInactiveEvent.class, e -> BUFFERING_COMPLETED)
                 .transition(BUFFERING_COMPLETED, ChannelExceptionEvent.class, s -> BUFFERING_COMPLETED)
                 .transition(BUFFERING_COMPLETED, ContentSubscribedEvent.class, this::contentSubscribedInBufferingCompleted)
-                .transition(BUFFERING_COMPLETED, ContentEndEvent.class, s -> BUFFERING_COMPLETED)
+                .transition(BUFFERING_COMPLETED, ContentEndEvent.class, this::contentEndEventWhileBufferingCompleted)
 
                 .transition(STREAMING, RxBackpressureRequestEvent.class, this::rxBackpressureRequestEventInStreaming)
                 .transition(STREAMING, ContentChunkEvent.class, this::contentChunkInStreaming)
@@ -161,6 +161,7 @@ public class FlowControllingHttpContentProducer {
     /*
      * BUFFERING state event handlers
      */
+
     private ProducerState rxBackpressureRequestInBuffering(RxBackpressureRequestEvent event) {
         // This can occur before the actual content subscribe event. This occurs if the subscriber
         // has called request() before having subscribed to the content observable. In this
@@ -173,7 +174,6 @@ public class FlowControllingHttpContentProducer {
 
         return this.state();
     }
-
     private ProducerState contentChunkInBuffering(ContentChunkEvent event) {
         queue(event.chunk);
         askForMore();
@@ -188,6 +188,7 @@ public class FlowControllingHttpContentProducer {
     }
 
     private ProducerState contentSubscribedInBuffering(ContentSubscribedEvent event) {
+        touchLastActive();
         this.contentSubscriber = event.subscriber;
         emitChunks(this.contentSubscriber);
         askForMore();
@@ -195,12 +196,14 @@ public class FlowControllingHttpContentProducer {
     }
 
     private ProducerState contentEndEventWhileBuffering(ContentEndEvent event) {
+        touchLastActive();
         return BUFFERING_COMPLETED;
     }
 
     /*
      * BUFFERING_COMPLETED event handlers
      */
+
     private ProducerState rxBackpressureRequestInBufferingCompleted(RxBackpressureRequestEvent event) {
         // This can occur before the actual content subscribe event. This occurs if the subscriber
         // has called request() before actually having subscribed to the content observable. In this
@@ -210,7 +213,6 @@ public class FlowControllingHttpContentProducer {
         getAndAddRequest(requested, event.n());
         return this.state();
     }
-
     private ProducerState spuriousContentChunkEvent(ContentChunkEvent event) {
         // Should not occur because content has already been fully consumed.
         LOGGER.warn(warningMessage("Spurious content chunk: " + event));
@@ -219,6 +221,7 @@ public class FlowControllingHttpContentProducer {
     }
 
     private ProducerState contentSubscribedInBufferingCompleted(ContentSubscribedEvent event) {
+        touchLastActive();
         this.contentSubscriber = event.subscriber;
         if (readQueue.size() == 0) {
             this.contentSubscriber.onComplete();
@@ -237,11 +240,16 @@ public class FlowControllingHttpContentProducer {
         }
     }
 
+    private ProducerState contentEndEventWhileBufferingCompleted(ContentEndEvent event) {
+        touchLastActive();
+        return this.state();
+    }
 
     /*
      * STREAMING event handlers
      */
     private ProducerState rxBackpressureRequestEventInStreaming(RxBackpressureRequestEvent event) {
+        touchLastActive();
         requested.compareAndSet(Long.MAX_VALUE, 0);
         getAndAddRequest(requested, event.n());
 
@@ -305,6 +313,7 @@ public class FlowControllingHttpContentProducer {
     }
 
     private ProducerState contentEndEventWhileStreaming(ContentEndEvent event) {
+        touchLastActive();
         if (readQueue.size() > 0) {
             return EMITTING_BUFFERED_CONTENT;
         } else {
@@ -325,6 +334,7 @@ public class FlowControllingHttpContentProducer {
      * EMITTING_BUFFERED_CONTENT event handlers
      */
     private ProducerState rxBackpressureRequestInEmittingBufferedContent(RxBackpressureRequestEvent event) {
+        touchLastActive();
         requested.compareAndSet(Long.MAX_VALUE, 0);
         getAndAddRequest(requested, event.n());
 
@@ -453,8 +463,8 @@ public class FlowControllingHttpContentProducer {
         return lastActive;
     }
 
-    long requested() {
-        return requested.get();
+    boolean isWaitingForSubscriber() {
+        return requested.get() == 0;
     }
 
     /*
@@ -473,7 +483,6 @@ public class FlowControllingHttpContentProducer {
         LongUnaryOperator incrementIfBackpressureEnabled = current -> current == Long.MAX_VALUE ? current : current + 1;
 
         while (requested.getAndUpdate(decrementIfBackpressureEnabled) > 0) {
-            touchLastActive();
             ByteBuf value = this.readQueue.poll();
             if (value == null) {
                 requested.getAndUpdate(incrementIfBackpressureEnabled);
@@ -483,7 +492,6 @@ public class FlowControllingHttpContentProducer {
             emittedChunks.incrementAndGet();
             downstream.onNext(value);
         }
-        touchLastActive();
     }
 
     @VisibleForTesting

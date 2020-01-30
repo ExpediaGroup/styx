@@ -17,6 +17,7 @@ package com.hotels.styx.common.content;
 
 import io.netty.channel.EventLoop;
 import io.netty.util.HashedWheelTimer;
+import io.netty.util.Timeout;
 
 import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.COMPLETED;
 import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.TERMINATED;
@@ -36,7 +37,7 @@ public class FlowControllerTimer {
         this.inactivityTimeoutMs = inactivityTimeoutMs;
         this.eventLoop = eventLoop;
         this.producer = producer;
-        timer.newTimeout(timeout -> checkActivity(), inactivityTimeoutMs, MILLISECONDS);
+        resetTimer(inactivityTimeoutMs);
     }
 
     public void checkActivity() {
@@ -46,11 +47,19 @@ public class FlowControllerTimer {
     }
 
     private void resetTimerOrTearDownFlowController() {
-        long timeLeft = (producer.lastActive() + inactivityTimeoutMs) - System.currentTimeMillis();
-        if (timeLeft > 0) {
-            timer.newTimeout(timeout -> checkActivity(), timeLeft, MILLISECONDS);
+        if (producer.isWaitingForSubscriber()) {
+            long timeLeft = (producer.lastActive() + inactivityTimeoutMs) - System.currentTimeMillis();
+            if (timeLeft > 0) {
+                resetTimer(timeLeft);
+            } else {
+                eventLoop.submit(() -> producer.tearDownResources("inactive subscriber"));
+            }
         } else {
-            eventLoop.submit(() -> producer.tearDownResources("inactive subscriber"));
+            resetTimer(inactivityTimeoutMs);
         }
+    }
+
+    private Timeout resetTimer(long delay) {
+        return timer.newTimeout(timeout -> checkActivity(), delay, MILLISECONDS);
     }
 }
