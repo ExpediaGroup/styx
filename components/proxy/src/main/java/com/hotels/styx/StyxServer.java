@@ -27,6 +27,7 @@ import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.config.schema.SchemaValidationException;
+import com.hotels.styx.debug.RequestDebugger;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.ConnectorConfig;
@@ -290,6 +291,7 @@ public final class StyxServer extends AbstractService {
 
     @Override
     protected void doStart() {
+        RequestDebugger.add(components.environment().configuration().get("debug-request-id-prefix").orElse(null));
         printBanner();
         CompletableFuture.runAsync(() -> {
             // doStart should return quicly. Therefore offload waiting on a separate thread:
