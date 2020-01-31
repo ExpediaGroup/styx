@@ -4,7 +4,6 @@
 
 ### Pull Requests
 
-* Fix scala test after accidentally removing an import ([#600](https://github.com/HotelsDotCom/styx/issues/600))
 * Allow configuring the maximum header size of origin responses (issue [#598](https://github.com/HotelsDotCom/styx/issues/598)) ([#599](https://github.com/HotelsDotCom/styx/issues/599))
 * Expose Styx/Netty proxy executor to the plugins. ([#596](https://github.com/HotelsDotCom/styx/issues/596))
 * Add content compression support to StyxServer object ([#595](https://github.com/HotelsDotCom/styx/issues/595))
@@ -22,9 +21,6 @@
 * Remove ProxyServerBuilder class. ([#581](https://github.com/HotelsDotCom/styx/issues/581))
 * Remove Guava ServiceManager from NettyServer. ([#580](https://github.com/HotelsDotCom/styx/issues/580))
 * Reinstate time-to-first-byte-ms metric. ([#575](https://github.com/HotelsDotCom/styx/issues/575))
-
-### Pull Requests
-
 * Re-register provider endpoints with admin interface after updates ([#572](https://github.com/HotelsDotCom/styx/issues/572))
 * Do not show an empty list of disabled plugins. ([#576](https://github.com/HotelsDotCom/styx/issues/576))
 * speed up kotlin integration tests by reusing the JVM fork. ([#579](https://github.com/HotelsDotCom/styx/issues/579))
