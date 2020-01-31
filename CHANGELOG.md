@@ -23,10 +23,6 @@
 * Remove Guava ServiceManager from NettyServer. ([#580](https://github.com/HotelsDotCom/styx/issues/580))
 * Reinstate time-to-first-byte-ms metric. ([#575](https://github.com/HotelsDotCom/styx/issues/575))
 
-
-<a name="testtag"></a>
-## [testtag](https://github.com/HotelsDotCom/styx/compare/styx-1.0.0.beta8...testtag) (2020-01-08)
-
 ### Pull Requests
 
 * Re-register provider endpoints with admin interface after updates ([#572](https://github.com/HotelsDotCom/styx/issues/572))
