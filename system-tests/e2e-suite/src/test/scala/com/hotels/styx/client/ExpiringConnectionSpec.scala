@@ -54,6 +54,7 @@ class ExpiringConnectionSpec extends FunSpec
         |    enabled: True
         |    longFormat: True
         |""".stripMargin,
+    logbackXmlLocation = fixturesHome(this.getClass, "/conf/logback/logback-instrumentation.xml")
   )
 
   val mockServer = FakeHttpServer.HttpStartupConfig()
