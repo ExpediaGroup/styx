@@ -32,7 +32,7 @@ import com.hotels.styx.support.server.UrlMatchingStrategies._
 import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
 import org.hamcrest.MatcherAssert._
 import org.hamcrest.Matchers._
-import org.scalatest.FunSpec
+import org.scalatest.{FixtureContext, FunSpec, Succeeded}
 import org.scalatest.concurrent.Eventually
 import reactor.core.publisher.Mono
 import com.hotels.styx.support.Support.requestContext
@@ -93,6 +93,8 @@ class ExpiringConnectionSpec extends FunSpec
   }
 
   it("Should expire connection after 1 second") {
+
+    // Prime a connection:
     val response1: HttpResponse = Mono.from(pooledClient.sendRequest(
       get(styxServer.routerURL("/app1/1")).build(),
       requestContext()))
@@ -101,6 +103,7 @@ class ExpiringConnectionSpec extends FunSpec
 
     assertThat(response1.status(), is(OK))
 
+    // Ensure that a connection got created in pool:
     eventually(timeout(1.seconds)) {
       styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.available-connections").get should be(1)
       styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.connections-closed").get should be(0)
@@ -108,6 +111,8 @@ class ExpiringConnectionSpec extends FunSpec
 
     Thread.sleep(2000)
 
+    // Send a second request. The connection would have been expired after two seconds
+    // Therefore, the pool creates a new connection.
     val response2: HttpResponse = Mono.from(pooledClient.sendRequest(
       get(styxServer.routerURL("/app1/2")).build(),
       requestContext()))

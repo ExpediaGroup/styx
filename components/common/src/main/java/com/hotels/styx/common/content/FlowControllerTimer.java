@@ -52,7 +52,7 @@ public class FlowControllerTimer {
             if (timeLeft > 0) {
                 resetTimer(timeLeft);
             } else {
-                eventLoop.submit(() -> producer.tearDownResources("inactive subscriber"));
+                eventLoop.submit(() -> producer.tearDownResources("Inactive subscriber"));
             }
         } else {
             resetTimer(inactivityTimeoutMs);

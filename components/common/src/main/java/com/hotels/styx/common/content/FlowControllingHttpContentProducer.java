@@ -419,7 +419,7 @@ public class FlowControllingHttpContentProducer {
     public void tearDownResources(String message) {
         stateMachine.handle(new TearDownEvent(new ContentTimeoutException(
                 origin,
-                message,
+                format("%s. %s", loggingPrefix, message),
                 receivedBytes(),
                 receivedChunks(),
                 emittedBytes(),
