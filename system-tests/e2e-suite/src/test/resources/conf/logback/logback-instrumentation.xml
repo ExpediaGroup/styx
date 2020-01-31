@@ -9,6 +9,7 @@
     <logger name="org.apache" level="DEBUG"/>
     <logger name="io.netty" level="DEBUG"/>
     <logger name="com.hotels.styx.proxy.backends.file.FileChangeMonitor" level="INFO"/>
+    <logger name="com.hotels.styx.common.content.FlowControllingHttpContentProducer" level="DEBUG"/>
 
     <root level="DEBUG">
         <appender-ref ref="CONSOLE"/>
