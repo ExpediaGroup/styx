@@ -93,22 +93,26 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
                 ctx.channel().config().setAutoRead(false);
                 ctx.channel().read();
 
-                this.producer = Optional.of(createProducer(ctx));
+                HttpRequest nettyRequest = (HttpRequest) msg;
+
+                this.producer = Optional.of(createProducer(ctx, nettyRequest.uri()));
                 Publisher<Buffer> contentPublisher = new FlowControllingPublisher(
                         ctx.channel().eventLoop(),
                         this.producer.get());
 
-                LiveHttpRequest styxRequest = toStyxRequest((HttpRequest) msg, contentPublisher);
+                LiveHttpRequest styxRequest = toStyxRequest(nettyRequest, contentPublisher);
                 out.add(styxRequest);
 
             }
             if (msg instanceof HttpContent) {
+                assert this.producer.isPresent();
+
                 ByteBuf content = ((ByteBufHolder) msg).content();
                 if (content.isReadable()) {
-                    getContentProducer(ctx).newChunk(retain(content));
+                    this.producer.ifPresent(it -> it.newChunk(retain(content)));
                 }
                 if (msg instanceof LastHttpContent) {
-                    getContentProducer(ctx).lastHttpContent();
+                    this.producer.ifPresent(FlowControllingHttpContentProducer::lastHttpContent);
                 }
             }
         } catch (BadRequestException ex) {
@@ -122,29 +126,22 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         TransportException cause = new TransportException(
                 "Connection to client lost: " + ctx.channel().remoteAddress());
-        getContentProducer(ctx).channelInactive(cause);
+        this.producer.ifPresent(it -> it.channelInactive(cause));
         super.channelInactive(ctx);
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         if (cause instanceof TooLongFrameException) {
-            getContentProducer(ctx).channelException(new BadRequestException(cause.getMessage(), cause));
+            this.producer.ifPresent(it -> it.channelException(new BadRequestException(cause.getMessage(), cause)));
         } else {
-            getContentProducer(ctx).channelException(cause);
+            this.producer.ifPresent(it -> it.channelException(cause));
         }
         super.exceptionCaught(ctx, cause);
     }
 
-    private FlowControllingHttpContentProducer getContentProducer(ChannelHandlerContext ctx) {
-        if (!this.producer.isPresent()) {
-            this.producer = Optional.of(createProducer(ctx));
-        }
-        return this.producer.get();
-    }
-
-    private FlowControllingHttpContentProducer createProducer(ChannelHandlerContext ctx) {
-        String loggingPrefix = format("Request body. [remote: %s, local: %s]", ctx.channel().remoteAddress(), ctx.channel().localAddress());
+    private FlowControllingHttpContentProducer createProducer(ChannelHandlerContext ctx, String uri) {
+        String loggingPrefix = format("Request body. %s [remote: %s, local: %s]", uri, ctx.channel().remoteAddress(), ctx.channel().localAddress());
 
         FlowControllingHttpContentProducer producer = new FlowControllingHttpContentProducer(
                 () -> ctx.channel().read(),

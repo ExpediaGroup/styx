@@ -55,7 +55,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import kotlin.system.measureTimeMillis
 
 class HostProxySpec : FeatureSpec() {
-    val LOGGER = LoggerFactory.getLogger("Styx-Tests")
+    val LOGGER = LoggerFactory.getLogger("HostProxySpec")
 
     // Enforce one instance for the test spec.
     // Run the tests sequentially:
@@ -190,12 +190,15 @@ class HostProxySpec : FeatureSpec() {
                                pendingConnectionTimeoutMillis: 15000
                            """.trimIndent()) shouldBe CREATED
 
-                val requestFutures = (1..10).map { client.send(get("/").header(HOST, styxServer().proxyHttpHostHeader()).build()) }
+                val requestFutures = (1..10)
+                        .map { "/$it" }
+                        .map { it to client.send(get(it).header(HOST, styxServer().proxyHttpHostHeader()).build()) }
 
                 requestFutures
-                        .forEach {
-                            val clientResponse = it.wait()
-                            clientResponse!!.status() shouldBe OK
+                        .forEach { (url, future) ->
+                            val clientResponse = future.wait()
+                            LOGGER.info("Response: $url -> ${clientResponse!!.status()}")
+                            clientResponse.status() shouldBe OK
                             clientResponse.bodyAs(UTF_8) shouldBe "Hello - HTTP"
                         }
 
