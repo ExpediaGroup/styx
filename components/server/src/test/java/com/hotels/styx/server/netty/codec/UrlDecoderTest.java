@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.Optional;
 import static io.netty.handler.codec.http.HttpHeaders.Names.HOST;
 import static io.netty.handler.codec.http.HttpMethod.GET;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
+import static java.util.Collections.emptyMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -41,7 +42,7 @@ public class UrlDecoderTest {
         assertThat(url.isAbsolute(), is(false));
         assertThat(url.isRelative(), is(true));
         assertThat(url.host(), is(Optional.empty()));
-        assertThat(url.query(), is(Optional.empty()));
+        assertThat(url.queryParams(), is(emptyMap()));
         assertThat(url.scheme(), is(""));
     }
 
@@ -59,7 +60,7 @@ public class UrlDecoderTest {
         assertThat(url.isAbsolute(), is(false));
         assertThat(url.isRelative(), is(true));
         assertThat(url.host(), is(Optional.empty()));
-        assertThat(url.query(), is(Optional.empty()));
+        assertThat(url.queryParams(), is(emptyMap()));
         assertThat(url.scheme(), is(""));
     }
 
@@ -77,7 +78,7 @@ public class UrlDecoderTest {
         assertThat(url.isAbsolute(), is(false));
         assertThat(url.isRelative(), is(true));
         assertThat(url.host(), is(Optional.empty()));
-        assertThat(url.query(), is(Optional.empty()));
+        assertThat(url.queryParams(), is(emptyMap()));
         assertThat(url.scheme(), is(""));
     }
 
@@ -94,7 +95,7 @@ public class UrlDecoderTest {
         assertThat(url.isAbsolute(), is(true));
         assertThat(url.isRelative(), is(false));
         assertThat(url.host(), is(Optional.of("example.com")));
-        assertThat(url.query(), is(Optional.empty()));
+        assertThat(url.queryParams(), is(emptyMap()));
         assertThat(url.scheme(), is("http"));
     }
 

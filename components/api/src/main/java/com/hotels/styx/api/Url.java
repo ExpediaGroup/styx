@@ -77,7 +77,7 @@ public final class Url implements Comparable<Url> {
     }
 
     /**
-     * The fragment part of the URL
+     * The fragment part of the URL.
      *
      * @return fragment, if present
      */
