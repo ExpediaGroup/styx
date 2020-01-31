@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 package com.hotels.styx.api;
 
 import javax.annotation.concurrent.ThreadSafe;
-import java.io.UnsupportedEncodingException;
+
+import com.google.common.annotations.VisibleForTesting;
+
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -32,9 +34,7 @@ import java.util.regex.Pattern;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Throwables.propagate;
-import static com.hotels.styx.api.URLEncoder.encodePathSegment;
 import static java.lang.Integer.parseInt;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
@@ -44,8 +44,6 @@ import static java.util.Collections.emptySet;
  */
 @ThreadSafe
 public final class Url implements Comparable<Url> {
-    private static final String PATH_DELIMITER = "/";
-
     private final String scheme;
     private final Optional<Authority> authority;
     private final String path;
@@ -76,6 +74,15 @@ public final class Url implements Comparable<Url> {
      */
     public String path() {
         return this.path;
+    }
+
+    /**
+     * The fragment part of the URL.
+     *
+     * @return fragment, if present
+     */
+    public Optional<String> fragment() {
+        return Optional.ofNullable(fragment);
     }
 
     /**
@@ -160,12 +167,8 @@ public final class Url implements Comparable<Url> {
         }
     }
 
-    /**
-     * The query part of the URL.
-     *
-     * @return query
-     */
-    public Optional<UrlQuery> query() {
+    @VisibleForTesting
+    Optional<UrlQuery> query() {
         return this.query;
     }
 
@@ -226,14 +229,6 @@ public final class Url implements Comparable<Url> {
      */
     public String encodedUri() {
         return toString();
-    }
-
-    private static CharSequence encodePathElement(String pathElement) {
-        try {
-            return encodePathSegment(pathElement, UTF_8.toString());
-        } catch (UnsupportedEncodingException ignore) {
-            return pathElement;
-        }
     }
 
     @Override
