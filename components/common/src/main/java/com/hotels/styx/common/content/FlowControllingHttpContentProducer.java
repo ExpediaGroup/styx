@@ -159,7 +159,7 @@ public class FlowControllingHttpContentProducer {
     }
 
     /*
-     * BUFFERING state event handlers
+     * BUFFERINlxG state event handlers
      */
 
     private ProducerState rxBackpressureRequestInBuffering(RxBackpressureRequestEvent event) {

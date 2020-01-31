@@ -145,7 +145,7 @@ public class NettyConnection implements Connection {
         for (int i = 2; i < 20; i++) {
             stackTrace.append("\t").append(stackTraceElements[i]).append("\n");
         }
-        logger.debug("Closing NettyConnection from: \n" + stackTrace);
+        logger.debug("Closing NettyConnection on port " + this.getOrigin().port() + ". Call stack: \n" + stackTrace);
     }
 
     private static String toString(Channel channel) {
