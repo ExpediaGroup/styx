@@ -95,7 +95,7 @@ class ExpiringConnectionSpec extends FunSpec
 
   it("Should expire connection after 1 second") {
     val response1: HttpResponse = Mono.from(pooledClient.sendRequest(
-      get(styxServer.routerURL("/app1/1")).build(),
+      get(styxServer.routerURL("/app1/1")).id("ExpiringConnectionSpec-1").build(),
       requestContext()))
       .flatMap(r => Mono.from(r.aggregate(1024)))
       .block()
@@ -110,7 +110,7 @@ class ExpiringConnectionSpec extends FunSpec
     Thread.sleep(2000)
 
     val response2: HttpResponse = Mono.from(pooledClient.sendRequest(
-      get(styxServer.routerURL("/app1/2")).build(),
+      get(styxServer.routerURL("/app1/2")).id("ExpiringConnectionSpec-2").build(),
       requestContext()))
       .flatMap(r => Mono.from(r.aggregate(1024)))
       .block()
