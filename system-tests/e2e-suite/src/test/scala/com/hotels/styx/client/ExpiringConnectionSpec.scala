@@ -35,6 +35,7 @@ import org.hamcrest.Matchers._
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
 import reactor.core.publisher.Mono
+import com.hotels.styx.api.HttpResponse
 
 import scala.concurrent.duration._
 
@@ -94,7 +95,9 @@ class ExpiringConnectionSpec extends FunSpec
   it("Should expire connection after 1 second") {
     val request = get(styxServer.routerURL("/app1")).build()
 
-    val response1 = Mono.from(pooledClient.sendRequest(request, requestContext())).block()
+    val response1: HttpResponse = Mono.from(pooledClient.sendRequest(get(styxServer.routerURL("/app1/1")).build()))
+      .flatMap(r => Mono.from(r.aggregate(1024)))
+      .block()
 
     assertThat(response1.status(), is(OK))
 
@@ -105,7 +108,10 @@ class ExpiringConnectionSpec extends FunSpec
 
     Thread.sleep(2000)
 
-    val response2 = Mono.from(pooledClient.sendRequest(request, requestContext())).block()
+    val response2: HttpResponse = Mono.from(pooledClient.sendRequest(get(styxServer.routerURL("/app1/2")).build()))
+      .flatMap(r => Mono.from(r.aggregate(1024)))
+      .block()
+
     assertThat(response2.status(), is(OK))
 
     eventually(timeout(2.seconds)) {
