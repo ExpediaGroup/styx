@@ -17,7 +17,8 @@ package com.hotels.styx.client
 
 import com.github.tomakehurst.wiremock.client.WireMock.{get => _, _}
 import com.hotels.styx.api.HttpResponseStatus.OK
-import com.hotels.styx.api.LiveHttpRequest._
+import com.hotels.styx.api.HttpResponse
+import com.hotels.styx.api.LiveHttpRequest.get
 import com.hotels.styx.api.extension.ActiveOrigins
 import com.hotels.styx.api.extension.Origin.newOriginBuilder
 import com.hotels.styx.api.extension.service.BackendService
@@ -25,7 +26,6 @@ import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
 import com.hotels.styx.support.ResourcePaths.fixturesHome
-import com.hotels.styx.support.Support.requestContext
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.server.UrlMatchingStrategies._
@@ -35,6 +35,7 @@ import org.hamcrest.Matchers._
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
 import reactor.core.publisher.Mono
+import com.hotels.styx.support.Support.requestContext
 
 import scala.concurrent.duration._
 
@@ -55,7 +56,7 @@ class ExpiringConnectionSpec extends FunSpec
         |    enabled: True
         |    longFormat: True
         |""".stripMargin,
-    logbackXmlLocation = fixturesHome(this.getClass, "/conf/logback/logback-debug.xml")
+    logbackXmlLocation = fixturesHome(this.getClass, "/conf/logback/logback-instrumentation.xml")
   )
 
   val mockServer = FakeHttpServer.HttpStartupConfig()
@@ -93,9 +94,11 @@ class ExpiringConnectionSpec extends FunSpec
   }
 
   it("Should expire connection after 1 second") {
-    val request1 = get(styxServer.routerURL("/app1")).id("ExpiringConnectionSpec-1").build()
-
-    val response1 = Mono.from(pooledClient.sendRequest(request1, requestContext())).block()
+    val response1: HttpResponse = Mono.from(pooledClient.sendRequest(
+      get(styxServer.routerURL("/app1/1")).build(),
+      requestContext()))
+      .flatMap(r => Mono.from(r.aggregate(1024)))
+      .block()
 
     assertThat(response1.status(), is(OK))
 
@@ -104,10 +107,14 @@ class ExpiringConnectionSpec extends FunSpec
       styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.connections-closed").get should be(0)
     }
 
-    Thread.sleep(1000)
+    Thread.sleep(2000)
 
-    val request2 = get(styxServer.routerURL("/app1")).id("ExpiringConnectionSpec-2").build()
-    val response2 = Mono.from(pooledClient.sendRequest(request2, requestContext())).block()
+    val response2: HttpResponse = Mono.from(pooledClient.sendRequest(
+      get(styxServer.routerURL("/app1/2")).build(),
+      requestContext()))
+      .flatMap(r => Mono.from(r.aggregate(1024)))
+      .block()
+
     assertThat(response2.status(), is(OK))
 
     eventually(timeout(2.seconds)) {
