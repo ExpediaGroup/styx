@@ -147,8 +147,6 @@ public class FlowControllingHttpContentProducer {
                 .transition(TERMINATED, RxBackpressureRequestEvent.class, ev -> TERMINATED)
                 .transition(TERMINATED, TearDownEvent.class, ev -> TERMINATED)
 
-                .debugTransitions(loggingPrefix)
-
                 .onInappropriateEvent((state, event) -> {
                     LOGGER.warn(warningMessage("Inappropriate event=" + event.getClass().getSimpleName()));
                     return state;
