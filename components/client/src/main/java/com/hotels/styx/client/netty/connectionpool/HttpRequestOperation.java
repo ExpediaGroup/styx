@@ -27,6 +27,7 @@ import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.common.logging.HttpRequestMessageLogger;
+import com.hotels.styx.debug.RequestDebugger;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -118,6 +119,10 @@ public class HttpRequestOperation {
         AtomicReference<RequestBodyChunkSubscriber> requestRequestBodyChunkSubscriber = new AtomicReference<>();
         requestTime = System.currentTimeMillis();
         executeCount.incrementAndGet();
+
+        if (RequestDebugger.shouldDebugRequest(request)) {
+            LOGGER.info(">>> Writing to connection: " + nettyConnection);
+        }
 
         Flux<LiveHttpResponse> responseFlux = Flux.create(sink -> {
             if (nettyConnection.isConnected()) {
@@ -223,10 +228,13 @@ public class HttpRequestOperation {
         public void write() {
             Channel originChannel = this.nettyConnection.channel();
             if (originChannel.isActive()) {
-                io.netty.handler.codec.http.HttpRequest messageHeaders = makeRequest(request);
-
-                originChannel.writeAndFlush(messageHeaders)
+                io.netty.handler.codec.http.HttpRequest httpRequest = makeRequest(request);
+                if (httpRequest.method().equals(HttpMethod.GET)) {
+                    originChannel.writeAndFlush(httpRequest);
+                } else {
+                    originChannel.writeAndFlush(httpRequest)
                         .addListener(subscribeToRequestBody());
+                }
             } else {
                 responseFromOriginFlux.error(new TransportLostException(originChannel.remoteAddress(), nettyConnection.getOrigin()));
             }

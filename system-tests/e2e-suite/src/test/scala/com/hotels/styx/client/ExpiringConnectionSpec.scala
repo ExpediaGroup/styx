@@ -54,8 +54,7 @@ class ExpiringConnectionSpec extends FunSpec
         |  outbound:
         |    enabled: True
         |    longFormat: True
-        |""".stripMargin,
-    logbackXmlLocation = fixturesHome(this.getClass, "/conf/logback/logback-instrumentation.xml")
+        |""".stripMargin
   )
 
   val mockServer = FakeHttpServer.HttpStartupConfig()
@@ -111,7 +110,7 @@ class ExpiringConnectionSpec extends FunSpec
       styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.connections-closed").get should be(0)
     }
 
-    Thread.sleep(2000)
+    Thread.sleep(1000)
 
     // Send a second request. The connection would have been expired after two seconds
     // Therefore, the pool creates a new connection.
