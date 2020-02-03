@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -173,7 +173,7 @@ public class LiveHttpResponse implements LiveHttpMessage {
     /**
      * Aggregates content stream and converts this response to a {@link HttpResponse}.
      * <p>
-     * Returns a {@link Eventual <HttpResponse>} that eventually produces a
+     * Returns a {@link Eventual &lt;HttpResponse&gt;} that eventually produces a
      * {@link HttpResponse}. The resulting full response object has the same
      * response line, headers, and content as this response.
      * <p>

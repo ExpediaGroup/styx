@@ -135,7 +135,7 @@ public final class Url implements Comparable<Url> {
      * Whether the URL is relative, i.e. not absolute.
      *
      * @return true if the URL is relative.
-     * @see {@link #isAbsolute()}
+     * @see #isAbsolute()
      */
     public boolean isRelative() {
         return scheme == null || scheme.isEmpty();

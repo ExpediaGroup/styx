@@ -320,7 +320,7 @@ public final class BackendService implements Identifiable {
 
         /**
          * Sets the https settings.
-         * For Jackson JSON serialiser that de-serialises from Option<TlsSettings>.
+         * For Jackson JSON serialiser that de-serialises from Option&lt;TlsSettings&gt;.
          */
         Builder https(Optional<TlsSettings> tlsSettings) {
             this.tlsSettings = tlsSettings.orElse(null);
