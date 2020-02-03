@@ -229,12 +229,8 @@ public class HttpRequestOperation {
             Channel originChannel = this.nettyConnection.channel();
             if (originChannel.isActive()) {
                 io.netty.handler.codec.http.HttpRequest httpRequest = makeRequest(request);
-                if (httpRequest.method().equals(HttpMethod.GET)) {
-                    originChannel.writeAndFlush(httpRequest);
-                } else {
-                    originChannel.writeAndFlush(httpRequest)
-                        .addListener(subscribeToRequestBody());
-                }
+                originChannel.writeAndFlush(httpRequest)
+                    .addListener(subscribeToRequestBody());
             } else {
                 responseFromOriginFlux.error(new TransportLostException(originChannel.remoteAddress(), nettyConnection.getOrigin()));
             }
