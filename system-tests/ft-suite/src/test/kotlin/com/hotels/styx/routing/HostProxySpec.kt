@@ -18,7 +18,9 @@ package com.hotels.styx.routing
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.urlMatching
+import com.hotels.styx.api.HttpHeaderNames
 import com.hotels.styx.api.HttpHeaderNames.HOST
+import com.hotels.styx.api.HttpHeaderValues
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY
 import com.hotels.styx.api.HttpResponseStatus.CREATED
@@ -191,7 +193,7 @@ class HostProxySpec : FeatureSpec() {
                            """.trimIndent()) shouldBe CREATED
 
                 val requestFutures = (1..10).map {
-                    .send(get("/")
+                    client.send(get("/")
                         .header(HOST, styxServer().proxyHttpHostHeader())
                         .header(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED)
                         .build()) }
@@ -260,7 +262,7 @@ class HostProxySpec : FeatureSpec() {
                         it["routing.objects.hostProxy.connectionspool.connections-terminated"]!!.get("value") shouldBe 1
                     }
                 }
-            }*/
+            }
         }
 
 
