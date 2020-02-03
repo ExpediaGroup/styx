@@ -47,7 +47,6 @@ class ExpiringConnectionSpec extends FunSpec
   override lazy val styxConfig = StyxConfig(
     yamlText =
       """
-        |debug-request-id-prefix: "ExpiringConnectionSpec"
         |request-logging:
         |  inbound:
         |    enabled: True
@@ -55,8 +54,7 @@ class ExpiringConnectionSpec extends FunSpec
         |  outbound:
         |    enabled: True
         |    longFormat: True
-        |""".stripMargin,
-    logbackXmlLocation = fixturesHome(this.getClass, "/conf/logback/logback-instrumentation.xml")
+        |""".stripMargin
   )
 
   val mockServer = FakeHttpServer.HttpStartupConfig()
@@ -95,10 +93,7 @@ class ExpiringConnectionSpec extends FunSpec
 
   it("Should expire connection after 1 second") {
     val response1: HttpResponse = Mono.from(pooledClient.sendRequest(
-      get(styxServer.routerURL("/app1/1"))
-        .header(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED)
-        .id("ExpiringConnectionSpec-1")
-        .build(),
+      get(styxServer.routerURL("/app1/1")).build(),
       requestContext()))
       .flatMap(r => Mono.from(r.aggregate(1024)))
       .block()
@@ -110,13 +105,10 @@ class ExpiringConnectionSpec extends FunSpec
       styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.connections-closed").get should be(0)
     }
 
-    Thread.sleep(2000)
+    Thread.sleep(1000)
 
     val response2: HttpResponse = Mono.from(pooledClient.sendRequest(
-      get(styxServer.routerURL("/app1/2"))
-        .header(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED)
-        .id("ExpiringConnectionSpec-2")
-        .build(),
+      get(styxServer.routerURL("/app1/2")).build(),
       requestContext()))
       .flatMap(r => Mono.from(r.aggregate(1024)))
       .block()
