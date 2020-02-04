@@ -286,7 +286,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 }
             }
 
-            test("!TLS Settings modifications") {
+            test("TLS Settings modifications") {
                 writeOrigins("""
                     - id: appTls
                       path: "/"
