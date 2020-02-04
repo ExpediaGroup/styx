@@ -16,38 +16,40 @@
 package com.hotels.styx.common.content;
 
 import com.hotels.styx.api.Buffer;
-import io.netty.channel.EventLoop;
+import com.hotels.styx.common.QueueDrainingExecutor;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-/**
- * A publisher to wrap the FlowControllingHttpContentProducer FSM and perform subscription operations via a Netty EventLoop.
- */
-public final class FlowControllingPublisher implements Publisher<Buffer> {
+import java.util.concurrent.Executor;
 
-    private final EventLoop eventLoop;
+/**
+ * A publisher to wrap the FlowControllingHttpContentProducer FSM and perform subscription operations via a QueueDrainingExecutor.
+ */
+public final class QueueDrainingPublisher implements Publisher<Buffer> {
+
+    private final Executor queueDrainingExecutor = new QueueDrainingExecutor();
     private final FlowControllingHttpContentProducer contentProducer;
 
-    public FlowControllingPublisher(EventLoop eventLoop, FlowControllingHttpContentProducer contentProducer) {
-        this.eventLoop = eventLoop;
+    public QueueDrainingPublisher(FlowControllingHttpContentProducer contentProducer) {
         this.contentProducer = contentProducer;
     }
 
     @Override
     public void subscribe(Subscriber<? super Buffer> subscriber) {
         ByteBufToBufferSubscriber byteBufToBufferSubscriber = new ByteBufToBufferSubscriber(subscriber);
-        eventLoop.submit(() -> contentProducer.onSubscribed(byteBufToBufferSubscriber));
+        queueDrainingExecutor.execute(() -> contentProducer.onSubscribed(byteBufToBufferSubscriber));
         byteBufToBufferSubscriber.onSubscribe(new Subscription() {
             @Override
             public void request(long n) {
-                eventLoop.submit(() -> contentProducer.request(n));
+                queueDrainingExecutor.execute(() -> contentProducer.request(n));
             }
 
             @Override
             public void cancel() {
-                eventLoop.submit(contentProducer::unsubscribe);
+                queueDrainingExecutor.execute(contentProducer::unsubscribe);
             }
         });
     }
+
 }

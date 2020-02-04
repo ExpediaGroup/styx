@@ -196,10 +196,9 @@ public class NettyToStyxRequestDecoderTest {
         channel.writeInbound(chunkedRequestHeaders);
         LiveHttpRequest request = channel.readInbound();
 
-        channel.writeInbound(EMPTY_LAST_CONTENT);
-
         StepVerifier.create(request.body())
-                .then(channel::runPendingTasks)
+                .expectSubscription()
+                .then(() -> channel.writeInbound(EMPTY_LAST_CONTENT))
                 .verifyComplete();
     }
 
