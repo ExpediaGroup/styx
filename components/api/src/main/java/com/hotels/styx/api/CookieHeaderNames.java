@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.api;
 
-final class CookieHeaderNames {
+public final class CookieHeaderNames {
     public static final String PATH = "Path";
 
     public static final String EXPIRES = "Expires";
@@ -30,7 +30,7 @@ final class CookieHeaderNames {
 
     public static final String SAMESITE = "SameSite";
 
-    enum SameSite {
+    public enum SameSite {
         Lax,
         Strict,
         None;
