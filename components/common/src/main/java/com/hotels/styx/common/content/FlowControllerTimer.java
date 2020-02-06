@@ -32,12 +32,17 @@ public class FlowControllerTimer {
     private long inactivityTimeoutMs;
     private EventLoop eventLoop;
     private FlowControllingHttpContentProducer producer;
+    private Timeout currentTimeout;
 
     public FlowControllerTimer(long inactivityTimeoutMs, EventLoop eventLoop, FlowControllingHttpContentProducer producer) {
         this.inactivityTimeoutMs = inactivityTimeoutMs;
         this.eventLoop = eventLoop;
         this.producer = producer;
         resetTimer(inactivityTimeoutMs);
+    }
+
+    public void cancel() {
+        currentTimeout.cancel();
     }
 
     public void checkActivity() {
@@ -59,7 +64,7 @@ public class FlowControllerTimer {
         }
     }
 
-    private Timeout resetTimer(long delay) {
-        return timer.newTimeout(timeout -> checkActivity(), delay, MILLISECONDS);
+    private void resetTimer(long delay) {
+        currentTimeout = timer.newTimeout(timeout -> checkActivity(), delay, MILLISECONDS);
     }
 }

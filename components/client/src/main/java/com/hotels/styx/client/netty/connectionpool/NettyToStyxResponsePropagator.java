@@ -24,9 +24,8 @@ import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.BadHttpResponseException;
 import com.hotels.styx.client.StyxClientException;
-import com.hotels.styx.common.content.FlowControllingPublisher;
 import com.hotels.styx.common.content.FlowControllingHttpContentProducer;
-import com.hotels.styx.common.content.FlowControllerTimer;
+import com.hotels.styx.common.content.FlowControllingPublisher;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.channel.ChannelHandlerContext;
@@ -162,7 +161,7 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
         String requestPrefix = request != null ? format("Request(method=%s, url=%s, id=%s)", request.method(), request.url(), request.id()) : "Request NA";
         String loggingPrefix = format("Response body. [local: %s, remote: %s]", ctx.channel().localAddress(), ctx.channel().remoteAddress());
 
-        FlowControllingHttpContentProducer producer = new FlowControllingHttpContentProducer(
+        return new FlowControllingHttpContentProducer(
                 () -> ctx.channel().read(),
                 () -> {
                     ctx.channel().config().setAutoRead(true);
@@ -170,9 +169,9 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
                 },
                 this::emitResponseError,
                 format("%s, %s", loggingPrefix, requestPrefix),
-                origin);
-        new FlowControllerTimer(idleTimeoutMillis, ctx.channel().eventLoop(), producer);
-        return producer;
+                origin,
+                idleTimeoutMillis,
+                ctx.channel().eventLoop());
     }
 
     private void emitResponseCompleted() {

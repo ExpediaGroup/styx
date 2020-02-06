@@ -20,6 +20,7 @@ import com.hotels.styx.api.exceptions.ContentTimeoutException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.common.StateMachine;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.EventLoop;
 import io.netty.util.ReferenceCountUtil;
 import org.reactivestreams.Subscriber;
 import org.slf4j.Logger;
@@ -77,6 +78,7 @@ public class FlowControllingHttpContentProducer {
 
     private volatile Subscriber<? super ByteBuf> contentSubscriber;
     private volatile long lastActive;
+    private FlowControllerTimer timer;
 
     enum ProducerState {
         BUFFERING,
@@ -92,7 +94,9 @@ public class FlowControllingHttpContentProducer {
             Runnable onCompleteAction,
             Consumer<Throwable> onTerminateAction,
             String loggingPrefix,
-            Origin origin) {
+            Origin origin,
+            long inactivityTimeoutMs,
+            EventLoop eventLoop) {
         this.askForMore = requireNonNull(askForMore);
         this.onCompleteAction = requireNonNull(onCompleteAction);
         this.onTerminateAction = requireNonNull(onTerminateAction);
@@ -152,6 +156,7 @@ public class FlowControllingHttpContentProducer {
                     return state;
                 }).build();
         touchLastActive();
+        timer = new FlowControllerTimer(inactivityTimeoutMs, eventLoop, this);
     }
 
     private void touchLastActive() {
@@ -226,6 +231,7 @@ public class FlowControllingHttpContentProducer {
         if (readQueue.size() == 0) {
             this.contentSubscriber.onComplete();
             this.onCompleteAction.run();
+            timer.cancel();
             return COMPLETED;
         }
 
@@ -236,6 +242,7 @@ public class FlowControllingHttpContentProducer {
         } else {
             this.contentSubscriber.onComplete();
             this.onCompleteAction.run();
+            timer.cancel();
             return COMPLETED;
         }
     }
@@ -284,6 +291,7 @@ public class FlowControllingHttpContentProducer {
         releaseBuffers();
         contentSubscriber.onError(cause);
         onTerminateAction.accept(cause);
+        timer.cancel();
         return TERMINATED;
     }
 
@@ -297,18 +305,21 @@ public class FlowControllingHttpContentProducer {
         contentSubscriber.onError(cause);
         event.subscriber.onError(cause);
         onTerminateAction.accept(cause);
+        timer.cancel();
         return TERMINATED;
     }
 
     private ProducerState contentSubscribedInCompletedState(ContentSubscribedEvent event) {
         event.subscriber.onError(new IllegalStateException(
                 format("Secondary subscription occurred. producerState=%s. connection=%s", state(), loggingPrefix)));
+        timer.cancel();
         return COMPLETED;
     }
 
     private ProducerState contentSubscribedInTerminatedState(ContentSubscribedEvent event) {
         event.subscriber.onError(new IllegalStateException(
                 format("Secondary subscription occurred. producerState=%s. connection=%s", state(), loggingPrefix)));
+        timer.cancel();
         return TERMINATED;
     }
 
@@ -319,6 +330,7 @@ public class FlowControllingHttpContentProducer {
         } else {
             this.contentSubscriber.onComplete();
             this.onCompleteAction.run();
+            timer.cancel();
             return COMPLETED;
         }
     }
@@ -345,6 +357,7 @@ public class FlowControllingHttpContentProducer {
         if (readQueue.size() == 0) {
             this.contentSubscriber.onComplete();
             this.onCompleteAction.run();
+            timer.cancel();
             return COMPLETED;
         } else {
             return EMITTING_BUFFERED_CONTENT;
@@ -381,6 +394,7 @@ public class FlowControllingHttpContentProducer {
                         format("Secondary content subscription detected. producerState=%s. connection=%s",
                                 state(), loggingPrefix)));
 
+        timer.cancel();
         return TERMINATED;
     }
 
