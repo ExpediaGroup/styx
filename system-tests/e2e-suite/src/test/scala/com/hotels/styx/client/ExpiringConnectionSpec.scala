@@ -44,19 +44,6 @@ class ExpiringConnectionSpec extends FunSpec
   with StyxProxySpec
   with Eventually {
 
-  override lazy val styxConfig = StyxConfig(
-    yamlText =
-      """
-        |request-logging:
-        |  inbound:
-        |    enabled: True
-        |    longFormat: True
-        |  outbound:
-        |    enabled: True
-        |    longFormat: True
-        |""".stripMargin
-  )
-
   val mockServer = FakeHttpServer.HttpStartupConfig()
     .start()
     .stub(urlStartingWith("/app1"), aResponse
@@ -80,10 +67,6 @@ class ExpiringConnectionSpec extends FunSpec
     pooledClient = newHttpClientBuilder(backendService.id)
       .loadBalancer(roundRobinStrategy(activeOrigins(backendService)))
       .build
-  }
-
-  override protected def afterEach(): Unit = {
-    println("Metrics from ExpiringConnectionSpec: \n" + styxServer.metricsSnapshot)
   }
 
   override protected def afterAll(): Unit = {

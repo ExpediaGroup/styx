@@ -103,7 +103,7 @@ class OriginClosesConnectionSpec extends FunSuite
 
   def stickySessionStrategy(activeOrigins: ActiveOrigins) = new StickySessionLoadBalancingStrategy(activeOrigins, busyConnectionStrategy(activeOrigins))
 
-  test("Emits RuntimeException when content subscriber stops requesting data") {
+  test("Emits ContentTimeoutException when content subscriber stops requesting data") {
     val timeout = 2.seconds.toMillis.toInt
     originRespondingWith(response200OkFollowedFollowedByServerConnectionClose("Test message body." * 1024))
 
@@ -126,7 +126,7 @@ class OriginClosesConnectionSpec extends FunSuite
     val duration = StepVerifier.create(response.body(), 1)
       .expectNextCount(1)
       .thenAwait()
-      .verifyError(classOf[RuntimeException])
+      .verifyError(classOf[ContentTimeoutException])
 
     duration.toMillis shouldBe (TWO_SECONDS.toLong +- 220.millis.toMillis)
   }

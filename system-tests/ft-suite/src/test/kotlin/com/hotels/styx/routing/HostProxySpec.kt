@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.urlMatching
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest.get
-import com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY
 import com.hotels.styx.api.HttpResponseStatus.CREATED
 import com.hotels.styx.api.HttpResponseStatus.GATEWAY_TIMEOUT
 import com.hotels.styx.api.HttpResponseStatus.OK
@@ -54,7 +53,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import kotlin.system.measureTimeMillis
 
 class HostProxySpec : FeatureSpec() {
-    val LOGGER = LoggerFactory.getLogger("HostProxySpec")
+    val LOGGER = LoggerFactory.getLogger("Styx-Tests")
 
     // Enforce one instance for the test spec.
     // Run the tests sequentially:
@@ -154,23 +153,6 @@ class HostProxySpec : FeatureSpec() {
                             it.bodyAs(UTF_8) shouldBe "Hello - HTTPS"
                         }
             }
-
-            scenario("Applies max header size settings") {
-                val maxHeaderSize = 20
-                styxServer().newRoutingObject("hostProxy", """
-                           type: HostProxy
-                           config:
-                             host: ${testServer().proxyHttpHostHeader()}
-                             maxHeaderSize: $maxHeaderSize
-                           """.trimIndent()) shouldBe CREATED
-
-                client.send(get("/")
-                        .header(HOST, styxServer().proxyHttpHostHeader())
-                        .build())
-                        .wait()!!
-                        .status() shouldBe BAD_GATEWAY
-            }
-
         }
 
 
@@ -186,18 +168,14 @@ class HostProxySpec : FeatureSpec() {
                              connectionPool:
                                maxConnectionsPerHost: 2
                                maxPendingConnectionsPerHost: 10
-                               pendingConnectionTimeoutMillis: 15000
                            """.trimIndent()) shouldBe CREATED
 
-                val requestFutures = (1..10)
-                        .map { "/$it" }
-                        .map { it to client.send(get(it).header(HOST, styxServer().proxyHttpHostHeader()).build()) }
+                val requestFutures = (1..10).map { client.send(get("/").header(HOST, styxServer().proxyHttpHostHeader()).build()) }
 
                 requestFutures
-                        .forEach { (url, future) ->
-                            val clientResponse = future.wait()
-                            LOGGER.info("Response: $url -> ${clientResponse!!.status()}")
-                            clientResponse.status() shouldBe OK
+                        .forEach {
+                            val clientResponse = it.wait()
+                            clientResponse!!.status() shouldBe OK
                             clientResponse.bodyAs(UTF_8) shouldBe "Hello - HTTP"
                         }
 
@@ -383,25 +361,23 @@ class HostProxySpec : FeatureSpec() {
         }
     }
 
-    private val styxServer = StyxServerProvider(
-            defaultConfig="""
-                proxy:
-                  connectors:
-                    http:
-                      port: 0
-                  clientWorkerThreadsCount: 3
+    private val styxServer = StyxServerProvider("""
+                                proxy:
+                                  connectors:
+                                    http:
+                                      port: 0
+                                  clientWorkerThreadsCount: 3
 
-                admin:
-                  connectors:
-                    http:
-                      port: 0
-                      
-                services:
-                  factories: {}                                     
+                                admin:
+                                  connectors:
+                                    http:
+                                      port: 0
+                                      
+                                services:
+                                  factories: {}                                     
 
-                httpPipeline: hostProxy
-                """.trimIndent()
-            )
+                                httpPipeline: hostProxy
+                              """.trimIndent())
 
     private val testServer = StyxServerProvider("""
                                 proxy:
@@ -442,10 +418,7 @@ class HostProxySpec : FeatureSpec() {
             .start()
             .stub(WireMock.get(urlMatching("/.*")), aResponse()
                     .withStatus(200)
-                    .withBody("mock-server-01")
-                    .withHeader("HEADER", "RANDOMLONGVALUETOVERIFYMAXHEADERSIZE")
-            )
-
+                    .withBody("mock-server-01"))
             .stub(WireMock.get(urlMatching("/slow/.*")), aResponse()
                     .withStatus(200)
                     .withFixedDelay(1500)

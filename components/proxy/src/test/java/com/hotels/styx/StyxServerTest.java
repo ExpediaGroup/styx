@@ -123,7 +123,6 @@ public class StyxServerTest {
     }
 
     @Test
-    @Disabled
     public void serverDoesNotStartUntilPluginsAreStarted() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
 

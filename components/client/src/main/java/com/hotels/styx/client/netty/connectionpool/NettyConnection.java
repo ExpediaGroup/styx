@@ -29,20 +29,17 @@ import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.AttributeKey;
-import org.slf4j.Logger;
 import reactor.core.publisher.Flux;
 
 import java.util.Optional;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static java.util.Objects.requireNonNull;
-import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * A connection using a netty channel.
  */
 public class NettyConnection implements Connection {
-    private static Logger logger = getLogger(NettyConnection.class);
     private static final AttributeKey<Object> CLOSED_BY_STYX = AttributeKey.newInstance("CLOSED_BY_STYX");
     private static final int IGNORED_PORT_NUMBER = -1;
 
@@ -122,9 +119,6 @@ public class NettyConnection implements Connection {
 
     @Override
     public void close() {
-        if (logger.isDebugEnabled()) {
-            debugCloseConnection();
-        }
         if (channel.isOpen()) {
             channel.attr(CLOSED_BY_STYX).set(true);
             channel.close();
@@ -137,15 +131,6 @@ public class NettyConnection implements Connection {
                 .add("host", this.origin.hostAndPortString())
                 .add("channel", toString(channel))
                 .toString();
-    }
-
-    private void debugCloseConnection() {
-        StringBuilder stackTrace = new StringBuilder();
-        StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
-        for (int i = 2; i < 20; i++) {
-            stackTrace.append("\t").append(stackTraceElements[i]).append("\n");
-        }
-        logger.debug("Closing NettyConnection on port " + this.getOrigin().port() + ". Call stack: \n" + stackTrace);
     }
 
     private static String toString(Channel channel) {
