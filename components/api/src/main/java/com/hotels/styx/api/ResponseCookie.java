@@ -15,9 +15,8 @@
  */
 package com.hotels.styx.api;
 
-import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
-import io.netty.handler.codec.http.cookie.Cookie;
-import io.netty.handler.codec.http.cookie.DefaultCookie;
+
+import com.hotels.styx.api.CookieHeaderNames.SameSite;
 
 import java.util.Collection;
 import java.util.List;
@@ -33,7 +32,7 @@ import static java.util.stream.Collectors.toSet;
 
 /**
  * Represents an HTTP cookie as sent in the HTTP response {@code Set-Cookie} header.
- *
+ * <p>
  * A server can include a {@code ResponseCookie} in its response to a client request.
  * It contains cookie {@code name}, {@code value}, and attributes such as {@code path}
  * and {@code maxAge}.
@@ -49,6 +48,8 @@ public final class ResponseCookie {
     private final boolean httpOnly;
     private final boolean secure;
     private final int hashCode;
+    private final SameSite sameSite;
+
 
     private ResponseCookie(Builder builder) {
         if (builder.name == null || builder.name.isEmpty()) {
@@ -63,7 +64,8 @@ public final class ResponseCookie {
         this.path = builder.path;
         this.httpOnly = builder.httpOnly;
         this.secure = builder.secure;
-        this.hashCode = hash(name, value, domain, maxAge, path, secure, httpOnly);
+        this.sameSite = builder.sameSite;
+        this.hashCode = hash(name, value, domain, maxAge, path, secure, httpOnly, sameSite);
     }
 
     /**
@@ -98,7 +100,7 @@ public final class ResponseCookie {
      * @return "Set-Cookie" header values
      */
     public static List<String> encode(Collection<ResponseCookie> cookies) {
-        Set<Cookie> nettyCookies = cookies.stream()
+        Set<NettyCookie> nettyCookies = cookies.stream()
                 .map(ResponseCookie::convert)
                 .collect(toSet());
 
@@ -178,8 +180,18 @@ public final class ResponseCookie {
         return secure;
     }
 
-    private static Cookie convert(ResponseCookie cookie) {
-        DefaultCookie nCookie = new DefaultCookie(cookie.name, cookie.value);
+    /**
+     * Returns the SameSite attribute, if present.
+     *
+     * @return SameSite attribute, if present
+     */
+    public Optional<String> sameSite() {
+        return Optional.ofNullable(sameSite).map(SameSite::name);
+    }
+
+
+    private static NettyCookie convert(ResponseCookie cookie) {
+        NettyCookie nCookie = new NettyCookie(cookie.name, cookie.value);
 
         nCookie.setDomain(cookie.domain);
         nCookie.setHttpOnly(cookie.httpOnly);
@@ -188,11 +200,12 @@ public final class ResponseCookie {
             nCookie.setMaxAge(cookie.maxAge);
         }
         nCookie.setPath(cookie.path);
+        nCookie.setSameSite(cookie.sameSite);
 
         return nCookie;
     }
 
-    private static ResponseCookie convert(Cookie cookie) {
+    private static ResponseCookie convert(NettyCookie cookie) {
         String value = cookie.wrap() ? quote(cookie.value()) : cookie.value();
 
         return responseCookie(cookie.name(), value)
@@ -201,6 +214,7 @@ public final class ResponseCookie {
                 .maxAge(cookie.maxAge())
                 .httpOnly(cookie.isHttpOnly())
                 .secure(cookie.isSecure())
+                .sameSite(cookie.sameSite())
                 .build();
     }
 
@@ -223,7 +237,8 @@ public final class ResponseCookie {
                 && Objects.equals(value, that.value)
                 && Objects.equals(domain, that.domain)
                 && Objects.equals(maxAge, that.maxAge)
-                && Objects.equals(path, that.path);
+                && Objects.equals(path, that.path)
+                && Objects.equals(sameSite, that.sameSite);
     }
 
     @Override
@@ -241,6 +256,7 @@ public final class ResponseCookie {
                 + ", path='" + path + '\''
                 + ", httpOnly=" + httpOnly
                 + ", secure=" + secure
+                + ", sameSite=" + sameSite
                 + '}';
     }
 
@@ -257,6 +273,7 @@ public final class ResponseCookie {
         private String path;
         private boolean httpOnly;
         private boolean secure;
+        private SameSite sameSite;
 
         private Builder(String name, String value) {
             this.name = requireNonNull(name);
@@ -339,6 +356,12 @@ public final class ResponseCookie {
             this.secure = secure;
             return this;
         }
+
+        public Builder sameSite(SameSite sameSite) {
+            this.sameSite = sameSite;
+            return this;
+        }
+
 
         public ResponseCookie build() {
             return new ResponseCookie(this);

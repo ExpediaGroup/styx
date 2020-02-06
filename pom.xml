@@ -1005,6 +1005,7 @@
             <exclude>default.properties</exclude>
             <exclude>**/GraphiteReporter.java</exclude>
             <exclude>**/ServerCookieEncoder.java</exclude>
+            <exclude>**/ClientCookieDecoder.java</exclude>
             <exclude>**/MultithreadedStressTester.java</exclude>
             <exclude>**/RelationshipTester.java</exclude>
             <exclude>**/EqualsTester.java</exclude>

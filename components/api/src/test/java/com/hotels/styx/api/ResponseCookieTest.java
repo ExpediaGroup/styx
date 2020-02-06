@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,9 +15,12 @@
  */
 package com.hotels.styx.api;
 
+import com.hotels.styx.api.CookieHeaderNames.SameSite;
 import org.junit.jupiter.api.Test;
 
 import static com.hotels.styx.api.ResponseCookie.responseCookie;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ResponseCookieTest {
@@ -35,4 +38,14 @@ public class ResponseCookieTest {
     public void acceptsOnlyNonNullValue() {
         assertThrows(NullPointerException.class, () -> responseCookie("name", null).build());
     }
+
+
+    @Test
+    public void acceptSameSiteCookie() {
+        assertThat(
+                responseCookie("name", "value").sameSite(SameSite.Lax).build().sameSite().orElse(""),
+                equalTo(SameSite.Lax.name())
+        );
+    }
+
 }
