@@ -23,11 +23,8 @@ import com.google.common.util.concurrent.ServiceManager;
 import com.hotels.styx.admin.AdminServerBuilder;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.Resource;
-import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
-import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.config.schema.SchemaValidationException;
-import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.ConnectorConfig;
 import com.hotels.styx.server.netty.NettyServerBuilder;
@@ -58,6 +55,8 @@ import static java.lang.String.format;
 import static java.lang.System.getProperty;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
+
+//import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 
 /**
  * Entry point for styx proxy server.
@@ -175,10 +174,7 @@ public final class StyxServer extends AbstractService {
         // The new `HttpServer` object (https://github.com/HotelsDotCom/styx/pull/591) doesn't use it.
         HttpHandler handlerForOldProxyServer = new StyxPipelineFactory(
                 components.routingObjectFactoryContext(),
-                components.environment(),
-                components.services(),
-                components.plugins(),
-                components.clientExecutor())
+                components.environment())
                 .create();
 
         // Startup phase 1: start plugins, control plane providers, and other services:
@@ -320,11 +316,7 @@ public final class StyxServer extends AbstractService {
     }
 
     private static InetServer createAdminServer(StyxServerComponents components) {
-        Registry<BackendService> registry = (Registry<BackendService>) components.services().get("backendServiceRegistry");
-
-        return new AdminServerBuilder(components)
-                .backendServicesRegistry(registry != null ? registry : new MemoryBackedRegistry<>())
-                .build();
+        return new AdminServerBuilder(components).build();
     }
 
     private class PluginsManager extends AbstractStyxService {

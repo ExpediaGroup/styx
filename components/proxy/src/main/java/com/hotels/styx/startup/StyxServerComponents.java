@@ -22,10 +22,11 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.AsyncEventBus;
 import com.hotels.styx.Environment;
-import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.InetServer;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.StartupConfig;
 import com.hotels.styx.StyxConfig;
+import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.Version;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.Configuration;
@@ -42,7 +43,6 @@ import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.RouteRefLookup.RouteDbRefLookup;
-import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
 import org.slf4j.Logger;
 
@@ -111,10 +111,7 @@ public class StyxServerComponents {
                 INTERCEPTOR_FACTORIES,
                 false);
 
-        this.services = mergeServices(
-                builder.servicesLoader.load(environment, routeObjectStore),
-                builder.additionalServices
-        );
+        this.services = builder.servicesLoader.load(environment, routeObjectStore);
 
         this.plugins.forEach(plugin -> this.environment.plugins().add(plugin));
 
@@ -223,17 +220,6 @@ public class StyxServerComponents {
         return readVersionFrom("/version.json");
     }
 
-    private static Map<String, StyxService> mergeServices(Map<String, StyxService> configServices, Map<String, StyxService> additionalServices) {
-        if (additionalServices == null) {
-            return configServices;
-        }
-
-        return new ImmutableMap.Builder<String, StyxService>()
-                .putAll(configServices)
-                .putAll(additionalServices)
-                .build();
-    }
-
     /**
      * CoreConfig builder.
      */
@@ -246,7 +232,6 @@ public class StyxServerComponents {
         private StartupConfig startupConfig;
 
         private final Map<String, RoutingObjectFactory> additionalRoutingObjectFactories = new HashMap<>();
-        private final Map<String, StyxService> additionalServices = new HashMap<>();
 
         public Builder styxConfig(StyxConfig styxConfig) {
             this.styxConfig = requireNonNull(styxConfig);
@@ -295,12 +280,6 @@ public class StyxServerComponents {
         @VisibleForTesting
         Builder services(ServicesLoader servicesLoader) {
             this.servicesLoader = requireNonNull(servicesLoader);
-            return this;
-        }
-
-        @VisibleForTesting
-        public Builder additionalServices(Map<String, StyxService> services) {
-            this.additionalServices.putAll(services);
             return this;
         }
 

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,22 +16,22 @@
 package com.hotels.styx
 
 import com.hotels.styx.api.extension.service.BackendService
-import com.hotels.styx.infrastructure.MemoryBackedRegistry
+//import com.hotels.styx.infrastructure.MemoryBackedRegistry
 import com.hotels.styx.support.configuration.StyxBackend
 
 trait BackendServicesRegistrySupplier {
 
-  def setBackends(registry: MemoryBackedRegistry[BackendService], pathAndbackends: (String, StyxBackend)*) = {
-    resetBackendRoutes(registry)
-
-    pathAndbackends.foreach {
-      case (path, backend) =>
-        registry.add(backend.toBackend(path).asJava)
-    }
-  }
-
-  def resetBackendRoutes(registry: MemoryBackedRegistry[BackendService]) = {
-    registry.reset()
-  }
+//  def setBackends(registry: MemoryBackedRegistry[BackendService], pathAndbackends: (String, StyxBackend)*) = {
+//    resetBackendRoutes(registry)
+//
+//    pathAndbackends.foreach {
+//      case (path, backend) =>
+//        registry.add(backend.toBackend(path).asJava)
+//    }
+//  }
+//
+//  def resetBackendRoutes(registry: MemoryBackedRegistry[BackendService]) = {
+//    registry.reset()
+//  }
 
 }

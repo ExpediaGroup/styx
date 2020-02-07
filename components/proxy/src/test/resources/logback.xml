@@ -16,7 +16,6 @@
   <logger name="com.hotels.styx.proxy.HttpErrorStatusCauseLogger" level="INFO"/>
   <logger name="com.hotels.styx.startup.ProxyServerSetUp" level="INFO"/>
   <logger name="com.hotels.styx.http-messages.inbound" level="INFO"/>
-  <logger name="com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry" level="INFO"/>
   <logger name="com.hotels.styx.metrics.reporting.graphite.GraphiteReporterService" level="INFO"/>
   <logger name="com.hotels.styx.metrics.reporting.graphite.GraphiteReporter" level="INFO"/>
 

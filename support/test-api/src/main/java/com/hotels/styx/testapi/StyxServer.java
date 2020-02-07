@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,17 +15,12 @@
  */
 package com.hotels.styx.testapi;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.admin.AdminServerConfig;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
-import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
-import com.hotels.styx.infrastructure.MemoryBackedRegistry;
-import com.hotels.styx.infrastructure.RegistryServiceAdapter;
 import com.hotels.styx.proxy.ProxyServerConfig;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpsConnectorConfig;
@@ -33,14 +28,9 @@ import com.hotels.styx.startup.StyxServerComponents;
 import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import static com.hotels.styx.testapi.ssl.SslTesting.acceptAllSslRequests;
-import static java.util.stream.Collectors.toSet;
 
 /**
  * A Styx server that can be started up programmatically in test code.
@@ -59,20 +49,14 @@ public final class StyxServer {
     private StyxServer(Builder builder) {
         acceptAllSslRequests();
 
-        MemoryBackedRegistry<com.hotels.styx.api.extension.service.BackendService> backendServicesRegistry = new MemoryBackedRegistry<>();
-
         StyxServerComponents config = new StyxServerComponents.Builder()
                 .styxConfig(styxConfig(builder))
                 .pluginFactories(builder.pluginFactories)
-                .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(backendServicesRegistry)))
                 .build();
 
         metricRegistry = config.environment().metricRegistry();
 
         this.server = new com.hotels.styx.StyxServer(config);
-
-        builder.routes.forEach((path, backendService) ->
-                backendServicesRegistry.add(backendService));
     }
 
     private StyxServer start() {
@@ -146,7 +130,6 @@ public final class StyxServer {
      * A builder for constructing instances of {@link StyxServer}.
      */
     public static final class Builder {
-        private final Map<String, com.hotels.styx.api.extension.service.BackendService> routes = new HashMap<>();
         private final List<ConfiguredPluginFactory> pluginFactories = new ArrayList<>();
         private int proxyHttpPort;
         private int adminHttpPort;
@@ -209,44 +192,6 @@ public final class StyxServer {
         public Builder addPluginFactory(String name, PluginFactory pluginFactory, Object pluginConfig) {
             pluginFactories.add(new ConfiguredPluginFactory(name, pluginFactory, pluginConfig));
             return this;
-        }
-
-        /**
-         * Routes to a fully configured backend service.
-         *
-         * @param pathPrefix     path to backend service
-         * @param backendService backend service
-         * @return this builder
-         */
-        public Builder addRoute(String pathPrefix, BackendService backendService) {
-            routes.put(pathPrefix, backendService.createBackendService(pathPrefix));
-            return this;
-        }
-
-        /**
-         * Routes to a backend service created from an array of origins.
-         *
-         * @param pathPrefix path to backend service
-         * @param origins    origins
-         * @return this builder
-         */
-        public Builder addRoute(String pathPrefix, Origin... origins) {
-            return addRoute(pathPrefix, ImmutableSet.copyOf(origins));
-        }
-
-        /**
-         * Routes to a backend service using origins created from localhost and an array of ports.
-         *
-         * @param pathPrefix  path to backend service
-         * @param originPorts origin ports
-         * @return this builder
-         */
-        public Builder addRoute(String pathPrefix, int... originPorts) {
-            return addRoute(pathPrefix, Arrays.stream(originPorts).mapToObj(Origins::origin).collect(toSet()));
-        }
-
-        private Builder addRoute(String pathPrefix, Set<Origin> origins) {
-            return addRoute(pathPrefix, new BackendService().addOrigins(origins));
         }
 
         /**

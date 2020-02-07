@@ -18,19 +18,11 @@ package com.hotels.styx;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.extension.service.BackendService;
-import com.hotels.styx.api.extension.service.spi.Registry;
-import com.hotels.styx.api.extension.service.spi.StyxService;
-import com.hotels.styx.infrastructure.MemoryBackedRegistry;
-import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingObject;
-import com.hotels.styx.routing.StaticPipelineFactory;
 import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static com.hotels.styx.BuiltInInterceptors.internalStyxInterceptors;
@@ -44,22 +36,13 @@ public class StyxPipelineFactory {
 
     private final RoutingObjectFactory.Context builtinRoutingObjects;
     private final Environment environment;
-    private final Map<String, StyxService> services;
-    private final List<NamedPlugin> plugins;
-    private final NettyExecutor executor;
 
 
     public StyxPipelineFactory(
             RoutingObjectFactory.Context builtinRoutingObjects,
-            Environment environment,
-            Map<String, StyxService> services,
-            List<NamedPlugin> plugins,
-            NettyExecutor executor) {
+            Environment environment) {
         this.builtinRoutingObjects = requireNonNull(builtinRoutingObjects);
         this.environment = requireNonNull(environment);
-        this.services = requireNonNull(services);
-        this.plugins = requireNonNull(plugins);
-        this.executor = requireNonNull(executor);
     }
 
     public HttpHandler create() {
@@ -76,17 +59,10 @@ public class StyxPipelineFactory {
 
         Optional<JsonNode> rootHandlerNode = environment.configuration().get("httpPipeline", JsonNode.class);
 
-        if (rootHandlerNode.isPresent()) {
-            return Builtins.build(ImmutableList.of("httpPipeline"), routingObjectFactoryContext, toRoutingConfigNode(rootHandlerNode.get()));
+        if (!rootHandlerNode.isPresent()) {
+            throw new IllegalArgumentException("Root handler is not present");
         }
 
-        Registry<BackendService> registry = (Registry<BackendService>) services.get("backendServiceRegistry");
-        return new StaticPipelineFactory(
-                environment,
-                registry != null ? registry : new MemoryBackedRegistry<>(),
-                plugins,
-                executor,
-                requestTracking)
-                .build();
+        return Builtins.build(ImmutableList.of("httpPipeline"), routingObjectFactoryContext, toRoutingConfigNode(rootHandlerNode.get()));
     }
 }

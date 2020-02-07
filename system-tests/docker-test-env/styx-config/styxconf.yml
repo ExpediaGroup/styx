@@ -14,12 +14,17 @@ routingObjects:
       status: 200
       content: "hello-2"
 
+providers:
+  foo:
+    type: YamlFileConfigurationService
+    config:
+      originsFile: /styx/config/origins.yml
 
-httpPipeline: hello1
+httpPipeline: foo-router
 
 servers:
   http:
     type: HttpServer
     config:
       port: 8081
-      handler: hello2
+      handler: foo-router

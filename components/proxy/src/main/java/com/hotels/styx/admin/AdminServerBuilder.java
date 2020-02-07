@@ -15,23 +15,17 @@
  */
 package com.hotels.styx.admin;
 
-import com.codahale.metrics.json.MetricsModule;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.Environment;
 import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.InetServer;
 import com.hotels.styx.StartupConfig;
 import com.hotels.styx.StyxConfig;
-import com.hotels.styx.admin.dashboard.DashboardData;
-import com.hotels.styx.admin.dashboard.DashboardDataSupplier;
 import com.hotels.styx.admin.handlers.CurrentRequestsHandler;
 import com.hotels.styx.admin.handlers.IndexHandler;
 import com.hotels.styx.admin.handlers.JVMMetricsHandler;
-import com.hotels.styx.admin.handlers.JsonHandler;
 import com.hotels.styx.admin.handlers.LoggingConfigurationHandler;
 import com.hotels.styx.admin.handlers.MetricsHandler;
-import com.hotels.styx.admin.handlers.OriginsHandler;
-import com.hotels.styx.admin.handlers.OriginsInventoryHandler;
 import com.hotels.styx.admin.handlers.PingHandler;
 import com.hotels.styx.admin.handlers.PluginListHandler;
 import com.hotels.styx.admin.handlers.PluginToggleHandler;
@@ -43,23 +37,17 @@ import com.hotels.styx.admin.handlers.StyxConfigurationHandler;
 import com.hotels.styx.admin.handlers.ThreadsHandler;
 import com.hotels.styx.admin.handlers.UptimeHandler;
 import com.hotels.styx.admin.handlers.VersionTextHandler;
-import com.hotels.styx.admin.tasks.OriginsCommandHandler;
-import com.hotels.styx.admin.tasks.OriginsReloadCommandHandler;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.WebServiceHandler;
 import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.api.extension.service.BackendService;
-import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.common.http.handler.HttpAggregator;
-import com.hotels.styx.common.http.handler.HttpMethodFilteringHandler;
 import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.server.AdminHttpRouter;
-import com.hotels.styx.server.handlers.ClassPathResourceHandler;
 import com.hotels.styx.server.netty.NettyServerBuilder;
 import com.hotels.styx.server.netty.WebServerConnectorFactory;
 import com.hotels.styx.server.track.CurrentRequestTracker;
@@ -75,13 +63,10 @@ import java.util.function.BiFunction;
 
 import static com.google.common.net.MediaType.HTML_UTF_8;
 import static com.hotels.styx.admin.handlers.IndexHandler.Link.link;
-import static com.hotels.styx.api.HttpMethod.POST;
 import static com.hotels.styx.routing.config.ConfigVersionResolver.Version.ROUTING_CONFIG_V1;
 import static com.hotels.styx.routing.config.ConfigVersionResolver.configVersion;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -100,8 +85,6 @@ public class AdminServerBuilder {
     private final StyxObjectStore<StyxObjectRecord<InetServer>> serverDatabase;
     private final StartupConfig startupConfig;
 
-    private Registry<BackendService> backendServicesRegistry;
-
     public AdminServerBuilder(StyxServerComponents serverComponents) {
         this.environment = requireNonNull(serverComponents.environment());
         this.routeDatabase = requireNonNull(serverComponents.routeDatabase());
@@ -110,11 +93,6 @@ public class AdminServerBuilder {
         this.configuration = this.environment.configuration();
         this.startupConfig = serverComponents.startupConfig();
         this.serverDatabase = requireNonNull(serverComponents.serversDatabase());
-    }
-
-    public AdminServerBuilder backendServicesRegistry(Registry<BackendService> backendServicesRegistry) {
-        this.backendServicesRegistry = requireNonNull(backendServicesRegistry);
-        return this;
     }
 
     public InetServer build() {
@@ -163,18 +141,6 @@ public class AdminServerBuilder {
         httpRouter.aggregate("/admin/service/providers", serviceProvideHandler);
         httpRouter.aggregate("/admin/service/provider/", serviceProvideHandler);
 
-        if (configVersion(styxConfig) == ROUTING_CONFIG_V1) {
-            httpRouter.aggregate("/admin/dashboard/data.json", dashboardDataHandler(styxConfig));
-            httpRouter.aggregate("/admin/dashboard/", new ClassPathResourceHandler("/admin/dashboard/"));
-        }
-
-        // Replace them in the backwards compatibility mode only.
-        // Remove altogether when Routing Engine is enabled:
-        httpRouter.aggregate("/admin/origins/status", new OriginsInventoryHandler(environment.eventBus()));
-        httpRouter.aggregate("/admin/configuration/origins", new OriginsHandler(backendServicesRegistry));
-        httpRouter.aggregate("/admin/tasks/origins/reload", new HttpMethodFilteringHandler(POST, new OriginsReloadCommandHandler(backendServicesRegistry)));
-        httpRouter.aggregate("/admin/tasks/origins", new HttpMethodFilteringHandler(POST, new OriginsCommandHandler(environment.eventBus())));
-
         httpRouter.aggregate("/admin/tasks/plugin/", new PluginToggleHandler(environment.plugins()));
 
         // Plugins Handler
@@ -195,12 +161,6 @@ public class AdminServerBuilder {
         httpRouter.aggregate("/admin/servers/", serverHandler);
 
         return httpRouter;
-    }
-
-    private JsonHandler<DashboardData> dashboardDataHandler(StyxConfig styxConfig) {
-        return new JsonHandler<>(new DashboardDataSupplier(backendServicesRegistry, environment, styxConfig),
-                Optional.of(Duration.ofSeconds(10)),
-                new MetricsModule(SECONDS, MILLISECONDS, false));
     }
 
     private static Iterable<IndexHandler.Link> indexLinkPaths(StyxConfig styxConfig) {

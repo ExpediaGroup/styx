@@ -28,7 +28,6 @@ import com.hotels.styx.routing.handlers.HostProxy;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
 import com.hotels.styx.routing.handlers.LoadBalancingGroup;
 import com.hotels.styx.routing.handlers.PathPrefixRouter;
-import com.hotels.styx.routing.handlers.ProxyToBackend;
 import com.hotels.styx.routing.handlers.RouteRefLookup;
 import com.hotels.styx.routing.handlers.StaticResponseHandler;
 import com.hotels.styx.StyxObjectRecord;
@@ -106,7 +105,6 @@ public final class Builtins {
                 .put(STATIC_RESPONSE, new StaticResponseHandler.Factory())
                 .put(CONDITION_ROUTER, new ConditionRouter.Factory())
                 .put(INTERCEPTOR_PIPELINE, new HttpInterceptorPipeline.Factory())
-                .put(PROXY_TO_BACKEND, new ProxyToBackend.Factory())
                 .put(PATH_PREFIX_ROUTER, new PathPrefixRouter.Factory())
                 .put(HOST_PROXY, new HostProxy.Factory())
                 .put(LOAD_BALANCING_GROUP, new LoadBalancingGroup.Factory())
@@ -116,7 +114,6 @@ public final class Builtins {
                 .put(STATIC_RESPONSE, StaticResponseHandler.SCHEMA)
                 .put(CONDITION_ROUTER, ConditionRouter.SCHEMA)
                 .put(INTERCEPTOR_PIPELINE, HttpInterceptorPipeline.SCHEMA)
-                .put(PROXY_TO_BACKEND, ProxyToBackend.SCHEMA)
                 .put(PATH_PREFIX_ROUTER, PathPrefixRouter.SCHEMA)
                 .put(HOST_PROXY, HostProxy.SCHEMA)
                 .put(LOAD_BALANCING_GROUP,  LoadBalancingGroup.Companion.getSCHEMA())

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -78,20 +78,6 @@ public class StyxServerComponentsTest {
         StyxServerComponents components = new StyxServerComponents.Builder()
                 .styxConfig(new StyxConfig())
                 .services((env, routeDb) -> ImmutableMap.of(
-                        "service1", mock(StyxService.class),
-                        "service2", mock(StyxService.class)))
-                .build();
-
-        Map<String, StyxService> services = components.services();
-
-        assertThat(services.keySet(), containsInAnyOrder("service1", "service2"));
-    }
-
-    @Test
-    public void exposesAdditionalServices() {
-        StyxServerComponents components = new StyxServerComponents.Builder()
-                .styxConfig(new StyxConfig())
-                .additionalServices(ImmutableMap.of(
                         "service1", mock(StyxService.class),
                         "service2", mock(StyxService.class)))
                 .build();

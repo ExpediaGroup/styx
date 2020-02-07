@@ -27,7 +27,7 @@ import com.hotels.styx.api.LiveHttpResponse.response
 import com.hotels.styx.api.{HttpResponseStatus, _}
 import com.hotels.styx.api.HttpResponseStatus.{BAD_GATEWAY, INTERNAL_SERVER_ERROR, OK}
 import com.hotels.styx.api.extension.service.BackendService
-import com.hotels.styx.infrastructure.{MemoryBackedRegistry, RegistryServiceAdapter}
+//import com.hotels.styx.infrastructure.{MemoryBackedRegistry, RegistryServiceAdapter}
 import com.hotels.styx.support.ImplicitStyxConversions
 import com.hotels.styx.support.backends.FakeHttpServer.HttpStartupConfig
 import com.hotels.styx.support.configuration
@@ -53,7 +53,7 @@ class ErrorMetricsSpec extends FunSpec
 
   var normalBackend: FakeHttpServer = _
 
-  var backendsRegistry: MemoryBackedRegistry[BackendService] = _
+//  var backendsRegistry: MemoryBackedRegistry[BackendService] = _
   var styxServer: StyxServer = _
 
   override val styxConfig = configuration.StyxConfig(ProxyConfig(), plugins = Map(
@@ -77,16 +77,16 @@ class ErrorMetricsSpec extends FunSpec
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
-    backendsRegistry = new MemoryBackedRegistry[BackendService]
-    styxServer = styxConfig.startServer(new RegistryServiceAdapter(backendsRegistry))
-    setBackends(
-      backendsRegistry,
-      "/" -> HttpBackend(
-        "appOne",
-        Origins(normalBackend),
-        responseTimeout = 5.seconds,
-        connectionPoolConfig = ConnectionPoolSettings(maxConnectionsPerHost = 2)
-      ))
+//    backendsRegistry = new MemoryBackedRegistry[BackendService]
+//    styxServer = styxConfig.startServer(new RegistryServiceAdapter(backendsRegistry))
+//    setBackends(
+//      backendsRegistry,
+//      "/" -> HttpBackend(
+//        "appOne",
+//        Origins(normalBackend),
+//        responseTimeout = 5.seconds,
+//        connectionPoolConfig = ConnectionPoolSettings(maxConnectionsPerHost = 2)
+//      ))
   }
 
   override protected def afterEach(): Unit = {

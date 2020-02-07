@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import com.hotels.styx._
 import com.hotels.styx.api.HttpResponse
 import com.hotels.styx.api.HttpResponseStatus._
 import com.hotels.styx.api.extension.service.BackendService
-import com.hotels.styx.infrastructure.{MemoryBackedRegistry, RegistryServiceAdapter}
+//import com.hotels.styx.infrastructure.{MemoryBackedRegistry, RegistryServiceAdapter}
 import com.hotels.styx.proxy.resiliency.DirectBufferMetrics.directBufferMetrics
 import com.hotels.styx.server.HttpServer
 import com.hotels.styx.support.DownloadClient._
@@ -195,12 +195,12 @@ object SharedStyx extends BackendServicesRegistrySupplier with ImplicitOriginCon
   System.setProperty("io.netty.leakDetectionLevel", "ADVANCED")
 
   private val styxStartOp = Future {
-    val backendsRegistry = new MemoryBackedRegistry[BackendService]
-    val styxServer = StyxConfig().startServer(new RegistryServiceAdapter(backendsRegistry))
-
-    setBackends(backendsRegistry, "/download" -> HttpBackend("myapp", Origins(SharedOrigins.fileServer), responseTimeout = 25.seconds))
-
-    (styxServer, StyxConfig())
+//    val backendsRegistry = new MemoryBackedRegistry[BackendService]
+//    val styxServer = StyxConfig().startServer(new RegistryServiceAdapter(backendsRegistry))
+//
+//    setBackends(backendsRegistry, "/download" -> HttpBackend("myapp", Origins(SharedOrigins.fileServer), responseTimeout = 25.seconds))
+//
+//    (styxServer, StyxConfig())
   }
 
   def styx: (StyxServer, StyxConfig) = Await.result(styxStartOp, 10.seconds)

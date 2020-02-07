@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hotels.styx
 import java.nio.file.Paths
 
 import com.hotels.styx.api.extension.service.BackendService
-import com.hotels.styx.infrastructure.{MemoryBackedRegistry, RegistryServiceAdapter}
+//import com.hotels.styx.infrastructure.{MemoryBackedRegistry, RegistryServiceAdapter}
 import com.hotels.styx.plugins.PluginPipelineSpec
 import com.hotels.styx.support.configuration.{ImplicitOriginConversions, StyxBackend, StyxBaseConfig}
 import com.hotels.styx.support.{ImplicitStyxConversions, configuration}
@@ -37,12 +37,12 @@ trait StyxProxySpec extends StyxClientSupplier
   this: Suite =>
 
   private val LOGGER = LoggerFactory.getLogger(getClass)
-  var backendsRegistry = new MemoryBackedRegistry[BackendService]
+//  var backendsRegistry = new MemoryBackedRegistry[BackendService]
   var styxServer: StyxServer = _
 
   implicit class StyxServerOperations(val styxServer: StyxServer) extends StyxServerSupplements
     with BackendServicesRegistrySupplier {
-    def setBackends(backends: (String, StyxBackend)*): Unit = setBackends(backendsRegistry, backends:_*)
+//    def setBackends(backends: (String, StyxBackend)*): Unit = setBackends(backendsRegistry, backends:_*)
   }
 
   def resourcesPluginsPath: String = {
@@ -51,7 +51,7 @@ trait StyxProxySpec extends StyxClientSupplier
   }
 
   override protected def beforeAll() = {
-    styxServer = styxConfig.startServer(new RegistryServiceAdapter(backendsRegistry))
+//    styxServer = styxConfig.startServer(new RegistryServiceAdapter(backendsRegistry))
     LOGGER.info("Styx http port is: [%d]".format(styxServer.httpPort))
     LOGGER.info("Styx https port is: [%d]".format(styxServer.secureHttpPort))
     super.beforeAll()
