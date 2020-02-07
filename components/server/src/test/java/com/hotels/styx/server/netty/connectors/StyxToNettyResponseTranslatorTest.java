@@ -15,9 +15,9 @@
  */
 package com.hotels.styx.server.netty.connectors;
 
-import com.hotels.styx.api.ClientCookieDecoder;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.ResponseCookie;
+import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.Cookie;
 import org.junit.jupiter.api.Test;
 

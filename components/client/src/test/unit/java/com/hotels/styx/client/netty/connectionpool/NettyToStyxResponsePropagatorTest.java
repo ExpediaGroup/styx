@@ -195,10 +195,10 @@ public class NettyToStyxResponsePropagatorTest {
     @Test
     public void shouldConvertNettyCookieHeaderToStyxCookies() {
         DefaultHttpResponse nettyResponse = new DefaultHttpResponse(HTTP_1_1, OK);
-        nettyResponse.headers().add("Set-Cookie", "SESSID=sessId; Domain=.foo.com; Path=/; HttpOnly; SameSite=Strict");
+        nettyResponse.headers().add("Set-Cookie", "SESSID=sessId; Domain=.foo.com; Path=/; HttpOnly");
         LiveHttpResponse styxResponse = toStyxResponse(nettyResponse).build();
 
-        assertThat(styxResponse.header("Set-Cookie"), isValue("SESSID=sessId; Domain=.foo.com; Path=/; HttpOnly; SameSite=Strict"));
+        assertThat(styxResponse.header("Set-Cookie"), isValue("SESSID=sessId; Domain=.foo.com; Path=/; HttpOnly"));
         assertThat(styxResponse.cookie("SESSID"), equalTo(
                 Optional.of(responseCookie("SESSID", "sessId")
                         .domain(".foo.com")
