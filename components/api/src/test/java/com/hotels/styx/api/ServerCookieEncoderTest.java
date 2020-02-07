@@ -15,9 +15,9 @@
  */
 package com.hotels.styx.api;
 
+import com.hotels.styx.api.ResponseCookie.SameSite;
 import org.junit.jupiter.api.Test;
 
-import static com.hotels.styx.api.CookieHeaderNames.SameSite.Lax;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -46,7 +46,7 @@ public class ServerCookieEncoderTest {
     @Test
     public void setValidSameSite() {
         NettyCookie cookie = new NettyCookie("key", "value");
-        cookie.setSameSite(Lax);
+        cookie.setSameSite(SameSite.Lax.name());
         cookie.setDomain(".domain.com");
         cookie.setMaxAge(50);
 
@@ -54,9 +54,9 @@ public class ServerCookieEncoderTest {
     }
 
     @Test
-    public void setNullSameSite() {
+    public void setAnySameSite() {
         NettyCookie cookie = new NettyCookie("key", "value");
-        cookie.setSameSite(null);
-        assertThat(ServerCookieEncoder.LAX.encode(cookie), is(not(containsString("SameSite"))));
+        cookie.setSameSite("Test");
+        assertThat(ServerCookieEncoder.LAX.encode(cookie), containsString("SameSite=Test"));
     }
 }

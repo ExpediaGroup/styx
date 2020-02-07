@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import com.hotels.styx.api.CookieHeaderNames.SameSite;
 import io.netty.handler.codec.DateFormatter;
 import io.netty.handler.codec.http.cookie.ClientCookieEncoder;
 import org.slf4j.Logger;
@@ -140,7 +139,7 @@ public final class ClientCookieDecoder {
 
             if (cookieBuilder == null) {
                 // cookie name-value pair
-                NettyCookie cookie = null;
+                NettyCookie cookie = initCookie(header, nameBegin, nameEnd, valueBegin, valueEnd);
                 if (nameBegin == -1 || nameBegin == nameEnd) {
                     logger.debug("Skipping cookie with null name");
                 } else if (valueBegin == -1) {
@@ -245,7 +244,7 @@ public final class ClientCookieDecoder {
         private int expiresEnd;
         private boolean secure;
         private boolean httpOnly;
-        private SameSite sameSite;
+        private String sameSite;
 
         CookieBuilder(NettyCookie cookie, String header) {
             this.cookie = cookie;
@@ -335,12 +334,7 @@ public final class ClientCookieDecoder {
                 httpOnly = true;
             }
             if (header.regionMatches(true, nameStart, CookieHeaderNames.SAMESITE, 0, 8)) {
-                String siteRestriction = computeValue(valueStart, valueEnd);
-                try {
-                    sameSite = SameSite.of(siteRestriction);
-                } catch (IllegalArgumentException e) {
-                    logger.debug("Same site value {} was invalid, ignoring attribute");
-                }
+                sameSite = computeValue(valueStart, valueEnd);
             }
         }
 

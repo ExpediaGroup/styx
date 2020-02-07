@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,9 +15,9 @@
  */
 package com.hotels.styx.server.netty.connectors;
 
+import com.hotels.styx.api.ClientCookieDecoder;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.ResponseCookie;
-import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.Cookie;
 import org.junit.jupiter.api.Test;
 

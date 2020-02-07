@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import com.hotels.styx.api.CookieHeaderNames.SameSite;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 
 import static com.hotels.styx.api.CookieUtil.stringBuilder;
@@ -24,7 +23,7 @@ import static com.hotels.styx.api.CookieUtil.stringBuilder;
 class NettyCookie extends DefaultCookie {
 
 
-    private SameSite sameSite;
+    private String sameSite;
     /**
      * Creates a new cookie with the specified name and value.
      *
@@ -36,11 +35,11 @@ class NettyCookie extends DefaultCookie {
     }
 
 
-    public SameSite sameSite() {
+    public String sameSite() {
         return sameSite;
     }
 
-    public void setSameSite(SameSite sameSite) {
+    public void setSameSite(String sameSite) {
         this.sameSite = sameSite;
     }
 
@@ -70,7 +69,7 @@ class NettyCookie extends DefaultCookie {
             buf.append(", HTTPOnly");
         }
         if (sameSite != null) {
-            buf.append("SameSite=").append(sameSite.toString());
+            buf.append(", SameSite=").append(sameSite.toString());
         }
         return buf.toString();
     }

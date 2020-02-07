@@ -15,7 +15,8 @@
  */
 package com.hotels.styx.api;
 
-import com.hotels.styx.api.CookieHeaderNames.SameSite;
+
+import com.hotels.styx.api.ResponseCookie.SameSite;
 import org.junit.jupiter.api.Test;
 
 import static com.hotels.styx.api.ResponseCookie.responseCookie;

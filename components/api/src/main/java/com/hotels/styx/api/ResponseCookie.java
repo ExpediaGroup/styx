@@ -16,8 +16,6 @@
 package com.hotels.styx.api;
 
 
-import com.hotels.styx.api.CookieHeaderNames.SameSite;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -48,8 +46,13 @@ public final class ResponseCookie {
     private final boolean httpOnly;
     private final boolean secure;
     private final int hashCode;
-    private final SameSite sameSite;
+    private final String sameSite;
 
+    public enum SameSite {
+        Lax,
+        Strict,
+        None
+    }
 
     private ResponseCookie(Builder builder) {
         if (builder.name == null || builder.name.isEmpty()) {
@@ -186,7 +189,7 @@ public final class ResponseCookie {
      * @return SameSite attribute, if present
      */
     public Optional<String> sameSite() {
-        return Optional.ofNullable(sameSite).map(SameSite::name);
+        return Optional.ofNullable(sameSite);
     }
 
 
@@ -214,7 +217,7 @@ public final class ResponseCookie {
                 .maxAge(cookie.maxAge())
                 .httpOnly(cookie.isHttpOnly())
                 .secure(cookie.isSecure())
-                .sameSite(cookie.sameSite())
+                .sameSiteRawValue(cookie.sameSite())
                 .build();
     }
 
@@ -273,7 +276,7 @@ public final class ResponseCookie {
         private String path;
         private boolean httpOnly;
         private boolean secure;
-        private SameSite sameSite;
+        private String sameSite;
 
         private Builder(String name, String value) {
             this.name = requireNonNull(name);
@@ -357,7 +360,23 @@ public final class ResponseCookie {
             return this;
         }
 
+        /**
+         * Sets/unsets the SameSite attribute.
+         *
+         * @param sameSite enum with a valid value for the SameSite attribute
+         * @return this builder
+         */
         public Builder sameSite(SameSite sameSite) {
+            this.sameSite = sameSite.name();
+            return this;
+        }
+
+        /**
+         * Sets/unsets the SameSite attribute.
+         * @param sameSite SameSite attribute
+         * @return this builder
+         */
+        public Builder sameSiteRawValue(String sameSite) {
             this.sameSite = sameSite;
             return this;
         }

@@ -115,7 +115,7 @@ final class ServerCookieEncoder extends CookieEncoder {
         }
 
         if (cookie.sameSite() != null) {
-            add(buf, CookieHeaderNames.SAMESITE, cookie.sameSite().name());
+            add(buf, CookieHeaderNames.SAMESITE, cookie.sameSite());
         }
         return stripTrailingSeparator(buf);
     }

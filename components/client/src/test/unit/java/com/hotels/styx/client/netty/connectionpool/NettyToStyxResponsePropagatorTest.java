@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -195,10 +195,10 @@ public class NettyToStyxResponsePropagatorTest {
     @Test
     public void shouldConvertNettyCookieHeaderToStyxCookies() {
         DefaultHttpResponse nettyResponse = new DefaultHttpResponse(HTTP_1_1, OK);
-        nettyResponse.headers().add("Set-Cookie", "SESSID=sessId; Domain=.foo.com; Path=/; HttpOnly");
+        nettyResponse.headers().add("Set-Cookie", "SESSID=sessId; Domain=.foo.com; Path=/; HttpOnly; SameSite=Strict");
         LiveHttpResponse styxResponse = toStyxResponse(nettyResponse).build();
 
-        assertThat(styxResponse.header("Set-Cookie"), isValue("SESSID=sessId; Domain=.foo.com; Path=/; HttpOnly"));
+        assertThat(styxResponse.header("Set-Cookie"), isValue("SESSID=sessId; Domain=.foo.com; Path=/; HttpOnly; SameSite=Strict"));
         assertThat(styxResponse.cookie("SESSID"), equalTo(
                 Optional.of(responseCookie("SESSID", "sessId")
                         .domain(".foo.com")
