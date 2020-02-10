@@ -85,14 +85,14 @@ internal class YamlFileConfigurationService(
     }
 
     override fun start() = fileMonitoringService.start()
-            .thenAccept {
+            .thenAcceptAsync {
                 LOGGER.info("service starting - {}", config.originsFile)
                 initialised.await()
                 LOGGER.info("service started - {}", config.originsFile)
             }
 
     override fun stop() = fileMonitoringService.stop()
-            .thenAccept {
+            .thenAcceptAsync {
                 LOGGER.info("service stopped")
             }
 
