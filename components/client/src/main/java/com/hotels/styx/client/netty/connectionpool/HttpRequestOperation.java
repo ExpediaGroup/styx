@@ -105,7 +105,7 @@ public class HttpRequestOperation {
         HttpVersion version = request.version();
         HttpMethod method = request.method();
         String url = request.url().toString();
-        DefaultHttpRequest nettyRequest = new DefaultHttpRequest(toNettyVersion(version), toNettyMethod(method), url, false);
+        DefaultHttpRequest nettyRequest = new DefaultHttpRequest(toNettyVersion(version), toNettyMethod(method), url, true);
 
         request.headers().forEach((name, value) ->
                 nettyRequest.headers().add(name, value));

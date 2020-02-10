@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -372,6 +372,41 @@ class HeadersSpec extends FunSpec
         assert(resp.status() == OK)
         assert(!resp.contentLength.isPresent, "content length header should be empty")
         assert(resp.header(TRANSFER_ENCODING).get() == CHUNKED)
+      }
+
+      it("should support new lines from received request headers in folding format (no CR)") {
+        recordingBackend.stub(urlPathEqualTo("/headers"), aResponse.withStatus(200))
+
+        val req = get("/headers")
+          .addHeader(HOST, styxServer.proxyHost)
+          .addHeader(ACCEPT_ENCODING, "UTF\n 8")
+          .build()
+
+        assert(req.header(ACCEPT_ENCODING).get() == "UTF\n 8")
+
+        decodedRequest(req)
+
+        recordingBackend.verify(
+          getRequestedFor(urlPathEqualTo("/headers"))
+            .withHeader(ACCEPT_ENCODING, equalTo("UTF 8"))
+        )
+      }
+      it("should support new lines in received request headers in obsolete folding format (CRLF)") {
+        recordingBackend.stub(urlPathEqualTo("/headers"), aResponse.withStatus(200))
+
+        val req = get("/headers")
+          .addHeader(HOST, styxServer.proxyHost)
+          .addHeader(ACCEPT_ENCODING, "UTF\r\n 8")
+          .build()
+
+        assert(req.header(ACCEPT_ENCODING).get() == "UTF\r\n 8")
+
+        decodedRequest(req)
+
+        recordingBackend.verify(
+          getRequestedFor(urlPathEqualTo("/headers"))
+            .withHeader(ACCEPT_ENCODING, equalTo("UTF 8"))
+        )
       }
     }
 

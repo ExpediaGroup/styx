@@ -29,7 +29,7 @@ import com.hotels.styx.support.{NettyOrigins, TestClientSupport}
 import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
 import io.netty.buffer.Unpooled
 import io.netty.channel.ChannelHandlerContext
-import io.netty.handler.codec.http.HttpHeaders.Names.{CONTENT_LENGTH, HOST, TRANSFER_ENCODING}
+import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values.CHUNKED
 import io.netty.handler.codec.http.HttpMethod._
 import io.netty.handler.codec.http.HttpResponseStatus.OK
@@ -109,6 +109,30 @@ class BadResponseFromOriginSpec extends FunSpec
       eventually(timeout(7.seconds)) {
         styxServer.metricsSnapshot.count("styx.response.status.502").get should be(1)
       }
+    }
+
+
+    it("ignores second response from an origin") {
+      val twoResponses = (ctx: ChannelHandlerContext, msg: scala.Any) => {
+        val response = new DefaultFullHttpResponse(HTTP_1_1, OK)
+        response.headers().add(CONTENT_LENGTH, 0)
+        response.headers().add(ACCEPT_ENCODING, "ENCODING")
+        ctx.write(response)
+
+        val response2 = new DefaultFullHttpResponse(HTTP_1_1, HttpResponseStatus.NOT_FOUND)
+        response2.headers().add(ACCEPT_CHARSET, "CHARSET")
+        ctx.writeAndFlush(response2)
+      }
+
+      originRespondingWith(twoResponses)
+      val req = get("/badResponseFromOriginSpec/4")
+        .addHeader(HOST, styxServer.proxyHost)
+        .build()
+
+      val resp = decodedRequest(req)
+      assert(resp.status().code() == 200)
+      assert(resp.header(ACCEPT_ENCODING).get() == "ENCODING")
+      assert(!resp.header(ACCEPT_CHARSET).isPresent)
     }
   }
 

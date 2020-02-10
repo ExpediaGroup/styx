@@ -128,8 +128,23 @@ public class HttpHeadersTest {
 
     @Test
     public void doesNotAllowNullName() {
-        assertThrows(NullPointerException.class, () -> new HttpHeaders.Builder()
+        assertThrows(IllegalArgumentException.class, () -> new HttpHeaders.Builder()
                 .add(null, "value")
+                .build());
+    }
+
+
+    @Test
+    public void doesNotAllowNewLines() {
+        assertThrows(IllegalArgumentException.class, () -> new HttpHeaders.Builder()
+                .add("key", "value\rvalue2")
+                .build());
+
+        assertThrows(IllegalArgumentException.class, () -> new HttpHeaders.Builder()
+                .add("key", "value\r\nvalue2")
+                .build());
+        assertThrows(IllegalArgumentException.class, () -> new HttpHeaders.Builder()
+                .add("key", "value\nvalue2")
                 .build());
     }
 
