@@ -61,6 +61,7 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
     private static final Logger LOGGER = getLogger(NettyToStyxResponsePropagator.class);
 
     private final AtomicBoolean responseCompleted = new AtomicBoolean(false);
+    private final AtomicBoolean responseReceived = new AtomicBoolean(false);
     private final FluxSink<LiveHttpResponse> sink;
     private final LiveHttpRequest request;
 
@@ -119,10 +120,18 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
 
         if (msg instanceof io.netty.handler.codec.http.HttpResponse) {
             io.netty.handler.codec.http.HttpResponse nettyResponse = (io.netty.handler.codec.http.HttpResponse) msg;
+
+            if (!responseReceived.compareAndSet(false, true)) {
+                LOGGER.warn("Unexpected additional response received: " + nettyResponse);
+                ctx.channel().close();
+                return;
+            }
+
             if (nettyResponse.getDecoderResult().isFailure()) {
                 emitResponseError(new BadHttpResponseException(origin, nettyResponse.getDecoderResult().cause()));
                 return;
             }
+
 
             ctx.channel().config().setAutoRead(false);
             ctx.channel().read();
