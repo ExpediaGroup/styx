@@ -50,15 +50,18 @@ class HttpMessageLoggingSpec : FeatureSpec() {
                         .wait()
 
                 val expectedRequest = Regex("requestId=[-a-z0-9]+, secure=false, origin=null, "
-                    + "request=\\{version=HTTP/1.1, method=GET, uri=/a/path, headers=\\[Host=localhost:[0-9]+, header1=\\*\\*\\*\\*, header2=h2, cookie=cookie1=\\*\\*\\*\\*;cookie2=c2\\], id=[-a-z0-9]+\\}")
+                        + "request=\\{version=HTTP/1.1, method=GET, uri=/a/path, headers=\\[Host=localhost:[0-9]+, header1=\\*\\*\\*\\*, header2=h2, cookie=cookie1=\\*\\*\\*\\*;cookie2=c2\\], id=[-a-z0-9]+\\}")
 
                 val expectedResponse = Regex("requestId=[-a-z0-9]+, secure=false, "
-                    + "response=\\{version=HTTP/1.1, status=200 OK, headers=\\[header1=\\*\\*\\*\\*, header2=h2, cookie=cookie1=\\*\\*\\*\\*;cookie2=c2, Via=1.1 styx\\]\\}")
+                        + "response=\\{version=HTTP/1.1, status=200 OK, headers=\\[header1=\\*\\*\\*\\*, header2=h2, cookie=cookie1=\\*\\*\\*\\*;cookie2=c2, Via=1.1 styx\\]\\}")
 
                 logger.log().shouldContain(INFO, expectedRequest)
                 logger.log().shouldContain(INFO, expectedResponse)
             }
+        }
 
+        // These tests have been disabled as our API does not allow us to create invalid cookies any longer
+        feature("!Logging invalid requests/responses hides sensitive information") {
             scenario("Requests with badly-formed headers should hide sensitive cookies and headers when logged") {
 
                 httpErrorLogger.logger.level = ERROR
@@ -111,7 +114,7 @@ class HttpMessageLoggingSpec : FeatureSpec() {
             }
 
             scenario("Responses with badly-formed headers should hide sensitive cookies and headers when logged") {
-
+                // In this scenario, the response generated for this request should include an invalid cookie.
                 rootLogger.appender.list.clear()
                 rootLogger.logger.level = DEBUG
 
@@ -193,8 +196,6 @@ class HttpMessageLoggingSpec : FeatureSpec() {
               routes:
                 - prefix: /
                   destination: default
-                - prefix: /bad
-                  destination: bad
                   
           default:
             type: StaticResponseHandler
@@ -209,20 +210,6 @@ class HttpMessageLoggingSpec : FeatureSpec() {
                 - name: "cookie"
                   value: "cookie1=c1;cookie2=c2"
 
-          bad:
-            type: StaticResponseHandler
-            config:
-              status: 200
-              content: ""
-              headers:
-                - name: "header1"
-                  value: "h1"
-                - name: "header2"
-                  value: "h2" 
-                - name: "cookie"
-                  value: "cookie1=c1;cookie2=c2"
-                - name: "badheader"
-                  value: "bad\u0000bad" 
 
         httpPipeline: root
       """.trimIndent())
