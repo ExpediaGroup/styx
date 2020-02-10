@@ -332,8 +332,7 @@ final class ClientCookieDecoder {
         private void parse8(int nameStart, int valueStart, int valueEnd) {
             if (header.regionMatches(true, nameStart, CookieHeaderNames.HTTPONLY, 0, 8)) {
                 httpOnly = true;
-            }
-            if (header.regionMatches(true, nameStart, CookieHeaderNames.SAMESITE, 0, 8)) {
+            } else if (header.regionMatches(true, nameStart, CookieHeaderNames.SAMESITE, 0, 8)) {
                 sameSite = computeValue(valueStart, valueEnd);
             }
         }
