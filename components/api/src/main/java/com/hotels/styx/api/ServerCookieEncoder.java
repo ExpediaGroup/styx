@@ -54,7 +54,7 @@ final class ServerCookieEncoder extends CookieEncoder {
      * Lax instance that doesn't validate name and value, and that allows multiple
      * cookies with the same name.
      */
-    public static final ServerCookieEncoder LAX = new ServerCookieEncoder(false);
+    static final ServerCookieEncoder LAX = new ServerCookieEncoder(false);
 
     private ServerCookieEncoder(boolean strict) {
         super(strict);
@@ -67,7 +67,7 @@ final class ServerCookieEncoder extends CookieEncoder {
      * @param value the cookie value
      * @return a single Set-Cookie header value
      */
-    public String encode(String name, String value) {
+    String encode(String name, String value) {
         return encode(new NettyCookie(name, value));
     }
 
@@ -77,7 +77,7 @@ final class ServerCookieEncoder extends CookieEncoder {
      * @param cookie the cookie
      * @return a single Set-Cookie header value
      */
-    public String encode(NettyCookie cookie) {
+    String encode(NettyCookie cookie) {
 
         final String name = requireNonNull(cookie, "cookie").name();
         final String value = cookie.value() != null ? cookie.value() : "";
@@ -147,7 +147,7 @@ final class ServerCookieEncoder extends CookieEncoder {
      * @param cookies a bunch of cookies
      * @return the corresponding bunch of Set-Cookie headers
      */
-    public List<String> encode(NettyCookie... cookies) {
+    List<String> encode(NettyCookie... cookies) {
         if (requireNonNull(cookies, "cookies").length == 0) {
             return Collections.emptyList();
         }
@@ -171,7 +171,7 @@ final class ServerCookieEncoder extends CookieEncoder {
      * @param cookies a bunch of cookies
      * @return the corresponding bunch of Set-Cookie headers
      */
-    public List<String> encode(Collection<? extends NettyCookie> cookies) {
+    List<String> encode(Collection<? extends NettyCookie> cookies) {
         if (requireNonNull(cookies, "cookies").isEmpty()) {
             return Collections.emptyList();
         }
@@ -195,7 +195,7 @@ final class ServerCookieEncoder extends CookieEncoder {
      * @param cookies a bunch of cookies
      * @return the corresponding bunch of Set-Cookie headers
      */
-    public List<String> encode(Iterable<? extends NettyCookie> cookies) {
+    List<String> encode(Iterable<? extends NettyCookie> cookies) {
         Iterator<? extends NettyCookie> cookiesIt = requireNonNull(cookies, "cookies").iterator();
         if (!cookiesIt.hasNext()) {
             return Collections.emptyList();
