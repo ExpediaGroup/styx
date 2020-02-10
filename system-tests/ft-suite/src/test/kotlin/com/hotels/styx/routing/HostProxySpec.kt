@@ -18,7 +18,9 @@ package com.hotels.styx.routing
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.urlMatching
+import com.hotels.styx.api.HttpHeaderNames.CHUNKED
 import com.hotels.styx.api.HttpHeaderNames.HOST
+import com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY
 import com.hotels.styx.api.HttpResponseStatus.CREATED
@@ -225,8 +227,16 @@ class HostProxySpec : FeatureSpec() {
                                connectionExpirationSeconds: $connectinExpiryInSeconds
                            """.trimIndent()) shouldBe CREATED
 
+                // NOTE: Connection priming will fail when it encounters "Origin Responded Too Quickly" scenario.
+                //       This may happen when the request is sent with empty body and `Content-Length: 0`.
+                //       This is okay in production. The pooled connection is closed, instead of
+                //       returned back to the pool. But in this test we do need a pooled connection.
+                //
+                //       To avoid this scenario, we will set `Transfer-Encoding: Chunked`, enforcing the origin
+                //       receiver to wait for an additional TCP segment before responding.
                 client.send(get("/")
                         .header(HOST, styxServer().proxyHttpHostHeader())
+                        .header(TRANSFER_ENCODING, CHUNKED)
                         .build())
                         .wait()!!
                         .status() shouldBe OK
