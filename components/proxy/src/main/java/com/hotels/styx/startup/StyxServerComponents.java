@@ -98,19 +98,6 @@ public class StyxServerComponents {
 
         this.executor = NettyExecutor.create("Styx-Client-Worker", environment.configuration().proxyServerConfig().clientWorkerThreadsCount());
 
-        // TODO In further refactoring, we will probably want this loading to happen outside of this constructor call,
-        //  so that it doesn't delay the admin server from starting up
-        this.plugins = builder.configuredPluginFactories.isEmpty()
-                ? loadPlugins(environment)
-                : loadPlugins(environment, builder.configuredPluginFactories);
-
-        this.services = mergeServices(
-                builder.servicesLoader.load(environment, routeObjectStore),
-                builder.additionalServices
-        );
-
-        this.plugins.forEach(plugin -> this.environment.plugins().add(plugin));
-
         this.environment.configuration().get("executors", JsonNode.class)
                 .map(StyxServerComponents::readComponents)
                 .orElse(ImmutableMap.of())
@@ -120,6 +107,19 @@ public class StyxServerComponents {
                     StyxObjectRecord<NettyExecutor> record = new StyxObjectRecord<>(definition.type(), ImmutableSet.copyOf(definition.tags()), definition.config(), provider);
                     executorObjectStore.insert(name, record);
                 });
+
+        this.services = mergeServices(
+                builder.servicesLoader.load(environment, routeObjectStore),
+                builder.additionalServices
+        );
+
+        // TODO In further refactoring, we will probably want this loading to happen outside of this constructor call,
+        //  so that it doesn't delay the admin server from starting up
+        this.plugins = builder.configuredPluginFactories.isEmpty()
+                ? loadPlugins(environment)
+                : loadPlugins(environment, builder.configuredPluginFactories);
+
+        this.plugins.forEach(plugin -> this.environment.plugins().add(plugin));
 
         this.routingObjectContext = new RoutingObjectFactory.Context(
                 new RouteDbRefLookup(this.routeObjectStore),

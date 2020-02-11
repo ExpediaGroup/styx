@@ -93,7 +93,6 @@ public final class Builtins {
             "HttpServer", new StyxHttpServerFactory()
     );
 
-
     public static final ImmutableMap<String, Schema.FieldType> BUILTIN_SERVER_SCHEMAS = ImmutableMap.of(
             "HttpServer", StyxHttpServer.SCHEMA
     );
