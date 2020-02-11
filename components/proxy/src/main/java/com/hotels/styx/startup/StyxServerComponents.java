@@ -34,6 +34,7 @@ import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.common.format.SanitisedHttpHeaderFormatter;
 import com.hotels.styx.common.format.SanitisedHttpMessageFormatter;
+import com.hotels.styx.executors.NettyExecutorConfig;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingObjectRecord;
@@ -103,10 +104,25 @@ public class StyxServerComponents {
                 .orElse(ImmutableMap.of())
                 .forEach((name, definition) -> {
                     LOGGER.warn("Loading styx server: " + name + ": " + definition);
-                    NettyExecutor provider = Builtins.buildExecutor(name, definition, BUILTIN_EXECUTOR_FACTORIES);
-                    StyxObjectRecord<NettyExecutor> record = new StyxObjectRecord<>(definition.type(), ImmutableSet.copyOf(definition.tags()), definition.config(), provider);
+                    NettyExecutor executor = Builtins.buildExecutor(name, definition, BUILTIN_EXECUTOR_FACTORIES);
+                    StyxObjectRecord<NettyExecutor> record = new StyxObjectRecord<>(definition.type(), ImmutableSet.copyOf(definition.tags()), definition.config(), executor);
                     executorObjectStore.insert(name, record);
                 });
+
+        // Overwrite any existing or user-supplied values:
+        executorObjectStore.insert("StyxHttpServer-Global-Boss", new StyxObjectRecord<>(
+                "NettyExecutor",
+                ImmutableSet.of("StyxInternal"),
+                new NettyExecutorConfig(0, "StyxHttpServer-Global-Boss").asJsonNode(),
+                NettyExecutor.create("StyxHttpServer-Global-Boss", 0)));
+
+        // Overwrite any existing or user-supplied values:
+        executorObjectStore.insert("StyxHttpServer-Global-Worker",
+                new StyxObjectRecord<>(
+                        "NettyExecutor",
+                        ImmutableSet.of("StyxInternal"),
+                        new NettyExecutorConfig(0, "StyxHttpServer-Global-Worker").asJsonNode(),
+                        NettyExecutor.create("StyxHttpServer-Global-Worker", 0)));
 
         this.services = mergeServices(
                 builder.servicesLoader.load(environment, routeObjectStore),

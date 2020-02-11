@@ -17,7 +17,6 @@ package com.hotels.styx.servers
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.hotels.styx.InetServer
-import com.hotels.styx.NettyExecutor
 import com.hotels.styx.ProxyConnectorFactory
 import com.hotels.styx.ResponseInfoFormat
 import com.hotels.styx.StyxObjectRecord
@@ -59,9 +58,6 @@ object StyxHttpServer {
             optional("keepAliveTimeoutMillis", integer()),
             optional("maxConnectionsCount", integer()),
 
-            optional("bossThreadsCount", integer()),
-            optional("workerThreadsCount", integer()),
-
             optional("bossExecutor", string()),
             optional("workerExecutor", string())
     )
@@ -94,11 +90,8 @@ private data class StyxHttpServerConfiguration(
         val keepAliveTimeoutMillis: Int = 120000,
         val maxConnectionsCount: Int = 512,
 
-        val bossThreadsCount: Int = 0,
-        val workerThreadsCount: Int = 0,
-
-        val bossExecutor: String?,
-        val workerExecutor: String?
+        val bossExecutor: String = "StyxHttpServer-Global-Boss",
+        val workerExecutor: String = "StyxHttpServer-Global-Boss"
 )
 
 internal class StyxHttpServerFactory : StyxServerFactory {
@@ -106,24 +99,7 @@ internal class StyxHttpServerFactory : StyxServerFactory {
 
     override fun create(name: String, context: RoutingObjectFactory.Context, configuration: JsonNode, serverDb: StyxObjectStore<StyxObjectRecord<InetServer>>): InetServer {
         val config = serverConfig(configuration)
-
         val environment = context.environment()
-
-        val bossExecutor = if (config.bossExecutor != null) {
-            context.executors().get(config.bossExecutor)
-                    .map { it.styxService }
-                    .orElseThrow()
-        } else {
-            NettyExecutor.create("Http-Server(localhost-${config.port})-boss", config.bossThreadsCount)
-        }
-
-        val workerExecutor = if (config.workerExecutor != null) {
-            context.executors().get(config.workerExecutor)
-                    .map { it.styxService }
-                    .orElseThrow()
-        } else {
-            NettyExecutor.create("Http-Server(localhost-${config.port})-worker", config.bossThreadsCount)
-        }
 
         return NettyServerBuilder()
                 .setMetricsRegistry(environment.metricRegistry())
@@ -161,8 +137,12 @@ internal class StyxHttpServerFactory : StyxServerFactory {
                                                     .protocols(*config.tlsSettings.protocols.toTypedArray())
                                                     .build()
                                         }))
-                .workerExecutor(workerExecutor)
-                .bossExecutor(bossExecutor)
+                .bossExecutor(context.executors().get(config.bossExecutor)
+                            .map { it.styxService }
+                            .orElseThrow())
+                .workerExecutor(context.executors().get(config.workerExecutor)
+                            .map { it.styxService }
+                            .orElseThrow())
                 .handler({ request, ctx ->
                     context.refLookup()
                             .apply(StyxObjectReference(config.handler))

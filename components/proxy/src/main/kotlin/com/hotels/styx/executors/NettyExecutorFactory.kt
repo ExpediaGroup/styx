@@ -15,10 +15,15 @@
  */
 package com.hotels.styx.executors
 
+import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.hotels.styx.ExecutorFactory
 import com.hotels.styx.NettyExecutor
 import com.hotels.styx.config.schema.SchemaDsl
+import com.hotels.styx.infrastructure.configuration.json.ObjectMappers
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig
 
 class NettyExecutorFactory : ExecutorFactory {
@@ -26,7 +31,7 @@ class NettyExecutorFactory : ExecutorFactory {
 
     override fun create(name: String, configuration: JsonNode): NettyExecutor {
         val config = parseConfig(configuration)
-        return NettyExecutor.create(config.namePattern, config.count)
+        return NettyExecutor.create(config.namePattern, config.threads)
     }
 
     companion object {
@@ -38,6 +43,12 @@ class NettyExecutorFactory : ExecutorFactory {
     }
 }
 
+private val mapper = ObjectMappers.addStyxMixins(ObjectMapper(YAMLFactory()))
+        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+        .configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, true)
+
 internal data class NettyExecutorConfig(
-        val count: Int = 0,
-        val namePattern: String = "netty-executor")
+        val threads: Int = 0,
+        val namePattern: String = "netty-executor") {
+    fun asJsonNode(): JsonNode = mapper.readTree(mapper.writeValueAsString(this))
+}
