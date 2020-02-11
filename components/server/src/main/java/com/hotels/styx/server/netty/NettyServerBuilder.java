@@ -42,6 +42,7 @@ public final class NettyServerBuilder {
     private HttpHandler handler = (request, context) -> Eventual.of(response(NOT_FOUND).build());
     private NettyExecutor bossExecutor;
     private NettyExecutor workerExecutor;
+    private Runnable shutdownAction = () -> { };
 
     public static NettyServerBuilder newBuilder() {
         return new NettyServerBuilder();
@@ -49,6 +50,34 @@ public final class NettyServerBuilder {
 
     String host() {
         return firstNonNull(host, "localhost");
+    }
+
+    MetricRegistry metricsRegistry() {
+        return this.metricRegistry;
+    }
+
+    NettyExecutor bossExecutor() {
+        return this.bossExecutor;
+    }
+
+    NettyExecutor workerExecutor() {
+        return this.workerExecutor;
+    }
+
+    ChannelGroup channelGroup() {
+        return this.channelGroup;
+    }
+
+    public Runnable shutdownAction() {
+        return this.shutdownAction;
+    }
+
+    HttpHandler handler() {
+        return this.handler;
+    }
+
+    ServerConnector protocolConnector() {
+        return httpConnector;
     }
 
     public NettyServerBuilder host(String host) {
@@ -61,9 +90,6 @@ public final class NettyServerBuilder {
         return this;
     }
 
-    MetricRegistry metricsRegistry() {
-        return this.metricRegistry;
-    }
 
     public NettyServerBuilder bossExecutor(NettyExecutor executor) {
         this.bossExecutor = checkNotNull(executor, "boss executor");
@@ -75,25 +101,9 @@ public final class NettyServerBuilder {
         return this;
     }
 
-    public NettyExecutor bossExecutor() {
-        return this.bossExecutor;
-    }
-
-    public NettyExecutor workerExecutor() {
-        return this.workerExecutor;
-    }
-
-    public ChannelGroup channelGroup() {
-        return this.channelGroup;
-    }
-
     public NettyServerBuilder handler(HttpHandler handler) {
         this.handler = handler;
         return this;
-    }
-
-    HttpHandler handler() {
-        return this.handler;
     }
 
     public NettyServerBuilder setProtocolConnector(ServerConnector connector) {
@@ -101,8 +111,9 @@ public final class NettyServerBuilder {
         return this;
     }
 
-    ServerConnector protocolConnector() {
-        return httpConnector;
+    public NettyServerBuilder shutdownAction(Runnable shutdownAction) {
+        this.shutdownAction = shutdownAction;
+        return this;
     }
 
     public InetServer build() {

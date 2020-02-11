@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hotels.styx.startup;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.Environment;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.configuration.Configuration;
@@ -52,6 +53,7 @@ public class StyxServerComponentsTest {
         new StyxServerComponents.Builder()
                 .styxConfig(new StyxConfig())
                 .loggingSetUp(loggingSetUp)
+                .serverExecutors(mock(NettyExecutor.class), mock(NettyExecutor.class))
                 .build();
 
         verify(loggingSetUp).setUp(any(Environment.class));
@@ -65,6 +67,7 @@ public class StyxServerComponentsTest {
         StyxServerComponents components = new StyxServerComponents.Builder()
                 .styxConfig(new StyxConfig())
                 .pluginFactories(ImmutableList.of(f1, f2))
+                .serverExecutors(mock(NettyExecutor.class), mock(NettyExecutor.class))
                 .build();
 
         List<NamedPlugin> plugins = components.plugins();
@@ -80,6 +83,7 @@ public class StyxServerComponentsTest {
                 .services((env, routeDb) -> ImmutableMap.of(
                         "service1", mock(StyxService.class),
                         "service2", mock(StyxService.class)))
+                .serverExecutors(mock(NettyExecutor.class), mock(NettyExecutor.class))
                 .build();
 
         Map<String, StyxService> services = components.services();
@@ -94,6 +98,7 @@ public class StyxServerComponentsTest {
                 .additionalServices(ImmutableMap.of(
                         "service1", mock(StyxService.class),
                         "service2", mock(StyxService.class)))
+                .serverExecutors(mock(NettyExecutor.class), mock(NettyExecutor.class))
                 .build();
 
         Map<String, StyxService> services = components.services();
@@ -109,6 +114,7 @@ public class StyxServerComponentsTest {
 
         StyxServerComponents components = new StyxServerComponents.Builder()
                 .styxConfig(new StyxConfig(config))
+                .serverExecutors(mock(NettyExecutor.class), mock(NettyExecutor.class))
                 .build();
 
         Environment environment = components.environment();

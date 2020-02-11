@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -74,6 +74,8 @@ import static org.mockito.Mockito.when;
 public class StyxServerTest {
     private LoggingTestSupport log;
     private LoggingTestSupport pssLog;
+    private NettyExecutor bossExecutor = NettyExecutor.create("StyxServerTest-boss", 1);
+    private NettyExecutor workerExecutor = NettyExecutor.create("StyxServerTest-worker", 1);
 
     @BeforeEach
     public void setUp() {
@@ -85,6 +87,8 @@ public class StyxServerTest {
     public void removeAppender() {
         log.stop();
         pssLog.stop();
+        bossExecutor.shut();
+        workerExecutor.shut();
     }
 
     @BeforeAll
@@ -162,6 +166,7 @@ public class StyxServerTest {
         StyxServerComponents config = new StyxServerComponents.Builder()
                 .configuration(EMPTY_CONFIGURATION)
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(new MemoryBackedRegistry<>())))
+                .serverExecutors(bossExecutor, workerExecutor)
                 .build();
 
         new StyxServer(config);
@@ -257,20 +262,22 @@ public class StyxServerTest {
         };
     }
 
-    private static StyxServer styxServerWithPlugins(Map<String, Plugin> plugins) {
+    private StyxServer styxServerWithPlugins(Map<String, Plugin> plugins) {
         StyxServerComponents config = new StyxServerComponents.Builder()
                 .configuration(styxConfig())
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(new MemoryBackedRegistry<>())))
                 .plugins(plugins)
+                .serverExecutors(bossExecutor, workerExecutor)
                 .build();
 
         return new StyxServer(config);
     }
 
-    private static StyxServer styxServerWithBackendServiceRegistry(StyxService backendServiceRegistry) {
+    private StyxServer styxServerWithBackendServiceRegistry(StyxService backendServiceRegistry) {
         StyxServerComponents config = new StyxServerComponents.Builder()
                 .configuration(styxConfig())
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", backendServiceRegistry))
+                .serverExecutors(bossExecutor, workerExecutor)
                 .build();
 
         return new StyxServer(config);

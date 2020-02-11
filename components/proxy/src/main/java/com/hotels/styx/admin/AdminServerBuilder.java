@@ -122,12 +122,18 @@ public class AdminServerBuilder {
         StyxConfig styxConfig = environment.configuration();
         AdminServerConfig adminServerConfig = styxConfig.adminServerConfig();
 
-        NettyExecutor executor = NettyExecutor.create("Admin-Boss", adminServerConfig.bossThreadsCount());
+        NettyExecutor bossExecutor = NettyExecutor.create("Admin-Boss", adminServerConfig.bossThreadsCount());
+        NettyExecutor workerExecutor = NettyExecutor.create("Admin-Worker", adminServerConfig.workerThreadsCount());
+
         NettyServerBuilder builder = NettyServerBuilder.newBuilder()
                 .setMetricsRegistry(environment.metricRegistry())
-                .bossExecutor(executor)
-                .workerExecutor(NettyExecutor.create("Admin-Worker", adminServerConfig.workerThreadsCount()))
-                .handler(adminEndpoints(styxConfig, startupConfig));
+                .bossExecutor(bossExecutor)
+                .workerExecutor(workerExecutor)
+                .handler(adminEndpoints(styxConfig, startupConfig))
+                .shutdownAction(() -> {
+                    bossExecutor.shut();
+                    workerExecutor.shut();
+                });
 
         // Currently admin server cannot be started over TLS protocol.
         // This appears to be an existing issue that needs rectifying.

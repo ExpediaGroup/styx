@@ -125,21 +125,19 @@ internal class StyxHttpServerFactory : StyxServerFactory {
             NettyExecutor.create("Http-Server(localhost-${config.port})-worker", config.bossThreadsCount)
         }
 
-        val proxyServerConfig = ProxyServerConfig.Builder()
-                .setCompressResponses(config.compressResponses)
-                .setMaxInitialLength(config.maxInitialLength)
-                .setMaxHeaderSize(config.maxHeaderSize)
-                .setMaxChunkSize(config.maxChunkSize)
-                .setRequestTimeoutMillis(config.requestTimeoutMillis)
-                .setKeepAliveTimeoutMillis(config.keepAliveTimeoutMillis)
-                .setMaxConnectionsCount(config.maxConnectionsCount)
-                .build()
-
         return NettyServerBuilder()
                 .setMetricsRegistry(environment.metricRegistry())
                 .setProtocolConnector(
                         ProxyConnectorFactory(
-                                proxyServerConfig,
+                                ProxyServerConfig.Builder()
+                                        .setCompressResponses(config.compressResponses)
+                                        .setMaxInitialLength(config.maxInitialLength)
+                                        .setMaxHeaderSize(config.maxHeaderSize)
+                                        .setMaxChunkSize(config.maxChunkSize)
+                                        .setRequestTimeoutMillis(config.requestTimeoutMillis)
+                                        .setKeepAliveTimeoutMillis(config.keepAliveTimeoutMillis)
+                                        .setMaxConnectionsCount(config.maxConnectionsCount)
+                                        .build(),
                                 environment.metricRegistry(),
                                 environment.errorListener(),
                                 environment.configuration().get(ENCODE_UNWISECHARS).orElse(""),

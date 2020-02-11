@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package com.hotels.styx.testapi;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.admin.AdminServerConfig;
 import com.hotels.styx.api.MetricRegistry;
@@ -65,6 +66,7 @@ public final class StyxServer {
                 .styxConfig(styxConfig(builder))
                 .pluginFactories(builder.pluginFactories)
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(backendServicesRegistry)))
+                .serverExecutors(NettyExecutor.create("StyxServer-boss", 1), NettyExecutor.create("StyxServer-worker", 1))
                 .build();
 
         metricRegistry = config.environment().metricRegistry();
