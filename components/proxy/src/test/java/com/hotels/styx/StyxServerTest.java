@@ -74,8 +74,6 @@ import static org.mockito.Mockito.when;
 public class StyxServerTest {
     private LoggingTestSupport log;
     private LoggingTestSupport pssLog;
-    private NettyExecutor bossExecutor = NettyExecutor.create("StyxServerTest-boss", 1);
-    private NettyExecutor workerExecutor = NettyExecutor.create("StyxServerTest-worker", 1);
 
     @BeforeEach
     public void setUp() {
@@ -87,8 +85,6 @@ public class StyxServerTest {
     public void removeAppender() {
         log.stop();
         pssLog.stop();
-        bossExecutor.shut();
-        workerExecutor.shut();
     }
 
     @BeforeAll
@@ -166,7 +162,6 @@ public class StyxServerTest {
         StyxServerComponents config = new StyxServerComponents.Builder()
                 .configuration(EMPTY_CONFIGURATION)
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(new MemoryBackedRegistry<>())))
-                .serverExecutors(bossExecutor, workerExecutor)
                 .build();
 
         new StyxServer(config);
@@ -267,7 +262,6 @@ public class StyxServerTest {
                 .configuration(styxConfig())
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(new MemoryBackedRegistry<>())))
                 .plugins(plugins)
-                .serverExecutors(bossExecutor, workerExecutor)
                 .build();
 
         return new StyxServer(config);
@@ -277,7 +271,6 @@ public class StyxServerTest {
         StyxServerComponents config = new StyxServerComponents.Builder()
                 .configuration(styxConfig())
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", backendServiceRegistry))
-                .serverExecutors(bossExecutor, workerExecutor)
                 .build();
 
         return new StyxServer(config);

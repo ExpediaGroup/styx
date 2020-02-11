@@ -87,7 +87,6 @@ object StyxServerSupport {
     val builder = new StyxServerComponents.Builder()
       .styxConfig(styxConfig)
       .additionalServices(ImmutableMap.of("backendServiceRegistry", styxService))
-      .serverExecutors(StyxBaseConfig.globalBossExecutor, StyxBaseConfig.globalWorkerExecutor)
 
     if (plugins.nonEmpty) {
       builder.plugins(plugins1)
@@ -101,7 +100,6 @@ object StyxServerSupport {
 
     val builder = new StyxServerComponents.Builder()
       .styxConfig(styxConfig)
-      .serverExecutors(StyxBaseConfig.globalBossExecutor, StyxBaseConfig.globalWorkerExecutor)
 
     if (plugins.nonEmpty) {
       builder.plugins(plugins1)

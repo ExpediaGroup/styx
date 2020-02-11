@@ -66,7 +66,6 @@ public final class StyxServer {
                 .styxConfig(styxConfig(builder))
                 .pluginFactories(builder.pluginFactories)
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(backendServicesRegistry)))
-                .serverExecutors(NettyExecutor.create("StyxServer-boss", 1), NettyExecutor.create("StyxServer-worker", 1))
                 .build();
 
         metricRegistry = config.environment().metricRegistry();

@@ -153,7 +153,6 @@ case class StyxYamlConfig(yamlConfig: String,
       .styxConfig(styxConfig)
       .additionalServices(services(backendsRegistry).asJava)
       .loggingSetUp(logbackXmlLocation.toString)
-      .serverExecutors(StyxBaseConfig.globalBossExecutor, StyxBaseConfig.globalWorkerExecutor)
       .build())
 
     styxServer.startAsync().awaitRunning()
@@ -167,7 +166,6 @@ case class StyxYamlConfig(yamlConfig: String,
     val styxServer = new StyxServer(new StyxServerComponents.Builder()
       .styxConfig(styxConfig)
       .loggingSetUp(logbackXmlLocation.toString)
-      .serverExecutors(StyxBaseConfig.globalBossExecutor, StyxBaseConfig.globalWorkerExecutor)
       .build())
 
     styxServer.startAsync().awaitRunning()

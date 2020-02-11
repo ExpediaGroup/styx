@@ -80,8 +80,6 @@ public class StyxServerComponents {
     private final StyxObjectStore<StyxObjectRecord<NettyExecutor>> executorObjectStore = new StyxObjectStore<>();
     private final RoutingObjectFactory.Context routingObjectContext;
     private final StartupConfig startupConfig;
-    private final NettyExecutor bossExecutor;
-    private final NettyExecutor workerExecutor;
 
     private static final Logger LOGGER = getLogger(StyxServerComponents.class);
     private final NettyExecutor executor;
@@ -99,8 +97,6 @@ public class StyxServerComponents {
         builder.loggingSetUp.setUp(environment);
 
         this.executor = NettyExecutor.create("Styx-Client-Worker", environment.configuration().proxyServerConfig().clientWorkerThreadsCount());
-        this.bossExecutor = builder.bossExecutor;
-        this.workerExecutor = builder.workerExecutor;
 
         this.environment.configuration().get("executors", JsonNode.class)
                 .map(StyxServerComponents::readComponents)
@@ -251,14 +247,6 @@ public class StyxServerComponents {
                 .build();
     }
 
-    public NettyExecutor bossExecutor() {
-        return this.bossExecutor;
-    }
-
-    public NettyExecutor workerExecutor() {
-        return this.workerExecutor;
-    }
-
     /**
      * CoreConfig builder.
      */
@@ -272,8 +260,6 @@ public class StyxServerComponents {
 
         private final Map<String, RoutingObjectFactory> additionalRoutingObjectFactories = new HashMap<>();
         private final Map<String, StyxService> additionalServices = new HashMap<>();
-        private NettyExecutor bossExecutor;
-        private NettyExecutor workerExecutor;
 
         public Builder styxConfig(StyxConfig styxConfig) {
             this.styxConfig = requireNonNull(styxConfig);
@@ -339,13 +325,6 @@ public class StyxServerComponents {
         @VisibleForTesting
         public Builder additionalRoutingObjects(Map<String, RoutingObjectFactory> additionalRoutingObjectFactories) {
             this.additionalRoutingObjectFactories.putAll(additionalRoutingObjectFactories);
-            return this;
-        }
-
-        public Builder serverExecutors(NettyExecutor bossExecutor, NettyExecutor workerExecutor) {
-            this.bossExecutor = bossExecutor;
-            this.workerExecutor = workerExecutor;
-
             return this;
         }
 
