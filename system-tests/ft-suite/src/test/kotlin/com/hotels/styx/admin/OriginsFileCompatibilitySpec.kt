@@ -749,24 +749,28 @@ class OriginsFileCompatibilitySpec : FunSpec() {
             .start()
             .stub(WireMock.get(WireMock.urlMatching("/.*")), WireMock.aResponse()
                     .withStatus(200)
+                    .withHeader("X-Origin", "Server-A01-server")
                     .withBody("appA-01"))
 
     val mockServerA02 = MockOriginServer.create("appA", "appA-02", 0, HttpConnectorConfig(0))
             .start()
             .stub(WireMock.get(WireMock.urlMatching("/.*")), WireMock.aResponse()
                     .withStatus(200)
+                    .withHeader("X-Origin", "Server-A02-server")
                     .withBody("appA-02"))
 
     val mockServerB01 = MockOriginServer.create("appB", "appB-01", 0, HttpConnectorConfig(0))
             .start()
             .stub(WireMock.get(WireMock.urlMatching("/.*")), WireMock.aResponse()
                     .withStatus(200)
+                    .withHeader("X-Origin", "Server-B01-server")
                     .withBody("appB-01"))
 
     val mockServerC01 = MockOriginServer.create("appC", "appC-01", 0, HttpConnectorConfig(0))
             .start()
             .stub(WireMock.get(WireMock.urlMatching("/.*")), WireMock.aResponse()
                     .withStatus(200)
+                    .withHeader("X-Origin", "Server-C01-server")
                     .withBody("appC-01"))
 
     val mockTlsv12Server = MockOriginServer.create("appTls", "appTls-01", 0,
@@ -778,6 +782,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
             .start()
             .stub(WireMock.get(WireMock.urlMatching("/.*")), WireMock.aResponse()
                     .withStatus(200)
+                    .withHeader("X-Origin", "TlsV2-server")
                     .withBody("appTls-01"))
 
     override fun afterSpec(spec: Spec) {
