@@ -107,7 +107,7 @@
     <!-- General Versions -->
     <guava.version>18.0</guava.version>
     <jackson.version>2.10.1</jackson.version>
-    <jackson.dataformat.version>2.10.1</jackson.dataformat.version>
+    <jackson.dataformat.version>2.10.2</jackson.dataformat.version>
     <jackson.module.scala.version>2.10.1</jackson.module.scala.version>
     <jackson-module-kotlin.version>2.10.1</jackson-module-kotlin.version>
     <metrics.version>4.0.5</metrics.version>
