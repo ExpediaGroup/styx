@@ -55,7 +55,7 @@ internal class HealthCheckMonitoringService(
         activeThreshold: Int,
         inactiveThreshold: Int,
         private val executor: ScheduledExecutorService,
-        workerExecutor: NettyExecutor = healthCheckExecutor) : AbstractStyxService("HealthCheckMonitoringService") {
+        workerExecutor: NettyExecutor = healthCheckExecutor) : AbstractStyxService("HealthCheckMonitoringService-$application") {
 
     companion object {
         @JvmField
