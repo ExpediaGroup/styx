@@ -622,7 +622,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                             it!!.status() shouldBe OK
                             it.header(CONTENT_TYPE).get().toLowerCase() shouldBe APPLICATION_JSON.toString().toLowerCase()
                             // TODO: This name should probably change.
-                            it.bodyAs(UTF_8) shouldBe "{ name: \"HealthCheckMonitoringService\" status: \"RUNNING\" }"
+                            it.bodyAs(UTF_8) shouldBe "{ name: \"HealthCheckMonitoringService-appB\" status: \"RUNNING\" }"
                         }
             }
 
