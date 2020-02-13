@@ -43,6 +43,7 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.time.Duration
 import java.util.Optional
+import java.util.concurrent.TimeUnit.SECONDS
 
 private val LOGGER = LoggerFactory.getLogger(YamlFileConfigurationServiceTest::class.java)
 
@@ -65,7 +66,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
         try {
             action(service)
         } finally {
-            service.stop().join()
+            service.stop().orTimeout(2, SECONDS).join()
         }
     }
 
@@ -90,8 +91,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                         OriginsConfigConverter(serviceDb, RoutingObjectFactoryContext(objectStore = routeDb).get(), "origins-cookie"),
                         YamlFileConfigurationServiceConfig(originsConfig.absolutePath, pollInterval = pollInterval),
                         serviceDb)) {
-                    it.start().join()
-
+                    it.start().orTimeout(2, SECONDS).join()
                     eventually(2.seconds, AssertionError::class.java) {
                         routeDb.entrySet().size shouldBe 4
                     }
@@ -786,7 +786,7 @@ internal data class CreatedService(val config: YamlFileConfigurationServiceTest.
         val startFuture = this.service.start()
 
         if (wait) {
-            startFuture.join()
+            startFuture.orTimeout(2, SECONDS).join()
         }
 
         return this
@@ -801,7 +801,7 @@ internal data class CreatedService(val config: YamlFileConfigurationServiceTest.
     }
 
     fun stop() {
-        service.stop().join()
+        service.stop().orTimeout(2, SECONDS).join()
     }
 }
 

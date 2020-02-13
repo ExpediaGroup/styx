@@ -85,6 +85,7 @@ public class StyxServerComponents {
     private static final Logger LOGGER = getLogger(StyxServerComponents.class);
     private final NettyExecutor executor;
 
+    // CHECKSTYLE:OFF
     private StyxServerComponents(Builder builder) {
         StyxConfig styxConfig = requireNonNull(builder.styxConfig);
 
@@ -123,6 +124,14 @@ public class StyxServerComponents {
                         ImmutableSet.of("StyxInternal"),
                         new NettyExecutorConfig(0, "StyxHttpServer-Global-Worker").asJsonNode(),
                         NettyExecutor.create("StyxHttpServer-Global-Worker", 0)));
+
+        // Overwrite any existing or user-supplied values:
+        executorObjectStore.insert("Styx-Client-Global-Worker",
+                new StyxObjectRecord<>(
+                        "NettyExecutor",
+                        ImmutableSet.of("StyxInternal"),
+                        new NettyExecutorConfig(0, "Styx-Client-Global-Worker").asJsonNode(),
+                        NettyExecutor.create("Styx-Client-Global-Worker", 0)));
 
         this.services = mergeServices(
                 builder.servicesLoader.load(environment, routeObjectStore),
@@ -179,6 +188,7 @@ public class StyxServerComponents {
                     serverObjectStore.insert(name, record);
                 });
     }
+    // CHECKSTYLE:ON
 
     private static Map<String, StyxObjectDefinition> readComponents(JsonNode root) {
         Map<String, StyxObjectDefinition> handlers = new HashMap<>();
@@ -212,6 +222,10 @@ public class StyxServerComponents {
 
     public StyxObjectStore<StyxObjectRecord<StyxService>> servicesDatabase() {
         return this.providerObjectStore;
+    }
+
+    public StyxObjectStore<StyxObjectRecord<NettyExecutor>> executors() {
+        return this.executorObjectStore;
     }
 
     public StyxObjectStore<StyxObjectRecord<InetServer>> serversDatabase() {

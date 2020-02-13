@@ -66,6 +66,7 @@ public interface RoutingObjectFactory {
         private final boolean requestTracking;
         private StyxObjectStore<StyxObjectRecord<NettyExecutor>> executorObjectStore;
 
+        // CHECKSTYLE:OFF
         public Context(
                 RouteRefLookup refLookup,
                 Environment environment,
@@ -84,6 +85,7 @@ public interface RoutingObjectFactory {
             this.requestTracking = requestTracking;
             this.executorObjectStore = executorObjectStore;
         }
+        // CHECKSTYLE:ON
 
         public Environment environment() {
             return environment;
@@ -113,6 +115,8 @@ public interface RoutingObjectFactory {
             return refLookup;
         }
 
-        public ObjectStore<StyxObjectRecord<NettyExecutor>> executors() { return executorObjectStore; };
+        public ObjectStore<StyxObjectRecord<NettyExecutor>> executors() {
+            return executorObjectStore;
+        };
     }
 }

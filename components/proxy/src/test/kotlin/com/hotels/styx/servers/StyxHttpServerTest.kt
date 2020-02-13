@@ -16,7 +16,6 @@
 package com.hotels.styx.servers
 
 import com.hotels.styx.InetServer
-import com.hotels.styx.NettyExecutor
 import com.hotels.styx.StyxObjectRecord
 import com.hotels.styx.StyxServers.toGuavaService
 import com.hotels.styx.api.ByteStream
@@ -37,7 +36,7 @@ import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.RoutingObjectFactoryContext
 import com.hotels.styx.configBlock
-import com.hotels.styx.executors.NettyExecutorConfig
+import com.hotels.styx.executorObjects
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.ref
 import com.hotels.styx.routeLookup
@@ -342,7 +341,7 @@ class StyxHttpServerTest : FeatureSpec({
                 maxConnectionsCount: 2
               """.trimIndent())
 
-        val server = StyxHttpServerFactory().create("test-01", routingContext.copy(executorObjectStore = executors).get(), serverConfig, db)
+        val server = StyxHttpServerFactory().create("test-01", routingContext.copy(executorObjectStore = executorObjects()).get(), serverConfig, db)
         val guavaServer = toGuavaService(server)
         guavaServer.startAsync().awaitRunning()
 
@@ -363,31 +362,6 @@ class StyxHttpServerTest : FeatureSpec({
 })
 
 
-private val globalBossExecutor = NettyExecutor.create("StyxHttpServer-Global-Boss", 1)
-private val globalWorkerExecutor = NettyExecutor.create("StyxHttpServer-Global-Worker", 1)
-
-fun createExecutors(): StyxObjectStore<StyxObjectRecord<NettyExecutor>> = StyxObjectStore<StyxObjectRecord<NettyExecutor>>()
-        .let {
-
-            // TODO: These need to be kept in-sync with the ones in StyxServerComponents:
-            // Overwrite any existing or user-supplied values:
-            it.insert("StyxHttpServer-Global-Boss", StyxObjectRecord(
-                    "NettyExecutor",
-                    setOf("StyxInternal"),
-                    NettyExecutorConfig(0, "StyxHttpServer-Global-Boss").asJsonNode(),
-                    globalBossExecutor));
-
-            // Overwrite any existing or user-supplied values:
-            it.insert("StyxHttpServer-Global-Worker",
-                    StyxObjectRecord(
-                            "NettyExecutor",
-                            setOf("StyxInternal"),
-                            NettyExecutorConfig(0, "StyxHttpServer-Global-Worker").asJsonNode(),
-                            globalWorkerExecutor));
-
-            it
-        }
-
 fun threadCount(namePattern: String) = Thread.getAllStackTraces().keys
         .map { it.name }
         .filter { it.contains(namePattern) }
@@ -395,9 +369,6 @@ fun threadCount(namePattern: String) = Thread.getAllStackTraces().keys
 
 fun threadNames() = Thread.getAllStackTraces().keys
         .map { it.name }
-
-
-val executors = createExecutors()
 
 private fun createConnection(port: Int) = NettyConnectionFactory.Builder()
         .build()
@@ -432,7 +403,7 @@ private val routingContext = RoutingObjectFactoryContext(
                         .flatMap { Eventual.of(response.stream()) }
             })
         },
-        executorObjectStore = executors)
+        executorObjectStore = executorObjects())
 
 private fun ungzip(content: ByteArray, charset: Charset): String = GZIPInputStream(content.inputStream()).bufferedReader(charset).use { it.readText() }
 

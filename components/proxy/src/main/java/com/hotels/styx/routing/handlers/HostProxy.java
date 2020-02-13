@@ -18,6 +18,7 @@ package com.hotels.styx.routing.handlers;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.net.HostAndPort;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
@@ -74,6 +75,8 @@ public class HostProxy implements RoutingObject {
             optional("tlsSettings", object(
                     optional("trustAllCerts", bool()),
                     optional("sslProvider", string()),
+
+                    // We could pull them out to a separate configuration block:
                     optional("trustStorePath", string()),
                     optional("trustStorePassword", string()),
                     optional("protocols", list(string())),
@@ -105,7 +108,8 @@ public class HostProxy implements RoutingObject {
             )),
             optional("responseTimeoutMillis", integer()),
             optional("maxHeaderSize", integer()),
-            optional("metricPrefix", string())
+            optional("metricPrefix", string()),
+            optional("executor", string())
     );
 
     private final String errorMessage;
@@ -155,6 +159,7 @@ public class HostProxy implements RoutingObject {
         private final int responseTimeoutMillis;
         private final int maxHeaderSize;
         private final String metricPrefix;
+        private final String executor;
 
         public HostProxyConfiguration(
                 String host,
@@ -162,13 +167,15 @@ public class HostProxy implements RoutingObject {
                 TlsSettings tlsSettings,
                 int responseTimeoutMillis,
                 int maxHeaderSize,
-                String metricPrefix) {
+                String metricPrefix,
+                String executor) {
             this.host = host;
             this.connectionPool = connectionPool;
             this.tlsSettings = tlsSettings;
             this.responseTimeoutMillis = responseTimeoutMillis;
             this.maxHeaderSize = maxHeaderSize;
             this.metricPrefix = metricPrefix;
+            this.executor = executor;
         }
 
         @JsonProperty("host")
@@ -201,6 +208,11 @@ public class HostProxy implements RoutingObject {
             return metricPrefix;
         }
 
+        @JsonProperty("executor")
+        public String executor() {
+            return executor;
+        }
+
     }
 
     /**
@@ -230,6 +242,12 @@ public class HostProxy implements RoutingObject {
             String metricPrefix = config.get("metricPrefix", String.class)
                     .orElse("routing.objects");
 
+            String executorName = config.get("executor", String.class)
+                    .orElse("Styx-Client-Global-Worker");
+
+            // TODO: unknown executor name:
+            NettyExecutor executor = context.executors().get(executorName).get().component4();
+
             HostAndPort hostAndPort = config.get("host")
                     .map(HostAndPort::fromString)
                     .map(it -> addDefaultPort(it, tlsSettings))
@@ -238,6 +256,7 @@ public class HostProxy implements RoutingObject {
             String objectName = fullName.get(fullName.size() - 1);
 
             return createHostProxyHandler(
+                    executor,
                     context.environment().metricRegistry(),
                     hostAndPort,
                     poolSettings,
@@ -262,6 +281,7 @@ public class HostProxy implements RoutingObject {
 
         @NotNull
         public static HostProxy createHostProxyHandler(
+                NettyExecutor executor,
                 MetricRegistry metricRegistry,
                 HostAndPort hostAndPort,
                 ConnectionPoolSettings poolSettings,
@@ -284,6 +304,7 @@ public class HostProxy implements RoutingObject {
             ConnectionPool.Factory connectionPoolFactory = new SimpleConnectionPoolFactory.Builder()
                     .connectionFactory(
                             connectionFactory(
+                                    executor,
                                     tlsSettings,
                                     responseTimeoutMillis,
                                     maxHeaderSize,
@@ -297,6 +318,7 @@ public class HostProxy implements RoutingObject {
         }
 
         private static Connection.Factory connectionFactory(
+                NettyExecutor executor,
                 TlsSettings tlsSettings,
                 int responseTimeoutMillis,
                 int maxHeaderSize,
@@ -312,6 +334,7 @@ public class HostProxy implements RoutingObject {
                                     .responseTimeoutMillis(responseTimeoutMillis)
                                     .build()
                     )
+                    .executor(executor)
                     .tlsSettings(tlsSettings)
                     .httpConfig(newHttpConfigBuilder().setMaxHeadersSize(maxHeaderSize).build())
                     .build();

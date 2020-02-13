@@ -222,6 +222,7 @@ internal class OriginsConfigConverter(
                     .parse(configSource(yamlConfig)).`as`(StyxObjectDefinition::class.java)
         }
 
+        // TODO: Executor: Must add executor configuration settings:
         private fun hostProxyConfig(poolSettings: ConnectionPoolSettings,
                                     tlsSettings: TlsSettings?,
                                     responseTimeout: Int,
@@ -234,6 +235,7 @@ internal class OriginsConfigConverter(
                         tlsSettings,
                         responseTimeout,
                         maxHeaderSize,
-                        metricsPrefix))
+                        metricsPrefix,
+                        "Styx-Client-Global-Worker"))
     }
 }

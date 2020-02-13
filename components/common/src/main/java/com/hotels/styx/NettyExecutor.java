@@ -26,6 +26,8 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.TimeUnit;
+
 import static com.hotels.styx.EventLoopGroups.epollEventLoopGroup;
 import static com.hotels.styx.EventLoopGroups.nioEventLoopGroup;
 
@@ -70,7 +72,11 @@ public class NettyExecutor {
     }
 
     public void shut() {
-        eventLoopGroup.shutdownGracefully();
+        try {
+            eventLoopGroup.shutdownGracefully(0, 0, TimeUnit.SECONDS).await(5000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public Class<? extends ServerChannel> serverEventLoopClass() {

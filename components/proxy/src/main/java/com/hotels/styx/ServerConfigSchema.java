@@ -35,6 +35,7 @@ import static com.hotels.styx.config.schema.SchemaDsl.routingObject;
 import static com.hotels.styx.config.schema.SchemaDsl.string;
 import static com.hotels.styx.config.schema.SchemaDsl.union;
 import static com.hotels.styx.config.validator.DocumentFormat.newDocument;
+import static com.hotels.styx.routing.config.Builtins.BUILTIN_EXECUTOR_SCHEMAS;
 import static com.hotels.styx.routing.config.Builtins.BUILTIN_HANDLER_SCHEMAS;
 import static com.hotels.styx.routing.config.Builtins.BUILTIN_SERVER_SCHEMAS;
 import static com.hotels.styx.routing.config.Builtins.BUILTIN_SERVICE_PROVIDER_SCHEMAS;
@@ -111,6 +112,7 @@ final class ServerConfigSchema {
                                             field("expirationMillis", integer())
                                     ))
                             )),
+                            optional("executors", map(routingObject())),
                             optional("services", object(
                                     field("factories", map(object(opaque())))
                             )),
@@ -166,6 +168,7 @@ final class ServerConfigSchema {
         BUILTIN_SERVICE_PROVIDER_SCHEMAS.forEach(STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER::typeExtension);
         BUILTIN_SERVER_SCHEMAS.forEach(STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER::typeExtension);
         INTERCEPTOR_SCHEMAS.forEach(STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER::typeExtension);
+        BUILTIN_EXECUTOR_SCHEMAS.forEach(STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER::typeExtension);
     }
 
 

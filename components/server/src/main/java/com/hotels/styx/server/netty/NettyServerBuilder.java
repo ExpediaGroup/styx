@@ -36,6 +36,8 @@ import static com.hotels.styx.api.LiveHttpResponse.response;
 public final class NettyServerBuilder {
     private final ChannelGroup channelGroup = new DefaultChannelGroup(ImmediateEventExecutor.INSTANCE);
 
+    private static final NettyExecutor DEFAULT_SERVER_BOSS_EXECUTOR = NettyExecutor.create("Server-Boss", 1);
+
     private String host;
     private MetricRegistry metricRegistry;
     private ServerConnector httpConnector;
@@ -121,7 +123,7 @@ public final class NettyServerBuilder {
         checkArgument(workerExecutor != null, "Must configure a worker executor");
 
         if (bossExecutor == null) {
-            bossExecutor = NettyExecutor.create("Server-Boss", 1);
+            bossExecutor = DEFAULT_SERVER_BOSS_EXECUTOR;
         }
         return new NettyServer(this);
     }

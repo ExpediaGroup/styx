@@ -317,6 +317,10 @@ public final class StyxServer extends AbstractService {
         proxyBossExecutor.shut();
         proxyWorkerExecutor.shut();
 
+        this.components.executors()
+                .entrySet()
+                .forEach(entry -> entry.getValue().component4().shut());
+
         this.phase1Services.stopAsync().awaitStopped();
         shutdownLogging(true);
     }

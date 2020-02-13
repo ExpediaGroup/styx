@@ -17,7 +17,6 @@ package com.hotels.styx.testapi;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.admin.AdminServerConfig;
 import com.hotels.styx.api.MetricRegistry;

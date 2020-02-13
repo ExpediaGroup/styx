@@ -137,12 +137,17 @@ internal class StyxHttpServerFactory : StyxServerFactory {
                                                     .protocols(*config.tlsSettings.protocols.toTypedArray())
                                                     .build()
                                         }))
+
+                // TODO: Unknown executor name
                 .bossExecutor(context.executors().get(config.bossExecutor)
                             .map { it.styxService }
                             .orElseThrow())
+
+                // TODO: Unknown executor name
                 .workerExecutor(context.executors().get(config.workerExecutor)
                             .map { it.styxService }
                             .orElseThrow())
+
                 .handler({ request, ctx ->
                     context.refLookup()
                             .apply(StyxObjectReference(config.handler))

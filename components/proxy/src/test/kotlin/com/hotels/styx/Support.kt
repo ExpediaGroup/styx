@@ -16,6 +16,7 @@
 package com.hotels.styx
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.google.common.collect.ImmutableSet
 import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpHandler
 import com.hotels.styx.api.HttpRequest
@@ -25,6 +26,7 @@ import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.api.WebServiceHandler
+import com.hotels.styx.executors.NettyExecutorConfig
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.proxy.plugin.NamedPlugin
 import com.hotels.styx.routing.RoutingObject
@@ -60,7 +62,7 @@ internal data class RoutingObjectFactoryContext(
         val plugins: Iterable<NamedPlugin> = listOf(),
         val interceptorFactories: Map<String, HttpInterceptorFactory> = INTERCEPTOR_FACTORIES,
         val requestTracking: Boolean = false,
-        val executorObjectStore: StyxObjectStore<StyxObjectRecord<NettyExecutor>> = StyxObjectStore()) {
+        val executorObjectStore: StyxObjectStore<StyxObjectRecord<NettyExecutor>> = executorObjects()) {
     fun get() = RoutingObjectFactory.Context(
             routeRefLookup,
             environment,
@@ -70,8 +72,37 @@ internal data class RoutingObjectFactoryContext(
             INTERCEPTOR_FACTORIES,
             requestTracking,
             executorObjectStore)
-
 }
+
+fun executorObjects(): StyxObjectStore<StyxObjectRecord<NettyExecutor>> = StyxObjectStore<StyxObjectRecord<NettyExecutor>>()
+        .let { objectStore ->
+
+            "Test-HttpServer-Global-Boss".let { name ->
+                objectStore.insert("StyxHttpServer-Global-Boss", StyxObjectRecord(
+                        "NettyExecutor",
+                        setOf("StyxInternal"),
+                        NettyExecutorConfig(0, name).asJsonNode(),
+                        NettyExecutor.create(name, 1)));
+            }
+
+            "Test-HttpServer-Global-Worker".let { name ->
+                objectStore.insert("StyxHttpServer-Global-Worker", StyxObjectRecord(
+                        "NettyExecutor",
+                        setOf("StyxInternal"),
+                        NettyExecutorConfig(0, name).asJsonNode(),
+                        NettyExecutor.create(name, 1)));
+            }
+
+            "Test-Client-Global-Worker".let { name ->
+                objectStore.insert("Styx-Client-Global-Worker", StyxObjectRecord(
+                        "NettyExecutor",
+                        ImmutableSet.of("StyxInternal"),
+                        NettyExecutorConfig(0, name).asJsonNode(),
+                        NettyExecutor.create(name, 0)))
+            }
+
+            objectStore
+        }
 
 fun WebServiceHandler.handle(request: HttpRequest) = this.handle(request, requestContext())
 
@@ -161,7 +192,7 @@ fun CompletableFuture<LiveHttpResponse>.wait(debug: Boolean = false) = this.toMo
         }
         .block()
 
-fun Eventual<LiveHttpResponse>.wait(maxBytes: Int = 100*1024, debug: Boolean = false) = this.toMono()
+fun Eventual<LiveHttpResponse>.wait(maxBytes: Int = 100 * 1024, debug: Boolean = false) = this.toMono()
         .flatMap { it.aggregate(maxBytes).toMono() }
         .doOnNext {
             if (debug) {
