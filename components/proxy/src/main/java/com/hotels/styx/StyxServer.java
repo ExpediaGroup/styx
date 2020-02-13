@@ -111,10 +111,8 @@ public final class StyxServer extends AbstractService {
         LOG.info("Styx configFileLocation={}", startupConfig.configFileLocation());
         LOG.info("Styx logConfigLocation={}", startupConfig.logConfigLocation());
 
-        StyxConfig styxConfig = parseConfiguration(startupConfig);
-
         StyxServerComponents components = new StyxServerComponents.Builder()
-                .styxConfig(styxConfig)
+                .styxConfig(parseConfiguration(startupConfig))
                 .startupConfig(startupConfig)
                 .loggingSetUp(environment -> activateLogbackConfigurer(startupConfig))
                 .build();
