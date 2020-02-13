@@ -66,7 +66,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
         try {
             action(service)
         } finally {
-            service.stop().orTimeout(2, SECONDS).join()
+            service.stop().get(2, SECONDS)
         }
     }
 
@@ -91,7 +91,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                         OriginsConfigConverter(serviceDb, RoutingObjectFactoryContext(objectStore = routeDb).get(), "origins-cookie"),
                         YamlFileConfigurationServiceConfig(originsConfig.absolutePath, pollInterval = pollInterval),
                         serviceDb)) {
-                    it.start().orTimeout(2, SECONDS).join()
+                    it.start().get(2, SECONDS)
                     eventually(2.seconds, AssertionError::class.java) {
                         routeDb.entrySet().size shouldBe 4
                     }
@@ -786,7 +786,7 @@ internal data class CreatedService(val config: YamlFileConfigurationServiceTest.
         val startFuture = this.service.start()
 
         if (wait) {
-            startFuture.orTimeout(2, SECONDS).join()
+            startFuture.get(2, SECONDS)
         }
 
         return this
@@ -801,7 +801,7 @@ internal data class CreatedService(val config: YamlFileConfigurationServiceTest.
     }
 
     fun stop() {
-        service.stop().orTimeout(2, SECONDS).join()
+        service.stop().get(2, SECONDS)
     }
 }
 
