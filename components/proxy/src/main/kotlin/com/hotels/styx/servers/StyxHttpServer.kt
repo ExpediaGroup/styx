@@ -91,7 +91,7 @@ private data class StyxHttpServerConfiguration(
         val maxConnectionsCount: Int = 512,
 
         val bossExecutor: String = "StyxHttpServer-Global-Boss",
-        val workerExecutor: String = "StyxHttpServer-Global-Boss"
+        val workerExecutor: String = "StyxHttpServer-Global-Worker"
 )
 
 internal class StyxHttpServerFactory : StyxServerFactory {

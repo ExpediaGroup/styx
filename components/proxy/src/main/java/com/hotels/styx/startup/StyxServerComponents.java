@@ -100,16 +100,6 @@ public class StyxServerComponents {
 
         this.executor = NettyExecutor.create("Styx-Client-Worker", environment.configuration().proxyServerConfig().clientWorkerThreadsCount());
 
-        this.environment.configuration().get("executors", JsonNode.class)
-                .map(StyxServerComponents::readComponents)
-                .orElse(ImmutableMap.of())
-                .forEach((name, definition) -> {
-                    LOGGER.warn("Loading styx server: " + name + ": " + definition);
-                    NettyExecutor executor = Builtins.buildExecutor(name, definition, BUILTIN_EXECUTOR_FACTORIES);
-                    StyxObjectRecord<NettyExecutor> record = new StyxObjectRecord<>(definition.type(), ImmutableSet.copyOf(definition.tags()), definition.config(), executor);
-                    executorObjectStore.insert(name, record);
-                });
-
         // Overwrite any existing or user-supplied values:
         executorObjectStore.insert("StyxHttpServer-Global-Boss", new StyxObjectRecord<>(
                 "NettyExecutor",
@@ -132,6 +122,16 @@ public class StyxServerComponents {
                         ImmutableSet.of("StyxInternal"),
                         new NettyExecutorConfig(0, "Styx-Client-Global-Worker").asJsonNode(),
                         NettyExecutor.create("Styx-Client-Global-Worker", 0)));
+
+        this.environment.configuration().get("executors", JsonNode.class)
+                .map(StyxServerComponents::readComponents)
+                .orElse(ImmutableMap.of())
+                .forEach((name, definition) -> {
+                    LOGGER.warn("Loading styx server: " + name + ": " + definition);
+                    NettyExecutor executor = Builtins.buildExecutor(name, definition, BUILTIN_EXECUTOR_FACTORIES);
+                    StyxObjectRecord<NettyExecutor> record = new StyxObjectRecord<>(definition.type(), ImmutableSet.copyOf(definition.tags()), definition.config(), executor);
+                    executorObjectStore.insert(name, record);
+                });
 
         this.services = mergeServices(
                 builder.servicesLoader.load(environment, routeObjectStore),

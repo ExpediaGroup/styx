@@ -26,7 +26,6 @@ import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.proxyHttpHostHeader
 import com.hotels.styx.support.serverPort
 import com.hotels.styx.support.threadCount
-import com.hotels.styx.support.threadNames
 import com.hotels.styx.support.wait
 import io.kotlintest.Spec
 import io.kotlintest.shouldBe
@@ -160,8 +159,6 @@ class ExecutorSettingsSpec : FeatureSpec() {
                             it.bodyAs(UTF_8) shouldBe "Hello, from styx server!"
                         }
 
-                println("Test 3: thread names: " + threadNames().joinToString(separator = "\n") { it })
-
                 threadCount("http-boss-executor") shouldBe 1
                 threadCount("http-worker-executor") shouldBe 1
             }
@@ -170,6 +167,55 @@ class ExecutorSettingsSpec : FeatureSpec() {
                 styxServer.stop()
                 threadCount("http-boss-executor") shouldBe 0
                 threadCount("http-worker-executor") shouldBe 0
+            }
+
+            scenario("Overrides default global executors") {
+                styxServer.restart(configuration = """
+                    executors:
+                      Styx-Client-Global-Worker:
+                        type: NettyExecutor
+                        config:
+                          threads: 2
+                          namePattern: new-styx-client-global
+                          
+                      StyxHttpServer-Global-Worker:
+                        type: NettyExecutor
+                        config:
+                          threads: 2
+                          namePattern: new-styx-server-worker
+            
+                    routingObjects:
+                      proxyToOrigin:
+                        type: HostProxy
+                        config:
+                          host: "localhost:${mockServer.port()}"
+
+                    servers: 
+                      http:
+                        type: HttpServer
+                        config:
+                          port: 0
+                          handler: proxyToOrigin
+            
+                    admin:
+                      connectors:
+                        http:
+                          port: 0
+                  """.trimIndent())
+
+                val httpPort = styxServer().serverPort("http")
+
+                (1..10).map { client.send(get("/").header(HOST, "localhost:$httpPort").build()) }
+                        .forEach {
+                            it.wait()!!
+                                    .let { response ->
+                                        response.status() shouldBe OK
+                                        response.bodyAs(UTF_8) shouldBe "mock-server-01"
+                                    }
+                        }
+
+                threadCount("new-styx-client-global") shouldBe 2
+                threadCount("new-styx-server-worker") shouldBe 2
             }
         }
     }
