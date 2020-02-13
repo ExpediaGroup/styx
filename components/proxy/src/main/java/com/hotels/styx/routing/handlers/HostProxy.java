@@ -245,15 +245,20 @@ public class HostProxy implements RoutingObject {
             String executorName = config.get("executor", String.class)
                     .orElse("Styx-Client-Global-Worker");
 
-            // TODO: unknown executor name:
-            NettyExecutor executor = context.executors().get(executorName).get().component4();
+            String objectName = fullName.get(fullName.size() - 1);
+
+            NettyExecutor executor = context.executors().get(executorName)
+                    .orElseThrow(() ->
+                            new IllegalArgumentException(
+                                    format("HostProxy(%s) configuration error: executor='%s' not declared.",
+                                            objectName,
+                                            executorName)))
+                    .component4();
 
             HostAndPort hostAndPort = config.get("host")
                     .map(HostAndPort::fromString)
                     .map(it -> addDefaultPort(it, tlsSettings))
                     .orElseThrow(() -> missingAttributeError(configBlock, join(".", fullName), "host"));
-
-            String objectName = fullName.get(fullName.size() - 1);
 
             return createHostProxyHandler(
                     executor,

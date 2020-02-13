@@ -20,7 +20,13 @@ import com.hotels.styx.InetServer
 import com.hotels.styx.ProxyConnectorFactory
 import com.hotels.styx.ResponseInfoFormat
 import com.hotels.styx.StyxObjectRecord
-import com.hotels.styx.config.schema.SchemaDsl.*
+import com.hotels.styx.config.schema.SchemaDsl.`object`
+import com.hotels.styx.config.schema.SchemaDsl.bool
+import com.hotels.styx.config.schema.SchemaDsl.field
+import com.hotels.styx.config.schema.SchemaDsl.integer
+import com.hotels.styx.config.schema.SchemaDsl.list
+import com.hotels.styx.config.schema.SchemaDsl.optional
+import com.hotels.styx.config.schema.SchemaDsl.string
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig
 import com.hotels.styx.proxy.ProxyServerConfig
 import com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder.ENCODE_UNWISECHARS
@@ -101,6 +107,14 @@ internal class StyxHttpServerFactory : StyxServerFactory {
         val config = serverConfig(configuration)
         val environment = context.environment()
 
+        val bossExecutor = context.executors()[config.bossExecutor]
+                .orElseThrow { IllegalArgumentException("StyxHttpServer($name) configuration error: bossExecutor='${config.bossExecutor}' not declared.") }
+                .styxService
+
+        val workerExecutor = context.executors()[config.workerExecutor]
+                .orElseThrow { IllegalArgumentException("StyxHttpServer($name) configuration error: workerExecutor='${config.workerExecutor}' not declared.") }
+                .styxService
+
         return NettyServerBuilder()
                 .setMetricsRegistry(environment.metricRegistry())
                 .setProtocolConnector(
@@ -137,17 +151,8 @@ internal class StyxHttpServerFactory : StyxServerFactory {
                                                     .protocols(*config.tlsSettings.protocols.toTypedArray())
                                                     .build()
                                         }))
-
-                // TODO: Unknown executor name
-                .bossExecutor(context.executors().get(config.bossExecutor)
-                            .map { it.styxService }
-                            .orElseThrow())
-
-                // TODO: Unknown executor name
-                .workerExecutor(context.executors().get(config.workerExecutor)
-                            .map { it.styxService }
-                            .orElseThrow())
-
+                .bossExecutor(bossExecutor)
+                .workerExecutor(workerExecutor)
                 .handler({ request, ctx ->
                     context.refLookup()
                             .apply(StyxObjectReference(config.handler))
