@@ -28,6 +28,9 @@ import com.hotels.styx.support.serverPort
 import com.hotels.styx.support.threadCount
 import com.hotels.styx.support.wait
 import io.kotlintest.Spec
+import io.kotlintest.eventually
+import io.kotlintest.matchers.numerics.shouldBeGreaterThan
+import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
 import java.nio.charset.StandardCharsets.UTF_8
@@ -82,7 +85,7 @@ class ExecutorSettingsSpec : FeatureSpec() {
                 threadCount("host-proxy") shouldBe 1
             }
 
-            scenario("!HostProxy uses default configuration when `executors` are not specified") {
+            scenario("HostProxy uses default configuration when `executors` are not specified") {
                 // It is impossible to verify, externally, on what thread HostProxy runs.
                 // The best we can do is to make sure it still works.
                 styxServer.restart(configuration = """
@@ -203,6 +206,9 @@ class ExecutorSettingsSpec : FeatureSpec() {
                           port: 0
                   """.trimIndent())
 
+                eventually(2.seconds, AssertionError::class.java) {
+                    styxServer().serverPort("http") shouldBeGreaterThan 0
+                }
                 val httpPort = styxServer().serverPort("http")
 
                 (1..10).map { client.send(get("/").header(HOST, "localhost:$httpPort").build()) }
