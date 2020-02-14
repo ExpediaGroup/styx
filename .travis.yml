@@ -12,14 +12,16 @@ deploy:
   script: chmod +x travis/deploy.sh && travis/deploy.sh
   skip_cleanup: true
   on:
-    branch: multiple-jdks
+    branch: master
     jdk: openjdk8
+    repo: HotelsDotCom/styx
 - provider: script
   script: chmod +x travis/deploy.sh && travis/deploy.sh
   skip_cleanup: true
   on:
     tags: true
     jdk: openjdk8
+    repo: HotelsDotCom/styx
 - provider: releases
   api_key: $GIT_TOKEN
   file_glob: true
