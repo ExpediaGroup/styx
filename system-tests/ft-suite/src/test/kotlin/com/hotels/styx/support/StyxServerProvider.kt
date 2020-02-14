@@ -135,7 +135,7 @@ fun StyxServerProvider.adminRequest(endpoint: String, debug: Boolean = false): H
 fun CompletableFuture<HttpResponse>.wait(debug: Boolean = false) = this.toMono()
         .doOnNext {
             if (debug) {
-                LOGGER.debug("${it.status()} - ${it.headers()} - ${it.bodyAs(UTF_8)}")
+                LOGGER.info("${it.status()} - ${it.headers()} - ${it.bodyAs(UTF_8)}")
             }
         }
         .block()
