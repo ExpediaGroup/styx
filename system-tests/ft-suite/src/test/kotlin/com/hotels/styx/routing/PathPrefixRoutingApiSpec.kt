@@ -18,6 +18,9 @@ package com.hotels.styx.routing
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.client.StyxHttpClient
+import com.hotels.styx.routing.handlers.RouteRefLookup
+import com.hotels.styx.routing.handlers.StaticResponseHandler
+import com.hotels.styx.startup.StyxServerComponents
 import com.hotels.styx.support.StyxServerProvider
 //import com.hotels.styx.support.proxyHttpHostHeader
 import io.kotlintest.Spec
@@ -26,7 +29,7 @@ import io.kotlintest.specs.StringSpec
 import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
 
-class PathPrefixRoutingSpec : StringSpec() {
+class PathPrefixRoutingApiSpec : StringSpec() {
 
 //    init {
 //        "Routes to the best match" {
@@ -49,6 +52,17 @@ class PathPrefixRoutingSpec : StringSpec() {
 //    }
 
     val client: StyxHttpClient = StyxHttpClient.Builder().build()
+
+    val bar = StyxServerComponents.Builder()
+            .httpHanlder("root")
+//            .routingObjectDescriptor(StaticResponseHandler.DESCRIPTOR("StaticResponseHandler"))
+//            .routingObject("root", PathPrefixRouter(mapOf(
+//                    "/" to RouteRefLookup("default"),
+//                    "/database" to RouteRefLookup("database")
+//            ))
+//            .routingObject("default", StaticResponseHandler(200, "I'm default"))
+//            .routingObject("database", StaticResponseHandler(200, "I'm database"))
+//                    .build())
 
     val styxServer = StyxServerProvider("""
         proxy:

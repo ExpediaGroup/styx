@@ -35,112 +35,112 @@ import kotlin.test.assertFailsWith
 
 class HttpMessageLoggingSpec : FeatureSpec() {
 
-    init {
-        feature("Styx request/response logging") {
-            styxServer.restart(loggingConfig = null)
-
-            scenario("Logger should hide cookies and headers") {
-
-                client.send(HttpRequest.get("/a/path")
-                        .header(HOST, styxServer().proxyHttpHostHeader())
-                        .header("header1", "h1")
-                        .header("header2", "h2")
-                        .header("cookie", "cookie1=c1;cookie2=c2")
-                        .build())
-                        .wait()
-
-                val expectedRequest = Regex("requestId=[-a-z0-9]+, secure=false, origin=null, "
-                    + "request=\\{version=HTTP/1.1, method=GET, uri=/a/path, headers=\\[Host=localhost:[0-9]+, header1=\\*\\*\\*\\*, header2=h2, cookie=cookie1=\\*\\*\\*\\*;cookie2=c2\\], id=[-a-z0-9]+\\}")
-
-                val expectedResponse = Regex("requestId=[-a-z0-9]+, secure=false, "
-                    + "response=\\{version=HTTP/1.1, status=200 OK, headers=\\[header1=\\*\\*\\*\\*, header2=h2, cookie=cookie1=\\*\\*\\*\\*;cookie2=c2, Via=1.1 styx\\]\\}")
-
-                logger.log().shouldContain(INFO, expectedRequest)
-                logger.log().shouldContain(INFO, expectedResponse)
-            }
-
-            scenario("Requests with badly-formed headers should hide sensitive cookies and headers when logged") {
-
-                httpErrorLogger.logger.level = ERROR
-                httpErrorLogger.appender.list.clear()
-
-                val response = client.send(HttpRequest.get("/a/path")
-                        .header(HOST, styxServer().proxyHttpHostHeader())
-                        .header("header1", "h1")
-                        .header("header2", "h2")
-                        .header("cookie", "cookie1=c1;cookie2=c2")
-                        .header("badheader", "with\u0000nullchar")
-                        .build())
-                        .wait()!!
-
-                response.status() shouldBe BAD_REQUEST
-
-                val event = httpErrorLogger.log().first()
-                event.level shouldBe ERROR
-
-                var t = event.throwableProxy
-                while (t != null) {
-                    anySensitiveHeadersAreHidden(t.message)
-                    t = t.cause
-                }
-            }
-
-            scenario("Requests with badly-formed cookies should hide sensitive cookies and headers when logged") {
-
-                httpErrorLogger.logger.level = ERROR
-                httpErrorLogger.appender.list.clear()
-
-                val response = client.send(HttpRequest.get("/a/path")
-                        .header(HOST, styxServer().proxyHttpHostHeader())
-                        .header("header1", "h1")
-                        .header("header2", "h2")
-                        .header("cookie", "cookie1=c1;cookie2=c2;badcookie=bad\u0000bad")
-                        .build())
-                        .wait()!!
-
-                response.status() shouldBe BAD_REQUEST
-
-                val event = httpErrorLogger.log().first()
-                event.level shouldBe ERROR
-
-                var t = event.throwableProxy
-                while (t != null) {
-                    anySensitiveHeadersAreHidden(t.message)
-                    t = t.cause
-                }
-            }
-
-            scenario("Responses with badly-formed headers should hide sensitive cookies and headers when logged") {
-
-                rootLogger.appender.list.clear()
-                rootLogger.logger.level = DEBUG
-
-                var exception: Throwable? = assertFailsWith<BadHttpResponseException> {
-                    client.send(HttpRequest.get("/bad/path")
-                            .header(HOST, styxServer().proxyHttpHostHeader())
-                            .header("header1", "h1")
-                            .header("header2", "h2")
-                            .header("cookie", "cookie1=c1;cookie2=c2")
-                            .build())
-                            .wait()
-                }
-
-                while (exception != null) {
-                    anySensitiveHeadersAreHidden(exception.message ?: "")
-                    exception = exception.cause
-                }
-
-                rootLogger.log().forEach {
-                    anySensitiveHeadersAreHidden(it.message)
-                    var t = it.throwableProxy
-                    while (t != null) {
-                        anySensitiveHeadersAreHidden(t.message)
-                        t = t.cause
-                    }
-                }
-            }
-        }
-    }
+//    init {
+//        feature("Styx request/response logging") {
+//            styxServer.restart(loggingConfig = null)
+//
+//            scenario("Logger should hide cookies and headers") {
+//
+//                client.send(HttpRequest.get("/a/path")
+//                        .header(HOST, styxServer().proxyHttpHostHeader())
+//                        .header("header1", "h1")
+//                        .header("header2", "h2")
+//                        .header("cookie", "cookie1=c1;cookie2=c2")
+//                        .build())
+//                        .wait()
+//
+//                val expectedRequest = Regex("requestId=[-a-z0-9]+, secure=false, origin=null, "
+//                    + "request=\\{version=HTTP/1.1, method=GET, uri=/a/path, headers=\\[Host=localhost:[0-9]+, header1=\\*\\*\\*\\*, header2=h2, cookie=cookie1=\\*\\*\\*\\*;cookie2=c2\\], id=[-a-z0-9]+\\}")
+//
+//                val expectedResponse = Regex("requestId=[-a-z0-9]+, secure=false, "
+//                    + "response=\\{version=HTTP/1.1, status=200 OK, headers=\\[header1=\\*\\*\\*\\*, header2=h2, cookie=cookie1=\\*\\*\\*\\*;cookie2=c2, Via=1.1 styx\\]\\}")
+//
+//                logger.log().shouldContain(INFO, expectedRequest)
+//                logger.log().shouldContain(INFO, expectedResponse)
+//            }
+//
+//            scenario("Requests with badly-formed headers should hide sensitive cookies and headers when logged") {
+//
+//                httpErrorLogger.logger.level = ERROR
+//                httpErrorLogger.appender.list.clear()
+//
+//                val response = client.send(HttpRequest.get("/a/path")
+//                        .header(HOST, styxServer().proxyHttpHostHeader())
+//                        .header("header1", "h1")
+//                        .header("header2", "h2")
+//                        .header("cookie", "cookie1=c1;cookie2=c2")
+//                        .header("badheader", "with\u0000nullchar")
+//                        .build())
+//                        .wait()!!
+//
+//                response.status() shouldBe BAD_REQUEST
+//
+//                val event = httpErrorLogger.log().first()
+//                event.level shouldBe ERROR
+//
+//                var t = event.throwableProxy
+//                while (t != null) {
+//                    anySensitiveHeadersAreHidden(t.message)
+//                    t = t.cause
+//                }
+//            }
+//
+//            scenario("Requests with badly-formed cookies should hide sensitive cookies and headers when logged") {
+//
+//                httpErrorLogger.logger.level = ERROR
+//                httpErrorLogger.appender.list.clear()
+//
+//                val response = client.send(HttpRequest.get("/a/path")
+//                        .header(HOST, styxServer().proxyHttpHostHeader())
+//                        .header("header1", "h1")
+//                        .header("header2", "h2")
+//                        .header("cookie", "cookie1=c1;cookie2=c2;badcookie=bad\u0000bad")
+//                        .build())
+//                        .wait()!!
+//
+//                response.status() shouldBe BAD_REQUEST
+//
+//                val event = httpErrorLogger.log().first()
+//                event.level shouldBe ERROR
+//
+//                var t = event.throwableProxy
+//                while (t != null) {
+//                    anySensitiveHeadersAreHidden(t.message)
+//                    t = t.cause
+//                }
+//            }
+//
+//            scenario("Responses with badly-formed headers should hide sensitive cookies and headers when logged") {
+//
+//                rootLogger.appender.list.clear()
+//                rootLogger.logger.level = DEBUG
+//
+//                var exception: Throwable? = assertFailsWith<BadHttpResponseException> {
+//                    client.send(HttpRequest.get("/bad/path")
+//                            .header(HOST, styxServer().proxyHttpHostHeader())
+//                            .header("header1", "h1")
+//                            .header("header2", "h2")
+//                            .header("cookie", "cookie1=c1;cookie2=c2")
+//                            .build())
+//                            .wait()
+//                }
+//
+//                while (exception != null) {
+//                    anySensitiveHeadersAreHidden(exception.message ?: "")
+//                    exception = exception.cause
+//                }
+//
+//                rootLogger.log().forEach {
+//                    anySensitiveHeadersAreHidden(it.message)
+//                    var t = it.throwableProxy
+//                    while (t != null) {
+//                        anySensitiveHeadersAreHidden(t.message)
+//                        t = t.cause
+//                    }
+//                }
+//            }
+//        }
+//    }
 
     private fun anySensitiveHeadersAreHidden(msg: String) {
         msg shouldNotContain "header1=h1"

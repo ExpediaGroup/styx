@@ -75,8 +75,6 @@ public final class StyxServer extends AbstractService {
         LOG.debug("Real resource leak detection level = {}", ResourceLeakDetector.getLevel());
     }
 
-    private final InetServer httpServer;
-    private final InetServer httpsServer;
     private final InetServer adminServer;
 
     private final ServiceManager phase1Services;
@@ -169,14 +167,6 @@ public final class StyxServer extends AbstractService {
 
         registerCoreMetrics(components.environment().buildInfo(), components.environment().metricRegistry());
 
-        // The plugins are loaded, but not initialised. And therefore not able to accept traffic.
-        // This handler is for the "old" proxy servers, that are started from proxy.connectors configuration.
-        // The new `HttpServer` object (https://github.com/HotelsDotCom/styx/pull/591) doesn't use it.
-        HttpHandler handlerForOldProxyServer = new StyxPipelineFactory(
-                components.routingObjectFactoryContext(),
-                components.environment())
-                .create();
-
         // Startup phase 1: start plugins, control plane providers, and other services:
         ArrayList<Service> services = new ArrayList<>();
         adminServer = createAdminServer(components);
@@ -186,22 +176,7 @@ public final class StyxServer extends AbstractService {
         components.services().values().forEach(it -> services.add(toGuavaService(it)));
         this.phase1Services = new ServiceManager(services);
 
-        // Phase 2: start HTTP services;
-        StyxConfig styxConfig = components.environment().configuration();
-        httpServer = styxConfig.proxyServerConfig()
-                .httpConnectorConfig()
-                .map(it -> httpServer(components.environment(), it, handlerForOldProxyServer))
-                .orElse(null);
-
-        httpsServer = styxConfig.proxyServerConfig()
-                .httpsConnectorConfig()
-                .map(it -> httpServer(components.environment(), it, handlerForOldProxyServer))
-                .orElse(null);
-
         ArrayList<Service> services2 = new ArrayList<>();
-
-        Optional.ofNullable(httpServer).map(StyxServers::toGuavaService).ifPresent(services2::add);
-        Optional.ofNullable(httpsServer).map(StyxServers::toGuavaService).ifPresent(services2::add);
 
         services2.add(toGuavaService(new ServiceProviderMonitor<>("Styx-Server-Monitor", components.serversDatabase())));
 
@@ -215,43 +190,8 @@ public final class StyxServer extends AbstractService {
                 .orElse(null);
     }
 
-    public InetSocketAddress proxyHttpAddress() {
-        return Optional.ofNullable(httpServer)
-                .map(InetServer::inetAddress)
-                .orElse(null);
-    }
-
-    public InetSocketAddress proxyHttpsAddress() {
-        return Optional.ofNullable(httpsServer)
-                .map(InetServer::inetAddress)
-                .orElse(null);
-    }
-
     public InetSocketAddress adminHttpAddress() {
         return adminServer.inetAddress();
-    }
-
-    private static InetServer httpServer(Environment environment, ConnectorConfig connectorConfig, HttpHandler styxDataPlane) {
-        CharSequence styxInfoHeaderName = environment.configuration().styxHeaderConfig().styxInfoHeaderName();
-        ResponseInfoFormat responseInfoFormat = new ResponseInfoFormat(environment);
-
-        ServerConnector proxyConnector = new ProxyConnectorFactory(
-                environment.configuration().proxyServerConfig(),
-                environment.metricRegistry(),
-                environment.errorListener(),
-                environment.configuration().get(ENCODE_UNWISECHARS).orElse(""),
-                (builder, request) -> builder.header(styxInfoHeaderName, responseInfoFormat.format(request)),
-                environment.configuration().get("requestTracking", Boolean.class).orElse(false),
-                environment.httpMessageFormatter())
-                .create(connectorConfig);
-
-        return NettyServerBuilder.newBuilder()
-                .setMetricsRegistry(environment.metricRegistry())
-                .bossExecutor(NettyExecutor.create("Proxy-Boss", environment.configuration().proxyServerConfig().bossThreadsCount()))
-                .workerExecutor(NettyExecutor.create("Proxy-Worker", environment.configuration().proxyServerConfig().workerThreadsCount()))
-                .setProtocolConnector(proxyConnector)
-                .handler(styxDataPlane)
-                .build();
     }
 
     private static void initialisePlugins(Iterable<NamedPlugin> plugins) {

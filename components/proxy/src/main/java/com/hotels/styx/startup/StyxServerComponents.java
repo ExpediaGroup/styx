@@ -44,6 +44,7 @@ import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.RouteRefLookup.RouteDbRefLookup;
 import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
 import java.util.HashMap;
@@ -81,6 +82,7 @@ public class StyxServerComponents {
 
     private static final Logger LOGGER = getLogger(StyxServerComponents.class);
     private final NettyExecutor executor;
+    private final String httpPipeline;
 
     private StyxServerComponents(Builder builder) {
         StyxConfig styxConfig = requireNonNull(builder.styxConfig);
@@ -110,6 +112,8 @@ public class StyxServerComponents {
                 plugins,
                 INTERCEPTOR_FACTORIES,
                 false);
+
+        this.httpPipeline = builder.httpHandler;
 
         this.services = builder.servicesLoader.load(environment, routeObjectStore);
 
@@ -190,6 +194,9 @@ public class StyxServerComponents {
         return this.routingObjectContext;
     }
 
+    public String httpPipeline() {
+        return this.httpPipeline;
+    }
 
     public NettyExecutor clientExecutor() {
         return this.executor;
@@ -232,6 +239,7 @@ public class StyxServerComponents {
         private StartupConfig startupConfig;
 
         private final Map<String, RoutingObjectFactory> additionalRoutingObjectFactories = new HashMap<>();
+        private String httpHandler;
 
         public Builder styxConfig(StyxConfig styxConfig) {
             this.styxConfig = requireNonNull(styxConfig);
@@ -288,6 +296,12 @@ public class StyxServerComponents {
             return this;
         }
 
+        @NotNull
+        public Builder httpHanlder(@NotNull String httpHandler) {
+            this.httpHandler = httpHandler;
+            return this;
+        }
+
         @VisibleForTesting
         public Builder additionalRoutingObjects(Map<String, RoutingObjectFactory> additionalRoutingObjectFactories) {
             this.additionalRoutingObjectFactories.putAll(additionalRoutingObjectFactories);
@@ -297,6 +311,12 @@ public class StyxServerComponents {
         public StyxServerComponents build() {
             return new StyxServerComponents(this);
         }
+
+//        @NotNull
+//        public Builder routingObjectDescriptor(@NotNull StyxObjectDescriptor descriptor) {
+//            this.additionalRoutingObjects.add(descriptor);
+//            return this;
+//        }
     }
 
     /**

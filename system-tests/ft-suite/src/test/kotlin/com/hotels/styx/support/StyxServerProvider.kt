@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -141,8 +141,8 @@ fun CompletableFuture<HttpResponse>.wait(debug: Boolean = false) = this.toMono()
         .block()
 
 fun StyxServer.adminHostHeader() = "${this.adminHttpAddress().hostName}:${this.adminHttpAddress().port}"
-fun StyxServer.proxyHttpHostHeader() = "localhost:${this.proxyHttpAddress().port}"
-fun StyxServer.proxyHttpsHostHeader() = "localhost:${this.proxyHttpsAddress().port}"
+//fun StyxServer.proxyHttpHostHeader() = "localhost:${this.proxyHttpAddress().port}"
+//fun StyxServer.proxyHttpsHostHeader() = "localhost:${this.proxyHttpsAddress().port}"
 
 //@Throws(IOException::class)
 private fun decodeToMap(body: String): Map<String, Any> {

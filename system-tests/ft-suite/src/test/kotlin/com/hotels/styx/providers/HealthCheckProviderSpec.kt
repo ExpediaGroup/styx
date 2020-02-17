@@ -34,7 +34,6 @@ import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.support.ResourcePaths
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.newRoutingObject
-import com.hotels.styx.support.proxyHttpHostHeader
 import com.hotels.styx.support.routingObject
 import com.hotels.styx.support.wait
 import io.kotlintest.Description
@@ -83,116 +82,116 @@ class HealthCheckProviderSpec : FeatureSpec() {
                   origins: aaa
             """.trimIndent())
 
-    fun hostProxy(tag: String, remote: StyxServerProvider) = """
-        type: HostProxy
-        tags:
-          - $tag
-        config:
-          host: ${remote().proxyHttpHostHeader()}
-        """.trimIndent()
+//    fun hostProxy(tag: String, remote: StyxServerProvider) = """
+//        type: HostProxy
+//        tags:
+//          - $tag
+//        config:
+//          host: ${remote().proxyHttpHostHeader()}
+//        """.trimIndent()
+//
+//    fun hostProxy(tag1: String, tag2: String, remote: StyxServerProvider) = """
+//        type: HostProxy
+//        tags:
+//          - $tag1
+//          - $tag2
+//        config:
+//          host: ${remote().proxyHttpHostHeader()}
+//        """.trimIndent()
 
-    fun hostProxy(tag1: String, tag2: String, remote: StyxServerProvider) = """
-        type: HostProxy
-        tags:
-          - $tag1
-          - $tag2
-        config:
-          host: ${remote().proxyHttpHostHeader()}
-        """.trimIndent()
+//    init {
+//        feature("Object monitoring") {
+//            styxServer.restart()
+//
+//            styxServer().newRoutingObject("aaa-01", hostProxy(lbGroupTag("aaa"), testServer01)).shouldBe(CREATED)
+//            styxServer().newRoutingObject("aaa-02", hostProxy(lbGroupTag("aaa"), testServer02)).shouldBe(CREATED)
+//
+//            scenario("Tags unresponsive origins with state=unreachable tag") {
+//                pollOrigins(styxServer, "origin-0[12]").let {
+//                    withClue("Both origins should be taking traffic. Origins distribution: $it") {
+//                        (it["origin-01"]?:0).shouldBeGreaterThan(15)
+//                        (it["origin-02"]?:0).shouldBeGreaterThan(15)
+//                    }
+//                }
+//
+//                origin02Active.set(false)
+//
+//                eventually(2.seconds, AssertionError::class.java) {
+//                    styxServer().routingObject("aaa-02").get().shouldContain(stateTag(STATE_UNREACHABLE))
+//                }
+//
+//                eventually(2.seconds, AssertionError::class.java) {
+//                    pollOrigins(styxServer, times = 50).let {
+//                        withClue("Only the active origin (origin-01) should be taking traffic. Origins distribution: $it") {
+//                            (it["origin-01"] ?: 0).shouldBe(50)
+//                        }
+//                    }
+//                }
+//            }
+//
+//            scenario("Tags responsive origins with state:active TAG") {
+//                origin02Active.set(true)
+//
+//                eventually(2.seconds, AssertionError::class.java) {
+//                    styxServer().routingObject("aaa-02").get().shouldContain(stateTag(STATE_ACTIVE))
+//                }
+//
+//                eventually(2.seconds, AssertionError::class.java) {
+//                    pollOrigins(styxServer, "origin-0[12]").let {
+//                        withClue("Both origins should be taking traffic. Origins distribution: $it") {
+//                            (it["origin-01"] ?: 0).shouldBeGreaterThan(20)
+//                            (it["origin-02"] ?: 0).shouldBeGreaterThan(20)
+//                        }
+//                    }
+//                }
+//            }
+//
+//            scenario("Ignores closed origins") {
+//                styxServer().newRoutingObject("aaa-04", hostProxy(lbGroupTag("aaa"), stateTag(STATE_INACTIVE), testServer03)).shouldBe(CREATED)
+//                Thread.sleep(5.seconds.toMillis())
+//                styxServer().routingObject("aaa-04").get().shouldContain(stateTag(STATE_INACTIVE))
+//                styxServer().routingObject("aaa-04").get().shouldNotContain(healthCheckTag("on" to 0)!!)
+//            }
+//
+//            scenario("Detects up new origins") {
+//                styxServer().newRoutingObject("aaa-03", hostProxy(lbGroupTag("aaa"), testServer03)).shouldBe(CREATED)
+//
+//                eventually(2.seconds, AssertionError::class.java) {
+//                    styxServer().routingObject("aaa-03").get().shouldContain(stateTag(STATE_ACTIVE))
+//                    styxServer().routingObject("aaa-03").get().shouldContain(healthCheckTag("on" to 0)!!)
+//                }
+//
+//                eventually(2.seconds, AssertionError::class.java) {
+//                    pollOrigins(styxServer, "origin-0[1234]").let {
+//                        withClue("Both origins should be taking traffic. Origins distribution: $it") {
+//                            (it["origin-01"] ?: 0).shouldBeGreaterThan(15)
+//                            (it["origin-02"] ?: 0).shouldBeGreaterThan(15)
+//                            (it["origin-03"] ?: 0).shouldBeGreaterThan(15)
+//                        }
+//                        withClue("Closed origin should be taking no traffic. Origins distribution: $it") {
+//                            (it["origin-04"] ?: 0).shouldBe(0)
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    }
 
-    init {
-        feature("Object monitoring") {
-            styxServer.restart()
-
-            styxServer().newRoutingObject("aaa-01", hostProxy(lbGroupTag("aaa"), testServer01)).shouldBe(CREATED)
-            styxServer().newRoutingObject("aaa-02", hostProxy(lbGroupTag("aaa"), testServer02)).shouldBe(CREATED)
-
-            scenario("Tags unresponsive origins with state=unreachable tag") {
-                pollOrigins(styxServer, "origin-0[12]").let {
-                    withClue("Both origins should be taking traffic. Origins distribution: $it") {
-                        (it["origin-01"]?:0).shouldBeGreaterThan(15)
-                        (it["origin-02"]?:0).shouldBeGreaterThan(15)
-                    }
-                }
-
-                origin02Active.set(false)
-
-                eventually(2.seconds, AssertionError::class.java) {
-                    styxServer().routingObject("aaa-02").get().shouldContain(stateTag(STATE_UNREACHABLE))
-                }
-
-                eventually(2.seconds, AssertionError::class.java) {
-                    pollOrigins(styxServer, times = 50).let {
-                        withClue("Only the active origin (origin-01) should be taking traffic. Origins distribution: $it") {
-                            (it["origin-01"] ?: 0).shouldBe(50)
-                        }
-                    }
-                }
-            }
-
-            scenario("Tags responsive origins with state:active TAG") {
-                origin02Active.set(true)
-
-                eventually(2.seconds, AssertionError::class.java) {
-                    styxServer().routingObject("aaa-02").get().shouldContain(stateTag(STATE_ACTIVE))
-                }
-
-                eventually(2.seconds, AssertionError::class.java) {
-                    pollOrigins(styxServer, "origin-0[12]").let {
-                        withClue("Both origins should be taking traffic. Origins distribution: $it") {
-                            (it["origin-01"] ?: 0).shouldBeGreaterThan(20)
-                            (it["origin-02"] ?: 0).shouldBeGreaterThan(20)
-                        }
-                    }
-                }
-            }
-
-            scenario("Ignores closed origins") {
-                styxServer().newRoutingObject("aaa-04", hostProxy(lbGroupTag("aaa"), stateTag(STATE_INACTIVE), testServer03)).shouldBe(CREATED)
-                Thread.sleep(5.seconds.toMillis())
-                styxServer().routingObject("aaa-04").get().shouldContain(stateTag(STATE_INACTIVE))
-                styxServer().routingObject("aaa-04").get().shouldNotContain(healthCheckTag("on" to 0)!!)
-            }
-
-            scenario("Detects up new origins") {
-                styxServer().newRoutingObject("aaa-03", hostProxy(lbGroupTag("aaa"), testServer03)).shouldBe(CREATED)
-
-                eventually(2.seconds, AssertionError::class.java) {
-                    styxServer().routingObject("aaa-03").get().shouldContain(stateTag(STATE_ACTIVE))
-                    styxServer().routingObject("aaa-03").get().shouldContain(healthCheckTag("on" to 0)!!)
-                }
-
-                eventually(2.seconds, AssertionError::class.java) {
-                    pollOrigins(styxServer, "origin-0[1234]").let {
-                        withClue("Both origins should be taking traffic. Origins distribution: $it") {
-                            (it["origin-01"] ?: 0).shouldBeGreaterThan(15)
-                            (it["origin-02"] ?: 0).shouldBeGreaterThan(15)
-                            (it["origin-03"] ?: 0).shouldBeGreaterThan(15)
-                        }
-                        withClue("Closed origin should be taking no traffic. Origins distribution: $it") {
-                            (it["origin-04"] ?: 0).shouldBe(0)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    fun pollOrigins(styxServer: StyxServerProvider, responsePattern: String = "origin-0[123]", times: Int = 100): Map<String, Int> {
-        val httpClient = StyxHttpClient.Builder().build()
-        return List(times) { 1 }
-                .groupBy {
-                    httpClient
-                            .send(get("/").header(HOST, styxServer().proxyHttpHostHeader()).build())
-                            .wait(debug = false)!!
-                            .run {
-                                status() shouldBe(OK)
-                                bodyAs(UTF_8) shouldMatch responsePattern
-                                bodyAs(UTF_8)
-                            }
-                }.mapValues { (_, value) -> value.sum() }
-
-    }
+//    fun pollOrigins(styxServer: StyxServerProvider, responsePattern: String = "origin-0[123]", times: Int = 100): Map<String, Int> {
+//        val httpClient = StyxHttpClient.Builder().build()
+//        return List(times) { 1 }
+//                .groupBy {
+//                    httpClient
+//                            .send(get("/").header(HOST, styxServer().proxyHttpHostHeader()).build())
+//                            .wait(debug = false)!!
+//                            .run {
+//                                status() shouldBe(OK)
+//                                bodyAs(UTF_8) shouldMatch responsePattern
+//                                bodyAs(UTF_8)
+//                            }
+//                }.mapValues { (_, value) -> value.sum() }
+//
+//    }
 
     class TestEndpoint(val status: HttpResponseStatus = OK, val content: String = "hello world", val active: AtomicBoolean = AtomicBoolean(true)): RoutingObject {
         override fun handle(request: LiveHttpRequest, context: HttpInterceptor.Context): Eventual<LiveHttpResponse> =

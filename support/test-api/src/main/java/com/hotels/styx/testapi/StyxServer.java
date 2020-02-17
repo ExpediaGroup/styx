@@ -100,24 +100,6 @@ public final class StyxServer {
     }
 
     /**
-     * The HTTP port of the proxy.
-     *
-     * @return the HTTP port of the proxy
-     */
-    public int proxyHttpPort() {
-        return server.proxyHttpAddress().getPort();
-    }
-
-    /**
-     * The HTTPS port of the proxy.
-     *
-     * @return the HTTPS port of the proxy
-     */
-    public int proxyHttpsPort() {
-        return server.proxyHttpsAddress().getPort();
-    }
-
-    /**
      * Provides the metric registry.
      *
      * @return metric registry
