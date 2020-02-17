@@ -1,6 +1,11 @@
 ARG TAG=11-jdk
 FROM openjdk:${TAG}
 
+RUN addgroup styx && useradd -d /home/styx -g styx -s /bin/bash styx
+
+# Remove overriding ulimits
+RUN rm -f /etc/security/limits.d/*
+
 ARG STYX_VERSION=""
 ARG STYX_IMAGE=https://github.com/HotelsDotCom/styx/releases/download/${STYX_VERSION}/${STYX_VERSION}-linux-x86_64.zip
 
@@ -21,7 +26,12 @@ ADD origins.yml /styx/default-config/origins.yml
 RUN unzip styx.zip \
     && rm styx.zip
 
+RUN mkdir -p ${STYX_LOG_OUTPUT}
+RUN chown styx:styx ${STYX_LOG_OUTPUT}
+
 EXPOSE 8080 8443 9000
+
+USER styx
 
 CMD ["/styx/default-config/default.yml"]
 
