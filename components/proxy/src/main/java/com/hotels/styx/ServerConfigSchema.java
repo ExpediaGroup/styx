@@ -35,10 +35,10 @@ import static com.hotels.styx.config.schema.SchemaDsl.routingObject;
 import static com.hotels.styx.config.schema.SchemaDsl.string;
 import static com.hotels.styx.config.schema.SchemaDsl.union;
 import static com.hotels.styx.config.validator.DocumentFormat.newDocument;
-import static com.hotels.styx.routing.config.Builtins.BUILTIN_HANDLER_SCHEMAS;
-import static com.hotels.styx.routing.config.Builtins.BUILTIN_SERVER_SCHEMAS;
-import static com.hotels.styx.routing.config.Builtins.BUILTIN_SERVICE_PROVIDER_SCHEMAS;
 import static com.hotels.styx.routing.config.Builtins.INTERCEPTOR_SCHEMAS;
+import static com.hotels.styx.routing.config.Builtins.ROUTING_OBJECT_DESCRIPTORS;
+import static com.hotels.styx.routing.config.Builtins.SERVER_DESCRIPTORS;
+import static com.hotels.styx.routing.config.Builtins.SERVICE_PROVIDER_DESCRIPTORS;
 
 final class ServerConfigSchema {
 
@@ -162,9 +162,10 @@ final class ServerConfigSchema {
                                     optional("config", union("type")))))
                     ));
 
-        BUILTIN_HANDLER_SCHEMAS.forEach(STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER::typeExtension);
-        BUILTIN_SERVICE_PROVIDER_SCHEMAS.forEach(STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER::typeExtension);
-        BUILTIN_SERVER_SCHEMAS.forEach(STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER::typeExtension);
+        ROUTING_OBJECT_DESCRIPTORS.forEach((ignore, bar) -> STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER.typeExtension(bar.type(), bar.schema()));
+        SERVICE_PROVIDER_DESCRIPTORS.forEach((ignore, bar) -> STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER.typeExtension(bar.type(), bar.schema()));
+        SERVER_DESCRIPTORS.forEach((ignore, bar) -> STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER.typeExtension(bar.type(), bar.schema()));
+
         INTERCEPTOR_SCHEMAS.forEach(STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER::typeExtension);
     }
 

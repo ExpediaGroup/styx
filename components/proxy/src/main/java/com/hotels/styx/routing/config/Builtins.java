@@ -54,6 +54,32 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * Contains mappings of builtin routing object and interceptor names to their factory methods.
  */
 public final class Builtins {
+
+    public static class StyxObjectDescriptor<T> {
+        private final String typeName;
+        private final T factory;
+        private final Schema.FieldType schema;
+
+        public StyxObjectDescriptor(String typeName, T factory, Schema.FieldType schema) {
+            this.typeName = typeName;
+            this.factory = factory;
+            this.schema = schema;
+        }
+
+        public String type() {
+            return typeName;
+        }
+
+        public T factory() {
+            return factory;
+        }
+
+        public Schema.FieldType schema() {
+            return schema;
+        }
+
+    }
+
     public static final String STATIC_RESPONSE = "StaticResponseHandler";
     public static final String CONDITION_ROUTER = "ConditionRouter";
     public static final String INTERCEPTOR_PIPELINE = "InterceptorPipeline";
@@ -67,8 +93,9 @@ public final class Builtins {
 
     public static final String REWRITE = "Rewrite";
 
-    public static final ImmutableMap<String, Schema.FieldType> BUILTIN_HANDLER_SCHEMAS;
-    public static final ImmutableMap<String, RoutingObjectFactory> BUILTIN_HANDLER_FACTORIES;
+    public static final ImmutableMap<String, StyxObjectDescriptor<RoutingObjectFactory>> ROUTING_OBJECT_DESCRIPTORS;
+    public static final ImmutableMap<String, StyxObjectDescriptor<ServiceProviderFactory>> SERVICE_PROVIDER_DESCRIPTORS;
+    public static final ImmutableMap<String, StyxObjectDescriptor<StyxServerFactory>> SERVER_DESCRIPTORS;
 
     public static final ImmutableMap<String, HttpInterceptorFactory> INTERCEPTOR_FACTORIES =
             ImmutableMap.of(REWRITE, new RewriteInterceptor.Factory());
@@ -76,47 +103,29 @@ public final class Builtins {
     public static final ImmutableMap<String, Schema.FieldType> INTERCEPTOR_SCHEMAS =
             ImmutableMap.of(REWRITE, RewriteInterceptor.SCHEMA);
 
-    public static final ImmutableMap<String, ServiceProviderFactory> BUILTIN_SERVICE_PROVIDER_FACTORIES =
-            ImmutableMap.of(HEALTH_CHECK_MONITOR, new HealthCheckMonitoringServiceFactory(),
-                    YAML_FILE_CONFIGURATION_SERVICE, new YamlFileConfigurationServiceFactory()
-            );
-
-    public static final ImmutableMap<String, Schema.FieldType> BUILTIN_SERVICE_PROVIDER_SCHEMAS =
-            ImmutableMap.of(HEALTH_CHECK_MONITOR, HealthCheckMonitoringService.SCHEMA,
-                    YAML_FILE_CONFIGURATION_SERVICE, YamlFileConfigurationService.SCHEMA);
-
-    public static final ImmutableMap<String, StyxServerFactory> BUILTIN_SERVER_FACTORIES = ImmutableMap.of(
-            "HttpServer", new StyxHttpServerFactory()
-    );
-
-    public static final ImmutableMap<String, Schema.FieldType> BUILTIN_SERVER_SCHEMAS = ImmutableMap.of(
-            "HttpServer", StyxHttpServer.SCHEMA
-    );
-
     public static final RouteRefLookup DEFAULT_REFERENCE_LOOKUP = reference -> (request, ctx) ->
             Eventual.of(response(NOT_FOUND)
                     .body(format("Handler not found for '%s'.", reference), UTF_8)
                     .build()
                     .stream());
 
-
     static {
-        BUILTIN_HANDLER_FACTORIES = ImmutableMap.<String, RoutingObjectFactory>builder()
-                .put(STATIC_RESPONSE, new StaticResponseHandler.Factory())
-                .put(CONDITION_ROUTER, new ConditionRouter.Factory())
-                .put(INTERCEPTOR_PIPELINE, new HttpInterceptorPipeline.Factory())
-                .put(PATH_PREFIX_ROUTER, new PathPrefixRouter.Factory())
-                .put(HOST_PROXY, new HostProxy.Factory())
-                .put(LOAD_BALANCING_GROUP, new LoadBalancingGroup.Factory())
+        ROUTING_OBJECT_DESCRIPTORS = ImmutableMap.<String, StyxObjectDescriptor<RoutingObjectFactory>>builder()
+                .put(STATIC_RESPONSE, new StyxObjectDescriptor<>(     STATIC_RESPONSE,      new StaticResponseHandler.Factory(),   StaticResponseHandler.SCHEMA))
+                .put(CONDITION_ROUTER, new StyxObjectDescriptor<>(    CONDITION_ROUTER,     new ConditionRouter.Factory(),         ConditionRouter.SCHEMA))
+                .put(INTERCEPTOR_PIPELINE, new StyxObjectDescriptor<>(INTERCEPTOR_PIPELINE, new HttpInterceptorPipeline.Factory(), HttpInterceptorPipeline.SCHEMA))
+                .put(PATH_PREFIX_ROUTER, new StyxObjectDescriptor<>(  PATH_PREFIX_ROUTER,   new PathPrefixRouter.Factory(),        PathPrefixRouter.SCHEMA))
+                .put(HOST_PROXY, new StyxObjectDescriptor<>(          HOST_PROXY,           new HostProxy.Factory(),               HostProxy.SCHEMA))
+                .put(LOAD_BALANCING_GROUP, new StyxObjectDescriptor<>(LOAD_BALANCING_GROUP, new LoadBalancingGroup.Factory(),      LoadBalancingGroup.Companion.getSCHEMA()))
                 .build();
 
-        BUILTIN_HANDLER_SCHEMAS = ImmutableMap.<String, Schema.FieldType>builder()
-                .put(STATIC_RESPONSE, StaticResponseHandler.SCHEMA)
-                .put(CONDITION_ROUTER, ConditionRouter.SCHEMA)
-                .put(INTERCEPTOR_PIPELINE, HttpInterceptorPipeline.SCHEMA)
-                .put(PATH_PREFIX_ROUTER, PathPrefixRouter.SCHEMA)
-                .put(HOST_PROXY, HostProxy.SCHEMA)
-                .put(LOAD_BALANCING_GROUP,  LoadBalancingGroup.Companion.getSCHEMA())
+        SERVICE_PROVIDER_DESCRIPTORS = ImmutableMap.<String, StyxObjectDescriptor<ServiceProviderFactory>>builder()
+                .put(HEALTH_CHECK_MONITOR,            new StyxObjectDescriptor<>(HEALTH_CHECK_MONITOR,            new HealthCheckMonitoringServiceFactory(), HealthCheckMonitoringService.SCHEMA))
+                .put(YAML_FILE_CONFIGURATION_SERVICE, new StyxObjectDescriptor<>(YAML_FILE_CONFIGURATION_SERVICE, new YamlFileConfigurationServiceFactory(), YamlFileConfigurationService.SCHEMA))
+                .build();
+
+        SERVER_DESCRIPTORS = ImmutableMap.<String, StyxObjectDescriptor<StyxServerFactory>>builder()
+                .put("HttpServer",            new StyxObjectDescriptor<>("HttpServer", new StyxHttpServerFactory(), StyxHttpServer.SCHEMA))
                 .build();
     }
 

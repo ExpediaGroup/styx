@@ -22,9 +22,9 @@ import com.hotels.styx.common.Pair.pair
 import com.hotels.styx.config.schema.SchemaValidationException
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.RoutingObjectFactoryContext
+import com.hotels.styx.config.schema.Schema
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.config.Builtins
-import com.hotels.styx.routing.config.Builtins.BUILTIN_HANDLER_SCHEMAS
 import com.hotels.styx.routing.config.StyxObjectReference
 import com.hotels.styx.handle
 import com.hotels.styx.mockObject
@@ -153,7 +153,7 @@ class PathPrefixRouterTest : FeatureSpec({
     }
 
     feature("Schema validation") {
-        val EXTENSIONS = { key: String -> BUILTIN_HANDLER_SCHEMAS[key] }
+        val EXTENSIONS = { key: String -> mapOf<String, Schema.FieldType>()[key] }
 
         scenario("Accepts inlined routing object definitions") {
             val jsonNode = YamlConfig("""

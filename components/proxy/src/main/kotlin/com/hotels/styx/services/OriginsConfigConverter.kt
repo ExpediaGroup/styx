@@ -112,7 +112,7 @@ internal class OriginsConfigConverter(
         val serviceConfig = MAPPER.readTree(str)
 
         val providerObject = Builtins.build(serviceName, StyxObjectDefinition(appId, HEALTH_CHECK_MONITOR, serviceConfig),
-                serviceDb, Builtins.BUILTIN_SERVICE_PROVIDER_FACTORIES, context)
+                serviceDb, mapOf(), context)
 
         return ProviderObjectRecord(HEALTH_CHECK_MONITOR,
                 setOf(targetTag(appId)),
