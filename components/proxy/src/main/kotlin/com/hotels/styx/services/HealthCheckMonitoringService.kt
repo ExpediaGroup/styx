@@ -102,27 +102,20 @@ internal class HealthCheckMonitoringService(
         objectStore.entrySet()
                 .filter(::containsRelevantStateTag)
                 .forEach { (name, record) ->
-                    objectStore.get(name).ifPresent {
-                        try {
-                            objectStore.compute(name) { previous ->
-                                if (previous == null) throw ObjectDisappearedException()
+                    objectStore.compute(name) { previous ->
+                        if (previous === null) return@compute null
 
-                                val newTags = previous.tags
-                                        .let { healthCheckTag.remove(it) }
-                                        .let { stateTag.remove(it) }
-                                        .plus(stateTag(STATE_ACTIVE))
+                        val newTags = previous.tags
+                                .let { healthCheckTag.remove(it) }
+                                .let { stateTag.remove(it) }
+                                .plus(stateTag(STATE_ACTIVE))
 
-                                if (previous.tags != newTags)
-                                    it.copy(tags = newTags)
-                                else
-                                    previous
-                            }
-                        } catch (e: ObjectDisappearedException) {
-                            // Object disappeared between the ifPresent check and the compute, but we don't really mind.
-                            // We just want to exit the compute, to avoid re-creating it.
-                            // (The ifPresent is not strictly required, but a pre-emptive check is preferred to an exception)
-                        }
+                        if (previous.tags != newTags)
+                            previous.copy(tags = newTags)
+                        else
+                            previous
                     }
+
                 }
 
         futureRef.get().cancel(false)
@@ -211,8 +204,6 @@ internal fun objectHealthFrom(state: String?, health: Pair<String, Int>?) =
 
             else -> ObjectOther(state)
         }
-
-internal class ObjectDisappearedException : RuntimeException("Object disappeared")
 
 
 private fun markObject(db: StyxObjectStore<RoutingObjectRecord>, name: String, newStatus: ObjectHealth) {
