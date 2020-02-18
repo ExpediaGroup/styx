@@ -115,9 +115,7 @@ internal class HealthCheckMonitoringService(
                         else
                             previous
                     }
-
                 }
-
         futureRef.get().cancel(false)
     }
 
