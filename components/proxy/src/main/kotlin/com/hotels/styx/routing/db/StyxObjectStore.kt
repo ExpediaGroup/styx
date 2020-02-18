@@ -133,7 +133,7 @@ class StyxObjectStore<T> internal constructor(executor: ExecutorService): Object
             val existingValue = current.snapshot.get(key)
             result = computation(existingValue)
 
-            new = if (existingValue != null && result === null) {
+            new = if (existingValue !== null && result === null) {
                 //New value is null, removing key
                 current.map { it.minus(key) }
             } else if (result != existingValue) {
