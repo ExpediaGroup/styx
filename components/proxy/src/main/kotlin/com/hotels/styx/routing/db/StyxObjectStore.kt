@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -121,32 +121,36 @@ class StyxObjectStore<T> internal constructor(executor: ExecutorService): Object
      * @property computation a function that produces the new value
      * @return the previous value
      */
-    fun compute(key: String, computation: (T?) -> T): Optional<T> {
+    fun compute(key: String, computation: (T?) -> T?): Optional<T> {
         require(key.isNotEmpty()) { "ObjectStore compute: empty keys are not allowed." }
 
-            var current: IndexedSnapshot<T>
-            var result: T
-            var new: IndexedSnapshot<T>
+        var current: IndexedSnapshot<T>
+        var result: T?
+        var new: IndexedSnapshot<T>
 
-            do {
-                current = objects.get()
-                result = computation(current.snapshot.get(key))
+        do {
+            current = objects.get()
+            val existingValue = current.snapshot.get(key)
+            result = computation(existingValue)
 
-                new = if (result != current.snapshot.get(key)){
-                    // Consumer REPLACES an existing value or ADDS a new value
-                    current.map { it.plus(key, result) }
-                } else {
-                    // Consumer KEEPS the existing value
-                    current
-                }
-            } while(!objects.compareAndSet(current, new))
-
-            if (current != new) {
-                // Notify only if content changed:
-                notificationQueue.publishChange(new)
+            new = if (existingValue !== null && result === null) {
+                //New value is null, removing key
+                current.map { it.minus(key) }
+            } else if (result != existingValue) {
+                // Consumer REPLACES an existing value or ADDS a new value
+                current.map { it.plus(key, result) }
+            } else {
+                // Consumer KEEPS the existing value
+                current
             }
+        } while (!objects.compareAndSet(current, new))
 
-            return Optional.ofNullable(current.snapshot[key])
+        if (current != new) {
+            // Notify only if content changed:
+            notificationQueue.publishChange(new)
+        }
+
+        return Optional.ofNullable(current.snapshot[key])
     }
 
 
