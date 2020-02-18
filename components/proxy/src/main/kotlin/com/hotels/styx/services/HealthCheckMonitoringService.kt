@@ -206,16 +206,15 @@ internal fun objectHealthFrom(state: String?, health: Pair<String, Int>?) =
 
 private fun markObject(db: StyxObjectStore<RoutingObjectRecord>, name: String, newStatus: ObjectHealth) {
     db.compute(name) { previous ->
-        if (previous == null) {
-            null
-        } else {
-            val prevTags = previous.tags;
-            val newTags = reTag(prevTags, newStatus)
-            if (prevTags != newTags)
-                previous.copy(tags = newTags)
-            else
-                previous
+        if (previous === null) {
+            return@compute null
         }
+        val prevTags = previous.tags;
+        val newTags = reTag(prevTags, newStatus)
+        if (prevTags != newTags)
+            previous.copy(tags = newTags)
+        else
+            previous
     }
 }
 
