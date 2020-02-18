@@ -69,7 +69,7 @@ class NettyCookie extends DefaultCookie {
             buf.append(", HTTPOnly");
         }
         if (sameSite != null) {
-            buf.append(", SameSite=").append(sameSite.toString());
+            buf.append(", SameSite=").append(sameSite);
         }
         return buf.toString();
     }

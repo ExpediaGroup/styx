@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import io.kotlintest.matchers.boolean.shouldBeTrue
 import io.kotlintest.matchers.collections.shouldBeEmpty
 import io.kotlintest.matchers.collections.shouldNotBeEmpty
 import io.kotlintest.matchers.numerics.shouldBeGreaterThanOrEqual
-import io.kotlintest.matchers.numerics.shouldBeLessThanOrEqual
 import io.kotlintest.milliseconds
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
@@ -30,7 +29,6 @@ import io.kotlintest.specs.FeatureSpec
 import reactor.core.publisher.Flux
 import reactor.core.publisher.toFlux
 import reactor.test.StepVerifier
-import java.time.Duration
 import java.util.Optional
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
@@ -38,7 +36,6 @@ import java.util.concurrent.Executors
 import java.util.concurrent.Executors.newFixedThreadPool
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.SECONDS
-import java.util.concurrent.atomic.AtomicReference
 
 // We can remove AssertionError::class.java argument from the
 // calls to `eventually`, after this bug fix is released:
@@ -231,6 +228,19 @@ class StyxObjectStoreTest : FeatureSpec() {
                         .expectNextCount(1)
                         .then { db.compute("key") { currentEntry -> "new value" } }
                         .assertNext { it.get("key") shouldBe Optional.of("new value") }
+                        .thenCancel()
+                        .verify()
+            }
+
+            scenario("Deletes value if computation returns null") {
+                val db = StyxObjectStore<String>()
+
+                db.insert("key", "old value")
+
+                StepVerifier.create(db.watch())
+                        .expectNextCount(1)
+                        .then { db.compute("key") { currentEntry -> null } }
+                        .assertNext { it.entrySet().filter { it.key === "key" }.size shouldBe 0 }
                         .thenCancel()
                         .verify()
             }
