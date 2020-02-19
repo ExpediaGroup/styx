@@ -286,7 +286,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 }
             }
 
-            test("!TLS Settings modifications") {
+            test("TLS Settings modifications") {
                 writeOrigins("""
                     - id: appTls
                       path: "/"
@@ -295,6 +295,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                         sslProvider: JDK
                         protocols:
                           - TLSv1.1
+                      responseTimeoutMillis: 5000
                       origins:
                       - { id: "appTls-01", host: "localhost:${mockTlsv12Server.port()}" } 
                     """.trimIndent())
@@ -316,6 +317,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                         sslProvider: JDK
                         protocols:
                           - TLSv1.2
+                      responseTimeoutMillis: 5000
                       origins:
                       - { id: "appTls-01", host: "localhost:${mockTlsv12Server.port()}" } 
                     """.trimIndent())
