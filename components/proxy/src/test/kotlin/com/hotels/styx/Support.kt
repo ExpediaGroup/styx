@@ -35,6 +35,7 @@ import com.hotels.styx.routing.config.HttpInterceptorFactory
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.config.StyxObjectDefinition
 import com.hotels.styx.routing.config.StyxObjectReference
+import com.hotels.styx.routing.config2.StyxObject
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.RouteRefLookup
 import com.hotels.styx.server.HttpInterceptorContext
@@ -63,6 +64,19 @@ internal data class RoutingObjectFactoryContext(
     fun get() = RoutingObjectFactory.Context(routeRefLookup, environment, objectStore, objectFactories, plugins, INTERCEPTOR_FACTORIES, requestTracking)
 
 }
+
+internal data class RoutingObjectFactoryContext2(
+        val routeRefLookup: RouteRefLookup = DEFAULT_REFERENCE_LOOKUP,
+        val environment: Environment = Environment.Builder().build(),
+        val objectStore: StyxObjectStore<RoutingObjectRecord> = StyxObjectStore(),
+        val objectFactories: Map<String, StyxObject> = mapOf(),
+        val plugins: Iterable<NamedPlugin> = listOf(),
+        val interceptorFactories: Map<String, HttpInterceptorFactory> = INTERCEPTOR_FACTORIES,
+        val requestTracking: Boolean = false) {
+    fun get() = StyxObject.Context(routeRefLookup, environment, objectStore, objectFactories, plugins, INTERCEPTOR_FACTORIES, requestTracking)
+
+}
+
 
 fun WebServiceHandler.handle(request: HttpRequest) = this.handle(request, requestContext())
 

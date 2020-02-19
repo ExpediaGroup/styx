@@ -59,11 +59,13 @@ public final class Builtins {
         private final String typeName;
         private final T factory;
         private final Schema.FieldType schema;
+        private final Class<?> klass;
 
-        public StyxObjectDescriptor(String typeName, T factory, Schema.FieldType schema) {
+        public StyxObjectDescriptor(String typeName, T factory, Schema.FieldType schema, Class<?> klass) {
             this.typeName = typeName;
             this.factory = factory;
             this.schema = schema;
+            this.klass = klass;
         }
 
         public String type() {
@@ -78,12 +80,14 @@ public final class Builtins {
             return schema;
         }
 
+        public Class<?> klass() {
+            return this.klass;
+        }
     }
 
     public static final String STATIC_RESPONSE = "StaticResponseHandler";
     public static final String CONDITION_ROUTER = "ConditionRouter";
     public static final String INTERCEPTOR_PIPELINE = "InterceptorPipeline";
-    public static final String PROXY_TO_BACKEND = "ProxyToBackend";
     public static final String PATH_PREFIX_ROUTER = "PathPrefixRouter";
     public static final String HOST_PROXY = "HostProxy";
     public static final String LOAD_BALANCING_GROUP = "LoadBalancingGroup";
@@ -111,21 +115,21 @@ public final class Builtins {
 
     static {
         ROUTING_OBJECT_DESCRIPTORS = ImmutableMap.<String, StyxObjectDescriptor<RoutingObjectFactory>>builder()
-                .put(STATIC_RESPONSE, new StyxObjectDescriptor<>(     STATIC_RESPONSE,      new StaticResponseHandler.Factory(),   StaticResponseHandler.SCHEMA))
-                .put(CONDITION_ROUTER, new StyxObjectDescriptor<>(    CONDITION_ROUTER,     new ConditionRouter.Factory(),         ConditionRouter.SCHEMA))
-                .put(INTERCEPTOR_PIPELINE, new StyxObjectDescriptor<>(INTERCEPTOR_PIPELINE, new HttpInterceptorPipeline.Factory(), HttpInterceptorPipeline.SCHEMA))
-                .put(PATH_PREFIX_ROUTER, new StyxObjectDescriptor<>(  PATH_PREFIX_ROUTER,   new PathPrefixRouter.Factory(),        PathPrefixRouter.SCHEMA))
-                .put(HOST_PROXY, new StyxObjectDescriptor<>(          HOST_PROXY,           new HostProxy.Factory(),               HostProxy.SCHEMA))
-                .put(LOAD_BALANCING_GROUP, new StyxObjectDescriptor<>(LOAD_BALANCING_GROUP, new LoadBalancingGroup.Factory(),      LoadBalancingGroup.Companion.getSCHEMA()))
+                .put(STATIC_RESPONSE, new StyxObjectDescriptor<>(STATIC_RESPONSE, new StaticResponseHandler.Factory(), StaticResponseHandler.SCHEMA, StaticResponseHandler.class))
+                .put(CONDITION_ROUTER, new StyxObjectDescriptor<>(CONDITION_ROUTER, new ConditionRouter.Factory(), ConditionRouter.SCHEMA, ConditionRouter.class))
+                .put(INTERCEPTOR_PIPELINE, new StyxObjectDescriptor<>(INTERCEPTOR_PIPELINE, new HttpInterceptorPipeline.Factory(), HttpInterceptorPipeline.SCHEMA, HttpInterceptorPipeline.class))
+                .put(PATH_PREFIX_ROUTER, new StyxObjectDescriptor<>(PATH_PREFIX_ROUTER, new PathPrefixRouter.Factory(), PathPrefixRouter.SCHEMA, PathPrefixRouter.class))
+                .put(HOST_PROXY, new StyxObjectDescriptor<>(HOST_PROXY, new HostProxy.Factory(), HostProxy.SCHEMA, HostProxy.class))
+                .put(LOAD_BALANCING_GROUP, new StyxObjectDescriptor<>(LOAD_BALANCING_GROUP, new LoadBalancingGroup.Factory(), LoadBalancingGroup.Companion.getSCHEMA(), LoadBalancingGroup.class))
                 .build();
 
         SERVICE_PROVIDER_DESCRIPTORS = ImmutableMap.<String, StyxObjectDescriptor<ServiceProviderFactory>>builder()
-                .put(HEALTH_CHECK_MONITOR,            new StyxObjectDescriptor<>(HEALTH_CHECK_MONITOR,            new HealthCheckMonitoringServiceFactory(), HealthCheckMonitoringService.SCHEMA))
-                .put(YAML_FILE_CONFIGURATION_SERVICE, new StyxObjectDescriptor<>(YAML_FILE_CONFIGURATION_SERVICE, new YamlFileConfigurationServiceFactory(), YamlFileConfigurationService.SCHEMA))
+                .put(HEALTH_CHECK_MONITOR, new StyxObjectDescriptor<>(HEALTH_CHECK_MONITOR, new HealthCheckMonitoringServiceFactory(), HealthCheckMonitoringService.SCHEMA, HealthCheckMonitoringService.class))
+                .put(YAML_FILE_CONFIGURATION_SERVICE, new StyxObjectDescriptor<>(YAML_FILE_CONFIGURATION_SERVICE, new YamlFileConfigurationServiceFactory(), YamlFileConfigurationService.SCHEMA, YamlFileConfigurationService.class))
                 .build();
 
         SERVER_DESCRIPTORS = ImmutableMap.<String, StyxObjectDescriptor<StyxServerFactory>>builder()
-                .put("HttpServer",            new StyxObjectDescriptor<>("HttpServer", new StyxHttpServerFactory(), StyxHttpServer.SCHEMA))
+                .put("HttpServer", new StyxObjectDescriptor<>("HttpServer", new StyxHttpServerFactory(), StyxHttpServer.SCHEMA, StyxHttpServer.class))
                 .build();
     }
 
@@ -135,10 +139,9 @@ public final class Builtins {
     /**
      * Buiulds a routing object.
      *
-     * @param parents fully qualified attribute name
-     * @param context a context to styx environment
+     * @param parents    fully qualified attribute name
+     * @param context    a context to styx environment
      * @param configNode routing object configuration
-     *
      * @return a routing object
      */
     public static RoutingObject build(List<String> parents, RoutingObjectFactory.Context context, StyxObjectConfiguration configNode) {
@@ -162,9 +165,8 @@ public final class Builtins {
     /**
      * Builds a HTTP interceptor.
      *
-     * @param configBlock configuration
+     * @param configBlock          configuration
      * @param interceptorFactories built-in interceptor factories by name
-     *
      * @return an HTTP interceptor
      */
     public static HttpInterceptor build(StyxObjectConfiguration configBlock, Map<String, HttpInterceptorFactory> interceptorFactories) {
@@ -184,11 +186,10 @@ public final class Builtins {
     /**
      * Builds a Styx service.
      *
-     * @param name Styx service name
+     * @param name        Styx service name
      * @param providerDef Styx service object configuration
-     * @param factories Service provider factories by name
-     * @param context Routing object factory context
-     *
+     * @param factories   Service provider factories by name
+     * @param context     Routing object factory context
      * @return a Styx service
      */
     public static StyxService build(
@@ -205,14 +206,13 @@ public final class Builtins {
 
     /**
      * Builds a Styx server.
-     *
+     * <p>
      * Styx server is a service that can accept incoming traffic from the client hosts.
      *
-     * @param name Styx service name
+     * @param name      Styx service name
      * @param serverDef Styx service object configuration
      * @param factories Service provider factories by name
-     * @param context Routing object factory context
-     *
+     * @param context   Routing object factory context
      * @return a Styx service
      */
     public static InetServer buildServer(
