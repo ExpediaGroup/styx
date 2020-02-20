@@ -24,6 +24,8 @@ import com.hotels.styx.support.adminHostHeader
 import com.hotels.styx.support.testClient
 import com.hotels.styx.support.wait
 import io.kotlintest.Spec
+import io.kotlintest.eventually
+import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
 import java.nio.charset.StandardCharsets.UTF_8
@@ -80,15 +82,20 @@ class ServerObjectSpec : FeatureSpec() {
                 styxServer.restart()
 
                 // 1. Query server addresses from the admin interface
-                val httpPort = testClient.send(get("/admin/servers/myHttp/port").header(HOST, styxServer().adminHostHeader()).build())
-                        .wait()
-                        .bodyAs(UTF_8)
-                        .toInt()
+                val httpPort = eventually(2.seconds) {
+                    testClient.send(get("/admin/servers/myHttp/port").header(HOST, styxServer().adminHostHeader()).build())
+                            .wait()
+                            .bodyAs(UTF_8)
+                            .toInt()
+                }
 
-                val httpsPort = testClient.send(get("/admin/servers/myHttps/port").header(HOST, styxServer().adminHostHeader()).build())
-                        .wait()
-                        .bodyAs(UTF_8)
-                        .toInt()
+
+                val httpsPort = eventually(2.seconds) {
+                    testClient.send(get("/admin/servers/myHttps/port").header(HOST, styxServer().adminHostHeader()).build())
+                            .wait()
+                            .bodyAs(UTF_8)
+                            .toInt()
+                }
 
                 // 2. Send a probe to both of them
                 testClient.send(get("/").header(HOST, "localhost:$httpPort").build())
