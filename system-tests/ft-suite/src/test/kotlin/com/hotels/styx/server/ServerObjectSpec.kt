@@ -82,7 +82,7 @@ class ServerObjectSpec : FeatureSpec() {
                 styxServer.restart()
 
                 // 1. Query server addresses from the admin interface
-                val httpPort = eventually(2.seconds, AssertionError::class.java) {
+                val httpPort = eventually(2.seconds) {
                     testClient.send(get("/admin/servers/myHttp/port").header(HOST, styxServer().adminHostHeader()).build())
                             .wait()
                             .bodyAs(UTF_8)
@@ -90,7 +90,7 @@ class ServerObjectSpec : FeatureSpec() {
                 }
 
 
-                val httpsPort = eventually(2.seconds, AssertionError::class.java) {
+                val httpsPort = eventually(2.seconds) {
                     testClient.send(get("/admin/servers/myHttps/port").header(HOST, styxServer().adminHostHeader()).build())
                             .wait()
                             .bodyAs(UTF_8)
