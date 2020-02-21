@@ -1,4 +1,21 @@
 
+<a name="1.0.0-rc1"></a>
+## [1.0.0-rc1](https://github.com/HotelsDotCom/styx/compare/styx-1.0.0.beta9...1.0.0-rc1) (2020-02-11)
+
+### Pull Requests
+
+* Update CHANGELOG with beta9 release information ([#615](https://github.com/HotelsDotCom/styx/issues/615))
+* Hardening of e2e tests ([#611](https://github.com/HotelsDotCom/styx/issues/611))
+* Fix Http Message Logging Spec tests that created invalid cookies using the Styx API (no longer allowed) ([#610](https://github.com/HotelsDotCom/styx/issues/610))
+* YamlFileConfigurationService: Fix a threading issue ([#608](https://github.com/HotelsDotCom/styx/issues/608))
+* Add support for the SameSite cookie attribute (closes [#604](https://github.com/HotelsDotCom/styx/issues/604))  ([#607](https://github.com/HotelsDotCom/styx/issues/607))
+* Fix for CVE-2020-6858: Improper Neutralization of CRLF Sequences in HTTP Headers ('HTTP Response Splitting')
+* Bump checkstyle from 8.18 to 8.29 ([#603](https://github.com/HotelsDotCom/styx/issues/603))
+* Improve Url API ([#597](https://github.com/HotelsDotCom/styx/issues/597))
+* Deploy the version of the artifacts compiled with Jdk8 ([#601](https://github.com/HotelsDotCom/styx/issues/601))
+* Release artifacts from Travis ([#594](https://github.com/HotelsDotCom/styx/issues/594))
+
+
 <a name="styx-1.0.0.beta9"></a>
 ## [styx-1.0.0.beta9](https://github.com/HotelsDotCom/styx/compare/testtag...styx-1.0.0.beta9) (2020-01-30)
 
