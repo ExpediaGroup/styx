@@ -17,6 +17,7 @@ package com.hotels.styx
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.hotels.styx.api.extension.service.spi.StyxService
+import com.hotels.styx.routing.config2.StyxObject
 
 /**
  * A routing object and its associated configuration metadata.
@@ -24,7 +25,7 @@ import com.hotels.styx.api.extension.service.spi.StyxService
 data class StyxObjectRecord<T: StyxService>(
         val type: String,
         val tags: Set<String>,
-        val config: JsonNode,
+        val config: StyxObject<T>,
         val styxService: T)
 
 internal typealias ProviderObjectRecord = StyxObjectRecord<StyxService>

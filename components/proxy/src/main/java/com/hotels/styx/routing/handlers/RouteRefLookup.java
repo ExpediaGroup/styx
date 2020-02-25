@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -41,15 +41,15 @@ public interface RouteRefLookup {
      * A StyxObjectStore based route reference lookup function.
      */
     class RouteDbRefLookup implements RouteRefLookup {
-        private final StyxObjectStore<RoutingObjectRecord> routeDatabase;
+        private final StyxObjectStore<RoutingObjectRecord<RoutingObject>> routeDatabase;
 
-        public RouteDbRefLookup(StyxObjectStore<RoutingObjectRecord> routeDatabase) {
+        public RouteDbRefLookup(StyxObjectStore<RoutingObjectRecord<RoutingObject>> routeDatabase) {
             this.routeDatabase = requireNonNull(routeDatabase);
         }
 
         @Override
         public RoutingObject apply(StyxObjectReference route) {
-            Optional<RoutingObjectRecord> routingObjectRecord = this.routeDatabase.get(route.name());
+            Optional<RoutingObjectRecord<RoutingObject>> routingObjectRecord = this.routeDatabase.get(route.name());
 
             return routingObjectRecord
                     .map(it -> (RoutingObject) it.getRoutingObject())

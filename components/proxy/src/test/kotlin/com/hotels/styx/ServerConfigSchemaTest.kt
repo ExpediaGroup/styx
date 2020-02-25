@@ -314,36 +314,39 @@ class ServerConfigSchemaTest : DescribeSpec({
             validateServerConfiguration(yamlConfig(minimalConfig + """
                 routingObjects:
                   staticResponse:
-                    type: StaticResponseHandler
+                    type: StaticResponse
                     config:
                       status: 200
                       content: "Hello, world"
             """.trimIndent())) shouldBe Optional.empty()
         }
 
-        it("Detects configuration errors in nested routing objects") {
+        it("!Detects configuration errors in nested routing objects") {
             validateServerConfiguration(yamlConfig(minimalConfig + """
                     routingObjects:
                       staticResponse:
-                        type: StaticResponseHandler
+                        type: StaticResponse
                         config:
                           status: 200
                           content: "Hello, world"
                       condition:
-                        type: ConditionRouter
+                        type: PathPrefixRouter
                         config:
                           routes:
-                            - condition: "some condition"
-                              destination: "destination 1"
-                            - condition: "another condition"
-                              destination: "destination 2"
+                            - prefix: "/"
+                              destination:
+                                type: RefLookup
+                                config:
+                                  name: destination1
+                            - prefix: "/bar"
+                              destination: destination2
                           fallback:
-                            type: InterceptorPipeline
+                            type: Pipeline
                             config:
                               pipeline:
                                 - "bar"
                               handler:
-                                type: StaticResponseHandler
+                                type: StaticResponse
                                 config:
                                   status: 200
                                   contentS: "Fallback"

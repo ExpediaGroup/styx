@@ -173,7 +173,6 @@ public final class StyxServer extends AbstractService {
         services.add(toGuavaService(adminServer));
         services.add(toGuavaService(new PluginsManager("Sty§x-Plugins-Manager", components)));
         services.add(toGuavaService(new ServiceProviderMonitor<>("Styx-Service-Monitor", components.servicesDatabase())));
-        components.services().values().forEach(it -> services.add(toGuavaService(it)));
         this.phase1Services = new ServiceManager(services);
 
         ArrayList<Service> services2 = new ArrayList<>();

@@ -31,7 +31,6 @@ import com.hotels.styx.admin.handlers.PluginListHandler;
 import com.hotels.styx.admin.handlers.PluginToggleHandler;
 import com.hotels.styx.admin.handlers.ProviderRoutingHandler;
 import com.hotels.styx.admin.handlers.RoutingObjectHandler;
-import com.hotels.styx.admin.handlers.ServiceProviderHandler;
 import com.hotels.styx.admin.handlers.StartupConfigHandler;
 import com.hotels.styx.admin.handlers.StyxConfigurationHandler;
 import com.hotels.styx.admin.handlers.ThreadsHandler;
@@ -43,8 +42,10 @@ import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.common.http.handler.HttpAggregator;
 import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
+import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.RoutingObjectRecord;
-import com.hotels.styx.routing.config.RoutingObjectFactory;
+import com.hotels.styx.routing.config.Builtins;
+import com.hotels.styx.routing.config2.StyxObject;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.server.AdminHttpRouter;
@@ -79,11 +80,12 @@ public class AdminServerBuilder {
 
     private final Environment environment;
     private final Configuration configuration;
-    private final RoutingObjectFactory.Context routingObjectFactoryContext;
-    private final StyxObjectStore<RoutingObjectRecord> routeDatabase;
+    private final StyxObject.Context routingObjectFactoryContext;
+    private final StyxObjectStore<RoutingObjectRecord<RoutingObject>> routeDatabase;
     private final StyxObjectStore<StyxObjectRecord<StyxService>> providerDatabase;
     private final StyxObjectStore<StyxObjectRecord<InetServer>> serverDatabase;
     private final StartupConfig startupConfig;
+    private final Map<String, Builtins.StyxObjectDescriptor<StyxObject<RoutingObject>>> routingObjectDescriptors;
 
     public AdminServerBuilder(StyxServerComponents serverComponents) {
         this.environment = requireNonNull(serverComponents.environment());
@@ -93,6 +95,7 @@ public class AdminServerBuilder {
         this.configuration = this.environment.configuration();
         this.startupConfig = serverComponents.startupConfig();
         this.serverDatabase = requireNonNull(serverComponents.serversDatabase());
+        this.routingObjectDescriptors = requireNonNull(serverComponents.routingObjectDescriptors());
     }
 
     public InetServer build() {
@@ -133,13 +136,12 @@ public class AdminServerBuilder {
         httpRouter.aggregate("/admin/configuration/logging", new LoggingConfigurationHandler(startupConfig.logConfigLocation()));
         httpRouter.aggregate("/admin/configuration/startup", new StartupConfigHandler(startupConfig));
 
-        RoutingObjectHandler routingObjectHandler = new RoutingObjectHandler(routeDatabase, routingObjectFactoryContext);
+        RoutingObjectHandler routingObjectHandler = new RoutingObjectHandler(
+                routeDatabase,
+                routingObjectFactoryContext,
+                routingObjectDescriptors);
         httpRouter.aggregate("/admin/routing", routingObjectHandler);
         httpRouter.aggregate("/admin/routing/", routingObjectHandler);
-
-        ServiceProviderHandler serviceProvideHandler = new ServiceProviderHandler(providerDatabase);
-        httpRouter.aggregate("/admin/service/providers", serviceProvideHandler);
-        httpRouter.aggregate("/admin/service/provider/", serviceProvideHandler);
 
         httpRouter.aggregate("/admin/tasks/plugin/", new PluginToggleHandler(environment.plugins()));
 

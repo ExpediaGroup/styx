@@ -26,6 +26,8 @@ import com.hotels.styx.routing.handlers.RouteRefLookup
 import com.hotels.styx.support.Support.requestContext
 import com.hotels.styx.wait
 import io.kotlintest.specs.FunSpec
+import com.fasterxml.jackson.module.kotlin.readValue
+
 
 class PipelineTest : FunSpec({
 
@@ -36,7 +38,11 @@ class PipelineTest : FunSpec({
 
     // Check this: https://www.baeldung.com/jackson-call-default-serializer-from-custom-serializer
     test("serialises nested objects") {
-        val pipeline = Pipeline(Pipeline(RefLookup("abc")))
+        val pipeline = Pipeline(
+                pipeline = listOf("dio", "kes", "foo"),
+                handler = Pipeline(
+                        pipeline = listOf(),
+                        handler = RefLookup("abc")))
 
         val myPipeline = pipeline.build(RoutingObjectFactoryContext2().get())
 
@@ -48,9 +54,13 @@ class PipelineTest : FunSpec({
     }
 
     test("deserialises nested objects") {
-        val pipeline: StyxObject = objectMmapper(descriptors).readValue("""
+        val pipeline = objectMmapper(descriptors).readValue<StyxObject<RoutingObject>>("""
             type: Pipeline
-            config: 
+            config:
+              pipeline: 
+                - type: MeasureLatency
+                  config:
+                    endOfContent: true
               handler:
                 type: Pipeline
                 config:
@@ -58,15 +68,15 @@ class PipelineTest : FunSpec({
                     type: RefLookup
                     config:
                       name: abc
-            """.trimIndent(), StyxObject::class.java) as StyxObject
+            """.trimIndent())
 
         val routeDb = mapOf("abc" to RoutingObject { request, context -> Eventual.of(HttpResponse.response(HttpResponseStatus.OK).build().stream()) })
 
         val context = RoutingObjectFactoryContext2(routeRefLookup = RouteRefLookup { ref -> routeDb[ref.name()] })
 
-        val pipelineObject = pipeline.build(context.get())
+        val theActualRoutingObject = pipeline.build(context.get())
 
-        val response = pipelineObject
+        val response = theActualRoutingObject
                 .handle(get("/").build().stream(), requestContext())
                 .wait(1024)!!
 

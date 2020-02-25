@@ -100,7 +100,6 @@ class StyxServerProvider(
 
         var components = StyxServerComponents.Builder()
                 .styxConfig(StyxConfig.fromYaml(configuration, validateConfig))
-                .additionalRoutingObjects(additionalRoutingObjects)
                 .plugins(additionalPlugins)
 
         LOGGER.info("restarted with logging config: $loggingConfig")

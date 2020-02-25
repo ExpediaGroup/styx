@@ -18,35 +18,18 @@ package com.hotels.styx.routing.config;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.InetServer;
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.routing.RoutingObject;
-import com.hotels.styx.routing.db.StyxObjectStore;
-import com.hotels.styx.routing.handlers.ConditionRouter;
-import com.hotels.styx.routing.handlers.HostProxy;
-import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
-import com.hotels.styx.routing.handlers.LoadBalancingGroup;
-import com.hotels.styx.routing.handlers.PathPrefixRouter;
+import com.hotels.styx.routing.config2.StyxObject;
 import com.hotels.styx.routing.handlers.RouteRefLookup;
-import com.hotels.styx.routing.handlers.StaticResponseHandler;
-import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.routing.interceptors.RewriteInterceptor;
-import com.hotels.styx.servers.StyxHttpServer;
-import com.hotels.styx.servers.StyxHttpServerFactory;
-import com.hotels.styx.serviceproviders.ServiceProviderFactory;
-import com.hotels.styx.serviceproviders.StyxServerFactory;
-import com.hotels.styx.services.HealthCheckMonitoringService;
-import com.hotels.styx.services.HealthCheckMonitoringServiceFactory;
-import com.hotels.styx.services.YamlFileConfigurationService;
-import com.hotels.styx.services.YamlFileConfigurationServiceFactory;
 
-import java.util.List;
-import java.util.Map;
-
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
+import static com.hotels.styx.routing.handlers2.PathPrefixRouterKt.getPathPrefixRouterDescriptor;
+import static com.hotels.styx.routing.handlers2.RefLookupObjectKt.getRefLookupDescriptor;
+import static com.hotels.styx.routing.handlers2.StaticResponseKt.getStaticResponseDescriptor;
+import static com.hotels.styx.servers.StyxHttpServerObjectKt.getHttpServerDescriptor;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -57,23 +40,17 @@ public final class Builtins {
 
     public static class StyxObjectDescriptor<T> {
         private final String typeName;
-        private final T factory;
         private final Schema.FieldType schema;
         private final Class<?> klass;
 
-        public StyxObjectDescriptor(String typeName, T factory, Schema.FieldType schema, Class<?> klass) {
+        public StyxObjectDescriptor(String typeName, Schema.FieldType schema, Class<?> klass) {
             this.typeName = typeName;
-            this.factory = factory;
             this.schema = schema;
             this.klass = klass;
         }
 
         public String type() {
             return typeName;
-        }
-
-        public T factory() {
-            return factory;
         }
 
         public Schema.FieldType schema() {
@@ -85,21 +62,14 @@ public final class Builtins {
         }
     }
 
-    public static final String STATIC_RESPONSE = "StaticResponseHandler";
-    public static final String CONDITION_ROUTER = "ConditionRouter";
-    public static final String INTERCEPTOR_PIPELINE = "InterceptorPipeline";
+    public static final String REF_LOOKUP = "RefLookup";
+    public static final String STATIC_RESPONSE = "StaticResponse";
     public static final String PATH_PREFIX_ROUTER = "PathPrefixRouter";
-    public static final String HOST_PROXY = "HostProxy";
-    public static final String LOAD_BALANCING_GROUP = "LoadBalancingGroup";
-
-    public static final String HEALTH_CHECK_MONITOR = "HealthCheckMonitor";
-    public static final String YAML_FILE_CONFIGURATION_SERVICE = "YamlFileConfigurationService";
 
     public static final String REWRITE = "Rewrite";
 
-    public static final ImmutableMap<String, StyxObjectDescriptor<RoutingObjectFactory>> ROUTING_OBJECT_DESCRIPTORS;
-    public static final ImmutableMap<String, StyxObjectDescriptor<ServiceProviderFactory>> SERVICE_PROVIDER_DESCRIPTORS;
-    public static final ImmutableMap<String, StyxObjectDescriptor<StyxServerFactory>> SERVER_DESCRIPTORS;
+    public static final ImmutableMap<String, Builtins.StyxObjectDescriptor<StyxObject<RoutingObject>>> ROUTING_OBJECT_DESCRIPTORS;
+    public static final ImmutableMap<String, Builtins.StyxObjectDescriptor<StyxObject<InetServer>>> SERVER_DESCRIPTORS;
 
     public static final ImmutableMap<String, HttpInterceptorFactory> INTERCEPTOR_FACTORIES =
             ImmutableMap.of(REWRITE, new RewriteInterceptor.Factory());
@@ -114,116 +84,19 @@ public final class Builtins {
                     .stream());
 
     static {
-        ROUTING_OBJECT_DESCRIPTORS = ImmutableMap.<String, StyxObjectDescriptor<RoutingObjectFactory>>builder()
-                .put(STATIC_RESPONSE, new StyxObjectDescriptor<>(STATIC_RESPONSE, new StaticResponseHandler.Factory(), StaticResponseHandler.SCHEMA, StaticResponseHandler.class))
-                .put(CONDITION_ROUTER, new StyxObjectDescriptor<>(CONDITION_ROUTER, new ConditionRouter.Factory(), ConditionRouter.SCHEMA, ConditionRouter.class))
-                .put(INTERCEPTOR_PIPELINE, new StyxObjectDescriptor<>(INTERCEPTOR_PIPELINE, new HttpInterceptorPipeline.Factory(), HttpInterceptorPipeline.SCHEMA, HttpInterceptorPipeline.class))
-                .put(PATH_PREFIX_ROUTER, new StyxObjectDescriptor<>(PATH_PREFIX_ROUTER, new PathPrefixRouter.Factory(), PathPrefixRouter.SCHEMA, PathPrefixRouter.class))
-                .put(HOST_PROXY, new StyxObjectDescriptor<>(HOST_PROXY, new HostProxy.Factory(), HostProxy.SCHEMA, HostProxy.class))
-                .put(LOAD_BALANCING_GROUP, new StyxObjectDescriptor<>(LOAD_BALANCING_GROUP, new LoadBalancingGroup.Factory(), LoadBalancingGroup.Companion.getSCHEMA(), LoadBalancingGroup.class))
+        ROUTING_OBJECT_DESCRIPTORS = ImmutableMap.<String, Builtins.StyxObjectDescriptor<StyxObject<RoutingObject>>>builder()
+                .put(PATH_PREFIX_ROUTER,  getPathPrefixRouterDescriptor())
+                .put(REF_LOOKUP, getRefLookupDescriptor())
+                .put(STATIC_RESPONSE, getStaticResponseDescriptor())
                 .build();
 
-        SERVICE_PROVIDER_DESCRIPTORS = ImmutableMap.<String, StyxObjectDescriptor<ServiceProviderFactory>>builder()
-                .put(HEALTH_CHECK_MONITOR, new StyxObjectDescriptor<>(HEALTH_CHECK_MONITOR, new HealthCheckMonitoringServiceFactory(), HealthCheckMonitoringService.SCHEMA, HealthCheckMonitoringService.class))
-                .put(YAML_FILE_CONFIGURATION_SERVICE, new StyxObjectDescriptor<>(YAML_FILE_CONFIGURATION_SERVICE, new YamlFileConfigurationServiceFactory(), YamlFileConfigurationService.SCHEMA, YamlFileConfigurationService.class))
-                .build();
-
-        SERVER_DESCRIPTORS = ImmutableMap.<String, StyxObjectDescriptor<StyxServerFactory>>builder()
-                .put("HttpServer", new StyxObjectDescriptor<>("HttpServer", new StyxHttpServerFactory(), StyxHttpServer.SCHEMA, StyxHttpServer.class))
+        SERVER_DESCRIPTORS = ImmutableMap.<String, Builtins.StyxObjectDescriptor<StyxObject<InetServer>>>builder()
+                .put("HttpServer", getHttpServerDescriptor())
                 .build();
     }
 
     private Builtins() {
     }
 
-    /**
-     * Buiulds a routing object.
-     *
-     * @param parents    fully qualified attribute name
-     * @param context    a context to styx environment
-     * @param configNode routing object configuration
-     * @return a routing object
-     */
-    public static RoutingObject build(List<String> parents, RoutingObjectFactory.Context context, StyxObjectConfiguration configNode) {
-        if (configNode instanceof StyxObjectDefinition) {
-            StyxObjectDefinition configBlock = (StyxObjectDefinition) configNode;
-            String type = configBlock.type();
 
-            RoutingObjectFactory factory = context.objectFactories().get(type);
-            checkArgument(factory != null, format("Unknown handler type '%s'", type));
-
-            return factory.build(parents, context, configBlock);
-        } else if (configNode instanceof StyxObjectReference) {
-            return (request, httpContext) -> context.refLookup()
-                    .apply((StyxObjectReference) configNode)
-                    .handle(request, httpContext);
-        } else {
-            throw new UnsupportedOperationException(format("Unsupported configuration node type: '%s'", configNode.getClass().getName()));
-        }
-    }
-
-    /**
-     * Builds a HTTP interceptor.
-     *
-     * @param configBlock          configuration
-     * @param interceptorFactories built-in interceptor factories by name
-     * @return an HTTP interceptor
-     */
-    public static HttpInterceptor build(StyxObjectConfiguration configBlock, Map<String, HttpInterceptorFactory> interceptorFactories) {
-        if (configBlock instanceof StyxObjectDefinition) {
-            StyxObjectDefinition block = (StyxObjectDefinition) configBlock;
-            String type = block.type();
-
-            HttpInterceptorFactory constructor = interceptorFactories.get(type);
-            checkArgument(constructor != null, format("Unknown service provider type '%s'", type));
-
-            return constructor.build(block);
-        } else {
-            throw new UnsupportedOperationException("Routing config node must be an config block, not a reference");
-        }
-    }
-
-    /**
-     * Builds a Styx service.
-     *
-     * @param name        Styx service name
-     * @param providerDef Styx service object configuration
-     * @param factories   Service provider factories by name
-     * @param context     Routing object factory context
-     * @return a Styx service
-     */
-    public static StyxService build(
-            String name,
-            StyxObjectDefinition providerDef,
-            StyxObjectStore<StyxObjectRecord<StyxService>> serviceDb,
-            Map<String, ServiceProviderFactory> factories,
-            RoutingObjectFactory.Context context) {
-        ServiceProviderFactory constructor = factories.get(providerDef.type());
-        checkArgument(constructor != null, format("Unknown service provider type '%s' for '%s' provider", providerDef.type(), providerDef.name()));
-
-        return constructor.create(name, context, providerDef.config(), serviceDb);
-    }
-
-    /**
-     * Builds a Styx server.
-     * <p>
-     * Styx server is a service that can accept incoming traffic from the client hosts.
-     *
-     * @param name      Styx service name
-     * @param serverDef Styx service object configuration
-     * @param factories Service provider factories by name
-     * @param context   Routing object factory context
-     * @return a Styx service
-     */
-    public static InetServer buildServer(
-            String name,
-            StyxObjectDefinition serverDef,
-            StyxObjectStore<StyxObjectRecord<InetServer>> serverDb,
-            Map<String, StyxServerFactory> factories,
-            RoutingObjectFactory.Context context) {
-        StyxServerFactory constructor = factories.get(serverDef.type());
-        checkArgument(constructor != null, format("Unknown server type '%s' for '%s' provider", serverDef.type(), serverDef.name()));
-
-        return constructor.create(name, context, serverDef.config(), serverDb);
-    }
 }

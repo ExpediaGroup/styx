@@ -20,23 +20,67 @@ import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpInterceptor
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse
+import com.hotels.styx.config.schema.SchemaDsl.`object`
+import com.hotels.styx.config.schema.SchemaDsl.field
+import com.hotels.styx.config.schema.SchemaDsl.list
+import com.hotels.styx.config.schema.SchemaDsl.optional
+import com.hotels.styx.config.schema.SchemaDsl.or
+import com.hotels.styx.config.schema.SchemaDsl.routingObject
+import com.hotels.styx.config.schema.SchemaDsl.string
+import com.hotels.styx.proxy.plugin.NamedPlugin
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.routing.config.Builtins
+import com.hotels.styx.routing.config.StyxObjectReference
 import com.hotels.styx.routing.config2.StyxObject
+import com.hotels.styx.routing.handlers.StandardHttpPipeline
+import com.hotels.styx.routing.handlers.StandardHttpPipeline.HttpInterceptorChain
+import com.hotels.styx.server.track.CurrentRequestTracker
+import com.hotels.styx.server.track.RequestTracker
 
-internal class PipelineObject(private val handler: RoutingObject) : RoutingObject {
-    override fun handle(request: LiveHttpRequest, context: HttpInterceptor.Context): Eventual<LiveHttpResponse> = handler
-            .handle(request, context)
-}
+private class PipelineObject(val interceptors: List<NamedPlugin>, private val handler: RoutingObject, trackRequests: Boolean) : RoutingObject {
+    var requestTracker = if (trackRequests) CurrentRequestTracker.INSTANCE else RequestTracker.NO_OP
+    val pipeline = StandardHttpPipeline(interceptors, handler, requestTracker)
 
-val PipelineDescriptor = Builtins.StyxObjectDescriptor<StyxObject>("Pipeline", null, null, Pipeline::class.java)
-
-internal data class Pipeline(@JsonProperty val handler: StyxObject) : StyxObject {
-
-    override fun type() = PipelineDescriptor.type()
-
-    override fun build(context: StyxObject.Context): RoutingObject {
-        return PipelineObject(handler.build(context))
+    override fun handle(request: LiveHttpRequest, context: HttpInterceptor.Context): Eventual<LiveHttpResponse> {
+        val interceptorsChain = HttpInterceptorChain(interceptors, 0, handler, context, requestTracker)
+        return interceptorsChain.proceed(request)
     }
 }
 
+val PipelineDescriptor = Builtins.StyxObjectDescriptor<StyxObject<RoutingObject>>(
+        "Pipeline",
+        `object`(
+                optional("pipeline", or(string(), list(string()))),
+                field("handler", routingObject())
+        ),
+        Pipeline::class.java)
+
+// TODO:
+//   Custom deserialiser:
+//     - if `pipeline` is a String, then convert to List<String>
+//     - else serialise it as it is.
+
+data class Pipeline(
+        @JsonProperty val pipeline: List<String>,
+        @JsonProperty val handler: StyxObject<RoutingObject>) : StyxObject<RoutingObject> {
+    override fun type() = PipelineDescriptor.type()
+
+    override fun build(context: StyxObject.Context): RoutingObject {
+        // Support named references only. For now.
+
+        val plugins = context.plugins().toList()
+                .map { it.name() to it }
+                .toMap()
+
+        val interceptors: List<NamedPlugin> = pipeline.map { StyxObjectReference(it) }
+                .onEach {
+                    if (!plugins.containsKey(it.name())) {
+                        throw IllegalArgumentException("No such plugin or interceptor exists, name='${it.name()}'")
+                    }
+                }
+                .map { plugins.get(it.name())!! }
+
+        return PipelineObject(interceptors, handler.build(context), true)
+    }
+
+}

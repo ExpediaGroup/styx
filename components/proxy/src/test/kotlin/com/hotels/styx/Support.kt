@@ -53,27 +53,14 @@ fun routingObjectDef(text: String) = YamlConfig(text).`as`(StyxObjectDefinition:
 
 fun configBlock(text: String) = YamlConfig(text).`as`(JsonNode::class.java)
 
-internal data class RoutingObjectFactoryContext(
-        val routeRefLookup: RouteRefLookup = DEFAULT_REFERENCE_LOOKUP,
-        val environment: Environment = Environment.Builder().build(),
-        val objectStore: StyxObjectStore<RoutingObjectRecord> = StyxObjectStore(),
-        val objectFactories: Map<String, RoutingObjectFactory> = mapOf(),
-        val plugins: Iterable<NamedPlugin> = listOf(),
-        val interceptorFactories: Map<String, HttpInterceptorFactory> = INTERCEPTOR_FACTORIES,
-        val requestTracking: Boolean = false) {
-    fun get() = RoutingObjectFactory.Context(routeRefLookup, environment, objectStore, objectFactories, plugins, INTERCEPTOR_FACTORIES, requestTracking)
-
-}
-
 internal data class RoutingObjectFactoryContext2(
         val routeRefLookup: RouteRefLookup = DEFAULT_REFERENCE_LOOKUP,
         val environment: Environment = Environment.Builder().build(),
-        val objectStore: StyxObjectStore<RoutingObjectRecord> = StyxObjectStore(),
-        val objectFactories: Map<String, StyxObject> = mapOf(),
+        val objectStore: StyxObjectStore<RoutingObjectRecord<RoutingObject>> = StyxObjectStore(),
         val plugins: Iterable<NamedPlugin> = listOf(),
         val interceptorFactories: Map<String, HttpInterceptorFactory> = INTERCEPTOR_FACTORIES,
         val requestTracking: Boolean = false) {
-    fun get() = StyxObject.Context(routeRefLookup, environment, objectStore, objectFactories, plugins, INTERCEPTOR_FACTORIES, requestTracking)
+    fun get() = StyxObject.Context(routeRefLookup, environment, objectStore, plugins, INTERCEPTOR_FACTORIES, requestTracking)
 
 }
 
@@ -137,14 +124,6 @@ object DontCapture : ArgumentCapture()
 fun failingMockObject() = mockk<RoutingObject> {
     every { handle(any(), any()) } returns Eventual.error(RuntimeException("Error occurred!"))
     every { stop() } returns CompletableFuture.completedFuture(null)
-}
-
-/**
- * Creates a mock RoutingObjectFactory. Takes a list of routing objects as its sole argument.
- * Each factory invocation will return next object from the list.
- */
-fun mockObjectFactory(objects: List<RoutingObject>) = mockk<RoutingObjectFactory> {
-    every { build(any(), any(), any()) } returnsMany objects
 }
 
 

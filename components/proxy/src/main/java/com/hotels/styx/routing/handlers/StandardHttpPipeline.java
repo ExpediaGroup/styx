@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * The pipeline consists of a chain of interceptors followed by a handler.
  */
-class StandardHttpPipeline implements HttpHandler {
+public class StandardHttpPipeline implements HttpHandler {
     private final List<HttpInterceptor> interceptors;
     private final HttpHandler handler;
     private final RequestTracker requestTracker;
@@ -55,14 +55,14 @@ class StandardHttpPipeline implements HttpHandler {
         return interceptorsChain.proceed(request);
     }
 
-    static final class HttpInterceptorChain implements HttpInterceptor.Chain {
+    public static final class HttpInterceptorChain implements HttpInterceptor.Chain {
         private final List<HttpInterceptor> interceptors;
         private final int index;
         private final HttpHandler client;
         private final HttpInterceptor.Context context;
         private final RequestTracker requestTracker;
 
-        HttpInterceptorChain(List<HttpInterceptor> interceptors, int index, HttpHandler client, HttpInterceptor.Context context, RequestTracker requestTracker) {
+        public HttpInterceptorChain(List<HttpInterceptor> interceptors, int index, HttpHandler client, HttpInterceptor.Context context, RequestTracker requestTracker) {
             this.interceptors = interceptors;
             this.index = index;
             this.client = client;

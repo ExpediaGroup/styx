@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import com.hotels.styx.Environment;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.RoutingObjectRecord;
+import com.hotels.styx.routing.config2.StyxObject;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.RouteRefLookup;
 
@@ -57,7 +58,7 @@ public interface RoutingObjectFactory {
         private final RouteRefLookup refLookup;
         private final Environment environment;
         private final StyxObjectStore<RoutingObjectRecord> routeDb;
-        private final Map<String, RoutingObjectFactory> objectFactories;
+        private final Map<String, Builtins.StyxObjectDescriptor<StyxObject>> objectFactories;
         private final Iterable<NamedPlugin> plugins;
         private final Map<String, HttpInterceptorFactory> interceptorFactories;
         private final boolean requestTracking;
@@ -66,7 +67,7 @@ public interface RoutingObjectFactory {
                 RouteRefLookup refLookup,
                 Environment environment,
                 StyxObjectStore<RoutingObjectRecord> routeDb,
-                Map<String, RoutingObjectFactory> objectFactories,
+                Map<String, Builtins.StyxObjectDescriptor<StyxObject>> objectFactories,
                 Iterable<NamedPlugin> plugins,
                 Map<String, HttpInterceptorFactory> interceptorFactories,
                 boolean requestTracking) {
@@ -87,7 +88,7 @@ public interface RoutingObjectFactory {
             return routeDb;
         }
 
-        public Map<String, RoutingObjectFactory> objectFactories() {
+        public Map<String, Builtins.StyxObjectDescriptor<StyxObject>> objectFactories() {
             return objectFactories;
         }
 

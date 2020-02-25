@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,20 +15,20 @@
  */
 package com.hotels.styx.routing
 
-import com.fasterxml.jackson.databind.JsonNode
+import com.hotels.styx.routing.config2.StyxObject
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter.ISO_DATE_TIME
 
 /**
  * A routing object and its associated configuration metadata.
  */
-internal data class RoutingObjectRecord(
+internal data class RoutingObjectRecord<T>(
         val type: String,
         val tags: Set<String>,
-        val config: JsonNode,
+        val config: StyxObject<T>,
         val routingObject: RoutingMetadataDecorator) {
     companion object {
-        fun create(type: String, tags: Set<String>, config: JsonNode, routingObject: RoutingObject) = RoutingObjectRecord(
+        fun <T> create(type: String, tags: Set<String>, config: StyxObject<T>, routingObject: RoutingObject) = RoutingObjectRecord(
                 type,
                 tags + "created:${timestamp()}",
                 config,
@@ -39,6 +39,12 @@ internal data class RoutingObjectRecord(
             .filter { it.startsWith("created:") }
             .first()
 }
+
+internal data class RoutingObjectYamlRecord<T>(
+        val type: String,
+        val tags: Set<String>,
+        val config: StyxObject<T>
+)
 
 private fun timestamp(): String {
     return LocalDateTime.now().format(ISO_DATE_TIME)

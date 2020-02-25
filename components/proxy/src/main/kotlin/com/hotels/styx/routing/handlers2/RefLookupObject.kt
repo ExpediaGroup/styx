@@ -21,25 +21,31 @@ import com.hotels.styx.api.HttpInterceptor
 import com.hotels.styx.api.HttpResponseStatus.NOT_FOUND
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse
+import com.hotels.styx.config.schema.SchemaDsl
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.Builtins
 import com.hotels.styx.routing.config2.StyxObject
 import com.hotels.styx.routing.db.StyxObjectStore
 
-internal class RefLookupObject(private val name: String, private val routeDb: StyxObjectStore<RoutingObjectRecord>) : RoutingObject {
+internal class RefLookupObject(private val name: String, private val routeDb: StyxObjectStore<RoutingObjectRecord<RoutingObject>>) : RoutingObject {
     override fun handle(request: LiveHttpRequest, context: HttpInterceptor.Context): Eventual<LiveHttpResponse> = routeDb
             .get(name)
             .map { it.routingObject.handle(request, context) }
             .orElse(Eventual.of(LiveHttpResponse.response(NOT_FOUND).build()))
 }
 
-val RefLookupDescriptor = Builtins.StyxObjectDescriptor<StyxObject>("RefLookup", null, null, RefLookup::class.java)
+val RefLookupDescriptor = Builtins.StyxObjectDescriptor<StyxObject<RoutingObject>>(
+        "RefLookup",
+        SchemaDsl.`object`(
+                SchemaDsl.field("name", SchemaDsl.string())
+        ),
+        RefLookup::class.java)
 
-internal data class RefLookup(@JsonProperty val name: String): StyxObject {
+internal data class RefLookup(@JsonProperty val name: String) : StyxObject<RoutingObject> {
     override fun type() = RefLookupDescriptor.type()
 
     override fun build(context: StyxObject.Context): RoutingObject {
-        return RefLookupObject("name", context.routeDb())
+        return RefLookupObject(name, context.routeDb())
     }
 }

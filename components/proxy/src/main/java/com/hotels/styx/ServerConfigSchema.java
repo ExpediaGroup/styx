@@ -38,7 +38,6 @@ import static com.hotels.styx.config.validator.DocumentFormat.newDocument;
 import static com.hotels.styx.routing.config.Builtins.INTERCEPTOR_SCHEMAS;
 import static com.hotels.styx.routing.config.Builtins.ROUTING_OBJECT_DESCRIPTORS;
 import static com.hotels.styx.routing.config.Builtins.SERVER_DESCRIPTORS;
-import static com.hotels.styx.routing.config.Builtins.SERVICE_PROVIDER_DESCRIPTORS;
 
 final class ServerConfigSchema {
 
@@ -162,9 +161,8 @@ final class ServerConfigSchema {
                                     optional("config", union("type")))))
                     ));
 
-        ROUTING_OBJECT_DESCRIPTORS.forEach((ignore, bar) -> STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER.typeExtension(bar.type(), bar.schema()));
-        SERVICE_PROVIDER_DESCRIPTORS.forEach((ignore, bar) -> STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER.typeExtension(bar.type(), bar.schema()));
-        SERVER_DESCRIPTORS.forEach((ignore, bar) -> STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER.typeExtension(bar.type(), bar.schema()));
+        ROUTING_OBJECT_DESCRIPTORS.forEach((na, it) -> STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER.typeExtension(it.type(), it.schema()));
+        SERVER_DESCRIPTORS.forEach((na, it) -> STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER.typeExtension(it.type(), it.schema()));
 
         INTERCEPTOR_SCHEMAS.forEach(STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER::typeExtension);
     }

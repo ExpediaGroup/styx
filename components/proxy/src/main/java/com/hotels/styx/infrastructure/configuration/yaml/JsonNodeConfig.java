@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ public class JsonNodeConfig implements Configuration {
      * @param rootNode a JSON node
      * @param mapper   mapper to convert JSON into objects
      */
-    protected JsonNodeConfig(JsonNode rootNode, ObjectMapper mapper) {
+    public JsonNodeConfig(JsonNode rootNode, ObjectMapper mapper) {
         this.rootNode = requireNonNull(rootNode);
         this.mapper = addStyxMixins(requireNonNull(mapper));
     }
@@ -92,7 +92,7 @@ public class JsonNodeConfig implements Configuration {
     }
 
     private <T> T parseNodeToClass(JsonNode node, Class<T> tClass) {
-        JsonParser parser = node.traverse();
+        JsonParser parser = node.traverse(mapper);
 
         try {
             return mapper.readValue(parser, tClass);

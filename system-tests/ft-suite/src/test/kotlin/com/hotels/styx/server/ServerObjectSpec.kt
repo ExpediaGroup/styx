@@ -24,6 +24,8 @@ import com.hotels.styx.support.adminHostHeader
 import com.hotels.styx.support.testClient
 import com.hotels.styx.support.wait
 import io.kotlintest.Spec
+import io.kotlintest.eventually
+import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
 import java.nio.charset.StandardCharsets.UTF_8
@@ -40,16 +42,37 @@ class ServerObjectSpec : FeatureSpec() {
 
                 routingObjects:
                   secure:
-                    type: StaticResponseHandler
+                    type: StaticResponse
                     config:
                       status: 200
                       content: "secure"
                       
                   nonSecure:
-                    type: StaticResponseHandler
+                    type: StaticResponse
                     config:
                       status: 200
                       content: "non-secure"
+
+                  nonSecure2:
+                    type: StaticResponse
+                    config:
+                      status: 200
+                      content: "non-secure 2"
+                      
+                  pathMapper:
+                    type: PathPrefixRouter
+                    config:
+                      routes:
+                        - prefix: "/"
+                          destination:
+                              type: RefLookup
+                              config:
+                                name: nonSecure
+                        - prefix: "/2/"
+                          destination:
+                              type: RefLookup
+                              config:
+                                name: nonSecure2
                       
                 servers:
                   myHttp:
@@ -57,6 +80,12 @@ class ServerObjectSpec : FeatureSpec() {
                     config:
                       port: 0
                       handler: nonSecure
+                      
+                  pathPrefixServer:
+                    type: HttpServer
+                    config:
+                      port: 0
+                      handler: pathMapper
                         
                   myHttps:
                     type: HttpServer
@@ -85,10 +114,19 @@ class ServerObjectSpec : FeatureSpec() {
                         .bodyAs(UTF_8)
                         .toInt()
 
-                val httpsPort = testClient.send(get("/admin/servers/myHttps/port").header(HOST, styxServer().adminHostHeader()).build())
-                        .wait()
-                        .bodyAs(UTF_8)
-                        .toInt()
+                val httpsPort = eventually(2.seconds) {
+                    testClient.send(get("/admin/servers/myHttps/port").header(HOST, styxServer().adminHostHeader()).build())
+                            .wait()
+                            .bodyAs(UTF_8)
+                            .toInt()
+                }
+
+                val httpPort2 = eventually(2.seconds) {
+                    testClient.send(get("/admin/servers/pathPrefixServer/port").header(HOST, styxServer().adminHostHeader()).build())
+                            .wait()
+                            .bodyAs(UTF_8)
+                            .toInt()
+                }
 
                 // 2. Send a probe to both of them
                 testClient.send(get("/").header(HOST, "localhost:$httpPort").build())
@@ -103,6 +141,22 @@ class ServerObjectSpec : FeatureSpec() {
                         .let {
                             it.status() shouldBe OK
                             it.bodyAs(UTF_8) shouldBe "secure"
+                        }
+
+
+                testClient.send(get("/1/bar").header(HOST, "localhost:$httpPort2").build())
+                        .wait()!!
+                        .let {
+                            it.status() shouldBe OK
+                            it.bodyAs(UTF_8) shouldBe "non-secure"
+                        }
+
+
+                testClient.send(get("/2/bar").header(HOST, "localhost:$httpPort2").build())
+                        .wait()!!
+                        .let {
+                            it.status() shouldBe OK
+                            it.bodyAs(UTF_8) shouldBe "non-secure 2"
                         }
             }
         }

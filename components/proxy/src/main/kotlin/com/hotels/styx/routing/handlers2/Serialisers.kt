@@ -21,18 +21,35 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.hotels.styx.InetServer
 import com.hotels.styx.infrastructure.configuration.json.ObjectMappers
+import com.hotels.styx.routing.RoutingObject
+import com.hotels.styx.routing.RoutingObjectYamlRecord
 import com.hotels.styx.routing.config.Builtins
 import com.hotels.styx.routing.config2.StyxObject
-import com.hotels.styx.routing.config2.StyxObjectDeserialiser
+import com.hotels.styx.routing.config2.RoutingObjectDeserialiser
+import com.hotels.styx.routing.config2.RoutingObjectRecordDeserialiser
+import com.hotels.styx.routing.config2.ServerObjectDeserialiser
+import com.hotels.styx.routing.config2.ServerObjectRecordDeserialiser
 import com.hotels.styx.routing.config2.StyxObjectSerialiserModifier
 
 
-fun objectMmapper(descriptors: Map<String, Builtins.StyxObjectDescriptor<StyxObject>>) = ObjectMappers.addStyxMixins(ObjectMapper(YAMLFactory()))
+fun objectMmapper(descriptors: Map<String, Builtins.StyxObjectDescriptor<StyxObject<RoutingObject>>>) = ObjectMappers.addStyxMixins(ObjectMapper(YAMLFactory()))
         .disable(FAIL_ON_UNKNOWN_PROPERTIES)
         .registerModule(KotlinModule())
         .configure(AUTO_CLOSE_SOURCE, true)
         .registerModule(SimpleModule().also {
             it.setSerializerModifier(StyxObjectSerialiserModifier())
-            it.addDeserializer(StyxObject::class.java, StyxObjectDeserialiser(descriptors))
+            it.addDeserializer(StyxObject::class.java, RoutingObjectDeserialiser(descriptors))
+            it.addDeserializer(RoutingObjectYamlRecord::class.java, RoutingObjectRecordDeserialiser(descriptors))
+        })
+
+fun serverObjectMmapper(descriptors: Map<String, Builtins.StyxObjectDescriptor<StyxObject<InetServer>>>) = ObjectMappers.addStyxMixins(ObjectMapper(YAMLFactory()))
+        .disable(FAIL_ON_UNKNOWN_PROPERTIES)
+        .registerModule(KotlinModule())
+        .configure(AUTO_CLOSE_SOURCE, true)
+        .registerModule(SimpleModule().also {
+            it.setSerializerModifier(StyxObjectSerialiserModifier())
+            it.addDeserializer(StyxObject::class.java, ServerObjectDeserialiser(descriptors))
+            it.addDeserializer(RoutingObjectYamlRecord::class.java, ServerObjectRecordDeserialiser(descriptors))
         })

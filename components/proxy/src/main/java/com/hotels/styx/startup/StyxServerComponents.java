@@ -16,10 +16,10 @@
 package com.hotels.styx.startup;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.AsyncEventBus;
 import com.hotels.styx.Environment;
 import com.hotels.styx.InetServer;
@@ -37,15 +37,16 @@ import com.hotels.styx.common.format.SanitisedHttpHeaderFormatter;
 import com.hotels.styx.common.format.SanitisedHttpMessageFormatter;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
+import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.RoutingObjectRecord;
+import com.hotels.styx.routing.RoutingObjectYamlRecord;
 import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.Builtins.StyxObjectDescriptor;
-import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
+import com.hotels.styx.routing.config2.StyxObject;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.RouteRefLookup.RouteDbRefLookup;
 import com.hotels.styx.serviceproviders.ServiceProviderFactory;
-import com.hotels.styx.serviceproviders.StyxServerFactory;
 import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -53,12 +54,13 @@ import org.slf4j.Logger;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static com.hotels.styx.StartupConfig.newStartupConfigBuilder;
 import static com.hotels.styx.Version.readVersionFrom;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
 import static com.hotels.styx.routing.config.Builtins.INTERCEPTOR_FACTORIES;
+import static com.hotels.styx.routing.handlers2.SerialisersKt.objectMmapper;
+import static com.hotels.styx.routing.handlers2.SerialisersKt.serverObjectMmapper;
 import static com.hotels.styx.startup.ServicesLoader.SERVICES_FROM_CONFIG;
 import static com.hotels.styx.startup.StyxServerComponents.LoggingSetUp.DO_NOT_MODIFY;
 import static com.hotels.styx.startup.extensions.PluginLoadingForStartup.loadPlugins;
@@ -73,25 +75,25 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public class StyxServerComponents {
     private final Environment environment;
-    private final Map<String, StyxService> services;
+    //    private final Map<String, StyxService> services;
     private final List<NamedPlugin> plugins;
-    private final StyxObjectStore<RoutingObjectRecord> routeObjectStore = new StyxObjectStore<>();
-    private final StyxObjectStore<StyxObjectRecord<StyxService>> providerObjectStore = new StyxObjectStore<>();
+    private final StyxObjectStore<RoutingObjectRecord<RoutingObject>> routeObjectStore = new StyxObjectStore<>();
     private final StyxObjectStore<StyxObjectRecord<InetServer>> serverObjectStore = new StyxObjectStore<>();
-    private final RoutingObjectFactory.Context routingObjectContext;
+    private final StyxObjectStore<StyxObjectRecord<StyxService>> providerObjectStore = new StyxObjectStore<>();
     private final StartupConfig startupConfig;
 
     private static final Logger LOGGER = getLogger(StyxServerComponents.class);
     private final NettyExecutor executor;
     private final String httpPipeline;
+    private final StyxObject.Context styxObjectContext;
+    private final Map<String, StyxObjectDescriptor<StyxObject<RoutingObject>>> routingObjectDescriptors;
 
     private StyxServerComponents(Builder builder) {
         StyxConfig styxConfig = requireNonNull(builder.styxConfig);
 
         this.startupConfig = builder.startupConfig == null ? newStartupConfigBuilder().build() : builder.startupConfig;
-        Map<String, StyxObjectDescriptor<RoutingObjectFactory>> routingObjectFactories = builder.routingObjectDescriptors;
-        Map<String, StyxObjectDescriptor<ServiceProviderFactory>> serviceProviderFactories = builder.serviceProviderDescriptors;
-        Map<String, StyxObjectDescriptor<StyxServerFactory>> styxServerFactories = builder.styxServerDescriptors;
+        routingObjectDescriptors = builder.routingObjectDescriptors;
+        Map<String, ? extends StyxObjectDescriptor<StyxObject<InetServer>>> serverObjectDescriptors = builder.styxServerDescriptors;
 
         this.environment = newEnvironment(styxConfig, builder.metricRegistry);
         builder.loggingSetUp.setUp(environment);
@@ -104,19 +106,15 @@ public class StyxServerComponents {
                 ? loadPlugins(environment)
                 : loadPlugins(environment, builder.configuredPluginFactories);
 
-        this.routingObjectContext = new RoutingObjectFactory.Context(
+        this.styxObjectContext = new StyxObject.Context(
                 new RouteDbRefLookup(this.routeObjectStore),
                 environment,
                 routeObjectStore,
-                routingObjectFactories.values().stream()
-                        .collect(Collectors.toMap(StyxObjectDescriptor::type, StyxObjectDescriptor::factory)),
                 plugins,
                 INTERCEPTOR_FACTORIES,
                 false);
 
         this.httpPipeline = builder.httpHandler;
-
-        this.services = builder.servicesLoader.load(environment, routeObjectStore);
 
         this.plugins.forEach(plugin -> this.environment.plugins().add(plugin));
 
@@ -129,50 +127,57 @@ public class StyxServerComponents {
 
         this.environment.configuration().get("routingObjects", JsonNode.class)
                 // Deserialise to StyxObjectDefinition block:
-                .map(StyxServerComponents::readComponents)
+                .map(a -> readComponents(a, objectMmapper(routingObjectDescriptors)))
                 .orElse(ImmutableMap.of())
-                .forEach((name, definition) -> {
+                .forEach((name, jsonNode) -> {
                     // Insert each StyxObjectDefinition to the database:
-                    routeObjectStore.insert(name, RoutingObjectRecord.Companion.create(
-                            definition.type(),
-                            ImmutableSet.copyOf(definition.tags()),
-                            definition.config(),
-                            Builtins.build(ImmutableList.of(name), routingObjectContext, definition))
-                    ).ifPresent(previous -> previous.getRoutingObject().stop());
-                });
+                    RoutingObjectYamlRecord<RoutingObject> yamlRecord = (RoutingObjectYamlRecord<RoutingObject>) new JsonNodeConfig(
+                            jsonNode,
+                            objectMmapper(routingObjectDescriptors))
+                            .as(RoutingObjectYamlRecord.class);
 
-        this.environment.configuration().get("providers", JsonNode.class)
-                .map(StyxServerComponents::readComponents)
-                .orElse(ImmutableMap.of())
-                .forEach((name, definition) -> {
-                    LOGGER.warn("Loading provider: " + name + ": " + definition);
-                    StyxService provider = Builtins.build(name,
-                            definition,
-                            providerObjectStore,
-                            serviceProviderFactories.values().stream()
-                                    .collect(Collectors.toMap(StyxObjectDescriptor::type, StyxObjectDescriptor::factory)),
-                            routingObjectContext);
-                    StyxObjectRecord<StyxService> record = new StyxObjectRecord<>(definition.type(), ImmutableSet.copyOf(definition.tags()), definition.config(), provider);
-                    providerObjectStore.insert(name, record);
+                    RoutingObject routingObject = yamlRecord.getConfig().build(styxObjectContext);
+
+                    routeObjectStore.insert(name, RoutingObjectRecord.Companion.create(
+                            yamlRecord.getType(),
+                            yamlRecord.getTags(),
+                            yamlRecord.getConfig(),
+                            routingObject
+                    )).ifPresent(previous -> previous.getRoutingObject().stop());
                 });
 
         this.environment.configuration().get("servers", JsonNode.class)
-                .map(StyxServerComponents::readComponents)
+                .map(a -> readComponents(a, serverObjectMmapper(serverObjectDescriptors)))
                 .orElse(ImmutableMap.of())
-                .forEach((name, definition) -> {
-                    LOGGER.warn("Loading styx server: " + name + ": " + definition);
-                    InetServer provider = Builtins.buildServer(name,
-                            definition,
-                            serverObjectStore,
-                            styxServerFactories.values().stream()
-                                    .collect(Collectors.toMap(StyxObjectDescriptor::type, StyxObjectDescriptor::factory)),
-                            routingObjectContext);
-                    StyxObjectRecord<InetServer> record = new StyxObjectRecord<>(definition.type(), ImmutableSet.copyOf(definition.tags()), definition.config(), provider);
+                .forEach((name, jsonNode) -> {
+                    LOGGER.warn("Loading styx server: " + name + ": " + jsonNode);
+
+                    RoutingObjectYamlRecord<InetServer> yamlRecord = (RoutingObjectYamlRecord<InetServer>) new JsonNodeConfig(
+                            jsonNode,
+                            serverObjectMmapper(serverObjectDescriptors))
+                            .as(RoutingObjectYamlRecord.class);
+
+                    InetServer serverObject = yamlRecord.getConfig().build(styxObjectContext);
+
+                    StyxObjectRecord<InetServer> record = new StyxObjectRecord<>(
+                            yamlRecord.getType(),
+                            yamlRecord.getTags(),
+                            yamlRecord.getConfig(),
+                            serverObject);
+
                     serverObjectStore.insert(name, record);
                 });
     }
 
-    private static Map<String, StyxObjectDefinition> readComponents(JsonNode root) {
+    private static Map<String, JsonNode> readComponents(JsonNode root, ObjectMapper mapper) {
+        Map<String, JsonNode> handlers = new HashMap<>();
+
+        root.fields().forEachRemaining(entry -> handlers.put(entry.getKey(), entry.getValue()));
+
+        return handlers;
+    }
+
+    private static Map<String, StyxObjectDefinition> oldReadComponents(JsonNode root) {
         Map<String, StyxObjectDefinition> handlers = new HashMap<>();
 
         root.fields().forEachRemaining(
@@ -190,15 +195,15 @@ public class StyxServerComponents {
         return environment;
     }
 
-    public Map<String, StyxService> services() {
-        return services;
+    public Map<String, StyxObjectDescriptor<StyxObject<RoutingObject>>> routingObjectDescriptors() {
+        return routingObjectDescriptors;
     }
 
     public List<NamedPlugin> plugins() {
         return plugins;
     }
 
-    public StyxObjectStore<RoutingObjectRecord> routeDatabase() {
+    public StyxObjectStore<RoutingObjectRecord<RoutingObject>> routeDatabase() {
         return this.routeObjectStore;
     }
 
@@ -210,8 +215,8 @@ public class StyxServerComponents {
         return this.serverObjectStore;
     }
 
-    public RoutingObjectFactory.Context routingObjectFactoryContext() {
-        return this.routingObjectContext;
+    public StyxObject.Context routingObjectFactoryContext() {
+        return this.styxObjectContext;
     }
 
     public String httpPipeline() {
@@ -258,13 +263,12 @@ public class StyxServerComponents {
         private MetricRegistry metricRegistry = new CodaHaleMetricRegistry();
         private StartupConfig startupConfig;
 
-        private final Map<String, StyxObjectDescriptor<RoutingObjectFactory>> routingObjectDescriptors = new HashMap<>();
+        private final Map<String, StyxObjectDescriptor<StyxObject<RoutingObject>>> routingObjectDescriptors = new HashMap<>();
         public final Map<String, StyxObjectDescriptor<ServiceProviderFactory>> serviceProviderDescriptors = new HashMap<>();
-        public final Map<String, StyxObjectDescriptor<StyxServerFactory>> styxServerDescriptors = new HashMap<>();
+        public final Map<String, StyxObjectDescriptor<StyxObject<InetServer>>> styxServerDescriptors = new HashMap<>();
 
         public Builder() {
             routingObjectDescriptors.putAll(Builtins.ROUTING_OBJECT_DESCRIPTORS);
-            serviceProviderDescriptors.putAll(Builtins.SERVICE_PROVIDER_DESCRIPTORS);
             styxServerDescriptors.putAll(Builtins.SERVER_DESCRIPTORS);
         }
 
@@ -332,7 +336,7 @@ public class StyxServerComponents {
         }
 
         @NotNull
-        public Builder routingObjectDescriptor(@NotNull StyxObjectDescriptor<RoutingObjectFactory> descriptor) {
+        public Builder routingObjectDescriptor(@NotNull StyxObjectDescriptor<StyxObject<RoutingObject>> descriptor) {
             routingObjectDescriptors.put(descriptor.type(), descriptor);
             return this;
         }
@@ -344,7 +348,7 @@ public class StyxServerComponents {
         }
 
         @NotNull
-        public Builder styxServerDescriptor(@NotNull StyxObjectDescriptor<StyxServerFactory> descriptor) {
+        public Builder styxServerDescriptor(@NotNull StyxObjectDescriptor<StyxObject<InetServer>> descriptor) {
             styxServerDescriptors.put(descriptor.type(), descriptor);
             return this;
         }

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.HttpInterceptorFactory;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.RouteRefLookup;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
@@ -31,7 +32,7 @@ import static java.util.Objects.requireNonNull;
  * A factory for constructing Styx routing objects from a StyxObjectDefinition
  * yaml config block.
  */
-public interface StyxObject {
+public interface StyxObject<T> {
     /**
      * Constructs a RoutingObject instance according to configuration block.
      * <p>
@@ -43,7 +44,7 @@ public interface StyxObject {
      * @param context a routing object factory context
      * @return a RoutingObject with all dependant objects
      */
-    RoutingObject build(Context context);
+    T build(@NotNull Context context);
 
     String type();
 
@@ -56,8 +57,7 @@ public interface StyxObject {
     class Context {
         private final RouteRefLookup refLookup;
         private final Environment environment;
-        private final StyxObjectStore<RoutingObjectRecord> routeDb;
-        private final Map<String, StyxObject> objectFactories;
+        private final StyxObjectStore<RoutingObjectRecord<RoutingObject>> routeDb;
         private final Iterable<NamedPlugin> plugins;
         private final Map<String, HttpInterceptorFactory> interceptorFactories;
         private final boolean requestTracking;
@@ -65,15 +65,13 @@ public interface StyxObject {
         public Context(
                 RouteRefLookup refLookup,
                 Environment environment,
-                StyxObjectStore<RoutingObjectRecord> routeDb,
-                Map<String, StyxObject> objectFactories,
+                StyxObjectStore<RoutingObjectRecord<RoutingObject>> routeDb,
                 Iterable<NamedPlugin> plugins,
                 Map<String, HttpInterceptorFactory> interceptorFactories,
                 boolean requestTracking) {
             this.refLookup = refLookup;
             this.environment = requireNonNull(environment);
             this.routeDb = requireNonNull(routeDb);
-            this.objectFactories = requireNonNull(objectFactories);
             this.plugins = requireNonNull(plugins);
             this.interceptorFactories = requireNonNull(interceptorFactories);
             this.requestTracking = requestTracking;
@@ -83,12 +81,8 @@ public interface StyxObject {
             return environment;
         }
 
-        public StyxObjectStore<RoutingObjectRecord> routeDb() {
+        public StyxObjectStore<RoutingObjectRecord<RoutingObject>> routeDb() {
             return routeDb;
-        }
-
-        public Map<String, StyxObject> objectFactories() {
-            return objectFactories;
         }
 
         public Iterable<NamedPlugin> plugins() {
