@@ -31,38 +31,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 
 class PathPrefixRoutingApiSpec : StringSpec() {
 
-//    init {
-//        "Routes to the best match" {
-//            val proxyHost = styxServer().proxyHttpHostHeader()
-//
-//            client.send(get("/a/path")
-//                    .header(HOST, proxyHost)
-//                    .build())
-//                    .toMono()
-//                    .block()!!
-//                    .bodyAs(UTF_8) shouldBe "I'm default"
-//
-//            client.send(get("/database/a/path")
-//                    .header(HOST, proxyHost)
-//                    .build())
-//                    .toMono()
-//                    .block()!!
-//                    .bodyAs(UTF_8) shouldBe "I'm database"
-//        }
-//    }
-
     val client: StyxHttpClient = StyxHttpClient.Builder().build()
-
-    val bar = StyxServerComponents.Builder()
-            .httpHanlder("root")
-//            .routingObjectDescriptor(StaticResponseHandler.DESCRIPTOR("StaticResponseHandler"))
-//            .routingObject("root", PathPrefixRouter(mapOf(
-//                    "/" to RouteRefLookup("default"),
-//                    "/database" to RouteRefLookup("database")
-//            ))
-//            .routingObject("default", StaticResponseHandler(200, "I'm default"))
-//            .routingObject("database", StaticResponseHandler(200, "I'm database"))
-//                    .build())
 
     val styxServer = StyxServerProvider("""
         proxy:

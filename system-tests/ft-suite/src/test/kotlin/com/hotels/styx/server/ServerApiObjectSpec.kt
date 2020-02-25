@@ -15,11 +15,19 @@
  */
 package com.hotels.styx.server
 
+import com.hotels.styx.StyxConfig
+import com.hotels.styx.StyxServer
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.OK
+import com.hotels.styx.routing.handlers2.PathPrefixRouter
+import com.hotels.styx.routing.handlers2.RefLookup
+import com.hotels.styx.routing.handlers2.Route
+import com.hotels.styx.routing.handlers2.StaticResponse
+import com.hotels.styx.servers.StyxHttpServer
+import com.hotels.styx.servers.StyxHttpServerTlsSettings
+import com.hotels.styx.startup.StyxServerComponents
 import com.hotels.styx.support.ResourcePaths
-import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.adminHostHeader
 import com.hotels.styx.support.testClient
 import com.hotels.styx.support.wait
@@ -31,100 +39,66 @@ import io.kotlintest.specs.FeatureSpec
 import java.nio.charset.StandardCharsets.UTF_8
 
 
-class ServerObjectSpec : FeatureSpec() {
-    val styxServer = StyxServerProvider(
-            defaultConfig = """
+class ServerApiObjectSpec : FeatureSpec() {
+
+    val styxServer = StyxServer(StyxServerComponents.Builder()
+            .styxConfig(StyxConfig.fromYaml("""
                 ---
                 admin:
                   connectors:
                     http:
-                      port: 0
+                      port: 0 
+                """.trimIndent(), true))
+            .routingObject("secure", StaticResponse(status = 200, content = "secure"))
+            .routingObject("nonSecure", StaticResponse(status = 200, content = "non-secure"))
+            .routingObject("nonSecure2", StaticResponse(status = 200, content = "non-secure 2"))
+            .routingObject("pathMapper",
+                    PathPrefixRouter(listOf(
+                            Route("/", RefLookup("nonSecure")),
+                            Route("/2/", RefLookup("nonSecure2"))
+                    )))
 
-                routingObjects:
-                  secure:
-                    type: StaticResponse
-                    config:
-                      status: 200
-                      content: "secure"
-                      
-                  nonSecure:
-                    type: StaticResponse
-                    config:
-                      status: 200
-                      content: "non-secure"
+            .server("myHttp", StyxHttpServer(port = 0, handler = "nonSecure"))
+            .server("pathPrefixServer", StyxHttpServer(port = 0, handler = "pathMapper"))
+            .server("myHttps",
+                    StyxHttpServer(
+                            port = 0,
+                            handler = "secure",
+                            tlsSettings = StyxHttpServerTlsSettings(
+                                    certificateFile = crtFile,
+                                    certificateKeyFile = keyFile,
+                                    sslProvider = "JDK"
+                            )))
+            .build())
 
-                  nonSecure2:
-                    type: StaticResponse
-                    config:
-                      status: 200
-                      content: "non-secure 2"
-                      
-                  pathMapper:
-                    type: PathPrefixRouter
-                    config:
-                      routes:
-                        - prefix: "/"
-                          destination:
-                              type: RefLookup
-                              config:
-                                name: nonSecure
-                        - prefix: "/2/"
-                          destination:
-                              type: RefLookup
-                              config:
-                                name: nonSecure2
-                      
-                servers:
-                  myHttp:
-                    type: HttpServer
-                    config:
-                      port: 0
-                      handler: nonSecure
-                      
-                  pathPrefixServer:
-                    type: HttpServer
-                    config:
-                      port: 0
-                      handler: pathMapper
-                        
-                  myHttps:
-                    type: HttpServer
-                    config:
-                      port: 0
-                      handler: secure
-                      tlsSettings:
-                        certificateFile: $crtFile
-                        certificateKeyFile: $keyFile
-                        sslProvider: JDK
-                """.trimIndent())
 
     override fun afterSpec(spec: Spec) {
-        styxServer.stop()
+        styxServer.stopAsync().awaitTerminated()
     }
 
     init {
         feature("Styx HTTP servers") {
-            scenario("Start accepting traffic after plugins are loaded") {
+            styxServer.startAsync().awaitRunning()
 
-                styxServer.restart()
+            scenario("Start accepting traffic after plugins are loaded") {
 
                 // 1. Query server addresses from the admin interface
                 val httpPort = eventually(2.seconds) {
-                    testClient.send(get("/admin/servers/myHttp/port").header(HOST, styxServer().adminHostHeader()).build())
+                    testClient.send(get("/admin/servers/myHttp/port").header(HOST, styxServer.adminHostHeader()).build())
                             .wait()
                             .bodyAs(UTF_8)
                             .toInt()
                 }
 
                 val httpsPort = eventually(2.seconds) {
-                    testClient.send(get("/admin/servers/myHttps/port").header(HOST, styxServer().adminHostHeader()).build())
+                    testClient.send(get("/admin/servers/myHttps/port").header(HOST, styxServer.adminHostHeader()).build())
                             .wait()
                             .bodyAs(UTF_8)
                             .toInt()
                 }
 
                 val httpPort2 = eventually(2.seconds) {
-                    testClient.send(get("/admin/servers/pathPrefixServer/port").header(HOST, styxServer().adminHostHeader()).build())
+                    testClient.send(get("/admin/servers/pathPrefixServer/port").header(HOST, styxServer.adminHostHeader()).build())
                             .wait()
                             .bodyAs(UTF_8)
                             .toInt()
@@ -152,7 +126,6 @@ class ServerObjectSpec : FeatureSpec() {
                             it.status() shouldBe OK
                             it.bodyAs(UTF_8) shouldBe "non-secure"
                         }
-
 
                 testClient.send(get("/2/bar").header(HOST, "localhost:$httpPort2").build())
                         .wait()!!

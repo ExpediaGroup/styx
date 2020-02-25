@@ -21,14 +21,10 @@ import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
 import com.hotels.styx.admin.AdminServerBuilder;
-import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
 import com.hotels.styx.config.schema.SchemaValidationException;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
-import com.hotels.styx.server.ConnectorConfig;
-import com.hotels.styx.server.netty.NettyServerBuilder;
-import com.hotels.styx.server.netty.ServerConnector;
 import com.hotels.styx.startup.StyxServerComponents;
 import io.netty.util.ResourceLeakDetector;
 import org.jetbrains.annotations.NotNull;
@@ -47,7 +43,6 @@ import java.util.concurrent.CompletableFuture;
 import static com.hotels.styx.StyxServers.toGuavaService;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.shutdownLogging;
-import static com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder.ENCODE_UNWISECHARS;
 import static com.hotels.styx.startup.CoreMetrics.registerCoreMetrics;
 import static io.netty.util.ResourceLeakDetector.Level.DISABLED;
 import static java.lang.Runtime.getRuntime;
@@ -97,6 +92,7 @@ public final class StyxServer extends AbstractService {
         }
     }
 
+
     private static StyxServer createStyxServer(String[] args) {
         Stopwatch stopwatch = Stopwatch.createStarted();
 
@@ -106,13 +102,11 @@ public final class StyxServer extends AbstractService {
         LOG.info("Styx configFileLocation={}", startupConfig.configFileLocation());
         LOG.info("Styx logConfigLocation={}", startupConfig.logConfigLocation());
 
-        StyxServerComponents components = new StyxServerComponents.Builder()
-                .styxConfig(parseConfiguration(startupConfig))
+        StyxServerComponents.Builder components = StyxServerComponents.Builder.fromConfiguration(parseConfiguration(startupConfig))
                 .startupConfig(startupConfig)
-                .loggingSetUp(environment -> activateLogbackConfigurer(startupConfig))
-                .build();
+                .loggingSetUp(environment -> activateLogbackConfigurer(startupConfig));
 
-        return new StyxServer(components, stopwatch);
+        return new StyxServer(components.build(), stopwatch);
     }
 
     private static void activateLogbackConfigurer(StartupConfig startupConfig) {

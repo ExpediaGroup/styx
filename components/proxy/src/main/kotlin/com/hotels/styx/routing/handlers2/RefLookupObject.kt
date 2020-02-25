@@ -42,7 +42,7 @@ val RefLookupDescriptor = Builtins.StyxObjectDescriptor<StyxObject<RoutingObject
         ),
         RefLookup::class.java)
 
-internal data class RefLookup(@JsonProperty val name: String) : StyxObject<RoutingObject> {
+data class RefLookup(@JsonProperty val name: String) : StyxObject<RoutingObject> {
     override fun type() = RefLookupDescriptor.type()
 
     override fun build(context: StyxObject.Context): RoutingObject {

@@ -50,7 +50,7 @@ val staticResponseDescriptor = Builtins.StyxObjectDescriptor<StyxObject<RoutingO
         StaticResponse::class.java)
 
 
-internal data class StaticResponse(
+data class StaticResponse(
         @JsonProperty val status: Int,
         @JsonProperty val content: String = "",
         @JsonProperty val headers: List<StaticResponseHeader> = listOf()) : StyxObject<RoutingObject> {
@@ -76,6 +76,6 @@ internal data class StaticResponse(
 }
 
 
-internal data class StaticResponseHeader(
+data class StaticResponseHeader(
         @JsonProperty val name: String,
         @JsonProperty val value: String)

@@ -18,7 +18,7 @@ package com.hotels.styx.support
 import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.hotels.styx.StyxConfig
+import com.hotels.styx.StyxConfig.fromYaml
 import com.hotels.styx.StyxServer
 import com.hotels.styx.api.HttpHeaderNames
 import com.hotels.styx.api.HttpHeaderNames.HOST
@@ -98,8 +98,7 @@ class StyxServerProvider(
             stop()
         }
 
-        var components = StyxServerComponents.Builder()
-                .styxConfig(StyxConfig.fromYaml(configuration, validateConfig))
+        var components = StyxServerComponents.Builder.fromConfiguration(fromYaml(configuration, validateConfig))
                 .plugins(additionalPlugins)
 
         LOGGER.info("restarted with logging config: $loggingConfig")
@@ -140,8 +139,6 @@ fun CompletableFuture<HttpResponse>.wait(debug: Boolean = false) = this.toMono()
         .block()
 
 fun StyxServer.adminHostHeader() = "${this.adminHttpAddress().hostName}:${this.adminHttpAddress().port}"
-//fun StyxServer.proxyHttpHostHeader() = "localhost:${this.proxyHttpAddress().port}"
-//fun StyxServer.proxyHttpsHostHeader() = "localhost:${this.proxyHttpsAddress().port}"
 
 //@Throws(IOException::class)
 private fun decodeToMap(body: String): Map<String, Any> {
