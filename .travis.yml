@@ -29,3 +29,5 @@ deploy:
   skip_cleanup: true
   on:
     tags: true
+    jdk: openjdk8
+    repo: HotelsDotCom/styx
