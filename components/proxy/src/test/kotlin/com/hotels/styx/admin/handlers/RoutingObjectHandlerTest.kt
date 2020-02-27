@@ -135,22 +135,20 @@ class RoutingObjectHandlerTest : FeatureSpec({
                         it!!.status() shouldBe OK
                         it.bodyAs(UTF_8).trim() shouldBe """
                                 ---
-                                name: "conditionRouter"
-                                type: "ConditionRouter"
-                                tags: []
-                                config:
-                                  routes:
-                                  - condition: "path() == \"/bar\""
-                                    destination: "b"
-                                  fallback: "fb"
-
-                                ---
-                                name: "staticResponse"
-                                type: "StaticResponseHandler"
-                                tags: []
-                                config:
-                                  status: 200
-                                  content: "Hello, world!"
+                                - name: "conditionRouter"
+                                  type: "ConditionRouter"
+                                  tags: []
+                                  config:
+                                    routes:
+                                    - condition: "path() == \"/bar\""
+                                      destination: "b"
+                                    fallback: "fb"
+                                - name: "staticResponse"
+                                  type: "StaticResponseHandler"
+                                  tags: []
+                                  config:
+                                    status: 200
+                                    content: "Hello, world!"
                             """.trimIndent().trim()
                     }
 

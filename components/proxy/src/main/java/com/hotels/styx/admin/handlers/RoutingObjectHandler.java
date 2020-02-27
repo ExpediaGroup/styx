@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
@@ -68,10 +69,11 @@ public class RoutingObjectHandler implements WebServiceHandler {
     public RoutingObjectHandler(StyxObjectStore<RoutingObjectRecord> routeDatabase, RoutingObjectFactory.Context routingObjectFactoryContext) {
         urlRouter = new UrlPatternRouter.Builder()
                 .get("/admin/routing/objects", (request, context) -> {
-                    String output = routeDatabase.entrySet()
+                    List<StyxObjectDefinition> objects = routeDatabase.entrySet()
                             .stream()
-                            .map(entry -> serialise(entry.getKey(), entry.getValue()))
-                            .collect(joining("\n"));
+                            .map(entry -> createObjectDef(entry.getKey(), entry.getValue()))
+                            .collect(Collectors.toList());
+                    String output = serialise(objects);
 
                     return Eventual.of(response(OK)
                             .body(output, UTF_8)
@@ -82,7 +84,8 @@ public class RoutingObjectHandler implements WebServiceHandler {
 
                     try {
                         String object = routeDatabase.get(name)
-                                .map(record -> serialise(name, record))
+                                .map(record -> createObjectDef(name, record))
+                                .map(RoutingObjectHandler::serialise)
                                 .orElseThrow(ResourceNotFoundException::new);
 
                         return Eventual.of(response(OK).body(object, UTF_8).build());
@@ -117,15 +120,21 @@ public class RoutingObjectHandler implements WebServiceHandler {
                 .build();
     }
 
-    private static String serialise(String name, RoutingObjectRecord record) {
-        JsonNode node = YAML_MAPPER
-                .addMixIn(StyxObjectDefinition.class, RoutingObjectDefMixin.class)
-                .valueToTree(new StyxObjectDefinition(name, record.getType(), ImmutableList.copyOf(record.getTags()), record.getConfig()));
+    private static StyxObjectDefinition createObjectDef(String name, RoutingObjectRecord record) {
+        return new StyxObjectDefinition(name, record.getType(), ImmutableList.copyOf(record.getTags()), record.getConfig());
+    }
 
-        ((ObjectNode) node).set("config", record.getConfig());
+    /**
+     * Serializes either a single {@link com.hotels.styx.routing.config.StyxObjectDefinition} or
+     * a collection of them.
+     */
+    private static String serialise(Object object) {
+        JsonNode json = YAML_MAPPER
+                .addMixIn(StyxObjectDefinition.class, RoutingObjectDefMixin.class)
+                .valueToTree(object);
 
         try {
-            return YAML_MAPPER.writeValueAsString(node);
+            return YAML_MAPPER.writeValueAsString(json);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
@@ -148,6 +157,9 @@ public class RoutingObjectHandler implements WebServiceHandler {
 
         @JsonProperty("tags")
         public abstract List<String> tags();
+
+        @JsonProperty("config")
+        public abstract JsonNode config();
     }
 
 }

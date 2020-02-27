@@ -120,20 +120,18 @@ class RoutingRestApiSpec : StringSpec() {
                         it!!.status() shouldBe OK
                         it.bodyAs(UTF_8).trim() shouldBe """
                                 ---
-                                name: "responder"
-                                type: "StaticResponseHandler"
-                                tags: []
-                                config:
-                                  status: 200
-                                  content: "Responder"
-
-                                ---
-                                name: "root"
-                                type: "StaticResponseHandler"
-                                tags: []
-                                config:
-                                  status: 200
-                                  content: "Root"
+                                - name: "responder"
+                                  type: "StaticResponseHandler"
+                                  tags: []
+                                  config:
+                                    status: 200
+                                    content: "Responder"
+                                - name: "root"
+                                  type: "StaticResponseHandler"
+                                  tags: []
+                                  config:
+                                    status: 200
+                                    content: "Root"
                                 """.trimIndent().trim()
                     }
         }
