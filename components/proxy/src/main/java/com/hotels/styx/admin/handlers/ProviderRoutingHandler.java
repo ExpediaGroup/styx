@@ -30,7 +30,6 @@ import com.hotels.styx.api.WebServiceHandler;
 import com.hotels.styx.api.configuration.ObjectStore;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.common.http.handler.HttpStreamer;
-import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import org.slf4j.Logger;
@@ -91,7 +90,9 @@ public class ProviderRoutingHandler implements WebServiceHandler {
     private UrlPatternRouter buildRouter(ObjectStore<? extends StyxObjectRecord<? extends StyxService>> db) {
         UrlPatternRouter.Builder routeBuilder = new UrlPatternRouter.Builder(pathPrefix)
             .get("", new ProviderListHandler(db))
-            .get("objects", (request, context) -> { return handleRequestForAllObjects(request, context, db); })
+            .get("objects", (request, context) -> {
+                return handleRequestForAllObjects(request, context, db);
+            })
             .get("objects/:objectName", (request, context) -> {
                 String name = placeholders(context).get("objectName");
                 return handleRequestForOneObject(request, context, db, name);
@@ -108,7 +109,8 @@ public class ProviderRoutingHandler implements WebServiceHandler {
         return routeBuilder.build();
     }
 
-    private Eventual<HttpResponse> handleRequestForAllObjects(HttpRequest request, HttpInterceptor.Context context, ObjectStore<? extends StyxObjectRecord<? extends StyxService>> db) {
+    private Eventual<HttpResponse> handleRequestForAllObjects(HttpRequest request, HttpInterceptor.Context context,
+                                                              ObjectStore<? extends StyxObjectRecord<? extends StyxService>> db) {
         List<StyxObjectDefinition> objects = db.entrySet()
                 .stream()
                 .map(entry -> createObjectDef(entry.getKey(), entry.getValue()))
@@ -120,7 +122,9 @@ public class ProviderRoutingHandler implements WebServiceHandler {
                 .build());
     }
 
-    private Eventual<HttpResponse> handleRequestForOneObject(HttpRequest request, HttpInterceptor.Context context, ObjectStore<? extends StyxObjectRecord<? extends StyxService>> db, String name) {
+    private Eventual<HttpResponse> handleRequestForOneObject(HttpRequest request, HttpInterceptor.Context context,
+                                                             ObjectStore<? extends StyxObjectRecord<? extends StyxService>> db,
+                                                             String name) {
         try {
             String object = db.get(name)
                     .map(record -> createObjectDef(name, record))
