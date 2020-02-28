@@ -15,6 +15,12 @@
  */
 package com.hotels.styx.admin.handlers;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.collect.ImmutableList;
 import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
@@ -24,10 +30,24 @@ import com.hotels.styx.api.WebServiceHandler;
 import com.hotels.styx.api.configuration.ObjectStore;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.common.http.handler.HttpStreamer;
+import com.hotels.styx.routing.RoutingObjectRecord;
+import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE;
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
+import static com.hotels.styx.admin.handlers.UrlPatternRouter.placeholders;
+import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Routes admin requests to the admin endpoints of each {@link com.hotels.styx.api.extension.service.spi.StyxService}
@@ -38,6 +58,9 @@ public class ProviderRoutingHandler implements WebServiceHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(ProviderRoutingHandler.class);
     private static final int MEGABYTE = 1024 * 1024;
+    private static final ObjectMapper YAML_MAPPER = addStyxMixins(new ObjectMapper(new YAMLFactory()))
+            .configure(FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .configure(AUTO_CLOSE_SOURCE, true);
 
     private final String pathPrefix;
     private volatile UrlPatternRouter router;
@@ -67,16 +90,85 @@ public class ProviderRoutingHandler implements WebServiceHandler {
 
     private UrlPatternRouter buildRouter(ObjectStore<? extends StyxObjectRecord<? extends StyxService>> db) {
         UrlPatternRouter.Builder routeBuilder = new UrlPatternRouter.Builder(pathPrefix)
-                .get("", new ProviderListHandler(db));
+            .get("", new ProviderListHandler(db))
+            .get("objects", (request, context) -> { return handleRequestForAllObjects(request, context, db); })
+            .get("objects/:objectName", (request, context) -> {
+                String name = placeholders(context).get("objectName");
+                return handleRequestForOneObject(request, context, db, name);
+            });
 
         db.entrySet().forEach(entry -> {
-                String providerName = entry.getKey();
-                entry.getValue().getStyxService().adminInterfaceHandlers(pathPrefix + "/" + providerName)
-                        .forEach((relPath, handler) ->
-                            routeBuilder.get(providerName + "/" + relPath, new HttpStreamer(MEGABYTE, handler))
-                        );
+            String providerName = entry.getKey();
+            entry.getValue().getStyxService().adminInterfaceHandlers(pathPrefix + "/" + providerName)
+                .forEach((relPath, handler) ->
+                    routeBuilder.get(providerName + "/" + relPath, new HttpStreamer(MEGABYTE, handler))
+                );
         });
 
         return routeBuilder.build();
     }
+
+    private Eventual<HttpResponse> handleRequestForAllObjects(HttpRequest request, HttpInterceptor.Context context, ObjectStore<? extends StyxObjectRecord<? extends StyxService>> db) {
+        List<StyxObjectDefinition> objects = db.entrySet()
+                .stream()
+                .map(entry -> createObjectDef(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toList());
+        String output = serialise(objects);
+
+        return Eventual.of(response(OK)
+                .body(output, UTF_8)
+                .build());
+    }
+
+    private Eventual<HttpResponse> handleRequestForOneObject(HttpRequest request, HttpInterceptor.Context context, ObjectStore<? extends StyxObjectRecord<? extends StyxService>> db, String name) {
+        try {
+            String object = db.get(name)
+                    .map(record -> createObjectDef(name, record))
+                    .map(ProviderRoutingHandler::serialise)
+                    .orElseThrow(ProviderRoutingHandler.ResourceNotFoundException::new);
+
+            return Eventual.of(response(OK).body(object, UTF_8).build());
+        } catch (ProviderRoutingHandler.ResourceNotFoundException e) {
+            return Eventual.of(response(NOT_FOUND).build());
+        }
+    }
+
+    private static StyxObjectDefinition createObjectDef(String name, StyxObjectRecord<? extends StyxService> record) {
+        return new StyxObjectDefinition(name, record.getType(), ImmutableList.copyOf(record.getTags()), record.getConfig());
+    }
+
+    /**
+     * Serializes either a single {@link com.hotels.styx.routing.config.StyxObjectDefinition} or
+     * a collection of them.
+     */
+    private static String serialise(Object object) {
+        JsonNode json = YAML_MAPPER
+                .addMixIn(StyxObjectDefinition.class, ProviderObjectDefMixin.class)
+                .valueToTree(object);
+
+        try {
+            return YAML_MAPPER.writeValueAsString(json);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static class ResourceNotFoundException extends RuntimeException {
+    }
+
+    private abstract static class ProviderObjectDefMixin {
+        @JsonProperty("name")
+        public abstract String name();
+
+        @JsonProperty("type")
+        public abstract String type();
+
+        @JsonProperty("tags")
+        public abstract List<String> tags();
+
+        @JsonProperty("config")
+        public abstract JsonNode config();
+    }
+
+
 }
