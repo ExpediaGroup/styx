@@ -119,6 +119,45 @@ class ProviderAdminInterfaceSpec : FeatureSpec() {
                 body shouldContain "/admin/providers/myMonitor/status"
                 body shouldContain "/admin/providers/mySecondMonitor/status"
             }
+
+            scenario("YAML configuration for all providers is available") {
+                val body = styxServer.adminRequest("/admin/providers/objects")
+                        .bodyAs(UTF_8)
+                body shouldContain """
+                    - name: "mySecondMonitor"
+                      type: "HealthCheckMonitor"
+                      tags: []
+                      config:
+                        objects: "bbb"
+                        path: "/healthCheck/y"
+                        timeoutMillis: 250
+                        intervalMillis: 500
+                        healthyThreshold: 3
+                        unhealthyThreshold: 2
+                    """.trimIndent()
+
+                body shouldContain """ - name: "myMonitor" """.trim()
+                body shouldContain """ - name: "originsFileLoader" """.trim()
+            }
+
+            scenario("YAML configuration for a single provider is available") {
+                val body = styxServer.adminRequest("/admin/providers/objects/myMonitor")
+                        .bodyAs(UTF_8)
+                body shouldNotContain """ name: "mySecondMonitor" """.trim()
+                body shouldNotContain """ name: "originsFileLoader" """.trim()
+                body shouldContain """
+                      name: "myMonitor"
+                      type: "HealthCheckMonitor"
+                      tags: []
+                      config:
+                        objects: "aaa"
+                        path: "/healthCheck/x"
+                        timeoutMillis: 250
+                        intervalMillis: 500
+                        healthyThreshold: 3
+                        unhealthyThreshold: 2
+                    """.trimIndent()
+            }
         }
 
         feature("Endpoints for dynamically added Styx services are available in the Admin interface") {
