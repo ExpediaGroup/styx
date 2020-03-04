@@ -28,7 +28,6 @@ import java.util.Optional;
 import java.util.Set;
 
 import static com.google.common.base.Objects.toStringHelper;
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.extension.Origin.checkThatOriginsAreDistinct;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
@@ -99,7 +98,9 @@ public final class BackendService implements Identifiable {
         this.maxHeaderSize = builder.maxHeaderSize;
 
         checkThatOriginsAreDistinct(origins);
-        checkArgument(responseTimeoutMillis >= 0, "Request timeout must be greater than or equal to zero");
+        if (responseTimeoutMillis < 0) {
+            throw new IllegalArgumentException("Request timeout must be greater than or equal to zero");
+        }
     }
 
     private static HealthCheckConfig nullIfDisabled(HealthCheckConfig healthCheckConfig) {
