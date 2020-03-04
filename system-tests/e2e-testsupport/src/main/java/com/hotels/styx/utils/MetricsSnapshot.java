@@ -18,10 +18,9 @@ package com.hotels.styx.utils;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
-import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.client.StyxHttpClient;
 
 import java.io.IOException;
@@ -37,6 +36,7 @@ import static com.hotels.styx.common.StyxFutures.await;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 @Deprecated
@@ -96,7 +96,7 @@ public class MetricsSnapshot {
 
     @Override
     public String toString() {
-        return Joiner.on('\n').join(entries());
+        return entries().stream().map(Object::toString).collect(joining("\n"));
     }
 
     private List<Map.Entry<String, ?>> entries() {

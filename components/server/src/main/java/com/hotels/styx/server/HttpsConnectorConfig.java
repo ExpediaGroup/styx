@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
-import com.hotels.styx.common.Joiners;
 
 import java.util.Collections;
 import java.util.List;
@@ -30,6 +29,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 
 /**
  * Https Connector configuration.
@@ -148,7 +148,9 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
                 .add("sessionTimeoutMillis", sessionTimeoutMillis)
                 .add("sessionCacheSize", sessionCacheSize)
                 .add("cipherSuites", cipherSuites)
-                .add("protocols", protocols != null ? Joiners.JOINER_ON_COMMA.join(protocols) : "None")
+                .add("protocols", protocols != null
+                        ? protocols.stream().filter(java.util.Objects::nonNull).collect(joining(","))
+                        : "None")
                 .toString();
     }
 

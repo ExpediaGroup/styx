@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.admin.tasks;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -51,7 +50,7 @@ public class OriginsCommandHandler extends BaseHttpHandler implements OriginsCha
     private static final String INVALID_APP_ID_FORMAT = "application with id=%s is not found";
     private static final String INVALID_ORIGIN_ID_FORMAT = "origin with id=%s is not found for application=%s";
     private static final List<String> VALID_COMMANDS = ImmutableList.of("enable_origin", "disable_origin");
-    private static final String MISSING_ERROR_MESSAGE = format("cmd, appId and originId are all required parameters. cmd can be %s", Joiner.on('|').join(VALID_COMMANDS));
+    private static final String MISSING_ERROR_MESSAGE = format("cmd, appId and originId are all required parameters. cmd can be %s", String.join("|", VALID_COMMANDS));
 
     private final EventBus eventBus;
     private final Map<Id, OriginsSnapshot> originsInventorySnapshotMap = new ConcurrentHashMap<>();

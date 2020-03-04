@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 
 import java.util.List;
@@ -23,13 +22,13 @@ import java.util.Objects;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 
 /**
  * Represents the key to value relationship in an HTTP header.
  * It is possible for a header to have multiple values.
  */
 public final class HttpHeader {
-    private static final Joiner HEADER_VALUES_JOINER = Joiner.on(", ").skipNulls();
 
     private final String name;
     private final List<String> values;
@@ -98,6 +97,6 @@ public final class HttpHeader {
 
     @Override
     public String toString() {
-        return name + "=" + HEADER_VALUES_JOINER.join(values);
+        return name + "=" + values.stream().filter(Objects::nonNull).collect(joining(", "));
     }
 }

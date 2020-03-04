@@ -18,7 +18,6 @@ package com.hotels.styx.metrics;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Joiner;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.support.Meter;
@@ -43,6 +42,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyMap;
 import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
@@ -173,7 +173,7 @@ public class StyxMetrics {
 
     @Override
     public String toString() {
-        return Joiner.on('\n').join(entries());
+        return entries().stream().map(Object::toString).collect(joining("\n"));
     }
 
     private List<Map.Entry<String, ?>> entries() {
