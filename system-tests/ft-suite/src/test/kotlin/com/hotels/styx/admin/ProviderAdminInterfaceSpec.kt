@@ -124,7 +124,7 @@ class ProviderAdminInterfaceSpec : FeatureSpec() {
                 val body = styxServer.adminRequest("/admin/providers/objects")
                         .bodyAs(UTF_8)
                 body shouldContain """
-                    - name: "mySecondMonitor"
+                    mySecondMonitor:
                       type: "HealthCheckMonitor"
                       tags: []
                       config:
@@ -136,17 +136,8 @@ class ProviderAdminInterfaceSpec : FeatureSpec() {
                         unhealthyThreshold: 2
                     """.trimIndent()
 
-                body shouldContain """ - name: "myMonitor" """.trim()
-                body shouldContain """ - name: "originsFileLoader" """.trim()
-            }
-
-            scenario("YAML configuration for a single provider is available") {
-                val body = styxServer.adminRequest("/admin/providers/objects/myMonitor")
-                        .bodyAs(UTF_8)
-                body shouldNotContain """ name: "mySecondMonitor" """.trim()
-                body shouldNotContain """ name: "originsFileLoader" """.trim()
                 body shouldContain """
-                      name: "myMonitor"
+                    myMonitor:
                       type: "HealthCheckMonitor"
                       tags: []
                       config:
@@ -157,6 +148,34 @@ class ProviderAdminInterfaceSpec : FeatureSpec() {
                         healthyThreshold: 3
                         unhealthyThreshold: 2
                     """.trimIndent()
+
+                body shouldContain """
+                    originsFileLoader:
+                      type: "YamlFileConfigurationService"
+                      tags: []
+                      config:
+                        originsFile: "${originsFile.absolutePath}"
+                        ingressObject: "pathPrefixRouter"
+                        monitor: true
+                        pollInterval: "PT0.1S"
+                    """.trimIndent()
+            }
+
+            scenario("YAML configuration for a single provider is available") {
+                val body = styxServer.adminRequest("/admin/providers/objects/myMonitor")
+                        .bodyAs(UTF_8)
+                body.trim() shouldBe """
+                      ---
+                      type: "HealthCheckMonitor"
+                      tags: []
+                      config:
+                        objects: "aaa"
+                        path: "/healthCheck/x"
+                        timeoutMillis: 250
+                        intervalMillis: 500
+                        healthyThreshold: 3
+                        unhealthyThreshold: 2
+                      """.trimIndent()
             }
         }
 

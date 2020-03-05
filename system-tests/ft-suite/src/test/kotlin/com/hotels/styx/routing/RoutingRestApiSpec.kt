@@ -16,18 +16,15 @@
 package com.hotels.styx.routing
 
 import com.hotels.styx.api.HttpHeaderNames.HOST
-import com.hotels.styx.api.HttpRequest.delete
-import com.hotels.styx.api.HttpRequest.get
-import com.hotels.styx.api.HttpRequest.put
-import com.hotels.styx.api.HttpResponseStatus.CREATED
-import com.hotels.styx.api.HttpResponseStatus.NOT_FOUND
-import com.hotels.styx.api.HttpResponseStatus.OK
+import com.hotels.styx.api.HttpRequest.*
+import com.hotels.styx.api.HttpResponseStatus.*
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.adminHostHeader
 import com.hotels.styx.support.proxyHttpHostHeader
 import io.kotlintest.Spec
 import io.kotlintest.TestCase
+import io.kotlintest.matchers.string.shouldContain
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 import reactor.core.publisher.toMono
@@ -118,21 +115,22 @@ class RoutingRestApiSpec : StringSpec() {
                     .block()
                     .let {
                         it!!.status() shouldBe OK
-                        it.bodyAs(UTF_8).trim() shouldBe """
-                                ---
-                                - name: "responder"
+                        it.bodyAs(UTF_8) shouldContain  """
+                                responder:
                                   type: "StaticResponseHandler"
                                   tags: []
                                   config:
                                     status: 200
                                     content: "Responder"
-                                - name: "root"
+                                """.trimIndent()
+                        it.bodyAs(UTF_8) shouldContain  """
+                                root:
                                   type: "StaticResponseHandler"
                                   tags: []
                                   config:
                                     status: 200
                                     content: "Root"
-                                """.trimIndent().trim()
+                                """.trimIndent()
                     }
         }
     }

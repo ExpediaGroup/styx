@@ -15,12 +15,12 @@
  */
 package com.hotels.styx.admin.handlers;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
@@ -30,13 +30,13 @@ import com.hotels.styx.api.WebServiceHandler;
 import com.hotels.styx.api.configuration.ObjectStore;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.common.http.handler.HttpStreamer;
-import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE;
@@ -90,12 +90,10 @@ public class ProviderRoutingHandler implements WebServiceHandler {
     private UrlPatternRouter buildRouter(ObjectStore<? extends StyxObjectRecord<? extends StyxService>> db) {
         UrlPatternRouter.Builder routeBuilder = new UrlPatternRouter.Builder(pathPrefix)
             .get("", new ProviderListHandler(db))
-            .get("objects", (request, context) -> {
-                return handleRequestForAllObjects(request, context, db);
-            })
+            .get("objects", (request, context) -> handleRequestForAllObjects(db))
             .get("objects/:objectName", (request, context) -> {
                 String name = placeholders(context).get("objectName");
-                return handleRequestForOneObject(request, context, db, name);
+                return handleRequestForOneObject(db, name);
             });
 
         db.entrySet().forEach(entry -> {
@@ -109,12 +107,9 @@ public class ProviderRoutingHandler implements WebServiceHandler {
         return routeBuilder.build();
     }
 
-    private Eventual<HttpResponse> handleRequestForAllObjects(HttpRequest request, HttpInterceptor.Context context,
-                                                              ObjectStore<? extends StyxObjectRecord<? extends StyxService>> db) {
-        List<StyxObjectDefinition> objects = db.entrySet()
-                .stream()
-                .map(entry -> createObjectDef(entry.getKey(), entry.getValue()))
-                .collect(Collectors.toList());
+    private Eventual<HttpResponse> handleRequestForAllObjects(ObjectStore<? extends StyxObjectRecord<? extends StyxService>> db) {
+        Map<String, StyxObjectRecord> objects = db.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         String output = serialise(objects);
 
         return Eventual.of(response(OK)
@@ -122,12 +117,10 @@ public class ProviderRoutingHandler implements WebServiceHandler {
                 .build());
     }
 
-    private Eventual<HttpResponse> handleRequestForOneObject(HttpRequest request, HttpInterceptor.Context context,
-                                                             ObjectStore<? extends StyxObjectRecord<? extends StyxService>> db,
+    private Eventual<HttpResponse> handleRequestForOneObject(ObjectStore<? extends StyxObjectRecord<? extends StyxService>> db,
                                                              String name) {
         try {
             String object = db.get(name)
-                    .map(record -> createObjectDef(name, record))
                     .map(ProviderRoutingHandler::serialise)
                     .orElseThrow(ProviderRoutingHandler.ResourceNotFoundException::new);
 
@@ -137,17 +130,13 @@ public class ProviderRoutingHandler implements WebServiceHandler {
         }
     }
 
-    private static StyxObjectDefinition createObjectDef(String name, StyxObjectRecord<? extends StyxService> record) {
-        return new StyxObjectDefinition(name, record.getType(), ImmutableList.copyOf(record.getTags()), record.getConfig());
-    }
-
     /**
      * Serializes either a single {@link com.hotels.styx.routing.config.StyxObjectDefinition} or
      * a collection of them.
      */
     private static String serialise(Object object) {
         JsonNode json = YAML_MAPPER
-                .addMixIn(StyxObjectDefinition.class, ProviderObjectDefMixin.class)
+                .addMixIn(StyxObjectRecord.class, ProviderObjectDefMixin.class)
                 .valueToTree(object);
 
         try {
@@ -161,8 +150,6 @@ public class ProviderRoutingHandler implements WebServiceHandler {
     }
 
     private abstract static class ProviderObjectDefMixin {
-        @JsonProperty("name")
-        public abstract String name();
 
         @JsonProperty("type")
         public abstract String type();
@@ -172,6 +159,9 @@ public class ProviderRoutingHandler implements WebServiceHandler {
 
         @JsonProperty("config")
         public abstract JsonNode config();
+
+        @JsonIgnore
+        public abstract Object getStyxService();
     }
 
 
