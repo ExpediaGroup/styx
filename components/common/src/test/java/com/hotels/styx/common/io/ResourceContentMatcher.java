@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Objects;
 
-import static com.google.common.base.Throwables.propagate;
 import static java.lang.System.lineSeparator;
 import static java.util.Objects.requireNonNull;
 
@@ -67,7 +66,7 @@ public class ResourceContentMatcher extends TypeSafeMatcher<Resource> {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(item.inputStream()))) {
             return CharStreams.toString(reader).replace(lineSeparator(), "\n");
         } catch (IOException e) {
-            throw propagate(e);
+            throw new RuntimeException(e);
         }
     }
 

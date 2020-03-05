@@ -40,7 +40,6 @@ import java.util.function.Predicate;
 
 import static com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
-import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.api.extension.service.spi.Registry.Outcome.FAILED;
 import static com.hotels.styx.applications.BackendServices.newBackendServices;
 import static com.hotels.styx.common.io.ResourceFactory.newResource;
@@ -199,8 +198,10 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
                 List<BackendService> services = MAPPER.readValue(rootNode.traverse(), TYPE);
 
                 return newBackendServices(services);
+            } catch (RuntimeException e) {
+                throw e;
             } catch (Exception e) {
-                throw propagate(e);
+                throw new RuntimeException(e);
             }
         }
     }

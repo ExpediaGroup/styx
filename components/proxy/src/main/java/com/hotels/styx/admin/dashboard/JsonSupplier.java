@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.function.Supplier;
 
-import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.admin.support.Json.PRETTY_PRINTER;
 import static java.util.Objects.requireNonNull;
 
@@ -79,7 +78,7 @@ public class JsonSupplier implements Supplier<String> {
                 return mapper.writer().writeValueAsString(object);
             }
         } catch (JsonProcessingException e) {
-            throw propagate(e);
+            throw new RuntimeException(e);
         }
     }
 

@@ -15,10 +15,9 @@
  */
 package com.hotels.styx.api;
 
-import javax.annotation.concurrent.ThreadSafe;
-
 import com.google.common.annotations.VisibleForTesting;
 
+import javax.annotation.concurrent.ThreadSafe;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -33,7 +32,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.google.common.base.Throwables.propagate;
 import static java.lang.Integer.parseInt;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -150,7 +148,7 @@ public final class Url implements Comparable<Url> {
         try {
             return toURI().toURL();
         } catch (MalformedURLException e) {
-            throw propagate(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -163,7 +161,7 @@ public final class Url implements Comparable<Url> {
         try {
             return new URI(toString());
         } catch (URISyntaxException e) {
-            throw propagate(e);
+            throw new RuntimeException(e);
         }
     }
 

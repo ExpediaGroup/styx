@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.util.Objects;
 
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
-import static com.google.common.base.Throwables.propagate;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -66,7 +65,7 @@ public class SpiExtension {
         try {
             return MAPPER.readValue(parser, configClass);
         } catch (IOException e) {
-            throw propagate(e);
+            throw new RuntimeException(e);
         }
     }
 

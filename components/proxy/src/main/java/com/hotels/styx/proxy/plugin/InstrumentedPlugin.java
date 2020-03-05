@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ import com.codahale.metrics.Meter;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginException;
 import com.hotels.styx.common.SimpleCache;
@@ -29,7 +29,6 @@ import org.slf4j.Logger;
 
 import java.util.Map;
 
-import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static java.util.Objects.requireNonNull;
@@ -146,9 +145,12 @@ public class InstrumentedPlugin implements Plugin {
                         toPublisher(toObservable(chain.proceed(request))
                                 .doOnNext(response -> upstreamStatus = response.status())
                                 .doOnError(error -> upstreamException = true)));
-            } catch (Throwable e) {
+            } catch (RuntimeException | Error e) {
                 upstreamException = true;
-                throw propagate(e);
+                throw e;
+            } catch (Exception e) {
+                upstreamException = true;
+                throw new RuntimeException(e);
             }
         }
     }

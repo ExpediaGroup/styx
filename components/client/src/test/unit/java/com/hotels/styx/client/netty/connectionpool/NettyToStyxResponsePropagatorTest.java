@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.client.netty.connectionpool;
 
-import com.google.common.base.Throwables;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.exceptions.TransportLostException;
@@ -252,7 +251,7 @@ public class NettyToStyxResponsePropagatorTest {
         try {
             constructor = OutOfDirectMemoryError.class.getDeclaredConstructor(String.class);
         } catch (NoSuchMethodException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
         constructor.setAccessible(true);
         return constructor.newInstance(message);
