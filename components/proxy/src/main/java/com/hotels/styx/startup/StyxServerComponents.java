@@ -84,6 +84,10 @@ public class StyxServerComponents {
 
     private static final Logger LOGGER = getLogger(StyxServerComponents.class);
     private final NettyExecutor executor;
+    private final String NETTY_EXECUTOR = "NettyExecutor";
+    private final String GLOBAL_SERVER_BOSS_NAME = "StyxHttpServer-Global-Boss";
+    private final String GLOBAL_SERVER_WORKER_NAME = "StyxHttpServer-Global-Worker";
+    private final String GLOBAL_CLIENT_WORKER_NAME = "Styx-Client-Global-Worker";
 
     // CHECKSTYLE:OFF
     private StyxServerComponents(Builder builder) {
@@ -101,27 +105,27 @@ public class StyxServerComponents {
         this.executor = NettyExecutor.create("Styx-Client-Worker", environment.configuration().proxyServerConfig().clientWorkerThreadsCount());
 
         // Overwrite any existing or user-supplied values:
-        executorObjectStore.insert("StyxHttpServer-Global-Boss", new StyxObjectRecord<>(
-                "NettyExecutor",
+        executorObjectStore.insert(GLOBAL_SERVER_BOSS_NAME, new StyxObjectRecord<>(
+                NETTY_EXECUTOR,
                 ImmutableSet.of("StyxInternal"),
-                new NettyExecutorConfig(0, "StyxHttpServer-Global-Boss").asJsonNode(),
-                NettyExecutor.create("StyxHttpServer-Global-Boss", 0)));
+                new NettyExecutorConfig(0, GLOBAL_SERVER_BOSS_NAME).asJsonNode(),
+                NettyExecutor.create(GLOBAL_SERVER_BOSS_NAME, 0)));
 
         // Overwrite any existing or user-supplied values:
-        executorObjectStore.insert("StyxHttpServer-Global-Worker",
+        executorObjectStore.insert(GLOBAL_SERVER_WORKER_NAME,
                 new StyxObjectRecord<>(
-                        "NettyExecutor",
+                        NETTY_EXECUTOR,
                         ImmutableSet.of("StyxInternal"),
-                        new NettyExecutorConfig(0, "StyxHttpServer-Global-Worker").asJsonNode(),
-                        NettyExecutor.create("StyxHttpServer-Global-Worker", 0)));
+                        new NettyExecutorConfig(0, GLOBAL_SERVER_WORKER_NAME).asJsonNode(),
+                        NettyExecutor.create(GLOBAL_SERVER_WORKER_NAME, 0)));
 
         // Overwrite any existing or user-supplied values:
-        executorObjectStore.insert("Styx-Client-Global-Worker",
+        executorObjectStore.insert(GLOBAL_CLIENT_WORKER_NAME,
                 new StyxObjectRecord<>(
-                        "NettyExecutor",
+                        NETTY_EXECUTOR,
                         ImmutableSet.of("StyxInternal"),
-                        new NettyExecutorConfig(0, "Styx-Client-Global-Worker").asJsonNode(),
-                        NettyExecutor.create("Styx-Client-Global-Worker", 0)));
+                        new NettyExecutorConfig(0, GLOBAL_CLIENT_WORKER_NAME).asJsonNode(),
+                        NettyExecutor.create(GLOBAL_CLIENT_WORKER_NAME, 0)));
 
         this.environment.configuration().get("executors", JsonNode.class)
                 .map(StyxServerComponents::readComponents)

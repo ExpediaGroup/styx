@@ -233,7 +233,7 @@ public final class Builtins {
     }
 
     /**
-     * Builds a Styx server.
+     * Builds a Styx executor object.
      *
      * Styx server is a service that can accept incoming traffic from the client hosts.
      *
