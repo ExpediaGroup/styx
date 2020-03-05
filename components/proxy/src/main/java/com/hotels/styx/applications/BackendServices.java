@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -29,10 +29,10 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 import static com.google.common.base.Objects.toStringHelper;
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Iterables.getFirst;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.service.BackendService.newBackendServiceBuilder;
+import static com.hotels.styx.common.Preconditions.checkArgument;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 

@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.server.netty;
 
-import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.InetServer;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.MetricRegistry;
@@ -25,10 +25,10 @@ import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 
 import static com.google.common.base.Objects.firstNonNull;
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.LiveHttpResponse.response;
+import static com.hotels.styx.common.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A builder of {@link NettyServer} instances.
@@ -66,12 +66,12 @@ public final class NettyServerBuilder {
     }
 
     public NettyServerBuilder bossExecutor(NettyExecutor executor) {
-        this.bossExecutor = checkNotNull(executor, "boss executor");
+        this.bossExecutor = requireNonNull(executor, "boss executor");
         return this;
     }
 
     public NettyServerBuilder workerExecutor(NettyExecutor executor) {
-        this.workerExecutor = checkNotNull(executor, "worker executor");
+        this.workerExecutor = requireNonNull(executor, "worker executor");
         return this;
     }
 

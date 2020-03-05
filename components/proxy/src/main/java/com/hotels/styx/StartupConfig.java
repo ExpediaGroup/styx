@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import com.hotels.styx.api.Resource;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.hotels.styx.common.Preconditions.checkArgument;
 import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static java.nio.file.Files.isReadable;
 
