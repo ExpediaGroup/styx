@@ -43,5 +43,3 @@ services:
     command:
      - /styx/config/styxconf.yml
 
-    entrypoint:
-      - styx/bin/startup
