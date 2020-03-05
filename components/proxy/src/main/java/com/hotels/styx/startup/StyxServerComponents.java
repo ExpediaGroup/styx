@@ -22,10 +22,11 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.AsyncEventBus;
 import com.hotels.styx.Environment;
-import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.InetServer;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.StartupConfig;
 import com.hotels.styx.StyxConfig;
+import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.Version;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.Configuration;
@@ -43,7 +44,6 @@ import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.RouteRefLookup.RouteDbRefLookup;
-import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
 import org.slf4j.Logger;
 
@@ -72,6 +72,12 @@ import static org.slf4j.LoggerFactory.getLogger;
  * Configuration required to set-up the core Styx services, such as the proxy and admin servers.
  */
 public class StyxServerComponents {
+    private static final Logger LOGGER = getLogger(StyxServerComponents.class);
+    private static final String NETTY_EXECUTOR = "NettyExecutor";
+    private static final String GLOBAL_SERVER_BOSS_NAME = "StyxHttpServer-Global-Boss";
+    private static final String GLOBAL_SERVER_WORKER_NAME = "StyxHttpServer-Global-Worker";
+    private static final String GLOBAL_CLIENT_WORKER_NAME = "Styx-Client-Global-Worker";
+
     private final Environment environment;
     private final Map<String, StyxService> services;
     private final List<NamedPlugin> plugins;
@@ -81,13 +87,7 @@ public class StyxServerComponents {
     private final StyxObjectStore<StyxObjectRecord<NettyExecutor>> executorObjectStore = new StyxObjectStore<>();
     private final RoutingObjectFactory.Context routingObjectContext;
     private final StartupConfig startupConfig;
-
-    private static final Logger LOGGER = getLogger(StyxServerComponents.class);
     private final NettyExecutor executor;
-    private final String NETTY_EXECUTOR = "NettyExecutor";
-    private final String GLOBAL_SERVER_BOSS_NAME = "StyxHttpServer-Global-Boss";
-    private final String GLOBAL_SERVER_WORKER_NAME = "StyxHttpServer-Global-Worker";
-    private final String GLOBAL_CLIENT_WORKER_NAME = "Styx-Client-Global-Worker";
 
     // CHECKSTYLE:OFF
     private StyxServerComponents(Builder builder) {
