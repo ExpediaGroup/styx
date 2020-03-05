@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -257,7 +257,7 @@ public class StyxServerTest {
         };
     }
 
-    private static StyxServer styxServerWithPlugins(Map<String, Plugin> plugins) {
+    private StyxServer styxServerWithPlugins(Map<String, Plugin> plugins) {
         StyxServerComponents config = new StyxServerComponents.Builder()
                 .configuration(styxConfig())
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(new MemoryBackedRegistry<>())))
@@ -267,7 +267,7 @@ public class StyxServerTest {
         return new StyxServer(config);
     }
 
-    private static StyxServer styxServerWithBackendServiceRegistry(StyxService backendServiceRegistry) {
+    private StyxServer styxServerWithBackendServiceRegistry(StyxService backendServiceRegistry) {
         StyxServerComponents config = new StyxServerComponents.Builder()
                 .configuration(styxConfig())
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", backendServiceRegistry))

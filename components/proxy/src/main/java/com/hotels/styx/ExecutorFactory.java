@@ -13,20 +13,23 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx
+package com.hotels.styx;
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.hotels.styx.api.extension.service.spi.StyxService
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
- * A routing object and its associated configuration metadata.
+ * A generic factory that can be implemented to create executor objects whose type is not known
+ * until read from configuration.
+ *
  */
-data class StyxObjectRecord<T>(
-        val type: String,
-        val tags: Set<String>,
-        val config: JsonNode,
-        val styxService: T)
-
-internal typealias ProviderObjectRecord = StyxObjectRecord<StyxService>
-
-internal typealias ServerObjectRecord = StyxObjectRecord<InetServer>
+public interface ExecutorFactory {
+    /**
+     * Create an executor instance.
+     *
+     * @param name                 Executor name
+     * @param configuration        Styx executor configuration
+     *
+     * @return Styx service instance
+     */
+    NettyExecutor create(String name, JsonNode configuration);
+}

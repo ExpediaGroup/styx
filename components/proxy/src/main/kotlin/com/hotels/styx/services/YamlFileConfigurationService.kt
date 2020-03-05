@@ -18,6 +18,7 @@ package com.hotels.styx.services
 import com.fasterxml.jackson.databind.JsonNode
 import com.google.common.net.MediaType.HTML_UTF_8
 import com.google.common.net.MediaType.PLAIN_TEXT_UTF_8
+import com.hotels.styx.NettyExecutor
 import com.hotels.styx.common.http.handler.HttpContentHandler
 import com.hotels.styx.api.extension.service.spi.StyxService
 import com.hotels.styx.common.http.handler.HttpAggregator
@@ -40,6 +41,7 @@ import com.hotels.styx.sourceTag
 import org.slf4j.LoggerFactory
 import java.io.PrintWriter
 import java.io.StringWriter
+import java.lang.IllegalArgumentException
 import java.lang.RuntimeException
 import java.nio.charset.StandardCharsets.UTF_8
 import java.time.Duration
@@ -80,7 +82,8 @@ internal class YamlFileConfigurationService(
                 field("originsFile", string()),
                 optional("monitor", bool()),
                 optional("ingressObject", string()),
-                optional("pollInterval", string()))
+                optional("pollInterval", string()),
+                optional("executor", string()))
 
         private val LOGGER = LoggerFactory.getLogger(YamlFileConfigurationService::class.java)
     }
@@ -220,13 +223,26 @@ internal class YamlFileConfigurationService(
     private class DuplicateObjectException(message: String): RuntimeException(message)
 }
 
-internal data class YamlFileConfigurationServiceConfig(val originsFile: String, val ingressObject: String = "", val monitor: Boolean = true, val pollInterval: String = "")
+internal data class YamlFileConfigurationServiceConfig(
+        val originsFile: String,
+        val ingressObject: String = "",
+        val monitor: Boolean = true,
+        val executor: String = "Styx-Client-Global-Worker",
+        val pollInterval: String = "")
 
 internal class YamlFileConfigurationServiceFactory : ServiceProviderFactory {
     override fun create(name: String, context: RoutingObjectFactory.Context, jsonConfig: JsonNode, serviceDb: StyxObjectStore<ProviderObjectRecord>): StyxService {
         val serviceConfig = JsonNodeConfig(jsonConfig).`as`(YamlFileConfigurationServiceConfig::class.java)!!
         val originRestrictionCookie = context.environment().configuration().get("originRestrictionCookie").orElse(null)
 
-        return YamlFileConfigurationService(name, context.routeDb(), OriginsConfigConverter(serviceDb, context, originRestrictionCookie), serviceConfig, serviceDb)
+        context.executors().get((serviceConfig.executor))
+                .orElseThrow { IllegalArgumentException("YamlFileConfigurationService($name) configuration error: executor='${serviceConfig.executor}' not declared.") }
+
+        return YamlFileConfigurationService(
+                name,
+                context.routeDb(),
+                OriginsConfigConverter(serviceDb, context, originRestrictionCookie, serviceConfig.executor),
+                serviceConfig,
+                serviceDb)
     }
 }
