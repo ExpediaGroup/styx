@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.google.common.base.Objects.toStringHelper;
 import static com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSource;
 import static com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
@@ -608,10 +607,13 @@ public class YamlConfigurationTest {
 
         @Override
         public String toString() {
-            return toStringHelper(this)
-                    .add("host", host)
-                    .add("port", port)
-                    .toString();
+            StringBuilder sb = new StringBuilder(64);
+            sb.append(this.getClass().getSimpleName());
+            sb.append("{host=");
+            sb.append(host);
+            sb.append(", port=");
+            sb.append(port);
+            return sb.append('}').toString();
         }
     }
 }

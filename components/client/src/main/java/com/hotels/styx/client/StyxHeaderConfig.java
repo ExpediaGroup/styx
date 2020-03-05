@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package com.hotels.styx.client;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Objects;
 import io.netty.util.AsciiString;
 
 /**
@@ -83,12 +82,17 @@ public class StyxHeaderConfig {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
-                .add("styxInfoHeaderName", styxInfoHeaderName)
-                .add("originIdHeaderName", originIdHeaderName)
-                .add("requestIdHeaderName", requestIdHeaderName)
-                .add("styxInfoHeaderFormat", styxInfoHeaderFormat)
-                .toString();
+        StringBuilder sb = new StringBuilder(128);
+        sb.append(this.getClass().getSimpleName());
+        sb.append("{styxInfoHeaderName=");
+        sb.append(styxInfoHeaderName);
+        sb.append(", originIdHeaderName=");
+        sb.append(originIdHeaderName);
+        sb.append(", requestIdHeaderName=");
+        sb.append(requestIdHeaderName);
+        sb.append(", styxInfoHeaderFormat=");
+        sb.append(styxInfoHeaderFormat);
+        return sb.append('}').toString();
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 package com.hotels.styx.spi.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Objects;
 
-import static com.google.common.base.Objects.toStringHelper;
+import java.util.Objects;
+
+import static java.util.Objects.hash;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -45,7 +46,7 @@ public class SpiExtensionFactory {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(factoryClass, classPath);
+        return hash(factoryClass, classPath);
     }
 
     @Override
@@ -57,15 +58,18 @@ public class SpiExtensionFactory {
             return false;
         }
         SpiExtensionFactory other = (SpiExtensionFactory) obj;
-        return Objects.equal(this.factoryClass, other.factoryClass)
-                && Objects.equal(this.classPath, other.classPath);
+        return Objects.equals(this.factoryClass, other.factoryClass)
+                && Objects.equals(this.classPath, other.classPath);
     }
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("class", factoryClass)
-                .add("classPath", classPath)
-                .toString();
+        StringBuilder sb = new StringBuilder(64);
+        sb.append(this.getClass().getSimpleName());
+        sb.append("{class=");
+        sb.append(factoryClass);
+        sb.append(", classPath=");
+        sb.append(classPath);
+        return sb.append('}').toString();
     }
 }

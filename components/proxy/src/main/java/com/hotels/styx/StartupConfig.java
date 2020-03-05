@@ -15,7 +15,6 @@
  */
 package com.hotels.styx;
 
-import com.google.common.base.Objects;
 import com.hotels.styx.api.Resource;
 
 import java.nio.file.Path;
@@ -97,11 +96,15 @@ public final class StartupConfig {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
-                .add(STYX_HOME_VAR_NAME, styxHome)
-                .add(CONFIG_FILE_LOCATION_VAR_NAME, configFileLocation)
-                .add(LOGBACK_CONFIG_LOCATION_VAR_NAME, logConfigLocation)
-                .toString();
+        StringBuilder sb = new StringBuilder(96);
+        sb.append(this.getClass().getSimpleName());
+        sb.append("{" + STYX_HOME_VAR_NAME + "=");
+        sb.append(styxHome);
+        sb.append(", " + CONFIG_FILE_LOCATION_VAR_NAME + "=");
+        sb.append(configFileLocation);
+        sb.append(", " + LOGBACK_CONFIG_LOCATION_VAR_NAME + "=");
+        sb.append(logConfigLocation);
+        return sb.append('}').toString();
     }
 
     /**

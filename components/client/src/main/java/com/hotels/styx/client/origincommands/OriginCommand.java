@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import com.hotels.styx.api.Id;
 
 import java.util.Objects;
 
-import static com.google.common.base.Objects.toStringHelper;
 import static java.util.Objects.hash;
 import static java.util.Objects.requireNonNull;
 
@@ -66,9 +65,13 @@ abstract class OriginCommand {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("appId", appId)
-                .add("originId", originId)
-                .toString();
+        StringBuilder sb = new StringBuilder(64);
+        sb.append(this.getClass().getSimpleName());
+        sb.append("{appId=");
+        sb.append(appId);
+        sb.append(", originId=");
+        sb.append(originId);
+        return sb.append('}').toString();
+
     }
 }

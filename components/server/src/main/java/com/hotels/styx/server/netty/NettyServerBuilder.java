@@ -24,7 +24,6 @@ import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 
-import static com.google.common.base.Objects.firstNonNull;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.common.Preconditions.checkArgument;
@@ -48,7 +47,7 @@ public final class NettyServerBuilder {
     }
 
     String host() {
-        return firstNonNull(host, "localhost");
+        return host != null ? host : "localhost";
     }
 
     public NettyServerBuilder host(String host) {
