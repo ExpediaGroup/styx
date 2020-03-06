@@ -171,7 +171,8 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
                 format("%s, %s", loggingPrefix, requestPrefix),
                 origin,
                 idleTimeoutMillis,
-                ctx.channel().eventLoop());
+                ctx.channel().eventLoop(),
+                request.url().toString());
     }
 
     private void emitResponseCompleted() {

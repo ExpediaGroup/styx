@@ -40,8 +40,8 @@ public class QueueDrainingExecutor implements Executor {
                 Runnable task = tasks.poll();
                 try {
                     task.run();
-                } catch (RuntimeException cause) {
-                    LOGGER.warn("Task {} threw an exception {}.", task, cause);
+                } catch (Throwable cause) {
+                    LOGGER.warn("Task {} threw an error {}.", task, cause);
                 }
             } while (taskCount.decrementAndGet() > 0);
         }

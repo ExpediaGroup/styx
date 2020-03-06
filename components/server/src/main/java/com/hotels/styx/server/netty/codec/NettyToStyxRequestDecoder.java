@@ -42,7 +42,9 @@ import org.reactivestreams.Publisher;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
@@ -147,7 +149,8 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
                 format("%s, %s", loggingPrefix, ""),
                 null,
                 inactivityTimeoutMs,
-                ctx.channel().eventLoop());
+                ctx.channel().eventLoop(),
+                "_" + uri);
     }
 
     private LiveHttpRequest toStyxRequest(HttpRequest request, Publisher<Buffer> contentPublisher) {

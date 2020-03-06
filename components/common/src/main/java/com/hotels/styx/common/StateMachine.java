@@ -68,7 +68,9 @@ public final class StateMachine<S> {
 
         S oldState = currentState;
         currentState = transition == null ? inappropriateEventHandler.apply(oldState, event) : transition.apply(event);
-
+        if (oldState.toString().equals("STREAMING") && currentState.toString().equals("BUFFERING")) {
+            LOGGER.warn("Funny stuff happening with transition: " + transition + " and event: " + event);
+        }
         stateChangeListener.onStateChange(oldState, currentState, event);
     }
 

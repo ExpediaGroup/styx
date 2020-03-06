@@ -39,6 +39,7 @@ import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.
 import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.EMITTING_BUFFERED_CONTENT;
 import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.STREAMING;
 import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.TERMINATED;
+import static com.hotels.styx.common.content.FsmHistory.fsmHistories;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static reactor.core.publisher.Operators.addCap;
@@ -79,6 +80,7 @@ public class FlowControllingHttpContentProducer {
     private volatile Subscriber<? super ByteBuf> contentSubscriber;
     private volatile long lastActive;
     private FlowControllerTimer timer;
+    private String uri;
 
     enum ProducerState {
         BUFFERING,
@@ -96,13 +98,18 @@ public class FlowControllingHttpContentProducer {
             String loggingPrefix,
             Origin origin,
             long inactivityTimeoutMs,
-            EventLoop eventLoop) {
+            EventLoop eventLoop,
+            String uri) {
         this.askForMore = requireNonNull(askForMore);
         this.onCompleteAction = requireNonNull(onCompleteAction);
         this.onTerminateAction = requireNonNull(onTerminateAction);
         this.loggingPrefix = loggingPrefix;
         this.origin = origin;
-
+        this.uri = uri;
+        if (uri.startsWith("_")) {
+            LOGGER.warn(">>> Request FSM being created");
+            fsmHistories.put(uri, "Initial state:BUFFERING");
+        }
         this.stateMachine = new StateMachine.Builder<ProducerState>()
                 .initialState(BUFFERING)
 
@@ -154,7 +161,19 @@ public class FlowControllingHttpContentProducer {
                 .onInappropriateEvent((state, event) -> {
                     LOGGER.warn(warningMessage("Inappropriate event=" + event.getClass().getSimpleName()));
                     return state;
-                }).build();
+                })
+                .onStateChange((oldState, newState, event)-> {
+                    if (uri.startsWith("_")) {
+                        String stateChange = ". Event:" + event + " Change:" + oldState + " -> " + newState;
+                        fsmHistories.put(uri, fsmHistories.get(uri) + stateChange);
+                        if (newState == COMPLETED) {
+                            LOGGER.warn(">>>>Completed");
+                        }
+                    }
+                })
+                .build();
+
+
         touchLastActive();
         timer = new FlowControllerTimer(inactivityTimeoutMs, eventLoop, this);
     }
@@ -429,6 +448,7 @@ public class FlowControllingHttpContentProducer {
     }
 
     public void tearDownResources(String message) {
+        LOGGER.warn("Request FSM History: " + fsmHistories.get("_" + uri));
         stateMachine.handle(new TearDownEvent(new ContentTimeoutException(
                 origin,
                 format("%s. %s", loggingPrefix, message),

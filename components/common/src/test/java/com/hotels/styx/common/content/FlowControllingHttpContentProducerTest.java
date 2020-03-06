@@ -89,7 +89,8 @@ public class FlowControllingHttpContentProducerTest {
                 "foobar",
                 newOriginBuilder("foohost", 12345).build(),
                 1000,
-                eventLoop);
+                eventLoop,
+                null);
 
         producer.request(initialCount);
     }
