@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.hotels.styx.common.Strings.isNotEmpty;
 import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static java.util.Objects.hash;
 import static java.util.Objects.requireNonNull;
@@ -164,7 +164,7 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
     }
 
     public boolean isConfigured() {
-        return !isNullOrEmpty(certificateFile) && !isNullOrEmpty(certificateKeyFile);
+        return isNotEmpty(certificateFile) && isNotEmpty(certificateKeyFile);
     }
 
     /**

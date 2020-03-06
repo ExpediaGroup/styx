@@ -18,11 +18,11 @@ package com.hotels.styx.admin.handlers.json;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 
-import static com.google.common.base.Strings.padStart;
 import static java.util.stream.Collectors.joining;
 
 /**
@@ -160,7 +160,9 @@ public final class JsonReformatter {
         }
 
         private static String indent(int indentation) {
-            return padStart("", indentation * 2, ' ');
+            char[] spaces = new char[indentation * 2];
+            Arrays.fill(spaces, ' ');
+            return new String(spaces);
         }
     }
 }

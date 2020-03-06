@@ -26,8 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.hotels.styx.common.Preconditions.checkArgument;
+import static com.hotels.styx.common.Preconditions.checkNotEmpty;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
@@ -119,7 +118,7 @@ public class PathTrie<T> {
      * @param value value to map path to
      */
     public void put(String path, T value) {
-        checkArgument(!isNullOrEmpty(path));
+        checkNotEmpty(path);
         requireNonNull(value);
 
         List<String> components = pathToComponents(Paths.get(removeAsterisk(path)));

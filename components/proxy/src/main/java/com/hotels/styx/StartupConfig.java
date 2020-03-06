@@ -20,8 +20,8 @@ import com.hotels.styx.api.Resource;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.hotels.styx.common.Preconditions.checkArgument;
+import static com.hotels.styx.common.Preconditions.checkNotEmpty;
 import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static java.nio.file.Files.isReadable;
 
@@ -131,19 +131,19 @@ public final class StartupConfig {
         }
 
         public Builder styxHome(String styxHome) {
-            checkArgument(!isNullOrEmpty(styxHome));
+            checkNotEmpty(styxHome);
             this.styxHome = styxHome;
             return this;
         }
 
         public Builder configFileLocation(String configFileLocation) {
-            checkArgument(!isNullOrEmpty(configFileLocation));
+            checkNotEmpty(configFileLocation);
             this.configFileLocation = configFileLocation;
             return this;
         }
 
         public Builder logbackConfigLocation(String logbackConfigLocation) {
-            checkArgument(!isNullOrEmpty(logbackConfigLocation));
+            checkNotEmpty(logbackConfigLocation);
             this.logbackConfigLocation = logbackConfigLocation;
             return this;
         }
