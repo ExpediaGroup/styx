@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static java.util.Objects.hash;
@@ -141,18 +140,27 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("port", port())
-                .add("sslProvider", sslProvider)
-                .add("certificateFile", certificateFile)
-                .add("certificateKeyFile", certificateKeyFile)
-                .add("sessionTimeoutMillis", sessionTimeoutMillis)
-                .add("sessionCacheSize", sessionCacheSize)
-                .add("cipherSuites", cipherSuites)
-                .add("protocols", protocols != null
-                        ? protocols.stream().filter(java.util.Objects::nonNull).collect(joining(","))
-                        : "None")
-                .toString();
+        StringBuilder sb = new StringBuilder(256);
+        sb.append(this.getClass().getSimpleName());
+        sb.append("{port=");
+        sb.append(port());
+        sb.append(", sslProvider=");
+        sb.append(sslProvider);
+        sb.append(", certificateFile=");
+        sb.append(certificateFile);
+        sb.append(", certificateKeyFile=");
+        sb.append(certificateKeyFile);
+        sb.append(", sessionTimeoutMillis=");
+        sb.append(sessionTimeoutMillis);
+        sb.append(", sessionCacheSize=");
+        sb.append(sessionCacheSize);
+        sb.append(", cipherSuites=");
+        sb.append(cipherSuites);
+        sb.append(", protocols=");
+        sb.append(protocols != null
+                ? protocols.stream().filter(java.util.Objects::nonNull).collect(joining(","))
+                : "None");
+        return sb.append('}').toString();
     }
 
     public boolean isConfigured() {

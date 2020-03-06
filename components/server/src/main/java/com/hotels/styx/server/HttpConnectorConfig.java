@@ -19,8 +19,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Objects;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
-
 /**
  * Http Connector config.
  */
@@ -66,8 +64,10 @@ public class HttpConnectorConfig implements ConnectorConfig {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("port", port)
-                .toString();
+        StringBuilder sb = new StringBuilder(32);
+        sb.append(this.getClass().getSimpleName());
+        sb.append("{port=");
+        sb.append(port);
+        return sb.append('}').toString();
     }
 }
