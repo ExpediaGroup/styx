@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import static com.hotels.styx.EventLoopGroups.epollEventLoopGroup;
 import static com.hotels.styx.EventLoopGroups.nioEventLoopGroup;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * A netty based executor for styx.
@@ -41,7 +42,8 @@ public class NettyExecutor {
 
     /**
      * Constructs an netty/io event executor.
-     * @param name thread group name.
+     *
+     * @param name  thread group name.
      * @param count thread count.
      * @return
      */
@@ -62,15 +64,20 @@ public class NettyExecutor {
     }
 
     private NettyExecutor(EventLoopGroup eventLoopGroup,
-                         Class<? extends ServerChannel> serverEventLoopClass,
-                         Class<? extends SocketChannel> clientEventLoopClass) {
-            this.serverEventLoopClass = serverEventLoopClass;
-            this.clientEventLoopClass = clientEventLoopClass;
-            this.eventLoopGroup = eventLoopGroup;
+                          Class<? extends ServerChannel> serverEventLoopClass,
+                          Class<? extends SocketChannel> clientEventLoopClass) {
+        this.serverEventLoopClass = serverEventLoopClass;
+        this.clientEventLoopClass = clientEventLoopClass;
+        this.eventLoopGroup = eventLoopGroup;
     }
 
     public void shut() {
-        eventLoopGroup.shutdownGracefully();
+        try {
+            eventLoopGroup.shutdownGracefully(0, 0, SECONDS).await(5000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
     }
 
     public Class<? extends ServerChannel> serverEventLoopClass() {

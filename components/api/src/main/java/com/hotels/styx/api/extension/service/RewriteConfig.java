@@ -122,8 +122,11 @@ public class RewriteConfig implements RewriteRule {
         private String substitute(MatchResult matcher) {
             StringBuilder rewrittenUrl = new StringBuilder();
 
+            // There may not be enough literals to fully interleave with placeholders.
+            // This is just how String.split(REGEX) works.
+            // Any remaining literals are assumed to be empty strings.
             for (int i = 0; i < placeholderNumbers.size(); i++) {
-                if (!literals.isEmpty()) {
+                if (literals.size() > i) {
                     rewrittenUrl.append(literals.get(i));
                 }
                 rewrittenUrl.append(matcher.group(placeholderNumbers.get(i)));

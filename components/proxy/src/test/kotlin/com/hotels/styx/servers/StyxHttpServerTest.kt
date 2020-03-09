@@ -36,6 +36,7 @@ import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.RoutingObjectFactoryContext
 import com.hotels.styx.configBlock
+import com.hotels.styx.executorObjects
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.ref
 import com.hotels.styx.routeLookup
@@ -60,7 +61,7 @@ class StyxHttpServerTest : FeatureSpec({
                 handler: aHandler
               """.trimIndent())
 
-        val server = StyxHttpServerFactory().create("test-01", routingContext, serverConfig, db)
+        val server = StyxHttpServerFactory().create("test-01", routingContext.get(), serverConfig, db)
         val guavaServer = toGuavaService(server)
 
         try {
@@ -90,7 +91,7 @@ class StyxHttpServerTest : FeatureSpec({
                   sslProvider: JDK
               """.trimIndent())
 
-        val server = StyxHttpServerFactory().create("test-01", routingContext, serverConfig, db)
+        val server = StyxHttpServerFactory().create("test-01", routingContext.get(), serverConfig, db)
         val guavaServer = toGuavaService(server)
 
         try {
@@ -119,7 +120,7 @@ class StyxHttpServerTest : FeatureSpec({
                 compressResponses: true
               """.trimIndent())
 
-        val server = StyxHttpServerFactory().create("test-01", routingContext, serverConfig, db)
+        val server = StyxHttpServerFactory().create("test-01", routingContext.get(), serverConfig, db)
         val guavaServer = toGuavaService(server)
         guavaServer.startAsync().awaitRunning()
 
@@ -158,7 +159,7 @@ class StyxHttpServerTest : FeatureSpec({
                 maxInitialLength: 100
               """.trimIndent())
 
-        val server = StyxHttpServerFactory().create("test-01", routingContext, serverConfig, db)
+        val server = StyxHttpServerFactory().create("test-01", routingContext.get(), serverConfig, db)
         val guavaServer = toGuavaService(server)
         guavaServer.startAsync().awaitRunning()
 
@@ -195,7 +196,7 @@ class StyxHttpServerTest : FeatureSpec({
                 maxHeaderSize: 1024
               """.trimIndent())
 
-        val server = StyxHttpServerFactory().create("test-01", routingContext, serverConfig, db)
+        val server = StyxHttpServerFactory().create("test-01", routingContext.get(), serverConfig, db)
         val guavaServer = toGuavaService(server)
         guavaServer.startAsync().awaitRunning()
 
@@ -235,7 +236,7 @@ class StyxHttpServerTest : FeatureSpec({
                 requestTimeoutMillis: 50
               """.trimIndent())
 
-            val server = StyxHttpServerFactory().create("test-01", routingContext, serverConfig, db)
+            val server = StyxHttpServerFactory().create("test-01", routingContext.get(), serverConfig, db)
             val guavaServer = toGuavaService(server)
 
             try {
@@ -270,7 +271,7 @@ class StyxHttpServerTest : FeatureSpec({
                 keepAliveTimeoutMillis: 500
               """.trimIndent())
 
-        val server = StyxHttpServerFactory().create("test-01", routingContext, serverConfig, db)
+        val server = StyxHttpServerFactory().create("test-01", routingContext.get(), serverConfig, db)
         val guavaServer = toGuavaService(server)
         guavaServer.startAsync().awaitRunning()
 
@@ -295,13 +296,13 @@ class StyxHttpServerTest : FeatureSpec({
 
             Thread.sleep(100)
 
-            connection.isConnected shouldBe(true)
+            connection.isConnected shouldBe (true)
         }
 
         scenario("Should close the connection after keepAlive time") {
             Thread.sleep(500)
 
-            connection.isConnected shouldBe(false)
+            connection.isConnected shouldBe (false)
         }
 
         guavaServer.stopAsync().awaitTerminated()
@@ -312,11 +313,9 @@ class StyxHttpServerTest : FeatureSpec({
                 port: 0
                 handler: aggregator
                 maxConnectionsCount: 2 
-                bossThreadsCount: 1
-                workerThreadsCount: 1
               """.trimIndent())
 
-        val server = StyxHttpServerFactory().create("test-01", routingContext, serverConfig, db)
+        val server = StyxHttpServerFactory().create("test-01", routingContext.get(), serverConfig, db)
         val guavaServer = toGuavaService(server)
         guavaServer.startAsync().awaitRunning()
 
@@ -335,7 +334,41 @@ class StyxHttpServerTest : FeatureSpec({
         guavaServer.stopAsync().awaitTerminated()
     }
 
+    feature("Uses named executor") {
+        val serverConfig = configBlock("""
+                port: 0
+                handler: aggregator
+                maxConnectionsCount: 2
+              """.trimIndent())
+
+        val server = StyxHttpServerFactory().create("test-01", routingContext.copy(executorObjectStore = executorObjects()).get(), serverConfig, db)
+        val guavaServer = toGuavaService(server)
+        guavaServer.startAsync().awaitRunning()
+
+        StyxHttpClient.Builder().build().send(get("/a/" + "b".repeat(95))
+                .header(HOST, "localhost:${server.inetAddress().port}")
+                .build())!!
+                .wait()!!
+                .let {
+                    it.status() shouldBe OK
+                }
+
+
+        println("Thread names: ${threadNames()}")
+
+        guavaServer.stopAsync().awaitTerminated()
+    }
+
 })
+
+
+fun threadCount(namePattern: String) = Thread.getAllStackTraces().keys
+        .map { it.name }
+        .filter { it.contains(namePattern) }
+        .count()
+
+fun threadNames() = Thread.getAllStackTraces().keys
+        .map { it.name }
 
 private fun createConnection(port: Int) = NettyConnectionFactory.Builder()
         .build()
@@ -358,7 +391,7 @@ private val compressedResponse = response(OK)
 private val routingContext = RoutingObjectFactoryContext(
         routeRefLookup = routeLookup {
             ref("aHandler" to RoutingObject { request, _ ->
-                when(request.url().toString()) {
+                when (request.url().toString()) {
                     "/compressed" -> Eventual.of(compressedResponse.stream())
                     else -> Eventual.of(response.stream())
                 }
@@ -369,8 +402,8 @@ private val routingContext = RoutingObjectFactoryContext(
                         .aggregate(1024)
                         .flatMap { Eventual.of(response.stream()) }
             })
-        })
-        .get()
+        },
+        executorObjectStore = executorObjects())
 
 private fun ungzip(content: ByteArray, charset: Charset): String = GZIPInputStream(content.inputStream()).bufferedReader(charset).use { it.readText() }
 
