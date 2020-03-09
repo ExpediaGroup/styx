@@ -60,7 +60,7 @@ public class AdminServerConfig extends NettyServerConfig {
         MetricsCache(
                 @JsonProperty("enabled") Boolean enabled,
                 @JsonProperty("expirationMillis") Integer expirationMillis) {
-            this.enabled = enabled != null ? enabled : enabled;
+            this.enabled = enabled != null ? enabled : false;
             this.expirationMillis = expirationMillis != null ? expirationMillis : 10_000;
         }
     }
