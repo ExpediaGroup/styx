@@ -99,6 +99,7 @@ public class RequestEnrichingInterceptorTest {
 
     private static class TestChain implements Chain {
         private final boolean secure;
+
         TestChain(boolean secure) {
             this.secure = secure;
         }

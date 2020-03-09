@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -135,7 +135,7 @@ fun StyxServerProvider.adminRequest(endpoint: String, debug: Boolean = false): H
 fun CompletableFuture<HttpResponse>.wait(debug: Boolean = false) = this.toMono()
         .doOnNext {
             if (debug) {
-                LOGGER.debug("${it.status()} - ${it.headers()} - ${it.bodyAs(UTF_8)}")
+                LOGGER.info("${it.status()} - ${it.headers()} - ${it.bodyAs(UTF_8)}")
             }
         }
         .block()
@@ -227,7 +227,16 @@ fun StyxServer.routingObjects(debug: Boolean = false): Optional<String> = StyxHt
             }
         }
 
-fun threadCount(namePattern: String) = Thread.getAllStackTraces().keys
+fun StyxServer.serverPort(name: String, debug: Boolean = false) = testClient
+        .send(HttpRequest.get("/admin/servers/$name/port")
+                .header(HOST, this.adminHostHeader()).build())
+        .wait()
+        .bodyAs(UTF_8)
+        .toInt()
+
+fun threadNames() = Thread.getAllStackTraces().keys
         .map { it.name }
+
+fun threadCount(namePattern: String) = threadNames()
         .filter { it.contains(namePattern) }
         .count()
