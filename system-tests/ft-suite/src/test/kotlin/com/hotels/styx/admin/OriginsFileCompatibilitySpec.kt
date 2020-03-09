@@ -129,6 +129,28 @@ class OriginsFileCompatibilitySpec : FunSpec() {
             }
         }
 
+        // Test hangs:
+        context("!Error scenarios") {
+            writeOrigins("""
+                    - id: appA
+                    - this file has somehow corrupted
+                      .. bl;ah blah" 
+                    """.trimIndent())
+
+            styxServer.restart()
+
+            delay(1.seconds.toMillis())
+
+            client.send(get("/20")
+                            .header(HOST, styxServer().proxyHttpHostHeader())
+                            .build())
+                    .wait().let {
+                        it!!.status() shouldBe NOT_FOUND
+                    }
+
+            styxServer.stop()
+        }
+
         context("Origins configuration changes") {
             writeOrigins("""
                 - id: appA
