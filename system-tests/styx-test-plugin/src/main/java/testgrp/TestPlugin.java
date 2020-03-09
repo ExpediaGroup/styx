@@ -15,12 +15,11 @@
  */
 package testgrp;
 
-import com.google.common.base.Charsets;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import io.netty.buffer.ByteBuf;
@@ -28,6 +27,8 @@ import io.netty.buffer.ByteBuf;
 import java.util.Collections;
 import java.util.Map;
 import java.util.function.Function;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class TestPlugin implements Plugin {
     private static final String X_HCOM_PLUGINS_HEADER = "X-Hcom-Plugins";
@@ -54,7 +55,7 @@ public class TestPlugin implements Plugin {
                 .header("X-Hcom-Styx-Stopped", styxStopped)
                 .build();
 
-        Function<ByteBuf, String> byteBufStringFunction = byteBuf -> byteBuf.toString(Charsets.UTF_8);
+        Function<ByteBuf, String> byteBufStringFunction = byteBuf -> byteBuf.toString(UTF_8);
 
         return chain.proceed(newRequest)
                 .flatMap(response -> response.aggregate(1 * 1024 * 1024))

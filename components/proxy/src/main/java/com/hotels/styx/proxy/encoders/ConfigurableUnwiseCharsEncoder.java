@@ -15,10 +15,10 @@
  */
 package com.hotels.styx.proxy.encoders;
 
-import com.google.common.base.Splitter;
 import com.google.common.escape.CharEscaperBuilder;
 import com.google.common.escape.Escaper;
 import com.hotels.styx.StyxConfig;
+import com.hotels.styx.common.Strings;
 import com.hotels.styx.server.netty.codec.UnwiseCharsEncoder;
 import org.slf4j.Logger;
 
@@ -27,6 +27,7 @@ import java.util.Objects;
 import static com.google.common.escape.Escapers.nullEscaper;
 import static com.hotels.styx.common.Strings.isNullOrEmpty;
 import static java.lang.Integer.toHexString;
+import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -69,12 +70,13 @@ public class ConfigurableUnwiseCharsEncoder implements UnwiseCharsEncoder {
         if (isNullOrEmpty(unwiseChars)) {
             return nullEscaper();
         }
-        Iterable<String> tokens = Splitter.on(",").omitEmptyStrings().split(unwiseChars);
         CharEscaperBuilder builder = new CharEscaperBuilder();
-        for (String token : tokens) {
-            char c = token.charAt(0);
-            builder.addEscape(c, "%" + toHexString(c).toUpperCase());
-        }
+
+        stream(unwiseChars.split(","))
+                .filter(Strings::isNotEmpty)
+                .map(token -> token.charAt(0))
+                .forEach(c -> builder.addEscape(c, "%" + toHexString(c).toUpperCase()));
+
         return builder.toEscaper();
     }
 }

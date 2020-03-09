@@ -162,7 +162,7 @@ public final class JsonReformatter {
         private static String indent(int indentation) {
             char[] spaces = new char[indentation * 2];
             Arrays.fill(spaces, ' ');
-            return new String(spaces);
+            return String.valueOf(spaces);
         }
     }
 }
