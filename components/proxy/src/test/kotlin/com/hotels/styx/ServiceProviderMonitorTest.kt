@@ -24,7 +24,7 @@ import io.mockk.verify
 
 class ServiceProviderMonitorTest : FeatureSpec({
 
-    feature("Service provider lifecycle management") {
+    feature("!Service provider lifecycle management") {
 
         val serviceAaa = mockk<StyxService>(relaxed = true)
         val serviceBbb = mockk<StyxService>(relaxed = true)
