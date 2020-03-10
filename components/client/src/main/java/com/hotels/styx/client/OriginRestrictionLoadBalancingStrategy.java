@@ -86,13 +86,14 @@ public class OriginRestrictionLoadBalancingStrategy implements LoadBalancer {
                 .map(this::originIdMatches);
     }
 
-    @SuppressWarnings("checkstyle:IllegalInstantiation")
+    // CHECKSTYLE:OFF
     private Stream<String> regularExpressionStream(String cookieValue) {
         return Collections.list(new StringTokenizer(cookieValue, ","))
                 .stream()
                 .map(String.class::cast)
                 .map(String::trim);
     }
+    // CHECKSTYLE:ON
 
     private Pattern compileRegularExpression(String regex) {
         try {
