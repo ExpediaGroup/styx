@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
@@ -45,6 +44,7 @@ import static com.hotels.styx.api.RequestCookie.decode;
 import static com.hotels.styx.api.RequestCookie.encode;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.lang.Long.parseLong;
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
@@ -703,7 +703,9 @@ public class HttpRequest implements HttpMessage {
         }
 
         private void ensureMethodIsValid() {
-            checkArgument(isMethodValid(), "Unrecognised HTTP method=%s", this.method);
+            if (!isMethodValid()) {
+                throw new IllegalArgumentException(format("Unrecognised HTTP method=%s", this.method));
+            }
         }
 
         private boolean isMethodValid() {
@@ -711,15 +713,20 @@ public class HttpRequest implements HttpMessage {
         }
 
         private void ensureContentLengthIsValid() {
-            requireNotDuplicatedHeader(CONTENT_LENGTH).ifPresent(contentLength ->
-                    checkArgument(isNonNegativeInteger(contentLength), "Invalid Content-Length found. %s", contentLength)
+            requireNotDuplicatedHeader(CONTENT_LENGTH).ifPresent(contentLength -> {
+                        if (!isNonNegativeInteger(contentLength)) {
+                            throw new IllegalArgumentException(format("Invalid Content-Length found. %s", contentLength));
+                        }
+                    }
             );
         }
 
         private Optional<String> requireNotDuplicatedHeader(CharSequence headerName) {
             List<String> headerValues = headers.build().getAll(headerName);
 
-            checkArgument(headerValues.size() <= 1, "Duplicate %s found. %s", headerName, headerValues);
+            if (headerValues.size() > 1) {
+                throw new IllegalArgumentException(format("Duplicate %s found. %s", headerName, headerValues));
+            }
 
             return headerValues.isEmpty() ? Optional.empty() : Optional.of(headerValues.get(0));
         }

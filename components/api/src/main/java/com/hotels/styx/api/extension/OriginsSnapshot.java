@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static com.google.common.base.Objects.toStringHelper;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static java.util.Objects.requireNonNull;
@@ -139,11 +138,17 @@ public final class OriginsSnapshot {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("appId", appId)
-                .add("activeOrigins", activeOrigins)
-                .add("inactiveOrigins", inactiveOrigins)
-                .add("disabledOrigins", disabledOrigins)
+        return new StringBuilder(128)
+                .append(this.getClass().getSimpleName())
+                .append("{appId=")
+                .append(appId)
+                .append(", activeOrigins=")
+                .append(activeOrigins)
+                .append(", inactiveOrigins=")
+                .append(inactiveOrigins)
+                .append(", disabledOrigins=")
+                .append(disabledOrigins)
+                .append('}')
                 .toString();
     }
 }

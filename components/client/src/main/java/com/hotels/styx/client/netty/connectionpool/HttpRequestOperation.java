@@ -48,7 +48,6 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.google.common.base.Objects.toStringHelper;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.extension.service.BackendService.DEFAULT_RESPONSE_TIMEOUT_MILLIS;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
@@ -214,8 +213,11 @@ public class HttpRequestOperation {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("httpRequest", this.request)
+        return new StringBuilder(32)
+                .append(this.getClass().getSimpleName())
+                .append("{httpRequest=")
+                .append(this.request)
+                .append('}')
                 .toString();
     }
 

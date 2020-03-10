@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.base.Objects;
+import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
@@ -61,6 +61,6 @@ public final class Id {
             return false;
         }
         Id other = (Id) obj;
-        return Objects.equal(this.value, other.value);
+        return Objects.equals(this.value, other.value);
     }
 }

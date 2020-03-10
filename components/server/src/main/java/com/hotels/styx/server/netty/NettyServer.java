@@ -16,8 +16,8 @@
 package com.hotels.styx.server.netty;
 
 import com.google.common.collect.ImmutableMap;
-import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.InetServer;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
@@ -35,7 +35,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static io.netty.channel.ChannelOption.ALLOCATOR;
@@ -153,8 +152,10 @@ final class NettyServer extends AbstractStyxService implements InetServer {
                     shutdownAction.run();
                 }
                 address = null;
+            } catch (RuntimeException e) {
+                throw e;
             } catch (Exception e) {
-                throw propagate(e);
+                throw new RuntimeException(e);
             }
         });
     }

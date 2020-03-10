@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package com.hotels.styx.server.handlers;
 import com.google.common.io.Files;
 import com.google.common.net.MediaType;
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.common.http.handler.HttpAggregator;
@@ -30,11 +30,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
 
-import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
-import static com.hotels.styx.server.handlers.MediaTypes.mediaTypeOf;
-import static com.hotels.styx.common.http.handler.NotFoundHandler.NOT_FOUND_HANDLER;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.common.http.handler.NotFoundHandler.NOT_FOUND_HANDLER;
+import static com.hotels.styx.server.handlers.MediaTypes.mediaTypeOf;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -85,7 +84,7 @@ public class StaticFileHandler implements HttpHandler {
         try {
             return Files.toString(file, UTF_8);
         } catch (IOException e) {
-            throw propagate(e);
+            throw new RuntimeException(e);
         }
     }
 

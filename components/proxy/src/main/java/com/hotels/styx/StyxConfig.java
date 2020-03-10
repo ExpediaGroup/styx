@@ -15,11 +15,11 @@
  */
 package com.hotels.styx;
 
-import com.google.common.base.Splitter;
 import com.hotels.styx.admin.AdminServerConfig;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.client.StyxHeaderConfig;
+import com.hotels.styx.common.Strings;
 import com.hotels.styx.common.io.ResourceFactory;
 import com.hotels.styx.config.schema.SchemaValidationException;
 import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
@@ -34,6 +34,7 @@ import static com.hotels.styx.ServerConfigSchema.validateServerConfiguration;
 import static com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSource;
 import static com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML;
 import static java.lang.System.getProperty;
+import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
@@ -160,10 +161,10 @@ public final class StyxConfig implements Configuration {
     }
 
     private static Iterable<String> versionFiles(String versionFilesAsString) {
-        return Splitter.on(',')
-                .trimResults()
-                .omitEmptyStrings()
-                .split(versionFilesAsString);
+        return stream(versionFilesAsString.split(","))
+                .filter(Strings::isNotEmpty)
+                .map(String::trim)
+                .collect(toList());
     }
 
     private static YamlConfiguration loadYamlConfiguration(String yaml) {

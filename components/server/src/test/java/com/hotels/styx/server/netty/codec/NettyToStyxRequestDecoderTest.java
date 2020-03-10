@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.server.netty.codec;
 
-import com.google.common.base.Strings;
 import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.HttpHeader;
@@ -53,8 +52,6 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 
-import static com.google.common.base.Charsets.US_ASCII;
-import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Sets.newHashSet;
 import static com.hotels.styx.api.RequestCookie.requestCookie;
@@ -72,6 +69,8 @@ import static io.netty.handler.codec.http.HttpMethod.GET;
 import static io.netty.handler.codec.http.HttpMethod.POST;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.matchesPattern;
@@ -258,7 +257,7 @@ public class NettyToStyxRequestDecoderTest {
     public void throwsBadRequestForTooLongFrames() throws Throwable {
         HttpRequest request = new DefaultFullHttpRequest(HTTP_1_1, GET, "http://foo.com/");
         request.headers().set(HOST, "http://foo.com/");
-        request.headers().set("foo", Strings.repeat("x", 10000));
+        request.headers().set("foo", String.format("%10000s", "").replace(" ", "x"));
         ByteBuf byteBuf = httpMessageToBytes(request);
 
         Exception e = assertThrows(DecoderException.class, () -> channel.writeInbound(byteBuf));

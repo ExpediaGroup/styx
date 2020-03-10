@@ -24,7 +24,6 @@ import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.google.common.base.Objects.toStringHelper;
 import static java.lang.Integer.parseInt;
 import static java.util.Arrays.asList;
 import static java.util.regex.Pattern.compile;
@@ -90,9 +89,13 @@ public class RewriteConfig implements RewriteRule {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("urlPattern", urlPattern)
-                .add("replacement", replacement)
+        return new StringBuilder(64)
+                .append(this.getClass().getSimpleName())
+                .append("{urlPattern=")
+                .append(urlPattern)
+                .append(", replacement=")
+                .append(replacement)
+                .append('}')
                 .toString();
     }
 

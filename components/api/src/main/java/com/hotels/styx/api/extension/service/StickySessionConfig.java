@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,12 +15,10 @@
  */
 package com.hotels.styx.api.extension.service;
 
-import com.google.common.base.Objects;
-
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
+import static java.util.Objects.hash;
 import static java.util.concurrent.TimeUnit.HOURS;
 
 /**
@@ -63,15 +61,19 @@ public class StickySessionConfig {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("enabled", enabled)
-                .add("timeoutSeconds", timeoutSeconds)
+        return new StringBuilder(64)
+                .append(this.getClass().getSimpleName())
+                .append("{enabled=")
+                .append(enabled)
+                .append(", timeoutSeconds=")
+                .append(timeoutSeconds)
+                .append('}')
                 .toString();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(this.enabled, this.timeoutSeconds);
+        return hash(this.enabled, this.timeoutSeconds);
     }
 
     @Override

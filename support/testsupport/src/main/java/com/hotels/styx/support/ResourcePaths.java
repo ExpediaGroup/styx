@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static com.google.common.base.Throwables.propagate;
 import static java.lang.String.format;
 
 public final class ResourcePaths {
@@ -32,7 +31,7 @@ public final class ResourcePaths {
         try {
             return Paths.get(ResourcePaths.class.getResource("/").toURI()).toString() + File.separator;
         } catch (URISyntaxException e) {
-            throw propagate(e);
+            throw new RuntimeException(e);
         }
     }
 

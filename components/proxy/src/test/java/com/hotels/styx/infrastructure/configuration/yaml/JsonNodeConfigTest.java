@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -54,7 +53,7 @@ public class JsonNodeConfigTest {
         try {
             return new ObjectMapper().readTree(json);
         } catch (IOException e) {
-            throw propagate(e);
+            throw new RuntimeException(e);
         }
     }
 }

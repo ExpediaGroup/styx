@@ -23,7 +23,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
 
-import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.ExamplePluginJarLocation.createTemporarySharedDirectoryForJars;
 import static com.hotels.styx.ExamplePluginJarLocation.exampleDependencyJarLocation;
 import static com.hotels.styx.ExamplePluginJarLocation.examplePluginJarLocation;
@@ -93,7 +92,7 @@ public class BuildVsRuntimeJarAccessTest {
         try {
             return path.toUri().toURL();
         } catch (MalformedURLException e) {
-            throw propagate(e);
+            throw new RuntimeException(e);
         }
     }
 }

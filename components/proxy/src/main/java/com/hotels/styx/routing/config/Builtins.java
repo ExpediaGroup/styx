@@ -18,6 +18,7 @@ package com.hotels.styx.routing.config;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.ExecutorFactory;
 import com.hotels.styx.InetServer;
+import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
@@ -34,7 +35,6 @@ import com.hotels.styx.routing.handlers.PathPrefixRouter;
 import com.hotels.styx.routing.handlers.ProxyToBackend;
 import com.hotels.styx.routing.handlers.RouteRefLookup;
 import com.hotels.styx.routing.handlers.StaticResponseHandler;
-import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.routing.interceptors.RewriteInterceptor;
 import com.hotels.styx.servers.StyxHttpServer;
 import com.hotels.styx.servers.StyxHttpServerFactory;
@@ -48,9 +48,9 @@ import com.hotels.styx.services.YamlFileConfigurationServiceFactory;
 import java.util.List;
 import java.util.Map;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
+import static com.hotels.styx.common.Preconditions.checkArgument;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
