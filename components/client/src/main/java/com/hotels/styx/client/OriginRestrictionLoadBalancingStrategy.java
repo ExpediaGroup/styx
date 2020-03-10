@@ -21,7 +21,6 @@ import com.hotels.styx.api.extension.RemoteHost;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
 import org.slf4j.Logger;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -87,6 +86,7 @@ public class OriginRestrictionLoadBalancingStrategy implements LoadBalancer {
                 .map(this::originIdMatches);
     }
 
+    @SuppressWarnings("checkstyle:IllegalInstantiation")
     private Stream<String> regularExpressionStream(String cookieValue) {
         return Collections.list(new StringTokenizer(cookieValue, ","))
                 .stream()
