@@ -22,6 +22,7 @@ import com.hotels.styx.api.HttpVersion;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.Url;
 import com.hotels.styx.api.exceptions.TransportException;
+import com.hotels.styx.common.QueueDrainingExecutor;
 import com.hotels.styx.common.content.FlowControllingHttpContentProducer;
 import com.hotels.styx.common.content.QueueDrainingPublisher;
 import com.hotels.styx.common.format.DefaultHttpMessageFormatter;
@@ -42,10 +43,9 @@ import org.reactivestreams.Publisher;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.collect.Iterables.size;
@@ -73,6 +73,7 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
 
     private final long inactivityTimeoutMs;
     private Optional<FlowControllingHttpContentProducer> producer = Optional.empty();
+    private final Executor queueDrainingExecutor = new QueueDrainingExecutor();
 
     private NettyToStyxRequestDecoder(Builder builder) {
         this.uniqueIdSupplier = builder.uniqueIdSupplier;
@@ -97,7 +98,7 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
                 HttpRequest nettyRequest = (HttpRequest) msg;
 
                 this.producer = Optional.of(createProducer(ctx, nettyRequest.uri()));
-                Publisher<Buffer> contentPublisher = new QueueDrainingPublisher(this.producer.get());
+                Publisher<Buffer> contentPublisher = new QueueDrainingPublisher(queueDrainingExecutor, this.producer.get());
 
                 LiveHttpRequest styxRequest = toStyxRequest(nettyRequest, contentPublisher);
                 out.add(styxRequest);
@@ -108,10 +109,11 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
 
                 ByteBuf content = ((ByteBufHolder) msg).content();
                 if (content.isReadable()) {
-                    this.producer.ifPresent(it -> it.newChunk(retain(content)));
+                    ByteBuf byteBuf = retain(content);
+                    queueDrainingExecutor.execute(() -> producer.get().newChunk(byteBuf));
                 }
                 if (msg instanceof LastHttpContent) {
-                    this.producer.ifPresent(FlowControllingHttpContentProducer::lastHttpContent);
+                    queueDrainingExecutor.execute(() -> producer.get().lastHttpContent());
                 }
             }
         } catch (BadRequestException ex) {

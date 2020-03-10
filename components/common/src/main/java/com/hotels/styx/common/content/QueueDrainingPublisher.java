@@ -16,7 +16,6 @@
 package com.hotels.styx.common.content;
 
 import com.hotels.styx.api.Buffer;
-import com.hotels.styx.common.QueueDrainingExecutor;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -28,10 +27,11 @@ import java.util.concurrent.Executor;
  */
 public final class QueueDrainingPublisher implements Publisher<Buffer> {
 
-    private final Executor queueDrainingExecutor = new QueueDrainingExecutor();
+    private final Executor queueDrainingExecutor;
     private final FlowControllingHttpContentProducer contentProducer;
 
-    public QueueDrainingPublisher(FlowControllingHttpContentProducer contentProducer) {
+    public QueueDrainingPublisher(Executor queueDrainingExecutor, FlowControllingHttpContentProducer contentProducer) {
+        this.queueDrainingExecutor = queueDrainingExecutor;
         this.contentProducer = contentProducer;
     }
 

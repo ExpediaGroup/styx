@@ -107,7 +107,6 @@ public class FlowControllingHttpContentProducer {
         this.origin = origin;
         this.uri = uri;
         if (uri.startsWith("_")) {
-            LOGGER.warn(">>> Request FSM being created");
             fsmHistories.put(uri, "Initial state:BUFFERING");
         }
         this.stateMachine = new StateMachine.Builder<ProducerState>()
@@ -159,16 +158,13 @@ public class FlowControllingHttpContentProducer {
                 .transition(TERMINATED, TearDownEvent.class, ev -> TERMINATED)
 
                 .onInappropriateEvent((state, event) -> {
-                    LOGGER.warn(warningMessage("Inappropriate event=" + event.getClass().getSimpleName()));
+                    LOGGER.warn(warningMessage("Inappropriate event=" + event));
                     return state;
                 })
                 .onStateChange((oldState, newState, event)-> {
                     if (uri.startsWith("_")) {
                         String stateChange = ". Event:" + event + " Change:" + oldState + " -> " + newState;
                         fsmHistories.put(uri, fsmHistories.get(uri) + stateChange);
-                        if (newState == COMPLETED) {
-                            LOGGER.warn(">>>>Completed");
-                        }
                     }
                 })
                 .build();
