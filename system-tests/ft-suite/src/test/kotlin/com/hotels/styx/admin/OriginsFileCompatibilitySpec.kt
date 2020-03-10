@@ -129,7 +129,6 @@ class OriginsFileCompatibilitySpec : FunSpec() {
             }
         }
 
-        // Test hangs:
         context("Failing to load an initial configuration blocks Styx HTTP server from starting.") {
             writeOrigins("""
                     - id: appA
