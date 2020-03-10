@@ -104,11 +104,12 @@ public class Version {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(32);
-        sb.append(this.getClass().getSimpleName());
-        sb.append("{releaseTag=");
-        sb.append(releaseTag);
-        return sb.append('}').toString();
+        return new StringBuilder(32)
+                .append(this.getClass().getSimpleName())
+                .append("{releaseTag=")
+                .append(releaseTag)
+                .append('}')
+                .toString();
     }
 
     @Override

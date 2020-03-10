@@ -74,13 +74,14 @@ public class Certificate {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(64);
-        sb.append(this.getClass().getSimpleName());
-        sb.append("{alias=");
-        sb.append(alias);
-        sb.append(", certificatePath=");
-        sb.append(certificatePath);
-        return sb.append('}').toString();
+        return new StringBuilder(64)
+                .append(this.getClass().getSimpleName())
+                .append("{alias=")
+                .append(alias)
+                .append(", certificatePath=")
+                .append(certificatePath)
+                .append('}')
+                .toString();
     }
 
     /**

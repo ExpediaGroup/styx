@@ -64,12 +64,13 @@ public class SpiExtensionFactory {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(64);
-        sb.append(this.getClass().getSimpleName());
-        sb.append("{class=");
-        sb.append(factoryClass);
-        sb.append(", classPath=");
-        sb.append(classPath);
-        return sb.append('}').toString();
+        return new StringBuilder(64)
+                .append(this.getClass().getSimpleName())
+                .append("{class=")
+                .append(factoryClass)
+                .append(", classPath=")
+                .append(classPath)
+                .append('}')
+                .toString();
     }
 }

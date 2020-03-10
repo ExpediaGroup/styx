@@ -607,13 +607,14 @@ public class YamlConfigurationTest {
 
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder(64);
-            sb.append(this.getClass().getSimpleName());
-            sb.append("{host=");
-            sb.append(host);
-            sb.append(", port=");
-            sb.append(port);
-            return sb.append('}').toString();
+            return new StringBuilder(64)
+                    .append(this.getClass().getSimpleName())
+                    .append("{host=")
+                    .append(host)
+                    .append(", port=")
+                    .append(port)
+                    .append('}')
+                    .toString();
         }
     }
 }

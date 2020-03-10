@@ -140,27 +140,28 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(256);
-        sb.append(this.getClass().getSimpleName());
-        sb.append("{port=");
-        sb.append(port());
-        sb.append(", sslProvider=");
-        sb.append(sslProvider);
-        sb.append(", certificateFile=");
-        sb.append(certificateFile);
-        sb.append(", certificateKeyFile=");
-        sb.append(certificateKeyFile);
-        sb.append(", sessionTimeoutMillis=");
-        sb.append(sessionTimeoutMillis);
-        sb.append(", sessionCacheSize=");
-        sb.append(sessionCacheSize);
-        sb.append(", cipherSuites=");
-        sb.append(cipherSuites);
-        sb.append(", protocols=");
-        sb.append(protocols != null
-                ? protocols.stream().filter(java.util.Objects::nonNull).collect(joining(","))
-                : "None");
-        return sb.append('}').toString();
+        return new StringBuilder(256)
+                .append(this.getClass().getSimpleName())
+                .append("{port=")
+                .append(port())
+                .append(", sslProvider=")
+                .append(sslProvider)
+                .append(", certificateFile=")
+                .append(certificateFile)
+                .append(", certificateKeyFile=")
+                .append(certificateKeyFile)
+                .append(", sessionTimeoutMillis=")
+                .append(sessionTimeoutMillis)
+                .append(", sessionCacheSize=")
+                .append(sessionCacheSize)
+                .append(", cipherSuites=")
+                .append(cipherSuites)
+                .append(", protocols=")
+                .append(protocols != null
+                        ? protocols.stream().filter(java.util.Objects::nonNull).collect(joining(","))
+                        : "None")
+                .append('}')
+                .toString();
     }
 
     public boolean isConfigured() {

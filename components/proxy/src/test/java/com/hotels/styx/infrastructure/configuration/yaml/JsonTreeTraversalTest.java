@@ -141,15 +141,16 @@ public class JsonTreeTraversalTest {
 
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder(96);
-            sb.append(this.getClass().getSimpleName());
-            sb.append("{node=");
-            sb.append(node);
-            sb.append(", parent=");
-            sb.append(parent);
-            sb.append(", path=");
-            sb.append(path);
-            return sb.append('}').toString();
+            return new StringBuilder(96)
+                    .append(this.getClass().getSimpleName())
+                    .append("{node=")
+                    .append(node)
+                    .append(", parent=")
+                    .append(parent)
+                    .append(", path=")
+                    .append(path)
+                    .append('}')
+                    .toString();
         }
     }
 }

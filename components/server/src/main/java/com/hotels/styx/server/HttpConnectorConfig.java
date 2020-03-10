@@ -64,10 +64,11 @@ public class HttpConnectorConfig implements ConnectorConfig {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(32);
-        sb.append(this.getClass().getSimpleName());
-        sb.append("{port=");
-        sb.append(port);
-        return sb.append('}').toString();
+        return new StringBuilder(32)
+                .append(this.getClass().getSimpleName())
+                .append("{port=")
+                .append(port)
+                .append('}')
+                .toString();
     }
 }

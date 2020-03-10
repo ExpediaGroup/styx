@@ -265,23 +265,24 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
 
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder(224);
-            sb.append(this.getClass().getSimpleName());
-            sb.append("{\navailableConnections=");
-            sb.append(availableConnectionCount());
-            sb.append(", \npendingConnections=");
-            sb.append(pendingConnectionCount());
-            sb.append(", \nbusyConnections=");
-            sb.append(busyConnectionCount());
-            sb.append(", \nconnectionAttempts=");
-            sb.append(connectionAttempts());
-            sb.append(", \nconnectionFailures=");
-            sb.append(connectionFailures());
-            sb.append(", \nclosedConnections=");
-            sb.append(closedConnections());
-            sb.append(", \nterminatedConnections=");
-            sb.append(terminatedConnections());
-            return sb.append('}').toString();
+            return new StringBuilder(224)
+                    .append(this.getClass().getSimpleName())
+                    .append("{\navailableConnections=")
+                    .append(availableConnectionCount())
+                    .append(", \npendingConnections=")
+                    .append(pendingConnectionCount())
+                    .append(", \nbusyConnections=")
+                    .append(busyConnectionCount())
+                    .append(", \nconnectionAttempts=")
+                    .append(connectionAttempts())
+                    .append(", \nconnectionFailures=")
+                    .append(connectionFailures())
+                    .append(", \nclosedConnections=")
+                    .append(closedConnections())
+                    .append(", \nterminatedConnections=")
+                    .append(terminatedConnections())
+                    .append('}')
+                    .toString();
         }
     }
 }

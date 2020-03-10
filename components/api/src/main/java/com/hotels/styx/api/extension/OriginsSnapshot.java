@@ -138,16 +138,17 @@ public final class OriginsSnapshot {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(128);
-        sb.append(this.getClass().getSimpleName());
-        sb.append("{appId=");
-        sb.append(appId);
-        sb.append(", activeOrigins=");
-        sb.append(activeOrigins);
-        sb.append(", inactiveOrigins=");
-        sb.append(inactiveOrigins);
-        sb.append(", disabledOrigins=");
-        sb.append(disabledOrigins);
-        return sb.append('}').toString();
+        return new StringBuilder(128)
+                .append(this.getClass().getSimpleName())
+                .append("{appId=")
+                .append(appId)
+                .append(", activeOrigins=")
+                .append(activeOrigins)
+                .append(", inactiveOrigins=")
+                .append(inactiveOrigins)
+                .append(", disabledOrigins=")
+                .append(disabledOrigins)
+                .append('}')
+                .toString();
     }
 }

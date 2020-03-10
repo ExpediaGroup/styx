@@ -65,13 +65,14 @@ abstract class OriginCommand {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(64);
-        sb.append(this.getClass().getSimpleName());
-        sb.append("{appId=");
-        sb.append(appId);
-        sb.append(", originId=");
-        sb.append(originId);
-        return sb.append('}').toString();
+        return new StringBuilder(64)
+                .append(this.getClass().getSimpleName())
+                .append("{appId=")
+                .append(appId)
+                .append(", originId=")
+                .append(originId)
+                .append('}')
+                .toString();
 
     }
 }

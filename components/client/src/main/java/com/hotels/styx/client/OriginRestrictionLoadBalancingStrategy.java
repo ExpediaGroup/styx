@@ -22,9 +22,11 @@ import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
 import org.slf4j.Logger;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.StringTokenizer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -86,7 +88,10 @@ public class OriginRestrictionLoadBalancingStrategy implements LoadBalancer {
     }
 
     private Stream<String> regularExpressionStream(String cookieValue) {
-        return Arrays.stream(cookieValue.split(",")).map(String::trim);
+        return Collections.list(new StringTokenizer(cookieValue, ","))
+                .stream()
+                .map(String.class::cast)
+                .map(String::trim);
     }
 
     private Pattern compileRegularExpression(String regex) {

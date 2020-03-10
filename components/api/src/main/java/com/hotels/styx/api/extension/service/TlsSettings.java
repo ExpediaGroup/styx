@@ -135,27 +135,28 @@ public class TlsSettings {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(288);
-        sb.append(this.getClass().getSimpleName());
-        sb.append("{trustAllCerts=");
-        sb.append(trustAllCerts);
-        sb.append(", sslProvider=");
-        sb.append(sslProvider);
-        sb.append(", additionalCerts=");
-        sb.append(additionalCerts);
-        sb.append(", trustStorePath=");
-        sb.append(trustStorePath);
-        sb.append(", trustStorePassword=");
-        sb.append(trustStorePassword);
-        sb.append(", protocols=");
-        sb.append(protocols);
-        sb.append(", cipherSuites=");
-        sb.append(cipherSuites);
-        sb.append(", sendSni=");
-        sb.append(sendSni);
-        sb.append(", sniHost=");
-        sb.append(getSniHost());
-        return sb.append('}').toString();
+        return new StringBuilder(288)
+                .append(this.getClass().getSimpleName())
+                .append("{trustAllCerts=")
+                .append(trustAllCerts)
+                .append(", sslProvider=")
+                .append(sslProvider)
+                .append(", additionalCerts=")
+                .append(additionalCerts)
+                .append(", trustStorePath=")
+                .append(trustStorePath)
+                .append(", trustStorePassword=")
+                .append(trustStorePassword)
+                .append(", protocols=")
+                .append(protocols)
+                .append(", cipherSuites=")
+                .append(cipherSuites)
+                .append(", sendSni=")
+                .append(sendSni)
+                .append(", sniHost=")
+                .append(getSniHost())
+                .append('}')
+                .toString();
     }
 
     @Override

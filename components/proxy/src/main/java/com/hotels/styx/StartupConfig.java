@@ -96,15 +96,16 @@ public final class StartupConfig {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(96);
-        sb.append(this.getClass().getSimpleName());
-        sb.append("{" + STYX_HOME_VAR_NAME + "=");
-        sb.append(styxHome);
-        sb.append(", " + CONFIG_FILE_LOCATION_VAR_NAME + "=");
-        sb.append(configFileLocation);
-        sb.append(", " + LOGBACK_CONFIG_LOCATION_VAR_NAME + "=");
-        sb.append(logConfigLocation);
-        return sb.append('}').toString();
+        return new StringBuilder(96)
+                .append(this.getClass().getSimpleName())
+                .append("{" + STYX_HOME_VAR_NAME + "=")
+                .append(styxHome)
+                .append(", " + CONFIG_FILE_LOCATION_VAR_NAME + "=")
+                .append(configFileLocation)
+                .append(", " + LOGBACK_CONFIG_LOCATION_VAR_NAME + "=")
+                .append(logConfigLocation)
+                .append('}')
+                .toString();
     }
 
     /**

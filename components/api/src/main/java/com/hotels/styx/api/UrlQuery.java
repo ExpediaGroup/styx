@@ -101,13 +101,14 @@ final class UrlQuery {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(64);
-        sb.append(this.getClass().getSimpleName());
-        sb.append("{parameters=");
-        sb.append(parameters);
-        sb.append(", encodedQuery=");
-        sb.append(encodedQuery);
-        return sb.append('}').toString();
+        return new StringBuilder(64)
+                .append(this.getClass().getSimpleName())
+                .append("{parameters=")
+                .append(parameters)
+                .append(", encodedQuery=")
+                .append(encodedQuery)
+                .append('}')
+                .toString();
     }
 
     static class Parameter {

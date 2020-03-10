@@ -64,14 +64,15 @@ public class GraphiteConfig {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(96);
-        sb.append(this.getClass().getSimpleName());
-        sb.append("{host=");
-        sb.append(host);
-        sb.append(", port=");
-        sb.append(port);
-        sb.append(", intervalMillis=");
-        sb.append(intervalMillis);
-        return sb.append('}').toString();
+        return new StringBuilder(96)
+                .append(this.getClass().getSimpleName())
+                .append("{host=")
+                .append(host)
+                .append(", port=")
+                .append(port)
+                .append(", intervalMillis=")
+                .append(intervalMillis)
+                .append('}')
+                .toString();
     }
 }
