@@ -130,24 +130,18 @@ class OriginsFileCompatibilitySpec : FunSpec() {
         }
 
         // Test hangs:
-        context("!Error scenarios") {
+        context("Failing to load an initial configuration blocks Styx HTTP server from starting.") {
             writeOrigins("""
                     - id: appA
                     - this file has somehow corrupted
                       .. bl;ah blah" 
                     """.trimIndent())
 
-            styxServer.restart()
+            styxServer.restartAsync()
 
             delay(1.seconds.toMillis())
 
-            client.send(get("/20")
-                            .header(HOST, styxServer().proxyHttpHostHeader())
-                            .build())
-                    .wait().let {
-                        it!!.status() shouldBe NOT_FOUND
-                    }
-
+            styxServer().proxyHttpAddress() shouldBe null
             styxServer.stop()
         }
 
