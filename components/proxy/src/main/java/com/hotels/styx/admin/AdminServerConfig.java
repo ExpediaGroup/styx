@@ -25,6 +25,8 @@ import com.hotels.styx.server.netty.NettyServerConfig;
 import java.time.Duration;
 import java.util.Optional;
 
+import static java.util.Optional.ofNullable;
+
 /**
  * xConfigurations for the Admin Server.
  */
@@ -41,7 +43,7 @@ public class AdminServerConfig extends NettyServerConfig {
     private AdminServerConfig(Builder builder) {
         super(builder);
 
-        this.metricsCacheExpiration = Optional.ofNullable(builder.metricsCache)
+        this.metricsCacheExpiration = ofNullable(builder.metricsCache)
                 .filter(cache -> cache.enabled)
                 .map(cache -> Duration.ofMillis(cache.expirationMillis));
     }
@@ -60,8 +62,8 @@ public class AdminServerConfig extends NettyServerConfig {
         MetricsCache(
                 @JsonProperty("enabled") Boolean enabled,
                 @JsonProperty("expirationMillis") Integer expirationMillis) {
-            this.enabled = enabled != null ? enabled : false;
-            this.expirationMillis = expirationMillis != null ? expirationMillis : 10_000;
+            this.enabled = ofNullable(enabled).orElse(false);
+            this.expirationMillis = ofNullable(expirationMillis).orElse(10_000);
         }
     }
 
