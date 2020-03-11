@@ -15,42 +15,55 @@
  */
 package com.hotels.styx;
 
+import com.google.common.util.concurrent.Service
+import com.google.common.util.concurrent.ServiceManager
+import com.google.common.util.concurrent.ServiceManager.Listener
+import com.hotels.styx.StyxServers.toGuavaService
 import com.hotels.styx.api.extension.service.spi.AbstractStyxService
 import com.hotels.styx.api.extension.service.spi.StyxService
 import com.hotels.styx.routing.db.StyxObjectStore
 import org.slf4j.LoggerFactory.getLogger
+import java.lang.IllegalStateException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicReference
 
-
-internal class ServiceProviderMonitor<T: StyxObjectRecord<out StyxService>>(name: String, val servicesDatabase: StyxObjectStore<T>) : AbstractStyxService(name) {
+internal class ServiceProviderMonitor<T : StyxObjectRecord<out StyxService>>(name: String, val servicesDatabase: StyxObjectStore<T>)
+    : AbstractStyxService(name) {
 
     companion object {
         private val LOG = getLogger(ServiceProviderMonitor::class.java)
     }
 
     private val services = AtomicReference<Map<String, T>>()
+    private val manager = AtomicReference<ServiceManager>()
 
-    override fun startService(): CompletableFuture<Void> = CompletableFuture.runAsync {
-        services.set(servicesDatabase
-                .entrySet()
+    override fun startService(): CompletableFuture<Void> {
+        val future = CompletableFuture<Void>()
+
+        services.set(servicesDatabase.entrySet()
                 .map { it.key to it.value }
                 .toMap())
 
-        services.get()
-                .forEach { name, record ->
-                    val service = record.styxService
-                    service.start()
-                            .thenAccept { LOG.debug("Service '{}/{}' started", record.type, name) }
-                }
+        manager.set(ServiceManager(services.get().values.map { toGuavaService(it.styxService) }))
+        manager.get().addListener(object : Listener() {
+            override fun healthy() {
+                future.complete(null);
+            }
+
+            override fun failure(service: Service) {
+                future.completeExceptionally(service.failureCause())
+            }
+        })
+
+        manager.get().startAsync()
+
+        return future;
     }
 
     override fun stopService(): CompletableFuture<Void> = CompletableFuture.runAsync {
-        services.get()
-                .forEach { name, record ->
-                    val service = record.styxService
-                    service.stop()
-                            .thenAccept { LOG.debug("Service '{}/{}' stopped", record.type, name) }
-                }
+        if (manager.get() == null) {
+            throw IllegalStateException("ServiceProviderMonitor ${serviceName()} is not RUNNING.")
+        }
+        manager.get().stopAsync().awaitStopped()
     }
 }

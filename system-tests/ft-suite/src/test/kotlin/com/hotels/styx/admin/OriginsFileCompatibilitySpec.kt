@@ -129,6 +129,21 @@ class OriginsFileCompatibilitySpec : FunSpec() {
             }
         }
 
+        context("Failing to load an initial configuration blocks Styx HTTP server from starting.") {
+            writeOrigins("""
+                    - id: appA
+                    - this file has somehow corrupted
+                      .. bl;ah blah" 
+                    """.trimIndent())
+
+            styxServer.restartAsync()
+
+            delay(1.seconds.toMillis())
+
+            styxServer().proxyHttpAddress() shouldBe null
+            styxServer.stop()
+        }
+
         context("Origins configuration changes") {
             writeOrigins("""
                 - id: appA
