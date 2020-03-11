@@ -15,7 +15,7 @@
  */
 package com.hotels.styx;
 
-import com.google.common.base.Stopwatch;
+import com.hotels.styx.common.Stopwatch;
 import com.google.common.io.CharStreams;
 import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.Service;

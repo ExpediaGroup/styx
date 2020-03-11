@@ -62,7 +62,8 @@ MultithreadedStressTester.java,
 licensed under the Apache Software License 2.0.
 
 This product includes software developed by Google Guava Authors:
-RelationshipTester.java, EqualsTester.java, Preconditions.java
+RelationshipTester.java, EqualsTester.java, Preconditions.java, Suppliers.java,
+Stopwatch.java, Ticker.java
 licensed under the Apache Software License 2.0.
 
 This product includes software developed by jMock.org:

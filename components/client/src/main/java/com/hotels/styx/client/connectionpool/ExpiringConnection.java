@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.client.connectionpool;
 
-import com.google.common.base.Stopwatch;
-import com.google.common.base.Ticker;
+import com.hotels.styx.common.Stopwatch;
+import com.hotels.styx.common.Ticker;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.extension.Origin;

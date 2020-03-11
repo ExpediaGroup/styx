@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -30,9 +30,9 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static ch.qos.logback.core.CoreConstants.LINE_SEPARATOR;
-import static com.google.common.base.Charsets.UTF_8;
 import static com.hotels.styx.common.Strings.isNotEmpty;
 import static java.lang.Integer.toHexString;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 

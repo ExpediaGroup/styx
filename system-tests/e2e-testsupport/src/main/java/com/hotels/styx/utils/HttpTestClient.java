@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.utils;
 
-import com.google.common.base.Suppliers;
 import com.google.common.net.HostAndPort;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.bootstrap.Bootstrap;
@@ -35,6 +34,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+import static com.hotels.styx.common.Suppliers.memoize;
 import static io.netty.channel.ChannelOption.ALLOCATOR;
 import static io.netty.channel.ChannelOption.AUTO_READ;
 import static io.netty.channel.ChannelOption.CONNECT_TIMEOUT_MILLIS;
@@ -131,6 +131,6 @@ public class HttpTestClient {
     }
 
     private static <T> Supplier<T> lazy(Supplier<T> supplier) {
-        return Suppliers.memoize(supplier::get)::get;
+        return memoize(supplier::get)::get;
     }
 }
