@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.support;
 
-import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
@@ -29,12 +28,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import static com.hotels.styx.api.Collections.unmodifiableListOf;
+import static com.hotels.styx.api.Collections.unmodifiableSetOf;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.DEFAULT_CONNECT_TIMEOUT_MILLIS;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.DEFAULT_MAX_CONNECTIONS_PER_HOST;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST;
 import static com.hotels.styx.api.extension.service.StickySessionConfig.stickySessionDisabled;
-import static com.hotels.styx.api.Collections.unmodifiableListOf;
 import static java.util.Collections.emptyList;
 
 public class ApplicationConfigurationMatcher extends TypeSafeMatcher<BackendService> {
@@ -63,7 +63,7 @@ public class ApplicationConfigurationMatcher extends TypeSafeMatcher<BackendServ
     }
 
     public ApplicationConfigurationMatcher withOrigins(Origin... origins) {
-        this.origins = ImmutableSet.copyOf(origins);
+        this.origins = unmodifiableSetOf(origins);
         return this;
     }
 

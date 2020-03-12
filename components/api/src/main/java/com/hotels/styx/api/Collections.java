@@ -18,14 +18,23 @@ package com.hotels.styx.api;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static java.util.Collections.unmodifiableList;
+import static java.util.Collections.unmodifiableSet;
+import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 
+/**
+ * {@link Collection}s cannot contain <code>null</code> elements, and will throw a {@link NullPointerException} if one is encountered.
+ *
+ * {@link Set}s, in addition, preserve ordering of source sets.
+ */
 public final class Collections {
 
     public static <T> List<T> copyToUnmodifiableList(Iterator<? extends T> iterator) {
@@ -42,6 +51,22 @@ public final class Collections {
 
     public static <T> List<T> unmodifiableListOf(T... elements) {
         return unmodifiableList(Arrays.stream(elements).map(Objects::requireNonNull).collect(toList()));
+    }
+
+    public static <T> Set<T> copyToUnmodifiableSet(Iterator<? extends T> iterator) {
+        return copyToUnmodifiableSet(toIterable(iterator));
+    }
+
+    public static <T> Set<T> copyToUnmodifiableSet(Iterable<? extends T> iterable) {
+        return unmodifiableSet(stream(iterable).map(Objects::requireNonNull).collect(toCollection(() -> new LinkedHashSet<>())));
+    }
+
+    public static <T> Set<T> copyToUnmodifiableSet(Collection<? extends T> list) {
+        return unmodifiableSet(list.stream().map(Objects::requireNonNull).collect(toCollection(() -> new LinkedHashSet<>())));
+    }
+
+    public static <T> Set<T> unmodifiableSetOf(T... elements) {
+        return unmodifiableSet(Arrays.stream(elements).map(Objects::requireNonNull).collect(toCollection(() -> new LinkedHashSet<>())));
     }
 
     public static <T> Stream<T> stream(Iterator<? extends T> iterator) {

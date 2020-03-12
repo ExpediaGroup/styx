@@ -15,11 +15,10 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.collect.ImmutableSet;
-
 import java.util.Map;
 import java.util.Set;
 
+import static com.hotels.styx.api.Collections.unmodifiableSetOf;
 import static java.lang.String.format;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
@@ -38,7 +37,7 @@ public final class HttpMethod {
     public static final HttpMethod TRACE = new HttpMethod("TRACE");
     public static final HttpMethod CONNECT = new HttpMethod("CONNECT");
 
-    public static final Set<HttpMethod> METHODS = ImmutableSet.of(
+    public static final Set<HttpMethod> METHODS = unmodifiableSetOf(
             OPTIONS,
             GET,
             HEAD,

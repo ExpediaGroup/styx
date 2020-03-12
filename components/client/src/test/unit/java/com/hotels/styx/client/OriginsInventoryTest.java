@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 package com.hotels.styx.client;
 
 import com.codahale.metrics.Gauge;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.EventBus;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.Origin;
@@ -37,6 +36,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Optional;
 
 import static ch.qos.logback.classic.Level.INFO;
+import static com.hotels.styx.api.Collections.unmodifiableSetOf;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
@@ -461,8 +461,8 @@ public class OriginsInventoryTest {
         inventory.setOrigins(ORIGIN_1, ORIGIN_2);
         inventory.close();
 
-        verify(monitor).stopMonitoring(eq(ImmutableSet.of(ORIGIN_1)));
-        verify(monitor).stopMonitoring(eq(ImmutableSet.of(ORIGIN_2)));
+        verify(monitor).stopMonitoring(eq(unmodifiableSetOf(ORIGIN_1)));
+        verify(monitor).stopMonitoring(eq(unmodifiableSetOf(ORIGIN_2)));
         assertThat(gaugeValue("origins.generic-app.app-01.status"), isAbsent());
         assertThat(gaugeValue("origins.generic-app.app-02.status"), isAbsent());
 

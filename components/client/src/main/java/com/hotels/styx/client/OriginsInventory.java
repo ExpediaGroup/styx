@@ -18,7 +18,6 @@ package com.hotels.styx.client;
 import com.codahale.metrics.Gauge;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.hotels.styx.api.Eventual;
@@ -52,6 +51,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hotels.styx.api.Collections.copyToUnmodifiableSet;
+import static com.hotels.styx.api.Collections.unmodifiableSetOf;
 import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
 import static com.hotels.styx.client.OriginsInventory.OriginState.ACTIVE;
 import static com.hotels.styx.client.OriginsInventory.OriginState.DISABLED;
@@ -147,7 +148,7 @@ public final class OriginsInventory
 
     @VisibleForTesting
     public void setOrigins(Origin... origins) {
-        setOrigins(ImmutableSet.copyOf(origins));
+        setOrigins(unmodifiableSetOf(origins));
     }
 
     @Override
@@ -528,7 +529,7 @@ public final class OriginsInventory
         }
 
         public Builder initialOrigins(Set<Origin> origins) {
-            this.initialOrigins = ImmutableSet.copyOf(origins);
+            this.initialOrigins = copyToUnmodifiableSet(origins);
             return this;
         }
 

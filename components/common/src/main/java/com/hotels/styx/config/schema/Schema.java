@@ -16,7 +16,6 @@
 package com.hotels.styx.config.schema;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.ImmutableSet;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -26,6 +25,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.api.Collections.copyToUnmodifiableSet;
 import static com.hotels.styx.config.schema.SchemaDsl.field;
 import static com.hotels.styx.config.schema.SchemaDsl.list;
 import static com.hotels.styx.config.schema.SchemaDsl.object;
@@ -73,7 +73,7 @@ public class Schema {
     private Schema(Builder builder) {
         this.fieldNames = builder.fields.stream().map(Field::name).collect(toList());
         this.fields = copyToUnmodifiableList(builder.fields);
-        this.optionalFields = ImmutableSet.copyOf(builder.optionalFields);
+        this.optionalFields = copyToUnmodifiableSet(builder.optionalFields);
         this.constraints = copyToUnmodifiableList(builder.constraints);
         this.ignore = builder.pass;
         this.name = builder.name.length() > 0 ? builder.name : String.join(", ", this.fieldNames);
@@ -139,7 +139,7 @@ public class Schema {
     }
 
     private static void assertNoUnknownFields(String prefix, Schema schema, List<String> fieldsPresent) {
-        Set<String> knownFields = ImmutableSet.copyOf(schema.fieldNames());
+        Set<String> knownFields = copyToUnmodifiableSet(schema.fieldNames());
 
         fieldsPresent.forEach(name -> {
             if (!knownFields.contains(name)) {

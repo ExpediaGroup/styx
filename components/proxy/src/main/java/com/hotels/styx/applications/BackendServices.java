@@ -17,7 +17,7 @@ package com.hotels.styx.applications;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.collect.ImmutableSet;
+import com.hotels.styx.api.Collections;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.BackendService;
@@ -29,6 +29,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import static com.google.common.collect.Iterables.getFirst;
+import static com.hotels.styx.api.Collections.copyToUnmodifiableSet;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.service.BackendService.newBackendServiceBuilder;
 import static com.hotels.styx.common.Preconditions.checkArgument;
@@ -55,7 +56,7 @@ public final class BackendServices implements Iterable<BackendService> {
 
         if (setDerivedAttributes) {
             // note: ImmutableSet preserves order
-            this.backendServices = ImmutableSet.copyOf(backendServices.stream().map(BackendServices::setDerivedAttributes).collect(toList()));
+            this.backendServices = copyToUnmodifiableSet(backendServices.stream().map(BackendServices::setDerivedAttributes).collect(toList()));
         } else {
             this.backendServices = backendServices;
         }
@@ -74,7 +75,7 @@ public final class BackendServices implements Iterable<BackendService> {
      * @return a new Applications
      */
     public static BackendServices newBackendServices(Iterable<BackendService> applications) {
-        return new BackendServices(ImmutableSet.copyOf(applications), true);
+        return new BackendServices(copyToUnmodifiableSet(applications), true);
     }
 
     /**
@@ -84,7 +85,7 @@ public final class BackendServices implements Iterable<BackendService> {
      * @return a new Applications
      */
     public static BackendServices newBackendServices(BackendService... backendServices) {
-        return new BackendServices(ImmutableSet.copyOf(backendServices), true);
+        return new BackendServices(Collections.unmodifiableSetOf(backendServices), true);
     }
 
     private static BackendService setDerivedAttributes(BackendService application) {
@@ -94,7 +95,7 @@ public final class BackendServices implements Iterable<BackendService> {
     }
 
     private static Set<Origin> originsWithDerivedApplicationIds(BackendService backendService) {
-        return ImmutableSet.copyOf(originsWithApplicationId(backendService));
+        return copyToUnmodifiableSet(originsWithApplicationId(backendService));
     }
 
     private static Iterable<Origin> originsWithApplicationId(BackendService backendService) {

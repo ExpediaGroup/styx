@@ -16,11 +16,11 @@
 package com.hotels.styx.config.schema;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.Collections;
 
 import java.util.Set;
 
+import static com.hotels.styx.api.Collections.unmodifiableSetOf;
 import static java.lang.String.format;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
@@ -33,7 +33,7 @@ class AtLeastOneFieldPresenceConstraint implements Constraint {
     private final String description;
 
     AtLeastOneFieldPresenceConstraint(String... fieldNames) {
-        this.fieldNames = ImmutableSet.copyOf(fieldNames);
+        this.fieldNames = unmodifiableSetOf(fieldNames);
         this.description = description(fieldNames);
     }
 

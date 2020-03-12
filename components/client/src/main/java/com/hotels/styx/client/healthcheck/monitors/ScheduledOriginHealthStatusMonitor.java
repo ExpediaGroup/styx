@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ScheduledExecutorService;
 
-import static com.google.common.collect.ImmutableSet.copyOf;
+import static com.hotels.styx.api.Collections.unmodifiableSetOf;
 import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.RUNNING;
 import static java.lang.Thread.currentThread;
 import static java.util.Objects.requireNonNull;
@@ -76,7 +76,7 @@ public class ScheduledOriginHealthStatusMonitor extends AbstractStyxService impl
 
     @VisibleForTesting
     OriginHealthStatusMonitor monitor(Origin... origins) {
-        return monitor(copyOf(origins));
+        return monitor(unmodifiableSetOf(origins));
     }
 
     @Override

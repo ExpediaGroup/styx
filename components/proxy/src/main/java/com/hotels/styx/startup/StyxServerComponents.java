@@ -18,7 +18,6 @@ package com.hotels.styx.startup;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.AsyncEventBus;
 import com.hotels.styx.Environment;
 import com.hotels.styx.InetServer;
@@ -52,6 +51,8 @@ import java.util.Map;
 
 import static com.hotels.styx.StartupConfig.newStartupConfigBuilder;
 import static com.hotels.styx.Version.readVersionFrom;
+import static com.hotels.styx.api.Collections.copyToUnmodifiableSet;
+import static com.hotels.styx.api.Collections.unmodifiableSetOf;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
 import static com.hotels.styx.routing.config.Builtins.BUILTIN_EXECUTOR_FACTORIES;
 import static com.hotels.styx.routing.config.Builtins.BUILTIN_HANDLER_FACTORIES;
@@ -107,7 +108,7 @@ public class StyxServerComponents {
         // Overwrite any existing or user-supplied values:
         executorObjectStore.insert(GLOBAL_SERVER_BOSS_NAME, new StyxObjectRecord<>(
                 NETTY_EXECUTOR,
-                ImmutableSet.of("StyxInternal"),
+                unmodifiableSetOf("StyxInternal"),
                 new NettyExecutorConfig(0, GLOBAL_SERVER_BOSS_NAME).asJsonNode(),
                 NettyExecutor.create(GLOBAL_SERVER_BOSS_NAME, 0)));
 
@@ -115,7 +116,7 @@ public class StyxServerComponents {
         executorObjectStore.insert(GLOBAL_SERVER_WORKER_NAME,
                 new StyxObjectRecord<>(
                         NETTY_EXECUTOR,
-                        ImmutableSet.of("StyxInternal"),
+                        unmodifiableSetOf("StyxInternal"),
                         new NettyExecutorConfig(0, GLOBAL_SERVER_WORKER_NAME).asJsonNode(),
                         NettyExecutor.create(GLOBAL_SERVER_WORKER_NAME, 0)));
 
@@ -123,7 +124,7 @@ public class StyxServerComponents {
         executorObjectStore.insert(GLOBAL_CLIENT_WORKER_NAME,
                 new StyxObjectRecord<>(
                         NETTY_EXECUTOR,
-                        ImmutableSet.of("StyxInternal"),
+                        unmodifiableSetOf("StyxInternal"),
                         new NettyExecutorConfig(0, GLOBAL_CLIENT_WORKER_NAME).asJsonNode(),
                         NettyExecutor.create(GLOBAL_CLIENT_WORKER_NAME, 0)));
 
@@ -133,7 +134,7 @@ public class StyxServerComponents {
                 .forEach((name, definition) -> {
                     LOGGER.warn("Loading styx server: " + name + ": " + definition);
                     NettyExecutor executor = Builtins.buildExecutor(name, definition, BUILTIN_EXECUTOR_FACTORIES);
-                    StyxObjectRecord<NettyExecutor> record = new StyxObjectRecord<>(definition.type(), ImmutableSet.copyOf(definition.tags()), definition.config(), executor);
+                    StyxObjectRecord<NettyExecutor> record = new StyxObjectRecord<>(definition.type(), copyToUnmodifiableSet(definition.tags()), definition.config(), executor);
                     executorObjectStore.insert(name, record);
                 });
 
@@ -166,7 +167,7 @@ public class StyxServerComponents {
                 .forEach((name, definition) -> {
                     routeObjectStore.insert(name, RoutingObjectRecord.Companion.create(
                             definition.type(),
-                            ImmutableSet.copyOf(definition.tags()),
+                            copyToUnmodifiableSet(definition.tags()),
                             definition.config(),
                             Builtins.build(singletonList(name), routingObjectContext, definition))
                     ).ifPresent(previous -> previous.getRoutingObject().stop());
@@ -178,7 +179,7 @@ public class StyxServerComponents {
                 .forEach((name, definition) -> {
                     LOGGER.warn("Loading provider: " + name + ": " + definition);
                     StyxService provider = Builtins.build(name, definition, providerObjectStore, BUILTIN_SERVICE_PROVIDER_FACTORIES, routingObjectContext);
-                    StyxObjectRecord<StyxService> record = new StyxObjectRecord<>(definition.type(), ImmutableSet.copyOf(definition.tags()), definition.config(), provider);
+                    StyxObjectRecord<StyxService> record = new StyxObjectRecord<>(definition.type(), copyToUnmodifiableSet(definition.tags()), definition.config(), provider);
                     providerObjectStore.insert(name, record);
                 });
 
@@ -188,7 +189,7 @@ public class StyxServerComponents {
                 .forEach((name, definition) -> {
                     LOGGER.warn("Loading styx server: " + name + ": " + definition);
                     InetServer provider = Builtins.buildServer(name, definition, serverObjectStore, BUILTIN_SERVER_FACTORIES, routingObjectContext);
-                    StyxObjectRecord<InetServer> record = new StyxObjectRecord<>(definition.type(), ImmutableSet.copyOf(definition.tags()), definition.config(), provider);
+                    StyxObjectRecord<InetServer> record = new StyxObjectRecord<>(definition.type(), copyToUnmodifiableSet(definition.tags()), definition.config(), provider);
                     serverObjectStore.insert(name, record);
                 });
     }

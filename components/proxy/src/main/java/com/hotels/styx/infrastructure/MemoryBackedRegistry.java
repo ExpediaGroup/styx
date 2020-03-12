@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.infrastructure;
 
-import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.Identifiable;
@@ -27,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hotels.styx.api.Collections.copyToUnmodifiableSet;
 import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
@@ -84,7 +84,7 @@ public class MemoryBackedRegistry<T extends Identifiable> extends AbstractRegist
 
     @Override
     public CompletableFuture<ReloadResult> reload() {
-        set(ImmutableSet.copyOf(resources.values()));
+        set(copyToUnmodifiableSet(resources.values()));
         return completedFuture(reloaded("changed"));
     }
 }

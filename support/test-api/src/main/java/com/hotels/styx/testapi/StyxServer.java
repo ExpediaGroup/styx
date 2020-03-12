@@ -16,7 +16,6 @@
 package com.hotels.styx.testapi;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.admin.AdminServerConfig;
 import com.hotels.styx.api.MetricRegistry;
@@ -39,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hotels.styx.api.Collections.unmodifiableSetOf;
 import static com.hotels.styx.testapi.ssl.SslTesting.acceptAllSslRequests;
 import static java.util.stream.Collectors.toSet;
 
@@ -231,7 +231,7 @@ public final class StyxServer {
          * @return this builder
          */
         public Builder addRoute(String pathPrefix, Origin... origins) {
-            return addRoute(pathPrefix, ImmutableSet.copyOf(origins));
+            return addRoute(pathPrefix, unmodifiableSetOf(origins));
         }
 
         /**

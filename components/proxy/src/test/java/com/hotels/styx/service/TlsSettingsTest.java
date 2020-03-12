@@ -16,7 +16,6 @@
 package com.hotels.styx.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.extension.service.Certificate;
 import com.hotels.styx.api.extension.service.TlsSettings;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,8 +27,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static com.hotels.styx.api.extension.service.Certificate.certificate;
 import static com.hotels.styx.api.Collections.unmodifiableListOf;
+import static com.hotels.styx.api.Collections.unmodifiableSetOf;
+import static com.hotels.styx.api.extension.service.Certificate.certificate;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -247,6 +247,6 @@ public class TlsSettingsTest {
 
         assertThat(tlsSettings.protocols(), equalTo(singletonList("TLSv1")));
         assertThat(tlsSettings.cipherSuites(), equalTo(singletonList("x")));
-        assertThat(tlsSettings.additionalCerts(), equalTo(ImmutableSet.of(certificate("x", "x"))));
+        assertThat(tlsSettings.additionalCerts(), equalTo(unmodifiableSetOf(certificate("x", "x"))));
     }
 }
