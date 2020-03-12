@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,13 +15,12 @@
  */
 package com.hotels.styx.support;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
-import com.hotels.styx.api.extension.service.RewriteConfig;
 import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.api.extension.service.HealthCheckConfig;
+import com.hotels.styx.api.extension.service.RewriteConfig;
 import com.hotels.styx.api.extension.service.StickySessionConfig;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
@@ -35,6 +34,7 @@ import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.DEFAU
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.DEFAULT_MAX_CONNECTIONS_PER_HOST;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST;
 import static com.hotels.styx.api.extension.service.StickySessionConfig.stickySessionDisabled;
+import static com.hotels.styx.api.Collections.unmodifiableListOf;
 import static java.util.Collections.emptyList;
 
 public class ApplicationConfigurationMatcher extends TypeSafeMatcher<BackendService> {
@@ -68,7 +68,7 @@ public class ApplicationConfigurationMatcher extends TypeSafeMatcher<BackendServ
     }
 
     public ApplicationConfigurationMatcher withRewrites(RewriteConfig... urlRewrites) {
-        this.rewrites = ImmutableList.copyOf(urlRewrites);
+        this.rewrites = unmodifiableListOf(urlRewrites);
         return this;
     }
 

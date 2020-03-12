@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.startup;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
@@ -32,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.Collections.unmodifiableListOf;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
@@ -64,7 +64,7 @@ public class StyxServerComponentsTest {
 
         StyxServerComponents components = new StyxServerComponents.Builder()
                 .styxConfig(new StyxConfig())
-                .pluginFactories(ImmutableList.of(f1, f2))
+                .pluginFactories(unmodifiableListOf(f1, f2))
                 .build();
 
         List<NamedPlugin> plugins = components.plugins();

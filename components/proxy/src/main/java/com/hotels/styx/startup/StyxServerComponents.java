@@ -17,7 +17,6 @@ package com.hotels.styx.startup;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.AsyncEventBus;
@@ -63,6 +62,7 @@ import static com.hotels.styx.startup.ServicesLoader.SERVICES_FROM_CONFIG;
 import static com.hotels.styx.startup.StyxServerComponents.LoggingSetUp.DO_NOT_MODIFY;
 import static com.hotels.styx.startup.extensions.PluginLoadingForStartup.loadPlugins;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static java.util.stream.Collectors.toList;
@@ -168,7 +168,7 @@ public class StyxServerComponents {
                             definition.type(),
                             ImmutableSet.copyOf(definition.tags()),
                             definition.config(),
-                            Builtins.build(ImmutableList.of(name), routingObjectContext, definition))
+                            Builtins.build(singletonList(name), routingObjectContext, definition))
                     ).ifPresent(previous -> previous.getRoutingObject().stop());
                 });
 
@@ -287,7 +287,7 @@ public class StyxServerComponents {
     public static final class Builder {
         private StyxConfig styxConfig;
         private LoggingSetUp loggingSetUp = DO_NOT_MODIFY;
-        private List<ConfiguredPluginFactory> configuredPluginFactories = ImmutableList.of();
+        private List<ConfiguredPluginFactory> configuredPluginFactories = emptyList();
         private ServicesLoader servicesLoader = SERVICES_FROM_CONFIG;
         private MetricRegistry metricRegistry = new CodaHaleMetricRegistry();
         private StartupConfig startupConfig;

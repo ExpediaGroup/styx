@@ -18,13 +18,14 @@ package com.hotels.styx.server;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import com.google.common.collect.ImmutableList;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.api.Collections.unmodifiableListOf;
 import static com.hotels.styx.common.Strings.isNotEmpty;
 import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static java.util.Objects.hash;
@@ -205,7 +206,7 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
         }
 
         public Builder cipherSuites(List<String> cipherSuites) {
-            this.cipherSuites = ImmutableList.copyOf(requireNonNull(cipherSuites));
+            this.cipherSuites = copyToUnmodifiableList(requireNonNull(cipherSuites));
             return this;
         }
 
@@ -220,7 +221,7 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
         }
 
         public Builder protocols(String... protocols) {
-            this.protocols = ImmutableList.copyOf(protocols);
+            this.protocols = unmodifiableListOf(protocols);
             return this;
         }
 

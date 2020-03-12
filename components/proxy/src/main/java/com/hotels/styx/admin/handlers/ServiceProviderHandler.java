@@ -21,7 +21,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.collect.ImmutableList;
+import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
@@ -30,7 +30,6 @@ import com.hotels.styx.api.WebServiceHandler;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.routing.db.StyxObjectStore;
-import com.hotels.styx.StyxObjectRecord;
 import org.slf4j.Logger;
 
 import java.util.List;
@@ -44,6 +43,7 @@ import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.HttpResponseStatus.NO_CONTENT;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.joining;
@@ -110,7 +110,7 @@ public class ServiceProviderHandler implements WebServiceHandler {
     }
 
     private static String serialise(String name, StyxObjectRecord<StyxService> record) {
-        List<String> tags = ImmutableList.copyOf(record.getTags());
+        List<String> tags = copyToUnmodifiableList(record.getTags());
         StyxObjectDefinition objectDef =
                 new StyxObjectDefinition(name, record.getType(), tags, record.getConfig());
 

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 package com.hotels.styx.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.extension.service.Certificate;
 import com.hotels.styx.api.extension.service.TlsSettings;
@@ -30,7 +29,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.hotels.styx.api.extension.service.Certificate.certificate;
+import static com.hotels.styx.api.Collections.unmodifiableListOf;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
+import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
@@ -54,8 +55,8 @@ public class TlsSettingsTest {
                 .trustAllCerts(true)
                 .sslProvider("JDK")
                 .trustStorePassword("bar")
-                .protocols(ImmutableList.of("TLSv1.2"))
-                .cipherSuites(ImmutableList.of("TLS_RSA_WITH_AES_128_CBC_SHA"))
+                .protocols(singletonList("TLSv1.2"))
+                .cipherSuites(singletonList("TLS_RSA_WITH_AES_128_CBC_SHA"))
                 .sendSni(false)
                 .sniHost("some.sni.host")
                 .build();
@@ -128,7 +129,7 @@ public class TlsSettingsTest {
     @Test
     public void equalsToConsidersProtocols() throws Exception {
         TlsSettings tlsSettings1 = new TlsSettings.Builder()
-                .protocols(ImmutableList.of("TLSv1", "TLSv1.1"))
+                .protocols(unmodifiableListOf("TLSv1", "TLSv1.1"))
                 .build();
 
         TlsSettings tlsSettings2 = new TlsSettings.Builder()
@@ -137,11 +138,11 @@ public class TlsSettingsTest {
         assertThat(tlsSettings1.equals(tlsSettings2), is(false));
 
         tlsSettings1 = new TlsSettings.Builder()
-                .protocols(ImmutableList.of("TLSv1", "TLSv1.1"))
+                .protocols(unmodifiableListOf("TLSv1", "TLSv1.1"))
                 .build();
 
         tlsSettings2 = new TlsSettings.Builder()
-                .protocols(ImmutableList.of("TLSv1", "TLSv1.1"))
+                .protocols(unmodifiableListOf("TLSv1", "TLSv1.1"))
                 .build();
 
         assertThat(tlsSettings1.equals(tlsSettings2), is(true));
@@ -150,7 +151,7 @@ public class TlsSettingsTest {
     @Test
     public void equalsToConsidersCipherSuites() throws Exception {
         TlsSettings tlsSettings1 = new TlsSettings.Builder()
-                .cipherSuites(ImmutableList.of("x", "y"))
+                .cipherSuites(unmodifiableListOf("x", "y"))
                 .build();
 
         TlsSettings tlsSettings2 = new TlsSettings.Builder()
@@ -159,11 +160,11 @@ public class TlsSettingsTest {
         assertThat(tlsSettings1.equals(tlsSettings2), is(false));
 
         tlsSettings1 = new TlsSettings.Builder()
-                .cipherSuites(ImmutableList.of("x", "y"))
+                .cipherSuites(unmodifiableListOf("x", "y"))
                 .build();
 
         tlsSettings2 = new TlsSettings.Builder()
-                .cipherSuites(ImmutableList.of("x", "y"))
+                .cipherSuites(unmodifiableListOf("x", "y"))
                 .build();
 
         assertThat(tlsSettings1.equals(tlsSettings2), is(true));
@@ -172,7 +173,7 @@ public class TlsSettingsTest {
     @Test
     public void hashCodeConsidersProtocols() throws Exception {
         TlsSettings tlsSettings1 = new TlsSettings.Builder()
-                .protocols(ImmutableList.of("TLSv1", "TLSv1.1"))
+                .protocols(unmodifiableListOf("TLSv1", "TLSv1.1"))
                 .build();
 
         TlsSettings tlsSettings2 = new TlsSettings.Builder()
@@ -181,11 +182,11 @@ public class TlsSettingsTest {
         assertThat(tlsSettings1.hashCode() == tlsSettings2.hashCode(), is(false));
 
         tlsSettings1 = new TlsSettings.Builder()
-                .protocols(ImmutableList.of("TLSv1", "TLSv1.1"))
+                .protocols(unmodifiableListOf("TLSv1", "TLSv1.1"))
                 .build();
 
         tlsSettings2 = new TlsSettings.Builder()
-                .protocols(ImmutableList.of("TLSv1", "TLSv1.1"))
+                .protocols(unmodifiableListOf("TLSv1", "TLSv1.1"))
                 .build();
 
         assertThat(tlsSettings1.hashCode() == tlsSettings2.hashCode(), is(true));
@@ -194,7 +195,7 @@ public class TlsSettingsTest {
     @Test
     public void hashCodeConsidersCipherSuites() throws Exception {
         TlsSettings tlsSettings1 = new TlsSettings.Builder()
-                .cipherSuites(ImmutableList.of("x", "y"))
+                .cipherSuites(unmodifiableListOf("x", "y"))
                 .build();
 
         TlsSettings tlsSettings2 = new TlsSettings.Builder()
@@ -203,11 +204,11 @@ public class TlsSettingsTest {
         assertThat(tlsSettings1.hashCode() == tlsSettings2.hashCode(), is(false));
 
         tlsSettings1 = new TlsSettings.Builder()
-                .cipherSuites(ImmutableList.of("x", "y"))
+                .cipherSuites(unmodifiableListOf("x", "y"))
                 .build();
 
         tlsSettings2 = new TlsSettings.Builder()
-                .cipherSuites(ImmutableList.of("x", "y"))
+                .cipherSuites(unmodifiableListOf("x", "y"))
                 .build();
 
         assertThat(tlsSettings1.hashCode() == tlsSettings2.hashCode(), is(true));
@@ -216,8 +217,8 @@ public class TlsSettingsTest {
     @Test
     public void toStringPrintsAttributeNames() throws Exception {
         TlsSettings tlsSettings = new TlsSettings.Builder()
-                .cipherSuites(ImmutableList.of("x", "y"))
-                .protocols(ImmutableList.of("TLSv1", "TLSv1.2"))
+                .cipherSuites(unmodifiableListOf("x", "y"))
+                .protocols(unmodifiableListOf("TLSv1", "TLSv1.2"))
                 .build();
 
         assertThat(tlsSettings.toString(), containsString("protocols=[TLSv1, TLSv1.2]"));
@@ -244,8 +245,8 @@ public class TlsSettingsTest {
         cipherSuites.add("y");
         certificates[0] = certificate("y", "y");
 
-        assertThat(tlsSettings.protocols(), equalTo(ImmutableList.of("TLSv1")));
-        assertThat(tlsSettings.cipherSuites(), equalTo(ImmutableList.of("x")));
+        assertThat(tlsSettings.protocols(), equalTo(singletonList("TLSv1")));
+        assertThat(tlsSettings.cipherSuites(), equalTo(singletonList("x")));
         assertThat(tlsSettings.additionalCerts(), equalTo(ImmutableSet.of(certificate("x", "x"))));
     }
 }

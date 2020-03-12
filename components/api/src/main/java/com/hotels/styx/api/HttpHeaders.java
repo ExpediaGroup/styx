@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
@@ -29,6 +28,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
+import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
 import static com.hotels.styx.api.HttpHeader.header;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Locale.US;
@@ -80,7 +80,7 @@ public final class HttpHeaders implements Iterable<HttpHeader> {
      * are found
      */
     public List<String> getAll(CharSequence name) {
-        return ImmutableList.copyOf(nettyHeaders.getAll(name));
+        return copyToUnmodifiableList(nettyHeaders.getAll(name));
     }
 
     /**

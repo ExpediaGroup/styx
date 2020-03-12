@@ -16,12 +16,12 @@
 package com.hotels.styx.admin;
 
 import com.codahale.metrics.json.MetricsModule;
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.Environment;
-import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.InetServer;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.StartupConfig;
 import com.hotels.styx.StyxConfig;
+import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.admin.dashboard.DashboardData;
 import com.hotels.styx.admin.dashboard.DashboardDataSupplier;
 import com.hotels.styx.admin.handlers.CurrentRequestsHandler;
@@ -57,7 +57,6 @@ import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.db.StyxObjectStore;
-import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.server.AdminHttpRouter;
 import com.hotels.styx.server.handlers.ClassPathResourceHandler;
 import com.hotels.styx.server.netty.NettyServerBuilder;
@@ -210,7 +209,7 @@ public class AdminServerBuilder {
     }
 
     private static Iterable<IndexHandler.Link> indexLinkPaths(StyxConfig styxConfig) {
-        ImmutableList.Builder<IndexHandler.Link> builder = ImmutableList.builder();
+        List<IndexHandler.Link> builder = new ArrayList<>();
         builder.add(link("version.txt", "/version.txt"));
         builder.add(link("uptime", "/admin/uptime"));
         builder.add(link("Ping", "/admin/ping"));
@@ -225,11 +224,11 @@ public class AdminServerBuilder {
         builder.add(link("Providers", "/admin/providers"));
 
         if (configVersion(styxConfig) == ROUTING_CONFIG_V1) {
-            builder.add(link("Dashboard", "/admin/dashboard/index.html"))
-                    .add(link("Origins Status", "/admin/origins/status?pretty"))
-                    .add(link("Origins Configuration", "/admin/configuration/origins?pretty"));
+            builder.add(link("Dashboard", "/admin/dashboard/index.html"));
+            builder.add(link("Origins Status", "/admin/origins/status?pretty"));
+            builder.add(link("Origins Configuration", "/admin/configuration/origins?pretty"));
         }
-        return builder.build()
+        return builder
                 .stream()
                 .sorted()
                 .collect(toList());

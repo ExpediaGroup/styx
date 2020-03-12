@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.proxy.backends.file;
 
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
@@ -47,6 +46,7 @@ import static com.hotels.styx.api.extension.service.spi.Registry.Outcome.FAILED;
 import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.failed;
 import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded;
 import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.unchanged;
+import static com.hotels.styx.api.Collections.unmodifiableListOf;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
@@ -406,7 +406,7 @@ public class FileBackedBackendServicesRegistryTest {
 
     @Test
     public void constraintAcceptsDistinctPaths() {
-        Collection<BackendService> backendServices = ImmutableList.of(
+        Collection<BackendService> backendServices = unmodifiableListOf(
                 new BackendService.Builder()
                         .path("/foo")
                         .build(),
@@ -420,7 +420,7 @@ public class FileBackedBackendServicesRegistryTest {
 
     @Test
     public void constraintRejectsDuplicatePaths() {
-        Collection<BackendService> backendServices = ImmutableList.of(
+        Collection<BackendService> backendServices = unmodifiableListOf(
                 new BackendService.Builder()
                         .id("app-a")
                         .path("/foo")
@@ -441,7 +441,7 @@ public class FileBackedBackendServicesRegistryTest {
 
     @Test
     public void constraintRejectsAndLogsMultipleDuplicatePaths() {
-        Collection<BackendService> backendServices = ImmutableList.of(
+        Collection<BackendService> backendServices = unmodifiableListOf(
                 new BackendService.Builder()
                         .id("app-a")
                         .path("/foo")

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package com.hotels.styx.infrastructure.configuration.yaml;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.infrastructure.configuration.UnresolvedPlaceholder;
 import com.hotels.styx.infrastructure.configuration.yaml.PlaceholderResolver.Placeholder;
 import org.junit.jupiter.api.Test;
@@ -27,6 +26,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import static com.hotels.styx.api.Collections.unmodifiableListOf;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
@@ -148,7 +148,7 @@ public class PlaceholderResolverTest {
 
         List<Placeholder> placeholders = PlaceholderResolver.extractPlaceholders(valueWithPlaceholders);
 
-        List<Placeholder> expected = ImmutableList.of(
+        List<Placeholder> expected = unmodifiableListOf(
                 new Placeholder("with.default", "defaultValue"),
                 new Placeholder("without.default"),
                 new Placeholder("configLocation", "classpath:"));

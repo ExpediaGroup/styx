@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.routing;
 
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.Environment;
 import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.HttpHandler;
@@ -34,14 +33,16 @@ import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletableFuture;
 
-import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.service.BackendService.newBackendServiceBuilder;
 import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded;
+import static com.hotels.styx.api.Collections.unmodifiableListOf;
+import static com.hotels.styx.support.Support.requestContext;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
@@ -73,14 +74,14 @@ public class StaticPipelineBuilderTest {
 
     @Test
     public void buildsInterceptorPipelineForBackendServices() throws Exception {
-        HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, ImmutableList.of(), executor, false).build();
+        HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, emptyList(), executor, false).build();
         LiveHttpResponse response = Mono.from(handler.handle(get("/foo").build(), requestContext())).block();
         assertThat(response.status(), is(OK));
     }
 
     @Test
     public void appliesPluginsInOrderTheyAreConfigured() throws Exception {
-        Iterable<NamedPlugin> plugins = ImmutableList.of(
+        Iterable<NamedPlugin> plugins = unmodifiableListOf(
                 interceptor("Test-A", appendResponseHeader("X-From-Plugin", "A")),
                 interceptor("Test-B", appendResponseHeader("X-From-Plugin", "B"))
         );

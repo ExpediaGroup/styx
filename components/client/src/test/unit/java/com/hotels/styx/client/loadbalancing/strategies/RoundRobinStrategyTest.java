@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.client.loadbalancing.strategies;
 
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.Id;
@@ -31,6 +30,7 @@ import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.Optional;
 
 import static com.hotels.styx.api.Id.id;
@@ -86,7 +86,7 @@ public class RoundRobinStrategyTest {
 
     @Test
     public void returnsEmptyIfNoActiveOrigins() {
-        strategy = new RoundRobinStrategy.Factory().create(environment, configuration, ImmutableList::of);
+        strategy = new RoundRobinStrategy.Factory().create(environment, configuration, Collections::emptyList);
         assertThat(strategy.choose(null), is(Optional.empty()));
     }
 

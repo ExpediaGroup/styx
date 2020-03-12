@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.api.extension.service;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 
 import java.io.File;
@@ -26,6 +25,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.requireNonNull;
 
@@ -55,8 +55,8 @@ public class TlsSettings {
         this.additionalCerts = builder.additionalCerts;
         this.trustStorePath = builder.trustStorePath;
         this.trustStorePassword = toCharArray(builder.trustStorePassword);
-        this.protocols = ImmutableList.copyOf(builder.protocols);
-        this.cipherSuites = ImmutableList.copyOf(builder.cipherSuites);
+        this.protocols = copyToUnmodifiableList(builder.protocols);
+        this.cipherSuites = copyToUnmodifiableList(builder.cipherSuites);
         this.sendSni = builder.sendSni;
         this.sniHost = Optional.ofNullable(builder.sniHost);
     }

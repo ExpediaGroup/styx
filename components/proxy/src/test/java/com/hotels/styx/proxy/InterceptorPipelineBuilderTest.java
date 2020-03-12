@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.proxy;
 
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Eventual;
@@ -29,12 +28,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
-import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
+import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
+import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.any;
@@ -51,7 +51,7 @@ public class InterceptorPipelineBuilderTest {
         environment = new Environment.Builder()
                 .configuration(StyxConfig.defaultConfig())
                 .build();
-        plugins = ImmutableList.of(
+        plugins = asList(
                 namedPlugin("plug1",
                         (request, chain) ->
                                 chain.proceed(request)

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,12 +15,12 @@
  */
 package com.hotels.styx.server;
 
-import com.google.common.collect.ImmutableList;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.core.Is.is;
@@ -72,8 +72,8 @@ public class HttpsConnectorConfigTest {
         protocols[0] = "TLSv1.1";
         cipherSuites.add("A2");
 
-        assertThat(connector1.protocols(), equalTo(ImmutableList.of("TLSv1.2")));
-        assertThat(connector1.ciphers(), equalTo(ImmutableList.of("A1")));
+        assertThat(connector1.protocols(), equalTo(singletonList("TLSv1.2")));
+        assertThat(connector1.ciphers(), equalTo(singletonList("A1")));
     }
 
 

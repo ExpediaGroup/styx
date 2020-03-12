@@ -16,7 +16,6 @@
 package com.hotels.styx.config.schema;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
 import java.util.ArrayList;
@@ -26,6 +25,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
+import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
 import static com.hotels.styx.config.schema.SchemaDsl.field;
 import static com.hotels.styx.config.schema.SchemaDsl.list;
 import static com.hotels.styx.config.schema.SchemaDsl.object;
@@ -63,7 +63,7 @@ import static java.util.stream.Collectors.toSet;
  * attribute type.
  */
 public class Schema {
-    private final ImmutableList<Constraint> constraints;
+    private final List<Constraint> constraints;
     private final String name;
     private final List<String> fieldNames;
     private final List<Field> fields;
@@ -72,9 +72,9 @@ public class Schema {
 
     private Schema(Builder builder) {
         this.fieldNames = builder.fields.stream().map(Field::name).collect(toList());
-        this.fields = ImmutableList.copyOf(builder.fields);
+        this.fields = copyToUnmodifiableList(builder.fields);
         this.optionalFields = ImmutableSet.copyOf(builder.optionalFields);
-        this.constraints = ImmutableList.copyOf(builder.constraints);
+        this.constraints = copyToUnmodifiableList(builder.constraints);
         this.ignore = builder.pass;
         this.name = builder.name.length() > 0 ? builder.name : String.join(", ", this.fieldNames);
     }
@@ -435,7 +435,7 @@ public class Schema {
                 }
             });
 
-            assertNoUnknownFields(String.join(".", parents), schema, ImmutableList.copyOf(value.fieldNames()));
+            assertNoUnknownFields(String.join(".", parents), schema, copyToUnmodifiableList(value.fieldNames()));
         }
 
         @Override

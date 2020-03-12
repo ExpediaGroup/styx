@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.admin.handlers;
 
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpMethod;
@@ -38,6 +37,7 @@ import static com.hotels.styx.api.HttpMethod.PUT;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
+import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
 import static java.util.stream.Collectors.toMap;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -50,7 +50,7 @@ public class UrlPatternRouter implements WebServiceHandler {
     private final List<RouteDescriptor> alternatives;
 
     private UrlPatternRouter(List<RouteDescriptor> alternatives) {
-        this.alternatives = ImmutableList.copyOf(alternatives);
+        this.alternatives = copyToUnmodifiableList(alternatives);
     }
 
     public static Map<String, String> placeholders(HttpInterceptor.Context context) {

@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.api.extension.service;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.Identifiable;
@@ -27,6 +26,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.extension.Origin.checkThatOriginsAreDistinct;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
@@ -382,7 +382,7 @@ public final class BackendService implements Identifiable {
          * @return this builder
          */
         public Builder rewrites(List<RewriteConfig> rewriteConfigs) {
-            this.rewrites = ImmutableList.copyOf(rewriteConfigs);
+            this.rewrites = copyToUnmodifiableList(rewriteConfigs);
             return this;
         }
 

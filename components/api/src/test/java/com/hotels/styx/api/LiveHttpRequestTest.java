@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -516,7 +515,7 @@ public class LiveHttpRequestTest {
     public void transformsCookiesViaList() {
         LiveHttpRequest request = LiveHttpRequest.get("/").addCookies(requestCookie("cookie", "xyz010")).build()
                 .newBuilder()
-                .cookies(ImmutableList.of(requestCookie("cookie", "xyz202")))
+                .cookies(singletonList(requestCookie("cookie", "xyz202")))
                 .build();
 
         assertEquals(request.cookie("cookie"), Optional.of(requestCookie("cookie", "xyz202")));
@@ -536,7 +535,7 @@ public class LiveHttpRequestTest {
     public void transformsByAddingCookiesList() {
         LiveHttpRequest request = LiveHttpRequest.get("/").build()
                 .newBuilder()
-                .addCookies(ImmutableList.of(requestCookie("cookie", "xyz202")))
+                .addCookies(singletonList(requestCookie("cookie", "xyz202")))
                 .build();
 
         assertEquals(request.cookie("cookie"), Optional.of(requestCookie("cookie", "xyz202")));
@@ -556,7 +555,7 @@ public class LiveHttpRequestTest {
     public void transformsByRemovingCookieList() {
         LiveHttpRequest request = LiveHttpRequest.get("/").addCookies(requestCookie("cookie", "xyz202")).build()
                 .newBuilder()
-                .removeCookies(ImmutableList.of("cookie"))
+                .removeCookies(singletonList("cookie"))
                 .build();
 
         assertEquals(request.cookie("cookie"), Optional.empty());

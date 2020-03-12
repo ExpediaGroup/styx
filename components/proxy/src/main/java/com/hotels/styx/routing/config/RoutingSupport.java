@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,11 +15,11 @@
  */
 package com.hotels.styx.routing.config;
 
-import com.google.common.collect.ImmutableList;
-
+import java.util.ArrayList;
 import java.util.List;
 
 import static java.lang.String.format;
+import static java.util.Collections.unmodifiableList;
 
 /**
  * RoutingSupport providers supporting methods for HTTP routing features.
@@ -30,12 +30,12 @@ public final class RoutingSupport {
     }
 
     public static <T> List<T> append(List<T> list, T elem) {
-        ImmutableList.Builder<T> builder = ImmutableList.builder();
+        List<T> builder = new ArrayList<>();
 
         builder.addAll(list);
         builder.add(elem);
 
-        return builder.build();
+        return unmodifiableList(builder);
     }
 
     public static RuntimeException missingAttributeError(StyxObjectDefinition routingDef, String parent, String expected) {

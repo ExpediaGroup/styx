@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.proxy;
 
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.proxy.plugin.InstrumentedPlugin;
@@ -25,6 +24,7 @@ import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
 
 import java.util.List;
 
+import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
@@ -46,7 +46,7 @@ public class InterceptorPipelineBuilder {
     }
 
     public RoutingObject build() {
-        List<HttpInterceptor> interceptors = ImmutableList.copyOf(instrument(plugins, environment));
+        List<HttpInterceptor> interceptors = copyToUnmodifiableList(instrument(plugins, environment));
         return new HttpInterceptorPipeline(interceptors, handler, trackRequests);
     }
 

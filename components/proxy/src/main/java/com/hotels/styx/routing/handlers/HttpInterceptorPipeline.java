@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 package com.hotels.styx.routing.handlers;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
@@ -27,8 +26,8 @@ import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.HttpInterceptorFactory;
-import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.RoutingConfigParser;
+import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.StyxObjectConfiguration;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.routing.config.StyxObjectReference;
@@ -52,6 +51,7 @@ import static com.hotels.styx.routing.config.RoutingConfigParser.toRoutingConfig
 import static com.hotels.styx.routing.config.RoutingSupport.append;
 import static com.hotels.styx.routing.config.RoutingSupport.missingAttributeError;
 import static java.lang.String.join;
+import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
 import static java.util.stream.StreamSupport.stream;
@@ -111,7 +111,7 @@ public class HttpInterceptorPipeline implements RoutingObject {
                 Map<String, HttpInterceptorFactory> interceptorFactories,
                 JsonNode pipeline) {
             if (pipeline == null || pipeline.isNull()) {
-                return ImmutableList.of();
+                return emptyList();
             }
             List<StyxObjectConfiguration> interceptorConfigs = styxHttpPipeline(pipeline);
             ensureValidPluginReferences(parents, plugins, interceptorConfigs);

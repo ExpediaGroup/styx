@@ -17,7 +17,6 @@ package com.hotels.styx.server.netty.connectors;
 
 
 import ch.qos.logback.classic.Level;
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.LiveHttpResponse;
@@ -50,6 +49,7 @@ import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.ResponseCookie.responseCookie;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
+import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static java.net.InetAddress.getLoopbackAddress;
@@ -475,7 +475,7 @@ public class HttpResponseWriterTest {
         }
 
         public List<Object> writeEvents() {
-            return ImmutableList.copyOf(writeEvents);
+            return copyToUnmodifiableList(writeEvents);
         }
 
     }

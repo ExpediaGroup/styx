@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package com.hotels.styx;
 
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.proxy.interceptors.ConfigurationContextResolverInterceptor;
@@ -26,9 +25,11 @@ import com.hotels.styx.proxy.interceptors.TcpTunnelRequestRejector;
 import com.hotels.styx.proxy.interceptors.UnexpectedRequestContentLengthRemover;
 import com.hotels.styx.proxy.interceptors.ViaHeaderAppendingInterceptor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.hotels.styx.api.configuration.ConfigurationContextResolver.EMPTY_CONFIGURATION_CONTEXT_RESOLVER;
+import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
 
 /**
  * Provides a list of interceptors that are required by the Styx HTTP pipeline for core functionality.
@@ -38,7 +39,7 @@ final class BuiltInInterceptors {
     }
 
     static List<HttpInterceptor> internalStyxInterceptors(StyxConfig config, HttpMessageFormatter httpMessageFormatter) {
-        ImmutableList.Builder<HttpInterceptor> builder = ImmutableList.builder();
+        List<HttpInterceptor> tempList = new ArrayList<>();
 
         boolean loggingEnabled = config.get("request-logging.inbound.enabled", Boolean.class)
                 .orElse(false);
@@ -47,16 +48,16 @@ final class BuiltInInterceptors {
                 .orElse(false);
 
         if (loggingEnabled) {
-            builder.add(new HttpMessageLoggingInterceptor(longFormatEnabled, httpMessageFormatter));
+            tempList.add(new HttpMessageLoggingInterceptor(longFormatEnabled, httpMessageFormatter));
         }
 
-        builder.add(new TcpTunnelRequestRejector())
-                .add(new ConfigurationContextResolverInterceptor(EMPTY_CONFIGURATION_CONTEXT_RESOLVER))
-                .add(new UnexpectedRequestContentLengthRemover())
-                .add(new ViaHeaderAppendingInterceptor())
-                .add(new HopByHopHeadersRemovingInterceptor())
-                .add(new RequestEnrichingInterceptor(config.styxHeaderConfig()));
+        tempList.add(new TcpTunnelRequestRejector());
+        tempList.add(new ConfigurationContextResolverInterceptor(EMPTY_CONFIGURATION_CONTEXT_RESOLVER));
+        tempList.add(new UnexpectedRequestContentLengthRemover());
+        tempList.add(new ViaHeaderAppendingInterceptor());
+        tempList.add(new HopByHopHeadersRemovingInterceptor());
+        tempList.add(new RequestEnrichingInterceptor(config.styxHeaderConfig()));
 
-        return builder.build();
+        return copyToUnmodifiableList(tempList);
     }
 }

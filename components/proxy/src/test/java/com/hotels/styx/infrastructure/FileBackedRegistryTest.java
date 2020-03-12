@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.infrastructure;
 
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
@@ -30,6 +29,7 @@ import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.re
 import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.unchanged;
 import static com.hotels.styx.common.StyxFutures.await;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -37,7 +37,6 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.withSettings;
 
 
 public class FileBackedRegistryTest {
@@ -60,7 +59,7 @@ public class FileBackedRegistryTest {
     public void announcesInitialStateWhenStarts() throws IOException {
         Resource configurationFile = mockResource("/styx/config", new ByteArrayInputStream(originalContent));
 
-        registry = new FileBackedRegistry<>(configurationFile, bytes -> ImmutableList.of(backendService), any -> true);
+        registry = new FileBackedRegistry<>(configurationFile, bytes -> singletonList(backendService), any -> true);
         registry.addListener(listener);
 
         await(registry.reload());
@@ -75,7 +74,7 @@ public class FileBackedRegistryTest {
                 new ByteArrayInputStream(originalContent)
         );
 
-        registry = new FileBackedRegistry<>(configurationFile, bytes -> ImmutableList.of(backendService), any -> true);
+        registry = new FileBackedRegistry<>(configurationFile, bytes -> singletonList(backendService), any -> true);
         registry.addListener(listener);
         await(registry.reload());
         verify(listener).onChange(eq(changeSet().added(backendService).build()));
@@ -91,7 +90,7 @@ public class FileBackedRegistryTest {
     public void announcesNoMeaningfulChangesWhenNoSemanticChanges() throws Exception {
         Resource configurationFile = mockResource("/styx/config", new ByteArrayInputStream(originalContent));
 
-        registry = new FileBackedRegistry<>(configurationFile, bytes -> ImmutableList.of(backendService), any -> true);
+        registry = new FileBackedRegistry<>(configurationFile, bytes -> singletonList(backendService), any -> true);
         registry.addListener(listener);
 
         await(registry.reload());
@@ -118,9 +117,9 @@ public class FileBackedRegistryTest {
                 configurationFile,
                 bytes -> {
                     if (new String(bytes).equals(new String(originalContent))) {
-                        return ImmutableList.of(backendService1);
+                        return singletonList(backendService1);
                     } else {
-                        return ImmutableList.of(backendService2);
+                        return singletonList(backendService2);
                     }
                 },
                 any -> true);
@@ -149,7 +148,7 @@ public class FileBackedRegistryTest {
                 configurationFile,
                 bytes -> {
                     if (new String(bytes).equals(new String(originalContent))) {
-                        return ImmutableList.of(backendService);
+                        return singletonList(backendService);
                     } else {
                         throw new RuntimeException("Something went wrong...");
                     }
@@ -173,7 +172,7 @@ public class FileBackedRegistryTest {
     public void modifyTimeProviderHandlesExceptions() throws Exception {
         registry = new FileBackedRegistry<>(
                 mockResource("/styx/config", new ByteArrayInputStream(originalContent)),
-                bytes -> ImmutableList.of(new BackendService.Builder().id("x").path("/x").build()),
+                bytes -> singletonList(new BackendService.Builder().id("x").path("/x").build()),
                 any -> true
         );
 

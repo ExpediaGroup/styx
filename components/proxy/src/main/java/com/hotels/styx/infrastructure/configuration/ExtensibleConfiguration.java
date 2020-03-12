@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,12 +15,12 @@
  */
 package com.hotels.styx.infrastructure.configuration;
 
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.configuration.Configuration;
 
 import java.util.Collection;
 import java.util.Map;
 
+import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -66,7 +66,7 @@ public interface ExtensibleConfiguration<C extends ExtensibleConfiguration<C>> e
 
         public PlaceholderResolutionResult(C resolvedConfiguration, Collection<UnresolvedPlaceholder> unresolvedPlaceholders) {
             this.resolvedConfiguration = requireNonNull(resolvedConfiguration);
-            this.unresolvedPlaceholders = ImmutableList.copyOf(unresolvedPlaceholders);
+            this.unresolvedPlaceholders = copyToUnmodifiableList(unresolvedPlaceholders);
         }
 
         /**

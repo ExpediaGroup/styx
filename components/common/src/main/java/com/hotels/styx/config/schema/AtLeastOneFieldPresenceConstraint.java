@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 package com.hotels.styx.config.schema;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.hotels.styx.api.Collections;
 
 import java.util.Set;
 
@@ -46,8 +46,7 @@ class AtLeastOneFieldPresenceConstraint implements Constraint {
 
     @Override
     public boolean evaluate(Schema schema, JsonNode node) {
-        long fieldsPresent = ImmutableList.copyOf(node.fieldNames())
-                .stream()
+        long fieldsPresent = Collections.stream(node.fieldNames())
                 .filter(fieldNames::contains)
                 .count();
 

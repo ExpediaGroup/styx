@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.spi;
 
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.common.io.FileResource;
 import com.hotels.styx.common.io.FileResourceIndex;
@@ -23,6 +22,7 @@ import com.hotels.styx.common.io.FileResourceIndex;
 import java.nio.file.Path;
 import java.util.Collection;
 
+import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
 import static java.util.Collections.singleton;
 
 /**
@@ -54,6 +54,6 @@ final class JarResources {
 
     private static Collection<Resource> multipleResources(Path path) {
         FileResourceIndex resourceIndex = new FileResourceIndex();
-        return ImmutableList.copyOf(resourceIndex.list(path.toString(), ".jar"));
+        return copyToUnmodifiableList(resourceIndex.list(path.toString(), ".jar"));
     }
 }

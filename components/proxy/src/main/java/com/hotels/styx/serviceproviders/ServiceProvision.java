@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package com.hotels.styx.serviceproviders;
 
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationException;
@@ -34,6 +33,7 @@ import com.hotels.styx.spi.config.SpiExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -43,6 +43,7 @@ import static com.hotels.styx.common.Pair.pair;
 import static com.hotels.styx.proxy.ClassFactories.newInstance;
 import static com.hotels.styx.spi.ExtensionObjectFactory.EXTENSION_OBJECT_FACTORY;
 import static java.lang.String.format;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toMap;
 
@@ -159,8 +160,8 @@ public final class ServiceProvision {
         return jsonNodeConfig.get(name, SpiExtension.class)
                 .filter(SpiExtension::enabled)
                 .map(extension -> loadSpiExtension(extension, environment, serviceClass))
-                .map(service -> ImmutableList.<Pair<String, ? extends U>>of(pair(name, service)))
-                .orElse(ImmutableList.of())
+                .map(service -> Collections.<Pair<String, ? extends U>>singletonList(pair(name, service)))
+                .orElse(emptyList())
                 .stream();
     }
 
@@ -185,8 +186,8 @@ public final class ServiceProvision {
         return jsonNodeConfig.get(name, ServiceFactoryConfig.class)
                 .filter(ServiceFactoryConfig::enabled)
                 .map(serviceFactoryConfig -> loadServiceFactory(serviceFactoryConfig, environment, serviceClass))
-                .map(service -> ImmutableList.<Pair<String, ? extends U>>of(pair(name, service)))
-                .orElse(ImmutableList.of()).stream();
+                .map(service -> Collections.<Pair<String, ? extends U>>singletonList(pair(name, service)))
+                .orElse(emptyList()).stream();
     }
 
     private static <T> T loadServiceFactory(ServiceFactoryConfig serviceFactoryConfig, Environment environment, Class<T> serviceSuperclass) {

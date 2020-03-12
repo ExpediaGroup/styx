@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,11 +15,11 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.collect.ImmutableList;
 import org.junit.jupiter.api.Test;
 
 import static com.hotels.styx.api.RequestCookie.encode;
 import static com.hotels.styx.api.RequestCookie.requestCookie;
+import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -43,7 +43,7 @@ public class RequestCookieTest {
 
     @Test
     public void doesNotEncodeDuplicateCookies() {
-        String encoded = encode(ImmutableList.of(
+        String encoded = encode(asList(
                 requestCookie("foo", "bar"),
                 requestCookie("bar", "foo"),
                 requestCookie("foo", "asjdfksdajf")

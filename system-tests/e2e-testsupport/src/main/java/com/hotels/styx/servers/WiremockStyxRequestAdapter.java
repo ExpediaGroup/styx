@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.github.tomakehurst.wiremock.http.HttpHeaders;
 import com.github.tomakehurst.wiremock.http.QueryParameter;
 import com.github.tomakehurst.wiremock.http.Request;
 import com.github.tomakehurst.wiremock.http.RequestMethod;
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.HttpRequest;
 
 import java.util.HashSet;
@@ -32,6 +31,7 @@ import static com.github.tomakehurst.wiremock.http.HttpHeader.httpHeader;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpHeaderNames.HOST;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
@@ -101,7 +101,7 @@ public class WiremockStyxRequestAdapter implements Request {
     @Override
     public QueryParameter queryParameter(String key) {
         return styxRequest.queryParam(key)
-                .map(value -> new QueryParameter(key, ImmutableList.of(value)))
+                .map(value -> new QueryParameter(key, singletonList(value)))
                 .orElseGet(() -> QueryParameter.absent(key));
     }
 

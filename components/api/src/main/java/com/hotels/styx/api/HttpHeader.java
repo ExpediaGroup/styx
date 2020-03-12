@@ -15,11 +15,10 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.collect.ImmutableList;
-
 import java.util.List;
 import java.util.Objects;
 
+import static com.hotels.styx.api.Collections.unmodifiableListOf;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 
@@ -44,7 +43,7 @@ public final class HttpHeader {
             throw new IllegalArgumentException("must give at least one value");
         }
 
-        return new HttpHeader(requireNonNull(name), ImmutableList.copyOf(values));
+        return new HttpHeader(requireNonNull(name), unmodifiableListOf(values.clone()));
     }
 
     private HttpHeader(String name, List<String> values) {

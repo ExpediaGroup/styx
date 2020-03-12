@@ -15,10 +15,9 @@
  */
 package com.hotels.styx.proxy;
 
-import com.google.common.collect.ImmutableList;
-import com.hotels.styx.NettyExecutor;
 import com.google.common.util.concurrent.Service;
 import com.hotels.styx.InetServer;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.StyxServers;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
@@ -45,6 +44,7 @@ import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.server.netty.NettyServerBuilder.newBuilder;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -78,7 +78,7 @@ public class StyxProxyTest extends SSLSetup {
                 .bossExecutor(NettyExecutor.create("Test-Server-Boss", 1))
                 .workerExecutor(NettyExecutor.create("Test-Server-Worker", 0))
                 .handler(new HttpInterceptorPipeline(
-                        ImmutableList.of(echoInterceptor),
+                        singletonList(echoInterceptor),
                         (request, context) -> new HttpAggregator(new StandardHttpRouter()).handle(request, context),
                         false))
                 .build();

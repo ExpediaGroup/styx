@@ -21,7 +21,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
@@ -50,6 +49,7 @@ import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.singletonList;
 
 /**
  * Provides admin interface access to Styx routing configuration.
@@ -93,7 +93,7 @@ public class RoutingObjectHandler implements WebServiceHandler {
 
                     try {
                         StyxObjectDefinition payload = YAML_MAPPER.readValue(body, StyxObjectDefinition.class);
-                        RoutingMetadataDecorator decorator = new RoutingMetadataDecorator(Builtins.build(ImmutableList.of(name), routingObjectFactoryContext, payload));
+                        RoutingMetadataDecorator decorator = new RoutingMetadataDecorator(Builtins.build(singletonList(name), routingObjectFactoryContext, payload));
 
                         routeDatabase.insert(name, new RoutingObjectRecord(payload.type(), ImmutableSet.copyOf(payload.tags()), payload.config(), decorator))
                                 .ifPresent(previous -> previous.getRoutingObject().stop());

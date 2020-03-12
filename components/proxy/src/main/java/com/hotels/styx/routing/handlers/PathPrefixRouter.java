@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package com.hotels.styx.routing.handlers;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
@@ -47,6 +46,7 @@ import static com.hotels.styx.config.schema.SchemaDsl.string;
 import static com.hotels.styx.routing.config.RoutingConfigParser.toRoutingConfigNode;
 import static com.hotels.styx.routing.config.RoutingSupport.missingAttributeError;
 import static java.lang.String.join;
+import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparingInt;
 import static java.util.Comparator.naturalOrder;
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -99,7 +99,7 @@ public class PathPrefixRouter {
 
             PathPrefixRouter pathPrefixRouter = new PathPrefixRouter(
                     config.routes.stream()
-                            .map(route -> pair(route.prefix, Builtins.build(ImmutableList.of(""), context, route.destination)))
+                            .map(route -> pair(route.prefix, Builtins.build(singletonList(""), context, route.destination)))
                             .collect(toList())
             );
 
