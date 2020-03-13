@@ -28,8 +28,8 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 
-import static com.google.common.collect.Iterables.getFirst;
 import static com.hotels.styx.api.Collections.copyToUnmodifiableSet;
+import static com.hotels.styx.api.Collections.getFirst;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.service.BackendService.newBackendServiceBuilder;
 import static com.hotels.styx.common.Preconditions.checkArgument;

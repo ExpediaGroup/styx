@@ -26,8 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Sets.newHashSet;
+import static com.hotels.styx.api.Collections.concat;
 import static java.util.Collections.singleton;
 
 /**

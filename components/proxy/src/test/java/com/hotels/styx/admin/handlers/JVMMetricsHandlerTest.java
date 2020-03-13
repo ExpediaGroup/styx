@@ -27,13 +27,13 @@ import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import java.util.Optional;
+import java.util.stream.StreamSupport;
 
-import static com.google.common.collect.Iterables.all;
-import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.admin.handlers.JVMMetricsHandlerTest.StringsContains.containsStrings;
 import static com.hotels.styx.api.HttpHeaderValues.APPLICATION_JSON;
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.support.Support.requestContext;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -105,7 +105,8 @@ public class JVMMetricsHandlerTest {
 
         @Override
         protected boolean matchesSafely(String item) {
-            return all(this.substrings, item::contains);
+            return StreamSupport.stream(this.substrings.spliterator(), false)
+                    .allMatch(item::contains);
         }
 
         @Override

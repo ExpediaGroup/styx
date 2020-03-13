@@ -38,9 +38,9 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.function.Supplier;
 
-import static com.google.common.collect.Iterables.transform;
 import static com.hotels.styx.admin.dashboard.ResponseCodeSupplier.StatusMetricType.COUNTER;
 import static com.hotels.styx.admin.dashboard.ResponseCodeSupplier.StatusMetricType.METER;
+import static com.hotels.styx.api.Collections.transform;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;

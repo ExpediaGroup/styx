@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,16 +18,18 @@ package com.hotels.styx.client.loadbalancing.strategies;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Environment;
+import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.extension.ActiveOrigins;
 import com.hotels.styx.api.extension.RemoteHost;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancerFactory;
-import com.hotels.styx.api.configuration.Configuration;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
-import static com.google.common.collect.Iterables.toArray;
 import static java.util.Objects.requireNonNull;
 
 
@@ -61,17 +63,18 @@ public class PowerOfTwoStrategy implements LoadBalancer {
 
     @Override
     public Optional<RemoteHost> choose(LoadBalancer.Preferences preferences) {
-        RemoteHost[] hosts = toArray(activeOrigins.snapshot(), RemoteHost.class);
+        List<RemoteHost> hosts = StreamSupport.stream(activeOrigins.snapshot().spliterator(), false)
+                .collect(Collectors.toList());
 
-        if (hosts.length == 0) {
+        if (hosts.size() == 0) {
             return Optional.empty();
-        } else if (hosts.length == 1) {
-            return Optional.of(hosts[0]);
+        } else if (hosts.size() == 1) {
+            return Optional.of(hosts.get(0));
         } else {
-            int i1 = rng.nextInt(hosts.length);
-            int i2 = drawFromRemaining(hosts.length, i1);
+            int i1 = rng.nextInt(hosts.size());
+            int i2 = drawFromRemaining(hosts.size(), i1);
 
-            return Optional.of(betterOf(hosts[i1], hosts[i2]));
+            return Optional.of(betterOf(hosts.get(i1), hosts.get(i2)));
         }
     }
 

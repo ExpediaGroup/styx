@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import org.hamcrest.core.IsCollectionContaining;
 
 import java.util.List;
 
-import static com.google.common.collect.Iterables.all;
 import static com.hotels.styx.support.api.matchers.HeaderMatcher.header;
 import static java.lang.String.format;
 import static java.lang.System.getProperty;
@@ -52,7 +51,8 @@ public class HttpHeadersMatcher extends TypeSafeMatcher<Iterable<HttpHeader>> {
 
     @Override
     public boolean matchesSafely(Iterable<HttpHeader> actual) {
-        return all(matchers, elementMatcher -> new IsCollectionContaining<>(elementMatcher).matches(actual));
+        return matchers.stream()
+                .allMatch(elementMatcher -> new IsCollectionContaining<>(elementMatcher).matches(actual));
     }
 
     @Override

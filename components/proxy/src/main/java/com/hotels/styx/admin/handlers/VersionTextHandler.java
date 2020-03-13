@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Optional;
 
-import static com.google.common.collect.Iterables.isEmpty;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.hotels.styx.common.Preconditions.checkArgument;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -46,7 +45,7 @@ public class VersionTextHandler extends StaticBodyHttpHandler {
     }
 
     private static String body(Iterable<Resource> files) {
-        checkArgument(!isEmpty(files));
+        checkArgument(files.iterator().hasNext());
 
         return versionFileContent(files).orElse("Unknown version\n");
     }
