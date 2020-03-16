@@ -50,10 +50,6 @@ public final class Collections {
         return unmodifiableList(stream(iterable).map(Objects::requireNonNull).collect(toList()));
     }
 
-    public static <T> List<T> copyToUnmodifiableList(Collection<? extends T> list) {
-        return unmodifiableList(list.stream().map(Objects::requireNonNull).collect(toList()));
-    }
-
     public static <T> List<T> unmodifiableListOf(T... elements) {
         return unmodifiableList(Arrays.stream(elements).map(Objects::requireNonNull).collect(toList()));
     }
@@ -66,10 +62,6 @@ public final class Collections {
         return unmodifiableSet(stream(iterable).map(Objects::requireNonNull).collect(toCollection(() -> new LinkedHashSet<>())));
     }
 
-    public static <T> Set<T> copyToUnmodifiableSet(Collection<? extends T> list) {
-        return unmodifiableSet(list.stream().map(Objects::requireNonNull).collect(toCollection(() -> new LinkedHashSet<>())));
-    }
-
     public static <T> Set<T> unmodifiableSetOf(T... elements) {
         return unmodifiableSet(Arrays.stream(elements).map(Objects::requireNonNull).collect(toCollection(() -> new LinkedHashSet<>())));
     }
@@ -79,63 +71,24 @@ public final class Collections {
     }
 
     public static <T> Stream<T> stream(Iterable<? extends T> iterable) {
-        return StreamSupport.stream(((Iterable<T>) iterable).spliterator(), false);
+        return iterable instanceof Collection
+                ? ((Collection<T>) iterable).stream()
+                : StreamSupport.stream(((Iterable<T>) iterable).spliterator(), false);
     }
 
     public static String toString(Iterable<?> iterable) {
         return new StringBuilder("[")
-                .append(StreamSupport.stream(iterable.spliterator(), false)
-                        .map(Object::toString)
+                .append(stream(iterable)
+                        .map(o -> o == null ? "null" : o.toString())
                         .collect(joining(", ")))
                 .append("]")
                 .toString();
     }
 
     public static int size(Iterable<?> iterable) {
-        if (iterable instanceof Collection) {
-            return ((Collection<?>) iterable).size();
-        } else {
-            return size(iterable.iterator());
-        }
-    }
-
-    public static boolean contains(Iterable<?> iterable, Object element) {
-        if (iterable instanceof Collection) {
-            return ((Collection<?>) iterable).contains(element);
-        } else {
-            return contains(iterable.iterator(), element);
-        }
-    }
-
-    public static <T> T getFirst(Iterable<? extends T> iterable, T fallback) {
-        return getFirst(iterable.iterator(), fallback);
-    }
-
-    public static <T> Iterable<T> concat(Iterable<? extends T> a, Iterable<? extends T> b) {
-        return new Iterable<T>() {
-
-            @Override
-            public Iterator<T> iterator() {
-                return concat(a.iterator(), b.iterator());
-            }
-        };
-    }
-
-    public static <F, T> Iterable<T> transform(Iterable<F> iterable,
-                                               Function<? super F, ? extends T> function) {
-        return new Iterable<T>() {
-
-            @Override
-            public Iterator<T> iterator() {
-                return new TransformedIterator<F, T>(iterable.iterator()) {
-
-                    @Override
-                    T transform(F from) {
-                        return function.apply(from);
-                    }
-                };
-            }
-        };
+        return iterable instanceof Collection
+                ? ((Collection<?>) iterable).size()
+                : size(iterable.iterator());
     }
 
     public static int size(Iterator<?> iterator) {
@@ -147,6 +100,12 @@ public final class Collections {
         return c;
     }
 
+    public static boolean contains(Iterable<?> iterable, Object element) {
+        return iterable instanceof Collection
+                ? ((Collection<?>) iterable).contains(element)
+                : contains(iterable.iterator(), element);
+    }
+
     public static boolean contains(Iterator<?> iterator, Object element) {
         while (iterator.hasNext()) {
             if (Objects.equals(iterator.next(), element)) {
@@ -156,66 +115,22 @@ public final class Collections {
         return false;
     }
 
+    public static <T> T getFirst(Iterable<? extends T> iterable, T fallback) {
+        return getFirst(iterable.iterator(), fallback);
+    }
+
     public static <T> T getFirst(Iterator<? extends T> iterator, T fallback) {
         return iterator.hasNext() ? iterator.next() : fallback;
     }
 
-    private static <T> Iterable<? extends T> toIterable(Iterator<? extends T> iterator) {
-        return () -> (Iterator<T>) iterator;
-    }
+    public static <T> Iterable<T> concat(Iterable<? extends T> a, Iterable<? extends T> b) {
+        return new Iterable<T>() {
 
-
-
-    private Collections() {
-        // Private constructor
-    }
-
-
-    /*
-     * Copyright (C) 2012 The Guava Authors
-     *
-     * Licensed under the Apache License, Version 2.0 (the "License");
-     * you may not use this file except in compliance with the License.
-     * You may obtain a copy of the License at
-     *
-     * http://www.apache.org/licenses/LICENSE-2.0
-     *
-     * Unless required by applicable law or agreed to in writing, software
-     * distributed under the License is distributed on an "AS IS" BASIS,
-     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-     * See the License for the specific language governing permissions and
-     * limitations under the License.
-     */
-
-    /**
-     * An iterator that transforms a backing iterator; for internal use. This avoids
-     * the object overhead of constructing a {@link java.util.function.Function} for internal methods.
-     *
-     * @author Louis Wasserman
-     */
-    abstract static class TransformedIterator<F, T> implements Iterator<T> {
-        final Iterator<? extends F> backingIterator;
-
-        TransformedIterator(Iterator<? extends F> backingIterator) {
-            this.backingIterator = requireNonNull(backingIterator);
-        }
-
-        abstract T transform(F from);
-
-        @Override
-        public final boolean hasNext() {
-            return backingIterator.hasNext();
-        }
-
-        @Override
-        public final T next() {
-            return transform(backingIterator.next());
-        }
-
-        @Override
-        public final void remove() {
-            backingIterator.remove();
-        }
+            @Override
+            public Iterator<T> iterator() {
+                return concat(a.iterator(), b.iterator());
+            }
+        };
     }
 
     /*
@@ -291,5 +206,78 @@ public final class Collections {
                 removeFrom = null;
             }
         };
+    }
+
+    public static <F, T> Iterable<T> transform(Iterable<F> iterable,
+                                               Function<? super F, ? extends T> function) {
+        return new Iterable<T>() {
+
+            @Override
+            public Iterator<T> iterator() {
+                return new TransformedIterator<F, T>(iterable.iterator()) {
+
+                    @Override
+                    T transform(F from) {
+                        return function.apply(from);
+                    }
+                };
+            }
+        };
+    }
+
+    private static <T> Iterable<? extends T> toIterable(Iterator<? extends T> iterator) {
+        return () -> (Iterator<T>) iterator;
+    }
+
+    private Collections() {
+        // Private constructor
+    }
+
+
+    /*
+     * Copyright (C) 2012 The Guava Authors
+     *
+     * Licensed under the Apache License, Version 2.0 (the "License");
+     * you may not use this file except in compliance with the License.
+     * You may obtain a copy of the License at
+     *
+     * http://www.apache.org/licenses/LICENSE-2.0
+     *
+     * Unless required by applicable law or agreed to in writing, software
+     * distributed under the License is distributed on an "AS IS" BASIS,
+     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     * See the License for the specific language governing permissions and
+     * limitations under the License.
+     */
+
+    /**
+     * An iterator that transforms a backing iterator; for internal use. This avoids
+     * the object overhead of constructing a {@link java.util.function.Function} for internal methods.
+     *
+     * @author Louis Wasserman
+     */
+    abstract static class TransformedIterator<F, T> implements Iterator<T> {
+        final Iterator<? extends F> backingIterator;
+
+        TransformedIterator(Iterator<? extends F> backingIterator) {
+            this.backingIterator = requireNonNull(backingIterator);
+        }
+
+        abstract T transform(F from);
+
+        @Override
+        public final boolean hasNext() {
+            return backingIterator.hasNext();
+        }
+
+        @Override
+        public final T next() {
+            return transform(backingIterator.next());
+        }
+
+        @Override
+        public final void remove() {
+            backingIterator.remove();
+        }
     }
 }
