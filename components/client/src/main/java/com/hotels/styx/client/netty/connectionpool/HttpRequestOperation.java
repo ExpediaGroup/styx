@@ -143,11 +143,11 @@ public class HttpRequestOperation {
                         Requests.doFinally(response, cause -> {
                             if (nettyConnection.isConnected()) {
                                 removeProxyBridgeHandlers(nettyConnection);
-
                                 if (requestIsOngoing(requestRequestBodyChunkSubscriber.get())) {
                                     LOGGER.warn("Origin responded too quickly to an ongoing request, or it was cancelled. Connection={}, Request={}.",
                                             new Object[]{nettyConnection.channel(), this.request});
                                     nettyConnection.close();
+                                    requestRequestBodyChunkSubscriber.get().dispose();
                                 }
                             }
                         }));
