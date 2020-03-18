@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hotels.styx.api.HttpResponse.response;
-import static com.hotels.styx.api.Collections.unmodifiableListOf;
+import static com.hotels.styx.common.Collections.unmodifiableListOf;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;

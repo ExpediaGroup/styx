@@ -22,7 +22,7 @@ import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.hotels.styx.api.Collections.unmodifiableListOf;
+import static com.hotels.styx.api.extension.service.Collections.unmodifiableListOf;
 import static java.lang.Integer.parseInt;
 import static java.util.Collections.unmodifiableList;
 import static java.util.regex.Pattern.compile;

@@ -46,7 +46,7 @@ import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Queue;
 
-import static com.hotels.styx.api.Collections.size;
+import static com.hotels.styx.common.Collections.size;
 import static com.hotels.styx.api.HttpHeaderNames.EXPECT;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.server.UniqueIdSuppliers.UUID_VERSION_ONE_SUPPLIER;

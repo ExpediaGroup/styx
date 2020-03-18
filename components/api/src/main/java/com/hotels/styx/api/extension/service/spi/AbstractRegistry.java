@@ -29,7 +29,7 @@ import java.util.function.Predicate;
 
 import static com.google.common.collect.Maps.difference;
 import static com.google.common.collect.Maps.filterKeys;
-import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.api.extension.service.spi.Collections.copyToUnmodifiableList;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;

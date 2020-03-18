@@ -16,11 +16,11 @@
 package com.hotels.styx.config.schema;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.hotels.styx.api.Collections;
+import com.hotels.styx.common.Collections;
 
 import java.util.Set;
 
-import static com.hotels.styx.api.Collections.unmodifiableSetOf;
+import static com.hotels.styx.common.Collections.unmodifiableSetOf;
 import static java.lang.String.format;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;

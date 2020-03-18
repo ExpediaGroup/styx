@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.common.Collections.copyToUnmodifiableList;
 
 /**
  * A list of rules that defines how to rewrite the URL in HTTP requests. The rules are tested in order, until a matching

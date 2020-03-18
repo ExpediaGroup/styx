@@ -39,7 +39,7 @@ import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.service.BackendService.newBackendServiceBuilder;
 import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded;
-import static com.hotels.styx.api.Collections.unmodifiableListOf;
+import static com.hotels.styx.common.Collections.unmodifiableListOf;
 import static com.hotels.styx.support.Support.requestContext;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;

@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.common.Collections.copyToUnmodifiableList;
 
 /**
  * Traverse JSON trees.

@@ -22,7 +22,7 @@ import com.hotels.styx.common.io.FileResourceIndex;
 import java.nio.file.Path;
 import java.util.Collection;
 
-import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.common.Collections.copyToUnmodifiableList;
 import static java.util.Collections.singleton;
 
 /**

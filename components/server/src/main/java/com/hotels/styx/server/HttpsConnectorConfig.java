@@ -24,8 +24,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
-import static com.hotels.styx.api.Collections.unmodifiableListOf;
+import static com.hotels.styx.common.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.common.Collections.unmodifiableListOf;
 import static com.hotels.styx.common.Strings.isNotEmpty;
 import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static java.util.Objects.hash;

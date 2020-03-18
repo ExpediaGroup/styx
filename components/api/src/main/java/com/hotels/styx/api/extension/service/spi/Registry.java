@@ -26,9 +26,9 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
-import static com.hotels.styx.api.Collections.concat;
-import static com.hotels.styx.api.Collections.contains;
-import static com.hotels.styx.api.Collections.size;
+import static com.hotels.styx.api.extension.service.spi.Collections.concat;
+import static com.hotels.styx.api.extension.service.spi.Collections.contains;
+import static com.hotels.styx.api.extension.service.spi.Collections.size;
 import static com.hotels.styx.api.extension.service.spi.Registry.Outcome.FAILED;
 import static com.hotels.styx.api.extension.service.spi.Registry.Outcome.RELOADED;
 import static com.hotels.styx.api.extension.service.spi.Registry.Outcome.UNCHANGED;

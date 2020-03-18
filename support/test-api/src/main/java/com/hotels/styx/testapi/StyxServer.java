@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hotels.styx.api.Collections.unmodifiableSetOf;
+import static com.hotels.styx.common.Collections.unmodifiableSetOf;
 import static com.hotels.styx.testapi.ssl.SslTesting.acceptAllSslRequests;
 import static java.util.stream.Collectors.toSet;
 

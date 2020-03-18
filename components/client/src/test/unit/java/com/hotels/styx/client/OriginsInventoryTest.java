@@ -36,7 +36,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Optional;
 
 import static ch.qos.logback.classic.Level.INFO;
-import static com.hotels.styx.api.Collections.unmodifiableSetOf;
+import static com.hotels.styx.common.Collections.unmodifiableSetOf;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;

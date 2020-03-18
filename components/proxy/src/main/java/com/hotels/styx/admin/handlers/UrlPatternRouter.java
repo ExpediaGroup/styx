@@ -37,7 +37,7 @@ import static com.hotels.styx.api.HttpMethod.PUT;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
-import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.common.Collections.copyToUnmodifiableList;
 import static java.util.stream.Collectors.toMap;
 import static org.slf4j.LoggerFactory.getLogger;
 

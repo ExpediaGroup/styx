@@ -47,7 +47,7 @@ import static com.github.tomakehurst.wiremock.WireMockServer.FILES_ROOT;
 import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.google.common.base.Optional.absent;
-import static com.hotels.styx.api.Collections.unmodifiableListOf;
+import static com.hotels.styx.common.Collections.unmodifiableListOf;
 import static com.hotels.styx.servers.WiremockResponseConverter.toStyxResponse;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyMap;

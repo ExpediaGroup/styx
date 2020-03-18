@@ -28,8 +28,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import static com.hotels.styx.api.Collections.unmodifiableListOf;
-import static com.hotels.styx.api.Collections.unmodifiableSetOf;
+import static com.hotels.styx.common.Collections.unmodifiableListOf;
+import static com.hotels.styx.common.Collections.unmodifiableSetOf;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.DEFAULT_CONNECT_TIMEOUT_MILLIS;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.DEFAULT_MAX_CONNECTIONS_PER_HOST;

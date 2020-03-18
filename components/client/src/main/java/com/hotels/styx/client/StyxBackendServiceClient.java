@@ -50,7 +50,7 @@ import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.extension.service.StickySessionConfig.stickySessionDisabled;
 import static com.hotels.styx.client.StyxHeaderConfig.ORIGIN_ID_DEFAULT;
 import static com.hotels.styx.client.stickysession.StickySessionCookie.newStickySessionCookie;
-import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.common.Collections.copyToUnmodifiableList;
 import static io.netty.handler.codec.http.HttpMethod.HEAD;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;

@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.common.Collections.copyToUnmodifiableList;
 import static com.hotels.styx.support.matchers.IsOptional.isPresent;
 import static com.hotels.styx.support.matchers.IsOptional.matches;
 import static org.hamcrest.MatcherAssert.assertThat;

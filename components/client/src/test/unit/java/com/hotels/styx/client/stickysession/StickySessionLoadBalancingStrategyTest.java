@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Optional;
 
-import static com.hotels.styx.api.Collections.getFirst;
+import static com.hotels.styx.common.Collections.getFirst;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
 import static java.util.Arrays.asList;

@@ -24,7 +24,7 @@ import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
 
 import java.util.List;
 
-import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.common.Collections.copyToUnmodifiableList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;

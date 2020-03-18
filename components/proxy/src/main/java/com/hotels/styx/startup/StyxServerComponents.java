@@ -51,8 +51,8 @@ import java.util.Map;
 
 import static com.hotels.styx.StartupConfig.newStartupConfigBuilder;
 import static com.hotels.styx.Version.readVersionFrom;
-import static com.hotels.styx.api.Collections.copyToUnmodifiableSet;
-import static com.hotels.styx.api.Collections.unmodifiableSetOf;
+import static com.hotels.styx.common.Collections.copyToUnmodifiableSet;
+import static com.hotels.styx.common.Collections.unmodifiableSetOf;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
 import static com.hotels.styx.routing.config.Builtins.BUILTIN_EXECUTOR_FACTORIES;
 import static com.hotels.styx.routing.config.Builtins.BUILTIN_HANDLER_FACTORIES;

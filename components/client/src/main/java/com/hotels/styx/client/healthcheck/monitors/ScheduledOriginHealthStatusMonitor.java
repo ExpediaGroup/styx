@@ -30,7 +30,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ScheduledExecutorService;
 
-import static com.hotels.styx.api.Collections.unmodifiableSetOf;
+import static com.hotels.styx.common.Collections.unmodifiableSetOf;
 import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.RUNNING;
 import static java.lang.Thread.currentThread;
 import static java.util.Objects.requireNonNull;

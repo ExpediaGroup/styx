@@ -27,8 +27,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
-import static com.hotels.styx.api.Collections.unmodifiableListOf;
+import static com.hotels.styx.common.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.common.Collections.unmodifiableListOf;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.util.CharsetUtil.UTF_8;
 

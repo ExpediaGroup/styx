@@ -56,13 +56,11 @@ import java.net.InetSocketAddress;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.StreamSupport;
 
 import static ch.qos.logback.classic.Level.INFO;
 import static ch.qos.logback.classic.Level.WARN;
-import static com.google.common.collect.Iterables.toArray;
-import static com.hotels.styx.api.Collections.concat;
-import static com.hotels.styx.api.Collections.stream;
+import static com.hotels.styx.common.Collections.concat;
+import static com.hotels.styx.common.Collections.stream;
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderValues.CLOSE;

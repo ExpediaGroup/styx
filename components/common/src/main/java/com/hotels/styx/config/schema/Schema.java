@@ -24,8 +24,8 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
-import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
-import static com.hotels.styx.api.Collections.copyToUnmodifiableSet;
+import static com.hotels.styx.common.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.common.Collections.copyToUnmodifiableSet;
 import static com.hotels.styx.config.schema.SchemaDsl.field;
 import static com.hotels.styx.config.schema.SchemaDsl.list;
 import static com.hotels.styx.config.schema.SchemaDsl.object;

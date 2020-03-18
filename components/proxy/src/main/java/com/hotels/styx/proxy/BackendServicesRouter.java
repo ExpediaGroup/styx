@@ -51,7 +51,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
-import static com.hotels.styx.api.Collections.concat;
+import static com.hotels.styx.common.Collections.concat;
 import static com.hotels.styx.client.HttpConfig.newHttpConfigBuilder;
 import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
 import static java.util.Comparator.comparingInt;

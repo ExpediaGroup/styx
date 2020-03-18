@@ -1,4 +1,19 @@
-package com.hotels.styx.api;
+/*
+  Copyright (C) 2013-2020 Expedia Inc.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
+package com.hotels.styx.common;
 
 import org.junit.jupiter.api.Test;
 
@@ -6,13 +21,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
-import static com.hotels.styx.api.Collections.copyToUnmodifiableSet;
-import static com.hotels.styx.api.Collections.getFirst;
-import static com.hotels.styx.api.Collections.size;
-import static com.hotels.styx.api.Collections.transform;
-import static com.hotels.styx.api.Collections.unmodifiableListOf;
-import static com.hotels.styx.api.Collections.unmodifiableSetOf;
+import static com.hotels.styx.common.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.common.Collections.copyToUnmodifiableSet;
+import static com.hotels.styx.common.Collections.getFirst;
+import static com.hotels.styx.common.Collections.concat;
+import static com.hotels.styx.common.Collections.size;
+import static com.hotels.styx.common.Collections.transform;
+import static com.hotels.styx.common.Collections.unmodifiableListOf;
+import static com.hotels.styx.common.Collections.unmodifiableSetOf;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -198,7 +214,7 @@ public class CollectionsTest {
         Iterator<Integer> iter1 = asList(1, 2, 3).iterator();
         Iterator<Integer> iter2 = asList(4, 5).iterator();
         Iterator<Integer> iter3 = asList(6, 7, 8).iterator();
-        Iterator<Integer> concat = Collections.concat(iter1, iter2, iter3);
+        Iterator<Integer> concat = concat(iter1, iter2, iter3);
         assertTrue(iter1.hasNext());
         assertTrue(iter2.hasNext());
         assertTrue(iter3.hasNext());
@@ -215,7 +231,7 @@ public class CollectionsTest {
     public void iterableConcat() {
         Iterable<Integer> iter1 = asList(1, 2, 3);
         Iterable<Integer> iter2 = asList(4, 5);
-        Iterable<Integer> concat = Collections.concat(iter1, iter2);
+        Iterable<Integer> concat = concat(iter1, iter2);
         List<Integer> iterated = copyToUnmodifiableList(concat);
         assertThat(iterated, contains(1, 2, 3, 4, 5));
     }

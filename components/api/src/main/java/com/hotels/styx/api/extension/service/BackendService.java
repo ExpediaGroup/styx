@@ -25,9 +25,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
-import static com.hotels.styx.api.Collections.copyToUnmodifiableSet;
-import static com.hotels.styx.api.Collections.unmodifiableSetOf;
+import static com.hotels.styx.api.extension.service.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.api.extension.service.Collections.copyToUnmodifiableSet;
+import static com.hotels.styx.api.extension.service.Collections.unmodifiableSetOf;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.extension.Origin.checkThatOriginsAreDistinct;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;

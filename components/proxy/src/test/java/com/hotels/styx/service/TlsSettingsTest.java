@@ -27,8 +27,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static com.hotels.styx.api.Collections.unmodifiableListOf;
-import static com.hotels.styx.api.Collections.unmodifiableSetOf;
+import static com.hotels.styx.common.Collections.unmodifiableListOf;
+import static com.hotels.styx.common.Collections.unmodifiableSetOf;
 import static com.hotels.styx.api.extension.service.Certificate.certificate;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static java.util.Collections.singletonList;

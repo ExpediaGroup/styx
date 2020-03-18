@@ -19,7 +19,7 @@ import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.BackendService;
 import org.junit.jupiter.api.Test;
 
-import static com.hotels.styx.api.Collections.getFirst;
+import static com.hotels.styx.common.Collections.getFirst;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static java.util.Collections.singletonList;

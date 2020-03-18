@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hotels.styx.api.Collections.copyToUnmodifiableSet;
+import static com.hotels.styx.common.Collections.copyToUnmodifiableSet;
 import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 

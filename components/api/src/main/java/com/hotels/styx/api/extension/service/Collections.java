@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api;
+package com.hotels.styx.api.extension.service;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -27,12 +27,10 @@ import java.util.stream.StreamSupport;
 
 import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableSet;
-import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 
 class Collections {
-
     static <T> List<T> copyToUnmodifiableList(Iterator<? extends T> iterator) {
         return copyToUnmodifiableList(toIterable(iterator));
     }
@@ -63,17 +61,7 @@ class Collections {
                 : StreamSupport.stream(((Iterable<T>) iterable).spliterator(), false);
     }
 
-    static String toString(Iterable<?> iterable) {
-        return new StringBuilder("[")
-                .append(stream(iterable)
-                        .map(o -> o == null ? "null" : o.toString())
-                        .collect(joining(", ")))
-                .append("]")
-                .toString();
-    }
-
     private static <T> Iterable<? extends T> toIterable(Iterator<? extends T> iterator) {
         return () -> (Iterator<T>) iterator;
     }
-
 }

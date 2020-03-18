@@ -46,7 +46,7 @@ import static com.hotels.styx.api.extension.service.spi.Registry.Outcome.FAILED;
 import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.failed;
 import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded;
 import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.unchanged;
-import static com.hotels.styx.api.Collections.unmodifiableListOf;
+import static com.hotels.styx.common.Collections.unmodifiableListOf;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;

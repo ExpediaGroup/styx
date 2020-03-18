@@ -17,7 +17,7 @@ package com.hotels.styx.applications;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hotels.styx.api.Collections;
+import com.hotels.styx.common.Collections;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.BackendService;
@@ -28,8 +28,8 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 
-import static com.hotels.styx.api.Collections.copyToUnmodifiableSet;
-import static com.hotels.styx.api.Collections.getFirst;
+import static com.hotels.styx.common.Collections.copyToUnmodifiableSet;
+import static com.hotels.styx.common.Collections.getFirst;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.service.BackendService.newBackendServiceBuilder;
 import static com.hotels.styx.common.Preconditions.checkArgument;

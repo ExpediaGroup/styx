@@ -25,7 +25,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.api.extension.service.Collections.copyToUnmodifiableList;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.requireNonNull;
 

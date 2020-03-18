@@ -24,7 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.common.Collections.copyToUnmodifiableList;
 import static com.hotels.styx.common.Pair.pair;
 import static com.hotels.styx.common.Preconditions.checkArgument;
 import static java.util.Arrays.stream;

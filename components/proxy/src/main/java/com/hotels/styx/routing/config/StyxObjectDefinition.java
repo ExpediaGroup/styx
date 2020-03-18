@@ -22,7 +22,7 @@ import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 
 import java.util.List;
 
-import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.common.Collections.copyToUnmodifiableList;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 

@@ -20,7 +20,7 @@ import com.hotels.styx.api.configuration.Configuration;
 import java.util.Collection;
 import java.util.Map;
 
-import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.common.Collections.copyToUnmodifiableList;
 import static java.util.Objects.requireNonNull;
 
 /**

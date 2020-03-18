@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 import static com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.hotels.styx.admin.handlers.UrlPatternRouter.placeholders;
-import static com.hotels.styx.api.Collections.copyToUnmodifiableSet;
+import static com.hotels.styx.common.Collections.copyToUnmodifiableSet;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.CREATED;
