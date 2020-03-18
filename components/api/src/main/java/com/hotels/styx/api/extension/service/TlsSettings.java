@@ -25,9 +25,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.hotels.styx.api.extension.service.Collections.copyToUnmodifiableList;
 import static java.util.Collections.emptySet;
+import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 
 /**
  * SSL settings for a connection or pool.
@@ -55,8 +56,8 @@ public class TlsSettings {
         this.additionalCerts = builder.additionalCerts;
         this.trustStorePath = builder.trustStorePath;
         this.trustStorePassword = toCharArray(builder.trustStorePassword);
-        this.protocols = copyToUnmodifiableList(builder.protocols);
-        this.cipherSuites = copyToUnmodifiableList(builder.cipherSuites);
+        this.protocols = unmodifiableList(builder.protocols.stream().map(Objects::requireNonNull).collect(toList()));
+        this.cipherSuites = unmodifiableList(builder.cipherSuites.stream().map(Objects::requireNonNull).collect(toList()));
         this.sendSni = builder.sendSni;
         this.sniHost = Optional.ofNullable(builder.sniHost);
     }

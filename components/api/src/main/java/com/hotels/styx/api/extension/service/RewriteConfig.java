@@ -16,16 +16,17 @@
 package com.hotels.styx.api.extension.service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.hotels.styx.api.extension.service.Collections.unmodifiableListOf;
 import static java.lang.Integer.parseInt;
 import static java.util.Collections.unmodifiableList;
 import static java.util.regex.Pattern.compile;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Encapsulates configuration for a Styx URL path replacement rule.
@@ -140,7 +141,8 @@ public class RewriteConfig implements RewriteRule {
         }
 
         private static List<String> literals(String replacement) {
-            return unmodifiableListOf(replacement.split(REGEX));
+            return unmodifiableList(Arrays.stream(replacement.split(REGEX))
+                    .collect(toList()));
         }
 
         private static List<Integer> placeholderNumbers(String replacement) {

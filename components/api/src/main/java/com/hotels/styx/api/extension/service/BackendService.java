@@ -20,14 +20,13 @@ import com.hotels.styx.api.Identifiable;
 import com.hotels.styx.api.extension.Origin;
 
 import java.net.URI;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.hotels.styx.api.extension.service.Collections.copyToUnmodifiableList;
-import static com.hotels.styx.api.extension.service.Collections.copyToUnmodifiableSet;
-import static com.hotels.styx.api.extension.service.Collections.unmodifiableSetOf;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.extension.Origin.checkThatOriginsAreDistinct;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
@@ -36,7 +35,11 @@ import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
+import static java.util.Collections.unmodifiableList;
+import static java.util.Collections.unmodifiableSet;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Represents the configuration of an application (i.e. a backend service) that Styx can proxy to.
@@ -87,7 +90,9 @@ public final class BackendService implements Identifiable {
         this.id = requireNonNull(builder.id, "id");
         this.path = requireNonNull(builder.path, "path");
         this.connectionPoolSettings = requireNonNull(builder.connectionPoolSettings);
-        this.origins = copyToUnmodifiableSet(builder.origins);
+        this.origins = unmodifiableSet(builder.origins.stream()
+                .map(Objects::requireNonNull)
+                .collect(toCollection(() -> new LinkedHashSet<>())));
         this.healthCheckConfig = nullIfDisabled(builder.healthCheckConfig);
         this.stickySessionConfig = requireNonNull(builder.stickySessionConfig);
         this.rewrites = requireNonNull(builder.rewrites);
@@ -363,7 +368,9 @@ public final class BackendService implements Identifiable {
          * @return this builder
          */
         public Builder origins(Origin... origins) {
-            return origins(unmodifiableSetOf(origins));
+            return origins(Arrays.stream(origins)
+                    .map(Objects::requireNonNull)
+                    .collect(toCollection(() -> new LinkedHashSet<>())));
         }
 
         /**
@@ -383,7 +390,7 @@ public final class BackendService implements Identifiable {
          * @return this builder
          */
         public Builder rewrites(List<RewriteConfig> rewriteConfigs) {
-            this.rewrites = copyToUnmodifiableList(rewriteConfigs);
+            this.rewrites = unmodifiableList(rewriteConfigs.stream().map(Objects::requireNonNull).collect(toList()));
             return this;
         }
 
