@@ -15,36 +15,12 @@
  */
 package com.hotels.styx.api.exceptions;
 
-/**
- * An exception that causes a connection to fail.
- */
-public abstract class TransportException extends RuntimeException {
-    /**
-     * Constructor.
-     *
-     * @param message message
-     */
-    public TransportException(String message) {
-        super(message);
-    }
+import com.hotels.styx.api.Id;
 
-    /**
-     * Constructor.
-     *
-     * @param cause cause
-     */
-    public TransportException(Throwable cause) {
-        super(cause);
-    }
+import java.util.Optional;
 
-    /**
-     * Constructor.
-     *
-     * @param message message
-     * @param cause   cause
-     */
-    public TransportException(String message, Throwable cause) {
-        super(message, cause);
-    }
+public interface StyxException {
+    Optional<Id> origin();
 
+    Id application();
 }
