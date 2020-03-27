@@ -22,7 +22,7 @@ import com.hotels.styx.server.routing.ConditionParser.StringIsPresentContext;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import static com.google.common.base.Strings.nullToEmpty;
+import static com.hotels.styx.common.Strings.isNotEmpty;
 import static com.hotels.styx.server.routing.antlr.Strings.stripFirstAndLastCharacter;
 
 class ExpressionVisitor extends ConditionBaseVisitor<Expression<Boolean>> {
@@ -62,14 +62,17 @@ class ExpressionVisitor extends ConditionBaseVisitor<Expression<Boolean>> {
     @Override
     public Expression<Boolean> visitStringIsPresent(StringIsPresentContext ctx) {
         Expression<String> stringExpression = stringVisitor.visitStringExpression(ctx.stringExpression());
-        return (request, context) -> nullToEmpty(stringExpression.evaluate(request, context)).length() > 0;
+        return (request, context) -> isNotEmpty(stringExpression.evaluate(request, context));
     }
 
     @Override
     public Expression<Boolean> visitStringEqualsString(ConditionParser.StringEqualsStringContext ctx) {
         Expression<String> left = stringVisitor.visitStringExpression(ctx.stringExpression(0));
         Expression<String> right = stringVisitor.visitStringExpression(ctx.stringExpression(1));
-        return (request, context) -> nullToEmpty(left.evaluate(request, context)).equals(right.evaluate(request, context));
+        return (request, context) -> {
+            String leftValue = left.evaluate(request, context);
+            return (leftValue == null ? "" : leftValue).equals(right.evaluate(request, context));
+        };
     }
 
     @Override

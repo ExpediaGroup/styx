@@ -258,7 +258,7 @@ public class StyxServerTest {
         };
     }
 
-    private static StyxServer styxServerWithPlugins(Map<String, Plugin> plugins) {
+    private StyxServer styxServerWithPlugins(Map<String, Plugin> plugins) {
         StyxServerComponents config = new StyxServerComponents.Builder()
                 .configuration(styxConfig())
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(new MemoryBackedRegistry<>())))
@@ -268,7 +268,7 @@ public class StyxServerTest {
         return new StyxServer(config);
     }
 
-    private static StyxServer styxServerWithBackendServiceRegistry(StyxService backendServiceRegistry) {
+    private StyxServer styxServerWithBackendServiceRegistry(StyxService backendServiceRegistry) {
         StyxServerComponents config = new StyxServerComponents.Builder()
                 .configuration(styxConfig())
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", backendServiceRegistry))

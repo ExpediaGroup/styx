@@ -18,6 +18,7 @@ package com.hotels.styx.services
 import com.fasterxml.jackson.databind.JsonNode
 import com.google.common.net.MediaType.HTML_UTF_8
 import com.google.common.net.MediaType.PLAIN_TEXT_UTF_8
+import com.hotels.styx.NettyExecutor
 import com.hotels.styx.common.http.handler.HttpContentHandler
 import com.hotels.styx.api.extension.service.spi.StyxService
 import com.hotels.styx.common.http.handler.HttpAggregator
@@ -32,6 +33,7 @@ import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.config.StyxObjectDefinition
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.ProviderObjectRecord
+import com.hotels.styx.StyxObjectRecord
 import com.hotels.styx.server.handlers.ClassPathResourceHandler
 import com.hotels.styx.serviceproviders.ServiceProviderFactory
 import com.hotels.styx.services.OriginsConfigConverter.Companion.deserialiseOrigins
@@ -39,6 +41,7 @@ import com.hotels.styx.sourceTag
 import org.slf4j.LoggerFactory
 import java.io.PrintWriter
 import java.io.StringWriter
+import java.lang.IllegalArgumentException
 import java.lang.RuntimeException
 import java.nio.charset.StandardCharsets.UTF_8
 import java.time.Duration
@@ -79,20 +82,21 @@ internal class YamlFileConfigurationService(
                 field("originsFile", string()),
                 optional("monitor", bool()),
                 optional("ingressObject", string()),
-                optional("pollInterval", string()))
+                optional("pollInterval", string()),
+                optional("executor", string()))
 
         private val LOGGER = LoggerFactory.getLogger(YamlFileConfigurationService::class.java)
     }
 
     override fun start() = fileMonitoringService.start()
-            .thenAccept {
+            .thenAcceptAsync {
                 LOGGER.info("service starting - {}", config.originsFile)
                 initialised.await()
                 LOGGER.info("service started - {}", config.originsFile)
             }
 
     override fun stop() = fileMonitoringService.stop()
-            .thenAccept {
+            .thenAcceptAsync {
                 LOGGER.info("service stopped")
             }
 
@@ -181,27 +185,33 @@ internal class YamlFileConfigurationService(
         val newObjectNames = objects.map { it.first }
         val removedObjects = oldObjectNames.minus(newObjectNames)
 
-        objects.forEach { (name, new) ->
-            objectDb.compute(name) { previous ->
-                if (previous == null || changed(new.config, previous.config)) {
-                    new.styxService.start()
-                    previous?.styxService?.stop()
-                            ?.whenComplete { _, throwable ->
-                                if (throwable != null) {
-                                    val stack = StringWriter().let {
-                                        throwable.printStackTrace(PrintWriter(it))
-                                        it.toString()
-                                    }
-                                    LOGGER.warn("Service failed to terminate cleanly. cause=$throwable stack=$stack")
-                                }
+        objects.map { Triple(it.first, it.second, AtomicReference<StyxObjectRecord<StyxService>>()) }
+                .forEach { (name, new, cache) ->
+                    objectDb.compute(name) { previous ->
+                        if (cache.get() == null) {
+                            val result = if (previous == null || changed(new.config, previous.config)) {
+                                new.styxService.start()
+                                previous?.styxService?.stop()
+                                        ?.whenComplete { _, throwable ->
+                                            if (throwable != null) {
+                                                val stack = StringWriter().let {
+                                                    throwable.printStackTrace(PrintWriter(it))
+                                                    it.toString()
+                                                }
+                                                LOGGER.warn("Service failed to terminate cleanly. cause=$throwable stack=$stack")
+                                            }
+                                        }
+                                new
+                            } else {
+                                // No need to shout down the new one. It has yet been started.
+                                previous
                             }
-                    new
-                } else {
-                    // No need to shout down the new one. It has yet been started.
-                    previous
+                            cache.set(result)
+                        }
+
+                        cache.get()
+                    }
                 }
-            }
-        }
 
         removedObjects.forEach {
             objectDb.remove(it).ifPresent {
@@ -213,13 +223,26 @@ internal class YamlFileConfigurationService(
     private class DuplicateObjectException(message: String): RuntimeException(message)
 }
 
-internal data class YamlFileConfigurationServiceConfig(val originsFile: String, val ingressObject: String = "", val monitor: Boolean = true, val pollInterval: String = "")
+internal data class YamlFileConfigurationServiceConfig(
+        val originsFile: String,
+        val ingressObject: String = "",
+        val monitor: Boolean = true,
+        val executor: String = "Styx-Client-Global-Worker",
+        val pollInterval: String = "")
 
 internal class YamlFileConfigurationServiceFactory : ServiceProviderFactory {
     override fun create(name: String, context: RoutingObjectFactory.Context, jsonConfig: JsonNode, serviceDb: StyxObjectStore<ProviderObjectRecord>): StyxService {
         val serviceConfig = JsonNodeConfig(jsonConfig).`as`(YamlFileConfigurationServiceConfig::class.java)!!
         val originRestrictionCookie = context.environment().configuration().get("originRestrictionCookie").orElse(null)
 
-        return YamlFileConfigurationService(name, context.routeDb(), OriginsConfigConverter(serviceDb, context, originRestrictionCookie), serviceConfig, serviceDb)
+        context.executors().get((serviceConfig.executor))
+                .orElseThrow { IllegalArgumentException("YamlFileConfigurationService($name) configuration error: executor='${serviceConfig.executor}' not declared.") }
+
+        return YamlFileConfigurationService(
+                name,
+                context.routeDb(),
+                OriginsConfigConverter(serviceDb, context, originRestrictionCookie, serviceConfig.executor),
+                serviceConfig,
+                serviceDb)
     }
 }

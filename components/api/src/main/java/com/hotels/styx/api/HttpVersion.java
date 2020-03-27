@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hotels.styx.api;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static java.lang.String.format;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 
@@ -40,16 +40,17 @@ public class HttpVersion {
 
     /**
      * Creates a HttpVersion from String.
-     *
+     * <p>
      * Accepted strings are "HTTP/1.0" and "HTTP/1.1".
      * Otherwise throws an {@link IllegalArgumentException}.
      *
      * @param version
-     * @return
+     * @return HttpVersion for the received version
      */
     public static HttpVersion httpVersion(String version) {
-        checkArgument(VERSIONS.containsKey(version), "No such HTTP version %s", version);
-
+        if (!VERSIONS.containsKey(version)) {
+            throw new IllegalArgumentException(format("No such HTTP version %s", version));
+        }
         return VERSIONS.get(version);
     }
 

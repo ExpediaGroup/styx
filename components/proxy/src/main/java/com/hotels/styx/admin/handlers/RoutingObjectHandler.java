@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,11 +15,11 @@
  */
 package com.hotels.styx.admin.handlers;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -34,10 +34,11 @@ import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.routing.db.StyxObjectStore;
-import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
@@ -49,14 +50,11 @@ import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.stream.Collectors.joining;
-import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Provides admin interface access to Styx routing configuration.
  */
 public class RoutingObjectHandler implements WebServiceHandler {
-    private static final Logger LOGGER = getLogger(RoutingObjectHandler.class);
 
     private static final ObjectMapper YAML_MAPPER = addStyxMixins(new ObjectMapper(new YAMLFactory()))
             .configure(FAIL_ON_UNKNOWN_PROPERTIES, false)
@@ -68,10 +66,9 @@ public class RoutingObjectHandler implements WebServiceHandler {
     public RoutingObjectHandler(StyxObjectStore<RoutingObjectRecord> routeDatabase, RoutingObjectFactory.Context routingObjectFactoryContext) {
         urlRouter = new UrlPatternRouter.Builder()
                 .get("/admin/routing/objects", (request, context) -> {
-                    String output = routeDatabase.entrySet()
-                            .stream()
-                            .map(entry -> serialise(entry.getKey(), entry.getValue()))
-                            .collect(joining("\n"));
+                    Map<String, RoutingObjectRecord> objects = routeDatabase.entrySet().stream()
+                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                    String output = serialise(objects);
 
                     return Eventual.of(response(OK)
                             .body(output, UTF_8)
@@ -82,7 +79,7 @@ public class RoutingObjectHandler implements WebServiceHandler {
 
                     try {
                         String object = routeDatabase.get(name)
-                                .map(record -> serialise(name, record))
+                                .map(RoutingObjectHandler::serialise)
                                 .orElseThrow(ResourceNotFoundException::new);
 
                         return Eventual.of(response(OK).body(object, UTF_8).build());
@@ -117,15 +114,17 @@ public class RoutingObjectHandler implements WebServiceHandler {
                 .build();
     }
 
-    private static String serialise(String name, RoutingObjectRecord record) {
-        JsonNode node = YAML_MAPPER
-                .addMixIn(StyxObjectDefinition.class, RoutingObjectDefMixin.class)
-                .valueToTree(new StyxObjectDefinition(name, record.getType(), ImmutableList.copyOf(record.getTags()), record.getConfig()));
-
-        ((ObjectNode) node).set("config", record.getConfig());
+    /**
+     * Serializes either a single {@link com.hotels.styx.routing.config.StyxObjectDefinition} or
+     * a collection of them.
+     */
+    private static String serialise(Object object) {
+        JsonNode json = YAML_MAPPER
+                .addMixIn(RoutingObjectRecord.class, RoutingObjectDefMixin.class)
+                .valueToTree(object);
 
         try {
-            return YAML_MAPPER.writeValueAsString(node);
+            return YAML_MAPPER.writeValueAsString(json);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
@@ -140,14 +139,17 @@ public class RoutingObjectHandler implements WebServiceHandler {
     }
 
     private abstract static class RoutingObjectDefMixin {
-        @JsonProperty("name")
-        public abstract String name();
-
         @JsonProperty("type")
         public abstract String type();
 
         @JsonProperty("tags")
         public abstract List<String> tags();
+
+        @JsonProperty("config")
+        public abstract JsonNode config();
+
+        @JsonIgnore
+        public abstract Object getRoutingObject();
     }
 
 }

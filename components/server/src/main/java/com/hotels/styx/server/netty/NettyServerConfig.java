@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import com.hotels.styx.server.HttpsConnectorConfig;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import static com.google.common.base.MoreObjects.firstNonNull;
 import static java.lang.Math.max;
 import static java.lang.Runtime.getRuntime;
 import static java.util.Collections.singleton;
@@ -63,19 +62,15 @@ public class NettyServerConfig {
     }
 
     protected NettyServerConfig(Builder<?> builder) {
-        this.bossThreadsCount = firstNonNull(builder.bossThreadsCount, HALF_OF_AVAILABLE_PROCESSORS);
-        this.workerThreadsCount = firstNonNull(builder.workerThreadsCount, HALF_OF_AVAILABLE_PROCESSORS);
-        this.nioAcceptorBacklog = firstNonNull(builder.nioAcceptorBacklog, 1024);
-        this.maxInitialLength = firstNonNull(builder.maxInitialLength, 4096);
-        this.maxHeaderSize = firstNonNull(builder.maxHeaderSize, 8192);
-        this.maxChunkSize = firstNonNull(builder.maxChunkSize, 8192);
-        this.requestTimeoutMs = firstNonNull(builder.requestTimeoutMs, 12000);
-        this.keepAliveTimeoutMillis = firstNonNull(builder.keepAliveTimeoutMillis, 12000);
-        this.maxConnectionsCount = firstNonNull(builder.maxConnectionsCount, 512);
-
-        if (this.workerThreadsCount == 0) {
-            this.workerThreadsCount = HALF_OF_AVAILABLE_PROCESSORS;
-        }
+        this.bossThreadsCount = builder.bossThreadsCount;
+        this.workerThreadsCount = builder.workerThreadsCount;
+        this.nioAcceptorBacklog = builder.nioAcceptorBacklog;
+        this.maxInitialLength = builder.maxInitialLength;
+        this.maxHeaderSize = builder.maxHeaderSize;
+        this.maxChunkSize = builder.maxChunkSize;
+        this.requestTimeoutMs = builder.requestTimeoutMs;
+        this.keepAliveTimeoutMillis = builder.keepAliveTimeoutMillis;
+        this.maxConnectionsCount = builder.maxConnectionsCount;
 
         this.httpConnectorConfig = Optional.ofNullable(builder.httpConnectorConfig);
         this.httpsConnectorConfig = Optional.ofNullable(builder.httpsConnectorConfig);
@@ -196,15 +191,15 @@ public class NettyServerConfig {
      */
     @JsonPOJOBuilder(withPrefix = "set")
     public static class Builder<T extends Builder<T>> {
-        protected Integer bossThreadsCount;
-        protected Integer workerThreadsCount;
-        protected Integer nioAcceptorBacklog;
-        protected Integer maxInitialLength;
-        protected Integer maxHeaderSize;
-        protected Integer maxChunkSize;
-        protected Integer requestTimeoutMs;
-        protected Integer keepAliveTimeoutMillis;
-        protected Integer maxConnectionsCount;
+        protected int bossThreadsCount = HALF_OF_AVAILABLE_PROCESSORS;
+        protected int workerThreadsCount = HALF_OF_AVAILABLE_PROCESSORS;
+        protected int nioAcceptorBacklog = 1024;
+        protected int maxInitialLength = 4096;
+        protected int maxHeaderSize = 8192;
+        protected int maxChunkSize = 8192;
+        protected int requestTimeoutMs = 12000;
+        protected int keepAliveTimeoutMillis = 12000;
+        protected int maxConnectionsCount = 512;
         protected HttpConnectorConfig httpConnectorConfig;
         protected HttpsConnectorConfig httpsConnectorConfig;
         protected boolean compressResponses;
@@ -215,49 +210,65 @@ public class NettyServerConfig {
 
         @JsonProperty("bossThreadsCount")
         public T setBossThreadsCount(Integer bossThreadsCount) {
-            this.bossThreadsCount = bossThreadsCount;
+            if (bossThreadsCount != null) {
+                this.bossThreadsCount = bossThreadsCount;
+            }
             return (T) this;
         }
 
         @JsonProperty("workerThreadsCount")
         public T setWorkerThreadsCount(Integer workerThreadsCount) {
-            this.workerThreadsCount = workerThreadsCount;
+            if (workerThreadsCount != null && workerThreadsCount > 0) {
+                this.workerThreadsCount = workerThreadsCount;
+            }
             return (T) this;
         }
 
         @JsonProperty("nioAcceptorBacklog")
         public T setNioAcceptorBacklog(Integer nioAcceptorBacklog) {
-            this.nioAcceptorBacklog = nioAcceptorBacklog;
+            if (nioAcceptorBacklog != null) {
+                this.nioAcceptorBacklog = nioAcceptorBacklog;
+            }
             return (T) this;
         }
 
         @JsonProperty("maxInitialLength")
         public T setMaxInitialLength(Integer maxInitialLength) {
-            this.maxInitialLength = maxInitialLength;
+            if (maxInitialLength != null) {
+                this.maxInitialLength = maxInitialLength;
+            }
             return (T) this;
         }
 
         @JsonProperty("maxHeaderSize")
         public T setMaxHeaderSize(Integer maxHeaderSize) {
-            this.maxHeaderSize = maxHeaderSize;
+            if (maxHeaderSize != null) {
+                this.maxHeaderSize = maxHeaderSize;
+            }
             return (T) this;
         }
 
         @JsonProperty("maxChunkSize")
         public T setMaxChunkSize(Integer maxChunkSize) {
-            this.maxChunkSize = maxChunkSize;
+            if (maxChunkSize != null) {
+                this.maxChunkSize = maxChunkSize;
+            }
             return (T) this;
         }
 
         @JsonProperty("requestTimeoutMillis")
         public T setRequestTimeoutMs(Integer requestTimeoutMs) {
-            this.requestTimeoutMs = requestTimeoutMs;
+            if (requestTimeoutMs != null) {
+                this.requestTimeoutMs = requestTimeoutMs;
+            }
             return (T) this;
         }
 
         @JsonProperty("keepAliveTimeoutMillis")
         public T setKeepAliveTimeoutMillis(Integer keepAliveTimeoutMillis) {
-            this.keepAliveTimeoutMillis = keepAliveTimeoutMillis;
+            if (keepAliveTimeoutMillis != null) {
+                this.keepAliveTimeoutMillis = keepAliveTimeoutMillis;
+            }
             return (T) this;
         }
 
@@ -280,7 +291,9 @@ public class NettyServerConfig {
 
         @JsonProperty("maxConnectionsCount")
         public T setMaxConnectionsCount(Integer maxConnectionsCount) {
-            this.maxConnectionsCount = maxConnectionsCount;
+            if (maxConnectionsCount != null) {
+                this.maxConnectionsCount = maxConnectionsCount;
+            }
             return (T) this;
         }
 

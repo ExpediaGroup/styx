@@ -25,7 +25,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Objects;
 
-import static com.google.common.base.Throwables.propagate;
 import static javax.net.ssl.HttpsURLConnection.setDefaultHostnameVerifier;
 import static javax.net.ssl.HttpsURLConnection.setDefaultSSLSocketFactory;
 
@@ -43,7 +42,7 @@ public final class SslTesting {
         try {
             setUpSsl();
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
-            propagate(e);
+            throw new RuntimeException(e);
         }
     }
 

@@ -28,12 +28,10 @@ import org.mockito.ArgumentCaptor;
 import org.reactivestreams.Subscriber;
 
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.function.Consumer;
 
 import static ch.qos.logback.classic.Level.WARN;
-import static com.google.common.base.Charsets.UTF_8;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.BUFFERING;
 import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.BUFFERING_COMPLETED;
@@ -43,6 +41,7 @@ import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.
 import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.TERMINATED;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static io.netty.buffer.Unpooled.copiedBuffer;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
@@ -328,7 +327,7 @@ public class FlowControllingHttpContentProducerTest {
         setUpAndRequest(NO_BACKPRESSURE);
 
         producer.onSubscribed(downstream);
-        producer.newChunk(Unpooled.copiedBuffer("foobar", StandardCharsets.UTF_8));
+        producer.newChunk(Unpooled.copiedBuffer("foobar", UTF_8));
         producer.lastHttpContent();
 
         assertThat(producer.state(), is(COMPLETED));
@@ -348,7 +347,7 @@ public class FlowControllingHttpContentProducerTest {
         setUpAndRequest(NO_BACKPRESSURE);
 
         producer.onSubscribed(downstream);
-        producer.newChunk(Unpooled.copiedBuffer("foobar", StandardCharsets.UTF_8));
+        producer.newChunk(Unpooled.copiedBuffer("foobar", UTF_8));
         producer.channelException(new RuntimeException("An exception occurred, doesn't matter what."));
 
         assertThat(producer.state(), is(TERMINATED));

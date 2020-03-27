@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -142,11 +142,11 @@ public final class HttpHeaders implements Iterable<HttpHeader> {
         private final DefaultHttpHeaders nettyHeaders;
 
         public Builder() {
-            this.nettyHeaders = new DefaultHttpHeaders(false);
+            this.nettyHeaders = new DefaultHttpHeaders(true);
         }
 
         public Builder(HttpHeaders headers) {
-            this.nettyHeaders = new DefaultHttpHeaders(false);
+            this.nettyHeaders = new DefaultHttpHeaders(true);
             this.nettyHeaders.set(headers.nettyHeaders);
         }
 

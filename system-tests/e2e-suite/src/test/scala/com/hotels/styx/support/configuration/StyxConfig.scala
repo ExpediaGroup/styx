@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hotels.styx.support.configuration
 import java.nio.file.Path
 import java.util
 
-import com.hotels.styx.StyxServer
+import com.hotels.styx.{NettyExecutor, StyxServer}
 import com.hotels.styx.StyxServerSupport._
 import com.hotels.styx.api.extension.service.spi.StyxService
 import com.hotels.styx.api.plugins.spi.Plugin
@@ -58,6 +58,9 @@ sealed trait StyxBaseConfig {
 
 object StyxBaseConfig {
   val defaultLogbackXml = ResourcePaths.fixturesHome(this.getClass, "/logback.xml")
+  val globalBossExecutor = NettyExecutor.create("StyxServer-Boss", 1)
+  val globalWorkerExecutor = NettyExecutor.create("StyxServer-Worker", 1)
+
 }
 
 case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),

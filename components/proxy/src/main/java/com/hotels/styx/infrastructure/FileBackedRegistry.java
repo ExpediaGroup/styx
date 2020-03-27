@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import static com.google.common.base.Throwables.propagate;
 import static com.google.common.hash.HashCode.fromLong;
 import static com.google.common.hash.Hashing.md5;
 import static com.google.common.io.ByteStreams.toByteArray;
@@ -147,7 +146,7 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
         try (InputStream configurationContent = configurationFile.inputStream()) {
             return toByteArray(configurationContent);
         } catch (IOException e) {
-            throw propagate(e);
+            throw new RuntimeException(e);
         }
     }
 

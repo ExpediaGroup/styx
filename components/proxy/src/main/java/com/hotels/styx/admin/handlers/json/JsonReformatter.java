@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,12 +18,11 @@ package com.hotels.styx.admin.handlers.json;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 
-import static com.google.common.base.Strings.padStart;
-import static com.google.common.base.Throwables.propagate;
 import static java.util.stream.Collectors.joining;
 
 /**
@@ -41,7 +40,7 @@ public final class JsonReformatter {
         try {
             return reformat0(json);
         } catch (IOException e) {
-            throw propagate(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -161,7 +160,9 @@ public final class JsonReformatter {
         }
 
         private static String indent(int indentation) {
-            return padStart("", indentation * 2, ' ');
+            char[] spaces = new char[indentation * 2];
+            Arrays.fill(spaces, ' ');
+            return String.valueOf(spaces);
         }
     }
 }

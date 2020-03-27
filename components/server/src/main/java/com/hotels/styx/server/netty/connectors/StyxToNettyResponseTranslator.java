@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ class StyxToNettyResponseTranslator implements ResponseTranslator {
         io.netty.handler.codec.http.HttpVersion version = toNettyVersion(httpResponse.version());
         HttpResponseStatus httpResponseStatus = HttpResponseStatus.valueOf(httpResponse.status().code());
 
-        DefaultHttpResponse nettyResponse = new DefaultHttpResponse(version, httpResponseStatus, false);
+        DefaultHttpResponse nettyResponse = new DefaultHttpResponse(version, httpResponseStatus, true);
 
         httpResponse.headers().forEach(httpHeader ->
                 nettyResponse.headers().add(httpHeader.name(), httpHeader.value()));

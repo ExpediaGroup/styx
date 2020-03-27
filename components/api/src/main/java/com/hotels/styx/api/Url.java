@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,8 +15,9 @@
  */
 package com.hotels.styx.api;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import javax.annotation.concurrent.ThreadSafe;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -30,11 +31,7 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.google.common.base.Throwables.propagate;
-import static com.hotels.styx.api.URLEncoder.encodePathSegment;
 import static java.lang.Integer.parseInt;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
@@ -44,8 +41,6 @@ import static java.util.Collections.emptySet;
  */
 @ThreadSafe
 public final class Url implements Comparable<Url> {
-    private static final String PATH_DELIMITER = "/";
-
     private final String scheme;
     private final Optional<Authority> authority;
     private final String path;
@@ -76,6 +71,15 @@ public final class Url implements Comparable<Url> {
      */
     public String path() {
         return this.path;
+    }
+
+    /**
+     * The fragment part of the URL.
+     *
+     * @return fragment, if present
+     */
+    public Optional<String> fragment() {
+        return Optional.ofNullable(fragment);
     }
 
     /**
@@ -112,7 +116,7 @@ public final class Url implements Comparable<Url> {
      */
     public boolean isFullyQualified() {
         Optional<String> host = host();
-        return host.isPresent() && !isNullOrEmpty(host.get());
+        return host.isPresent() && !host.get().isEmpty();
     }
 
     /**
@@ -128,7 +132,7 @@ public final class Url implements Comparable<Url> {
      * Whether the URL is relative, i.e. not absolute.
      *
      * @return true if the URL is relative.
-     * @see {@link #isAbsolute()}
+     * @see #isAbsolute()
      */
     public boolean isRelative() {
         return scheme == null || scheme.isEmpty();
@@ -143,7 +147,7 @@ public final class Url implements Comparable<Url> {
         try {
             return toURI().toURL();
         } catch (MalformedURLException e) {
-            throw propagate(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -156,16 +160,12 @@ public final class Url implements Comparable<Url> {
         try {
             return new URI(toString());
         } catch (URISyntaxException e) {
-            throw propagate(e);
+            throw new RuntimeException(e);
         }
     }
 
-    /**
-     * The query part of the URL.
-     *
-     * @return query
-     */
-    public Optional<UrlQuery> query() {
+    @VisibleForTesting
+    Optional<UrlQuery> query() {
         return this.query;
     }
 
@@ -226,14 +226,6 @@ public final class Url implements Comparable<Url> {
      */
     public String encodedUri() {
         return toString();
-    }
-
-    private static CharSequence encodePathElement(String pathElement) {
-        try {
-            return encodePathSegment(pathElement, UTF_8.toString());
-        } catch (UnsupportedEncodingException ignore) {
-            return pathElement;
-        }
     }
 
     @Override
@@ -375,10 +367,10 @@ public final class Url implements Comparable<Url> {
         @Override
         public String toString() {
             StringBuilder builder = new StringBuilder();
-            if (isNullOrEmpty(host)) {
+            if (host == null || host.isEmpty()) {
                 return builder.toString();
             }
-            if (!isNullOrEmpty(userInfo)) {
+            if (userInfo != null && !userInfo.isEmpty()) {
                 builder.append(userInfo).append("@");
             }
             builder.append(host);

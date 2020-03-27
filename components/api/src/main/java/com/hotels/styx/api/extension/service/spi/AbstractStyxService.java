@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -90,7 +90,7 @@ public abstract class AbstractStyxService implements StyxService {
     public CompletableFuture<Void> stop() {
         boolean changed = status.compareAndSet(RUNNING, STOPPING);
 
-        LOGGER.info("Stopping {} failed", name);
+        LOGGER.info("Stopping {}", name);
         if (changed) {
             return stopService()
                     .exceptionally(failWithMessage("Service failed to stop."))

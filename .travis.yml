@@ -6,4 +6,28 @@ jdk:
 script: mvn verify -Pquality,linux
 cache:
   directories:
-  - ~/.m2/repository
+  - "~/.m2/repository"
+deploy:
+- provider: script
+  script: chmod +x travis/deploy.sh && travis/deploy.sh
+  skip_cleanup: true
+  on:
+    branch: master
+    jdk: openjdk8
+    repo: HotelsDotCom/styx
+- provider: script
+  script: chmod +x travis/deploy.sh && travis/deploy.sh
+  skip_cleanup: true
+  on:
+    tags: true
+    jdk: openjdk8
+    repo: HotelsDotCom/styx
+- provider: releases
+  api_key: $GIT_TOKEN
+  file_glob: true
+  file: "./distribution/target/styx-*.zip"
+  skip_cleanup: true
+  on:
+    tags: true
+    jdk: openjdk8
+    repo: HotelsDotCom/styx

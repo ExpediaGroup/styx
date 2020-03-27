@@ -31,7 +31,7 @@ import io.kotlintest.Spec
 import io.kotlintest.eventually
 import io.kotlintest.matchers.doubles.shouldBeGreaterThan
 import io.kotlintest.matchers.numerics.shouldBeGreaterThan
-import io.kotlintest.matchers.numerics.shouldBeInRange
+import io.kotlintest.matchers.shouldBeInRange
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FunSpec

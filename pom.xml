@@ -107,7 +107,7 @@
     <!-- General Versions -->
     <guava.version>18.0</guava.version>
     <jackson.version>2.10.1</jackson.version>
-    <jackson.dataformat.version>2.10.1</jackson.dataformat.version>
+    <jackson.dataformat.version>2.10.2</jackson.dataformat.version>
     <jackson.module.scala.version>2.10.1</jackson.module.scala.version>
     <jackson-module-kotlin.version>2.10.1</jackson-module-kotlin.version>
     <metrics.version>4.0.5</metrics.version>
@@ -121,7 +121,7 @@
     <bytebuddy.version>1.10.6</bytebuddy.version>
 
     <!--Kotlin -->
-    <kotlin.version>1.3.21</kotlin.version>
+    <kotlin.version>1.3.61</kotlin.version>
     <kotlintest.version>3.4.2</kotlintest.version>
     <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
     <kotlinx.html.version>0.6.12</kotlinx.html.version>
@@ -130,7 +130,7 @@
 
     <!-- Logging Versions -->
     <logback.version>1.1.2</logback.version>
-    <slf4j.version>1.6.1</slf4j.version>
+    <slf4j.version>1.7.30</slf4j.version>
 
     <scala.version>2.12</scala.version>
     <scala-compiler.version>2.12.7</scala-compiler.version>
@@ -146,7 +146,7 @@
     <!-- apache plugin versions and configurations, please sort alphabetically -->
     <maven-antrun-plugin.version>1.7</maven-antrun-plugin.version>
     <maven-assembly-plugin.version>2.4</maven-assembly-plugin.version>
-    <maven-checkstyle-plugin.version>3.0.0</maven-checkstyle-plugin.version>
+    <maven-checkstyle-plugin.version>3.1.0</maven-checkstyle-plugin.version>
     <maven-compiler-plugin.version>3.0</maven-compiler-plugin.version>
     <maven-dependency-plugin.version>2.8</maven-dependency-plugin.version>
     <maven-deploy-plugin.version>2.7</maven-deploy-plugin.version>
@@ -155,7 +155,7 @@
     <maven-install-plugin.version>2.5.1</maven-install-plugin.version>
     <maven-jar-plugin.version>2.4</maven-jar-plugin.version>
     <maven-pmd-plugin.version>3.5</maven-pmd-plugin.version>
-    <maven-javadoc-plugin.version>3.0.0-M1</maven-javadoc-plugin.version>
+    <maven-javadoc-plugin.version>3.1.1</maven-javadoc-plugin.version>
     <maven-project-info-reports-plugin.version>2.6</maven-project-info-reports-plugin.version>
     <maven-release-plugin.version>2.4</maven-release-plugin.version>
     <maven-resources-plugin.version>2.6</maven-resources-plugin.version>
@@ -166,6 +166,7 @@
     <!-- non apache plugin versions and configurations, please sort alphabetically -->
     <build-helper-maven-plugin.version>1.9.1</build-helper-maven-plugin.version>
     <jacoco-maven-plugin.version>0.8.5</jacoco-maven-plugin.version>
+    <nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
 
     <!-- code quality -->
     <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
@@ -471,7 +472,7 @@
       <dependency>
         <groupId>com.google.code.findbugs</groupId>
         <artifactId>annotations</artifactId>
-        <version>2.0.1</version>
+        <version>3.0.1u2</version>
         <scope>provided</scope>
       </dependency>
 
@@ -751,7 +752,7 @@
             <dependency>
               <groupId>org.apache.ant</groupId>
               <artifactId>ant-launcher</artifactId>
-              <version>1.8.0</version>
+              <version>1.10.7</version>
             </dependency>
           </dependencies>
         </plugin>
@@ -1004,6 +1005,8 @@
             <exclude>default.properties</exclude>
             <exclude>**/GraphiteReporter.java</exclude>
             <exclude>**/ServerCookieEncoder.java</exclude>
+            <exclude>**/ClientCookieDecoder.java</exclude>
+            <exclude>**/CookieHeaderNames.java</exclude>
             <exclude>**/MultithreadedStressTester.java</exclude>
             <exclude>**/RelationshipTester.java</exclude>
             <exclude>**/EqualsTester.java</exclude>
@@ -1103,7 +1106,7 @@
               <dependency>
                 <groupId>com.puppycrawl.tools</groupId>
                 <artifactId>checkstyle</artifactId>
-                <version>8.18</version>
+                <version>8.29</version>
               </dependency>
             </dependencies>
             <configuration>
@@ -1192,14 +1195,19 @@
                 <goals>
                   <goal>sign</goal>
                 </goals>
-                <configuration>
-                  <gpgArguments>
-                    <arg>--pinentry-mode</arg>
-                    <arg>loopback</arg>
-                  </gpgArguments>
-                </configuration>
               </execution>
             </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.sonatype.plugins</groupId>
+            <artifactId>nexus-staging-maven-plugin</artifactId>
+            <version>${nexus-staging-maven-plugin.version}</version>
+            <extensions>true</extensions>
+            <configuration>
+              <serverId>central</serverId>
+              <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+              <autoReleaseAfterClose>true</autoReleaseAfterClose>
+            </configuration>
           </plugin>
         </plugins>
       </build>

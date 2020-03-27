@@ -23,9 +23,10 @@ import com.hotels.styx.admin.handlers.ServiceProviderHandler
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpHeaderValues.APPLICATION_JSON
-import com.hotels.styx.api.HttpHeaderValues.HTML
 import com.hotels.styx.api.HttpRequest.get
-import com.hotels.styx.api.HttpResponseStatus.*
+import com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY
+import com.hotels.styx.api.HttpResponseStatus.NOT_FOUND
+import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.RequestCookie.requestCookie
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.routing.config.StyxObjectDefinition
@@ -36,6 +37,7 @@ import com.hotels.styx.support.ResourcePaths
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.adminHostHeader
 import com.hotels.styx.support.proxyHttpHostHeader
+import com.hotels.styx.support.routingObject
 import com.hotels.styx.support.wait
 import io.kotlintest.Spec
 import io.kotlintest.eventually
@@ -50,7 +52,6 @@ import kotlinx.coroutines.delay
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.charset.StandardCharsets.UTF_8
-import kotlin.io.writeText
 
 class OriginsFileCompatibilitySpec : FunSpec() {
     val tempDir = createTempDir(suffix = "-${this.javaClass.simpleName}")
@@ -60,6 +61,17 @@ class OriginsFileCompatibilitySpec : FunSpec() {
     val styxServer = StyxServerProvider(
             defaultConfig = """
                 ---
+                providers:
+                  originsFileLoader:
+                    type: YamlFileConfigurationService
+                    config:
+                      originsFile: ${originsFile.absolutePath}
+                      ingressObject: pathPrefixRouter
+                      monitor: True
+                      pollInterval: PT0.1S 
+
+                httpPipeline: pathPrefixRouter
+
                 proxy:
                   connectors:
                     http:
@@ -74,18 +86,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                   inbound:
                     enabled: true
                   outbound:
-                    enabled: true
-
-                providers:
-                  originsFileLoader:
-                    type: YamlFileConfigurationService
-                    config:
-                      originsFile: ${originsFile.absolutePath}
-                      ingressObject: pathPrefixRouter
-                      monitor: True
-                      pollInterval: PT0.1S 
-
-                httpPipeline: pathPrefixRouter
+                    enabled: true 
                 """.trimIndent(),
             defaultLoggingConfig = ResourcePaths.fixturesHome(
                     OriginsFileCompatibilitySpec::class.java,
@@ -126,6 +127,21 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                             it.bodyAs(UTF_8) shouldBe originsFile
                         }
             }
+        }
+
+        context("Failing to load an initial configuration blocks Styx HTTP server from starting.") {
+            writeOrigins("""
+                    - id: appA
+                    - this file has somehow corrupted
+                      .. bl;ah blah" 
+                    """.trimIndent())
+
+            styxServer.restartAsync()
+
+            delay(1.seconds.toMillis())
+
+            styxServer().proxyHttpAddress() shouldBe null
+            styxServer.stop()
         }
 
         context("Origins configuration changes") {
@@ -286,7 +302,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 }
             }
 
-            test("!TLS Settings modifications") {
+            test("TLS Settings modifications") {
                 writeOrigins("""
                     - id: appTls
                       path: "/"
@@ -295,6 +311,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                         sslProvider: JDK
                         protocols:
                           - TLSv1.1
+                      responseTimeoutMillis: 5000
                       origins:
                       - { id: "appTls-01", host: "localhost:${mockTlsv12Server.port()}" } 
                     """.trimIndent())
@@ -316,6 +333,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                         sslProvider: JDK
                         protocols:
                           - TLSv1.2
+                      responseTimeoutMillis: 5000
                       origins:
                       - { id: "appTls-01", host: "localhost:${mockTlsv12Server.port()}" } 
                     """.trimIndent())
@@ -622,7 +640,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                             it!!.status() shouldBe OK
                             it.header(CONTENT_TYPE).get().toLowerCase() shouldBe APPLICATION_JSON.toString().toLowerCase()
                             // TODO: This name should probably change.
-                            it.bodyAs(UTF_8) shouldBe "{ name: \"HealthCheckMonitoringService\" status: \"RUNNING\" }"
+                            it.bodyAs(UTF_8) shouldBe "{ name: \"HealthCheckMonitoringService-appB\" status: \"RUNNING\" }"
                         }
             }
 
@@ -668,6 +686,104 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                         .wait().let {
                             it!!.status() shouldBe NOT_FOUND
                         }
+            }
+        }
+
+        context("Executors configuration") {
+            writeOrigins("""
+                - id: appA
+                  path: "/"
+                  origins:
+                  - { id: "appA-01", host: "localhost:${mockServerA01.port()}" } 
+            """.trimIndent())
+
+            test("Uses named executor") {
+                styxServer.restart(
+                        configuration = """
+                        ---
+                        executors:
+                          test-executor:
+                            type: NettyExecutor
+                            config:
+                              threads: 1
+                              namePattern: MyTestExecutor
+                        
+                        providers:
+                          originsFileLoader:
+                            type: YamlFileConfigurationService
+                            config:
+                              originsFile: ${originsFile.absolutePath}
+                              ingressObject: pathPrefixRouter
+                              monitor: True
+                              pollInterval: PT0.1S
+                              executor: test-executor 
+        
+                        httpPipeline: pathPrefixRouter
+        
+                        proxy:
+                          connectors:
+                            http:
+                              port: 0
+                
+                        admin:
+                          connectors:
+                            http:
+                              port: 0
+                    """.trimIndent())
+
+
+                eventually(2.seconds, AssertionError::class.java) {
+                    client.send(get("/foo")
+                            .header(HOST, styxServer().proxyHttpHostHeader())
+                            .build())
+                            .wait()!!
+                            .let {
+                                it.status() shouldBe OK
+                            }
+                }
+
+                styxServer().routingObject("appA.appA-01", debug = true).get()
+                        .shouldContain("executor: \"test-executor\"")
+            }
+
+            test("Uses default executor, when named executor is not provided") {
+                styxServer.restart(
+                        configuration = """
+                        --- 
+                        providers:
+                          originsFileLoader:
+                            type: YamlFileConfigurationService
+                            config:
+                              originsFile: ${originsFile.absolutePath}
+                              ingressObject: pathPrefixRouter
+                              monitor: True
+                              pollInterval: PT0.1S
+        
+                        httpPipeline: pathPrefixRouter
+        
+                        proxy:
+                          connectors:
+                            http:
+                              port: 0
+                
+                        admin:
+                          connectors:
+                            http:
+                              port: 0
+                    """.trimIndent())
+
+                eventually(2.seconds, AssertionError::class.java) {
+                    client.send(get("/foo/2")
+                            .header(HOST, styxServer().proxyHttpHostHeader())
+                            .build())
+                            .wait()!!
+                            .let {
+                                it.status() shouldBe OK
+                            }
+                }
+
+                styxServer().routingObject("appA.appA-01", debug = true).get()
+                        .shouldContain("executor: \"Styx-Client-Global-Worker\"")
             }
         }
 
@@ -749,24 +865,28 @@ class OriginsFileCompatibilitySpec : FunSpec() {
             .start()
             .stub(WireMock.get(WireMock.urlMatching("/.*")), WireMock.aResponse()
                     .withStatus(200)
+                    .withHeader("X-Origin", "Server-A01-server")
                     .withBody("appA-01"))
 
     val mockServerA02 = MockOriginServer.create("appA", "appA-02", 0, HttpConnectorConfig(0))
             .start()
             .stub(WireMock.get(WireMock.urlMatching("/.*")), WireMock.aResponse()
                     .withStatus(200)
+                    .withHeader("X-Origin", "Server-A02-server")
                     .withBody("appA-02"))
 
     val mockServerB01 = MockOriginServer.create("appB", "appB-01", 0, HttpConnectorConfig(0))
             .start()
             .stub(WireMock.get(WireMock.urlMatching("/.*")), WireMock.aResponse()
                     .withStatus(200)
+                    .withHeader("X-Origin", "Server-B01-server")
                     .withBody("appB-01"))
 
     val mockServerC01 = MockOriginServer.create("appC", "appC-01", 0, HttpConnectorConfig(0))
             .start()
             .stub(WireMock.get(WireMock.urlMatching("/.*")), WireMock.aResponse()
                     .withStatus(200)
+                    .withHeader("X-Origin", "Server-C01-server")
                     .withBody("appC-01"))
 
     val mockTlsv12Server = MockOriginServer.create("appTls", "appTls-01", 0,
@@ -778,6 +898,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
             .start()
             .stub(WireMock.get(WireMock.urlMatching("/.*")), WireMock.aResponse()
                     .withStatus(200)
+                    .withHeader("X-Origin", "TlsV2-server")
                     .withBody("appTls-01"))
 
     override fun afterSpec(spec: Spec) {

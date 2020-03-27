@@ -32,7 +32,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.LongUnaryOperator;
 
-import static com.google.common.base.Objects.toStringHelper;
 import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.BUFFERING;
 import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.BUFFERING_COMPLETED;
 import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.COMPLETED;
@@ -543,17 +542,18 @@ public class FlowControllingHttpContentProducer {
 
         @Override
         public String toString() {
-            return toStringHelper(this)
-                    .add("chunk", chunk)
-                    .toString();
+            StringBuilder sb = new StringBuilder(32);
+            sb.append(this.getClass().getSimpleName());
+            sb.append("{chunk=");
+            sb.append(chunk);
+            return sb.append('}').toString();
         }
     }
 
     private static final class ContentEndEvent {
         @Override
         public String toString() {
-            return toStringHelper(this)
-                    .toString();
+            return this.getClass().getSimpleName();
         }
     }
 
@@ -566,9 +566,11 @@ public class FlowControllingHttpContentProducer {
 
         @Override
         public String toString() {
-            return toStringHelper(this)
-                    .add("subscriber", subscriber)
-                    .toString();
+            StringBuilder sb = new StringBuilder(32);
+            sb.append(this.getClass().getSimpleName());
+            sb.append("{subscriber=");
+            sb.append(subscriber);
+            return sb.append('}').toString();
         }
     }
 
@@ -585,9 +587,11 @@ public class FlowControllingHttpContentProducer {
 
         @Override
         public String toString() {
-            return toStringHelper(this)
-                    .add("n", n)
-                    .toString();
+            StringBuilder sb = new StringBuilder(32);
+            sb.append(this.getClass().getSimpleName());
+            sb.append("{n=");
+            sb.append(n);
+            return sb.append('}').toString();
         }
     }
 
@@ -609,8 +613,11 @@ public class FlowControllingHttpContentProducer {
 
         @Override
         public String toString() {
-            return toStringHelper(this)
-                    .add("cause", cause)
+            return new StringBuilder(32)
+                    .append(this.getClass().getSimpleName())
+                    .append("{cause=")
+                    .append(cause)
+                    .append('}')
                     .toString();
         }
     }
@@ -629,8 +636,11 @@ public class FlowControllingHttpContentProducer {
 
         @Override
         public String toString() {
-            return toStringHelper(this)
-                    .add("cause", cause)
+            return new StringBuilder(32)
+                    .append(this.getClass().getSimpleName())
+                    .append("{cause=")
+                    .append(cause)
+                    .append('}')
                     .toString();
         }
     }
@@ -649,8 +659,11 @@ public class FlowControllingHttpContentProducer {
 
         @Override
         public String toString() {
-            return toStringHelper(this)
-                    .add("cause", cause)
+            return new StringBuilder(32)
+                    .append(this.getClass().getSimpleName())
+                    .append("{cause=")
+                    .append(cause)
+                    .append('}')
                     .toString();
         }
     }

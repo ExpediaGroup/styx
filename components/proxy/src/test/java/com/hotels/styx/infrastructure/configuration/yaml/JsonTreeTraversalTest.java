@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.databind.node.ValueNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.base.Objects;
 import com.hotels.styx.support.matchers.IsOptional;
 import org.hamcrest.Description;
 import org.hamcrest.MatcherAssert;
@@ -34,10 +33,10 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
-import static com.google.common.base.Objects.toStringHelper;
-import static com.google.common.base.Preconditions.checkArgument;
+import static com.hotels.styx.common.Preconditions.checkArgument;
 import static com.hotels.styx.infrastructure.configuration.yaml.JsonTreeTraversal.traverseJsonTree;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -111,13 +110,13 @@ public class JsonTreeTraversalTest {
         protected boolean matchesSafely(PathElement item) {
             if (item instanceof ArrayIndex) {
                 ArrayIndex arrayIndex = (ArrayIndex) item;
-                return Objects.equal(arrayIndex.index(), expected);
+                return Objects.equals(arrayIndex.index(), expected);
             }
 
             if (item instanceof ObjectField) {
                 ObjectField objectField = (ObjectField) item;
 
-                return Objects.equal(objectField.name(), expected);
+                return Objects.equals(objectField.name(), expected);
             }
 
             return false;
@@ -142,10 +141,15 @@ public class JsonTreeTraversalTest {
 
         @Override
         public String toString() {
-            return toStringHelper(this)
-                    .add("node", node)
-                    .add("parent", parent)
-                    .add("path", path)
+            return new StringBuilder(96)
+                    .append(this.getClass().getSimpleName())
+                    .append("{node=")
+                    .append(node)
+                    .append(", parent=")
+                    .append(parent)
+                    .append(", path=")
+                    .append(path)
+                    .append('}')
                     .toString();
         }
     }

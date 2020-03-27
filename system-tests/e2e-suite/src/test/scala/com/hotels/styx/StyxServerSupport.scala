@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import com.hotels.styx.server.netty.NettyServerConfig.Connectors
 import com.hotels.styx.server.{HttpConnectorConfig, HttpsConnectorConfig}
 import com.hotels.styx.startup.StyxServerComponents
 import com.hotels.styx.support.CodaHaleMetricsFacade
+import com.hotels.styx.support.configuration.StyxBaseConfig
 
 import scala.collection.JavaConverters._
 

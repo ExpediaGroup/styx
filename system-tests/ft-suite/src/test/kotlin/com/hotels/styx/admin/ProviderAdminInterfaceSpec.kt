@@ -106,11 +106,11 @@ class ProviderAdminInterfaceSpec : FeatureSpec() {
             scenario("Exposes endpoints for each provider") {
                 styxServer.adminRequest("/admin/providers/myMonitor/status")
                         .bodyAs(UTF_8)
-                        .shouldBe("""{ name: "HealthCheckMonitoringService" status: "RUNNING" }""")
+                        .shouldBe("""{ name: "HealthCheckMonitoringService-aaa" status: "RUNNING" }""")
 
                 styxServer.adminRequest("/admin/providers/mySecondMonitor/status")
                         .bodyAs(UTF_8)
-                        .shouldBe("""{ name: "HealthCheckMonitoringService" status: "RUNNING" }""")
+                        .shouldBe("""{ name: "HealthCheckMonitoringService-bbb" status: "RUNNING" }""")
             }
 
             scenario ("Provider list page contains links for each provider endpoint") {
@@ -118,6 +118,64 @@ class ProviderAdminInterfaceSpec : FeatureSpec() {
                         .bodyAs(UTF_8)
                 body shouldContain "/admin/providers/myMonitor/status"
                 body shouldContain "/admin/providers/mySecondMonitor/status"
+            }
+
+            scenario("YAML configuration for all providers is available") {
+                val body = styxServer.adminRequest("/admin/providers/objects")
+                        .bodyAs(UTF_8)
+                body shouldContain """
+                    mySecondMonitor:
+                      type: "HealthCheckMonitor"
+                      tags: []
+                      config:
+                        objects: "bbb"
+                        path: "/healthCheck/y"
+                        timeoutMillis: 250
+                        intervalMillis: 500
+                        healthyThreshold: 3
+                        unhealthyThreshold: 2
+                    """.trimIndent()
+
+                body shouldContain """
+                    myMonitor:
+                      type: "HealthCheckMonitor"
+                      tags: []
+                      config:
+                        objects: "aaa"
+                        path: "/healthCheck/x"
+                        timeoutMillis: 250
+                        intervalMillis: 500
+                        healthyThreshold: 3
+                        unhealthyThreshold: 2
+                    """.trimIndent()
+
+                body shouldContain """
+                    originsFileLoader:
+                      type: "YamlFileConfigurationService"
+                      tags: []
+                      config:
+                        originsFile: "${originsFile.absolutePath}"
+                        ingressObject: "pathPrefixRouter"
+                        monitor: true
+                        pollInterval: "PT0.1S"
+                    """.trimIndent()
+            }
+
+            scenario("YAML configuration for a single provider is available") {
+                val body = styxServer.adminRequest("/admin/providers/objects/myMonitor")
+                        .bodyAs(UTF_8)
+                body.trim() shouldBe """
+                      ---
+                      type: "HealthCheckMonitor"
+                      tags: []
+                      config:
+                        objects: "aaa"
+                        path: "/healthCheck/x"
+                        timeoutMillis: 250
+                        intervalMillis: 500
+                        healthyThreshold: 3
+                        unhealthyThreshold: 2
+                      """.trimIndent()
             }
         }
 
@@ -143,7 +201,7 @@ class ProviderAdminInterfaceSpec : FeatureSpec() {
                 val responseB = styxServer.adminRequest("/admin/providers/appB-monitor/status")
                 responseB.status() shouldBe OK
                 responseB.header(CONTENT_TYPE).get().toLowerCase() shouldBe APPLICATION_JSON.toString().toLowerCase()
-                responseB.bodyAs(UTF_8) shouldBe "{ name: \"HealthCheckMonitoringService\" status: \"RUNNING\" }"
+                responseB.bodyAs(UTF_8) shouldBe "{ name: \"HealthCheckMonitoringService-appB\" status: \"RUNNING\" }"
             }
 
             scenario("Endpoints for dynamically removed Styx services are not listed in the Admin interface") {

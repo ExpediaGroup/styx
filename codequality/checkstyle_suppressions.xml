@@ -20,6 +20,8 @@
   <suppress checks="[a-zA-Z0-9]*" files=".*MetricsModule.java"/>
   <suppress checks="[a-zA-Z0-9]*" files=".*CookieUtil.java"/>
   <suppress checks="[a-zA-Z0-9]*" files=".*ServerCookieEncoder.java"/>
+  <suppress checks="[a-zA-Z0-9]*" files=".*ClientCookieDecoder.java"/>
+
 
   <suppress checks="InnerTypeLastCheck" files=".*.java"/>
   <suppress checks="DeclarationOrder" files=".*.java"/>

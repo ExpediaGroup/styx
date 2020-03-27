@@ -17,7 +17,6 @@ package com.hotels.styx.admin.handlers;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Charsets;
 import com.google.common.eventbus.EventBus;
 import com.hotels.styx.admin.tasks.StubConnectionPool;
 import com.hotels.styx.api.HttpHandler;
@@ -36,12 +35,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
+import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptySet;
@@ -141,6 +140,6 @@ public class OriginsInventoryHandlerTest {
     }
 
     private String body(HttpResponse response){
-        return response.bodyAs(Charsets.UTF_8).replace("\r\n", "\n");
+        return response.bodyAs(UTF_8).replace("\r\n", "\n");
     }
 }

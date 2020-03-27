@@ -21,7 +21,7 @@ import com.hotels.styx.api.extension.service.spi.StyxService
 /**
  * A routing object and its associated configuration metadata.
  */
-data class StyxObjectRecord<T: StyxService>(
+data class StyxObjectRecord<T>(
         val type: String,
         val tags: Set<String>,
         val config: JsonNode,

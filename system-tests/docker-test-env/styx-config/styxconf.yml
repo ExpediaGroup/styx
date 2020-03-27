@@ -14,8 +14,15 @@ routingObjects:
       status: 200
       content: "hello-2"
 
+providers:
+  originsFileLoader:
+    type: YamlFileConfigurationService
+    config:
+      originsFile: /styx/config/origins.yml
+      ingressObject: pathPrefixRouter
+      monitor: True
 
-httpPipeline: hello1
+httpPipeline: pathPrefixRouter
 
 servers:
   http:

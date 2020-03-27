@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,8 +25,6 @@ import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
@@ -51,8 +49,12 @@ public final class RequestCookie {
      * @param value cookie value
      */
     private RequestCookie(String name, String value) {
-        checkArgument(!isNullOrEmpty(name), "name cannot be null or empty");
+        if (name == null || name.isEmpty()) {
+            throw new IllegalArgumentException("name cannot be null or empty");
+        }
+
         requireNonNull(value, "value cannot be null");
+
         this.name = name;
         this.value = value;
         this.hashCode = Objects.hash(name, value);
@@ -92,7 +94,9 @@ public final class RequestCookie {
      * @return "Cookie" header value
      */
     public static String encode(Collection<RequestCookie> cookies) {
-        checkArgument(!cookies.isEmpty(), "Cannot create cookie header value from zero cookies");
+        if (cookies.isEmpty()) {
+            throw new IllegalArgumentException("Cannot create cookie header value from zero cookies");
+        }
 
         Set<Cookie> nettyCookies = cookies.stream()
                 .map(RequestCookie::convert)
