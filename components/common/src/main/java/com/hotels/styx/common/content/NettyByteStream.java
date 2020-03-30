@@ -24,12 +24,12 @@ import org.reactivestreams.Subscription;
 /**
  * A publisher to wrap the FlowControllingHttpContentProducer FSM and perform subscription operations via a Netty EventLoop.
  */
-public final class FlowControllingPublisher implements Publisher<Buffer> {
+public final class NettyByteStream implements Publisher<Buffer> {
 
     private final EventLoop eventLoop;
     private final FlowControllingHttpContentProducer contentProducer;
 
-    public FlowControllingPublisher(EventLoop eventLoop, FlowControllingHttpContentProducer contentProducer) {
+    public NettyByteStream(EventLoop eventLoop, FlowControllingHttpContentProducer contentProducer) {
         this.eventLoop = eventLoop;
         this.contentProducer = contentProducer;
     }

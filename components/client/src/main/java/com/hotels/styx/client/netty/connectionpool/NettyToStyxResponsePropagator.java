@@ -25,7 +25,7 @@ import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.BadHttpResponseException;
 import com.hotels.styx.client.StyxClientException;
 import com.hotels.styx.common.content.FlowControllingHttpContentProducer;
-import com.hotels.styx.common.content.FlowControllingPublisher;
+import com.hotels.styx.common.content.NettyByteStream;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.channel.ChannelHandlerContext;
@@ -36,6 +36,7 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.timeout.IdleStateEvent;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
+import org.slf4j.Logger;
 import reactor.core.publisher.FluxSink;
 
 import java.util.Optional;
@@ -48,12 +49,14 @@ import static io.netty.handler.codec.http.HttpHeaderNames.CONNECTION;
 import static io.netty.util.ReferenceCountUtil.retain;
 import static java.lang.String.format;
 import static java.util.stream.StreamSupport.stream;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * A netty channel handler that reads from a channel and pass the message to a {@link Subscriber}.
  */
 final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
     public static final String NAME = NettyToStyxResponsePropagator.class.getSimpleName();
+    private static final Logger LOGGER = getLogger(NettyToStyxResponsePropagator.class);
 
     private final AtomicBoolean responseCompleted = new AtomicBoolean(false);
     private final AtomicBoolean responseReceived = new AtomicBoolean(false);
@@ -125,7 +128,7 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
 
             EventLoop eventLoop = ctx.channel().eventLoop();
 
-            Publisher<Buffer> contentPublisher = new FlowControllingPublisher(eventLoop, producer);
+            Publisher<Buffer> contentPublisher = new NettyByteStream(eventLoop, producer);
 
             if ("close".equalsIgnoreCase(nettyResponse.headers().get(CONNECTION))) {
                 toBeClosed = true;

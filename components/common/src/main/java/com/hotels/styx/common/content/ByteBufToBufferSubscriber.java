@@ -39,7 +39,7 @@ public class ByteBufToBufferSubscriber implements Subscriber<ByteBuf> {
 
     @Override
     public void onNext(ByteBuf byteBuf) {
-        actual.onNext(Buffers.fromByteBuf(byteBuf));
+        actual.onNext(Buffers.toStyxBuffer(byteBuf));
     }
 
     @Override

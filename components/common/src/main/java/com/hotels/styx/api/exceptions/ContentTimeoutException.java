@@ -22,7 +22,7 @@ import static java.lang.String.format;
 /**
  * An exception due to a timeout occurring while relaying content.
  */
-public class ContentTimeoutException extends TransportException implements IsDeadConnectionException, IsTimeoutException {
+public class ContentTimeoutException extends TransportException {
 
     private final Origin origin;
 

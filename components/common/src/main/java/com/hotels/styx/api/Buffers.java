@@ -30,7 +30,7 @@ public final class Buffers {
      * @param byteBuf
      * @return
      */
-    public static Buffer fromByteBuf(ByteBuf byteBuf) {
+    public static Buffer toStyxBuffer(ByteBuf byteBuf) {
         return new Buffer(byteBuf);
     }
 
