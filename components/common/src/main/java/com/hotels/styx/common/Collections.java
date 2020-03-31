@@ -36,7 +36,9 @@ import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 
 /**
- * {@link Collection}s cannot contain <code>null</code> elements, and will throw a {@link NullPointerException} if one is encountered.
+ * {@link Collection}s created by these methods are unmodifiable shallow copies - the source data (Iterable, Iterator,
+ * array) can be changed without affecting the copy. These collections cannot contain <code>null</code> elements,
+ * and will throw a {@link NullPointerException} if one is encountered.
  *
  * {@link Set}s, in addition, preserve ordering of source sets.
  */

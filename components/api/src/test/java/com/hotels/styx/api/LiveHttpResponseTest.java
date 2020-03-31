@@ -29,7 +29,16 @@ import java.util.stream.Stream;
 
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
-import static com.hotels.styx.api.HttpResponseStatus.*;
+import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
+import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
+import static com.hotels.styx.api.HttpResponseStatus.CREATED;
+import static com.hotels.styx.api.HttpResponseStatus.GATEWAY_TIMEOUT;
+import static com.hotels.styx.api.HttpResponseStatus.MOVED_PERMANENTLY;
+import static com.hotels.styx.api.HttpResponseStatus.MULTIPLE_CHOICES;
+import static com.hotels.styx.api.HttpResponseStatus.NO_CONTENT;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpResponseStatus.SEE_OTHER;
+import static com.hotels.styx.api.HttpResponseStatus.TEMPORARY_REDIRECT;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_0;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.ResponseCookie.responseCookie;
