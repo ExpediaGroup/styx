@@ -22,6 +22,7 @@ import com.hotels.styx.api.HttpVersion;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Requests;
+import com.hotels.styx.api.exceptions.OriginUnreachableException;
 import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.OriginStatsFactory;
@@ -141,6 +142,8 @@ public class HttpRequestOperation {
                 if (requestLoggingEnabled) {
                     httpRequestMessageLogger.logRequest(request, nettyConnection.getOrigin());
                 }
+            } else {
+                throw new OriginUnreachableException(nettyConnection.getOrigin(), null);
             }
         });
 
