@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,16 +17,33 @@ package com.hotels.styx.api.exceptions;
 
 import com.hotels.styx.api.Id;
 
+import java.util.Optional;
+
+import static java.util.Objects.requireNonNull;
+
 /**
  * An exception to be thrown when there are no hosts available.
  */
-public class NoAvailableHostsException extends RuntimeException {
+public class NoAvailableHostsException extends RuntimeException implements StyxException {
+    private final Id applicationId;
+
     /**
      * Constructor.
      *
      * @param applicationId ID of the application for which there are no hosts
      */
     public NoAvailableHostsException(Id applicationId) {
-        super(String.format("No hosts available for application %s", applicationId));
+        super(String.format("No hosts available for application %s", requireNonNull(applicationId)));
+        this.applicationId = applicationId;
+    }
+
+    @Override
+    public Optional<Id> origin() {
+        return Optional.empty();
+    }
+
+    @Override
+    public Id application() {
+        return applicationId;
     }
 }

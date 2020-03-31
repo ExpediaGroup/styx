@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,14 +15,17 @@
  */
 package com.hotels.styx.api.exceptions;
 
+import com.hotels.styx.api.Id;
 import com.hotels.styx.api.extension.Origin;
+
+import java.util.Optional;
 
 import static java.lang.String.format;
 
 /**
  * An exception due to a response timeout.
  */
-public class ResponseTimeoutException extends TransportException implements IsDeadConnectionException, IsTimeoutException {
+public class ResponseTimeoutException extends TransportException implements IsDeadConnectionException, IsTimeoutException, StyxException {
     private final Origin origin;
 
     /**
@@ -56,8 +59,14 @@ public class ResponseTimeoutException extends TransportException implements IsDe
      *
      * @return origin
      */
-    public Origin origin() {
-        return origin;
+    @Override
+    public Optional<Id> origin() {
+        return Optional.of(origin.id());
+    }
+
+    @Override
+    public Id application() {
+        return origin.applicationId();
     }
 
     private static String message(Origin origin) {

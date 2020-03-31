@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,17 +15,19 @@
  */
 package com.hotels.styx.api.exceptions;
 
+import com.hotels.styx.api.Id;
 import com.hotels.styx.api.extension.Origin;
 import io.netty.channel.Channel;
 
 import java.net.SocketAddress;
+import java.util.Optional;
 
 import static java.lang.String.format;
 
 /**
  * Exception thrown when the connection between styx and origin is lost.
  */
-public class TransportLostException extends TransportException {
+public class TransportLostException extends TransportException implements StyxException {
     private static final String MESSAGE_FORMAT = "Connection to origin lost. origin=\"%s\", remoteAddress=\"%s\".";
     private final SocketAddress address;
     private final Origin origin;
@@ -62,7 +64,12 @@ public class TransportLostException extends TransportException {
      *
      * @return origin
      */
-    public Origin origin() {
-        return origin;
+    public Optional<Id> origin() {
+        return Optional.of(origin.id());
+    }
+
+    @Override
+    public Id application() {
+        return origin.applicationId();
     }
 }

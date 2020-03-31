@@ -71,14 +71,17 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
     private final ResponseEnhancer responseEnhancer;
     private final boolean requestTracking;
     private final HttpMessageFormatter httpMessageFormatter;
+    private final CharSequence originsHeader;
 
+    // CHECKSTYLE:OFF
     public ProxyConnectorFactory(NettyServerConfig serverConfig,
-                          MetricRegistry metrics,
-                          HttpErrorStatusListener errorStatusListener,
-                          String unwiseCharacters,
-                          ResponseEnhancer responseEnhancer,
-                          boolean requestTracking,
-                          HttpMessageFormatter httpMessageFormatter) {
+                                 MetricRegistry metrics,
+                                 HttpErrorStatusListener errorStatusListener,
+                                 String unwiseCharacters,
+                                 ResponseEnhancer responseEnhancer,
+                                 boolean requestTracking,
+                                 HttpMessageFormatter httpMessageFormatter,
+                                 CharSequence originsHeader) {
         this.serverConfig = requireNonNull(serverConfig);
         this.metrics = requireNonNull(metrics);
         this.errorStatusListener = requireNonNull(errorStatusListener);
@@ -86,7 +89,9 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
         this.responseEnhancer = requireNonNull(responseEnhancer);
         this.requestTracking = requestTracking;
         this.httpMessageFormatter = httpMessageFormatter;
+        this.originsHeader = originsHeader;
     }
+    // CHECKSTYLE:ON
 
     @Override
     public ServerConnector create(ConnectorConfig config) {
@@ -106,6 +111,7 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
         private final ResponseEnhancer responseEnhancer;
         private final RequestTracker requestTracker;
         private final HttpMessageFormatter httpMessageFormatter;
+        private final CharSequence originsHeader;
 
         private ProxyConnector(ConnectorConfig config, ProxyConnectorFactory factory) {
             this.config = requireNonNull(config);
@@ -124,6 +130,7 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
             }
             this.requestTracker = factory.requestTracking ? CurrentRequestTracker.INSTANCE : RequestTracker.NO_OP;
             this.httpMessageFormatter = factory.httpMessageFormatter;
+            this.originsHeader = factory.originsHeader;
         }
 
         @Override
@@ -169,6 +176,7 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
                             .metricRegistry(metrics)
                             .secure(sslContext.isPresent())
                             .requestTracker(requestTracker)
+                            .xOriginsHeader(originsHeader)
                             .build());
 
             if (serverConfig.compressResponses()) {
