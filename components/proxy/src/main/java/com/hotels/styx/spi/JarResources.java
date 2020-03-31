@@ -22,7 +22,7 @@ import com.hotels.styx.common.io.FileResourceIndex;
 import java.nio.file.Path;
 import java.util.Collection;
 
-import static com.hotels.styx.common.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.common.Collections.listOf;
 import static java.util.Collections.singleton;
 
 /**
@@ -54,6 +54,6 @@ final class JarResources {
 
     private static Collection<Resource> multipleResources(Path path) {
         FileResourceIndex resourceIndex = new FileResourceIndex();
-        return copyToUnmodifiableList(resourceIndex.list(path.toString(), ".jar"));
+        return listOf(resourceIndex.list(path.toString(), ".jar"));
     }
 }

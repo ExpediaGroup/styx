@@ -36,7 +36,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Optional;
 
 import static ch.qos.logback.classic.Level.INFO;
-import static com.hotels.styx.common.Collections.unmodifiableSetOf;
+import static com.hotels.styx.common.Collections.setOf;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
@@ -461,8 +461,8 @@ public class OriginsInventoryTest {
         inventory.setOrigins(ORIGIN_1, ORIGIN_2);
         inventory.close();
 
-        verify(monitor).stopMonitoring(eq(unmodifiableSetOf(ORIGIN_1)));
-        verify(monitor).stopMonitoring(eq(unmodifiableSetOf(ORIGIN_2)));
+        verify(monitor).stopMonitoring(eq(setOf(ORIGIN_1)));
+        verify(monitor).stopMonitoring(eq(setOf(ORIGIN_2)));
         assertThat(gaugeValue("origins.generic-app.app-01.status"), isAbsent());
         assertThat(gaugeValue("origins.generic-app.app-02.status"), isAbsent());
 

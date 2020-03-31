@@ -24,8 +24,8 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
-import static com.hotels.styx.common.Collections.copyToUnmodifiableList;
-import static com.hotels.styx.common.Collections.copyToUnmodifiableSet;
+import static com.hotels.styx.common.Collections.listOf;
+import static com.hotels.styx.common.Collections.setOf;
 import static com.hotels.styx.config.schema.SchemaDsl.field;
 import static com.hotels.styx.config.schema.SchemaDsl.list;
 import static com.hotels.styx.config.schema.SchemaDsl.object;
@@ -72,9 +72,9 @@ public class Schema {
 
     private Schema(Builder builder) {
         this.fieldNames = builder.fields.stream().map(Field::name).collect(toList());
-        this.fields = copyToUnmodifiableList(builder.fields);
-        this.optionalFields = copyToUnmodifiableSet(builder.optionalFields);
-        this.constraints = copyToUnmodifiableList(builder.constraints);
+        this.fields = listOf(builder.fields);
+        this.optionalFields = setOf(builder.optionalFields);
+        this.constraints = listOf(builder.constraints);
         this.ignore = builder.pass;
         this.name = builder.name.length() > 0 ? builder.name : String.join(", ", this.fieldNames);
     }
@@ -139,7 +139,7 @@ public class Schema {
     }
 
     private static void assertNoUnknownFields(String prefix, Schema schema, List<String> fieldsPresent) {
-        Set<String> knownFields = copyToUnmodifiableSet(schema.fieldNames());
+        Set<String> knownFields = setOf(schema.fieldNames());
 
         fieldsPresent.forEach(name -> {
             if (!knownFields.contains(name)) {
@@ -435,7 +435,7 @@ public class Schema {
                 }
             });
 
-            assertNoUnknownFields(String.join(".", parents), schema, copyToUnmodifiableList(value.fieldNames()));
+            assertNoUnknownFields(String.join(".", parents), schema, listOf(value.fieldNames()));
         }
 
         @Override

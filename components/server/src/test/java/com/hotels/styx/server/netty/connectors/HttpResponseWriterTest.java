@@ -49,7 +49,7 @@ import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.ResponseCookie.responseCookie;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
-import static com.hotels.styx.common.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.common.Collections.listOf;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static java.net.InetAddress.getLoopbackAddress;
@@ -475,7 +475,7 @@ public class HttpResponseWriterTest {
         }
 
         public List<Object> writeEvents() {
-            return copyToUnmodifiableList(writeEvents);
+            return listOf(writeEvents);
         }
 
     }

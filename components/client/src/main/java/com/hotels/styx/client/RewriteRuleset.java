@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static com.hotels.styx.common.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.common.Collections.listOf;
 
 /**
  * A list of rules that defines how to rewrite the URL in HTTP requests. The rules are tested in order, until a matching
@@ -38,7 +38,7 @@ public class RewriteRuleset {
      * @param rewriteRules rewrite rules
      */
     public RewriteRuleset(List<RewriteRule> rewriteRules) {
-        this.rewriteRules = copyToUnmodifiableList(rewriteRules);
+        this.rewriteRules = listOf(rewriteRules);
     }
 
     /**

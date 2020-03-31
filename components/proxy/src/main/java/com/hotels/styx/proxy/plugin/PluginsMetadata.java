@@ -24,7 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import static com.hotels.styx.common.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.common.Collections.listOf;
 import static com.hotels.styx.common.Pair.pair;
 import static com.hotels.styx.common.Preconditions.checkArgument;
 import static java.util.Arrays.stream;
@@ -48,7 +48,7 @@ public class PluginsMetadata implements Iterable<SpiExtension> {
                 .filter(Strings::isNotEmpty)
                 .collect(toList());
 
-        this.allPluginNames = copyToUnmodifiableList(plugins.keySet());
+        this.allPluginNames = listOf(plugins.keySet());
         this.plugins = plugins;
 
         plugins.forEach((name, metadata) -> {

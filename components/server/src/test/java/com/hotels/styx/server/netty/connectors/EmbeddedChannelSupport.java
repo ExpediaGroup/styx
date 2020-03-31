@@ -27,8 +27,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-import static com.hotels.styx.common.Collections.copyToUnmodifiableList;
-import static com.hotels.styx.common.Collections.unmodifiableListOf;
+import static com.hotels.styx.common.Collections.listOf;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.util.CharsetUtil.UTF_8;
 
@@ -41,7 +40,7 @@ public final class EmbeddedChannelSupport {
     }
 
     public static <T> List<T> toList(Supplier<? extends T> nullTerminatedSupplier) {
-        return copyToUnmodifiableList(() -> new Iterator<T>() {
+        return listOf(() -> new Iterator<T>() {
             boolean updated;
             T current;
 
@@ -79,7 +78,7 @@ public final class EmbeddedChannelSupport {
         private final List<HttpHeader> headers;
 
         private HttpResponseOkMatcher(HttpHeader... headers) {
-            this.headers = unmodifiableListOf(headers);
+            this.headers = listOf(headers);
         }
 
         @Override

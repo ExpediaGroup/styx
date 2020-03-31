@@ -28,8 +28,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import static com.hotels.styx.common.Collections.unmodifiableListOf;
-import static com.hotels.styx.common.Collections.unmodifiableSetOf;
+import static com.hotels.styx.common.Collections.listOf;
+import static com.hotels.styx.common.Collections.setOf;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.DEFAULT_CONNECT_TIMEOUT_MILLIS;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.DEFAULT_MAX_CONNECTIONS_PER_HOST;
@@ -63,12 +63,12 @@ public class ApplicationConfigurationMatcher extends TypeSafeMatcher<BackendServ
     }
 
     public ApplicationConfigurationMatcher withOrigins(Origin... origins) {
-        this.origins = unmodifiableSetOf(origins);
+        this.origins = setOf(origins);
         return this;
     }
 
     public ApplicationConfigurationMatcher withRewrites(RewriteConfig... urlRewrites) {
-        this.rewrites = unmodifiableListOf(urlRewrites);
+        this.rewrites = listOf(urlRewrites);
         return this;
     }
 

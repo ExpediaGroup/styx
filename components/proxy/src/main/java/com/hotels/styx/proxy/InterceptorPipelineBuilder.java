@@ -24,7 +24,7 @@ import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
 
 import java.util.List;
 
-import static com.hotels.styx.common.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.common.Collections.listOf;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
@@ -46,7 +46,7 @@ public class InterceptorPipelineBuilder {
     }
 
     public RoutingObject build() {
-        List<HttpInterceptor> interceptors = copyToUnmodifiableList(instrument(plugins, environment));
+        List<HttpInterceptor> interceptors = listOf(instrument(plugins, environment));
         return new HttpInterceptorPipeline(interceptors, handler, trackRequests);
     }
 

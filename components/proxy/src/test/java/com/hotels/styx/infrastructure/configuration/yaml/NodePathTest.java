@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static com.hotels.styx.common.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.common.Collections.listOf;
 import static com.hotels.styx.support.matchers.IsOptional.isPresent;
 import static com.hotels.styx.support.matchers.IsOptional.matches;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -86,7 +86,7 @@ public class NodePathTest {
     }
 
     private static List<JsonNode> elements(JsonNode node) {
-        return copyToUnmodifiableList(node::elements);
+        return listOf(node::elements);
     }
 
     private static JsonNode parseYaml(String yaml) {

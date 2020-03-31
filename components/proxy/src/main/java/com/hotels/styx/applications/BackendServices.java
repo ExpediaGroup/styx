@@ -17,7 +17,6 @@ package com.hotels.styx.applications;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hotels.styx.common.Collections;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.BackendService;
@@ -28,10 +27,11 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 
-import static com.hotels.styx.common.Collections.copyToUnmodifiableSet;
-import static com.hotels.styx.common.Collections.getFirst;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.service.BackendService.newBackendServiceBuilder;
+import static com.hotels.styx.common.Collections.getFirst;
+import static com.hotels.styx.common.Collections.setOf;
+import static com.hotels.styx.common.Collections.toOrderedSet;
 import static com.hotels.styx.common.Preconditions.checkArgument;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -55,8 +55,7 @@ public final class BackendServices implements Iterable<BackendService> {
         checkArgument(noDuplicateIds(backendServices), "Duplicate ids in " + backendServices);
 
         if (setDerivedAttributes) {
-            // note: ImmutableSet preserves order
-            this.backendServices = copyToUnmodifiableSet(backendServices.stream().map(BackendServices::setDerivedAttributes).collect(toList()));
+            this.backendServices = backendServices.stream().map(BackendServices::setDerivedAttributes).collect(toOrderedSet());
         } else {
             this.backendServices = backendServices;
         }
@@ -75,7 +74,7 @@ public final class BackendServices implements Iterable<BackendService> {
      * @return a new Applications
      */
     public static BackendServices newBackendServices(Iterable<BackendService> applications) {
-        return new BackendServices(copyToUnmodifiableSet(applications), true);
+        return new BackendServices(setOf(applications), true);
     }
 
     /**
@@ -85,7 +84,7 @@ public final class BackendServices implements Iterable<BackendService> {
      * @return a new Applications
      */
     public static BackendServices newBackendServices(BackendService... backendServices) {
-        return new BackendServices(Collections.unmodifiableSetOf(backendServices), true);
+        return new BackendServices(setOf(backendServices), true);
     }
 
     private static BackendService setDerivedAttributes(BackendService application) {
@@ -95,7 +94,7 @@ public final class BackendServices implements Iterable<BackendService> {
     }
 
     private static Set<Origin> originsWithDerivedApplicationIds(BackendService backendService) {
-        return copyToUnmodifiableSet(originsWithApplicationId(backendService));
+        return setOf(originsWithApplicationId(backendService));
     }
 
     private static Iterable<Origin> originsWithApplicationId(BackendService backendService) {

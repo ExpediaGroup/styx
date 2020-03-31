@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hotels.styx.api.configuration.ConfigurationContextResolver.EMPTY_CONFIGURATION_CONTEXT_RESOLVER;
-import static com.hotels.styx.common.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.common.Collections.listOf;
 
 /**
  * Provides a list of interceptors that are required by the Styx HTTP pipeline for core functionality.
@@ -58,6 +58,6 @@ final class BuiltInInterceptors {
         tempList.add(new HopByHopHeadersRemovingInterceptor());
         tempList.add(new RequestEnrichingInterceptor(config.styxHeaderConfig()));
 
-        return copyToUnmodifiableList(tempList);
+        return listOf(tempList);
     }
 }

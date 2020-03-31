@@ -26,8 +26,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
-import static com.hotels.styx.api.Collections.copyToUnmodifiableList;
-import static com.hotels.styx.api.Collections.copyToUnmodifiableSet;
+import static com.hotels.styx.api.Collections.listOf;
+import static com.hotels.styx.api.Collections.setOf;
 import static com.hotels.styx.api.HttpHeader.header;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Locale.US;
@@ -56,7 +56,7 @@ public final class HttpHeaders implements Iterable<HttpHeader> {
      * @return header names
      */
     public Set<String> names() {
-        return copyToUnmodifiableSet(nettyHeaders.names());
+        return setOf(nettyHeaders.names());
     }
 
     /**
@@ -79,7 +79,7 @@ public final class HttpHeaders implements Iterable<HttpHeader> {
      * are found
      */
     public List<String> getAll(CharSequence name) {
-        return copyToUnmodifiableList(nettyHeaders.getAll(name));
+        return listOf(nettyHeaders.getAll(name));
     }
 
     /**

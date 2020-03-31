@@ -51,13 +51,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hotels.styx.common.Collections.copyToUnmodifiableSet;
-import static com.hotels.styx.common.Collections.unmodifiableSetOf;
 import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
 import static com.hotels.styx.client.OriginsInventory.OriginState.ACTIVE;
 import static com.hotels.styx.client.OriginsInventory.OriginState.DISABLED;
 import static com.hotels.styx.client.OriginsInventory.OriginState.INACTIVE;
 import static com.hotels.styx.client.connectionpool.ConnectionPools.simplePoolFactory;
+import static com.hotels.styx.common.Collections.setOf;
 import static com.hotels.styx.common.Preconditions.checkArgument;
 import static com.hotels.styx.common.StyxFutures.await;
 import static java.util.Collections.emptyMap;
@@ -148,7 +147,7 @@ public final class OriginsInventory
 
     @VisibleForTesting
     public void setOrigins(Origin... origins) {
-        setOrigins(unmodifiableSetOf(origins));
+        setOrigins(setOf(origins));
     }
 
     @Override
@@ -529,7 +528,7 @@ public final class OriginsInventory
         }
 
         public Builder initialOrigins(Set<Origin> origins) {
-            this.initialOrigins = copyToUnmodifiableSet(origins);
+            this.initialOrigins = setOf(origins);
             return this;
         }
 

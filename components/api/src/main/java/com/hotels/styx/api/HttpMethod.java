@@ -18,7 +18,7 @@ package com.hotels.styx.api;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hotels.styx.api.Collections.unmodifiableSetOf;
+import static com.hotels.styx.api.Collections.setOf;
 import static java.lang.String.format;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
@@ -37,7 +37,7 @@ public final class HttpMethod {
     public static final HttpMethod TRACE = new HttpMethod("TRACE");
     public static final HttpMethod CONNECT = new HttpMethod("CONNECT");
 
-    public static final Set<HttpMethod> METHODS = unmodifiableSetOf(
+    public static final Set<HttpMethod> METHODS = setOf(
             OPTIONS,
             GET,
             HEAD,

@@ -29,7 +29,7 @@ import java.util.function.Predicate;
 
 import static com.google.common.collect.Maps.difference;
 import static com.google.common.collect.Maps.filterKeys;
-import static com.hotels.styx.api.extension.service.spi.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.api.extension.service.spi.Collections.listOf;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
@@ -90,7 +90,7 @@ public abstract class AbstractRegistry<T extends Identifiable> implements Regist
      * @throws IllegalStateException if the resource constraint is not satisfied
      */
     public void set(Iterable<T> newObjects) throws IllegalStateException {
-        List<T> newSnapshot = copyToUnmodifiableList(newObjects);
+        List<T> newSnapshot = listOf(newObjects);
 
         if (!resourceConstraint.test(newSnapshot)) {
             throw new IllegalStateException("Resource constraint failure");

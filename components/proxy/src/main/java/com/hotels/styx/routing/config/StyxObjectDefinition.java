@@ -22,7 +22,7 @@ import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 
 import java.util.List;
 
-import static com.hotels.styx.common.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.common.Collections.listOf;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 
@@ -39,7 +39,7 @@ public class StyxObjectDefinition implements StyxObjectConfiguration {
     public StyxObjectDefinition(String name, String type, List<String> tags, JsonNode config) {
         this.name = requireNonNull(name);
         this.type = requireNonNull(type);
-        this.tags = copyToUnmodifiableList(tags);
+        this.tags = listOf(tags);
         this.config = requireNonNull(config);
     }
 

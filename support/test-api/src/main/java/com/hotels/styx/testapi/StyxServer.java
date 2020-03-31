@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hotels.styx.common.Collections.unmodifiableSetOf;
+import static com.hotels.styx.common.Collections.setOf;
 import static com.hotels.styx.testapi.ssl.SslTesting.acceptAllSslRequests;
 import static java.util.stream.Collectors.toSet;
 
@@ -231,7 +231,7 @@ public final class StyxServer {
          * @return this builder
          */
         public Builder addRoute(String pathPrefix, Origin... origins) {
-            return addRoute(pathPrefix, unmodifiableSetOf(origins));
+            return addRoute(pathPrefix, setOf(origins));
         }
 
         /**

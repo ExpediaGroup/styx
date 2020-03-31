@@ -21,15 +21,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import static com.hotels.styx.common.Collections.copyToUnmodifiableList;
-import static com.hotels.styx.common.Collections.copyToUnmodifiableSet;
-import static com.hotels.styx.common.Collections.getFirst;
 import static com.hotels.styx.common.Collections.concat;
+import static com.hotels.styx.common.Collections.getFirst;
+import static com.hotels.styx.common.Collections.listOf;
+import static com.hotels.styx.common.Collections.setOf;
 import static com.hotels.styx.common.Collections.size;
 import static com.hotels.styx.common.Collections.transform;
-import static com.hotels.styx.common.Collections.unmodifiableListOf;
-import static com.hotels.styx.common.Collections.unmodifiableSetOf;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyIterator;
 import static java.util.Collections.emptyList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -43,7 +42,7 @@ public class CollectionsTest {
     @Test
     public void iteratorToList() {
         Iterator<Integer> source = asList(1, 2, 3, 4, 5, 6).iterator();
-        List<Integer> list = copyToUnmodifiableList(source);
+        List<Integer> list = listOf(source);
         assertThat(list.size(), equalTo(6));
         assertThat(list, contains(1, 2, 3, 4, 5, 6));
         assertThrows(UnsupportedOperationException.class, () -> {
@@ -55,14 +54,14 @@ public class CollectionsTest {
     public void iteratorToListDisallowsNulls() {
         Iterator<String> source = asList("1", "2", "3", null, "5", "6").iterator();
         assertThrows(NullPointerException.class, () -> {
-            copyToUnmodifiableList(source);
+            listOf(source);
         });
     }
 
     @Test
     public void iterableToList() {
         Iterable<Integer> source = asList(1, 2, 3, 4, 5, 6);
-        List<Integer> list = copyToUnmodifiableList(source);
+        List<Integer> list = listOf(source);
         ((List<Integer>) source).set(3, 100);
 
         assertThat(list.size(), equalTo(6));
@@ -76,14 +75,14 @@ public class CollectionsTest {
     public void iterableToListDisallowsNulls() {
         Iterable<String> source = asList("1", "2", "3", null, "5", "6");
         assertThrows(NullPointerException.class, () -> {
-            copyToUnmodifiableList(source);
+            listOf(source);
         });
     }
 
     @Test
     public void arrayToList() {
         Integer[] source = new Integer[] {1, 2, 3, 4, 5, 6};
-        List<Integer> list = unmodifiableListOf(source);
+        List<Integer> list = listOf(source);
         source[3] = 100;
 
         assertThat(list.size(), equalTo(6));
@@ -97,14 +96,14 @@ public class CollectionsTest {
     public void arrayToListDisallowsNulls() {
         Integer[] source = new Integer[] {1, 2, 3, null, 5, 6};
         assertThrows(NullPointerException.class, () -> {
-            unmodifiableListOf(source);
+            listOf(source);
         });
     }
 
     @Test
     public void iteratorToSet() {
         Iterator<Integer> source = asList(1, 2, 3, 4, 5, 6).iterator();
-        Set<Integer> set = copyToUnmodifiableSet(source);
+        Set<Integer> set = setOf(source);
         assertThat(set.size(), equalTo(6));
         assertThat(set, contains(1, 2, 3, 4, 5, 6)); // note - in order
         assertThrows(UnsupportedOperationException.class, () -> {
@@ -116,14 +115,14 @@ public class CollectionsTest {
     public void iteratorToSetDisallowsNulls() {
         Iterator<String> source = asList("1", "2", "3", null, "5", "6").iterator();
         assertThrows(NullPointerException.class, () -> {
-            copyToUnmodifiableSet(source);
+            setOf(source);
         });
     }
 
     @Test
     public void iterableToSet() {
         Iterable<Integer> source = asList(1, 2, 3, 4, 5, 6);
-        Set<Integer> set = copyToUnmodifiableSet(source);
+        Set<Integer> set = setOf(source);
         ((List<Integer>) source).set(3, 100);
 
         assertThat(set.size(), equalTo(6));
@@ -137,14 +136,14 @@ public class CollectionsTest {
     public void iterableToSetDisallowsNulls() {
         Iterable<String> source = asList("1", "2", "3", null, "5", "6");
         assertThrows(NullPointerException.class, () -> {
-            copyToUnmodifiableSet(source);
+            setOf(source);
         });
     }
 
     @Test
     public void arrayToSet() {
         Integer[] source = new Integer[] {1, 2, 3, 4, 5, 6};
-        Set<Integer> set = unmodifiableSetOf(source);
+        Set<Integer> set = setOf(source);
         source[3] = 100;
 
         assertThat(set.size(), equalTo(6));
@@ -158,7 +157,7 @@ public class CollectionsTest {
     public void arrayToSetDisallowsNulls() {
         Integer[] source = new Integer[] {1, 2, 3, null, 5, 6};
         assertThrows(NullPointerException.class, () -> {
-            unmodifiableSetOf(source);
+            setOf(source);
         });
     }
 
@@ -200,7 +199,7 @@ public class CollectionsTest {
     @Test
     public void iteratorGetFirst() {
         assertThat(getFirst(asList(1, 2, 3, 4, 5, 6).iterator(), 10), equalTo(1));
-        assertThat(getFirst(emptyList().iterator(), 10), equalTo(10));
+        assertThat(getFirst(emptyIterator(), 10), equalTo(10));
     }
 
     @Test
@@ -219,7 +218,7 @@ public class CollectionsTest {
         assertTrue(iter2.hasNext());
         assertTrue(iter3.hasNext());
         assertTrue(concat.hasNext());
-        List<Integer> iterated = copyToUnmodifiableList(concat);
+        List<Integer> iterated = listOf(concat);
         assertFalse(iter1.hasNext());
         assertFalse(iter2.hasNext());
         assertFalse(iter3.hasNext());
@@ -232,7 +231,7 @@ public class CollectionsTest {
         Iterable<Integer> iter1 = asList(1, 2, 3);
         Iterable<Integer> iter2 = asList(4, 5);
         Iterable<Integer> concat = concat(iter1, iter2);
-        List<Integer> iterated = copyToUnmodifiableList(concat);
+        List<Integer> iterated = listOf(concat);
         assertThat(iterated, contains(1, 2, 3, 4, 5));
     }
 
@@ -240,10 +239,10 @@ public class CollectionsTest {
     public void iterableTransform() {
         Iterable<Integer> source = asList(1, 2, 3, 4, 5);
         Iterable<Integer> doubled = transform(source, i -> i * 2);
-        List<Integer> iterated = copyToUnmodifiableList(doubled);
+        List<Integer> iterated = listOf(doubled);
 
         ((List<Integer>) source).set(3, 10);
-        List<Integer> iterated2 = copyToUnmodifiableList(doubled);
+        List<Integer> iterated2 = listOf(doubled);
 
         assertThat(iterated, contains(2, 4, 6, 8, 10));
         assertThat(iterated2, contains(2, 4, 6, 20, 10));

@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.hotels.styx.common.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.common.Collections.listOf;
 
 /**
  * Traverse JSON trees.
@@ -39,7 +39,7 @@ class JsonTreeTraversal {
 
     private static void traverseJsonTree(JsonNode node, ContainerNode<?> parent, List<PathElement> path, JsonTreeVisitor visitor) {
         if (node.isValueNode()) {
-            visitor.onValueNode((ValueNode) node, Optional.of(parent), copyToUnmodifiableList(path));
+            visitor.onValueNode((ValueNode) node, Optional.of(parent), listOf(path));
         } else if (node.isArray()) {
             Iterable<JsonNode> elements = node::elements;
             int index = 0;

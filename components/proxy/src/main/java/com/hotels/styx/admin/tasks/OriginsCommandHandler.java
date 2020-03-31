@@ -38,7 +38,7 @@ import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.TEMPORARY_REDIRECT;
 import static com.hotels.styx.api.Id.id;
-import static com.hotels.styx.common.Collections.unmodifiableListOf;
+import static com.hotels.styx.common.Collections.listOf;
 import static com.hotels.styx.common.Strings.isNullOrEmpty;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -49,7 +49,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class OriginsCommandHandler extends BaseHttpHandler implements OriginsChangeListener {
     private static final String INVALID_APP_ID_FORMAT = "application with id=%s is not found";
     private static final String INVALID_ORIGIN_ID_FORMAT = "origin with id=%s is not found for application=%s";
-    private static final List<String> VALID_COMMANDS = unmodifiableListOf("enable_origin", "disable_origin");
+    private static final List<String> VALID_COMMANDS = listOf("enable_origin", "disable_origin");
     private static final String MISSING_ERROR_MESSAGE = format("cmd, appId and originId are all required parameters. cmd can be %s", String.join("|", VALID_COMMANDS));
 
     private final EventBus eventBus;

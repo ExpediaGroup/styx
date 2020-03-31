@@ -43,7 +43,7 @@ import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.HttpResponseStatus.NO_CONTENT;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
-import static com.hotels.styx.common.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.common.Collections.listOf;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.joining;
@@ -110,7 +110,7 @@ public class ServiceProviderHandler implements WebServiceHandler {
     }
 
     private static String serialise(String name, StyxObjectRecord<StyxService> record) {
-        List<String> tags = copyToUnmodifiableList(record.getTags());
+        List<String> tags = listOf(record.getTags());
         StyxObjectDefinition objectDef =
                 new StyxObjectDefinition(name, record.getType(), tags, record.getConfig());
 

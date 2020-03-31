@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hotels.styx.common.Collections.copyToUnmodifiableSet;
+import static com.hotels.styx.common.Collections.setOf;
 import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
@@ -84,7 +84,7 @@ public class MemoryBackedRegistry<T extends Identifiable> extends AbstractRegist
 
     @Override
     public CompletableFuture<ReloadResult> reload() {
-        set(copyToUnmodifiableSet(resources.values()));
+        set(setOf(resources.values()));
         return completedFuture(reloaded("changed"));
     }
 }

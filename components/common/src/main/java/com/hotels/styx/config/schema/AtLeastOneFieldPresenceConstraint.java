@@ -20,7 +20,7 @@ import com.hotels.styx.common.Collections;
 
 import java.util.Set;
 
-import static com.hotels.styx.common.Collections.unmodifiableSetOf;
+import static com.hotels.styx.common.Collections.setOf;
 import static java.lang.String.format;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
@@ -33,7 +33,7 @@ class AtLeastOneFieldPresenceConstraint implements Constraint {
     private final String description;
 
     AtLeastOneFieldPresenceConstraint(String... fieldNames) {
-        this.fieldNames = unmodifiableSetOf(fieldNames);
+        this.fieldNames = setOf(fieldNames);
         this.description = description(fieldNames);
     }
 

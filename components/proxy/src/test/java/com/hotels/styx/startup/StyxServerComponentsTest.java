@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hotels.styx.api.HttpResponse.response;
-import static com.hotels.styx.common.Collections.unmodifiableListOf;
+import static com.hotels.styx.common.Collections.listOf;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
@@ -64,7 +64,7 @@ public class StyxServerComponentsTest {
 
         StyxServerComponents components = new StyxServerComponents.Builder()
                 .styxConfig(new StyxConfig())
-                .pluginFactories(unmodifiableListOf(f1, f2))
+                .pluginFactories(listOf(f1, f2))
                 .build();
 
         List<NamedPlugin> plugins = components.plugins();

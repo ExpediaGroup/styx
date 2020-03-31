@@ -19,15 +19,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import static com.hotels.styx.common.Collections.copyToUnmodifiableList;
-import static com.hotels.styx.common.Collections.unmodifiableListOf;
+import static com.hotels.styx.common.Collections.listOf;
 import static com.hotels.styx.common.Strings.isNotEmpty;
 import static com.hotels.styx.common.io.ResourceFactory.newResource;
+import static java.util.Collections.emptyList;
 import static java.util.Objects.hash;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
@@ -181,8 +180,8 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
         private String certificateKeyFile;
         private long sessionTimeoutMillis = 300_000;
         private long sessionCacheSize;
-        private List<String> cipherSuites = Collections.emptyList();
-        private List<String> protocols = Collections.emptyList();
+        private List<String> cipherSuites = emptyList();
+        private List<String> protocols = emptyList();
 
         @JsonProperty("port")
         public Builder port(int port) {
@@ -206,7 +205,7 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
         }
 
         public Builder cipherSuites(List<String> cipherSuites) {
-            this.cipherSuites = copyToUnmodifiableList(requireNonNull(cipherSuites));
+            this.cipherSuites = listOf(requireNonNull(cipherSuites));
             return this;
         }
 
@@ -221,7 +220,7 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
         }
 
         public Builder protocols(String... protocols) {
-            this.protocols = unmodifiableListOf(protocols);
+            this.protocols = listOf(protocols);
             return this;
         }
 

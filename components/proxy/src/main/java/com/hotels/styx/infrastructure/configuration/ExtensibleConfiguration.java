@@ -20,7 +20,7 @@ import com.hotels.styx.api.configuration.Configuration;
 import java.util.Collection;
 import java.util.Map;
 
-import static com.hotels.styx.common.Collections.copyToUnmodifiableList;
+import static com.hotels.styx.common.Collections.listOf;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -66,7 +66,7 @@ public interface ExtensibleConfiguration<C extends ExtensibleConfiguration<C>> e
 
         public PlaceholderResolutionResult(C resolvedConfiguration, Collection<UnresolvedPlaceholder> unresolvedPlaceholders) {
             this.resolvedConfiguration = requireNonNull(resolvedConfiguration);
-            this.unresolvedPlaceholders = copyToUnmodifiableList(unresolvedPlaceholders);
+            this.unresolvedPlaceholders = listOf(unresolvedPlaceholders);
         }
 
         /**

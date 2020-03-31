@@ -46,7 +46,7 @@ import static com.hotels.styx.api.extension.service.spi.Registry.Outcome.FAILED;
 import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.failed;
 import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded;
 import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.unchanged;
-import static com.hotels.styx.common.Collections.unmodifiableListOf;
+import static com.hotels.styx.common.Collections.listOf;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
@@ -406,7 +406,7 @@ public class FileBackedBackendServicesRegistryTest {
 
     @Test
     public void constraintAcceptsDistinctPaths() {
-        Collection<BackendService> backendServices = unmodifiableListOf(
+        Collection<BackendService> backendServices = listOf(
                 new BackendService.Builder()
                         .path("/foo")
                         .build(),
@@ -420,7 +420,7 @@ public class FileBackedBackendServicesRegistryTest {
 
     @Test
     public void constraintRejectsDuplicatePaths() {
-        Collection<BackendService> backendServices = unmodifiableListOf(
+        Collection<BackendService> backendServices = listOf(
                 new BackendService.Builder()
                         .id("app-a")
                         .path("/foo")
@@ -441,7 +441,7 @@ public class FileBackedBackendServicesRegistryTest {
 
     @Test
     public void constraintRejectsAndLogsMultipleDuplicatePaths() {
-        Collection<BackendService> backendServices = unmodifiableListOf(
+        Collection<BackendService> backendServices = listOf(
                 new BackendService.Builder()
                         .id("app-a")
                         .path("/foo")

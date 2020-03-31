@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 import static com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.hotels.styx.admin.handlers.UrlPatternRouter.placeholders;
-import static com.hotels.styx.common.Collections.copyToUnmodifiableSet;
+import static com.hotels.styx.common.Collections.setOf;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.CREATED;
@@ -95,7 +95,7 @@ public class RoutingObjectHandler implements WebServiceHandler {
                         StyxObjectDefinition payload = YAML_MAPPER.readValue(body, StyxObjectDefinition.class);
                         RoutingMetadataDecorator decorator = new RoutingMetadataDecorator(Builtins.build(singletonList(name), routingObjectFactoryContext, payload));
 
-                        routeDatabase.insert(name, new RoutingObjectRecord(payload.type(), copyToUnmodifiableSet(payload.tags()), payload.config(), decorator))
+                        routeDatabase.insert(name, new RoutingObjectRecord(payload.type(), setOf(payload.tags()), payload.config(), decorator))
                                 .ifPresent(previous -> previous.getRoutingObject().stop());
 
                         return Eventual.of(response(CREATED).build());
