@@ -41,10 +41,10 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.common.Collections.listOf;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.server.netty.NettyServerBuilder.newBuilder;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -78,7 +78,7 @@ public class StyxProxyTest extends SSLSetup {
                 .bossExecutor(NettyExecutor.create("Test-Server-Boss", 1))
                 .workerExecutor(NettyExecutor.create("Test-Server-Worker", 0))
                 .handler(new HttpInterceptorPipeline(
-                        singletonList(echoInterceptor),
+                        listOf(echoInterceptor),
                         (request, context) -> new HttpAggregator(new StandardHttpRouter()).handle(request, context),
                         false))
                 .build();

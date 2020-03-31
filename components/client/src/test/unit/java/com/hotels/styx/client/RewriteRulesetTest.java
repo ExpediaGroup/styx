@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,9 +22,9 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static com.hotels.styx.common.Collections.listOf;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -61,7 +61,7 @@ public class RewriteRulesetTest {
 
     @Test
     public void returnsReplacementStringWhenItDoesNotReferToCaptureGroups() {
-        List<RewriteRule> config = singletonList(new RewriteConfig("/sp/(.*)", "/constant/replacement"));
+        List<RewriteRule> config = listOf(new RewriteConfig("/sp/(.*)", "/constant/replacement"));
 
         RewriteRuleset rewriter = new RewriteRuleset(config);
         assertThat(rewriter.rewrite(requestWithUrl("/sp/foo/bar/path")).path(), is("/constant/replacement"));
@@ -69,7 +69,7 @@ public class RewriteRulesetTest {
 
     @Test
     public void handlesPlaceholderLookalikesInNonCapturedParts() {
-        List<RewriteRule> config = singletonList(new RewriteConfig("/sp/(.*)/\\$1/(.*)", "/$2/$1"));
+        List<RewriteRule> config = listOf(new RewriteConfig("/sp/(.*)/\\$1/(.*)", "/$2/$1"));
 
         RewriteRuleset rewriter = new RewriteRuleset(config);
         assertThat(rewriter.rewrite(requestWithUrl("/sp/foo/$1/bar")).path(), is("/bar/foo"));

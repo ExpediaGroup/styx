@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -34,8 +34,7 @@ import static com.hotels.styx.client.applications.OriginStats.REQUEST_FAILURE;
 import static com.hotels.styx.client.applications.OriginStats.REQUEST_SUCCESS;
 import static com.hotels.styx.client.netty.MetricsSupport.IsNotUpdated.hasNotReceivedUpdatesExcept;
 import static com.hotels.styx.client.netty.MetricsSupport.name;
-import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
+import static com.hotels.styx.common.Collections.listOf;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -50,8 +49,8 @@ public class OriginMetricsTest {
     private ApplicationMetrics appMetrics;
     private OriginMetrics originMetrics;
 
-    public static final List<String> APP_METRIC_PREFIX = singletonList("test-id");
-    public static final List<String> ORIGIN_METRIC_PREFIX = asList("test-id", "h1");
+    public static final List<String> APP_METRIC_PREFIX = listOf("test-id");
+    public static final List<String> ORIGIN_METRIC_PREFIX = listOf("test-id", "h1");
     private final StubClock clock;
 
     public OriginMetricsTest() {
@@ -135,10 +134,10 @@ public class OriginMetricsTest {
         Meter meter = rootMetricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_SUCCESS));
         assertThat(meter.getCount(), is(5L));
 
-        meter = rootMetricRegistry.meter(name(asList("test-id", "h1"), REQUEST_SUCCESS));
+        meter = rootMetricRegistry.meter(name(listOf("test-id", "h1"), REQUEST_SUCCESS));
         assertThat(meter.getCount(), is(2L));
 
-        meter = rootMetricRegistry.meter(name(asList("test-id", "h2"), REQUEST_SUCCESS));
+        meter = rootMetricRegistry.meter(name(listOf("test-id", "h2"), REQUEST_SUCCESS));
         assertThat(meter.getCount(), is(3L));
     }
 
@@ -179,10 +178,10 @@ public class OriginMetricsTest {
         Meter meter = rootMetricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_FAILURE));
         assertThat(meter.getCount(), is(5L));
 
-        meter = rootMetricRegistry.meter(name(asList("test-id", "h1"), REQUEST_FAILURE));
+        meter = rootMetricRegistry.meter(name(listOf("test-id", "h1"), REQUEST_FAILURE));
         assertThat(meter.getCount(), is(2L));
 
-        meter = rootMetricRegistry.meter(name(asList("test-id", "h2"), REQUEST_FAILURE));
+        meter = rootMetricRegistry.meter(name(listOf("test-id", "h2"), REQUEST_FAILURE));
         assertThat(meter.getCount(), is(3L));
     }
 

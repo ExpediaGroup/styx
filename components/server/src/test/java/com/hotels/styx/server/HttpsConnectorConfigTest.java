@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static java.util.Collections.singletonList;
+import static com.hotels.styx.common.Collections.listOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.core.Is.is;
@@ -72,8 +72,8 @@ public class HttpsConnectorConfigTest {
         protocols[0] = "TLSv1.1";
         cipherSuites.add("A2");
 
-        assertThat(connector1.protocols(), equalTo(singletonList("TLSv1.2")));
-        assertThat(connector1.ciphers(), equalTo(singletonList("A1")));
+        assertThat(connector1.protocols(), equalTo(listOf("TLSv1.2")));
+        assertThat(connector1.ciphers(), equalTo(listOf("A1")));
     }
 
 

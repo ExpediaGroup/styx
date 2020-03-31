@@ -28,10 +28,10 @@ import java.util.List;
 import java.util.Set;
 
 import static com.github.tomakehurst.wiremock.http.HttpHeader.httpHeader;
+import static com.hotels.styx.common.Collections.listOf;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpHeaderNames.HOST;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
@@ -101,7 +101,7 @@ public class WiremockStyxRequestAdapter implements Request {
     @Override
     public QueryParameter queryParameter(String key) {
         return styxRequest.queryParam(key)
-                .map(value -> new QueryParameter(key, singletonList(value)))
+                .map(value -> new QueryParameter(key, listOf(value)))
                 .orElseGet(() -> QueryParameter.absent(key));
     }
 

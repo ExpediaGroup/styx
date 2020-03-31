@@ -47,6 +47,7 @@ import static com.hotels.styx.client.applications.OriginStats.REQUEST_FAILURE;
 import static com.hotels.styx.client.applications.OriginStats.REQUEST_SUCCESS;
 import static com.hotels.styx.client.netty.MetricsSupport.IsNotUpdated.hasNotReceivedUpdatesExcept;
 import static com.hotels.styx.client.netty.MetricsSupport.name;
+import static com.hotels.styx.common.Collections.listOf;
 import static com.hotels.styx.support.netty.HttpMessageSupport.httpRequest;
 import static com.hotels.styx.support.netty.HttpMessageSupport.httpResponseAsBuf;
 import static io.netty.handler.codec.http.HttpMethod.GET;
@@ -56,8 +57,6 @@ import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERR
 import static io.netty.handler.codec.http.HttpResponseStatus.MOVED_PERMANENTLY;
 import static io.netty.handler.codec.http.HttpResponseStatus.NOT_IMPLEMENTED;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -66,8 +65,8 @@ import static org.mockito.Mockito.when;
 
 public class RequestsToOriginMetricsCollectorTest {
 
-    private static final List<String> APP_METRIC_PREFIX = singletonList("MyApp");
-    private static final List<String> ORIGIN_METRIC_PREFIX = asList("MyApp", "h1");
+    private static final List<String> APP_METRIC_PREFIX = listOf("MyApp");
+    private static final List<String> ORIGIN_METRIC_PREFIX = listOf("MyApp", "h1");
 
     private final Id appId;
     private final Origin origin;

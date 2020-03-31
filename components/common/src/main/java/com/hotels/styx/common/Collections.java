@@ -29,6 +29,9 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static java.util.Collections.emptyIterator;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
+import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.Objects.requireNonNull;
@@ -55,6 +58,11 @@ public final class Collections {
 
     @SafeVarargs
     public static <T> List<T> listOf(T... elements) {
+        if (elements.length == 0) {
+            return emptyList();
+        } else if (elements.length == 1) {
+            return singletonList(elements[0]);
+        }
         return unmodifiableList(Arrays.stream(elements).map(Objects::requireNonNull).collect(toList()));
     }
 
@@ -68,6 +76,9 @@ public final class Collections {
 
     @SafeVarargs
     public static <T> Set<T> setOf(T... elements) {
+        if (elements.length == 0) {
+            return emptySet();
+        }
         return unmodifiableSet(Arrays.stream(elements).map(Objects::requireNonNull).collect(toOrderedSet()));
     }
 

@@ -25,9 +25,9 @@ import java.util.Map;
 
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.RequestCookie.requestCookie;
+import static com.hotels.styx.common.Collections.listOf;
 import static com.hotels.styx.support.Support.requestContext;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.matchesPattern;
@@ -70,8 +70,8 @@ public class FunctionResolverTest {
                 .cookies(requestCookie("lang", "en_US|en-us_hotels_com"))
                 .build();
 
-        assertThat(functionResolver.resolveFunction("header", singletonList("Host")).call(request, context), is("www.hotels.com"));
-        assertThat(functionResolver.resolveFunction("cookie", singletonList("lang")).call(request, context), is("en_US|en-us_hotels_com"));
+        assertThat(functionResolver.resolveFunction("header", listOf("Host")).call(request, context), is("www.hotels.com"));
+        assertThat(functionResolver.resolveFunction("cookie", listOf("lang")).call(request, context), is("en_US|en-us_hotels_com"));
     }
 
     @Test
@@ -82,7 +82,7 @@ public class FunctionResolverTest {
                 .build();
 
         Exception e = assertThrows(DslFunctionResolutionError.class,
-                () -> functionResolver.resolveFunction("foobar", singletonList("barfoo")).call(request, context));
+                () -> functionResolver.resolveFunction("foobar", listOf("barfoo")).call(request, context));
         assertThat(e.getMessage(), matchesPattern("No such function=\\[foobar\\], with n=\\[1\\] arguments=\\[barfoo\\]"));
     }
 }

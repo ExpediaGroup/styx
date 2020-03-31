@@ -26,8 +26,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.service.spi.AbstractRegistryTest.IdObject.idObject;
-import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
+import static com.hotels.styx.api.extension.service.spi.Collections.listOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.any;
@@ -49,7 +48,7 @@ public class AbstractRegistryTest {
         registry.addListener(listener1);
         registry.addListener(listener2);
 
-        registry.set(asList(idObject("a", "1"), idObject("b", "2")));
+        registry.set(listOf(idObject("a", "1"), idObject("b", "2")));
 
         Registry.Changes<IdObject> changes = changeSet()
                 .added(idObject("a", "1"), idObject("b", "2"))
@@ -62,7 +61,7 @@ public class AbstractRegistryTest {
     @Test
     public void notifiesNewListenersImmediately() {
         TestRegistry registry = new TestRegistry();
-        registry.set(asList(idObject("a", "1"), idObject("b", "2")));
+        registry.set(listOf(idObject("a", "1"), idObject("b", "2")));
 
         AbstractRegistry.ChangeListener<IdObject> listener1 = mock(AbstractRegistry.ChangeListener.class);
         registry.addListener(listener1);
@@ -81,9 +80,9 @@ public class AbstractRegistryTest {
         AbstractRegistry.ChangeListener<IdObject> listener1 = mock(AbstractRegistry.ChangeListener.class);
         registry.addListener(listener1);
 
-        registry.set(singletonList(idObject("a", "1")));
+        registry.set(listOf(idObject("a", "1")));
 
-        registry.set(asList(idObject("a", "2"), idObject("b", "2")));
+        registry.set(listOf(idObject("a", "2"), idObject("b", "2")));
         verify(listener1).onChange(eq(changeSet()
                 .added(idObject("b", "2"))
                 .updated(idObject("a", "2"))
@@ -98,11 +97,11 @@ public class AbstractRegistryTest {
         registry.addListener(listener1);
         verify(listener1).onChange(any(Registry.Changes.class));
 
-        registry.set(asList(idObject("a", "1"), idObject("b", "2")));
+        registry.set(listOf(idObject("a", "1"), idObject("b", "2")));
         verify(listener1, times(2)).onChange(any(Registry.Changes.class));
 
         // Does not change:
-        registry.set(asList(idObject("a", "1"), idObject("b", "2")));
+        registry.set(listOf(idObject("a", "1"), idObject("b", "2")));
         verifyNoMoreInteractions(listener1);
     }
 
@@ -115,9 +114,9 @@ public class AbstractRegistryTest {
         registry.addListener(listener1);
         registry.addListener(listener2);
 
-        registry.set(asList(idObject("a", "1"), idObject("b", "2")));
+        registry.set(listOf(idObject("a", "1"), idObject("b", "2")));
 
-        registry.set(singletonList(idObject("a", "1")));
+        registry.set(listOf(idObject("a", "1")));
 
         verify(listener1).onChange(changeSet().removed(idObject("b", "2")).build());
         verify(listener2).onChange(changeSet().removed(idObject("b", "2")).build());
@@ -133,14 +132,14 @@ public class AbstractRegistryTest {
         registry.addListener(listener1);
         registry.addListener(listener2);
 
-        registry.set(asList(idObject("a", "1"), idObject("b", "2")));
+        registry.set(listOf(idObject("a", "1"), idObject("b", "2")));
 
         verify(listener1).onChange(changeSet().added(idObject("a", "1"), idObject("b", "2")).build());
         verify(listener2).onChange(changeSet().added(idObject("a", "1"), idObject("b", "2")).build());
 
         registry.removeListener(listener2);
 
-        registry.set(singletonList(idObject("a", "1")));
+        registry.set(listOf(idObject("a", "1")));
         verify(listener1).onChange(changeSet().removed(idObject("b", "2")).build());
         verify(listener2, never()).onChange(changeSet().removed(idObject("b", "2")).build());
 
@@ -148,8 +147,8 @@ public class AbstractRegistryTest {
 
     @Test
     public void calculatesTheDifferenceBetweenCurrentAndNewResources() {
-        Iterable<BackendService> newResources = singletonList(backendService("one", 9090));
-        Iterable<BackendService> currentResources = singletonList(backendService("two", 9091));
+        Iterable<BackendService> newResources = listOf(backendService("one", 9090));
+        Iterable<BackendService> currentResources = listOf(backendService("two", 9091));
         Registry.Changes<Identifiable> expected = new Registry.Changes.Builder<>()
                 .added(backendService("one", 9090))
                 .removed(backendService("two", 9091))

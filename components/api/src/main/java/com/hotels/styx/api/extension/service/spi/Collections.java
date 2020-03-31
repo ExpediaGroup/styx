@@ -25,6 +25,8 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static java.util.Collections.emptyIterator;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
@@ -37,6 +39,11 @@ class Collections {
 
     @SafeVarargs
     static <T> List<T> listOf(T... elements) {
+        if (elements.length == 0) {
+            return emptyList();
+        } else if (elements.length == 1) {
+            return singletonList(elements[0]);
+        }
         return unmodifiableList(Arrays.stream(elements).map(Objects::requireNonNull).collect(toList()));
     }
 

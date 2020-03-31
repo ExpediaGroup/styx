@@ -27,11 +27,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static com.hotels.styx.api.extension.service.Certificate.certificate;
 import static com.hotels.styx.common.Collections.listOf;
 import static com.hotels.styx.common.Collections.setOf;
-import static com.hotels.styx.api.extension.service.Certificate.certificate;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
-import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
@@ -55,8 +54,8 @@ public class TlsSettingsTest {
                 .trustAllCerts(true)
                 .sslProvider("JDK")
                 .trustStorePassword("bar")
-                .protocols(singletonList("TLSv1.2"))
-                .cipherSuites(singletonList("TLS_RSA_WITH_AES_128_CBC_SHA"))
+                .protocols(listOf("TLSv1.2"))
+                .cipherSuites(listOf("TLS_RSA_WITH_AES_128_CBC_SHA"))
                 .sendSni(false)
                 .sniHost("some.sni.host")
                 .build();
@@ -245,8 +244,8 @@ public class TlsSettingsTest {
         cipherSuites.add("y");
         certificates[0] = certificate("y", "y");
 
-        assertThat(tlsSettings.protocols(), equalTo(singletonList("TLSv1")));
-        assertThat(tlsSettings.cipherSuites(), equalTo(singletonList("x")));
+        assertThat(tlsSettings.protocols(), equalTo(listOf("TLSv1")));
+        assertThat(tlsSettings.cipherSuites(), equalTo(listOf("x")));
         assertThat(tlsSettings.additionalCerts(), equalTo(setOf(certificate("x", "x"))));
     }
 }

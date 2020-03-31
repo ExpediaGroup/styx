@@ -26,6 +26,7 @@ import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancerFactory;
 import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicyFactory;
+import com.hotels.styx.common.Collections;
 import com.hotels.styx.common.Pair;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.spi.config.ServiceFactoryConfig;
@@ -33,7 +34,6 @@ import com.hotels.styx.spi.config.SpiExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -160,7 +160,7 @@ public final class ServiceProvision {
         return jsonNodeConfig.get(name, SpiExtension.class)
                 .filter(SpiExtension::enabled)
                 .map(extension -> loadSpiExtension(extension, environment, serviceClass))
-                .map(service -> Collections.<Pair<String, ? extends U>>singletonList(pair(name, service)))
+                .map(service -> Collections.<Pair<String, ? extends U>>listOf(pair(name, service)))
                 .orElse(emptyList())
                 .stream();
     }
@@ -186,7 +186,7 @@ public final class ServiceProvision {
         return jsonNodeConfig.get(name, ServiceFactoryConfig.class)
                 .filter(ServiceFactoryConfig::enabled)
                 .map(serviceFactoryConfig -> loadServiceFactory(serviceFactoryConfig, environment, serviceClass))
-                .map(service -> Collections.<Pair<String, ? extends U>>singletonList(pair(name, service)))
+                .map(service -> Collections.<Pair<String, ? extends U>>listOf(pair(name, service)))
                 .orElse(emptyList()).stream();
     }
 

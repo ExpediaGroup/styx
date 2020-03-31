@@ -41,15 +41,15 @@ import java.util.stream.Collectors;
 import static com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.hotels.styx.admin.handlers.UrlPatternRouter.placeholders;
-import static com.hotels.styx.common.Collections.setOf;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.CREATED;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.common.Collections.listOf;
+import static com.hotels.styx.common.Collections.setOf;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Collections.singletonList;
 
 /**
  * Provides admin interface access to Styx routing configuration.
@@ -93,7 +93,7 @@ public class RoutingObjectHandler implements WebServiceHandler {
 
                     try {
                         StyxObjectDefinition payload = YAML_MAPPER.readValue(body, StyxObjectDefinition.class);
-                        RoutingMetadataDecorator decorator = new RoutingMetadataDecorator(Builtins.build(singletonList(name), routingObjectFactoryContext, payload));
+                        RoutingMetadataDecorator decorator = new RoutingMetadataDecorator(Builtins.build(listOf(name), routingObjectFactoryContext, payload));
 
                         routeDatabase.insert(name, new RoutingObjectRecord(payload.type(), setOf(payload.tags()), payload.config(), decorator))
                                 .ifPresent(previous -> previous.getRoutingObject().stop());

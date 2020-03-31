@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -26,9 +26,9 @@ import reactor.test.StepVerifier;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static com.hotels.styx.api.Collections.listOf;
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
-import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpMethod.DELETE;
 import static com.hotels.styx.api.HttpMethod.GET;
@@ -46,8 +46,6 @@ import static com.hotels.styx.support.matchers.MapMatcher.isMap;
 import static java.lang.String.valueOf;
 import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -306,8 +304,8 @@ public class HttpRequestTest {
         assertThat(req.queryParamNames(), containsInAnyOrder("foo", "abc"));
 
         assertThat(req.queryParams(), isMap(ImmutableMap.of(
-                "foo", asList("bar", "hello"),
-                "abc", singletonList("def")
+                "foo", listOf("bar", "hello"),
+                "abc", listOf("def")
         )));
     }
 

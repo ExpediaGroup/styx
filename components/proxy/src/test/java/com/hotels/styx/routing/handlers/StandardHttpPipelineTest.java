@@ -34,12 +34,12 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
+import static com.hotels.styx.common.Collections.listOf;
+import static com.hotels.styx.support.Support.requestContext;
 import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
@@ -174,7 +174,7 @@ public class StandardHttpPipelineTest {
     public void sendsExceptionUponExtraSubscriptionInsideInterceptor(HttpInterceptor interceptor) throws Exception {
         HttpHandler handler = (request, context) -> Eventual.of(response(OK).build());
 
-        List<HttpInterceptor> interceptors = singletonList(interceptor);
+        List<HttpInterceptor> interceptors = listOf(interceptor);
         StandardHttpPipeline pipeline = new StandardHttpPipeline(interceptors, handler, RequestTracker.NO_OP);
 
         Eventual<LiveHttpResponse> responseObservable = pipeline.handle(get("/").build(), requestContext());

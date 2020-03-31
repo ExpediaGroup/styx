@@ -17,8 +17,7 @@ package com.hotels.styx.common.format;
 
 import org.junit.jupiter.api.Test;
 
-import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
+import static com.hotels.styx.common.Collections.listOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -29,7 +28,7 @@ import static org.hamcrest.core.StringEndsWith.endsWith;
 class ThrowableSanitiserTest {
 
     SanitisedHttpHeaderFormatter formatter = new SanitisedHttpHeaderFormatter(
-            emptyList(), asList("secret-cookie", "private-cookie")
+            listOf(), listOf("secret-cookie", "private-cookie")
     );
 
     static Exception throwAndReturn(Exception ex) {

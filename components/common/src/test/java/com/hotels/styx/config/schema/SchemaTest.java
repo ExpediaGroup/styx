@@ -28,6 +28,7 @@ import java.util.function.Function;
 
 import static com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
+import static com.hotels.styx.common.Collections.listOf;
 import static com.hotels.styx.config.schema.SchemaDsl.atLeastOne;
 import static com.hotels.styx.config.schema.SchemaDsl.bool;
 import static com.hotels.styx.config.schema.SchemaDsl.field;
@@ -41,8 +42,6 @@ import static com.hotels.styx.config.schema.SchemaDsl.or;
 import static com.hotels.styx.config.schema.SchemaDsl.schema;
 import static com.hotels.styx.config.schema.SchemaDsl.string;
 import static com.hotels.styx.config.schema.SchemaDsl.union;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -61,9 +60,9 @@ public class SchemaTest {
                 + "  myOkValue: 5 \n"
                 + "  myNokValue: true \n");
 
-        integer().validate(singletonList("myOkValue"), root, root.get("myOkValue"), NO_EXTENSIONS);
+        integer().validate(listOf("myOkValue"), root, root.get("myOkValue"), NO_EXTENSIONS);
         Exception e = assertThrows(SchemaValidationException.class,
-                () -> integer().validate(singletonList("myNokValue"), root, root.get("myNokValue"), NO_EXTENSIONS));
+                () -> integer().validate(listOf("myNokValue"), root, root.get("myNokValue"), NO_EXTENSIONS));
         assertEquals("Unexpected field type. Field 'myNokValue' should be INTEGER, but it is BOOLEAN", e.getMessage());
     }
 
@@ -73,9 +72,9 @@ public class SchemaTest {
                 + "  myOkValue: abc \n"
                 + "  myNokValue: 34 \n");
 
-        string().validate(singletonList("myOkValue"), root, root.get("myOkValue"), NO_EXTENSIONS);
+        string().validate(listOf("myOkValue"), root, root.get("myOkValue"), NO_EXTENSIONS);
         Exception e = assertThrows(SchemaValidationException.class,
-                () -> string().validate(singletonList("myNokValue"), root, root.get("myNokValue"), NO_EXTENSIONS));
+                () -> string().validate(listOf("myNokValue"), root, root.get("myNokValue"), NO_EXTENSIONS));
         assertEquals("Unexpected field type. Field 'myNokValue' should be STRING, but it is NUMBER", e.getMessage());
     }
 
@@ -84,7 +83,7 @@ public class SchemaTest {
         JsonNode root = YAML_MAPPER.readTree(""
                 + "  myInt: '5' \n");
 
-        integer().validate(singletonList("myInt"), root, root.get("myInt"), NO_EXTENSIONS);
+        integer().validate(listOf("myInt"), root, root.get("myInt"), NO_EXTENSIONS);
     }
 
 
@@ -95,10 +94,10 @@ public class SchemaTest {
                 + "  myOkValue2: false \n"
                 + "  myNokValue: x \n");
 
-        bool().validate(singletonList("myOkValue1"), root, root.get("myOkValue1"), NO_EXTENSIONS);
-        bool().validate(singletonList("myOkValue2"), root, root.get("myOkValue2"), NO_EXTENSIONS);
+        bool().validate(listOf("myOkValue1"), root, root.get("myOkValue1"), NO_EXTENSIONS);
+        bool().validate(listOf("myOkValue2"), root, root.get("myOkValue2"), NO_EXTENSIONS);
         Exception e = assertThrows(SchemaValidationException.class,
-                () -> bool().validate(singletonList("myNokValue"), root, root.get("myNokValue"), NO_EXTENSIONS));
+                () -> bool().validate(listOf("myNokValue"), root, root.get("myNokValue"), NO_EXTENSIONS));
         assertEquals("Unexpected field type. Field 'myNokValue' should be BOOLEAN, but it is STRING", e.getMessage());
     }
 
@@ -114,12 +113,12 @@ public class SchemaTest {
                 + "  myBool_06: 'FALSE' \n"
         );
 
-        bool().validate(emptyList(), rootObject, rootObject.get("myBool_01"), NO_EXTENSIONS);
-        bool().validate(emptyList(), rootObject, rootObject.get("myBool_02"), NO_EXTENSIONS);
-        bool().validate(emptyList(), rootObject, rootObject.get("myBool_03"), NO_EXTENSIONS);
-        bool().validate(emptyList(), rootObject, rootObject.get("myBool_04"), NO_EXTENSIONS);
-        bool().validate(emptyList(), rootObject, rootObject.get("myBool_05"), NO_EXTENSIONS);
-        bool().validate(emptyList(), rootObject, rootObject.get("myBool_06"), NO_EXTENSIONS);
+        bool().validate(listOf(), rootObject, rootObject.get("myBool_01"), NO_EXTENSIONS);
+        bool().validate(listOf(), rootObject, rootObject.get("myBool_02"), NO_EXTENSIONS);
+        bool().validate(listOf(), rootObject, rootObject.get("myBool_03"), NO_EXTENSIONS);
+        bool().validate(listOf(), rootObject, rootObject.get("myBool_04"), NO_EXTENSIONS);
+        bool().validate(listOf(), rootObject, rootObject.get("myBool_05"), NO_EXTENSIONS);
+        bool().validate(listOf(), rootObject, rootObject.get("myBool_06"), NO_EXTENSIONS);
     }
 
 
@@ -137,7 +136,7 @@ public class SchemaTest {
                                 field("surname", string()),
                                 field("age", integer())
                         ))
-                ).validate(emptyList(), rootObject, rootObject, x -> null));
+                ).validate(listOf(), rootObject, rootObject, x -> null));
         assertEquals("Missing a mandatory field 'root.surname'", e.getMessage());
     }
 
@@ -154,7 +153,7 @@ public class SchemaTest {
                         optional("favouriteFood", string()),
                         field("age", integer())
                 ))
-        ).validate(singletonList("root"), rootObject, rootObject, NO_EXTENSIONS);
+        ).validate(listOf("root"), rootObject, rootObject, NO_EXTENSIONS);
     }
 
 
@@ -173,7 +172,7 @@ public class SchemaTest {
                                 optional("favouriteFood", string()),
                                 field("age", integer())
                         ))
-                ).validate(emptyList(), rootObject, rootObject, NO_EXTENSIONS));
+                ).validate(listOf(), rootObject, rootObject, NO_EXTENSIONS));
         assertEquals("Unexpected field type. Field 'root.favouriteFood' should be STRING, but it is NUMBER", e.getMessage());
     }
 
@@ -193,7 +192,7 @@ public class SchemaTest {
                                 field("surname", string()),
                                 field("age", integer())
                         ))
-                ).validate(emptyList(), rootObject, rootObject, NO_EXTENSIONS));
+                ).validate(listOf(), rootObject, rootObject, NO_EXTENSIONS));
         assertEquals("Unexpected field: 'root.xyxz'", e.getMessage());
     }
 
@@ -209,7 +208,7 @@ public class SchemaTest {
                         field("root", object(
                                 field("myInt", integer())
                         ))
-                ).validate(emptyList(), rootObject, rootObject, NO_EXTENSIONS));
+                ).validate(listOf(), rootObject, rootObject, NO_EXTENSIONS));
         assertEquals("Unexpected field type. Field 'root.myInt' should be INTEGER, but it is STRING", e.getMessage());
     }
 
@@ -225,7 +224,7 @@ public class SchemaTest {
                         field("root", object(
                                 field("myString", string())
                         ))
-                ).validate(emptyList(), rootObject, rootObject, NO_EXTENSIONS));
+                ).validate(listOf(), rootObject, rootObject, NO_EXTENSIONS));
         assertEquals("Unexpected field type. Field 'root.myString' should be STRING, but it is NUMBER", e.getMessage());
     }
 
@@ -241,7 +240,7 @@ public class SchemaTest {
                         field("root", object(
                                 field("myBool", bool())
                         ))
-                ).validate(emptyList(), rootObject, rootObject, NO_EXTENSIONS));
+                ).validate(listOf(), rootObject, rootObject, NO_EXTENSIONS));
         assertEquals("Unexpected field type. Field 'root.myBool' should be BOOLEAN, but it is NUMBER", e.getMessage());
     }
 
@@ -256,7 +255,7 @@ public class SchemaTest {
                         field("myChild", object(
                                 field("age", integer())
                         ))
-                ).validate(emptyList(), rootObject, rootObject, NO_EXTENSIONS));
+                ).validate(listOf(), rootObject, rootObject, NO_EXTENSIONS));
         assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'myChild' should be OBJECT\\(age\\), but it is NUMBER"));
     }
 
@@ -277,7 +276,7 @@ public class SchemaTest {
                         field("surname", string()),
                         field("age", integer())
                 ))
-        ).validate(emptyList(), rootObject, rootObject.get("person"), NO_EXTENSIONS);
+        ).validate(listOf(), rootObject, rootObject.get("person"), NO_EXTENSIONS);
     }
 
     @Test
@@ -288,7 +287,7 @@ public class SchemaTest {
                 + "    y: 6\n"
         );
 
-        object(opaque()).validate(emptyList(), root, root.get("opaque"), NO_EXTENSIONS);
+        object(opaque()).validate(listOf(), root, root.get("opaque"), NO_EXTENSIONS);
     }
 
     @Test
@@ -301,7 +300,7 @@ public class SchemaTest {
                 () -> object(
                         field("parent", object(
                                 field("child", string())))
-                ).validate(singletonList("parent"), root, root.get("parent"), NO_EXTENSIONS));
+                ).validate(listOf("parent"), root, root.get("parent"), NO_EXTENSIONS));
         assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'parent' should be OBJECT\\(parent\\), but it is STRING"));
     }
 
@@ -345,11 +344,11 @@ public class SchemaTest {
                         atLeastOne("http", "https")
                 )));
 
-        objectType.validate(emptyList(), first, first, NO_EXTENSIONS);
-        objectType.validate(emptyList(), second, second, NO_EXTENSIONS);
-        objectType.validate(emptyList(), both, both, NO_EXTENSIONS);
+        objectType.validate(listOf(), first, first, NO_EXTENSIONS);
+        objectType.validate(listOf(), second, second, NO_EXTENSIONS);
+        objectType.validate(listOf(), both, both, NO_EXTENSIONS);
         Exception e = assertThrows(SchemaValidationException.class,
-                () -> objectType.validate(emptyList(), neither, neither, NO_EXTENSIONS));
+                () -> objectType.validate(listOf(), neither, neither, NO_EXTENSIONS));
         assertThat(e.getMessage(), matchesPattern("Schema constraint failed. At least one of \\('http', 'https'\\) must be present."));
     }
 
@@ -362,7 +361,7 @@ public class SchemaTest {
         );
 
         Exception e = assertThrows(SchemaValidationException.class,
-                () -> list(string()).validate(singletonList("myList"), rootObject, rootObject.get("myList"), NO_EXTENSIONS));
+                () -> list(string()).validate(listOf("myList"), rootObject, rootObject.get("myList"), NO_EXTENSIONS));
         assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'myList\\[1\\]' should be STRING, but it is NUMBER"));
     }
 
@@ -375,7 +374,7 @@ public class SchemaTest {
         );
 
         Exception e = assertThrows(SchemaValidationException.class,
-                () -> list(integer()).validate(singletonList("myList"), rootObject, rootObject.get("myList"), NO_EXTENSIONS));
+                () -> list(integer()).validate(listOf("myList"), rootObject, rootObject.get("myList"), NO_EXTENSIONS));
         assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'myList\\[0\\]' should be INTEGER, but it is STRING"));
     }
 
@@ -393,7 +392,7 @@ public class SchemaTest {
                 () -> list(object(
                         field("x", integer()),
                         field("y", integer())
-                )).validate(singletonList("myList"), rootObject, rootObject.get("myList"), NO_EXTENSIONS));
+                )).validate(listOf("myList"), rootObject, rootObject.get("myList"), NO_EXTENSIONS));
         assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'myList\\[1\\].x' should be INTEGER, but it is STRING"));
     }
 
@@ -412,7 +411,7 @@ public class SchemaTest {
         );
 
         Exception e = assertThrows(SchemaValidationException.class,
-                () -> list(subObject).validate(singletonList("myList"), rootObject, rootObject.get("myList"), NO_EXTENSIONS));
+                () -> list(subObject).validate(listOf("myList"), rootObject, rootObject.get("myList"), NO_EXTENSIONS));
         assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'myList\\[1\\]' should be OBJECT\\(x, y\\), but it is STRING"));
     }
 
@@ -423,7 +422,7 @@ public class SchemaTest {
         );
 
         Exception e = assertThrows(SchemaValidationException.class,
-                () -> list(integer()).validate(singletonList("myList"), root, root.get("myList"), NO_EXTENSIONS));
+                () -> list(integer()).validate(listOf("myList"), root, root.get("myList"), NO_EXTENSIONS));
         assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'myList' should be LIST\\(INTEGER\\), but it is STRING"));
     }
 
@@ -436,7 +435,7 @@ public class SchemaTest {
         );
 
         Exception e = assertThrows(SchemaValidationException.class,
-                () -> list(integer()).validate(singletonList("myList"), root, root.get("myList"), NO_EXTENSIONS));
+                () -> list(integer()).validate(listOf("myList"), root, root.get("myList"), NO_EXTENSIONS));
         assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'myList' should be LIST\\(INTEGER\\), but it is OBJECT"));
     }
 
@@ -450,7 +449,7 @@ public class SchemaTest {
 
         Exception e = assertThrows(SchemaValidationException.class,
                 () -> list(object(field("a", integer()), field("b", integer())))
-                        .validate(singletonList("myList"), root, root.get("myList"), NO_EXTENSIONS));
+                        .validate(listOf("myList"), root, root.get("myList"), NO_EXTENSIONS));
         assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'myList' should be LIST\\(OBJECT\\(a, b\\)\\), but it is OBJECT"));
     }
 
@@ -482,8 +481,8 @@ public class SchemaTest {
                 + "    location: /new/location\n"
         );
 
-        new Schema.RoutingObjectSpec().validate(emptyList(), root, root.get("object1"), extensions::get);
-        new Schema.RoutingObjectSpec().validate(emptyList(), root, root.get("object2"), extensions::get);
+        new Schema.RoutingObjectSpec().validate(listOf(), root, root.get("object1"), extensions::get);
+        new Schema.RoutingObjectSpec().validate(listOf(), root, root.get("object2"), extensions::get);
     }
 
     @Test
@@ -500,7 +499,7 @@ public class SchemaTest {
                 () -> object(
                         field("config", union("type")),
                         field("type", string())
-                ).validate(singletonList("httpPipeline"), root, root.get("httpPipeline"), NO_EXTENSIONS));
+                ).validate(listOf("httpPipeline"), root, root.get("httpPipeline"), NO_EXTENSIONS));
         assertEquals("Union discriminator 'httpPipeline.config.type': Unexpected field type. Field 'httpPipeline.config.type' should be STRING, but it is NUMBER", e.getMessage());
     }
 
@@ -519,7 +518,7 @@ public class SchemaTest {
                 () -> object(
                         field("type", string()),
                         field("config", union("type"))
-                ).validate(singletonList("httpPipeline"), root, root.get("httpPipeline"), NO_EXTENSIONS));
+                ).validate(listOf("httpPipeline"), root, root.get("httpPipeline"), NO_EXTENSIONS));
         assertThat(e.getMessage(), matchesPattern("Unknown union discriminator type 'Foo' for union 'httpPipeline.config'. Union type is UNION\\(type\\)"));
     }
 
@@ -556,8 +555,8 @@ public class SchemaTest {
                 field("config", union("type"))
         );
 
-        unionSchema.validate(emptyList(), root, root.get("httpPipeline1"), extensions::get);
-        unionSchema.validate(emptyList(), root, root.get("httpPipeline2"), extensions::get);
+        unionSchema.validate(listOf(), root, root.get("httpPipeline1"), extensions::get);
+        unionSchema.validate(listOf(), root, root.get("httpPipeline2"), extensions::get);
     }
 
 
@@ -568,7 +567,7 @@ public class SchemaTest {
         );
 
         Exception e = assertThrows(SchemaValidationException.class,
-                () -> map(string()).validate(singletonList("parent"), root, root.get("parent"), NO_EXTENSIONS));
+                () -> map(string()).validate(listOf("parent"), root, root.get("parent"), NO_EXTENSIONS));
         assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'parent' should be MAP\\(STRING\\), but it is STRING"));
     }
 
@@ -587,7 +586,7 @@ public class SchemaTest {
         map(object(
                 field("x", integer()),
                 field("y", integer())
-        )).validate(singletonList("parent"), root, root.get("parent"), NO_EXTENSIONS);
+        )).validate(listOf("parent"), root, root.get("parent"), NO_EXTENSIONS);
 
     }
 
@@ -603,7 +602,7 @@ public class SchemaTest {
                 () -> map(object(
                         field("x", integer()),
                         field("y", integer())
-                )).validate(singletonList("parent"), root, root.get("parent"), NO_EXTENSIONS));
+                )).validate(listOf("parent"), root, root.get("parent"), NO_EXTENSIONS));
         assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'parent\\[key.\\]' should be OBJECT\\(x, y\\), but it is NUMBER"));
     }
 
@@ -615,7 +614,7 @@ public class SchemaTest {
                         + "  key2: 24\n"
         );
 
-        map(integer()).validate(singletonList("parent"), root, root.get("parent"), NO_EXTENSIONS);
+        map(integer()).validate(listOf("parent"), root, root.get("parent"), NO_EXTENSIONS);
     }
 
     @Test
@@ -627,7 +626,7 @@ public class SchemaTest {
         );
 
         Exception e = assertThrows(SchemaValidationException.class,
-                () -> map(integer()).validate(singletonList("parent"), root, root.get("parent"), NO_EXTENSIONS));
+                () -> map(integer()).validate(listOf("parent"), root, root.get("parent"), NO_EXTENSIONS));
         assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'parent\\[key1\\]' should be INTEGER, but it is STRING"));
     }
 
@@ -639,7 +638,7 @@ public class SchemaTest {
                         + "  key2: 'two'\n"
         );
 
-        map(string()).validate(singletonList("parent"), root, root.get("parent"), NO_EXTENSIONS);
+        map(string()).validate(listOf("parent"), root, root.get("parent"), NO_EXTENSIONS);
     }
 
     @Test
@@ -651,7 +650,7 @@ public class SchemaTest {
         );
 
         Exception e = assertThrows(SchemaValidationException.class,
-                () -> map(string()).validate(singletonList("parent"), root, root.get("parent"), NO_EXTENSIONS));
+                () -> map(string()).validate(listOf("parent"), root, root.get("parent"), NO_EXTENSIONS));
         assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'parent\\[key1\\]' should be STRING, but it is NUMBER"));
     }
 
@@ -663,7 +662,7 @@ public class SchemaTest {
                         + "  nok: False\n"
         );
 
-        map(bool()).validate(singletonList("parent"), root, root.get("parent"), NO_EXTENSIONS);
+        map(bool()).validate(listOf("parent"), root, root.get("parent"), NO_EXTENSIONS);
     }
 
     @Test
@@ -675,7 +674,7 @@ public class SchemaTest {
         );
 
         Exception e = assertThrows(SchemaValidationException.class,
-                () -> map(bool()).validate(singletonList("parent"), root, root.get("parent"), NO_EXTENSIONS));
+                () -> map(bool()).validate(listOf("parent"), root, root.get("parent"), NO_EXTENSIONS));
         assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'parent\\[ok\\]' should be BOOLEAN, but it is STRING"));
     }
 
@@ -691,7 +690,7 @@ public class SchemaTest {
                         + "    - 4\n"
         );
 
-        map(list(integer())).validate(singletonList("parent"), root, root.get("parent"), NO_EXTENSIONS);
+        map(list(integer())).validate(listOf("parent"), root, root.get("parent"), NO_EXTENSIONS);
     }
 
     @Test
@@ -707,7 +706,7 @@ public class SchemaTest {
         );
 
         Exception e = assertThrows(SchemaValidationException.class,
-                () -> map(list(integer())).validate(singletonList("parent"), root, root.get("parent"), NO_EXTENSIONS));
+                () -> map(list(integer())).validate(listOf("parent"), root, root.get("parent"), NO_EXTENSIONS));
         assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'parent\\[key1\\]' should be LIST\\(INTEGER\\), but it is OBJECT"));
     }
 
@@ -728,7 +727,7 @@ public class SchemaTest {
                         field("y", integer()
                         )
                 )
-        )).validate(singletonList("parent"), root, root.get("parent"), NO_EXTENSIONS);
+        )).validate(listOf("parent"), root, root.get("parent"), NO_EXTENSIONS);
     }
 
     @Test
@@ -748,7 +747,7 @@ public class SchemaTest {
                                 field("y", integer()
                                 )
                         )
-                )).validate(singletonList("parent"), root, root.get("parent"), NO_EXTENSIONS));
+                )).validate(listOf("parent"), root, root.get("parent"), NO_EXTENSIONS));
         assertThat(e.getMessage(), matchesPattern("Unexpected field type. Field 'parent\\[mapKey\\]\\[0\\]' should be OBJECT\\(x, y\\), but it is STRING"));
     }
 
@@ -784,11 +783,11 @@ public class SchemaTest {
 
         Schema.FieldType myOr = or(list(string()), string());
 
-        myOr.validate(singletonList("pipeline"), root, root.get("pipeline"), NO_EXTENSIONS);
-        myOr.validate(singletonList("pipeline2"), root, root.get("pipeline2"), NO_EXTENSIONS);
+        myOr.validate(listOf("pipeline"), root, root.get("pipeline"), NO_EXTENSIONS);
+        myOr.validate(listOf("pipeline2"), root, root.get("pipeline2"), NO_EXTENSIONS);
 
         Exception e = assertThrows(SchemaValidationException.class,
-                () -> myOr.validate(singletonList("pipeline3"), root, root.get("pipeline3"), NO_EXTENSIONS));
+                () -> myOr.validate(listOf("pipeline3"), root, root.get("pipeline3"), NO_EXTENSIONS));
 
         assertEquals("Unexpected field type. Field 'pipeline3' should be OR(LIST(STRING), STRING), but it is NUMBER", e.getMessage());
     }
