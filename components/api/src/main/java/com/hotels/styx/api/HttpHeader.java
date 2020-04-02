@@ -43,7 +43,7 @@ public final class HttpHeader {
             throw new IllegalArgumentException("must give at least one value");
         }
 
-        return new HttpHeader(requireNonNull(name), listOf(values.clone()));
+        return new HttpHeader(requireNonNull(name), listOf(values));
     }
 
     private HttpHeader(String name, List<String> values) {
