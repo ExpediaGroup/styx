@@ -254,7 +254,8 @@ public final class StyxServer extends AbstractService {
                 environment.configuration().get(ENCODE_UNWISECHARS).orElse(""),
                 (builder, request) -> builder.header(styxInfoHeaderName, responseInfoFormat.format(request)),
                 environment.configuration().get("requestTracking", Boolean.class).orElse(false),
-                environment.httpMessageFormatter())
+                environment.httpMessageFormatter(),
+                environment.configuration().styxHeaderConfig().originIdHeaderName())
                 .create(connectorConfig);
 
         return NettyServerBuilder.newBuilder()

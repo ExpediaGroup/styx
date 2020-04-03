@@ -320,10 +320,20 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     client.send(get("/11")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
-                            .wait().let {
-                                it!!.status() shouldBe BAD_GATEWAY
+                            .wait()!!
+                            .let {
+                                it.status() shouldBe BAD_GATEWAY
                             }
                 }
+
+                client.send(get("/11")
+                        .header(HOST, styxServer().proxyHttpHostHeader())
+                        .build())
+                        .wait()!!
+                        .let {
+                            it.status() shouldBe BAD_GATEWAY
+                            it.header("X-Styx-Origin-Id").get() shouldBe "appTls.appTls-01"
+                        }
 
                 writeOrigins("""
                     - id: appTls
@@ -603,8 +613,10 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 client.send(get("/16")
                         .header(HOST, styxServer().proxyHttpHostHeader())
                         .build())
-                        .wait().let {
-                            it!!.status() shouldBe BAD_GATEWAY
+                        .wait()!!
+                        .let {
+                            it.status() shouldBe BAD_GATEWAY
+                            it.header("X-Styx-Origin-Id").get() shouldBe "appB"
                             it.bodyAs(UTF_8) shouldBe "Site temporarily unavailable."
                         }
             }

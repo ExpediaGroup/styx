@@ -137,7 +137,9 @@ internal class StyxHttpServerFactory : StyxServerFactory {
                                             ResponseInfoFormat(environment).format(request))
                                 },
                                 false,
-                                environment.httpMessageFormatter())
+                                environment.httpMessageFormatter(),
+                                // TODO: Add styx header configuration
+                                null)
                                 .create(
                                         if (config.tlsSettings == null) {
                                             HttpConnectorConfig(config.port)
