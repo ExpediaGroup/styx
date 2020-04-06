@@ -35,10 +35,10 @@ import static testgrp.AdminHandlers.adminHandlers;
 
 
 /**
- * An example implementation of Backend Service Provider for styx
+ * An example implementation of Backend Service Provider for styx.
  * <p>
  * - Extends AbstractStyxService to get default styx service lifecycle implementation
- * - Implement Registry\<BackendService\>
+ * - Implement Registry BackendService
  */
 public class TestBackendProvider extends AbstractStyxService implements Registry<BackendService> {
 

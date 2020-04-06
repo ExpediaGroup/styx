@@ -191,10 +191,10 @@ public class DeterministicScheduler implements ScheduledExecutorService {
     private final class ScheduledTask<T> implements ScheduledFuture<T>, Runnable {
         public final long repeatDelay;
         public final Callable<T> command;
-        private boolean isCancelled = false;
-        private boolean isDone = false;
+        private boolean isCancelled;
+        private boolean isDone;
         private T futureResult;
-        private Exception failure = null;
+        private Exception failure;
 
         public ScheduledTask(Callable<T> command) {
             this.repeatDelay = -1;

@@ -41,7 +41,7 @@ class DeltaQueue<T> {
     private static class Node<T> {
         public final T value;
         public long delay;
-        public Node<T> next = null;
+        public Node<T> next;
 
         public Node(T value, long nanos) {
             this.value = value;
@@ -49,7 +49,7 @@ class DeltaQueue<T> {
         }
     }
 
-    private Node<T> head = null;
+    private Node<T> head;
 
     public boolean isEmpty() {
         return head == null;

@@ -23,7 +23,8 @@ import static java.util.stream.StreamSupport.stream;
 import static org.hamcrest.Matchers.equalTo;
 
 /**
- *
+ * Matcher to verify Type T contains only one element.
+ * @param <T> Type to match
  */
 public class ContainsExactlyOneMatcher<T> extends TypeSafeMatcher<Iterable<T>> {
     private final Matcher<T> expected;

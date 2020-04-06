@@ -24,7 +24,6 @@ import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.client.StyxHttpClient;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -60,7 +59,7 @@ public class MetricsSnapshot {
     private static Map<String, Object> decodeToMap(String body) throws IOException {
         JsonFactory factory = new JsonFactory();
         ObjectMapper mapper = new ObjectMapper(factory);
-        TypeReference<HashMap<String, Object>> typeRef = new TypeReference<HashMap<String, Object>>() {
+        TypeReference<Map<String, Object>> typeRef = new TypeReference<Map<String, Object>>() {
         };
         return mapper.readValue(body, typeRef);
     }

@@ -43,7 +43,7 @@ import static io.netty.util.ReferenceCountUtil.releaseLater;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class HttpTestClient {
-    private static final NioEventLoopGroup eventLoopGroup =
+    private static final NioEventLoopGroup EVENT_LOOP_GROUP =
             new NioEventLoopGroup(1, new ThreadFactoryBuilder().setNameFormat("Test-Client-%d").build());
 
     private final HostAndPort destination;
@@ -56,7 +56,7 @@ public class HttpTestClient {
         this.destination = destination;
 
         this.bootstrap = lazy(() -> new Bootstrap()
-                .group(eventLoopGroup)
+                .group(EVENT_LOOP_GROUP)
                 .channel(NioSocketChannel.class)
                 .handler(initializer)
                 .option(TCP_NODELAY, true)
