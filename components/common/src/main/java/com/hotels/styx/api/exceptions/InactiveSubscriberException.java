@@ -15,25 +15,19 @@
  */
 package com.hotels.styx.api.exceptions;
 
-import com.hotels.styx.api.extension.Origin;
-
 import static java.lang.String.format;
 
 /**
- * An exception due to a timeout occurring while relaying content.
+ * A timeout due to a subscriber being inactive.
  */
-public class ContentTimeoutException extends TransportException {
+public class InactiveSubscriberException extends TransportException {
 
-    private final Origin origin;
-
-    public ContentTimeoutException(Origin origin, String reason, long bytesReceived, long chunksReceived, long bytesEmitted, long chunksEmitted) {
-        super(message(origin, reason, bytesReceived, chunksReceived, bytesEmitted, chunksEmitted));
-        this.origin = origin;
+    public InactiveSubscriberException(long bytesReceived, long chunksReceived, long bytesEmitted, long chunksEmitted) {
+        super(message(bytesReceived, chunksReceived, bytesEmitted, chunksEmitted));
     }
 
-    private static String message(Origin origin, String reason, long bytesReceived, long chunksReceived, long bytesEmitted, long chunksEmitted) {
-        return format("Channel closed due to %s. ", reason)
-                + format("Origin=%s, ", origin)
+    private static String message(long bytesReceived, long chunksReceived, long bytesEmitted, long chunksEmitted) {
+        return "Timeout due to inactive subscriber. "
                 + format("bytesReceived=%d, ", bytesReceived)
                 + format("chunksReceived=%d, ", chunksReceived)
                 + format("bytesEmitted=%d, ", bytesEmitted)

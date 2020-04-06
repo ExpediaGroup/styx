@@ -18,7 +18,7 @@ package com.hotels.styx.api.exceptions;
 /**
  * An exception that causes a connection to fail.
  */
-public abstract class TransportException extends RuntimeException {
+public class TransportException extends RuntimeException {
     /**
      * Constructor.
      *

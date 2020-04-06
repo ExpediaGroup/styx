@@ -17,7 +17,6 @@ package com.hotels.styx.api.exceptions;
 
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.extension.Origin;
-import io.netty.channel.Channel;
 
 import java.net.SocketAddress;
 import java.util.Optional;
@@ -31,12 +30,6 @@ public class TransportLostException extends TransportException implements StyxEx
     private static final String MESSAGE_FORMAT = "Connection to origin lost. origin=\"%s\", remoteAddress=\"%s\".";
     private final SocketAddress address;
     private final Origin origin;
-
-    public TransportLostException(Channel channel, Origin origin) {
-        super(format("Connection to origin lost. origin=%s, connection=%s", origin, channel.toString()));
-        this.address = channel.remoteAddress();
-        this.origin = origin;
-    }
 
     /**
      * Construct an exception.

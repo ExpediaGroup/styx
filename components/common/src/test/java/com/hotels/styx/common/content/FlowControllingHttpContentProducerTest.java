@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.common.content;
 
-import com.hotels.styx.api.exceptions.ContentTimeoutException;
+import com.hotels.styx.api.exceptions.InactiveSubscriberException;
 import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import io.netty.buffer.ByteBuf;
@@ -60,7 +60,6 @@ import static org.mockito.Mockito.verify;
 
 public class FlowControllingHttpContentProducerTest {
     private static final Long NO_BACKPRESSURE = Long.MAX_VALUE;
-    private static final int INACTIVITY_TIMEOUT_MS = 500;
     private Subscriber<? super ByteBuf> downstream;
     private Subscriber<? super ByteBuf> additionalSubscriber;
     private FlowControllingHttpContentProducer producer;
@@ -88,8 +87,7 @@ public class FlowControllingHttpContentProducerTest {
                 "foobar",
                 newOriginBuilder("foohost", 12345).build(),
                 1000,
-                eventLoop,
-                null);
+                eventLoop);
 
         producer.request(initialCount);
     }
@@ -584,11 +582,11 @@ public class FlowControllingHttpContentProducerTest {
         assertThat(producer.state(), is(BUFFERING_COMPLETED));
 
         producer.channelInactive(transportLostCause);
-        producer.tearDownResources("test teardown");
+        producer.tearDownResources(new InactiveSubscriberException(producer.receivedBytes(),5,4,3));
 
         assertThat(producer.state(), is(TERMINATED));
         verify(onCompleteAction, never()).run();
-        ArgumentCaptor<ContentTimeoutException> argumentCaptor = ArgumentCaptor.forClass(ContentTimeoutException.class);
+        ArgumentCaptor<InactiveSubscriberException> argumentCaptor = ArgumentCaptor.forClass(InactiveSubscriberException.class);
         verify(onTerminateAction).accept(argumentCaptor.capture());
         assertThat(argumentCaptor.getValue().getMessage(), containsString("bytesReceived=6"));
 
@@ -778,7 +776,7 @@ public class FlowControllingHttpContentProducerTest {
         assertThat(producer.state(), is(EMITTING_BUFFERED_CONTENT));
 
 
-        producer.tearDownResources("test teardown");
+        producer.tearDownResources(new InactiveSubscriberException(4,3,2,1));
 
         assertThat(producer.state(), is(TERMINATED));
         verify(onCompleteAction, never()).run();
@@ -787,7 +785,7 @@ public class FlowControllingHttpContentProducerTest {
         verify(downstream, never()).onNext(any());
         ArgumentCaptor<Throwable> errorArg = ArgumentCaptor.forClass(Throwable.class);
         verify(downstream, atLeast(1)).onError(errorArg.capture());
-        assertThat(errorArg.getValue(), is(instanceOf(ContentTimeoutException.class)));
+        assertThat(errorArg.getValue(), is(instanceOf(InactiveSubscriberException.class)));
     }
 
 

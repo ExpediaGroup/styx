@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.common.content;
 
+import com.hotels.styx.api.exceptions.InactiveSubscriberException;
 import io.netty.channel.EventLoop;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
@@ -57,7 +58,14 @@ public class FlowControllerTimer {
             if (timeLeft > 0) {
                 resetTimer(timeLeft);
             } else {
-                eventLoop.submit(() -> producer.tearDownResources("Inactive subscriber"));
+                eventLoop.submit(() -> producer.tearDownResources(
+                        new InactiveSubscriberException(
+                                producer.receivedBytes(),
+                                producer.receivedChunks(),
+                                producer.emittedBytes(),
+                                producer.emittedChunks()
+                        )
+                ));
             }
         } else {
             resetTimer(inactivityTimeoutMs);

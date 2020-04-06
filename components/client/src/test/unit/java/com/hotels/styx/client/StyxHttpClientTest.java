@@ -20,7 +20,7 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.exceptions.ContentTimeoutException;
+import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
@@ -331,7 +331,7 @@ public class StyxHttpClientTest {
                             .header(HOST, hostString(server.port()))
                             .build())
                     .get(2, SECONDS));
-        assertEquals(ContentTimeoutException.class, e.getCause().getClass());
+        assertEquals(ResponseTimeoutException.class, e.getCause().getClass());
     }
 
     @Disabled

@@ -20,6 +20,7 @@ import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.BadHttpResponseException;
@@ -156,7 +157,17 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
         if (evt instanceof IdleStateEvent) {
-            getContentProducer(ctx).tearDownResources("idle timeout");
+            FlowControllingHttpContentProducer producer = getContentProducer(ctx);
+            getContentProducer(ctx).tearDownResources(
+                new ResponseTimeoutException(
+                    origin,
+                    "idleStateEvent",
+                    producer.receivedBytes(),
+                    producer.receivedChunks(),
+                    producer.emittedBytes(),
+                    producer.emittedChunks()
+                )
+            );
         } else {
             super.userEventTriggered(ctx, evt);
         }
@@ -183,8 +194,7 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
                 format("%s, %s", loggingPrefix, requestPrefix),
                 origin,
                 idleTimeoutMillis,
-                ctx.channel().eventLoop(),
-                request.url().toString());
+                ctx.channel().eventLoop());
     }
 
     private void emitResponseCompleted() {

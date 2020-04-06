@@ -16,7 +16,7 @@
 package com.hotels.styx.client.netty.connectionpool;
 
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.exceptions.ContentTimeoutException;
+import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.BadHttpResponseException;
@@ -142,7 +142,7 @@ public class NettyToStyxResponsePropagatorTest {
         StepVerifier.create(response.body())
                 .then(channel::runPendingTasks) // Execute onSubscribe in FSM
                 .then(() -> channel.pipeline().fireUserEventTriggered(ALL_IDLE_STATE_EVENT))
-                .expectError(ContentTimeoutException.class)
+                .expectError(ResponseTimeoutException.class)
                 .verify();
     }
 

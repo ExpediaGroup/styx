@@ -16,7 +16,6 @@
 package com.hotels.styx.common.content;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.hotels.styx.api.exceptions.ContentTimeoutException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.common.StateMachine;
 import io.netty.buffer.ByteBuf;
@@ -95,8 +94,7 @@ public class FlowControllingHttpContentProducer {
             String loggingPrefix,
             Origin origin,
             long inactivityTimeoutMs,
-            EventLoop eventLoop,
-            String uri) {
+            EventLoop eventLoop) {
         this.askForMore = requireNonNull(askForMore);
         this.onCompleteAction = requireNonNull(onCompleteAction);
         this.onTerminateAction = requireNonNull(onTerminateAction);
@@ -192,6 +190,7 @@ public class FlowControllingHttpContentProducer {
     private <T> ProducerState releaseAndTerminate(CausalEvent event) {
         releaseBuffers();
         onTerminateAction.accept(event.cause());
+        timer.cancel();
         return TERMINATED;
     }
 
@@ -431,14 +430,8 @@ public class FlowControllingHttpContentProducer {
         stateMachine.handle(new ChannelInactiveEvent(cause));
     }
 
-    public void tearDownResources(String message) {
-        stateMachine.handle(new TearDownEvent(new ContentTimeoutException(
-                origin,
-                format("%s. %s", message, loggingPrefix),
-                receivedBytes(),
-                receivedChunks(),
-                emittedBytes(),
-                emittedChunks())));
+    public void tearDownResources(Throwable cause) {
+        stateMachine.handle(new TearDownEvent(cause));
     }
 
     public void request(long n) {
@@ -472,7 +465,7 @@ public class FlowControllingHttpContentProducer {
         return receivedBytes.get();
     }
 
-    long receivedChunks() {
+    public long receivedChunks() {
         return receivedChunks.get();
     }
 

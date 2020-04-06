@@ -19,7 +19,7 @@ import ch.qos.logback.classic.Level
 import com.google.common.base.Charsets._
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.OK
-import com.hotels.styx.api.exceptions.ContentTimeoutException
+import com.hotels.styx.api.exceptions.ResponseTimeoutException
 import com.hotels.styx.api.extension
 import com.hotels.styx.api.extension.ActiveOrigins
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
@@ -27,9 +27,9 @@ import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
-import com.hotels.styx.support.Support.requestContext
 import com.hotels.styx.server.netty.connectors.HttpPipelineHandler
 import com.hotels.styx.support.NettyOrigins
+import com.hotels.styx.support.Support.requestContext
 import com.hotels.styx.support.configuration.{BackendService, HttpBackend, Origins}
 import com.hotels.styx.support.matchers.LoggingTestSupport
 import com.hotels.styx.{DefaultStyxConfiguration, StyxClientSupplier, StyxProxySpec}
@@ -103,7 +103,7 @@ class OriginClosesConnectionSpec extends FunSuite
 
   def stickySessionStrategy(activeOrigins: ActiveOrigins) = new StickySessionLoadBalancingStrategy(activeOrigins, busyConnectionStrategy(activeOrigins))
 
-  test("Emits ContentTimeoutException when content subscriber stops requesting data") {
+  test("Emits ResponseTimeoutException when content subscriber stops requesting data") {
     val timeout = 2.seconds.toMillis.toInt
     originRespondingWith(response200OkFollowedFollowedByServerConnectionClose("Test message body." * 1024))
 
@@ -126,7 +126,7 @@ class OriginClosesConnectionSpec extends FunSuite
     val duration = StepVerifier.create(response.body(), 1)
       .expectNextCount(1)
       .thenAwait()
-      .verifyError(classOf[ContentTimeoutException])
+      .verifyError(classOf[ResponseTimeoutException])
 
     duration.toMillis shouldBe (TWO_SECONDS.toLong +- 220.millis.toMillis)
   }
