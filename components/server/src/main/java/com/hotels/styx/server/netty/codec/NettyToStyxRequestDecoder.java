@@ -24,7 +24,7 @@ import com.hotels.styx.api.Url;
 import com.hotels.styx.api.exceptions.TransportException;
 import com.hotels.styx.common.QueueDrainingExecutor;
 import com.hotels.styx.common.content.FlowControllingHttpContentProducer;
-import com.hotels.styx.common.content.QueueDrainingPublisher;
+import com.hotels.styx.common.content.FlowControllingPublisher;
 import com.hotels.styx.common.format.DefaultHttpMessageFormatter;
 import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.server.BadRequestException;
@@ -98,7 +98,7 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
                 HttpRequest nettyRequest = (HttpRequest) msg;
 
                 this.producer = Optional.of(createProducer(ctx, nettyRequest.uri()));
-                Publisher<Buffer> contentPublisher = new QueueDrainingPublisher(queueDrainingExecutor, this.producer.get());
+                Publisher<Buffer> contentPublisher = new FlowControllingPublisher(queueDrainingExecutor, this.producer.get());
 
                 LiveHttpRequest styxRequest = toStyxRequest(nettyRequest, contentPublisher);
                 out.add(styxRequest);

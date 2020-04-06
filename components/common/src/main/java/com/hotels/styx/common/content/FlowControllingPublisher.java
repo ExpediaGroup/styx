@@ -25,29 +25,29 @@ import java.util.concurrent.Executor;
 /**
  * A publisher to wrap the FlowControllingHttpContentProducer FSM and perform subscription operations via a QueueDrainingExecutor.
  */
-public final class QueueDrainingPublisher implements Publisher<Buffer> {
+public final class FlowControllingPublisher implements Publisher<Buffer> {
 
-    private final Executor queueDrainingExecutor;
+    private final Executor executor;
     private final FlowControllingHttpContentProducer contentProducer;
 
-    public QueueDrainingPublisher(Executor queueDrainingExecutor, FlowControllingHttpContentProducer contentProducer) {
-        this.queueDrainingExecutor = queueDrainingExecutor;
+    public FlowControllingPublisher(Executor executor, FlowControllingHttpContentProducer contentProducer) {
+        this.executor = executor;
         this.contentProducer = contentProducer;
     }
 
     @Override
     public void subscribe(Subscriber<? super Buffer> subscriber) {
         ByteBufToBufferSubscriber byteBufToBufferSubscriber = new ByteBufToBufferSubscriber(subscriber);
-        queueDrainingExecutor.execute(() -> contentProducer.onSubscribed(byteBufToBufferSubscriber));
+        executor.execute(() -> contentProducer.onSubscribed(byteBufToBufferSubscriber));
         byteBufToBufferSubscriber.onSubscribe(new Subscription() {
             @Override
             public void request(long n) {
-                queueDrainingExecutor.execute(() -> contentProducer.request(n));
+                executor.execute(() -> contentProducer.request(n));
             }
 
             @Override
             public void cancel() {
-                queueDrainingExecutor.execute(contentProducer::unsubscribe);
+                executor.execute(contentProducer::unsubscribe);
             }
         });
     }
