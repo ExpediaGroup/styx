@@ -149,7 +149,6 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
                 () -> ctx.channel().config().setAutoRead(true),
                 cause -> { },
                 format("%s, %s", loggingPrefix, ""),
-                null,
                 inactivityTimeoutMs,
                 ctx.channel().eventLoop());
     }

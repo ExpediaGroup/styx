@@ -85,7 +85,6 @@ public class FlowControllingHttpContentProducerTest {
                 onCompleteAction,
                 onTerminateAction,
                 "foobar",
-                newOriginBuilder("foohost", 12345).build(),
                 1000,
                 eventLoop);
 
