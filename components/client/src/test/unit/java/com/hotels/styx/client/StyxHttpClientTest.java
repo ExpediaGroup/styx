@@ -90,9 +90,10 @@ public class StyxHttpClientTest {
      */
     @Test
     public void cannotBeModifiedAfterCreated() throws ExecutionException, InterruptedException {
-        StyxHttpClient client = new StyxHttpClient.Builder()
-                .userAgent("v1")
-                .build();
+        StyxHttpClient.Builder builder = new StyxHttpClient.Builder().userAgent("v1");
+        StyxHttpClient client = builder.build();
+
+        builder.userAgent("v2");
 
         assertThat(client.send(httpRequest).get().status(), is(OK));
         server.verify(
