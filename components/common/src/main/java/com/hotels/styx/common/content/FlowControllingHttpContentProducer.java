@@ -16,7 +16,6 @@
 package com.hotels.styx.common.content;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.common.StateMachine;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.EventLoop;
@@ -72,10 +71,7 @@ public class FlowControllingHttpContentProducer {
     final AtomicLong queueDepthBytes = new AtomicLong(0);
     final AtomicLong queueDepthChunks = new AtomicLong(0);
 
-    private final Origin origin;
-
     private volatile Subscriber<? super ByteBuf> contentSubscriber;
-    private volatile long lastActive;
     private FlowControllerTimer timer;
 
     enum ProducerState {
@@ -92,14 +88,12 @@ public class FlowControllingHttpContentProducer {
             Runnable onCompleteAction,
             Consumer<Throwable> onTerminateAction,
             String loggingPrefix,
-            Origin origin,
             long inactivityTimeoutMs,
             EventLoop eventLoop) {
         this.askForMore = requireNonNull(askForMore);
         this.onCompleteAction = requireNonNull(onCompleteAction);
         this.onTerminateAction = requireNonNull(onTerminateAction);
         this.loggingPrefix = loggingPrefix;
-        this.origin = origin;
 
         this.stateMachine = new StateMachine.Builder<ProducerState>()
                 .initialState(BUFFERING)
@@ -156,23 +150,18 @@ public class FlowControllingHttpContentProducer {
                 .build();
 
 
-        touchLastActive();
         timer = new FlowControllerTimer(inactivityTimeoutMs, eventLoop, this);
     }
 
-    private void touchLastActive() {
-        lastActive = System.currentTimeMillis();
-    }
-
     /*
-     * BUFFERINlxG state event handlers
+     * BUFFERING state event handlers
      */
 
     private ProducerState rxBackpressureRequestInBuffering(RxBackpressureRequestEvent event) {
         // This can occur before the actual content subscribe event. This occurs if the subscriber
         // has called request() before having subscribed to the content observable. In this
         // case just initialise the request count with requested N value.
-        touchLastActive();
+        timer.reset();
         requested.compareAndSet(Long.MAX_VALUE, 0);
         getAndAddRequest(requested, event.n());
 
@@ -195,7 +184,7 @@ public class FlowControllingHttpContentProducer {
     }
 
     private ProducerState contentSubscribedInBuffering(ContentSubscribedEvent event) {
-        touchLastActive();
+        timer.reset();
         this.contentSubscriber = event.subscriber;
         emitChunks(this.contentSubscriber);
         askForMore();
@@ -203,7 +192,7 @@ public class FlowControllingHttpContentProducer {
     }
 
     private ProducerState contentEndEventWhileBuffering(ContentEndEvent event) {
-        touchLastActive();
+        timer.reset();
         return BUFFERING_COMPLETED;
     }
 
@@ -215,7 +204,7 @@ public class FlowControllingHttpContentProducer {
         // This can occur before the actual content subscribe event. This occurs if the subscriber
         // has called request() before actually having subscribed to the content observable. In this
         // case just initialise the request count with requested N value.
-        touchLastActive();
+        timer.reset();
         requested.compareAndSet(Long.MAX_VALUE, 0);
         getAndAddRequest(requested, event.n());
         return this.state();
@@ -228,7 +217,7 @@ public class FlowControllingHttpContentProducer {
     }
 
     private ProducerState contentSubscribedInBufferingCompleted(ContentSubscribedEvent event) {
-        touchLastActive();
+        timer.reset();
         this.contentSubscriber = event.subscriber;
         if (readQueue.size() == 0) {
             this.contentSubscriber.onComplete();
@@ -250,7 +239,7 @@ public class FlowControllingHttpContentProducer {
     }
 
     private ProducerState contentEndEventWhileBufferingCompleted(ContentEndEvent event) {
-        touchLastActive();
+        timer.reset();
         return this.state();
     }
 
@@ -258,7 +247,7 @@ public class FlowControllingHttpContentProducer {
      * STREAMING event handlers
      */
     private ProducerState rxBackpressureRequestEventInStreaming(RxBackpressureRequestEvent event) {
-        touchLastActive();
+        timer.reset();
         requested.compareAndSet(Long.MAX_VALUE, 0);
         getAndAddRequest(requested, event.n());
 
@@ -326,7 +315,7 @@ public class FlowControllingHttpContentProducer {
     }
 
     private ProducerState contentEndEventWhileStreaming(ContentEndEvent event) {
-        touchLastActive();
+        timer.reset();
         if (readQueue.size() > 0) {
             return EMITTING_BUFFERED_CONTENT;
         } else {
@@ -348,7 +337,7 @@ public class FlowControllingHttpContentProducer {
      * EMITTING_BUFFERED_CONTENT event handlers
      */
     private ProducerState rxBackpressureRequestInEmittingBufferedContent(RxBackpressureRequestEvent event) {
-        touchLastActive();
+        timer.reset();
         requested.compareAndSet(Long.MAX_VALUE, 0);
         getAndAddRequest(requested, event.n());
 
@@ -467,10 +456,6 @@ public class FlowControllingHttpContentProducer {
 
     public long receivedChunks() {
         return receivedChunks.get();
-    }
-
-    long lastActive() {
-        return lastActive;
     }
 
     boolean isWaitingForSubscriber() {

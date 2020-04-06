@@ -30,6 +30,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class FlowControllerTimer {
 
     private static HashedWheelTimer timer = new HashedWheelTimer();
+    private volatile long lastActive = System.currentTimeMillis();
     private long inactivityTimeoutMs;
     private EventLoop eventLoop;
     private FlowControllingHttpContentProducer producer;
@@ -40,6 +41,10 @@ public class FlowControllerTimer {
         this.eventLoop = eventLoop;
         this.producer = producer;
         resetTimer(inactivityTimeoutMs);
+    }
+
+    public void reset() {
+        lastActive = System.currentTimeMillis();
     }
 
     public void cancel() {
@@ -54,7 +59,7 @@ public class FlowControllerTimer {
 
     private void resetTimerOrTearDownFlowController() {
         if (producer.isWaitingForSubscriber()) {
-            long timeLeft = (producer.lastActive() + inactivityTimeoutMs) - System.currentTimeMillis();
+            long timeLeft = (lastActive + inactivityTimeoutMs) - System.currentTimeMillis();
             if (timeLeft > 0) {
                 resetTimer(timeLeft);
             } else {
