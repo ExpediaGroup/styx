@@ -158,7 +158,7 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
         if (evt instanceof IdleStateEvent) {
             FlowControllingHttpContentProducer producer = getContentProducer(ctx);
-            getContentProducer(ctx).tearDownResources(
+            producer.tearDownResources(
                 new ResponseTimeoutException(
                     origin,
                     "idleStateEvent",
