@@ -13,7 +13,6 @@
   <description>Some dependencies for the example Styx interceptor plugin.</description>
 
   <properties>
-    <checkstyle.skip>true</checkstyle.skip>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
   </properties>
 
