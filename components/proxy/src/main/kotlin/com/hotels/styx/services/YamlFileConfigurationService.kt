@@ -101,7 +101,7 @@ internal class YamlFileConfigurationService(
             }
 
     override fun adminInterfaceHandlers(namespace: String) = mapOf(
-            "assets/" to HttpAggregator(ClassPathResourceHandler("$namespace/assets/", "/admin/assets/YamlConfigurationService")),
+            "assets/.*" to HttpAggregator(ClassPathResourceHandler("$namespace/assets/", "/admin/assets/YamlConfigurationService")),
             "configuration" to HttpContentHandler(PLAIN_TEXT_UTF_8.toString(), UTF_8) { originsConfig },
             "origins" to HttpContentHandler(HTML_UTF_8.toString(), UTF_8) {
                 OriginsPageRenderer("$namespace/assets", name, routeDb).render()
