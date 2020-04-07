@@ -37,12 +37,16 @@ import kotlinx.html.dom.document
 import kotlinx.html.dom.serialize
 import kotlinx.html.h3
 import kotlinx.html.h6
+import kotlinx.html.head
+import kotlinx.html.html
 import kotlinx.html.link
 import kotlinx.html.meta
+import kotlinx.html.script
 import kotlinx.html.span
 import kotlinx.html.table
 import kotlinx.html.tbody
 import kotlinx.html.td
+import kotlinx.html.title
 import kotlinx.html.tr
 
 internal class OriginsPageRenderer(val assetsRoot: String, val provider: String, val routeDatabase: StyxObjectStore<RoutingObjectRecord>) {

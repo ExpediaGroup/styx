@@ -21,7 +21,7 @@ import io.mockk.mockk
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter.ISO_DATE_TIME
 
-private const val CREATED_STRING = "created:"
+private const val CREATED_STRING = "created="
 private const val TIMESTAMP_START_POSITION = CREATED_STRING.length
 
 class RoutingObjectRecordTest : StringSpec({
