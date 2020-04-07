@@ -92,7 +92,7 @@ class HostProxySpec : FeatureSpec() {
     init {
         // There are other tests that set the JVM system property io.netty.eventLoopThreads=16,
         // thus potentially affecting and breaking this test.
-    /*    feature("!Executor thread pool") {
+        feature("!Executor thread pool") {
             scenario("Runs on StyxHttpClient global thread pool") {
                 testServer.restart()
                 styxServer.restart()
@@ -116,9 +116,9 @@ class HostProxySpec : FeatureSpec() {
                 }
             }
         }
-*/
+
         feature("Proxying requests") {
-           /* scenario("Response Timeout") {
+            scenario("Response Timeout") {
                 styxServer().newRoutingObject("hostProxy", """
                            type: HostProxy
                            config:
@@ -156,7 +156,7 @@ class HostProxySpec : FeatureSpec() {
                             it.bodyAs(UTF_8) shouldBe "Hello - HTTPS"
                         }
             }
-*/
+
             scenario("Applies max header size settings") {
                 val maxHeaderSize = 20
                 styxServer().newRoutingObject("hostProxy", """	
@@ -176,7 +176,6 @@ class HostProxySpec : FeatureSpec() {
 
         }
 
-/*
         feature("Connection pooling") {
             scenario("Pools connections") {
                 testServer.restart()
@@ -387,7 +386,7 @@ class HostProxySpec : FeatureSpec() {
                     }
                 }
             }
-        }*/
+        }
     }
 
     private val styxServer = StyxServerProvider("""
