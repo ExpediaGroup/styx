@@ -141,6 +141,8 @@ public class HttpRequestOperation {
                 if (requestLoggingEnabled) {
                     httpRequestMessageLogger.logRequest(request, nettyConnection.getOrigin());
                 }
+            } else {
+                sink.error(new TransportLostException(nettyConnection.channel(), nettyConnection.getOrigin()));
             }
         });
 

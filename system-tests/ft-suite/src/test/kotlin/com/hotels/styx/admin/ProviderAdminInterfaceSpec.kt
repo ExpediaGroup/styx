@@ -198,10 +198,15 @@ class ProviderAdminInterfaceSpec : FeatureSpec() {
             scenario("The new admin endpoint returns status information without server restart") {
                 val responseA = styxServer.adminRequest("/admin/providers/appA-monitor/status")
                 responseA.status() shouldBe NOT_FOUND
-                val responseB = styxServer.adminRequest("/admin/providers/appB-monitor/status")
-                responseB.status() shouldBe OK
-                responseB.header(CONTENT_TYPE).get().toLowerCase() shouldBe APPLICATION_JSON.toString().toLowerCase()
-                responseB.bodyAs(UTF_8) shouldBe "{ name: \"HealthCheckMonitoringService-appB\" status: \"RUNNING\" }"
+
+                eventually(3.seconds) {
+                    styxServer.adminRequest("/admin/providers/appB-monitor/status")
+                            .let {
+                                it.status() shouldBe OK
+                                it.header(CONTENT_TYPE).get().toLowerCase() shouldBe APPLICATION_JSON.toString().toLowerCase()
+                                it.bodyAs(UTF_8) shouldBe "{ name: \"HealthCheckMonitoringService-appB\" status: \"RUNNING\" }"
+                            }
+                }
             }
 
             scenario("Endpoints for dynamically removed Styx services are not listed in the Admin interface") {
@@ -235,7 +240,7 @@ class ProviderAdminInterfaceSpec : FeatureSpec() {
             .send(get(endpoint)
                     .header(HOST, this().adminHostHeader())
                     .build())
-            .wait()
+            .wait()!!
 
     private fun writeOriginsFile(vararg origins: Pair<String, Boolean>) {
         origins.joinToString (separator = "\n") {
