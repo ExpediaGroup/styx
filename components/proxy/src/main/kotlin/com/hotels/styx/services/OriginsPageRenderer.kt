@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package com.hotels.styx.services
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.NullNode
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig
 import com.hotels.styx.lbGroupTag
 import com.hotels.styx.routing.RoutingObjectRecord
@@ -36,16 +37,12 @@ import kotlinx.html.dom.document
 import kotlinx.html.dom.serialize
 import kotlinx.html.h3
 import kotlinx.html.h6
-import kotlinx.html.head
-import kotlinx.html.html
 import kotlinx.html.link
 import kotlinx.html.meta
-import kotlinx.html.script
 import kotlinx.html.span
 import kotlinx.html.table
 import kotlinx.html.tbody
 import kotlinx.html.td
-import kotlinx.html.title
 import kotlinx.html.tr
 
 internal class OriginsPageRenderer(val assetsRoot: String, val provider: String, val routeDatabase: StyxObjectStore<RoutingObjectRecord>) {
@@ -253,5 +250,8 @@ internal class OriginsPageRenderer(val assetsRoot: String, val provider: String,
             .filterNot { it.startsWith("state:inactive") }
             .filter { lbGroupTag.valueOf(it) == null }
 
-    private fun isSecureHost(config: JsonNode) = config.get("tlsSettings") != null
+    private fun isSecureHost(config: JsonNode): Boolean {
+        val tlsSettings = config.get("tlsSettings")
+        return tlsSettings != null && tlsSettings !is NullNode
+    }
 }
