@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 class HealthCheckMonitoringServiceTest : FeatureSpec({
     val LOGGER = LoggerFactory.getLogger(HealthCheckMonitoringServiceTest::class.java)
 
-    fun createdTag(tag: String) = tag.matches("created:.*".toRegex())
+    fun createdTag(tag: String) = tag.matches("created=.*".toRegex())
 
     val workerExecutor = NettyExecutor.create("monitoringServiceTest", 1)
 
