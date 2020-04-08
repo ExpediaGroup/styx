@@ -20,21 +20,25 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.IThrowableProxy;
 import ch.qos.logback.classic.spi.StackTraceElementProxy;
 import ch.qos.logback.core.Context;
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
+import com.google.common.base.Predicate;
+import com.google.common.base.Splitter;
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.Iterables;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 
+import javax.annotation.Nullable;
 import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import static ch.qos.logback.core.CoreConstants.LINE_SEPARATOR;
 import static com.google.common.base.Charsets.UTF_8;
+import static com.google.common.base.Optional.fromNullable;
 import static com.hotels.styx.common.Strings.isNotEmpty;
 import static java.lang.Integer.toHexString;
 import static java.util.Arrays.asList;
-import static java.util.Arrays.stream;
+import static java.util.Collections.EMPTY_LIST;
 
 /**
  * Logback converter to log Splunk friendly exception data.
@@ -57,34 +61,68 @@ public class ExceptionConverter extends ClassicConverter {
 
     @Override
     public String convert(final ILoggingEvent loggingEvent) {
-        return Optional.ofNullable(loggingEvent)
-                .map(this::getExceptionData)
-                .orElse(NO_MSG);
+        return fromNullable(loggingEvent.getThrowableProxy())
+                .transform(createExceptionData(loggingEvent))
+                .or(NO_MSG);
+    }
+
+    private Function<IThrowableProxy, String> createExceptionData(final ILoggingEvent loggingEvent) {
+        return new Function<IThrowableProxy, String>() {
+            @Nullable
+            @Override
+            public String apply(IThrowableProxy iThrowableProxy) {
+                return getExceptionData(loggingEvent);
+            }
+        };
     }
 
     private String getExceptionData(final ILoggingEvent loggingEvent) {
         IThrowableProxy throwableProxy = loggingEvent.getThrowableProxy();
         StackTraceElementProxy loggableStackTraceElement =
                 findFirstStackTraceElementForClasses(throwableProxy, readStyxClassesFromProperty())
-                        .orElse(getTopStackTraceElement(throwableProxy));
+                        .or(fromNullable(getTopStackTraceElement(throwableProxy)))
+                        .orNull();
 
-        return Optional.ofNullable(loggableStackTraceElement)
-                .map(ExceptionConverter::createExceptionMessage)
-                .orElse(NO_MSG);
+        return fromNullable(loggableStackTraceElement)
+                .transform(CREATE_EXCEPTION_MESSAGE)
+                .or(NO_MSG);
     }
 
-    private static String createExceptionMessage(StackTraceElementProxy loggableStackTraceElement) {
-        String exceptionClass = loggableStackTraceElement.getStackTraceElement().getClassName();
-        String exceptionMethod = loggableStackTraceElement.getStackTraceElement().getMethodName();
-        String exceptionID = hashCodeForException(exceptionClass, exceptionMethod);
-        return MessageFormat.format(SPLUNK_FRIENDLY_LOG_MESSAGE_TEMPLATE, exceptionClass, exceptionMethod, exceptionID);
-    }
+    private static final Function<StackTraceElementProxy, String> CREATE_EXCEPTION_MESSAGE = new Function<StackTraceElementProxy, String>() {
+        @Nullable
+        @Override
+        public String apply(@Nullable StackTraceElementProxy loggableStackTraceElement) {
+            String exceptionClass = loggableStackTraceElement.getStackTraceElement().getClassName();
+            String exceptionMethod = loggableStackTraceElement.getStackTraceElement().getMethodName();
+            String exceptionID = hashCodeForException(exceptionClass, exceptionMethod);
+            return MessageFormat.format(SPLUNK_FRIENDLY_LOG_MESSAGE_TEMPLATE, exceptionClass, exceptionMethod, exceptionID);
+        }
+    };
+
 
     private Optional<StackTraceElementProxy> findFirstStackTraceElementForClasses(final IThrowableProxy throwableProxy, final String[] targetClasses) {
-        return StreamSupport.stream(collectThrowableProxies(throwableProxy).spliterator(), false)
-                .flatMap(proxy -> proxy != null ? Arrays.stream(proxy.getStackTraceElementProxyArray()) : Stream.empty())
-                .filter(steProxy -> contains(steProxy.getSTEAsString(), targetClasses))
-                .findFirst();
+        return FluentIterable.from(collectThrowableProxies(throwableProxy))
+                .transformAndConcat(collectStackTraceElements())
+                .firstMatch(stackTraceElementForClasses(targetClasses));
+    }
+
+    private static Predicate<StackTraceElementProxy> stackTraceElementForClasses(final String[] targetClasses) {
+        return new Predicate<StackTraceElementProxy>() {
+            @Override
+            public boolean apply(@Nullable StackTraceElementProxy stackTraceElementProxy) {
+                return contains(stackTraceElementProxy.getSTEAsString(), targetClasses);
+            }
+        };
+    }
+
+    private static Function<IThrowableProxy, Iterable<StackTraceElementProxy>> collectStackTraceElements() {
+        return new Function<IThrowableProxy, Iterable<StackTraceElementProxy>>() {
+            @Nullable
+            @Override
+            public Iterable<StackTraceElementProxy> apply(@Nullable IThrowableProxy iThrowableProxy) {
+                return iThrowableProxy != null ? asList(iThrowableProxy.getStackTraceElementProxyArray()) : EMPTY_LIST;
+            }
+        };
     }
 
     private String[] readStyxClassesFromProperty() {
@@ -92,9 +130,7 @@ public class ExceptionConverter extends ClassicConverter {
         Context ctx = getContext();
         String property = ctx.getProperty(TARGET_CLASSES_PROPERTY_NAME);
         if (isNotEmpty(property)) {
-            targetClasses = stream(property.split(","))
-                    .map(String::trim)
-                    .toArray(String[]::new);
+            targetClasses = Iterables.toArray(Splitter.on(",").trimResults().split(property), String.class);
         } else {
             addError(MessageFormat.format("The '{0}' property should be present on logback configuration. Using default classname prefixes.",
                     TARGET_CLASSES_PROPERTY_NAME));
