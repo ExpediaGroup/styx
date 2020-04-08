@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2018 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,11 +21,12 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.base.Objects;
 
 import java.io.IOException;
-import java.util.Objects;
 
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
+import static com.google.common.base.Objects.toStringHelper;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -83,15 +84,13 @@ public class SpiExtension {
             return false;
         }
         SpiExtension other = (SpiExtension) obj;
-        return Objects.equals(this.factory, other.factory);
+        return Objects.equal(this.factory, other.factory);
     }
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(32);
-        sb.append(this.getClass().getSimpleName());
-        sb.append("{factory=");
-        sb.append(factory);
-        return sb.append('}').toString();
+        return toStringHelper(this)
+                .add("factory", factory)
+                .toString();
     }
 }

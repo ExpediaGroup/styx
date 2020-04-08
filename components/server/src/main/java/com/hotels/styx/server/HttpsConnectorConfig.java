@@ -18,17 +18,16 @@ package com.hotels.styx.server;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.hotels.styx.common.io.ResourceFactory.newResource;
-import static java.util.Objects.hash;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 
@@ -116,7 +115,7 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
 
     @Override
     public int hashCode() {
-        return 31 * super.hashCode() + hash(sslProvider, certificateFile, certificateKeyFile, sessionTimeoutMillis, sessionCacheSize, protocols);
+        return 31 * super.hashCode() + Objects.hashCode(sslProvider, certificateFile, certificateKeyFile, sessionTimeoutMillis, sessionCacheSize, protocols);
     }
 
     @Override
@@ -131,12 +130,12 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
             return false;
         }
         HttpsConnectorConfig other = (HttpsConnectorConfig) obj;
-        return Objects.equals(this.sslProvider, other.sslProvider)
-                && Objects.equals(this.certificateFile, other.certificateFile)
-                && Objects.equals(this.certificateKeyFile, other.certificateKeyFile)
-                && Objects.equals(this.sessionTimeoutMillis, other.sessionTimeoutMillis)
-                && Objects.equals(this.sessionCacheSize, other.sessionCacheSize)
-                && Objects.equals(this.protocols, other.protocols);
+        return Objects.equal(this.sslProvider, other.sslProvider)
+                && Objects.equal(this.certificateFile, other.certificateFile)
+                && Objects.equal(this.certificateKeyFile, other.certificateKeyFile)
+                && Objects.equal(this.sessionTimeoutMillis, other.sessionTimeoutMillis)
+                && Objects.equal(this.sessionCacheSize, other.sessionCacheSize)
+                && Objects.equal(this.protocols, other.protocols);
     }
 
     @Override

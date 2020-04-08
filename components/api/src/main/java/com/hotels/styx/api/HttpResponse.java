@@ -15,13 +15,13 @@
  */
 package com.hotels.styx.api;
 
+import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
 import reactor.core.publisher.Flux;
 
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -38,7 +38,6 @@ import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.lang.Long.parseLong;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
-import static java.util.Objects.hash;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
@@ -217,7 +216,7 @@ public class HttpResponse implements HttpMessage {
 
     @Override
     public int hashCode() {
-        return hash(version, status, headers);
+        return Objects.hashCode(version, status, headers);
     }
 
     @Override
@@ -229,9 +228,9 @@ public class HttpResponse implements HttpMessage {
             return false;
         }
         HttpResponse other = (HttpResponse) obj;
-        return Objects.equals(this.version, other.version)
-                && Objects.equals(this.status, other.status)
-                && Objects.equals(this.headers, other.headers);
+        return Objects.equal(this.version, other.version)
+                && Objects.equal(this.status, other.status)
+                && Objects.equal(this.headers, other.headers);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2018 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,6 +17,9 @@ package com.hotels.styx.api.extension.service;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+
+import static com.google.common.base.Objects.firstNonNull;
+import static com.google.common.base.Objects.toStringHelper;
 
 /**
  * Programmatically configurable connection pool settings.
@@ -41,12 +44,12 @@ public class ConnectionPoolSettings {
                            @Deprecated Integer socketTimeoutMillis,
                            Integer pendingConnectionTimeoutMillis,
                            Long connectionExpirationSeconds) {
-        this.maxConnectionsPerHost = maxConnectionsPerHost != null ? maxConnectionsPerHost : DEFAULT_MAX_CONNECTIONS_PER_HOST;
-        this.maxPendingConnectionsPerHost = maxPendingConnectionsPerHost != null ? maxPendingConnectionsPerHost : DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST;
-        this.connectTimeoutMillis = connectTimeoutMillis != null ? connectTimeoutMillis : DEFAULT_CONNECT_TIMEOUT_MILLIS;
-        this.socketTimeoutMillis = socketTimeoutMillis != null ? socketTimeoutMillis : DEFAULT_SOCKET_TIMEOUT_MILLIS;
-        this.pendingConnectionTimeoutMillis = pendingConnectionTimeoutMillis != null ? pendingConnectionTimeoutMillis : DEFAULT_CONNECT_TIMEOUT_MILLIS;
-        this.connectionExpirationSeconds = connectionExpirationSeconds != null ? connectionExpirationSeconds : DEFAULT_CONNECTION_EXPIRATION_SECONDS;
+        this.maxConnectionsPerHost = firstNonNull(maxConnectionsPerHost, DEFAULT_MAX_CONNECTIONS_PER_HOST);
+        this.maxPendingConnectionsPerHost = firstNonNull(maxPendingConnectionsPerHost, DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST);
+        this.connectTimeoutMillis = firstNonNull(connectTimeoutMillis, DEFAULT_CONNECT_TIMEOUT_MILLIS);
+        this.socketTimeoutMillis = firstNonNull(socketTimeoutMillis, DEFAULT_SOCKET_TIMEOUT_MILLIS);
+        this.pendingConnectionTimeoutMillis = firstNonNull(pendingConnectionTimeoutMillis, DEFAULT_CONNECT_TIMEOUT_MILLIS);
+        this.connectionExpirationSeconds = firstNonNull(connectionExpirationSeconds, DEFAULT_CONNECTION_EXPIRATION_SECONDS);
     }
 
     /**
@@ -71,12 +74,12 @@ public class ConnectionPoolSettings {
                                   int socketTimeoutMillis,
                                   int pendingConnectionTimeoutMillis,
                                   long connectionExpirationSeconds) {
-        this.maxConnectionsPerHost = maxConnectionsPerHost;
-        this.maxPendingConnectionsPerHost = maxPendingConnectionsPerHost;
-        this.connectTimeoutMillis = connectTimeoutMillis;
-        this.socketTimeoutMillis = socketTimeoutMillis;
-        this.pendingConnectionTimeoutMillis = pendingConnectionTimeoutMillis;
-        this.connectionExpirationSeconds = connectionExpirationSeconds;
+        this.maxConnectionsPerHost = firstNonNull(maxConnectionsPerHost, DEFAULT_MAX_CONNECTIONS_PER_HOST);
+        this.maxPendingConnectionsPerHost = firstNonNull(maxPendingConnectionsPerHost, DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST);
+        this.connectTimeoutMillis = firstNonNull(connectTimeoutMillis, DEFAULT_CONNECT_TIMEOUT_MILLIS);
+        this.socketTimeoutMillis = firstNonNull(socketTimeoutMillis, DEFAULT_SOCKET_TIMEOUT_MILLIS);
+        this.pendingConnectionTimeoutMillis = firstNonNull(pendingConnectionTimeoutMillis, DEFAULT_CONNECT_TIMEOUT_MILLIS);
+        this.connectionExpirationSeconds = firstNonNull(connectionExpirationSeconds, DEFAULT_CONNECTION_EXPIRATION_SECONDS);
     }
 
     public ConnectionPoolSettings(int maxConnectionsPerHost,
@@ -171,19 +174,13 @@ public class ConnectionPoolSettings {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(160);
-        sb.append(this.getClass().getSimpleName());
-        sb.append("{maxConnectionsPerHost=");
-        sb.append(maxConnectionsPerHost);
-        sb.append(", maxPendingConnectionsPerHost=");
-        sb.append(maxPendingConnectionsPerHost);
-        sb.append(", connectTimeoutMillis=");
-        sb.append(connectTimeoutMillis);
-        sb.append(", socketTimeoutMillis=");
-        sb.append(socketTimeoutMillis);
-        sb.append(", pendingConnectionTimeoutMillis=");
-        sb.append(pendingConnectionTimeoutMillis);
-        return sb.append('}').toString();
+        return toStringHelper(this)
+                .add("maxConnectionsPerHost", maxConnectionsPerHost)
+                .add("maxPendingConnectionsPerHost", maxPendingConnectionsPerHost)
+                .add("connectTimeoutMillis", connectTimeoutMillis)
+                .add("socketTimeoutMillis", socketTimeoutMillis)
+                .add("pendingConnectionTimeoutMillis", pendingConnectionTimeoutMillis)
+                .toString();
     }
 
     /**

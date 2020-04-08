@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.google.common.base.Objects.toStringHelper;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.extension.Origin.checkThatOriginsAreDistinct;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
@@ -195,25 +196,16 @@ public final class BackendService implements Identifiable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(128);
-        sb.append(this.getClass().getSimpleName());
-        sb.append("{id=");
-        sb.append(id);
-        sb.append(", path=");
-        sb.append(path);
-        sb.append(", origins=");
-        sb.append(origins);
-        sb.append(", connectionPoolSettings=");
-        sb.append(connectionPoolSettings);
-        sb.append(", healthCheckConfig=");
-        sb.append(healthCheckConfig);
-        sb.append(", stickySessionConfig=");
-        sb.append(stickySessionConfig);
-        sb.append(", rewrites=");
-        sb.append(rewrites);
-        sb.append(", tlsSettings=");
-        sb.append(tlsSettings);
-        return sb.append('}').toString();
+        return toStringHelper(this)
+                .add("id", this.id)
+                .add("path", this.path)
+                .add("origins", this.origins)
+                .add("connectionPoolSettings", this.connectionPoolSettings)
+                .add("healthCheckConfig", this.healthCheckConfig)
+                .add("stickySessionConfig", this.stickySessionConfig)
+                .add("rewrites", this.rewrites)
+                .add("tlsSettings", this.tlsSettings)
+                .toString();
     }
 
     public Builder newCopy() {

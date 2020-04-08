@@ -24,6 +24,8 @@ import com.hotels.styx.client.ConnectionSettings;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import static com.google.common.base.Objects.toStringHelper;
+
 /**
  * A stub {@link Connection.Factory}.
  */
@@ -78,13 +80,10 @@ public class StubConnectionFactory implements Connection.Factory {
 
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder(64);
-            sb.append(this.getClass().getSimpleName());
-            sb.append("{origin=");
-            sb.append(origin);
-            sb.append(", connected=");
-            sb.append(connected);
-            return sb.append('}').toString();
+            return toStringHelper(this)
+                    .add("origin", origin)
+                    .add("connected", connected)
+                    .toString();
         }
     }
 }

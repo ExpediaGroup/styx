@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 package com.hotels.styx.server;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.util.Objects;
+import com.google.common.base.Objects;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -60,7 +59,7 @@ public class HttpConnectorConfig implements ConnectorConfig {
             return false;
         }
         final HttpConnectorConfig other = (HttpConnectorConfig) obj;
-        return Objects.equals(this.port, other.port);
+        return Objects.equal(this.port, other.port);
     }
 
 

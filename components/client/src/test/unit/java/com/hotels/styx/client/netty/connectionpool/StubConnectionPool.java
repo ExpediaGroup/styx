@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.client.netty.connectionpool;
 
+import com.google.common.base.Objects;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.client.Connection;
@@ -23,10 +24,8 @@ import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
-import java.util.Objects;
-
+import static com.google.common.base.Objects.toStringHelper;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
-import static java.util.Objects.hash;
 
 public class StubConnectionPool implements ConnectionPool, Comparable<ConnectionPool> {
     private Connection connection;
@@ -150,7 +149,7 @@ public class StubConnectionPool implements ConnectionPool, Comparable<Connection
 
     @Override
     public int hashCode() {
-        return hash(origin, busyConnectionCount, pendingConnectionCount);
+        return Objects.hashCode(origin, busyConnectionCount, pendingConnectionCount);
     }
 
     @Override
@@ -162,21 +161,17 @@ public class StubConnectionPool implements ConnectionPool, Comparable<Connection
             return false;
         }
         StubConnectionPool other = (StubConnectionPool) obj;
-        return Objects.equals(this.origin, other.origin) &&
-                Objects.equals(this.busyConnectionCount, other.busyConnectionCount) &&
-                Objects.equals(this.pendingConnectionCount, other.pendingConnectionCount);
+        return Objects.equal(this.origin, other.origin) &&
+                Objects.equal(this.busyConnectionCount, other.busyConnectionCount) &&
+                Objects.equal(this.pendingConnectionCount, other.pendingConnectionCount);
     }
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(96);
-        sb.append(this.getClass().getSimpleName());
-        sb.append("{origin=");
-        sb.append(origin);
-        sb.append(", busyConnections=");
-        sb.append(busyConnectionCount);
-        sb.append(", pendingConnections=");
-        sb.append(pendingConnectionCount);
-        return sb.append('}').toString();
+        return toStringHelper(this)
+                .add("origin", origin)
+                .add("busyConnections", busyConnectionCount)
+                .add("pendingConnections", pendingConnectionCount)
+                .toString();
     }
 }

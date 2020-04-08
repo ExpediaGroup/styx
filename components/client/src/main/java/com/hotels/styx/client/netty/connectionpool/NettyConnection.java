@@ -33,6 +33,7 @@ import reactor.core.publisher.Flux;
 
 import java.util.Optional;
 
+import static com.google.common.base.Objects.toStringHelper;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -126,32 +127,21 @@ public class NettyConnection implements Connection {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(256);
-        sb.append(this.getClass().getSimpleName());
-        sb.append("{host=");
-        sb.append(this.origin.hostAndPortString());
-        sb.append(", channel=");
-        sb.append(toString(channel));
-        return sb.append('}').toString();
+        return toStringHelper(this)
+                .add("host", this.origin.hostAndPortString())
+                .add("channel", toString(channel))
+                .toString();
     }
 
     private static String toString(Channel channel) {
-        StringBuilder sb = new StringBuilder(224);
-        sb.append(channel.getClass().getSimpleName());
-        sb.append("{active=");
-        sb.append(channel.isActive());
-        sb.append(", open=");
-        sb.append(channel.isOpen());
-        sb.append(", registered=");
-        sb.append(channel.isRegistered());
-        sb.append(", writable=");
-        sb.append(channel.isWritable());
-        sb.append(", localAddress=");
-        sb.append(channel.localAddress());
-        sb.append(", clientAddress=");
-        sb.append(channel.remoteAddress());
-        sb.append(", hashCode=");
-        sb.append(channel.hashCode());
-        return sb.append('}').toString();
+        return toStringHelper(channel)
+                .add("active", channel.isActive())
+                .add("open", channel.isOpen())
+                .add("registered", channel.isRegistered())
+                .add("writable", channel.isWritable())
+                .add("localAddress", channel.localAddress())
+                .add("clientAddress", channel.remoteAddress())
+                .add("hashCode", channel.hashCode())
+                .toString();
     }
 }
