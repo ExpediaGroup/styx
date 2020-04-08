@@ -19,7 +19,7 @@ import ch.qos.logback.classic.Level
 import com.google.common.base.Charsets._
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.OK
-import com.hotels.styx.api.exceptions.{ResponseTimeoutException, TransportException}
+import com.hotels.styx.api.exceptions.TransportException
 import com.hotels.styx.api.extension
 import com.hotels.styx.api.extension.ActiveOrigins
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
