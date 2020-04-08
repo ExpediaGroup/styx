@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2018 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hotels.styx.common.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 /**

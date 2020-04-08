@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2018 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Maps.difference;
 import static com.google.common.collect.Maps.filterKeys;
 import static java.util.Collections.emptyList;
@@ -92,9 +93,7 @@ public abstract class AbstractRegistry<T extends Identifiable> implements Regist
     public void set(Iterable<T> newObjects) throws IllegalStateException {
         ImmutableList<T> newSnapshot = ImmutableList.copyOf(newObjects);
 
-        if (!resourceConstraint.test(newSnapshot)) {
-            throw new IllegalStateException("Resource constraint failure");
-        }
+        checkState(resourceConstraint.test(newSnapshot), "Resource constraint failure");
 
         Iterable<T> oldSnapshot = snapshot.get();
         snapshot.set(newSnapshot);
