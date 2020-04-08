@@ -20,7 +20,7 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.google.common.base.Charsets.UTF_8;
 import static org.hamcrest.CoreMatchers.equalTo;
 
 public class NettyHttpResponseContentMatcher<T extends FullHttpResponse> extends TypeSafeMatcher<T> {

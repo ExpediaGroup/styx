@@ -17,6 +17,7 @@ package com.hotels.styx.infrastructure.configuration.yaml;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import com.google.common.base.Splitter;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,8 +25,8 @@ import java.util.Optional;
 import static com.hotels.styx.common.Preconditions.checkArgument;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.join;
-import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.StreamSupport.stream;
 
 /**
  * Node path.
@@ -87,8 +88,14 @@ public class NodePath {
     }
 
     private static List<PathElement> splitPath(String path) {
-        return stream(path.split("\\."))
-                .flatMap(splitByDot -> stream(splitByDot.split("\\[")))
+        Splitter leftBracketSplitter = Splitter.on('[');
+        Splitter dotSplitter = Splitter.on('.');
+
+        Iterable<String> splitOnDot = dotSplitter.split(path);
+
+        return stream(splitOnDot.spliterator(), false)
+                .map(leftBracketSplitter::split)
+                .flatMap(splitByLeftBracket -> stream(splitByLeftBracket.spliterator(), false))
                 .map(input -> {
                     if (input.endsWith("]")) {
                         return new ArrayIndex(parseInt(input.substring(0, input.length() - 1)));

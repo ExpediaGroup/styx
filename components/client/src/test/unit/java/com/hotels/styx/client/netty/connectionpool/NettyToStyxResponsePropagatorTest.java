@@ -38,6 +38,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Optional;
 
+import static com.google.common.base.Charsets.UTF_8;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.ResponseCookie.responseCookie;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
@@ -50,7 +51,6 @@ import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static io.netty.handler.timeout.IdleStateEvent.ALL_IDLE_STATE_EVENT;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
