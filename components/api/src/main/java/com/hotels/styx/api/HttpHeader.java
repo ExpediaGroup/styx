@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableList;
 import java.util.List;
 import java.util.Objects;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 
@@ -40,9 +41,7 @@ public final class HttpHeader {
      * @return created header
      */
     public static HttpHeader header(String name, String... values) {
-        if (values.length <= 0) {
-            throw new IllegalArgumentException("must give at least one value");
-        }
+        checkArgument(values.length > 0, "must give at least one value");
 
         return new HttpHeader(requireNonNull(name), ImmutableList.copyOf(values));
     }

@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
@@ -62,18 +63,10 @@ public final class HealthCheckConfig {
         this.healthyThreshold = healthyThreshold.orElse(DEFAULT_HEALTHY_THRESHOLD_VALUE);
         this.unhealthyThreshold = unhealthyThreshold.orElse(DEFAULT_UNHEALTHY_THRESHOLD_VALUE);
 
-        if (this.intervalMillis < 1) {
-            throw new IllegalArgumentException(format("intervalMillis [%s] cannot be < 1 ms", intervalMillis));
-        }
-        if (this.timeoutMillis < 1) {
-            throw new IllegalArgumentException(format("timeoutMillis [%s] cannot be < 1 ms", intervalMillis));
-        }
-        if (this.healthyThreshold < 1) {
-            throw new IllegalArgumentException(format("healthyThreshold [%s] cannot be < 1", healthyThreshold));
-        }
-        if (this.unhealthyThreshold < 1) {
-            throw new IllegalArgumentException(format("unhealthyThreshold [%s] cannot be < 1", unhealthyThreshold));
-        }
+        checkArgument(this.intervalMillis >= 1, format("intervalMillis [%s] cannot be < 1 ms", intervalMillis));
+        checkArgument(this.timeoutMillis >= 1, format("timeoutMillis [%s] cannot be < 1 ms", intervalMillis));
+        checkArgument(this.healthyThreshold >= 1, format("healthyThreshold [%s] cannot be < 1", healthyThreshold));
+        checkArgument(this.unhealthyThreshold >= 1, format("unhealthyThreshold [%s] cannot be < 1", unhealthyThreshold));
     }
 
     private String checkValidUri(String uri) {

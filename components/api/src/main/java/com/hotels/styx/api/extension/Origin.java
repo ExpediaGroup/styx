@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
@@ -87,15 +88,11 @@ public class Origin implements Comparable<Origin> {
     public static void checkThatOriginsAreDistinct(Collection<Origin> origins) {
         Set<Id> ids = origins.stream().map(Origin::id).collect(toSet());
 
-        if (ids.size() != origins.size()) {
-            throw new IllegalArgumentException("Duplicate ids in " + origins);
-        }
+        checkArgument(ids.size() == origins.size(), "Duplicate ids in " + origins);
 
         Set<String> hosts = origins.stream().map(Origin::hostAndPortString).collect(toSet());
 
-        if (hosts.size() != origins.size()) {
-            throw new IllegalArgumentException("Duplicate host and port in " + origins);
-        }
+        checkArgument(hosts.size() == origins.size(), "Duplicate host and port in " + origins);
     }
 
     /**

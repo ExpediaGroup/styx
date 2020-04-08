@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.SET_COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
@@ -38,7 +39,6 @@ import static com.hotels.styx.api.ResponseCookie.decode;
 import static com.hotels.styx.api.ResponseCookie.encode;
 import static io.netty.buffer.ByteBufUtil.getBytes;
 import static java.lang.Long.parseLong;
-import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
@@ -860,12 +860,10 @@ public class LiveHttpResponse implements LiveHttpMessage {
         Builder ensureContentLengthIsValid() {
             List<String> contentLengths = headers.build().getAll(CONTENT_LENGTH);
 
-            if (contentLengths.size() > 1) {
-                throw new IllegalArgumentException(format("Duplicate Content-Length found. %s", contentLengths));
-            }
+            checkArgument(contentLengths.size() <= 1, "Duplicate Content-Length found. %s", contentLengths);
 
-            if (contentLengths.size() == 1 && !isNonNegativeInteger(contentLengths.get(0))) {
-                throw new IllegalArgumentException(format("Invalid Content-Length found. %s", contentLengths.get(0)));
+            if (contentLengths.size() == 1) {
+                checkArgument(isNonNegativeInteger(contentLengths.get(0)), "Invalid Content-Length found. %s", contentLengths.get(0));
             }
             return this;
         }
