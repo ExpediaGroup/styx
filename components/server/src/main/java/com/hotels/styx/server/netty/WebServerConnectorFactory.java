@@ -64,7 +64,6 @@ public class WebServerConnectorFactory implements ServerConnectorFactory {
             channel.pipeline()
                     .addLast(new HttpServerCodec())
                     .addLast(new NettyToStyxRequestDecoder.Builder()
-                            .flowControlEnabled(true)
                             .build())
                     .addLast(new HttpPipelineHandler.Builder(httpHandler).build());
         }

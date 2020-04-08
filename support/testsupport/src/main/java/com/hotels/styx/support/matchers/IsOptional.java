@@ -23,7 +23,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Provides matchers around the {@code Optional} class
+ * Provides matchers around the {@code Optional} class.
  *
  * @param <T>
  * @author john.butler
@@ -32,14 +32,14 @@ import java.util.Optional;
 public final class IsOptional<T> extends TypeSafeMatcher<Optional<? extends T>> {
 
     /**
-     * Checks that the passed Optional is not present
+     * Checks that the passed Optional is not present.
      */
     public static IsOptional<Object> isAbsent() {
         return new IsOptional<>(false);
     }
 
     /**
-     * Checks that the passed Optional is present
+     * Checks that the passed Optional is present.
      */
     public static IsOptional<Object> isPresent() {
         return new IsOptional<>(true);

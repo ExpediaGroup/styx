@@ -10,7 +10,7 @@
   <logger name="io.netty" level="WARN"/>
   <logger name="com.hotels.styx.proxy.backends.file.FileChangeMonitor" level="INFO"/>
 
-  <root level="INFO">
+  <root level="OFF">
     <appender-ref ref="CONSOLE"/>
   </root>
 </configuration>

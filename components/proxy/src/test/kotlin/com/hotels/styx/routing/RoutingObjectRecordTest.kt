@@ -26,7 +26,7 @@ private const val TIMESTAMP_START_POSITION = CREATED_STRING.length
 
 class RoutingObjectRecordTest : StringSpec({
     "Creates with timestamp" {
-        val createdTag= RoutingObjectRecord.create("A", setOf("b"), mockk(), mockk())
+        val createdTag = RoutingObjectRecord.create("A", setOf("b"), mockk(), mockk())
                 .tags
                 .filter { it.startsWith(CREATED_STRING) }
                 .map { it.substring(TIMESTAMP_START_POSITION) }

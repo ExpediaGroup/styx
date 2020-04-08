@@ -159,11 +159,11 @@ class HostProxySpec : FeatureSpec() {
 
             scenario("Applies max header size settings") {
                 val maxHeaderSize = 20
-                styxServer().newRoutingObject("hostProxy", """
-                           type: HostProxy
+                styxServer().newRoutingObject("hostProxy", """	
+                           type: HostProxy	
                            config:
-                             host: ${testServer().proxyHttpHostHeader()}
-                             maxHeaderSize: $maxHeaderSize
+                             host: ${testServer().proxyHttpHostHeader()}	
+                             maxHeaderSize: $maxHeaderSize	
                            """.trimIndent()) shouldBe CREATED
 
                 client.send(get("/")
@@ -173,8 +173,8 @@ class HostProxySpec : FeatureSpec() {
                         .status() shouldBe BAD_GATEWAY
             }
 
-        }
 
+        }
 
         feature("Connection pooling") {
             scenario("Pools connections") {
@@ -443,7 +443,6 @@ class HostProxySpec : FeatureSpec() {
                     .withBody("mock-server-01")
                     .withHeader("HEADER", "RANDOMLONGVALUETOVERIFYMAXHEADERSIZE")
             )
-
             .stub(WireMock.get(urlMatching("/slow/.*")), aResponse()
                     .withStatus(200)
                     .withFixedDelay(1500)

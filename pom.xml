@@ -1154,6 +1154,7 @@
         </plugins>
       </build>
     </profile>
+
     <profile>
       <id>sonatype-oss-release</id>
       <build>

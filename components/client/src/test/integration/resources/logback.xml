@@ -16,6 +16,6 @@
   <logger name="com.hotels.styx.http-messages.inbound" level="INFO"/>
   <logger name="com.hotels.styx.http-messages.outbound" level="INFO"/>
   <logger name="com.hotels.styx.client.OriginRestrictionLoadBalancingStrategy" level="INFO"/>
-  <logger name="com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer" level="INFO"/>
+  <logger name="com.hotels.styx.common.content.FlowControllingHttpContentProducer" level="INFO"/>
 
 </configuration>

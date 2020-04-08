@@ -180,6 +180,7 @@
           <systemProperties>
             <io.netty.leakDetectionLevel>ADVANCED</io.netty.leakDetectionLevel>
           </systemProperties>
+          <forkMode>once</forkMode>
         </configuration>
         <executions>
           <execution>

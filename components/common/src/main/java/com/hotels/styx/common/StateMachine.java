@@ -68,7 +68,6 @@ public final class StateMachine<S> {
 
         S oldState = currentState;
         currentState = transition == null ? inappropriateEventHandler.apply(oldState, event) : transition.apply(event);
-
         stateChangeListener.onStateChange(oldState, currentState, event);
     }
 
@@ -182,7 +181,7 @@ public final class StateMachine<S> {
 
         public Builder<S> debugTransitions(String messagePrefix) {
             return this.onStateChange((oldState, newState, event)-> {
-                LOGGER.info("{} {}: {} -> {}", new Object[] {messagePrefix, event, oldState, newState});
+                LOGGER.debug("{} {}: {} -> {}", new Object[] {messagePrefix, event, oldState, newState});
             });
         }
     }

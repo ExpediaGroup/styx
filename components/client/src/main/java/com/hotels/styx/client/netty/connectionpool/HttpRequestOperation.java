@@ -26,7 +26,6 @@ import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.common.format.HttpMessageFormatter;
-import com.hotels.styx.common.format.SanitisedHttpMessageFormatter;
 import com.hotels.styx.common.logging.HttpRequestMessageLogger;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -49,7 +48,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
-import static com.hotels.styx.api.extension.service.BackendService.DEFAULT_RESPONSE_TIMEOUT_MILLIS;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
@@ -71,17 +69,6 @@ public class HttpRequestOperation {
     private final boolean requestLoggingEnabled;
     private volatile long requestTime;
     private final HttpRequestMessageLogger httpRequestMessageLogger;
-
-    /**
-     * Constructs an instance with flow-control disabled and a default response time (1s).
-     *
-     * @param request            HTTP request
-     * @param originStatsFactory OriginStats factory
-     */
-    @VisibleForTesting
-    public HttpRequestOperation(LiveHttpRequest request, OriginStatsFactory originStatsFactory, SanitisedHttpMessageFormatter sanitisedHttpMessageFormatter) {
-        this(request, originStatsFactory, DEFAULT_RESPONSE_TIMEOUT_MILLIS, false, false, sanitisedHttpMessageFormatter);
-    }
 
     /**
      * Constructs an instance.
@@ -156,11 +143,11 @@ public class HttpRequestOperation {
                         Requests.doFinally(response, cause -> {
                             if (nettyConnection.isConnected()) {
                                 removeProxyBridgeHandlers(nettyConnection);
-
                                 if (requestIsOngoing(requestRequestBodyChunkSubscriber.get())) {
                                     LOGGER.warn("Origin responded too quickly to an ongoing request, or it was cancelled. Connection={}, Request={}.",
                                             new Object[]{nettyConnection.channel(), this.request});
                                     nettyConnection.close();
+                                    requestRequestBodyChunkSubscriber.get().dispose();
                                 }
                             }
                         }));
@@ -240,10 +227,10 @@ public class HttpRequestOperation {
         public void write() {
             Channel originChannel = this.nettyConnection.channel();
             if (originChannel.isActive()) {
-                io.netty.handler.codec.http.HttpRequest messageHeaders = makeRequest(request);
+                io.netty.handler.codec.http.HttpRequest httpRequest = makeRequest(request);
 
-                originChannel.writeAndFlush(messageHeaders)
-                        .addListener(subscribeToRequestBody());
+                originChannel.writeAndFlush(httpRequest)
+                    .addListener(subscribeToRequestBody());
             } else {
                 responseFromOriginFlux.error(new TransportLostException(originChannel.remoteAddress(), nettyConnection.getOrigin()));
             }
