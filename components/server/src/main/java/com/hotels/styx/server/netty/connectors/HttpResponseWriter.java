@@ -36,7 +36,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import static io.netty.handler.codec.http.HttpHeaders.setTransferEncodingChunked;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static java.util.Objects.requireNonNull;
-import static rx.RxReactiveStreams.toObservable;
 
 /**
  * Netty HTTP response writer.
@@ -157,7 +156,12 @@ class HttpResponseWriter {
             return future;
         } catch (Throwable cause) {
             LOGGER.warn("Failed to convert response headers. response={}, Cause={}", new Object[]{response, cause});
-            toObservable(response.body()).forEach(it -> Buffers.toByteBuf(it).release());
+            response.body().subscribe(new BaseSubscriber<Buffer>() {
+                @Override
+                protected void hookOnNext(Buffer b) {
+                    Buffers.toByteBuf(b).release();
+                }
+            });
             future.completeExceptionally(cause);
             return future;
         }
