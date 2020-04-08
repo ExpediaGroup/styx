@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
@@ -163,19 +164,13 @@ public final class HealthCheckConfig {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(160);
-        sb.append(this.getClass().getSimpleName());
-        sb.append("{uri=");
-        sb.append(uri);
-        sb.append(", intervalMillis=");
-        sb.append(intervalMillis);
-        sb.append(", timeoutMillis=");
-        sb.append(timeoutMillis);
-        sb.append(", healthyThreshold=");
-        sb.append(healthyThreshold);
-        sb.append(", unhealthyThreshold=");
-        sb.append(unhealthyThreshold);
-        return sb.append('}').toString();
+        return toStringHelper(this)
+                .add("uri", this.uri)
+                .add("intervalMillis", this.intervalMillis)
+                .add("timeoutMillis", this.timeoutMillis)
+                .add("healthyThreshold", this.healthyThreshold)
+                .add("unhealthyThreshold", this.unhealthyThreshold)
+                .toString();
     }
 
     /**

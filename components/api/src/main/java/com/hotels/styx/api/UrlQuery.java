@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
@@ -101,13 +102,10 @@ final class UrlQuery {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(64);
-        sb.append(this.getClass().getSimpleName());
-        sb.append("{parameters=");
-        sb.append(parameters);
-        sb.append(", encodedQuery=");
-        sb.append(encodedQuery);
-        return sb.append('}').toString();
+        return toStringHelper(this)
+                .add("parameters", parameters)
+                .add("encodedQuery", encodedQuery)
+                .toString();
     }
 
     static class Parameter {

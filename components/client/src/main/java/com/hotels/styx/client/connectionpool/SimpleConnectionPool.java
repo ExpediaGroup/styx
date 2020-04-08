@@ -16,6 +16,7 @@
 package com.hotels.styx.client.connectionpool;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.MoreObjects;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.client.Connection;
@@ -265,23 +266,15 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
 
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder(224);
-            sb.append(this.getClass().getSimpleName());
-            sb.append("{\navailableConnections=");
-            sb.append(availableConnectionCount());
-            sb.append(", \npendingConnections=");
-            sb.append(pendingConnectionCount());
-            sb.append(", \nbusyConnections=");
-            sb.append(busyConnectionCount());
-            sb.append(", \nconnectionAttempts=");
-            sb.append(connectionAttempts());
-            sb.append(", \nconnectionFailures=");
-            sb.append(connectionFailures());
-            sb.append(", \nclosedConnections=");
-            sb.append(closedConnections());
-            sb.append(", \nterminatedConnections=");
-            sb.append(terminatedConnections());
-            return sb.append('}').toString();
+            return MoreObjects.toStringHelper(this)
+                    .add("\navailableConnections", availableConnectionCount())
+                    .add("\npendingConnections", pendingConnectionCount())
+                    .add("\nbusyConnections", busyConnectionCount())
+                    .add("\nconnectionAttempts", connectionAttempts())
+                    .add("\nconnectionFailures", connectionFailures())
+                    .add("\nclosedConnections", closedConnections())
+                    .add("\nterminatedConnections", terminatedConnections())
+                    .toString();
         }
     }
 }
