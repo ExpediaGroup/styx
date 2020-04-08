@@ -24,6 +24,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Iterables;
 import com.google.common.hash.HashFunction;
@@ -35,7 +36,6 @@ import java.text.MessageFormat;
 import static ch.qos.logback.core.CoreConstants.LINE_SEPARATOR;
 import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.base.Optional.fromNullable;
-import static com.hotels.styx.common.Strings.isNotEmpty;
 import static java.lang.Integer.toHexString;
 import static java.util.Arrays.asList;
 import static java.util.Collections.EMPTY_LIST;
@@ -129,7 +129,7 @@ public class ExceptionConverter extends ClassicConverter {
         String[] targetClasses = TARGET_CLASSES_DEFAULT;
         Context ctx = getContext();
         String property = ctx.getProperty(TARGET_CLASSES_PROPERTY_NAME);
-        if (isNotEmpty(property)) {
+        if (!Strings.isNullOrEmpty(property)) {
             targetClasses = Iterables.toArray(Splitter.on(",").trimResults().split(property), String.class);
         } else {
             addError(MessageFormat.format("The '{0}' property should be present on logback configuration. Using default classname prefixes.",

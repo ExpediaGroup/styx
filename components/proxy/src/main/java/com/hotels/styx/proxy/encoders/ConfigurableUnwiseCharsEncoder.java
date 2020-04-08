@@ -24,8 +24,8 @@ import org.slf4j.Logger;
 
 import java.util.Objects;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.escape.Escapers.nullEscaper;
-import static com.hotels.styx.common.Strings.isNullOrEmpty;
 import static java.lang.Integer.toHexString;
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;

@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.server.netty.codec;
 
+import com.google.common.base.Strings;
 import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.HttpHeader;
@@ -257,7 +258,7 @@ public class NettyToStyxRequestDecoderTest {
     public void throwsBadRequestForTooLongFrames() throws Throwable {
         HttpRequest request = new DefaultFullHttpRequest(HTTP_1_1, GET, "http://foo.com/");
         request.headers().set(HOST, "http://foo.com/");
-        request.headers().set("foo", String.format("%10000s", "").replace(" ", "x"));
+        request.headers().set("foo", Strings.repeat("x", 10000));
         ByteBuf byteBuf = httpMessageToBytes(request);
 
         Exception e = assertThrows(DecoderException.class, () -> channel.writeInbound(byteBuf));

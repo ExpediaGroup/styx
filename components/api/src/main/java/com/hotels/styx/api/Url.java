@@ -31,6 +31,7 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.lang.Integer.parseInt;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -116,7 +117,7 @@ public final class Url implements Comparable<Url> {
      */
     public boolean isFullyQualified() {
         Optional<String> host = host();
-        return host.isPresent() && !host.get().isEmpty();
+        return host.isPresent() && !isNullOrEmpty(host.get());
     }
 
     /**
@@ -367,10 +368,10 @@ public final class Url implements Comparable<Url> {
         @Override
         public String toString() {
             StringBuilder builder = new StringBuilder();
-            if (host == null || host.isEmpty()) {
+            if (isNullOrEmpty(host)) {
                 return builder.toString();
             }
-            if (userInfo != null && !userInfo.isEmpty()) {
+            if (!isNullOrEmpty(userInfo)) {
                 builder.append(userInfo).append("@");
             }
             builder.append(host);
