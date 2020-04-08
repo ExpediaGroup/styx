@@ -25,6 +25,8 @@ import com.hotels.styx.api.WebServiceHandler;
 import com.hotels.styx.api.configuration.ObjectStore;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 
+import java.util.stream.Collectors;
+
 import static com.google.common.net.MediaType.HTML_UTF_8;
 import static com.hotels.styx.admin.AdminServerBuilder.adminEndpointPath;
 import static com.hotels.styx.admin.AdminServerBuilder.adminPath;
@@ -32,7 +34,6 @@ import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.stream.Collectors.joining;
 
 /**
  * Returns a simple HTML page with a list of Providers, and the set of available admin endpoints for each.
@@ -68,7 +69,7 @@ public class ProviderListHandler implements WebServiceHandler {
     public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         String providerList = providerDb.entrySet().stream()
                 .map(entry -> htmlForProvider(entry.getKey(), entry.getValue()))
-                .collect(joining());
+                .collect(Collectors.joining());
         String html = String.format(HTML_TEMPLATE, TITLE, h2(TITLE) + providerList);
         return Eventual.of(response(OK)
                 .body(html, UTF_8)
@@ -83,7 +84,7 @@ public class ProviderListHandler implements WebServiceHandler {
                 .stream()
                 .map(relativePath -> adminEndpointPath("providers", name, relativePath))
                 .map(absolutePath -> li(link(absolutePath, absolutePath)))
-                .collect(joining());
+                .collect(Collectors.joining());
         return h3(name + " (" + provider.getType() + ")")
                 + "<ul>\n"
                 + endpointList

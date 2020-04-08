@@ -17,6 +17,7 @@ package com.hotels.styx.client.netty;
 
 import com.codahale.metrics.Counting;
 import com.codahale.metrics.Meter;
+import com.google.common.base.Joiner;
 import com.hotels.styx.api.MetricRegistry;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -35,7 +36,7 @@ import static java.util.Collections.singleton;
  */
 public class MetricsSupport {
     public static String name(List<String> components, String name) {
-        return String.join(".", concat(components, singleton(name)));
+        return Joiner.on(".").join(concat(components, singleton(name)));
     }
 
     /**
@@ -66,7 +67,7 @@ public class MetricsSupport {
 
             if (excludedNames.size() > 0) {
                 sb.append(" except {");
-                sb.append(String.join(", ", excludedNames));
+                sb.append(Joiner.on(", ").join(excludedNames));
                 sb.append("}");
             }
 
@@ -76,7 +77,7 @@ public class MetricsSupport {
         @Override
         protected void describeMismatchSafely(MetricRegistry item, Description mismatchDescription) {
             String description = "following metrics have been updated: {"
-                    + String.join(", ", updatedMetrics(item))
+                    + Joiner.on(", ").join(updatedMetrics(item))
                     + "}";
 
             mismatchDescription.appendText(description);
