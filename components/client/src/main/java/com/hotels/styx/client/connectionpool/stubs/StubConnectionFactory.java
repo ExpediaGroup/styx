@@ -78,14 +78,13 @@ public class StubConnectionFactory implements Connection.Factory {
 
         @Override
         public String toString() {
-            return new StringBuilder(64)
-                    .append(this.getClass().getSimpleName())
-                    .append("{origin=")
-                    .append(origin)
-                    .append(", connected=")
-                    .append(connected)
-                    .append('}')
-                    .toString();
+            StringBuilder sb = new StringBuilder(64);
+            sb.append(this.getClass().getSimpleName());
+            sb.append("{origin=");
+            sb.append(origin);
+            sb.append(", connected=");
+            sb.append(connected);
+            return sb.append('}').toString();
         }
     }
 }

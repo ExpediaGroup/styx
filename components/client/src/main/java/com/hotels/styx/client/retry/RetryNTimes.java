@@ -58,13 +58,12 @@ public class RetryNTimes extends AbstractRetryPolicy {
 
     @Override
     public String toString() {
-        return new StringBuilder(64)
-                .append(this.getClass().getSimpleName())
-                .append("{delay=")
-                .append(deltaBackoffMillis())
-                .append(", maxAttempts=")
-                .append(maxAttempts())
-                .append('}')
-                .toString();
+        StringBuilder sb = new StringBuilder(64);
+        sb.append(this.getClass().getSimpleName());
+        sb.append("{delay=");
+        sb.append(deltaBackoffMillis());
+        sb.append(", maxAttempts=");
+        sb.append(maxAttempts());
+        return sb.append('}').toString();
     }
 }

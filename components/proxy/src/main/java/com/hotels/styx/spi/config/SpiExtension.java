@@ -88,11 +88,10 @@ public class SpiExtension {
 
     @Override
     public String toString() {
-        return new StringBuilder(32)
-                .append(this.getClass().getSimpleName())
-                .append("{factory=")
-                .append(factory)
-                .append('}')
-                .toString();
+        StringBuilder sb = new StringBuilder(32);
+        sb.append(this.getClass().getSimpleName());
+        sb.append("{factory=");
+        sb.append(factory);
+        return sb.append('}').toString();
     }
 }

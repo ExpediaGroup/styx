@@ -89,14 +89,13 @@ public class RewriteConfig implements RewriteRule {
 
     @Override
     public String toString() {
-        return new StringBuilder(64)
-                .append(this.getClass().getSimpleName())
-                .append("{urlPattern=")
-                .append(urlPattern)
-                .append(", replacement=")
-                .append(replacement)
-                .append('}')
-                .toString();
+        StringBuilder sb = new StringBuilder(64);
+        sb.append(this.getClass().getSimpleName());
+        sb.append("{urlPattern=");
+        sb.append(urlPattern);
+        sb.append(", replacement=");
+        sb.append(replacement);
+        return sb.append('}').toString();
     }
 
     @Override

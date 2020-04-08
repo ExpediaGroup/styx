@@ -195,26 +195,25 @@ public final class BackendService implements Identifiable {
 
     @Override
     public String toString() {
-        return new StringBuilder(128)
-                .append(this.getClass().getSimpleName())
-                .append("{id=")
-                .append(id)
-                .append(", path=")
-                .append(path)
-                .append(", origins=")
-                .append(origins)
-                .append(", connectionPoolSettings=")
-                .append(connectionPoolSettings)
-                .append(", healthCheckConfig=")
-                .append(healthCheckConfig)
-                .append(", stickySessionConfig=")
-                .append(stickySessionConfig)
-                .append(", rewrites=")
-                .append(rewrites)
-                .append(", tlsSettings=")
-                .append(tlsSettings)
-                .append('}')
-                .toString();
+        StringBuilder sb = new StringBuilder(128);
+        sb.append(this.getClass().getSimpleName());
+        sb.append("{id=");
+        sb.append(id);
+        sb.append(", path=");
+        sb.append(path);
+        sb.append(", origins=");
+        sb.append(origins);
+        sb.append(", connectionPoolSettings=");
+        sb.append(connectionPoolSettings);
+        sb.append(", healthCheckConfig=");
+        sb.append(healthCheckConfig);
+        sb.append(", stickySessionConfig=");
+        sb.append(stickySessionConfig);
+        sb.append(", rewrites=");
+        sb.append(rewrites);
+        sb.append(", tlsSettings=");
+        sb.append(tlsSettings);
+        return sb.append('}').toString();
     }
 
     public Builder newCopy() {

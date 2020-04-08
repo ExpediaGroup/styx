@@ -65,7 +65,7 @@ public final class HealthCheckConfig {
             throw new IllegalArgumentException(format("intervalMillis [%s] cannot be < 1 ms", intervalMillis));
         }
         if (this.timeoutMillis < 1) {
-            throw new IllegalArgumentException(format("timeoutMillis [%s] cannot be < 1 ms", timeoutMillis));
+            throw new IllegalArgumentException(format("timeoutMillis [%s] cannot be < 1 ms", intervalMillis));
         }
         if (this.healthyThreshold < 1) {
             throw new IllegalArgumentException(format("healthyThreshold [%s] cannot be < 1", healthyThreshold));
@@ -163,20 +163,19 @@ public final class HealthCheckConfig {
 
     @Override
     public String toString() {
-        return new StringBuilder(160)
-                .append(this.getClass().getSimpleName())
-                .append("{uri=")
-                .append(uri)
-                .append(", intervalMillis=")
-                .append(intervalMillis)
-                .append(", timeoutMillis=")
-                .append(timeoutMillis)
-                .append(", healthyThreshold=")
-                .append(healthyThreshold)
-                .append(", unhealthyThreshold=")
-                .append(unhealthyThreshold)
-                .append('}')
-                .toString();
+        StringBuilder sb = new StringBuilder(160);
+        sb.append(this.getClass().getSimpleName());
+        sb.append("{uri=");
+        sb.append(uri);
+        sb.append(", intervalMillis=");
+        sb.append(intervalMillis);
+        sb.append(", timeoutMillis=");
+        sb.append(timeoutMillis);
+        sb.append(", healthyThreshold=");
+        sb.append(healthyThreshold);
+        sb.append(", unhealthyThreshold=");
+        sb.append(unhealthyThreshold);
+        return sb.append('}').toString();
     }
 
     /**

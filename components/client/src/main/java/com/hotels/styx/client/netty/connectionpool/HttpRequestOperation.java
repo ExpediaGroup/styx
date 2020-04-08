@@ -213,12 +213,11 @@ public class HttpRequestOperation {
 
     @Override
     public String toString() {
-        return new StringBuilder(32)
-                .append(this.getClass().getSimpleName())
-                .append("{httpRequest=")
-                .append(this.request)
-                .append('}')
-                .toString();
+        StringBuilder sb = new StringBuilder(32);
+        sb.append(this.getClass().getSimpleName());
+        sb.append("{httpRequest=");
+        sb.append(this.request);
+        return sb.append('}').toString();
     }
 
     private static final class WriteRequestToOrigin {

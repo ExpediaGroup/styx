@@ -51,14 +51,13 @@ public class ServiceFactoryConfig {
 
     @Override
     public String toString() {
-        return new StringBuilder(64)
-                .append(this.getClass().getSimpleName())
-                .append("{factory=")
-                .append(factory)
-                .append(", config=")
-                .append(config)
-                .append('}')
-                .toString();
+        StringBuilder sb = new StringBuilder(64);
+        sb.append(this.getClass().getSimpleName());
+        sb.append("{factory=");
+        sb.append(factory);
+        sb.append(", config=");
+        sb.append(config);
+        return sb.append('}').toString();
 
     }
 }

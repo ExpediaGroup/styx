@@ -126,34 +126,32 @@ public class NettyConnection implements Connection {
 
     @Override
     public String toString() {
-        return new StringBuilder(256)
-                .append(this.getClass().getSimpleName())
-                .append("{host=")
-                .append(this.origin.hostAndPortString())
-                .append(", channel=")
-                .append(toString(channel))
-                .append('}')
-                .toString();
+        StringBuilder sb = new StringBuilder(256);
+        sb.append(this.getClass().getSimpleName());
+        sb.append("{host=");
+        sb.append(this.origin.hostAndPortString());
+        sb.append(", channel=");
+        sb.append(toString(channel));
+        return sb.append('}').toString();
     }
 
     private static String toString(Channel channel) {
-        return new StringBuilder(224)
-                .append(channel.getClass().getSimpleName())
-                .append("{active=")
-                .append(channel.isActive())
-                .append(", open=")
-                .append(channel.isOpen())
-                .append(", registered=")
-                .append(channel.isRegistered())
-                .append(", writable=")
-                .append(channel.isWritable())
-                .append(", localAddress=")
-                .append(channel.localAddress())
-                .append(", clientAddress=")
-                .append(channel.remoteAddress())
-                .append(", hashCode=")
-                .append(channel.hashCode())
-                .append('}')
-                .toString();
+        StringBuilder sb = new StringBuilder(224);
+        sb.append(channel.getClass().getSimpleName());
+        sb.append("{active=");
+        sb.append(channel.isActive());
+        sb.append(", open=");
+        sb.append(channel.isOpen());
+        sb.append(", registered=");
+        sb.append(channel.isRegistered());
+        sb.append(", writable=");
+        sb.append(channel.isWritable());
+        sb.append(", localAddress=");
+        sb.append(channel.localAddress());
+        sb.append(", clientAddress=");
+        sb.append(channel.remoteAddress());
+        sb.append(", hashCode=");
+        sb.append(channel.hashCode());
+        return sb.append('}').toString();
     }
 }

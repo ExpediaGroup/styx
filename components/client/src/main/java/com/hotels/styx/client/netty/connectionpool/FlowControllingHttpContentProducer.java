@@ -558,12 +558,11 @@ class FlowControllingHttpContentProducer {
 
         @Override
         public String toString() {
-            return new StringBuilder(32)
-                    .append(this.getClass().getSimpleName())
-                    .append("{cause=")
-                    .append(cause)
-                    .append('}')
-                    .toString();
+            StringBuilder sb = new StringBuilder(32);
+            sb.append(this.getClass().getSimpleName());
+            sb.append("{cause=");
+            sb.append(cause);
+            return sb.append('}').toString();
         }
     }
 
@@ -581,12 +580,11 @@ class FlowControllingHttpContentProducer {
 
         @Override
         public String toString() {
-            return new StringBuilder(32)
-                    .append(this.getClass().getSimpleName())
-                    .append("{cause=")
-                    .append(cause)
-                    .append('}')
-                    .toString();
+            StringBuilder sb = new StringBuilder(32);
+            sb.append(this.getClass().getSimpleName());
+            sb.append("{cause=");
+            sb.append(cause);
+            return sb.append('}').toString();
         }
     }
 
@@ -604,12 +602,11 @@ class FlowControllingHttpContentProducer {
 
         @Override
         public String toString() {
-            return new StringBuilder(32)
-                    .append(this.getClass().getSimpleName())
-                    .append("{cause=")
-                    .append(cause)
-                    .append('}')
-                    .toString();
+            StringBuilder sb = new StringBuilder(32);
+            sb.append(this.getClass().getSimpleName());
+            sb.append("{cause=");
+            sb.append(cause);
+            return sb.append('}').toString();
         }
     }
 

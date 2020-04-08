@@ -61,14 +61,13 @@ public class StickySessionConfig {
 
     @Override
     public String toString() {
-        return new StringBuilder(64)
-                .append(this.getClass().getSimpleName())
-                .append("{enabled=")
-                .append(enabled)
-                .append(", timeoutSeconds=")
-                .append(timeoutSeconds)
-                .append('}')
-                .toString();
+        StringBuilder sb = new StringBuilder(64);
+        sb.append(this.getClass().getSimpleName());
+        sb.append("{enabled=");
+        sb.append(enabled);
+        sb.append(", timeoutSeconds=");
+        sb.append(timeoutSeconds);
+        return sb.append('}').toString();
     }
 
     @Override

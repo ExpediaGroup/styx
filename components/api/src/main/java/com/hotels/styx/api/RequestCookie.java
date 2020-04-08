@@ -26,7 +26,6 @@ import java.util.Objects;
 import java.util.Set;
 
 import static java.util.Collections.emptySet;
-import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -53,7 +52,9 @@ public final class RequestCookie {
             throw new IllegalArgumentException("name cannot be null or empty");
         }
 
-        requireNonNull(value, "value cannot be null");
+        if (value == null) {
+            throw new NullPointerException("value cannot be null");
+        }
 
         this.name = name;
         this.value = value;

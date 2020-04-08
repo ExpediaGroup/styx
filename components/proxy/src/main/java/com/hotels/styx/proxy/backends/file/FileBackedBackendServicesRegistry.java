@@ -243,11 +243,10 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
 
     @Override
     public String toString() {
-        return new StringBuilder(32)
-                .append(this.getClass().getSimpleName())
-                .append("{originsFileName=")
-                .append(fileBackedRegistry.fileName())
-                .append('}')
-                .toString();
+        StringBuilder sb = new StringBuilder(32);
+        sb.append(this.getClass().getSimpleName());
+        sb.append("{originsFileName=");
+        sb.append(fileBackedRegistry.fileName());
+        return sb.append('}').toString();
     }
 }

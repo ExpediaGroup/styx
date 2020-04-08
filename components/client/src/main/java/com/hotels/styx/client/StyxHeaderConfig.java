@@ -82,18 +82,17 @@ public class StyxHeaderConfig {
 
     @Override
     public String toString() {
-        return new StringBuilder(128)
-                .append(this.getClass().getSimpleName())
-                .append("{styxInfoHeaderName=")
-                .append(styxInfoHeaderName)
-                .append(", originIdHeaderName=")
-                .append(originIdHeaderName)
-                .append(", requestIdHeaderName=")
-                .append(requestIdHeaderName)
-                .append(", styxInfoHeaderFormat=")
-                .append(styxInfoHeaderFormat)
-                .append('}')
-                .toString();
+        StringBuilder sb = new StringBuilder(128);
+        sb.append(this.getClass().getSimpleName());
+        sb.append("{styxInfoHeaderName=");
+        sb.append(styxInfoHeaderName);
+        sb.append(", originIdHeaderName=");
+        sb.append(originIdHeaderName);
+        sb.append(", requestIdHeaderName=");
+        sb.append(requestIdHeaderName);
+        sb.append(", styxInfoHeaderFormat=");
+        sb.append(styxInfoHeaderFormat);
+        return sb.append('}').toString();
     }
 
     /**

@@ -142,12 +142,11 @@ public final class BackendServices implements Iterable<BackendService> {
 
     @Override
     public String toString() {
-        return new StringBuilder(32)
-                .append(this.getClass().getSimpleName())
-                .append("{backendServices=")
-                .append(backendServices)
-                .append('}')
-                .toString();
+        StringBuilder sb = new StringBuilder(32);
+        sb.append(this.getClass().getSimpleName());
+        sb.append("{backendServices=");
+        sb.append(backendServices);
+        return sb.append('}').toString();
     }
 
     @Override

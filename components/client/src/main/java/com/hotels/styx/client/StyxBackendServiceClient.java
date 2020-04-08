@@ -242,20 +242,19 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
 
         @Override
         public String toString() {
-            return new StringBuilder(160)
-                    .append(this.getClass().getSimpleName())
-                    .append("{appId=")
-                    .append(appId)
-                    .append(", retryCount=")
-                    .append(retryCount)
-                    .append(", lastException=")
-                    .append(lastException)
-                    .append(", request=")
-                    .append(request.url())
-                    .append(", previouslyUsedOrigins=")
-                    .append(hosts(previouslyUsedOrigins))
-                    .append('}')
-                    .toString();
+            StringBuilder sb = new StringBuilder(160);
+            sb.append(this.getClass().getSimpleName());
+            sb.append("{appId=");
+            sb.append(appId);
+            sb.append(", retryCount=");
+            sb.append(retryCount);
+            sb.append(", lastException=");
+            sb.append(lastException);
+            sb.append(", request=");
+            sb.append(request.url());
+            sb.append(", previouslyUsedOrigins=");
+            sb.append(hosts(previouslyUsedOrigins));
+            return sb.append('}').toString();
         }
 
         private static String hosts(Iterable<RemoteHost> origins) {

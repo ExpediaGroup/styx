@@ -28,7 +28,6 @@ import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.common.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
-import static java.util.Optional.ofNullable;
 
 /**
  * A builder of {@link NettyServer} instances.
@@ -51,7 +50,7 @@ public final class NettyServerBuilder {
     }
 
     String host() {
-        return ofNullable(host).orElse("localhost");
+        return host != null ? host : "localhost";
     }
 
     MetricRegistry metricsRegistry() {

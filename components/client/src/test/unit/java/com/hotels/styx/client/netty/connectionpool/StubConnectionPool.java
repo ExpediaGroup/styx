@@ -169,15 +169,14 @@ public class StubConnectionPool implements ConnectionPool, Comparable<Connection
 
     @Override
     public String toString() {
-        return new StringBuilder(96)
-                .append(this.getClass().getSimpleName())
-                .append("{origin=")
-                .append(origin)
-                .append(", busyConnections=")
-                .append(busyConnectionCount)
-                .append(", pendingConnections=")
-                .append(pendingConnectionCount)
-                .append('}')
-                .toString();
+        StringBuilder sb = new StringBuilder(96);
+        sb.append(this.getClass().getSimpleName());
+        sb.append("{origin=");
+        sb.append(origin);
+        sb.append(", busyConnections=");
+        sb.append(busyConnectionCount);
+        sb.append(", pendingConnections=");
+        sb.append(pendingConnectionCount);
+        return sb.append('}').toString();
     }
 }
