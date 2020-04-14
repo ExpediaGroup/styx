@@ -15,20 +15,18 @@
  */
 package com.hotels.styx.api.extension.service;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.Identifiable;
 import com.hotels.styx.api.extension.Origin;
 
 import java.net.URI;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.google.common.base.Objects.toStringHelper;
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.extension.Origin.checkThatOriginsAreDistinct;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
@@ -37,7 +35,11 @@ import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
+import static java.util.Collections.unmodifiableList;
+import static java.util.Collections.unmodifiableSet;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Represents the configuration of an application (i.e. a backend service) that Styx can proxy to.
@@ -88,7 +90,9 @@ public final class BackendService implements Identifiable {
         this.id = requireNonNull(builder.id, "id");
         this.path = requireNonNull(builder.path, "path");
         this.connectionPoolSettings = requireNonNull(builder.connectionPoolSettings);
-        this.origins = ImmutableSet.copyOf(builder.origins);
+        this.origins = unmodifiableSet(builder.origins.stream()
+                .map(Objects::requireNonNull)
+                .collect(toCollection(() -> new LinkedHashSet<>())));
         this.healthCheckConfig = nullIfDisabled(builder.healthCheckConfig);
         this.stickySessionConfig = requireNonNull(builder.stickySessionConfig);
         this.rewrites = requireNonNull(builder.rewrites);
@@ -99,7 +103,9 @@ public final class BackendService implements Identifiable {
         this.maxHeaderSize = builder.maxHeaderSize;
 
         checkThatOriginsAreDistinct(origins);
-        checkArgument(responseTimeoutMillis >= 0, "Request timeout must be greater than or equal to zero");
+        if (responseTimeoutMillis < 0) {
+            throw new IllegalArgumentException("Request timeout must be greater than or equal to zero");
+        }
     }
 
     private static HealthCheckConfig nullIfDisabled(HealthCheckConfig healthCheckConfig) {
@@ -195,15 +201,25 @@ public final class BackendService implements Identifiable {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("id", this.id)
-                .add("path", this.path)
-                .add("origins", this.origins)
-                .add("connectionPoolSettings", this.connectionPoolSettings)
-                .add("healthCheckConfig", this.healthCheckConfig)
-                .add("stickySessionConfig", this.stickySessionConfig)
-                .add("rewrites", this.rewrites)
-                .add("tlsSettings", this.tlsSettings)
+        return new StringBuilder(128)
+                .append(this.getClass().getSimpleName())
+                .append("{id=")
+                .append(id)
+                .append(", path=")
+                .append(path)
+                .append(", origins=")
+                .append(origins)
+                .append(", connectionPoolSettings=")
+                .append(connectionPoolSettings)
+                .append(", healthCheckConfig=")
+                .append(healthCheckConfig)
+                .append(", stickySessionConfig=")
+                .append(stickySessionConfig)
+                .append(", rewrites=")
+                .append(rewrites)
+                .append(", tlsSettings=")
+                .append(tlsSettings)
+                .append('}')
                 .toString();
     }
 
@@ -352,7 +368,9 @@ public final class BackendService implements Identifiable {
          * @return this builder
          */
         public Builder origins(Origin... origins) {
-            return origins(ImmutableSet.copyOf(origins));
+            return origins(Arrays.stream(origins)
+                    .map(Objects::requireNonNull)
+                    .collect(toCollection(() -> new LinkedHashSet<>())));
         }
 
         /**
@@ -372,7 +390,7 @@ public final class BackendService implements Identifiable {
          * @return this builder
          */
         public Builder rewrites(List<RewriteConfig> rewriteConfigs) {
-            this.rewrites = ImmutableList.copyOf(rewriteConfigs);
+            this.rewrites = unmodifiableList(rewriteConfigs.stream().map(Objects::requireNonNull).collect(toList()));
             return this;
         }
 

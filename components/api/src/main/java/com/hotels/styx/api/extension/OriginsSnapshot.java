@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static com.google.common.base.Objects.toStringHelper;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static java.util.Objects.requireNonNull;
@@ -139,11 +138,17 @@ public final class OriginsSnapshot {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("appId", appId)
-                .add("activeOrigins", activeOrigins)
-                .add("inactiveOrigins", inactiveOrigins)
-                .add("disabledOrigins", disabledOrigins)
+        return new StringBuilder(128)
+                .append(this.getClass().getSimpleName())
+                .append("{appId=")
+                .append(appId)
+                .append(", activeOrigins=")
+                .append(activeOrigins)
+                .append(", inactiveOrigins=")
+                .append(inactiveOrigins)
+                .append(", disabledOrigins=")
+                .append(disabledOrigins)
+                .append('}')
                 .toString();
     }
 }

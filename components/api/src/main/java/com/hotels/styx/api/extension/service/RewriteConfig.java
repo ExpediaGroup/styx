@@ -15,19 +15,18 @@
  */
 package com.hotels.styx.api.extension.service;
 
-import com.google.common.collect.ImmutableList;
-
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.google.common.base.Objects.toStringHelper;
 import static java.lang.Integer.parseInt;
-import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableList;
 import static java.util.regex.Pattern.compile;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Encapsulates configuration for a Styx URL path replacement rule.
@@ -90,9 +89,13 @@ public class RewriteConfig implements RewriteRule {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("urlPattern", urlPattern)
-                .add("replacement", replacement)
+        return new StringBuilder(64)
+                .append(this.getClass().getSimpleName())
+                .append("{urlPattern=")
+                .append(urlPattern)
+                .append(", replacement=")
+                .append(replacement)
+                .append('}')
                 .toString();
     }
 
@@ -138,7 +141,8 @@ public class RewriteConfig implements RewriteRule {
         }
 
         private static List<String> literals(String replacement) {
-            return ImmutableList.copyOf(asList(replacement.split(REGEX)));
+            return unmodifiableList(Arrays.stream(replacement.split(REGEX))
+                    .collect(toList()));
         }
 
         private static List<Integer> placeholderNumbers(String replacement) {
@@ -151,7 +155,7 @@ public class RewriteConfig implements RewriteRule {
                 placeholderNumbers.add(placeholderNumber(nextGroup));
             }
 
-            return ImmutableList.copyOf(placeholderNumbers);
+            return unmodifiableList(placeholderNumbers);
         }
 
         private static int placeholderNumber(String nextGroup) {

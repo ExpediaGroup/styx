@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -24,10 +22,14 @@ import org.junit.jupiter.params.provider.MethodSource;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
+import static com.hotels.styx.api.Collections.listOf;
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
@@ -45,8 +47,6 @@ import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.MapMatcher.isMap;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -208,10 +208,10 @@ public class LiveHttpRequestTest {
 
         assertThat(req.queryParamNames(), containsInAnyOrder("foo", "abc"));
 
-        assertThat(req.queryParams(), isMap(ImmutableMap.of(
-                "foo", asList("bar", "hello"),
-                "abc", singletonList("def")
-        )));
+        Map<String, List<String>> expected = new HashMap<>();
+        expected.put("foo", listOf("bar", "hello"));
+        expected.put("abc", listOf("def"));
+        assertThat(req.queryParams(), isMap(expected));
     }
 
     @Test
@@ -516,7 +516,7 @@ public class LiveHttpRequestTest {
     public void transformsCookiesViaList() {
         LiveHttpRequest request = LiveHttpRequest.get("/").addCookies(requestCookie("cookie", "xyz010")).build()
                 .newBuilder()
-                .cookies(ImmutableList.of(requestCookie("cookie", "xyz202")))
+                .cookies(listOf(requestCookie("cookie", "xyz202")))
                 .build();
 
         assertEquals(request.cookie("cookie"), Optional.of(requestCookie("cookie", "xyz202")));
@@ -536,7 +536,7 @@ public class LiveHttpRequestTest {
     public void transformsByAddingCookiesList() {
         LiveHttpRequest request = LiveHttpRequest.get("/").build()
                 .newBuilder()
-                .addCookies(ImmutableList.of(requestCookie("cookie", "xyz202")))
+                .addCookies(listOf(requestCookie("cookie", "xyz202")))
                 .build();
 
         assertEquals(request.cookie("cookie"), Optional.of(requestCookie("cookie", "xyz202")));
@@ -556,7 +556,7 @@ public class LiveHttpRequestTest {
     public void transformsByRemovingCookieList() {
         LiveHttpRequest request = LiveHttpRequest.get("/").addCookies(requestCookie("cookie", "xyz202")).build()
                 .newBuilder()
-                .removeCookies(ImmutableList.of("cookie"))
+                .removeCookies(listOf("cookie"))
                 .build();
 
         assertEquals(request.cookie("cookie"), Optional.empty());

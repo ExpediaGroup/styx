@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.base.Objects;
+import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
@@ -61,6 +61,6 @@ public final class Id {
             return false;
         }
         Id other = (Id) obj;
-        return Objects.equal(this.value, other.value);
+        return Objects.equals(this.value, other.value);
     }
 }

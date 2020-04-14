@@ -18,8 +18,7 @@ package com.hotels.styx.api.extension.service;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import static com.google.common.base.Objects.firstNonNull;
-import static com.google.common.base.Objects.toStringHelper;
+import static java.util.Optional.ofNullable;
 
 /**
  * Programmatically configurable connection pool settings.
@@ -44,42 +43,12 @@ public class ConnectionPoolSettings {
                            @Deprecated Integer socketTimeoutMillis,
                            Integer pendingConnectionTimeoutMillis,
                            Long connectionExpirationSeconds) {
-        this.maxConnectionsPerHost = firstNonNull(maxConnectionsPerHost, DEFAULT_MAX_CONNECTIONS_PER_HOST);
-        this.maxPendingConnectionsPerHost = firstNonNull(maxPendingConnectionsPerHost, DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST);
-        this.connectTimeoutMillis = firstNonNull(connectTimeoutMillis, DEFAULT_CONNECT_TIMEOUT_MILLIS);
-        this.socketTimeoutMillis = firstNonNull(socketTimeoutMillis, DEFAULT_SOCKET_TIMEOUT_MILLIS);
-        this.pendingConnectionTimeoutMillis = firstNonNull(pendingConnectionTimeoutMillis, DEFAULT_CONNECT_TIMEOUT_MILLIS);
-        this.connectionExpirationSeconds = firstNonNull(connectionExpirationSeconds, DEFAULT_CONNECTION_EXPIRATION_SECONDS);
-    }
-
-    /**
-     * A constructor for ConnectionPoolSettings.
-     *
-     * This is a deprecated constructor. Use the alternative constructor that does not
-     * take a {{socketTimeoutMillis}} as an argument.
-     *
-     * @deprecated As the socketTimeout is due to be removed in the future release.
-     *
-     * @param maxConnectionsPerHost         Maximum number of connections.
-     * @param maxPendingConnectionsPerHost  Maximum number of pending connections.
-     * @param connectTimeoutMillis          TCP connection timeout.
-     * @param socketTimeoutMillis             Deprecated.
-     * @param pendingConnectionTimeoutMillis  Pending connection timeout, in milliseconds.
-     * @param connectionExpirationSeconds     Connection expiry, in seconds.
-     */
-    @Deprecated
-    public ConnectionPoolSettings(int maxConnectionsPerHost,
-                                  int maxPendingConnectionsPerHost,
-                                  int connectTimeoutMillis,
-                                  int socketTimeoutMillis,
-                                  int pendingConnectionTimeoutMillis,
-                                  long connectionExpirationSeconds) {
-        this.maxConnectionsPerHost = firstNonNull(maxConnectionsPerHost, DEFAULT_MAX_CONNECTIONS_PER_HOST);
-        this.maxPendingConnectionsPerHost = firstNonNull(maxPendingConnectionsPerHost, DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST);
-        this.connectTimeoutMillis = firstNonNull(connectTimeoutMillis, DEFAULT_CONNECT_TIMEOUT_MILLIS);
-        this.socketTimeoutMillis = firstNonNull(socketTimeoutMillis, DEFAULT_SOCKET_TIMEOUT_MILLIS);
-        this.pendingConnectionTimeoutMillis = firstNonNull(pendingConnectionTimeoutMillis, DEFAULT_CONNECT_TIMEOUT_MILLIS);
-        this.connectionExpirationSeconds = firstNonNull(connectionExpirationSeconds, DEFAULT_CONNECTION_EXPIRATION_SECONDS);
+        this.maxConnectionsPerHost = ofNullable(maxConnectionsPerHost).orElse(DEFAULT_MAX_CONNECTIONS_PER_HOST);
+        this.maxPendingConnectionsPerHost = ofNullable(maxPendingConnectionsPerHost).orElse(DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST);
+        this.connectTimeoutMillis = ofNullable(connectTimeoutMillis).orElse(DEFAULT_CONNECT_TIMEOUT_MILLIS);
+        this.socketTimeoutMillis = ofNullable(socketTimeoutMillis).orElse(DEFAULT_SOCKET_TIMEOUT_MILLIS);
+        this.pendingConnectionTimeoutMillis = ofNullable(pendingConnectionTimeoutMillis).orElse(DEFAULT_CONNECT_TIMEOUT_MILLIS);
+        this.connectionExpirationSeconds = ofNullable(connectionExpirationSeconds).orElse(DEFAULT_CONNECTION_EXPIRATION_SECONDS);
     }
 
     public ConnectionPoolSettings(int maxConnectionsPerHost,
@@ -174,12 +143,19 @@ public class ConnectionPoolSettings {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("maxConnectionsPerHost", maxConnectionsPerHost)
-                .add("maxPendingConnectionsPerHost", maxPendingConnectionsPerHost)
-                .add("connectTimeoutMillis", connectTimeoutMillis)
-                .add("socketTimeoutMillis", socketTimeoutMillis)
-                .add("pendingConnectionTimeoutMillis", pendingConnectionTimeoutMillis)
+        return new StringBuilder(160)
+                .append(this.getClass().getSimpleName())
+                .append("{maxConnectionsPerHost=")
+                .append(maxConnectionsPerHost)
+                .append(", maxPendingConnectionsPerHost=")
+                .append(maxPendingConnectionsPerHost)
+                .append(", connectTimeoutMillis=")
+                .append(connectTimeoutMillis)
+                .append(", socketTimeoutMillis=")
+                .append(socketTimeoutMillis)
+                .append(", pendingConnectionTimeoutMillis=")
+                .append(pendingConnectionTimeoutMillis)
+                .append('}')
                 .toString();
     }
 

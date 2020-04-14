@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.api.extension.service.spi;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MapDifference;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.Identifiable;
@@ -28,9 +27,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
-import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Maps.difference;
 import static com.google.common.collect.Maps.filterKeys;
+import static com.hotels.styx.api.extension.service.spi.Collections.listOf;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
@@ -91,9 +90,11 @@ public abstract class AbstractRegistry<T extends Identifiable> implements Regist
      * @throws IllegalStateException if the resource constraint is not satisfied
      */
     public void set(Iterable<T> newObjects) throws IllegalStateException {
-        ImmutableList<T> newSnapshot = ImmutableList.copyOf(newObjects);
+        List<T> newSnapshot = listOf(newObjects);
 
-        checkState(resourceConstraint.test(newSnapshot), "Resource constraint failure");
+        if (!resourceConstraint.test(newSnapshot)) {
+            throw new IllegalStateException("Resource constraint failure");
+        }
 
         Iterable<T> oldSnapshot = snapshot.get();
         snapshot.set(newSnapshot);

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.collect.ImmutableList;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -28,6 +27,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
+import static com.hotels.styx.api.Collections.listOf;
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
@@ -380,7 +380,7 @@ public class LiveHttpResponseTest {
     public void transformsWithCookieList() {
         LiveHttpResponse response = response().build()
                 .newBuilder()
-                .cookies(ImmutableList.of(responseCookie("x", "y").build()))
+                .cookies(listOf(responseCookie("x", "y").build()))
                 .build();
 
         assertEquals(response.cookie("x"), Optional.of(responseCookie("x", "y").build()));
@@ -400,7 +400,7 @@ public class LiveHttpResponseTest {
     public void transformerAddsCookiesList() {
         LiveHttpResponse response = response().build()
                 .newBuilder()
-                .addCookies(ImmutableList.of(responseCookie("x", "y").build()))
+                .addCookies(listOf(responseCookie("x", "y").build()))
                 .build();
 
         assertEquals(response.cookie("x"), Optional.of(responseCookie("x", "y").build()));
@@ -409,7 +409,7 @@ public class LiveHttpResponseTest {
     @Test
     public void transformerRemovesCookies() {
         LiveHttpResponse response = response()
-                .addCookies(ImmutableList.of(responseCookie("x", "y").build()))
+                .addCookies(listOf(responseCookie("x", "y").build()))
                 .build()
                 .newBuilder()
                 .removeCookies("x")
@@ -421,10 +421,10 @@ public class LiveHttpResponseTest {
     @Test
     public void transformerRemovesCookiesWithList() {
         LiveHttpResponse response = response()
-                .addCookies(ImmutableList.of(responseCookie("x", "y").build()))
+                .addCookies(listOf(responseCookie("x", "y").build()))
                 .build()
                 .newBuilder()
-                .removeCookies(ImmutableList.of("x"))
+                .removeCookies(listOf("x"))
                 .build();
 
         assertEquals(response.cookie("x"), Optional.empty());

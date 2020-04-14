@@ -15,9 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 
 import java.time.Instant;
@@ -29,6 +26,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
+import static com.hotels.styx.api.Collections.listOf;
+import static com.hotels.styx.api.Collections.setOf;
 import static com.hotels.styx.api.HttpHeader.header;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Locale.US;
@@ -57,7 +56,7 @@ public final class HttpHeaders implements Iterable<HttpHeader> {
      * @return header names
      */
     public Set<String> names() {
-        return ImmutableSet.copyOf(nettyHeaders.names());
+        return setOf(nettyHeaders.names());
     }
 
     /**
@@ -80,7 +79,7 @@ public final class HttpHeaders implements Iterable<HttpHeader> {
      * are found
      */
     public List<String> getAll(CharSequence name) {
-        return ImmutableList.copyOf(nettyHeaders.getAll(name));
+        return listOf(nettyHeaders.getAll(name));
     }
 
     /**
@@ -115,7 +114,7 @@ public final class HttpHeaders implements Iterable<HttpHeader> {
 
     @Override
     public String toString() {
-        return Iterables.toString(nettyHeaders);
+        return Collections.toString(nettyHeaders);
     }
 
     @Override

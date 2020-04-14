@@ -15,11 +15,11 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.collect.ImmutableSet;
 import reactor.core.publisher.Flux;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
@@ -48,6 +47,7 @@ import static com.hotels.styx.api.RequestCookie.encode;
 import static io.netty.buffer.ByteBufUtil.getBytes;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.lang.Long.parseLong;
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
@@ -963,7 +963,7 @@ public class LiveHttpRequest implements LiveHttpMessage {
         }
 
         private static <T> Set<T> toSet(Collection<T> collection) {
-            return collection instanceof Set ? (Set<T>) collection : ImmutableSet.copyOf(collection);
+            return collection instanceof Set ? (Set<T>) collection : new HashSet<>(collection);
         }
 
         /**
@@ -995,7 +995,9 @@ public class LiveHttpRequest implements LiveHttpMessage {
         }
 
         private void ensureMethodIsValid() {
-            checkArgument(isMethodValid(), "Unrecognised HTTP method=%s", this.method);
+            if (!isMethodValid()) {
+                throw new IllegalArgumentException(format("Unrecognised HTTP method=%s", this.method));
+            }
         }
 
         private boolean isMethodValid() {
@@ -1003,15 +1005,20 @@ public class LiveHttpRequest implements LiveHttpMessage {
         }
 
         private void ensureContentLengthIsValid() {
-            requireNotDuplicatedHeader(CONTENT_LENGTH).ifPresent(contentLength ->
-                    checkArgument(isNonNegativeInteger(contentLength), "Invalid Content-Length found. %s", contentLength)
+            requireNotDuplicatedHeader(CONTENT_LENGTH).ifPresent(contentLength -> {
+                        if (!isNonNegativeInteger(contentLength)) {
+                            throw new IllegalArgumentException(format("Invalid Content-Length found. %s", contentLength));
+                        }
+                    }
             );
         }
 
         private Optional<String> requireNotDuplicatedHeader(CharSequence headerName) {
             List<String> headerValues = headers.build().getAll(headerName);
 
-            checkArgument(headerValues.size() <= 1, "Duplicate %s found. %s", headerName, headerValues);
+            if (headerValues.size() > 1) {
+                throw new IllegalArgumentException(format("Duplicate %s found. %s", headerName, headerValues));
+            }
 
             return headerValues.isEmpty() ? Optional.empty() : Optional.of(headerValues.get(0));
         }

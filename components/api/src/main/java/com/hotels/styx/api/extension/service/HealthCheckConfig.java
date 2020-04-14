@@ -20,8 +20,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
-import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
@@ -63,10 +61,18 @@ public final class HealthCheckConfig {
         this.healthyThreshold = healthyThreshold.orElse(DEFAULT_HEALTHY_THRESHOLD_VALUE);
         this.unhealthyThreshold = unhealthyThreshold.orElse(DEFAULT_UNHEALTHY_THRESHOLD_VALUE);
 
-        checkArgument(this.intervalMillis >= 1, format("intervalMillis [%s] cannot be < 1 ms", intervalMillis));
-        checkArgument(this.timeoutMillis >= 1, format("timeoutMillis [%s] cannot be < 1 ms", intervalMillis));
-        checkArgument(this.healthyThreshold >= 1, format("healthyThreshold [%s] cannot be < 1", healthyThreshold));
-        checkArgument(this.unhealthyThreshold >= 1, format("unhealthyThreshold [%s] cannot be < 1", unhealthyThreshold));
+        if (this.intervalMillis < 1) {
+            throw new IllegalArgumentException(format("intervalMillis [%s] cannot be < 1 ms", intervalMillis));
+        }
+        if (this.timeoutMillis < 1) {
+            throw new IllegalArgumentException(format("timeoutMillis [%s] cannot be < 1 ms", timeoutMillis));
+        }
+        if (this.healthyThreshold < 1) {
+            throw new IllegalArgumentException(format("healthyThreshold [%s] cannot be < 1", healthyThreshold));
+        }
+        if (this.unhealthyThreshold < 1) {
+            throw new IllegalArgumentException(format("unhealthyThreshold [%s] cannot be < 1", unhealthyThreshold));
+        }
     }
 
     private String checkValidUri(String uri) {
@@ -157,12 +163,19 @@ public final class HealthCheckConfig {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("uri", this.uri)
-                .add("intervalMillis", this.intervalMillis)
-                .add("timeoutMillis", this.timeoutMillis)
-                .add("healthyThreshold", this.healthyThreshold)
-                .add("unhealthyThreshold", this.unhealthyThreshold)
+        return new StringBuilder(160)
+                .append(this.getClass().getSimpleName())
+                .append("{uri=")
+                .append(uri)
+                .append(", intervalMillis=")
+                .append(intervalMillis)
+                .append(", timeoutMillis=")
+                .append(timeoutMillis)
+                .append(", healthyThreshold=")
+                .append(healthyThreshold)
+                .append(", unhealthyThreshold=")
+                .append(unhealthyThreshold)
+                .append('}')
                 .toString();
     }
 

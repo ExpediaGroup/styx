@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.api.extension.service.spi;
 
-import com.google.common.collect.Iterables;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.Identifiable;
 import com.hotels.styx.api.configuration.Configuration;
@@ -27,6 +26,9 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
+import static com.hotels.styx.api.extension.service.spi.Collections.concat;
+import static com.hotels.styx.api.extension.service.spi.Collections.contains;
+import static com.hotels.styx.api.extension.service.spi.Collections.size;
 import static com.hotels.styx.api.extension.service.spi.Registry.Outcome.FAILED;
 import static com.hotels.styx.api.extension.service.spi.Registry.Outcome.RELOADED;
 import static com.hotels.styx.api.extension.service.spi.Registry.Outcome.UNCHANGED;
@@ -128,12 +130,12 @@ public interface Registry<T extends Identifiable> extends Supplier<Iterable<T>> 
         }
 
         private boolean equal(Iterable<T> iterable1, Iterable<T> iterable2) {
-            return Iterables.size(iterable1) == Iterables.size(iterable2) && containsAll(iterable1, iterable2);
+            return size(iterable1) == size(iterable2) && containsAll(iterable1, iterable2);
         }
 
         private boolean containsAll(Iterable<T> iterable1, Iterable<T> iterable2) {
             for (T item : iterable2) {
-                if (!Iterables.contains(iterable1, item)) {
+                if (!contains(iterable1, item)) {
                     return false;
                 }
             }
@@ -154,11 +156,11 @@ public interface Registry<T extends Identifiable> extends Supplier<Iterable<T>> 
         }
 
         public Iterable<T> addedAndUpdated() {
-            return Iterables.concat(added, updated);
+            return concat(added, updated);
         }
 
         public boolean isEmpty() {
-            return Iterables.isEmpty(added) && Iterables.isEmpty(removed) && Iterables.isEmpty(updated);
+            return !added.iterator().hasNext() && !removed.iterator().hasNext() && !updated.iterator().hasNext();
         }
 
         public static class Builder<T extends Identifiable> {

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.collect.ImmutableMap;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -23,16 +22,18 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.net.URL;
 import java.nio.charset.CharacterCodingException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static com.hotels.styx.api.Collections.listOf;
 import static com.hotels.styx.api.Url.Authority.authority;
 import static com.hotels.styx.api.Url.Builder.url;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.MapMatcher.isMap;
-import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
@@ -118,10 +119,10 @@ public class UrlTest {
 
         assertThat(url.queryParamNames(), containsInAnyOrder("foo", "abc"));
 
-        assertThat(url.queryParams(), isMap(ImmutableMap.of(
-                "foo", asList("bar", "hello"),
-                "abc", singletonList("def")
-        )));
+        Map<String, List<String>> expected = new HashMap<>();
+        expected.put("foo", listOf("bar", "hello"));
+        expected.put("abc", listOf("def"));
+        assertThat(url.queryParams(), isMap(expected));
     }
 
     @Test
