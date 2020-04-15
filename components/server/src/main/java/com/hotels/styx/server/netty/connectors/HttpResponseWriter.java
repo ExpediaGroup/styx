@@ -27,6 +27,7 @@ import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.BaseSubscriber;
+import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -156,12 +157,7 @@ class HttpResponseWriter {
             return future;
         } catch (Throwable cause) {
             LOGGER.warn("Failed to convert response headers. response={}, Cause={}", new Object[]{response, cause});
-            response.body().subscribe(new BaseSubscriber<Buffer>() {
-                @Override
-                protected void hookOnNext(Buffer b) {
-                    Buffers.toByteBuf(b).release();
-                }
-            });
+            Flux.from(response.body().drop()).subscribe();
             future.completeExceptionally(cause);
             return future;
         }
