@@ -10,12 +10,7 @@
     </encoder>
   </appender>
 
-  <root level="OFF">
+  <root level="INFO">
     <appender-ref ref="STDOUT"/>
   </root>
-
-  <logger name="Styx-Tests" level="INFO"/>
-  <logger name="com.hotels.styx.common.FsmEventProcessor" level="INFO"/>
-  <logger name="com.hotels.styx.common.content.FlowControllingHttpContentProducer" level="INFO"/>
-
 </configuration>
