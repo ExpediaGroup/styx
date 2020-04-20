@@ -48,7 +48,7 @@ mvn install -B -U -P macosx,release -DskipTests=true -Dmaven.test.skip=true -Dgp
 
 function deploySnapshot() {
   echo "Deploying snapshot to sonatype"
-  mvn deploy --settings travis/mvn-settings.xml -B -U -P sonatype-oss-release,linux -DskipTests=true -Dmaven.test.skip=true -Dgpg.skip=true
+  mvn deploy --settings travis/mvn-settings.xml -B -U -P sonatype-oss-release,linux -DskipTests=true -Dmaven.test.skip=true -Dgpg.skip=true -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
 }
 
 if [[ -n "$TRAVIS_TAG" ]]; then
