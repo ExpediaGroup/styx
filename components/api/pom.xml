@@ -16,6 +16,13 @@
   </properties>
 
   <dependencies>
+
+    <!-- Temporary until dependency transferred to plugins that require it -->
+    <dependency>
+      <groupId>io.reactivex</groupId>
+      <artifactId>rxjava</artifactId>
+    </dependency>
+
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-codec-http</artifactId>
