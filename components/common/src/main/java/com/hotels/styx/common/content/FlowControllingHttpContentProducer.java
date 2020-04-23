@@ -28,7 +28,6 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
-import java.util.function.LongUnaryOperator;
 
 import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.BUFFERING;
 import static com.hotels.styx.common.content.FlowControllingHttpContentProducer.ProducerState.BUFFERING_COMPLETED;
@@ -162,8 +161,7 @@ public class FlowControllingHttpContentProducer {
         // has called request() before having subscribed to the content observable. In this
         // case just initialise the request count with requested N value.
         timer.reset();
-        requested.compareAndSet(Long.MAX_VALUE, 0);
-        getAndAddRequest(requested, event.n());
+        incrementRequested(event.n());
 
         askForMore();
 
@@ -176,7 +174,7 @@ public class FlowControllingHttpContentProducer {
         return BUFFERING;
     }
 
-    private <T> ProducerState releaseAndTerminate(CausalEvent event) {
+    private ProducerState releaseAndTerminate(CausalEvent event) {
         releaseBuffers();
         onTerminateAction.accept(event.cause());
         timer.cancel();
@@ -205,8 +203,7 @@ public class FlowControllingHttpContentProducer {
         // has called request() before actually having subscribed to the content observable. In this
         // case just initialise the request count with requested N value.
         timer.reset();
-        requested.compareAndSet(Long.MAX_VALUE, 0);
-        getAndAddRequest(requested, event.n());
+        incrementRequested(event.n());
         return this.state();
     }
     private ProducerState spuriousContentChunkEvent(ContentChunkEvent event) {
@@ -248,8 +245,7 @@ public class FlowControllingHttpContentProducer {
      */
     private ProducerState rxBackpressureRequestEventInStreaming(RxBackpressureRequestEvent event) {
         timer.reset();
-        requested.compareAndSet(Long.MAX_VALUE, 0);
-        getAndAddRequest(requested, event.n());
+        incrementRequested(event.n());
 
         emitChunks(contentSubscriber);
 
@@ -338,8 +334,7 @@ public class FlowControllingHttpContentProducer {
      */
     private ProducerState rxBackpressureRequestInEmittingBufferedContent(RxBackpressureRequestEvent event) {
         timer.reset();
-        requested.compareAndSet(Long.MAX_VALUE, 0);
-        getAndAddRequest(requested, event.n());
+        incrementRequested(event.n());
 
         emitChunks(contentSubscriber);
 
@@ -352,16 +347,6 @@ public class FlowControllingHttpContentProducer {
             return COMPLETED;
         } else {
             return EMITTING_BUFFERED_CONTENT;
-        }
-    }
-
-    private static long getAndAddRequest(AtomicLong requested, long n) {
-        while (true) {
-            long current = requested.get();
-            long next = addCap(current, n);
-            if (requested.compareAndSet(current, next)) {
-                return current;
-            }
         }
     }
 
@@ -459,8 +444,12 @@ public class FlowControllingHttpContentProducer {
     }
 
     boolean isWaitingForSubscriber() {
-        return requested.get() == 0;
+        return getRequested() == 0;
     }
+
+    private long getRequested() { return requested.get(); }
+    private long getAndDecrementRequested() { return requested.getAndUpdate(c -> c == Long.MAX_VALUE ? Long.MAX_VALUE : Math.max(0, c - 1L)); }
+    private void incrementRequested(long n) { requested.getAndUpdate(c -> addCap(c, n)); }
 
     /*
      * Helper methods:
@@ -474,13 +463,10 @@ public class FlowControllingHttpContentProducer {
 
     // This must not be run with locks held:
     private void emitChunks(Subscriber<? super ByteBuf> downstream) {
-        LongUnaryOperator decrementIfBackpressureEnabled = current -> current == Long.MAX_VALUE ? current : current > 0 ? current - 1 : 0;
-        LongUnaryOperator incrementIfBackpressureEnabled = current -> current == Long.MAX_VALUE ? current : current + 1;
-
-        while (requested.getAndUpdate(decrementIfBackpressureEnabled) > 0) {
+        while (getAndDecrementRequested() > 0) {
             ByteBuf value = this.readQueue.poll();
             if (value == null) {
-                requested.getAndUpdate(incrementIfBackpressureEnabled);
+                incrementRequested(1L);
                 break;
             }
             emittedBytes.addAndGet(value.readableBytes());
@@ -508,11 +494,7 @@ public class FlowControllingHttpContentProducer {
 
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder(32);
-            sb.append(this.getClass().getSimpleName());
-            sb.append("{chunk=");
-            sb.append(chunk);
-            return sb.append('}').toString();
+            return this.getClass().getSimpleName() + "{chunk=" + chunk + '}';
         }
     }
 
@@ -532,11 +514,7 @@ public class FlowControllingHttpContentProducer {
 
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder(32);
-            sb.append(this.getClass().getSimpleName());
-            sb.append("{subscriber=");
-            sb.append(subscriber);
-            return sb.append('}').toString();
+            return this.getClass().getSimpleName() + "{subscriber=" + subscriber + '}';
         }
     }
 
@@ -553,11 +531,7 @@ public class FlowControllingHttpContentProducer {
 
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder(32);
-            sb.append(this.getClass().getSimpleName());
-            sb.append("{n=");
-            sb.append(n);
-            return sb.append('}').toString();
+            return this.getClass().getSimpleName() + "{n=" + n + '}';
         }
     }
 
@@ -579,12 +553,7 @@ public class FlowControllingHttpContentProducer {
 
         @Override
         public String toString() {
-            return new StringBuilder(32)
-                    .append(this.getClass().getSimpleName())
-                    .append("{cause=")
-                    .append(cause)
-                    .append('}')
-                    .toString();
+            return this.getClass().getSimpleName() + "{cause=" + cause + '}';
         }
     }
 
@@ -602,12 +571,7 @@ public class FlowControllingHttpContentProducer {
 
         @Override
         public String toString() {
-            return new StringBuilder(32)
-                    .append(this.getClass().getSimpleName())
-                    .append("{cause=")
-                    .append(cause)
-                    .append('}')
-                    .toString();
+            return this.getClass().getSimpleName() + "{cause=" + cause + '}';
         }
     }
 
@@ -625,12 +589,7 @@ public class FlowControllingHttpContentProducer {
 
         @Override
         public String toString() {
-            return new StringBuilder(32)
-                    .append(this.getClass().getSimpleName())
-                    .append("{cause=")
-                    .append(cause)
-                    .append('}')
-                    .toString();
+            return this.getClass().getSimpleName() + "{cause=" + cause + '}';
         }
     }
 
