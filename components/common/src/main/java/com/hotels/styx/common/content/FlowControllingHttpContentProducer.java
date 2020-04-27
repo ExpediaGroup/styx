@@ -447,9 +447,17 @@ public class FlowControllingHttpContentProducer {
         return getRequested() == 0;
     }
 
-    private long getRequested() { return requested.get(); }
-    private long getAndDecrementRequested() { return requested.getAndUpdate(c -> c == Long.MAX_VALUE ? Long.MAX_VALUE : Math.max(0, c - 1L)); }
-    private void incrementRequested(long n) { requested.getAndUpdate(c -> addCap(c, n)); }
+    private long getRequested() {
+        return requested.get();
+    }
+
+    private long getAndDecrementRequested() {
+        return requested.getAndUpdate(c -> c == Long.MAX_VALUE ? Long.MAX_VALUE : Math.max(0, c - 1L));
+    }
+
+    private void incrementRequested(long n) {
+        requested.getAndUpdate(c -> addCap(c, n));
+    }
 
     /*
      * Helper methods:
