@@ -23,6 +23,7 @@ import io.netty.util.ReferenceCountUtil;
 import org.reactivestreams.Subscriber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.publisher.Operators;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -409,7 +410,9 @@ public class FlowControllingHttpContentProducer {
     }
 
     public void request(long n) {
-        stateMachine.handle(new RxBackpressureRequestEvent(n));
+        if (Operators.validate(n)) {
+            stateMachine.handle(new RxBackpressureRequestEvent(n));
+        }
     }
 
     public void onSubscribed(Subscriber<? super ByteBuf> subscriber) {
