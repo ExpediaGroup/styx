@@ -23,6 +23,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.EventLoop;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.reactivestreams.Subscriber;
@@ -922,40 +923,6 @@ public class FlowControllingHttpContentProducerTest {
         assertThat(producer.state(), is(COMPLETED));
         verify(onCompleteAction).run();
         verify(onTerminateAction, never()).accept(isA(Throwable.class));
-    }
-
-    @Test
-    public void backpressureCanBeTurnedBackOnMidStream() {
-        setUpAndRequest(NO_BACKPRESSURE);
-
-        producer.newChunk(copiedBuffer("chunk 1", UTF_8));
-        producer.newChunk(copiedBuffer("chunk 2", UTF_8));
-
-        producer.onSubscribed(downstream);
-        assertThat(producer.state(), is(STREAMING));
-
-        assertThat(captureOnNext(), contains(
-                copiedBuffer("chunk 1", UTF_8),
-                copiedBuffer("chunk 2", UTF_8)
-        ));
-
-        producer.request(0);
-
-        producer.newChunk(copiedBuffer("chunk 3", UTF_8));
-        producer.newChunk(copiedBuffer("chunk 4", UTF_8));
-
-        assertThat(captureOnNext(), contains(
-                copiedBuffer("chunk 1", UTF_8),
-                copiedBuffer("chunk 2", UTF_8)
-        ));
-
-        producer.request(2);
-        assertThat(captureOnNext(), contains(
-                copiedBuffer("chunk 1", UTF_8),
-                copiedBuffer("chunk 2", UTF_8),
-                copiedBuffer("chunk 3", UTF_8),
-                copiedBuffer("chunk 4", UTF_8)
-        ));
     }
 
 
