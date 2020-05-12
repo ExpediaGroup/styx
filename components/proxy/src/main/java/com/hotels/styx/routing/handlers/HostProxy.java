@@ -134,7 +134,7 @@ public class HostProxy implements RoutingObject {
     public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
         if (active) {
             return new Eventual<>(
-                    ResponseEventListener.from(client.sendRequest(request))
+                    ResponseEventListener.from(client.sendRequest(request, context))
                             .whenCancelled(originMetrics::requestCancelled)
                             .apply());
         } else {

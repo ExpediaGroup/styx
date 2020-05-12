@@ -17,6 +17,7 @@ package com.hotels.styx.proxy;
 
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
+import com.hotels.styx.api.HttpInterceptor.Context;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
@@ -186,7 +187,7 @@ public class StyxBackendServiceClientFactoryTest {
 
     private StyxHostHttpClient hostClient(LiveHttpResponse response) {
         StyxHostHttpClient mockClient = mock(StyxHostHttpClient.class);
-        when(mockClient.sendRequest(any(LiveHttpRequest.class))).thenReturn(Flux.just(response));
+        when(mockClient.sendRequest(any(LiveHttpRequest.class), any(Context.class))).thenReturn(Flux.just(response));
         when(mockClient.loadBalancingMetric()).thenReturn(new LoadBalancingMetric(1));
         return mockClient;
     }
