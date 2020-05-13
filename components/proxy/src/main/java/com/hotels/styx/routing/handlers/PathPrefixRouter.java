@@ -31,14 +31,11 @@ import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.server.NoServiceConfiguredException;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hotels.styx.config.schema.SchemaDsl.field;
-import static com.hotels.styx.config.schema.SchemaDsl.list;
-import static com.hotels.styx.config.schema.SchemaDsl.object;
-import static com.hotels.styx.config.schema.SchemaDsl.routingObject;
-import static com.hotels.styx.config.schema.SchemaDsl.string;
+import static com.hotels.styx.config.schema.SchemaDsl.*;
 import static com.hotels.styx.routing.config.RoutingConfigParser.toRoutingConfigNode;
 import static com.hotels.styx.routing.config.RoutingSupport.missingAttributeError;
 import static java.lang.String.join;
@@ -47,7 +44,7 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Makes a routing decision based on a request path prefix.
- *
+ * <p>
  * Chooses a destination according to longest matching path prefix.
  * The destination can be a routing object reference or an inline definition.
  */
@@ -62,7 +59,7 @@ public class PathPrefixRouter implements RoutingObject {
     public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
         String path = request.path();
 
-        for(PrefixRoute route: routes) {
+        for (PrefixRoute route : routes) {
             if (path.startsWith(route.prefix)) {
                 return route.routingObject.handle(request, context);
             }
