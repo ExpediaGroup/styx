@@ -39,7 +39,7 @@ import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.Optional
 
-class PathPrefixRouterTest : FeatureSpec({
+class PathPrefixRouterFactoryTest : FeatureSpec({
 
     val context = RoutingObjectFactoryContext()
 
