@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,12 +17,10 @@ package com.hotels.styx.routing.handlers;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.common.Pair;
 import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.routing.RoutingObject;
@@ -31,14 +29,11 @@ import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.StyxObjectConfiguration;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.server.NoServiceConfiguredException;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentSkipListMap;
 
-import static com.hotels.styx.common.Pair.pair;
 import static com.hotels.styx.config.schema.SchemaDsl.field;
 import static com.hotels.styx.config.schema.SchemaDsl.list;
 import static com.hotels.styx.config.schema.SchemaDsl.object;
@@ -47,10 +42,8 @@ import static com.hotels.styx.config.schema.SchemaDsl.string;
 import static com.hotels.styx.routing.config.RoutingConfigParser.toRoutingConfigNode;
 import static com.hotels.styx.routing.config.RoutingSupport.missingAttributeError;
 import static java.lang.String.join;
-import static java.util.Comparator.comparingInt;
-import static java.util.Comparator.naturalOrder;
-import static java.util.concurrent.CompletableFuture.completedFuture;
-import static java.util.stream.Collectors.toList;
+import static java.util.Collections.singletonList;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Makes a routing decision based on a request path prefix.
@@ -58,31 +51,52 @@ import static java.util.stream.Collectors.toList;
  * Chooses a destination according to longest matching path prefix.
  * The destination can be a routing object reference or an inline definition.
  */
-public class PathPrefixRouter {
-    public static final Schema.FieldType SCHEMA = object(
-            field("routes", list(object(
-                    field("prefix", string()),
-                    field("destination", routingObject()))
-            ))
-    );
+public class PathPrefixRouter implements RoutingObject {
+    private final Iterable<PrefixRoute> routes;
 
-    private final ConcurrentSkipListMap<String, RoutingObject> routes = new ConcurrentSkipListMap<>(
-                    comparingInt(String::length)
-                            .reversed()
-                            .thenComparing(naturalOrder())
-    );
-
-    PathPrefixRouter(List<Pair<String, RoutingObject>> routes) {
-        routes.forEach(entry -> this.routes.put(entry.key(), entry.value()));
+    PathPrefixRouter(Iterable<PrefixRoute> routes) {
+        this.routes = routes;
     }
 
-    public Optional<RoutingObject> route(LiveHttpRequest request) {
+    @Override
+    public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
         String path = request.path();
 
-        return routes.entrySet().stream()
-                .filter(entry -> path.startsWith(entry.getKey()))
-                .findFirst()
-                .map(Map.Entry::getValue);
+        for(PrefixRoute route: routes) {
+            if (path.startsWith(route.prefix)) {
+                return route.routingObject.handle(request, context);
+            }
+        }
+
+        return Eventual.error(new NoServiceConfiguredException(path));
+    }
+
+    @Override
+    public CompletableFuture<Void> stop() {
+        List<CompletableFuture<Void>> stopFutures = new ArrayList<>();
+        routes.forEach(prefixRoute -> stopFutures.add(prefixRoute.routingObject.stop()));
+        return CompletableFuture.allOf(stopFutures.toArray(new CompletableFuture[stopFutures.size()]));
+    }
+
+    private static class PrefixRoute implements Comparable<PrefixRoute> {
+        private final String prefix;
+        private final RoutingObject routingObject;
+
+        PrefixRoute(String prefix, RoutingObject routingObject) {
+            this.prefix = requireNonNull(prefix);
+            this.routingObject = requireNonNull(routingObject);
+        }
+
+        @Override
+        public int compareTo(@NotNull PrefixRoute o) {
+            if (prefix.length() > o.prefix.length()) {
+                return -1;
+            } else if (prefix.length() < o.prefix.length()) {
+                return 1;
+            } else {
+                return prefix.compareTo(o.prefix);
+            }
+        }
     }
 
     /**
@@ -97,28 +111,24 @@ public class PathPrefixRouter {
                 throw missingAttributeError(configBlock, join(".", fullName), "routes");
             }
 
-            PathPrefixRouter pathPrefixRouter = new PathPrefixRouter(
-                    config.routes.stream()
-                            .map(route -> pair(route.prefix, Builtins.build(ImmutableList.of(""), context, route.destination)))
-                            .collect(toList())
-            );
+            List<PrefixRoute> routes = new ArrayList<>();
+            for (PathPrefixConfig routeConfig : config.routes()) {
+                String prefix = routeConfig.prefix();
+                RoutingObject route = Builtins.build(singletonList(""), context, routeConfig.destination());
+                routes.add(new PrefixRoute(prefix, route));
+            }
+            routes.sort(null);
 
-            return new RoutingObject() {
-                @Override
-                public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
-                    return pathPrefixRouter.route(request)
-                            .orElse((x, y) -> Eventual.error(new NoServiceConfiguredException(request.path())))
-                            .handle(request, context);
-                }
-
-                @Override
-                public CompletableFuture<Void> stop() {
-                    pathPrefixRouter.routes.forEach((route, routingObject) -> routingObject.stop());
-                    return completedFuture(null);
-                }
-            };
+            return new PathPrefixRouter(routes);
         }
     }
+
+    public static final Schema.FieldType SCHEMA = object(
+            field("routes", list(object(
+                    field("prefix", string()),
+                    field("destination", routingObject()))
+            ))
+    );
 
     /**
      * PathPrefixRouter configuration.
