@@ -16,20 +16,16 @@
 package com.hotels.styx.routing.handlers
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.hotels.styx.api.HttpRequest
-import com.hotels.styx.api.LiveHttpRequest.get
-import com.hotels.styx.common.Pair.pair
-import com.hotels.styx.config.schema.SchemaValidationException
-import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.RoutingObjectFactoryContext
-import com.hotels.styx.routing.config.RoutingObjectFactory
-import com.hotels.styx.routing.config.Builtins
-import com.hotels.styx.routing.config.Builtins.BUILTIN_HANDLER_SCHEMAS
-import com.hotels.styx.routing.config.StyxObjectReference
+import com.hotels.styx.api.HttpRequest
+import com.hotels.styx.config.schema.SchemaValidationException
 import com.hotels.styx.handle
+import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.mockObject
 import com.hotels.styx.ref
 import com.hotels.styx.routeLookup
+import com.hotels.styx.routing.config.Builtins.BUILTIN_HANDLER_SCHEMAS
+import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routingObjectDef
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
@@ -37,56 +33,10 @@ import io.kotlintest.specs.FeatureSpec
 import io.mockk.verify
 import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
-import java.util.Optional
 
 class PathPrefixRouterFactoryTest : FeatureSpec({
 
     val context = RoutingObjectFactoryContext()
-
-
-    feature("PathPrefixRouter") {
-//        scenario("No path prefixes configured") {
-//            val router = PathPrefixRouter(listOf())
-//
-//            router.route(get("/").build()) shouldBe Optional.empty()
-//        }
-
-//        scenario("Root path") {
-//            val rootHandler = Builtins.build(listOf(""), context.get(), StyxObjectReference("root"))
-//            val router = PathPrefixRouter(listOf(PathPrefixRouter.PrefixRoute("/", rootHandler)))
-//
-//            router.route(get("/").build()) shouldBe Optional.of(rootHandler)
-//            router.route(get("/foo/bar").build()) shouldBe Optional.of(rootHandler)
-//            router.route(get("/foo/bar/").build()) shouldBe Optional.of(rootHandler)
-//            router.route(get("/foo").build()) shouldBe Optional.of(rootHandler)
-//        }
-
-//        scenario("Choice of most specific path") {
-//            val fooFileHandler = Builtins.build(listOf(""), context.get(), StyxObjectReference("foo-file"))
-//            val fooPathHandler = Builtins.build(listOf(""), context.get(), StyxObjectReference("foo-path"))
-//            val fooBarFileHandler = Builtins.build(listOf(""), context.get(), StyxObjectReference("foo-bar-file"))
-//            val fooBarPathHandler = Builtins.build(listOf(""), context.get(), StyxObjectReference("foo-bar-path"))
-//            val fooBazFileHandler = Builtins.build(listOf(""), context.get(), StyxObjectReference("foo-baz-file"))
-//
-//            val router = PathPrefixRouter(listOf(
-//                    PathPrefixRouter.PrefixRoute("/foo", fooFileHandler),
-//                    PathPrefixRouter.PrefixRoute("/foo/", fooPathHandler),
-//                    PathPrefixRouter.PrefixRoute("/foo/bar", fooBarFileHandler),
-//                    PathPrefixRouter.PrefixRoute("/foo/bar/", fooBarPathHandler),
-//                    PathPrefixRouter.PrefixRoute("/foo/baz", fooBazFileHandler)
-//            ))
-//
-//            router.route(get("/").build()) shouldBe Optional.empty()
-//            router.route(get("/foo").build()) shouldBe Optional.of(fooFileHandler)
-//            router.route(get("/foo/x").build()) shouldBe Optional.of(fooPathHandler)
-//            router.route(get("/foo/").build()) shouldBe Optional.of(fooPathHandler)
-//            router.route(get("/foo/bar").build()) shouldBe Optional.of(fooBarFileHandler)
-//            router.route(get("/foo/bar/x").build()) shouldBe Optional.of(fooBarPathHandler)
-//            router.route(get("/foo/bar/").build()) shouldBe Optional.of(fooBarPathHandler)
-//            router.route(get("/foo/baz/").build()) shouldBe Optional.of(fooBazFileHandler)
-//            router.route(get("/foo/baz/y").build()) shouldBe Optional.of(fooBazFileHandler)
-//        }
-    }
 
     feature("PathPrefixRouterFactory") {
 
