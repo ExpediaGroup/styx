@@ -397,7 +397,7 @@ public final class OriginsInventory
         return origins.values().stream()
                 .filter(origin -> origin.state().equals(state))
                 .map(origin -> {
-                    HttpHandler hostClient = (request, context) -> new Eventual<>(origin.hostClient.sendRequest(request));
+                    HttpHandler hostClient = (request, context) -> new Eventual<>(origin.hostClient.sendRequest(request, context));
                     return remoteHost(origin.origin, hostClient, origin.hostClient);
                 })
                 .collect(toList());

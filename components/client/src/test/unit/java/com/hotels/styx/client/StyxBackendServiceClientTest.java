@@ -18,6 +18,7 @@ package com.hotels.styx.client;
 import com.google.common.net.HostAndPort;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpInterceptor.Context;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
@@ -112,7 +113,7 @@ public class StyxBackendServiceClientTest {
         LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ, requestContext())).block();
 
         assertThat(response.status(), is(OK));
-        verify(hostClient).sendRequest(eq(SOME_REQ));
+        verify(hostClient).sendRequest(eq(SOME_REQ), any(Context.class));
     }
 
     @Test
@@ -188,8 +189,8 @@ public class StyxBackendServiceClientTest {
         assertThat(response.status(), is(OK));
 
         InOrder ordered = inOrder(firstClient, secondClient);
-        ordered.verify(firstClient).sendRequest(eq(SOME_REQ));
-        ordered.verify(secondClient).sendRequest(eq(SOME_REQ));
+        ordered.verify(firstClient).sendRequest(eq(SOME_REQ), any(Context.class));
+        ordered.verify(secondClient).sendRequest(eq(SOME_REQ), any(Context.class));
     }
 
     @Test
@@ -213,9 +214,9 @@ public class StyxBackendServiceClientTest {
                 .verifyError(OriginUnreachableException.class);
 
         InOrder ordered = inOrder(firstClient, secondClient, thirdClient);
-        ordered.verify(firstClient).sendRequest(eq(SOME_REQ));
-        ordered.verify(secondClient).sendRequest(eq(SOME_REQ));
-        ordered.verify(thirdClient, never()).sendRequest(eq(SOME_REQ));
+        ordered.verify(firstClient).sendRequest(eq(SOME_REQ), any(Context.class));
+        ordered.verify(secondClient).sendRequest(eq(SOME_REQ), any(Context.class));
+        ordered.verify(thirdClient, never()).sendRequest(eq(SOME_REQ), any(Context.class));
     }
 
     @Test
@@ -242,10 +243,10 @@ public class StyxBackendServiceClientTest {
                 .verifyError(NoAvailableHostsException.class);
 
         InOrder ordered = inOrder(firstClient, secondClient, thirdClient, fourthClient);
-        ordered.verify(firstClient).sendRequest(eq(SOME_REQ));
-        ordered.verify(secondClient).sendRequest(eq(SOME_REQ));
-        ordered.verify(thirdClient).sendRequest(eq(SOME_REQ));
-        ordered.verify(fourthClient, never()).sendRequest(any(LiveHttpRequest.class));
+        ordered.verify(firstClient).sendRequest(eq(SOME_REQ), any(Context.class));
+        ordered.verify(secondClient).sendRequest(eq(SOME_REQ), any(Context.class));
+        ordered.verify(thirdClient).sendRequest(eq(SOME_REQ), any(Context.class));
+        ordered.verify(fourthClient, never()).sendRequest(any(LiveHttpRequest.class), any(Context.class));
     }
 
 
@@ -262,7 +263,7 @@ public class StyxBackendServiceClientTest {
         LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ, requestContext())).block();
 
         assertThat(response.status(), is(BAD_REQUEST));
-        verify(hostClient).sendRequest(eq(SOME_REQ));
+        verify(hostClient).sendRequest(eq(SOME_REQ), any(Context.class));
         assertThat(metricRegistry.counter("origins.response.status.400").getCount(), is(1L));
     }
 
@@ -280,7 +281,7 @@ public class StyxBackendServiceClientTest {
         LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ, requestContext())).block();
 
         assertThat(response.status(), is(UNAUTHORIZED));
-        verify(hostClient).sendRequest(eq(SOME_REQ));
+        verify(hostClient).sendRequest(eq(SOME_REQ), any(Context.class));
         assertThat(metricRegistry.counter("origins.response.status.401").getCount(), is(1L));
     }
 
@@ -298,7 +299,7 @@ public class StyxBackendServiceClientTest {
         LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ, requestContext())).block();
 
         assertThat(response.status(), is(INTERNAL_SERVER_ERROR));
-        verify(hostClient).sendRequest(eq(SOME_REQ));
+        verify(hostClient).sendRequest(eq(SOME_REQ), any(Context.class));
         assertThat(metricRegistry.counter("origins.response.status.500").getCount(), is(1L));
     }
 
@@ -315,7 +316,7 @@ public class StyxBackendServiceClientTest {
 
         LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ, requestContext())).block();
         assertThat(response.status(), is(NOT_IMPLEMENTED));
-        verify(hostClient).sendRequest(SOME_REQ);
+        verify(hostClient).sendRequest(eq(SOME_REQ), any(Context.class));
         assertThat(metricRegistry.counter("origins.response.status.501").getCount(), is(1L));
     }
 
@@ -452,7 +453,7 @@ public class StyxBackendServiceClientTest {
     }
 
     private HttpHandler toHandler(StyxHostHttpClient hostClient) {
-        return (request, ctx) -> new Eventual<>(hostClient.sendRequest(request));
+        return (request, ctx) -> new Eventual<>(hostClient.sendRequest(request, ctx));
     }
 
     private RetryPolicy mockRetryPolicy(Boolean first, Boolean... outcomes) {
@@ -485,7 +486,7 @@ public class StyxBackendServiceClientTest {
 
     private StyxHostHttpClient mockHostClient(Publisher<LiveHttpResponse> responsePublisher) {
         StyxHostHttpClient secondClient = mock(StyxHostHttpClient.class);
-        when(secondClient.sendRequest(any(LiveHttpRequest.class))).thenReturn(responsePublisher);
+        when(secondClient.sendRequest(any(LiveHttpRequest.class), any(Context.class))).thenReturn(responsePublisher);
         return secondClient;
     }
 
