@@ -16,13 +16,13 @@
 package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.HttpHeaderNames;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpVersion;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import io.netty.util.AsciiString;
 
+import static com.hotels.styx.api.HttpHeaderNames.VIA;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_0;
 import static com.hotels.styx.common.Strings.isBlank;
 import static com.hotels.styx.common.Strings.isNotEmpty;
@@ -32,36 +32,36 @@ import static com.hotels.styx.common.Strings.isNotEmpty;
  *
  */
 public class ViaHeaderAppendingInterceptor implements HttpInterceptor {
-    private static final String VIA = "styx";
-    private final CharSequence via_1_0;
-    private final CharSequence via_1_1;
+    private static final String DEFAULT_VIA = "styx";
+    private final CharSequence via10;
+    private final CharSequence via11;
 
     public ViaHeaderAppendingInterceptor() {
-        this(VIA);
+        this(DEFAULT_VIA);
     }
 
     public ViaHeaderAppendingInterceptor(final String via) {
-        final String value = isBlank(via) ? VIA : via;
-        via_1_0 = AsciiString.of("1.0 " + value);
-        via_1_1 = AsciiString.of("1.1 " + value);
+        final String value = isBlank(via) ? DEFAULT_VIA : via;
+        via10 = AsciiString.of("1.0 " + value);
+        via11 = AsciiString.of("1.1 " + value);
     }
 
     @Override
     public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
         LiveHttpRequest newRequest = request.newBuilder()
-                .header(HttpHeaderNames.VIA, viaHeader(request))
+                .header(VIA, viaHeader(request))
                 .build();
 
         return chain.proceed(newRequest)
                 .map(response -> response.newBuilder()
-                        .header(HttpHeaderNames.VIA, viaHeader(response))
+                        .header(VIA, viaHeader(response))
                         .build());
     }
 
     private CharSequence viaHeader(LiveHttpRequest httpMessage) {
         CharSequence styxViaEntry = styxViaEntry(httpMessage.version());
 
-        return httpMessage.headers().get(HttpHeaderNames.VIA)
+        return httpMessage.headers().get(VIA)
                 .map(viaHeader -> isNotEmpty(viaHeader) ? viaHeader + ", " + styxViaEntry : styxViaEntry)
                 .orElse(styxViaEntry);
     }
@@ -69,12 +69,12 @@ public class ViaHeaderAppendingInterceptor implements HttpInterceptor {
     private CharSequence viaHeader(LiveHttpResponse httpMessage) {
         CharSequence styxViaEntry = styxViaEntry(httpMessage.version());
 
-        return httpMessage.headers().get(HttpHeaderNames.VIA)
+        return httpMessage.headers().get(VIA)
                 .map(viaHeader -> isNotEmpty(viaHeader) ? viaHeader + ", " + styxViaEntry : styxViaEntry)
                 .orElse(styxViaEntry);
     }
 
     private CharSequence styxViaEntry(HttpVersion httpVersion) {
-        return httpVersion.equals(HTTP_1_0) ? via_1_0 : via_1_1;
+        return httpVersion.equals(HTTP_1_0) ? via10 : via11;
     }
 }
