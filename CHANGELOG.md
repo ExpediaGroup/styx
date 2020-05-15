@@ -20,7 +20,6 @@
 * Fix issue [#636](https://github.com/HotelsDotCom/styx/issues/636): RewriteConfig ending with two consecutive placeholders ([#638](https://github.com/HotelsDotCom/styx/issues/638))
 * Upload binaries compiled with JDK8 to GitHub from the Travis release pipeline ([#632](https://github.com/HotelsDotCom/styx/issues/632))
 * Enable WARN logs in HttpRequestOperation. ([#633](https://github.com/HotelsDotCom/styx/issues/633))
-* Update changelog to 1.0.0-rc1. ([#634](https://github.com/HotelsDotCom/styx/issues/634))
 * Fix a race condition in ServerObjectSpec. ([#631](https://github.com/HotelsDotCom/styx/issues/631))
 
 
