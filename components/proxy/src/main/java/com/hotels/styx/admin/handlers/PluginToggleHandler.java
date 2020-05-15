@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Throwables.propagate;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpMethod.GET;
@@ -125,7 +124,7 @@ public class PluginToggleHandler implements WebServiceHandler {
         try {
             return JSON_MAPPER.writeValueAsString(new JsonResponse(requestedUpdate, message));
         } catch (JsonProcessingException e) {
-            throw propagate(e);
+            throw new RuntimeException(e);
         }
     }
 

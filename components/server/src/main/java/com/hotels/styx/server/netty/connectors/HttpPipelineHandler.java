@@ -23,22 +23,24 @@ import com.hotels.styx.api.ContentOverflowException;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpResponseStatus;
+import com.hotels.styx.api.Id;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.api.exceptions.OriginUnreachableException;
 import com.hotels.styx.api.exceptions.ResponseTimeoutException;
+import com.hotels.styx.api.exceptions.StyxException;
 import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.PluginException;
 import com.hotels.styx.client.BadHttpResponseException;
 import com.hotels.styx.client.StyxClientException;
 import com.hotels.styx.client.connectionpool.ResourceExhaustedException;
-import com.hotels.styx.client.netty.ConsumerDisconnectedException;
 import com.hotels.styx.common.FsmEventProcessor;
 import com.hotels.styx.common.QueueDrainingEventProcessor;
 import com.hotels.styx.common.StateMachine;
+import com.hotels.styx.common.content.ConsumerDisconnectedException;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.HttpErrorStatusListener;
 import com.hotels.styx.server.HttpInterceptorContext;
@@ -59,6 +61,7 @@ import reactor.core.publisher.Flux;
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
@@ -120,6 +123,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
     private final StateMachine<State> stateMachine;
     private final ResponseEnhancer responseEnhancer;
     private final boolean secure;
+    private final CharSequence originsHeaderName;
 
     private volatile Subscription subscription;
     private volatile LiveHttpRequest ongoingRequest;
@@ -141,6 +145,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         this.metrics = builder.metricRegistry.get();
         this.secure = builder.secure;
         this.tracker = tracker;
+        this.originsHeaderName = builder.originsHeaderName;
     }
 
     private StateMachine<State> createStateMachine() {
@@ -276,23 +281,23 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
 
                 @Override
                 public void hookOnComplete() {
-                   eventProcessor.submit(new ResponseObservableCompletedEvent(ctx, request.id()));
+                    eventProcessor.submit(new ResponseObservableCompletedEvent(ctx, request.id()));
                 }
 
                 @Override
                 public void hookOnError(Throwable cause) {
-                   eventProcessor.submit(new ResponseObservableErrorEvent(ctx, cause, request.id()));
+                    eventProcessor.submit(new ResponseObservableErrorEvent(ctx, cause, request.id()));
                 }
 
                 @Override
                 public void hookOnNext(LiveHttpResponse response) {
-                   eventProcessor.submit(new ResponseReceivedEvent(response, ctx));
+                    eventProcessor.submit(new ResponseReceivedEvent(response, ctx));
                 }
             });
 
             return WAITING_FOR_RESPONSE;
         } catch (Throwable cause) {
-            LiveHttpResponse response = exceptionToResponse(cause, request);
+            LiveHttpResponse response = exceptionToResponse(cause, request, originsHeaderName);
             httpErrorStatusListener.proxyErrorOccurred(request, remoteAddress(ctx), response.status(), cause);
             statsSink.onTerminate(request.id());
             tracker.endTrack(ongoingRequest);
@@ -416,7 +421,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         }
 
         if (!isIoException(cause)) {
-            LiveHttpResponse response = exceptionToResponse(cause, ongoingRequest);
+            LiveHttpResponse response = exceptionToResponse(cause, ongoingRequest, originsHeaderName);
             httpErrorStatusListener.proxyErrorOccurred(response.status(), cause);
             if (ctx.channel().isActive()) {
                 respondAndClose(ctx, response);
@@ -459,7 +464,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
             return TERMINATED;
         }
 
-        LiveHttpResponse response = exceptionToResponse(cause, ongoingRequest);
+        LiveHttpResponse response = exceptionToResponse(cause, ongoingRequest, originsHeaderName);
         responseWriterFactory.create(ctx)
                 .write(response)
                 .handle((ignore, exception) -> {
@@ -505,21 +510,41 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         return throwable instanceof IOException;
     }
 
-    private LiveHttpResponse exceptionToResponse(Throwable exception, LiveHttpRequest request) {
-        HttpResponseStatus status = status(exception instanceof PluginException
-                ? exception.getCause()
-                : exception);
+    private LiveHttpResponse exceptionToResponse(Throwable cause, LiveHttpRequest request, CharSequence originsHeaderName) {
+        HttpResponseStatus status = status(cause instanceof PluginException
+                ? cause.getCause()
+                : cause);
 
         String message = status.code() >= 500 ? "Site temporarily unavailable." : status.description();
 
-        return responseEnhancer.enhance(
+        LiveHttpResponse.Transformer builder = responseEnhancer.enhance(
                 response(status)
                         .body(new ByteStream(Flux.just(new Buffer(message, UTF_8))))
                         .build()
                         .newBuilder(), request)
                 .header(CONTENT_LENGTH, message.getBytes(UTF_8).length)
-                .header(CONNECTION, "close")
-                .build();
+                .header(CONNECTION, "close");
+
+        if (originsHeaderName != null && originFromException(cause) != null) {
+            return builder.header(originsHeaderName, originFromException(cause))
+                    .build();
+        } else {
+            return builder.build();
+        }
+    }
+
+    private String originFromException(Throwable cause) {
+        if (cause instanceof StyxException) {
+            StyxException c = (StyxException) cause;
+            return c.origin()
+                    .map(Id::toString)
+                    .orElse(Optional.ofNullable(c.application())
+                            .map(Id::toString)
+                            .orElse(null));
+
+        } else {
+            return null;
+        }
     }
 
     private static HttpResponseStatus status(Throwable exception) {
@@ -645,6 +670,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         private Supplier<MetricRegistry> metricRegistry = CodaHaleMetricRegistry::new;
         private RequestTracker tracker = RequestTracker.NO_OP;
         private boolean secure;
+        private CharSequence originsHeaderName;
 
         /**
          * Constructs a new builder.
@@ -718,6 +744,11 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
 
         public Builder requestTracker(RequestTracker tracker) {
             this.tracker = requireNonNull(tracker);
+            return this;
+        }
+
+        public Builder xOriginsHeader(CharSequence originsHeaderName) {
+            this.originsHeaderName = originsHeaderName;
             return this;
         }
 

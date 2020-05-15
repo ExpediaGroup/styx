@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.services
 
+import com.hotels.styx.NettyExecutor
 import com.hotels.styx.STATE_INACTIVE
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.lbGroupTag
@@ -41,7 +42,9 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 class HealthCheckMonitoringServiceTest : FeatureSpec({
     val LOGGER = LoggerFactory.getLogger(HealthCheckMonitoringServiceTest::class.java)
 
-    fun createdTag(tag: String) = tag.matches("created:.*".toRegex())
+    fun createdTag(tag: String) = tag.matches("created=.*".toRegex())
+
+    val workerExecutor = NettyExecutor.create("monitoringServiceTest", 1)
 
     feature("Lifecycle management") {
         val scheduledFuture = mockk<ScheduledFuture<Void>>(relaxed = true)
@@ -69,7 +72,8 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
                 period = 100.milliseconds,
                 activeThreshold = 2,
                 inactiveThreshold = 2,
-                executor = executor
+                executor = executor,
+                workerExecutor = workerExecutor
         )
 
         scenario("Starts scheduled executor") {
@@ -138,7 +142,7 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
                     record("aaa-02", "x", setOf(lbGroupTag("aaa")), mockk(), handler02)
                 }
 
-        val monitor = HealthCheckMonitoringService(objectStore, "aaa", "/healthCheck.txt", 100.milliseconds, 3, 3, executor)
+        val monitor = HealthCheckMonitoringService(objectStore, "aaa", "/healthCheck.txt", 100.milliseconds, 3, 3, executor, workerExecutor)
 
         scenario("Probes discovered objects at specified URL") {
             monitor.runChecks("aaa", objectStore)
@@ -264,4 +268,6 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
                     }
         }
     }
+
+    workerExecutor.shut()
 })

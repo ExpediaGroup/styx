@@ -71,14 +71,17 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
     private final ResponseEnhancer responseEnhancer;
     private final boolean requestTracking;
     private final HttpMessageFormatter httpMessageFormatter;
+    private final CharSequence originsHeader;
 
+    // CHECKSTYLE:OFF
     public ProxyConnectorFactory(NettyServerConfig serverConfig,
-                          MetricRegistry metrics,
-                          HttpErrorStatusListener errorStatusListener,
-                          String unwiseCharacters,
-                          ResponseEnhancer responseEnhancer,
-                          boolean requestTracking,
-                          HttpMessageFormatter httpMessageFormatter) {
+                                 MetricRegistry metrics,
+                                 HttpErrorStatusListener errorStatusListener,
+                                 String unwiseCharacters,
+                                 ResponseEnhancer responseEnhancer,
+                                 boolean requestTracking,
+                                 HttpMessageFormatter httpMessageFormatter,
+                                 CharSequence originsHeader) {
         this.serverConfig = requireNonNull(serverConfig);
         this.metrics = requireNonNull(metrics);
         this.errorStatusListener = requireNonNull(errorStatusListener);
@@ -86,7 +89,9 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
         this.responseEnhancer = requireNonNull(responseEnhancer);
         this.requestTracking = requestTracking;
         this.httpMessageFormatter = httpMessageFormatter;
+        this.originsHeader = originsHeader;
     }
+    // CHECKSTYLE:ON
 
     @Override
     public ServerConnector create(ConnectorConfig config) {
@@ -106,6 +111,7 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
         private final ResponseEnhancer responseEnhancer;
         private final RequestTracker requestTracker;
         private final HttpMessageFormatter httpMessageFormatter;
+        private final CharSequence originsHeader;
 
         private ProxyConnector(ConnectorConfig config, ProxyConnectorFactory factory) {
             this.config = requireNonNull(config);
@@ -124,6 +130,7 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
             }
             this.requestTracker = factory.requestTracking ? CurrentRequestTracker.INSTANCE : RequestTracker.NO_OP;
             this.httpMessageFormatter = factory.httpMessageFormatter;
+            this.originsHeader = factory.originsHeader;
         }
 
         @Override
@@ -148,20 +155,11 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
                     .addLast("channel-activity-event-constrainer", new ChannelActivityEventConstrainer())
                     .addLast("idle-handler", new IdleStateHandler(serverConfig.requestTimeoutMillis(), 0, serverConfig.keepAliveTimeoutMillis(), MILLISECONDS))
                     .addLast("channel-stats", channelStatsHandler)
-
-                    // Http Server Codec
                     .addLast("http-server-codec", new HttpServerCodec(serverConfig.maxInitialLength(), serverConfig.maxHeaderSize(), serverConfig.maxChunkSize(), true))
-
-                    // idle-handler and timeout-handler must be before aggregator. Otherwise
-                    // timeout handler cannot see the incoming HTTP chunks.
                     .addLast("timeout-handler", new RequestTimeoutHandler())
-
                     .addLast("keep-alive-handler", new IdleTransactionConnectionCloser(metrics))
-
                     .addLast("server-protocol-distribution-recorder", new ServerProtocolDistributionRecorder(metrics, sslContext.isPresent()))
-
-                    .addLast("styx-decoder", requestTranslator())
-
+                    .addLast("styx-decoder", requestTranslator(serverConfig.keepAliveTimeoutMillis()))
                     .addLast("proxy", new HttpPipelineHandler.Builder(httpPipeline)
                             .responseEnhancer(responseEnhancer)
                             .errorStatusListener(httpErrorStatusListener)
@@ -169,6 +167,7 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
                             .metricRegistry(metrics)
                             .secure(sslContext.isPresent())
                             .requestTracker(requestTracker)
+                            .xOriginsHeader(originsHeader)
                             .build());
 
             if (serverConfig.compressResponses()) {
@@ -177,11 +176,11 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
         }
 
 
-        private NettyToStyxRequestDecoder requestTranslator() {
+        private NettyToStyxRequestDecoder requestTranslator(int inactivityTimeoutMs) {
             return new NettyToStyxRequestDecoder.Builder()
-                    .flowControlEnabled(true)
                     .unwiseCharEncoder(unwiseCharEncoder)
                     .httpMessageFormatter(httpMessageFormatter)
+                    .inactivityTimeoutMs(inactivityTimeoutMs)
                     .build();
         }
 

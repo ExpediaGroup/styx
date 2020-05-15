@@ -15,21 +15,22 @@
  */
 package com.hotels.styx
 
-import com.hotels.styx.api.extension.service.spi.StyxService
+import com.hotels.styx.api.extension.service.spi.AbstractStyxService
+import com.hotels.styx.api.extension.service.spi.StyxServiceStatus.RUNNING
+import com.hotels.styx.api.extension.service.spi.StyxServiceStatus.STOPPED
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.services.record
+import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
 import io.mockk.mockk
-import io.mockk.verify
 
 class ServiceProviderMonitorTest : FeatureSpec({
 
     feature("Service provider lifecycle management") {
 
-        val serviceAaa = mockk<StyxService>(relaxed = true)
-        val serviceBbb = mockk<StyxService>(relaxed = true)
-        val serviceCcc = mockk<StyxService>(relaxed = true)
-
+        val serviceAaa = MockService("aaa")
+        val serviceBbb = MockService("bbb")
+        val serviceCcc = MockService("ccc")
 
         val monitor = ServiceProviderMonitor(
                 "Styx-Service-Monitor",
@@ -43,22 +44,21 @@ class ServiceProviderMonitorTest : FeatureSpec({
         scenario("Starts configured services when styx starts up") {
             monitor.start().get()
 
-            verify {
-                serviceAaa.start()
-                serviceBbb.start()
-                serviceCcc.start()
-            }
+            serviceAaa.status().shouldBe(RUNNING)
+            serviceBbb.status().shouldBe(RUNNING)
+            serviceCcc.status().shouldBe(RUNNING)
         }
 
         scenario("Shuts services when Styx server shuts down") {
             monitor.stop().get()
 
-            verify {
-                serviceAaa.stop()
-                serviceBbb.stop()
-                serviceCcc.stop()
-            }
+            serviceAaa.status().shouldBe(STOPPED)
+            serviceBbb.status().shouldBe(STOPPED)
+            serviceCcc.status().shouldBe(STOPPED)
+
         }
     }
 
 })
+
+private class MockService(val name: String): AbstractStyxService(name)

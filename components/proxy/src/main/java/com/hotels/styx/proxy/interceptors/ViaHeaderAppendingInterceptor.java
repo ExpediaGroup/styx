@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,13 +17,13 @@ package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.HttpVersion;
 import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.hotels.styx.api.HttpHeaderNames.VIA;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_0;
+import static com.hotels.styx.common.Strings.isNotEmpty;
 import static io.netty.handler.codec.http.HttpHeaders.newEntity;
 
 /**
@@ -50,7 +50,7 @@ public class ViaHeaderAppendingInterceptor implements HttpInterceptor {
         CharSequence styxViaEntry = styxViaEntry(httpMessage.version());
 
         return httpMessage.headers().get(VIA)
-                .map(viaHeader -> !isNullOrEmpty(viaHeader) ? viaHeader + ", " + styxViaEntry : styxViaEntry)
+                .map(viaHeader -> isNotEmpty(viaHeader) ? viaHeader + ", " + styxViaEntry : styxViaEntry)
                 .orElse(styxViaEntry);
     }
 
@@ -58,7 +58,7 @@ public class ViaHeaderAppendingInterceptor implements HttpInterceptor {
         CharSequence styxViaEntry = styxViaEntry(httpMessage.version());
 
         return httpMessage.headers().get(VIA)
-                .map(viaHeader -> !isNullOrEmpty(viaHeader) ? viaHeader + ", " + styxViaEntry : styxViaEntry)
+                .map(viaHeader -> isNotEmpty(viaHeader) ? viaHeader + ", " + styxViaEntry : styxViaEntry)
                 .orElse(styxViaEntry);
     }
 

@@ -3,7 +3,10 @@
 
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n%ex{full,
+        org.junit,
+        org.apache.maven.surefire}
+      </pattern>
     </encoder>
   </appender>
 
@@ -15,5 +18,8 @@
   <logger name="com.hotels.styx.http-messages.inbound" level="INFO"/>
   <logger name="com.hotels.styx.http-messages.outbound" level="INFO"/>
   <logger name="com.hotels.styx.StyxServer" level="ERROR"/>
+  <logger name="com.hotels.styx.client.netty.connectionpool.HttpRequestOperation" level="WARN"/>
+  <logger name="com.hotels.styx.support.StyxServerProvider" level="INFO"/>
+  <logger name="com.hotels.styx.client.netty.connectionpool.HttpRequestOperation" level="WARN"/>
 
 </configuration>

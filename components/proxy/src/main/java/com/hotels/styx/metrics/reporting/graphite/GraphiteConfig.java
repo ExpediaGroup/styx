@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Optional;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -65,10 +64,15 @@ public class GraphiteConfig {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("host", host)
-                .add("port", port)
-                .add("intervalMillis", intervalMillis)
+        return new StringBuilder(96)
+                .append(this.getClass().getSimpleName())
+                .append("{host=")
+                .append(host)
+                .append(", port=")
+                .append(port)
+                .append(", intervalMillis=")
+                .append(intervalMillis)
+                .append('}')
                 .toString();
     }
 }

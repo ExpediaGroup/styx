@@ -119,6 +119,64 @@ class ProviderAdminInterfaceSpec : FeatureSpec() {
                 body shouldContain "/admin/providers/myMonitor/status"
                 body shouldContain "/admin/providers/mySecondMonitor/status"
             }
+
+            scenario("YAML configuration for all providers is available") {
+                val body = styxServer.adminRequest("/admin/providers/objects")
+                        .bodyAs(UTF_8)
+                body shouldContain """
+                    mySecondMonitor:
+                      type: "HealthCheckMonitor"
+                      tags: []
+                      config:
+                        objects: "bbb"
+                        path: "/healthCheck/y"
+                        timeoutMillis: 250
+                        intervalMillis: 500
+                        healthyThreshold: 3
+                        unhealthyThreshold: 2
+                    """.trimIndent()
+
+                body shouldContain """
+                    myMonitor:
+                      type: "HealthCheckMonitor"
+                      tags: []
+                      config:
+                        objects: "aaa"
+                        path: "/healthCheck/x"
+                        timeoutMillis: 250
+                        intervalMillis: 500
+                        healthyThreshold: 3
+                        unhealthyThreshold: 2
+                    """.trimIndent()
+
+                body shouldContain """
+                    originsFileLoader:
+                      type: "YamlFileConfigurationService"
+                      tags: []
+                      config:
+                        originsFile: "${originsFile.absolutePath}"
+                        ingressObject: "pathPrefixRouter"
+                        monitor: true
+                        pollInterval: "PT0.1S"
+                    """.trimIndent()
+            }
+
+            scenario("YAML configuration for a single provider is available") {
+                val body = styxServer.adminRequest("/admin/providers/objects/myMonitor")
+                        .bodyAs(UTF_8)
+                body.trim() shouldBe """
+                      ---
+                      type: "HealthCheckMonitor"
+                      tags: []
+                      config:
+                        objects: "aaa"
+                        path: "/healthCheck/x"
+                        timeoutMillis: 250
+                        intervalMillis: 500
+                        healthyThreshold: 3
+                        unhealthyThreshold: 2
+                      """.trimIndent()
+            }
         }
 
         feature("Endpoints for dynamically added Styx services are available in the Admin interface") {
@@ -140,10 +198,15 @@ class ProviderAdminInterfaceSpec : FeatureSpec() {
             scenario("The new admin endpoint returns status information without server restart") {
                 val responseA = styxServer.adminRequest("/admin/providers/appA-monitor/status")
                 responseA.status() shouldBe NOT_FOUND
-                val responseB = styxServer.adminRequest("/admin/providers/appB-monitor/status")
-                responseB.status() shouldBe OK
-                responseB.header(CONTENT_TYPE).get().toLowerCase() shouldBe APPLICATION_JSON.toString().toLowerCase()
-                responseB.bodyAs(UTF_8) shouldBe "{ name: \"HealthCheckMonitoringService-appB\" status: \"RUNNING\" }"
+
+                eventually(3.seconds) {
+                    styxServer.adminRequest("/admin/providers/appB-monitor/status")
+                            .let {
+                                it.status() shouldBe OK
+                                it.header(CONTENT_TYPE).get().toLowerCase() shouldBe APPLICATION_JSON.toString().toLowerCase()
+                                it.bodyAs(UTF_8) shouldBe "{ name: \"HealthCheckMonitoringService-appB\" status: \"RUNNING\" }"
+                            }
+                }
             }
 
             scenario("Endpoints for dynamically removed Styx services are not listed in the Admin interface") {
@@ -177,7 +240,7 @@ class ProviderAdminInterfaceSpec : FeatureSpec() {
             .send(get(endpoint)
                     .header(HOST, this().adminHostHeader())
                     .build())
-            .wait()
+            .wait()!!
 
     private fun writeOriginsFile(vararg origins: Pair<String, Boolean>) {
         origins.joinToString (separator = "\n") {

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 package com.hotels.styx.routing.config;
 
 import com.hotels.styx.Environment;
+import com.hotels.styx.NettyExecutor;
+import com.hotels.styx.StyxObjectRecord;
+import com.hotels.styx.api.configuration.ObjectStore;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.RoutingObjectRecord;
@@ -61,7 +64,9 @@ public interface RoutingObjectFactory {
         private final Iterable<NamedPlugin> plugins;
         private final Map<String, HttpInterceptorFactory> interceptorFactories;
         private final boolean requestTracking;
+        private StyxObjectStore<StyxObjectRecord<NettyExecutor>> executorObjectStore;
 
+        // CHECKSTYLE:OFF
         public Context(
                 RouteRefLookup refLookup,
                 Environment environment,
@@ -69,7 +74,8 @@ public interface RoutingObjectFactory {
                 Map<String, RoutingObjectFactory> objectFactories,
                 Iterable<NamedPlugin> plugins,
                 Map<String, HttpInterceptorFactory> interceptorFactories,
-                boolean requestTracking) {
+                boolean requestTracking,
+                StyxObjectStore<StyxObjectRecord<NettyExecutor>> executorObjectStore) {
             this.refLookup = refLookup;
             this.environment = requireNonNull(environment);
             this.routeDb = requireNonNull(routeDb);
@@ -77,7 +83,9 @@ public interface RoutingObjectFactory {
             this.plugins = requireNonNull(plugins);
             this.interceptorFactories = requireNonNull(interceptorFactories);
             this.requestTracking = requestTracking;
+            this.executorObjectStore = executorObjectStore;
         }
+        // CHECKSTYLE:ON
 
         public Environment environment() {
             return environment;
@@ -106,5 +114,9 @@ public interface RoutingObjectFactory {
         public RouteRefLookup refLookup() {
             return refLookup;
         }
+
+        public ObjectStore<StyxObjectRecord<NettyExecutor>> executors() {
+            return executorObjectStore;
+        };
     }
 }

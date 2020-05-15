@@ -16,11 +16,15 @@
 package com.hotels.styx.server.netty.codec;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.hotels.styx.api.Buffers;
+import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.HttpVersion;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.Url;
+import com.hotels.styx.api.exceptions.TransportException;
+import com.hotels.styx.common.QueueDrainingExecutor;
+import com.hotels.styx.common.content.FlowControllingHttpContentProducer;
+import com.hotels.styx.common.content.FlowControllingPublisher;
 import com.hotels.styx.common.format.DefaultHttpMessageFormatter;
 import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.server.BadRequestException;
@@ -35,16 +39,13 @@ import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.util.ReferenceCountUtil;
-import rx.Observable;
-import rx.Producer;
-import rx.Subscriber;
+import org.reactivestreams.Publisher;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayDeque;
 import java.util.List;
-import java.util.Queue;
+import java.util.Optional;
+import java.util.concurrent.Executor;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.collect.Iterables.size;
@@ -52,9 +53,10 @@ import static com.hotels.styx.api.HttpHeaderNames.EXPECT;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.server.UniqueIdSuppliers.UUID_VERSION_ONE_SUPPLIER;
 import static com.hotels.styx.server.netty.codec.UnwiseCharsEncoder.IGNORE;
+import static io.netty.util.ReferenceCountUtil.retain;
+import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.StreamSupport.stream;
-import static rx.RxReactiveStreams.toPublisher;
 
 /**
  * This {@link MessageToMessageDecoder} is responsible for decode {@link io.netty.handler.codec.http.HttpRequest}
@@ -63,85 +65,97 @@ import static rx.RxReactiveStreams.toPublisher;
  * This implementation is {@link Sharable}.
  */
 public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<HttpObject> {
+
+    private static final long DEFAULT_INACTIVITY_TIMEOUT_MS = 60000L;
     private final UniqueIdSupplier uniqueIdSupplier;
-    private final boolean flowControlEnabled;
     private final UnwiseCharsEncoder unwiseCharEncoder;
     private HttpMessageFormatter httpMessageFormatter;
 
-    private FlowControllingHttpContentProducer producer;
+    private final long inactivityTimeoutMs;
+    private Optional<FlowControllingHttpContentProducer> producer = Optional.empty();
+    private final Executor queueDrainingExecutor = new QueueDrainingExecutor();
 
     private NettyToStyxRequestDecoder(Builder builder) {
         this.uniqueIdSupplier = builder.uniqueIdSupplier;
-        this.flowControlEnabled = builder.flowControlEnabled;
         this.unwiseCharEncoder = builder.unwiseCharEncoder;
         this.httpMessageFormatter = builder.httpMessageFormatter;
+        this.inactivityTimeoutMs = builder.inactivityTimeoutMs;
     }
 
     @Override
-    protected void decode(ChannelHandlerContext ctx, HttpObject httpObject, List<Object> out) throws Exception {
-        if (httpObject.getDecoderResult().isFailure()) {
-            String formattedHttpObject = httpMessageFormatter.formatNettyMessage(httpObject);
+    protected void decode(ChannelHandlerContext ctx, HttpObject msg, List<Object> out) throws Exception {
+        if (msg.getDecoderResult().isFailure()) {
+            String formattedHttpObject = httpMessageFormatter.formatNettyMessage(msg);
             throw new BadRequestException("Error while decoding request: " + formattedHttpObject,
-                    httpMessageFormatter.wrap(httpObject.getDecoderResult().cause()));
+                    httpMessageFormatter.wrap(msg.getDecoderResult().cause()));
         }
 
         try {
-            if (httpObject instanceof HttpRequest) {
-                this.producer = new FlowControllingHttpContentProducer(ctx, this.flowControlEnabled);
-                Observable<ByteBuf> contentObservable = Observable.create(contentSubscriber -> {
-                    contentSubscriber.setProducer(this.producer);
-                    this.producer.subscriptionStart(contentSubscriber);
-                });
+            if (msg instanceof HttpRequest) {
+                ctx.channel().config().setAutoRead(false);
+                ctx.channel().read();
 
-                HttpRequest request = (HttpRequest) httpObject;
-                LiveHttpRequest styxRequest = toStyxRequest(request, contentObservable);
+                HttpRequest nettyRequest = (HttpRequest) msg;
+
+                this.producer = Optional.of(createProducer(ctx, nettyRequest.uri()));
+                Publisher<Buffer> contentPublisher = new FlowControllingPublisher(queueDrainingExecutor, this.producer.get());
+
+                LiveHttpRequest styxRequest = toStyxRequest(nettyRequest, contentPublisher);
                 out.add(styxRequest);
-            } else if (httpObject instanceof HttpContent && this.producer != null) {
-                this.producer.onNext(content(httpObject));
 
-                if (httpObject instanceof LastHttpContent) {
-                    this.producer.onCompleted();
+            }
+            if (msg instanceof HttpContent) {
+                assert this.producer.isPresent();
+
+                ByteBuf content = ((ByteBufHolder) msg).content();
+                if (content.isReadable()) {
+                    ByteBuf byteBuf = retain(content);
+                    queueDrainingExecutor.execute(() -> producer.get().newChunk(byteBuf));
+                }
+                if (msg instanceof LastHttpContent) {
+                    queueDrainingExecutor.execute(() -> producer.get().lastHttpContent());
                 }
             }
         } catch (BadRequestException ex) {
             throw ex;
         } catch (Exception ex) {
-            throw new BadRequestException(ex.getMessage() + " in " + httpObject, ex);
+            throw new BadRequestException(ex.getMessage() + " in " + msg, ex);
         }
-    }
-
-    @Override
-    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-        if (this.producer != null) {
-            this.producer.notifySubscriber();
-        }
-        super.channelReadComplete(ctx);
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        cleanUp();
+        TransportException cause = new TransportException(
+                "Connection to client lost: " + ctx.channel().remoteAddress());
+        this.producer.ifPresent(it -> it.channelInactive(cause));
         super.channelInactive(ctx);
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        cleanUp();
         if (cause instanceof TooLongFrameException) {
-            throw new BadRequestException(cause.getMessage(), cause);
+            this.producer.ifPresent(it -> it.channelException(new BadRequestException(cause.getMessage(), cause)));
+        } else {
+            this.producer.ifPresent(it -> it.channelException(cause));
         }
         super.exceptionCaught(ctx, cause);
     }
 
-    private void cleanUp() {
-        if (producer != null) {
-            producer.cleanUp();
-        }
+    private FlowControllingHttpContentProducer createProducer(ChannelHandlerContext ctx, String uri) {
+        String loggingPrefix = format("Request body. %s [remote: %s, local: %s]", uri, ctx.channel().remoteAddress(), ctx.channel().localAddress());
+
+        return new FlowControllingHttpContentProducer(
+                () -> ctx.channel().read(),
+                () -> ctx.channel().config().setAutoRead(true),
+                cause -> { },
+                format("%s, %s", loggingPrefix, ""),
+                inactivityTimeoutMs,
+                ctx.channel().eventLoop());
     }
 
-    private LiveHttpRequest toStyxRequest(HttpRequest request, Observable<ByteBuf> contentObservable) {
+    private LiveHttpRequest toStyxRequest(HttpRequest request, Publisher<Buffer> contentPublisher) {
         validateHostHeader(request);
-        return makeAStyxRequestFrom(request, contentObservable)
+        return makeAStyxRequestFrom(request, contentPublisher)
                 .removeHeader(EXPECT)
                 .build();
     }
@@ -162,20 +176,15 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
         return true;
     }
 
-    private static ByteBuf content(HttpObject httpObject) {
-        return ((ByteBufHolder) httpObject).content().retain();
-    }
-
-
     @VisibleForTesting
-    LiveHttpRequest.Builder makeAStyxRequestFrom(HttpRequest request, Observable<ByteBuf> content) {
+    LiveHttpRequest.Builder makeAStyxRequestFrom(HttpRequest request, Publisher<Buffer> content) {
         Url url = UrlDecoder.decodeUrl(unwiseCharEncoder, request);
         LiveHttpRequest.Builder requestBuilder = new LiveHttpRequest.Builder()
                 .method(toStyxMethod(request.method()))
                 .url(url)
                 .version(toStyxVersion(request.protocolVersion()))
                 .id(uniqueIdSupplier.get())
-                .body(new ByteStream(toPublisher(content.map(Buffers::fromByteBuf))));
+                .body(new ByteStream(content));
 
         stream(request.headers().spliterator(), false)
                 .forEach(entry -> requestBuilder.addHeader(entry.getKey(), entry.getValue()));
@@ -191,82 +200,17 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
         return com.hotels.styx.api.HttpMethod.httpMethod(method.name());
     }
 
-    private static class FlowControllingHttpContentProducer implements Producer {
-        private final ChannelHandlerContext ctx;
-
-        private final Queue<ByteBuf> readQueue = new ArrayDeque<>();
-        private boolean completed;
-        private Subscriber<? super ByteBuf> contentSubscriber;
-
-        FlowControllingHttpContentProducer(ChannelHandlerContext ctx, boolean flowControlEnabled) {
-            this.ctx = ctx;
-
-            if (flowControlEnabled) {
-                this.ctx.channel().config().setAutoRead(false);
-            }
-        }
-
-        @Override
-        public void request(long n) {
-            this.ctx.channel().read();
-        }
-
-        void onNext(ByteBuf content) {
-            synchronized (this.readQueue) {
-                this.readQueue.add(content);
-            }
-        }
-
-        void onCompleted() {
-            this.completed = true;
-            this.ctx.channel().config().setAutoRead(true);
-        }
-
-        void notifySubscriber() {
-            if (this.contentSubscriber != null) {
-                synchronized (this.readQueue) {
-                    ByteBuf value;
-                    while ((value = this.readQueue.poll()) != null) {
-                        this.contentSubscriber.onNext(value);
-                    }
-                }
-                if (this.completed) {
-                    this.contentSubscriber.onCompleted();
-                }
-            }
-        }
-
-        void subscriptionStart(Subscriber<? super ByteBuf> subscriber) {
-            this.contentSubscriber = subscriber;
-            notifySubscriber();
-        }
-
-        void cleanUp() {
-            synchronized (this.readQueue) {
-                ByteBuf value;
-                while ((value = this.readQueue.poll()) != null) {
-                    ReferenceCountUtil.release(value);
-                }
-            }
-        }
-    }
-
     /**
      * Builder.
      */
     public static final class Builder {
-        private boolean flowControlEnabled;
         private UniqueIdSupplier uniqueIdSupplier = UUID_VERSION_ONE_SUPPLIER;
         private UnwiseCharsEncoder unwiseCharEncoder = IGNORE;
         private HttpMessageFormatter httpMessageFormatter = new DefaultHttpMessageFormatter();
+        private long inactivityTimeoutMs = DEFAULT_INACTIVITY_TIMEOUT_MS;
 
         public Builder uniqueIdSupplier(UniqueIdSupplier uniqueIdSupplier) {
             this.uniqueIdSupplier = requireNonNull(uniqueIdSupplier);
-            return this;
-        }
-
-        public Builder flowControlEnabled(boolean flowControlEnabled) {
-            this.flowControlEnabled = flowControlEnabled;
             return this;
         }
 
@@ -277,6 +221,11 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
 
         public Builder httpMessageFormatter(HttpMessageFormatter httpMessageFormatter) {
             this.httpMessageFormatter = httpMessageFormatter;
+            return this;
+        }
+
+        public Builder inactivityTimeoutMs(long inactivityTimeoutMs) {
+            this.inactivityTimeoutMs = inactivityTimeoutMs;
             return this;
         }
 

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,10 +22,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 
-import static com.google.common.base.Preconditions.checkState;
-import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static com.hotels.styx.common.Logging.sanitise;
+import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSource;
+import static java.lang.String.format;
 import static java.util.Collections.emptyMap;
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -53,7 +53,9 @@ public final class ConfigurationParser<C extends ExtensibleConfiguration<C>> {
 
         PlaceholderResolutionResult<C> resolved = configuration.resolvePlaceholders(overrides);
 
-        checkState(resolved.unresolvedPlaceholders().isEmpty(), "Unresolved placeholders: %s", resolved.unresolvedPlaceholders());
+        if (!resolved.unresolvedPlaceholders().isEmpty()) {
+            throw new IllegalStateException(format("Unresolved placeholders: %s", resolved.unresolvedPlaceholders()));
+        }
 
         return resolved.resolvedConfiguration();
     }

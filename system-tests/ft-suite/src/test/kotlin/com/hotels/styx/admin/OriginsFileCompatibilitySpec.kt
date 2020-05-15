@@ -23,9 +23,10 @@ import com.hotels.styx.admin.handlers.ServiceProviderHandler
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpHeaderValues.APPLICATION_JSON
-import com.hotels.styx.api.HttpHeaderValues.HTML
 import com.hotels.styx.api.HttpRequest.get
-import com.hotels.styx.api.HttpResponseStatus.*
+import com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY
+import com.hotels.styx.api.HttpResponseStatus.NOT_FOUND
+import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.RequestCookie.requestCookie
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.routing.config.StyxObjectDefinition
@@ -36,6 +37,7 @@ import com.hotels.styx.support.ResourcePaths
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.adminHostHeader
 import com.hotels.styx.support.proxyHttpHostHeader
+import com.hotels.styx.support.routingObject
 import com.hotels.styx.support.wait
 import io.kotlintest.Spec
 import io.kotlintest.eventually
@@ -50,7 +52,6 @@ import kotlinx.coroutines.delay
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.charset.StandardCharsets.UTF_8
-import kotlin.io.writeText
 
 class OriginsFileCompatibilitySpec : FunSpec() {
     val tempDir = createTempDir(suffix = "-${this.javaClass.simpleName}")
@@ -60,6 +61,17 @@ class OriginsFileCompatibilitySpec : FunSpec() {
     val styxServer = StyxServerProvider(
             defaultConfig = """
                 ---
+                providers:
+                  originsFileLoader:
+                    type: YamlFileConfigurationService
+                    config:
+                      originsFile: ${originsFile.absolutePath}
+                      ingressObject: pathPrefixRouter
+                      monitor: True
+                      pollInterval: PT0.1S 
+
+                httpPipeline: pathPrefixRouter
+
                 proxy:
                   connectors:
                     http:
@@ -74,18 +86,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                   inbound:
                     enabled: true
                   outbound:
-                    enabled: true
-
-                providers:
-                  originsFileLoader:
-                    type: YamlFileConfigurationService
-                    config:
-                      originsFile: ${originsFile.absolutePath}
-                      ingressObject: pathPrefixRouter
-                      monitor: True
-                      pollInterval: PT0.1S 
-
-                httpPipeline: pathPrefixRouter
+                    enabled: true 
                 """.trimIndent(),
             defaultLoggingConfig = ResourcePaths.fixturesHome(
                     OriginsFileCompatibilitySpec::class.java,
@@ -126,6 +127,21 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                             it.bodyAs(UTF_8) shouldBe originsFile
                         }
             }
+        }
+
+        context("Failing to load an initial configuration blocks Styx HTTP server from starting.") {
+            writeOrigins("""
+                    - id: appA
+                    - this file has somehow corrupted
+                      .. bl;ah blah" 
+                    """.trimIndent())
+
+            styxServer.restartAsync()
+
+            delay(1.seconds.toMillis())
+
+            styxServer().proxyHttpAddress() shouldBe null
+            styxServer.stop()
         }
 
         context("Origins configuration changes") {
@@ -304,10 +320,20 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     client.send(get("/11")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
-                            .wait().let {
-                                it!!.status() shouldBe BAD_GATEWAY
+                            .wait()!!
+                            .let {
+                                it.status() shouldBe BAD_GATEWAY
                             }
                 }
+
+                client.send(get("/11")
+                        .header(HOST, styxServer().proxyHttpHostHeader())
+                        .build())
+                        .wait()!!
+                        .let {
+                            it.status() shouldBe BAD_GATEWAY
+                            it.header("X-Styx-Origin-Id").get() shouldBe "appTls.appTls-01"
+                        }
 
                 writeOrigins("""
                     - id: appTls
@@ -587,8 +613,10 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 client.send(get("/16")
                         .header(HOST, styxServer().proxyHttpHostHeader())
                         .build())
-                        .wait().let {
-                            it!!.status() shouldBe BAD_GATEWAY
+                        .wait()!!
+                        .let {
+                            it.status() shouldBe BAD_GATEWAY
+                            it.header("X-Styx-Origin-Id").get() shouldBe "appB"
                             it.bodyAs(UTF_8) shouldBe "Site temporarily unavailable."
                         }
             }
@@ -670,6 +698,104 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                         .wait().let {
                             it!!.status() shouldBe NOT_FOUND
                         }
+            }
+        }
+
+        context("Executors configuration") {
+            writeOrigins("""
+                - id: appA
+                  path: "/"
+                  origins:
+                  - { id: "appA-01", host: "localhost:${mockServerA01.port()}" } 
+            """.trimIndent())
+
+            test("Uses named executor") {
+                styxServer.restart(
+                        configuration = """
+                        ---
+                        executors:
+                          test-executor:
+                            type: NettyExecutor
+                            config:
+                              threads: 1
+                              namePattern: MyTestExecutor
+                        
+                        providers:
+                          originsFileLoader:
+                            type: YamlFileConfigurationService
+                            config:
+                              originsFile: ${originsFile.absolutePath}
+                              ingressObject: pathPrefixRouter
+                              monitor: True
+                              pollInterval: PT0.1S
+                              executor: test-executor 
+        
+                        httpPipeline: pathPrefixRouter
+        
+                        proxy:
+                          connectors:
+                            http:
+                              port: 0
+                
+                        admin:
+                          connectors:
+                            http:
+                              port: 0
+                    """.trimIndent())
+
+
+                eventually(2.seconds, AssertionError::class.java) {
+                    client.send(get("/foo")
+                            .header(HOST, styxServer().proxyHttpHostHeader())
+                            .build())
+                            .wait()!!
+                            .let {
+                                it.status() shouldBe OK
+                            }
+                }
+
+                styxServer().routingObject("appA.appA-01", debug = true).get()
+                        .shouldContain("executor: \"test-executor\"")
+            }
+
+            test("Uses default executor, when named executor is not provided") {
+                styxServer.restart(
+                        configuration = """
+                        --- 
+                        providers:
+                          originsFileLoader:
+                            type: YamlFileConfigurationService
+                            config:
+                              originsFile: ${originsFile.absolutePath}
+                              ingressObject: pathPrefixRouter
+                              monitor: True
+                              pollInterval: PT0.1S
+        
+                        httpPipeline: pathPrefixRouter
+        
+                        proxy:
+                          connectors:
+                            http:
+                              port: 0
+                
+                        admin:
+                          connectors:
+                            http:
+                              port: 0
+                    """.trimIndent())
+
+                eventually(2.seconds, AssertionError::class.java) {
+                    client.send(get("/foo/2")
+                            .header(HOST, styxServer().proxyHttpHostHeader())
+                            .build())
+                            .wait()!!
+                            .let {
+                                it.status() shouldBe OK
+                            }
+                }
+
+                styxServer().routingObject("appA.appA-01", debug = true).get()
+                        .shouldContain("executor: \"Styx-Client-Global-Worker\"")
             }
         }
 

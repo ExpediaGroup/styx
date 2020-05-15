@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,24 +19,21 @@ import com.codahale.metrics.Meter;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginException;
 import com.hotels.styx.common.SimpleCache;
 import org.slf4j.Logger;
+import reactor.core.publisher.Flux;
 
 import java.util.Map;
 
-import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
-import static rx.Observable.error;
-import static rx.RxReactiveStreams.toObservable;
-import static rx.RxReactiveStreams.toPublisher;
 
 /**
  * Collects metrics on plugin.
@@ -87,10 +84,9 @@ public class InstrumentedPlugin implements Plugin {
     public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain originalChain) {
         StatusRecordingChain chain = new StatusRecordingChain(originalChain);
         try {
-            return new Eventual<>(toPublisher(
-                    toObservable(plugin.intercept(request, chain))
+            return new Eventual<>(Flux.from(plugin.intercept(request, chain))
                             .doOnNext(response -> recordStatusCode(chain, response))
-                            .onErrorResumeNext(error -> error(recordAndWrapError(chain, error)))));
+                            .onErrorResume(error -> Flux.error(recordAndWrapError(chain, error))));
         } catch (Throwable e) {
             recordException(e);
             return Eventual.error(new PluginException(e, plugin.name()));
@@ -142,13 +138,15 @@ public class InstrumentedPlugin implements Plugin {
         @Override
         public Eventual<LiveHttpResponse> proceed(LiveHttpRequest request) {
             try {
-                return new Eventual<>(
-                        toPublisher(toObservable(chain.proceed(request))
+                return new Eventual<>(Flux.from(chain.proceed(request))
                                 .doOnNext(response -> upstreamStatus = response.status())
-                                .doOnError(error -> upstreamException = true)));
-            } catch (Throwable e) {
+                                .doOnError(error -> upstreamException = true));
+            } catch (RuntimeException | Error e) {
                 upstreamException = true;
-                throw propagate(e);
+                throw e;
+            } catch (Exception e) {
+                upstreamException = true;
+                throw new RuntimeException(e);
             }
         }
     }

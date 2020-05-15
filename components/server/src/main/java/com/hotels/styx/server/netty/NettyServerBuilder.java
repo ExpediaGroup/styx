@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.server.netty;
 
-import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.InetServer;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.MetricRegistry;
@@ -24,11 +24,11 @@ import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 
-import static com.google.common.base.Objects.firstNonNull;
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.LiveHttpResponse.response;
+import static com.hotels.styx.common.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
+import static java.util.Optional.ofNullable;
 
 /**
  * A builder of {@link NettyServer} instances.
@@ -36,19 +36,50 @@ import static com.hotels.styx.api.LiveHttpResponse.response;
 public final class NettyServerBuilder {
     private final ChannelGroup channelGroup = new DefaultChannelGroup(ImmediateEventExecutor.INSTANCE);
 
+    private static final NettyExecutor DEFAULT_SERVER_BOSS_EXECUTOR = NettyExecutor.create("Server-Boss", 1);
+
     private String host;
     private MetricRegistry metricRegistry;
     private ServerConnector httpConnector;
     private HttpHandler handler = (request, context) -> Eventual.of(response(NOT_FOUND).build());
     private NettyExecutor bossExecutor;
     private NettyExecutor workerExecutor;
+    private Runnable shutdownAction = () -> { };
 
     public static NettyServerBuilder newBuilder() {
         return new NettyServerBuilder();
     }
 
     String host() {
-        return firstNonNull(host, "localhost");
+        return ofNullable(host).orElse("localhost");
+    }
+
+    MetricRegistry metricsRegistry() {
+        return this.metricRegistry;
+    }
+
+    NettyExecutor bossExecutor() {
+        return this.bossExecutor;
+    }
+
+    NettyExecutor workerExecutor() {
+        return this.workerExecutor;
+    }
+
+    ChannelGroup channelGroup() {
+        return this.channelGroup;
+    }
+
+    public Runnable shutdownAction() {
+        return this.shutdownAction;
+    }
+
+    HttpHandler handler() {
+        return this.handler;
+    }
+
+    ServerConnector protocolConnector() {
+        return httpConnector;
     }
 
     public NettyServerBuilder host(String host) {
@@ -61,30 +92,15 @@ public final class NettyServerBuilder {
         return this;
     }
 
-    MetricRegistry metricsRegistry() {
-        return this.metricRegistry;
-    }
 
     public NettyServerBuilder bossExecutor(NettyExecutor executor) {
-        this.bossExecutor = checkNotNull(executor, "boss executor");
+        this.bossExecutor = requireNonNull(executor, "boss executor");
         return this;
     }
 
     public NettyServerBuilder workerExecutor(NettyExecutor executor) {
-        this.workerExecutor = checkNotNull(executor, "worker executor");
+        this.workerExecutor = requireNonNull(executor, "worker executor");
         return this;
-    }
-
-    public NettyExecutor bossExecutor() {
-        return this.bossExecutor;
-    }
-
-    public NettyExecutor workerExecutor() {
-        return this.workerExecutor;
-    }
-
-    public ChannelGroup channelGroup() {
-        return this.channelGroup;
     }
 
     public NettyServerBuilder handler(HttpHandler handler) {
@@ -92,17 +108,14 @@ public final class NettyServerBuilder {
         return this;
     }
 
-    HttpHandler handler() {
-        return this.handler;
-    }
-
     public NettyServerBuilder setProtocolConnector(ServerConnector connector) {
         this.httpConnector = connector;
         return this;
     }
 
-    ServerConnector protocolConnector() {
-        return httpConnector;
+    public NettyServerBuilder shutdownAction(Runnable shutdownAction) {
+        this.shutdownAction = shutdownAction;
+        return this;
     }
 
     public InetServer build() {
@@ -110,7 +123,7 @@ public final class NettyServerBuilder {
         checkArgument(workerExecutor != null, "Must configure a worker executor");
 
         if (bossExecutor == null) {
-            bossExecutor = NettyExecutor.create("Server-Boss", 1);
+            bossExecutor = DEFAULT_SERVER_BOSS_EXECUTOR;
         }
         return new NettyServer(this);
     }

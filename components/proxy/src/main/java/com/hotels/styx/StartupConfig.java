@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,14 +15,13 @@
  */
 package com.hotels.styx;
 
-import com.google.common.base.Objects;
 import com.hotels.styx.api.Resource;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.hotels.styx.common.Preconditions.checkArgument;
+import static com.hotels.styx.common.Preconditions.checkNotEmpty;
 import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static java.nio.file.Files.isReadable;
 
@@ -97,10 +96,15 @@ public final class StartupConfig {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
-                .add(STYX_HOME_VAR_NAME, styxHome)
-                .add(CONFIG_FILE_LOCATION_VAR_NAME, configFileLocation)
-                .add(LOGBACK_CONFIG_LOCATION_VAR_NAME, logConfigLocation)
+        return new StringBuilder(96)
+                .append(this.getClass().getSimpleName())
+                .append("{" + STYX_HOME_VAR_NAME + "=")
+                .append(styxHome)
+                .append(", " + CONFIG_FILE_LOCATION_VAR_NAME + "=")
+                .append(configFileLocation)
+                .append(", " + LOGBACK_CONFIG_LOCATION_VAR_NAME + "=")
+                .append(logConfigLocation)
+                .append('}')
                 .toString();
     }
 
@@ -128,19 +132,19 @@ public final class StartupConfig {
         }
 
         public Builder styxHome(String styxHome) {
-            checkArgument(!isNullOrEmpty(styxHome));
+            checkNotEmpty(styxHome);
             this.styxHome = styxHome;
             return this;
         }
 
         public Builder configFileLocation(String configFileLocation) {
-            checkArgument(!isNullOrEmpty(configFileLocation));
+            checkNotEmpty(configFileLocation);
             this.configFileLocation = configFileLocation;
             return this;
         }
 
         public Builder logbackConfigLocation(String logbackConfigLocation) {
-            checkArgument(!isNullOrEmpty(logbackConfigLocation));
+            checkNotEmpty(logbackConfigLocation);
             this.logbackConfigLocation = logbackConfigLocation;
             return this;
         }

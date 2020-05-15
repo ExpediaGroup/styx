@@ -114,7 +114,6 @@
     <antlr.version>4.5.1-1</antlr.version>
     <netty.version>4.1.42.Final</netty.version>
     <netty-tcnative.version>2.0.26.Final</netty-tcnative.version>
-    <rxjava.version>1.1.6</rxjava.version>
     <reactive-streams.version>1.0.2</reactive-streams.version>
     <reactor.version>3.3.0.RELEASE</reactor.version>
     <pcollections.version>3.0.3</pcollections.version>
@@ -129,7 +128,7 @@
     <java-uuid-generator.version>3.1.5</java-uuid-generator.version>
 
     <!-- Logging Versions -->
-    <logback.version>1.1.2</logback.version>
+    <logback.version>1.1.10</logback.version>
     <slf4j.version>1.7.30</slf4j.version>
 
     <scala.version>2.12</scala.version>
@@ -195,7 +194,6 @@
     <surefire.skip.tests>false</surefire.skip.tests>
 
     <netty-transport-native-epoll.classifier/>
-    <rxjava-reactive-streams.version>1.1.1</rxjava-reactive-streams.version>
     <mockk.version>1.9.3</mockk.version>
   </properties>
 
@@ -252,19 +250,6 @@
         <artifactId>netty-tcnative-boringssl-static</artifactId>
         <version>${netty-tcnative.version}</version>
         <classifier>${netty-tcnative.classifier}</classifier>
-      </dependency>
-
-      <!-- RxJava -->
-      <dependency>
-        <groupId>io.reactivex</groupId>
-        <artifactId>rxjava</artifactId>
-        <version>${rxjava.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>io.reactivex</groupId>
-        <artifactId>rxjava-reactive-streams</artifactId>
-        <version>${rxjava-reactive-streams.version}</version>
       </dependency>
 
       <dependency>
@@ -1154,6 +1139,7 @@
         </plugins>
       </build>
     </profile>
+
     <profile>
       <id>sonatype-oss-release</id>
       <build>

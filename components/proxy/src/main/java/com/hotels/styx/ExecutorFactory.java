@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,19 +13,23 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.common;
+package com.hotels.styx;
 
-import com.google.common.base.Joiner;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
- * Common uses of Guava's Joiner class.
+ * A generic factory that can be implemented to create executor objects whose type is not known
+ * until read from configuration.
+ *
  */
-public final class Joiners {
-    public static final Joiner JOINER_ON_COMMA = Joiner.on(",").skipNulls();
-    public static final Joiner JOINER_ON_SEMI_COLON = Joiner.on(";").skipNulls();
-    public static final Joiner JOINER_ON_SPACE = Joiner.on(" ").skipNulls();
-    public static final Joiner JOINER_ON_NEW_LINE = Joiner.on("\n").skipNulls();
-
-    private Joiners() {
-    }
+public interface ExecutorFactory {
+    /**
+     * Create an executor instance.
+     *
+     * @param name                 Executor name
+     * @param configuration        Styx executor configuration
+     *
+     * @return Styx service instance
+     */
+    NettyExecutor create(String name, JsonNode configuration);
 }

@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.server.netty.codec;
 
-import com.google.common.base.Strings;
 import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.HttpHeader;
@@ -45,16 +44,14 @@ import io.netty.handler.codec.http.HttpResponse;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import rx.Observable;
-import rx.Subscriber;
-import rx.observers.TestSubscriber;
+import reactor.core.publisher.BaseSubscriber;
+import reactor.core.publisher.Flux;
+import reactor.test.StepVerifier;
 
 import java.net.URI;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 
-import static com.google.common.base.Charsets.US_ASCII;
-import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Sets.newHashSet;
 import static com.hotels.styx.api.RequestCookie.requestCookie;
@@ -72,6 +69,8 @@ import static io.netty.handler.codec.http.HttpMethod.GET;
 import static io.netty.handler.codec.http.HttpMethod.POST;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.matchesPattern;
@@ -82,7 +81,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static rx.RxReactiveStreams.toObservable;
 
 public class NettyToStyxRequestDecoderTest {
     private final UniqueIdSupplier uniqueIdSupplier = fixedUniqueIdSupplier("1");
@@ -107,7 +105,6 @@ public class NettyToStyxRequestDecoderTest {
     public void throwsBadRequestExceptionOnInvalidRequests() throws Throwable {
         Exception e = assertThrows(DecoderException.class, () -> channel.writeInbound(perturb(httpRequestAsBuf(GET, "http://foo.com/"))));
         assertThat(e.getCause().getMessage(), matchesPattern("Error while decoding request.*\\R.*"));
-        assertEquals(BadRequestException.class, e.getCause().getClass());
     }
 
     @Test
@@ -189,20 +186,19 @@ public class NettyToStyxRequestDecoderTest {
         channel.writeInbound(contentChunkTwo);
         channel.writeInbound(contentChunkThree);
 
-        String content = subscribeAndRead(request.body());
+        String content = subscribeAndRead(request.body(), channel);
         assertThat(content, is("content chunk 1 content chunk 2 content chunk 3"));
     }
 
     @Test
-    public void completesContentObservableWhenLastHttpContentIsSeen() {
+    public void completesWhenThereIsNoMoreContentAndSubscriptionOccurs() {
         channel.writeInbound(chunkedRequestHeaders);
-        LiveHttpRequest request = (LiveHttpRequest) channel.readInbound();
+        LiveHttpRequest request = channel.readInbound();
 
-        TestSubscriber<?> contentSubscriber = subscribeTo(request.body());
-        assertThat(contentSubscriber.getOnCompletedEvents().size(), is(0));
-
-        channel.writeInbound(EMPTY_LAST_CONTENT);
-        assertThat(contentSubscriber.getOnCompletedEvents().size(), is(1));
+        StepVerifier.create(request.body())
+                .expectSubscription()
+                .then(() -> channel.writeInbound(EMPTY_LAST_CONTENT))
+                .verifyComplete();
     }
 
     @Test
@@ -258,7 +254,7 @@ public class NettyToStyxRequestDecoderTest {
     public void throwsBadRequestForTooLongFrames() throws Throwable {
         HttpRequest request = new DefaultFullHttpRequest(HTTP_1_1, GET, "http://foo.com/");
         request.headers().set(HOST, "http://foo.com/");
-        request.headers().set("foo", Strings.repeat("x", 10000));
+        request.headers().set("foo", String.format("%10000s", "").replace(" ", "x"));
         ByteBuf byteBuf = httpMessageToBytes(request);
 
         Exception e = assertThrows(DecoderException.class, () -> channel.writeInbound(byteBuf));
@@ -273,10 +269,9 @@ public class NettyToStyxRequestDecoderTest {
 
         NettyToStyxRequestDecoder decoder = new NettyToStyxRequestDecoder.Builder()
                 .uniqueIdSupplier(uniqueIdSupplier)
-                .flowControlEnabled(true)
                 .build();
 
-        LiveHttpRequest styxRequest = decoder.makeAStyxRequestFrom(request, Observable.<ByteBuf>empty())
+        LiveHttpRequest styxRequest = decoder.makeAStyxRequestFrom(request, Flux.empty())
                 .build();
 
         LiveHttpRequest expected = new LiveHttpRequest.Builder(
@@ -298,10 +293,9 @@ public class NettyToStyxRequestDecoderTest {
 
         NettyToStyxRequestDecoder decoder = new NettyToStyxRequestDecoder.Builder()
                 .uniqueIdSupplier(uniqueIdSupplier)
-                .flowControlEnabled(true)
                 .build();
 
-        LiveHttpRequest styxRequest = decoder.makeAStyxRequestFrom(request, Observable.<ByteBuf>empty())
+        LiveHttpRequest styxRequest = decoder.makeAStyxRequestFrom(request, Flux.empty())
                 .build();
 
         LiveHttpRequest expected = new LiveHttpRequest.Builder(
@@ -363,17 +357,11 @@ public class NettyToStyxRequestDecoderTest {
         return new DefaultHttpContent(copiedBuffer(content, UTF_8));
     }
 
-
-    private TestSubscriber<Buffer> subscribeTo(ByteStream contentStream) {
-        TestSubscriber<Buffer> subscriber = new TestSubscriber<>();
-        toObservable(contentStream).subscribe(subscriber);
-        return subscriber;
-    }
-
-    private String subscribeAndRead(ByteStream content) throws InterruptedException {
+    private String subscribeAndRead(ByteStream content, EmbeddedChannel channel) throws InterruptedException {
         CountDownLatch bodyCompletedLatch = new CountDownLatch(1);
 
         StringBuilder contentBuilder = subscribeToContent(content, bodyCompletedLatch);
+        channel.runPendingTasks();
         bodyCompletedLatch.await();
 
         return contentBuilder.toString();
@@ -381,20 +369,15 @@ public class NettyToStyxRequestDecoderTest {
 
     private static StringBuilder subscribeToContent(ByteStream contentStream, CountDownLatch onCompleteLatch) {
         StringBuilder builder = new StringBuilder();
-        toObservable(contentStream).subscribe(new Subscriber<Buffer>() {
+        contentStream.subscribe(new BaseSubscriber<Buffer>() {
             @Override
-            public void onCompleted() {
+            public void hookOnComplete() {
                 // no-op
                 onCompleteLatch.countDown();
             }
 
             @Override
-            public void onError(Throwable e) {
-                // no-op
-            }
-
-            @Override
-            public void onNext(Buffer buffer) {
+            public void hookOnNext(Buffer buffer) {
                 builder.append(new String(buffer.content(), UTF_8));
             }
         });
@@ -432,7 +415,6 @@ public class NettyToStyxRequestDecoderTest {
 
     public static NettyToStyxRequestDecoder newHttpRequestDecoderWithFlowControl() {
         return new NettyToStyxRequestDecoder.Builder()
-                .flowControlEnabled(true)
                 .build();
     }
 

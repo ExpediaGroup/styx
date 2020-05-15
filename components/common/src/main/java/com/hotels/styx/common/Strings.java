@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,10 +13,19 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.exceptions;
+package com.hotels.styx.common;
 
-/**
- * A marker interface for exceptions that indicates that an exception was caused by a timeout.
- */
-public interface IsTimeoutException {
+public final class Strings {
+
+    public static final boolean isNullOrEmpty(String s) {
+        return s == null || s.isEmpty();
+    }
+
+    public static final boolean isNotEmpty(String s) {
+        return !isNullOrEmpty(s);
+    }
+
+    private Strings() {
+        // Not used.
+    }
 }

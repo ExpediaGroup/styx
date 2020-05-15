@@ -17,7 +17,6 @@ package com.hotels.styx.client.netty.connectionpool;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Buffer;
-import com.hotels.styx.api.Buffers;
 import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
@@ -26,6 +25,8 @@ import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.BadHttpResponseException;
 import com.hotels.styx.client.StyxClientException;
+import com.hotels.styx.common.content.FlowControllingHttpContentProducer;
+import com.hotels.styx.common.content.NettyByteStream;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.channel.ChannelHandlerContext;
@@ -36,7 +37,6 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.timeout.IdleStateEvent;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
 import reactor.core.publisher.FluxSink;
 
@@ -49,7 +49,6 @@ import static com.hotels.styx.api.LiveHttpResponse.response;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONNECTION;
 import static io.netty.util.ReferenceCountUtil.retain;
 import static java.lang.String.format;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.StreamSupport.stream;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -96,22 +95,14 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
     private RuntimeException toStyxException(Throwable cause) {
         if (cause instanceof OutOfMemoryError) {
             return new StyxClientException("Styx Client out of memory. " + cause.getMessage(), cause);
-        } else {
-            return new BadHttpResponseException(origin, cause);
         }
+        return new BadHttpResponseException(origin, cause);
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
         TransportLostException cause = new TransportLostException(ctx.channel().remoteAddress(), origin);
         getContentProducer(ctx).channelInactive(cause);
-    }
-
-    private void scheduleResourcesTearDown(ChannelHandlerContext ctx) {
-        ctx.channel().eventLoop().schedule(
-                () -> contentProducer.ifPresent(FlowControllingHttpContentProducer::tearDownResources),
-                idleTimeoutMillis,
-                MILLISECONDS);
     }
 
     @Override
@@ -136,10 +127,9 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
             ctx.channel().config().setAutoRead(false);
             ctx.channel().read();
 
-            // Can be started with flow controlling disabled
             EventLoop eventLoop = ctx.channel().eventLoop();
 
-            Publisher<Buffer> contentPublisher = new ContentPublisher(eventLoop, producer);
+            Publisher<Buffer> contentPublisher = new NettyByteStream(eventLoop, producer);
 
             if ("close".equalsIgnoreCase(nettyResponse.headers().get(CONNECTION))) {
                 toBeClosed = true;
@@ -166,17 +156,18 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
 
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-        FlowControllingHttpContentProducer producer = getContentProducer(ctx);
-
         if (evt instanceof IdleStateEvent) {
-            producer.channelInactive(
-                    new ResponseTimeoutException(
-                            origin,
-                            "idleStateEvent",
-                            producer.receivedBytes(),
-                            producer.receivedChunks(),
-                            producer.emittedBytes(),
-                            producer.emittedChunks()));
+            FlowControllingHttpContentProducer producer = getContentProducer(ctx);
+            producer.tearDownResources(
+                new ResponseTimeoutException(
+                    origin,
+                    "idleStateEvent",
+                    producer.receivedBytes(),
+                    producer.receivedChunks(),
+                    producer.emittedBytes(),
+                    producer.emittedChunks()
+                )
+            );
         } else {
             super.userEventTriggered(ctx, evt);
         }
@@ -191,7 +182,7 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
 
     private FlowControllingHttpContentProducer createProducer(ChannelHandlerContext ctx, LiveHttpRequest request) {
         String requestPrefix = request != null ? format("Request(method=%s, url=%s, id=%s)", request.method(), request.url(), request.id()) : "Request NA";
-        String loggingPrefix = format("%s -> %s", ctx.channel().remoteAddress(), ctx.channel().localAddress());
+        String loggingPrefix = format("Response body. [local: %s, remote: %s]", ctx.channel().localAddress(), ctx.channel().remoteAddress());
 
         return new FlowControllingHttpContentProducer(
                 () -> ctx.channel().read(),
@@ -200,9 +191,9 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
                     emitResponseCompleted();
                 },
                 this::emitResponseError,
-                () -> scheduleResourcesTearDown(ctx),
                 format("%s, %s", loggingPrefix, requestPrefix),
-                origin);
+                idleTimeoutMillis,
+                ctx.channel().eventLoop());
     }
 
     private void emitResponseCompleted() {
@@ -234,63 +225,6 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
                     .build();
         } catch (IllegalArgumentException e) {
             throw new BadHttpResponseException(origin, e);
-        }
-    }
-
-    private static final class BufferSubscriber implements Subscriber<ByteBuf> {
-
-        private final Subscriber<? super Buffer> actual;
-
-        public BufferSubscriber(Subscriber<? super Buffer> actual) {
-            this.actual = actual;
-        }
-
-        @Override
-        public void onSubscribe(Subscription s) {
-            actual.onSubscribe(s);
-        }
-
-        @Override
-        public void onNext(ByteBuf byteBuf) {
-            actual.onNext(Buffers.fromByteBuf(byteBuf));
-        }
-
-        @Override
-        public void onError(Throwable t) {
-            actual.onError(t);
-        }
-
-        @Override
-        public void onComplete() {
-            actual.onComplete();
-        }
-    }
-
-    private static final class ContentPublisher implements Publisher<Buffer> {
-
-        private final EventLoop eventLoop;
-        private final FlowControllingHttpContentProducer contentProducer;
-
-        public ContentPublisher(EventLoop eventLoop, FlowControllingHttpContentProducer contentProducer) {
-            this.eventLoop = eventLoop;
-            this.contentProducer = contentProducer;
-        }
-
-        @Override
-        public void subscribe(Subscriber<? super Buffer> subscriber) {
-            BufferSubscriber bufferSubscriber = new BufferSubscriber(subscriber);
-            eventLoop.submit(() -> contentProducer.onSubscribed(bufferSubscriber));
-            subscriber.onSubscribe(new Subscription() {
-                @Override
-                public void request(long n) {
-                    eventLoop.submit(() -> contentProducer.request(n));
-                }
-
-                @Override
-                public void cancel() {
-                    eventLoop.submit(contentProducer::unsubscribe);
-                }
-            });
         }
     }
 }

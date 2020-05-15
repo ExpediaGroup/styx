@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 
-import static com.google.common.base.Objects.toStringHelper;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -52,9 +51,14 @@ public class ServiceFactoryConfig {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("factory", factory)
-                .add("config", config)
+        return new StringBuilder(64)
+                .append(this.getClass().getSimpleName())
+                .append("{factory=")
+                .append(factory)
+                .append(", config=")
+                .append(config)
+                .append('}')
                 .toString();
+
     }
 }

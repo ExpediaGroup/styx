@@ -17,11 +17,16 @@ package com.hotels.styx.servers
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.hotels.styx.InetServer
-import com.hotels.styx.NettyExecutor
 import com.hotels.styx.ProxyConnectorFactory
 import com.hotels.styx.ResponseInfoFormat
 import com.hotels.styx.StyxObjectRecord
-import com.hotels.styx.config.schema.SchemaDsl.*
+import com.hotels.styx.config.schema.SchemaDsl.`object`
+import com.hotels.styx.config.schema.SchemaDsl.bool
+import com.hotels.styx.config.schema.SchemaDsl.field
+import com.hotels.styx.config.schema.SchemaDsl.integer
+import com.hotels.styx.config.schema.SchemaDsl.list
+import com.hotels.styx.config.schema.SchemaDsl.optional
+import com.hotels.styx.config.schema.SchemaDsl.string
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig
 import com.hotels.styx.proxy.ProxyServerConfig
 import com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder.ENCODE_UNWISECHARS
@@ -59,8 +64,8 @@ object StyxHttpServer {
             optional("keepAliveTimeoutMillis", integer()),
             optional("maxConnectionsCount", integer()),
 
-            optional("bossThreadsCount", integer()),
-            optional("workerThreadsCount", integer())
+            optional("bossExecutor", string()),
+            optional("workerExecutor", string())
     )
 
     internal val LOGGER = LoggerFactory.getLogger(StyxHttpServer::class.java)
@@ -91,8 +96,8 @@ private data class StyxHttpServerConfiguration(
         val keepAliveTimeoutMillis: Int = 120000,
         val maxConnectionsCount: Int = 512,
 
-        val bossThreadsCount: Int = 0,
-        val workerThreadsCount: Int = 0
+        val bossExecutor: String = "StyxHttpServer-Global-Boss",
+        val workerExecutor: String = "StyxHttpServer-Global-Worker"
 )
 
 internal class StyxHttpServerFactory : StyxServerFactory {
@@ -100,25 +105,29 @@ internal class StyxHttpServerFactory : StyxServerFactory {
 
     override fun create(name: String, context: RoutingObjectFactory.Context, configuration: JsonNode, serverDb: StyxObjectStore<StyxObjectRecord<InetServer>>): InetServer {
         val config = serverConfig(configuration)
-
         val environment = context.environment()
-        val proxyServerConfig = ProxyServerConfig.Builder()
-                .setCompressResponses(config.compressResponses)
-                .setMaxInitialLength(config.maxInitialLength)
-                .setMaxHeaderSize(config.maxHeaderSize)
-                .setMaxChunkSize(config.maxChunkSize)
-                .setRequestTimeoutMillis(config.requestTimeoutMillis)
-                .setKeepAliveTimeoutMillis(config.keepAliveTimeoutMillis)
-                .setMaxConnectionsCount(config.maxConnectionsCount)
-                .setBossThreadsCount(config.bossThreadsCount)
-                .setWorkerThreadsCount(config.workerThreadsCount)
-                .build()
+
+        val bossExecutor = context.executors()[config.bossExecutor]
+                .orElseThrow { IllegalArgumentException("StyxHttpServer($name) configuration error: bossExecutor='${config.bossExecutor}' not declared.") }
+                .styxService
+
+        val workerExecutor = context.executors()[config.workerExecutor]
+                .orElseThrow { IllegalArgumentException("StyxHttpServer($name) configuration error: workerExecutor='${config.workerExecutor}' not declared.") }
+                .styxService
 
         return NettyServerBuilder()
                 .setMetricsRegistry(environment.metricRegistry())
                 .setProtocolConnector(
                         ProxyConnectorFactory(
-                                proxyServerConfig,
+                                ProxyServerConfig.Builder()
+                                        .setCompressResponses(config.compressResponses)
+                                        .setMaxInitialLength(config.maxInitialLength)
+                                        .setMaxHeaderSize(config.maxHeaderSize)
+                                        .setMaxChunkSize(config.maxChunkSize)
+                                        .setRequestTimeoutMillis(config.requestTimeoutMillis)
+                                        .setKeepAliveTimeoutMillis(config.keepAliveTimeoutMillis)
+                                        .setMaxConnectionsCount(config.maxConnectionsCount)
+                                        .build(),
                                 environment.metricRegistry(),
                                 environment.errorListener(),
                                 environment.configuration().get(ENCODE_UNWISECHARS).orElse(""),
@@ -128,7 +137,9 @@ internal class StyxHttpServerFactory : StyxServerFactory {
                                             ResponseInfoFormat(environment).format(request))
                                 },
                                 false,
-                                environment.httpMessageFormatter())
+                                environment.httpMessageFormatter(),
+                                // TODO: Add styx header configuration
+                                null)
                                 .create(
                                         if (config.tlsSettings == null) {
                                             HttpConnectorConfig(config.port)
@@ -142,8 +153,8 @@ internal class StyxHttpServerFactory : StyxServerFactory {
                                                     .protocols(*config.tlsSettings.protocols.toTypedArray())
                                                     .build()
                                         }))
-                .workerExecutor(NettyExecutor.create("Http-Server(localhost-${config.port})", config.workerThreadsCount))
-                .bossExecutor(NettyExecutor.create("Http-Server(localhost-${config.port})", config.bossThreadsCount))
+                .bossExecutor(bossExecutor)
+                .workerExecutor(workerExecutor)
                 .handler({ request, ctx ->
                     context.refLookup()
                             .apply(StyxObjectReference(config.handler))

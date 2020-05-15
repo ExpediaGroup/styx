@@ -45,7 +45,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
@@ -243,12 +242,19 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
 
         @Override
         public String toString() {
-            return toStringHelper(this)
-                    .add("appId", appId)
-                    .add("retryCount", retryCount)
-                    .add("lastException", lastException)
-                    .add("request", request.url())
-                    .add("previouslyUsedOrigins", hosts(previouslyUsedOrigins))
+            return new StringBuilder(160)
+                    .append(this.getClass().getSimpleName())
+                    .append("{appId=")
+                    .append(appId)
+                    .append(", retryCount=")
+                    .append(retryCount)
+                    .append(", lastException=")
+                    .append(lastException)
+                    .append(", request=")
+                    .append(request.url())
+                    .append(", previouslyUsedOrigins=")
+                    .append(hosts(previouslyUsedOrigins))
+                    .append('}')
                     .toString();
         }
 
@@ -326,13 +332,19 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("id", id)
-                .add("stickySessionConfig", stickySessionConfig)
-                .add("retryPolicy", retryPolicy)
-                .add("rewriteRuleset", rewriteRuleset)
-                .add("loadBalancingStrategy", loadBalancer)
-                .toString();
+        StringBuilder sb = new StringBuilder(160);
+        sb.append(this.getClass().getSimpleName());
+        sb.append("{id=");
+        sb.append(id);
+        sb.append(", stickySessionConfig=");
+        sb.append(stickySessionConfig);
+        sb.append(", retryPolicy=");
+        sb.append(retryPolicy);
+        sb.append(", rewriteRuleset=");
+        sb.append(rewriteRuleset);
+        sb.append(", loadBalancer=");
+        sb.append(loadBalancer);
+        return sb.append('}').toString();
     }
 
     /**

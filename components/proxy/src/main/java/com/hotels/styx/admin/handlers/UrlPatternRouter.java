@@ -175,7 +175,7 @@ public class UrlPatternRouter implements WebServiceHandler {
         private static Pattern compilePattern(String pattern) {
             Matcher matcher = PLACEHOLDER_PATTERN.matcher(pattern);
 
-            return Pattern.compile(matcher.replaceAll("(?<$1>[a-zA-Z0-9-_]+)"));
+            return Pattern.compile(matcher.replaceAll("(?<$1>[a-zA-Z0-9-_.]+)"));
         }
 
         private static List<String> placeholders(String pattern) {

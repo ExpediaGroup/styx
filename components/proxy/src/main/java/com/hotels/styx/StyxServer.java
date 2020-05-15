@@ -84,6 +84,8 @@ public final class StyxServer extends AbstractService {
     private final ServiceManager phase2Services;
     private final Stopwatch stopwatch;
     private final StyxServerComponents components;
+    private NettyExecutor proxyBossExecutor;
+    private NettyExecutor proxyWorkerExecutor;
 
     public static void main(String[] args) {
         try {
@@ -185,21 +187,25 @@ public final class StyxServer extends AbstractService {
         ArrayList<Service> services = new ArrayList<>();
         adminServer = createAdminServer(components);
         services.add(toGuavaService(adminServer));
-        services.add(toGuavaService(new PluginsManager("Sty§x-Plugins-Manager", components)));
+        services.add(toGuavaService(new PluginsManager("Styx-Plugins-Manager", components)));
         services.add(toGuavaService(new ServiceProviderMonitor<>("Styx-Service-Monitor", components.servicesDatabase())));
         components.services().values().forEach(it -> services.add(toGuavaService(it)));
         this.phase1Services = new ServiceManager(services);
 
         // Phase 2: start HTTP services;
         StyxConfig styxConfig = components.environment().configuration();
+
+        proxyBossExecutor = NettyExecutor.create("Proxy-Boss", styxConfig.proxyServerConfig().bossThreadsCount());
+        proxyWorkerExecutor = NettyExecutor.create("Proxy-Worker", styxConfig.proxyServerConfig().workerThreadsCount());
+
         httpServer = styxConfig.proxyServerConfig()
                 .httpConnectorConfig()
-                .map(it -> httpServer(components.environment(), it, handlerForOldProxyServer))
+                .map(it -> httpServer(components, it, handlerForOldProxyServer))
                 .orElse(null);
 
         httpsServer = styxConfig.proxyServerConfig()
                 .httpsConnectorConfig()
-                .map(it -> httpServer(components.environment(), it, handlerForOldProxyServer))
+                .map(it -> httpServer(components, it, handlerForOldProxyServer))
                 .orElse(null);
 
         ArrayList<Service> services2 = new ArrayList<>();
@@ -235,7 +241,8 @@ public final class StyxServer extends AbstractService {
         return adminServer.inetAddress();
     }
 
-    private static InetServer httpServer(Environment environment, ConnectorConfig connectorConfig, HttpHandler styxDataPlane) {
+    private InetServer httpServer(StyxServerComponents components, ConnectorConfig connectorConfig, HttpHandler styxDataPlane) {
+        Environment environment = components.environment();
         CharSequence styxInfoHeaderName = environment.configuration().styxHeaderConfig().styxInfoHeaderName();
         ResponseInfoFormat responseInfoFormat = new ResponseInfoFormat(environment);
 
@@ -246,13 +253,14 @@ public final class StyxServer extends AbstractService {
                 environment.configuration().get(ENCODE_UNWISECHARS).orElse(""),
                 (builder, request) -> builder.header(styxInfoHeaderName, responseInfoFormat.format(request)),
                 environment.configuration().get("requestTracking", Boolean.class).orElse(false),
-                environment.httpMessageFormatter())
+                environment.httpMessageFormatter(),
+                environment.configuration().styxHeaderConfig().originIdHeaderName())
                 .create(connectorConfig);
 
         return NettyServerBuilder.newBuilder()
                 .setMetricsRegistry(environment.metricRegistry())
-                .bossExecutor(NettyExecutor.create("Proxy-Boss", environment.configuration().proxyServerConfig().bossThreadsCount()))
-                .workerExecutor(NettyExecutor.create("Proxy-Worker", environment.configuration().proxyServerConfig().workerThreadsCount()))
+                .bossExecutor(proxyBossExecutor)
+                .workerExecutor(proxyWorkerExecutor)
                 .setProtocolConnector(proxyConnector)
                 .handler(styxDataPlane)
                 .build();
@@ -304,6 +312,14 @@ public final class StyxServer extends AbstractService {
     @Override
     protected void doStop() {
         this.phase2Services.stopAsync().awaitStopped();
+
+        proxyBossExecutor.shut();
+        proxyWorkerExecutor.shut();
+
+        this.components.executors()
+                .entrySet()
+                .forEach(entry -> entry.getValue().component4().shut());
+
         this.phase1Services.stopAsync().awaitStopped();
         shutdownLogging(true);
     }

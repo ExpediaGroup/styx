@@ -28,6 +28,7 @@ import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.handle
 import com.hotels.styx.mockObject
+import io.kotlintest.matchers.string.shouldContain
 import io.kotlintest.matchers.types.shouldBeTypeOf
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
@@ -85,7 +86,6 @@ class RoutingObjectHandlerTest : FeatureSpec({
                         it!!.status() shouldBe OK
                         it.bodyAs(UTF_8).trim() shouldBe """
                             ---
-                            name: "staticResponse"
                             type: "StaticResponseHandler"
                             tags: []
                             config:
@@ -133,25 +133,25 @@ class RoutingObjectHandlerTest : FeatureSpec({
                     .block()
                     .let {
                         it!!.status() shouldBe OK
-                        it.bodyAs(UTF_8).trim() shouldBe """
-                                ---
-                                name: "conditionRouter"
-                                type: "ConditionRouter"
-                                tags: []
-                                config:
-                                  routes:
-                                  - condition: "path() == \"/bar\""
-                                    destination: "b"
-                                  fallback: "fb"
+                        it.bodyAs(UTF_8) shouldContain """
+                                conditionRouter:
+                                  type: "ConditionRouter"
+                                  tags: []
+                                  config:
+                                    routes:
+                                    - condition: "path() == \"/bar\""
+                                      destination: "b"
+                                    fallback: "fb"
+                                    """.trimIndent()
 
-                                ---
-                                name: "staticResponse"
-                                type: "StaticResponseHandler"
-                                tags: []
-                                config:
-                                  status: 200
-                                  content: "Hello, world!"
-                            """.trimIndent().trim()
+                        it.bodyAs(UTF_8) shouldContain """
+                                staticResponse:
+                                  type: "StaticResponseHandler"
+                                  tags: []
+                                  config:
+                                    status: 200
+                                    content: "Hello, world!"
+                                    """.trimIndent()
                     }
 
         }

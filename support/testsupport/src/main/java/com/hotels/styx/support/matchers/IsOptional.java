@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,15 +15,15 @@
  */
 package com.hotels.styx.support.matchers;
 
-import com.google.common.base.Objects;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 
+import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Provides matchers around the {@code Optional} class
+ * Provides matchers around the {@code Optional} class.
  *
  * @param <T>
  * @author john.butler
@@ -32,25 +32,19 @@ import java.util.Optional;
 public final class IsOptional<T> extends TypeSafeMatcher<Optional<? extends T>> {
 
     /**
-     * Checks that the passed Optional is not present
+     * Checks that the passed Optional is not present.
      */
     public static IsOptional<Object> isAbsent() {
         return new IsOptional<>(false);
     }
 
     /**
-     * Checks that the passed Optional is present
+     * Checks that the passed Optional is present.
      */
     public static IsOptional<Object> isPresent() {
         return new IsOptional<>(true);
     }
 
-    /**
-     * Checks that the passed Option is Some and that the contains value matches
-     * {@code value} based on {@code Objects.equal}
-     *
-     * @see Objects#equal(Object, Object)
-     */
     public static <T> IsOptional<T> isValue(T value) {
         return new IsOptional<>(value);
     }
@@ -104,7 +98,7 @@ public final class IsOptional<T> extends TypeSafeMatcher<Optional<? extends T>> 
         if (!someExpected) {
             return !item.isPresent();
         } else if (expected.isPresent()) {
-            return item.isPresent() && Objects.equal(item.get(), expected.get());
+            return item.isPresent() && Objects.equals(item.get(), expected.get());
         } else if (matcher.isPresent()) {
             return item.isPresent() && matcher.get().matches(item.get());
         } else {
