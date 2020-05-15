@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -50,10 +50,14 @@ final class BuiltInInterceptors {
             builder.add(new HttpMessageLoggingInterceptor(longFormatEnabled, httpMessageFormatter));
         }
 
+        final HttpInterceptor viaInterceptor = config.get("via")
+                .map(ViaHeaderAppendingInterceptor::new)
+                .orElseGet(ViaHeaderAppendingInterceptor::new);
+
         builder.add(new TcpTunnelRequestRejector())
                 .add(new ConfigurationContextResolverInterceptor(EMPTY_CONFIGURATION_CONTEXT_RESOLVER))
                 .add(new UnexpectedRequestContentLengthRemover())
-                .add(new ViaHeaderAppendingInterceptor())
+                .add(viaInterceptor)
                 .add(new HopByHopHeadersRemovingInterceptor())
                 .add(new RequestEnrichingInterceptor(config.styxHeaderConfig()));
 
