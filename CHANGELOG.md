@@ -5,7 +5,7 @@
 ### Pull Requests
 
 * Reduce CI logging ([#654](https://github.com/HotelsDotCom/styx/issues/654))
-* final rx java removal ([#652](https://github.com/HotelsDotCom/styx/issues/652))
+* Final RxJava removal ([#652](https://github.com/HotelsDotCom/styx/issues/652))
 * Remove RxJava - Part 4 ([#560](https://github.com/HotelsDotCom/styx/issues/560))
 * Throw exception when connection is not connected ([#647](https://github.com/HotelsDotCom/styx/issues/647))
 * Fix the broken build caused by PR [#648](https://github.com/HotelsDotCom/styx/issues/648). ([#651](https://github.com/HotelsDotCom/styx/issues/651))
@@ -24,6 +24,24 @@
 * Fix a race condition in ServerObjectSpec. ([#631](https://github.com/HotelsDotCom/styx/issues/631))
 
 
+<a name="1.0.0-rc2"></a>
+## [1.0.0-rc2](https://github.com/HotelsDotCom/styx/compare/1.0.0-rc1...1.0.0-rc2) (2020-02-19)
+
+### Pull Requests
+
+* Docker publish preparation ([#630](https://github.com/HotelsDotCom/styx/issues/630))
+* Enable TLS Modification Settings tests  ([#628](https://github.com/HotelsDotCom/styx/issues/628))
+* Add support for null computations inside StyxObjectStore.compute() ([#629](https://github.com/HotelsDotCom/styx/issues/629))
+* Deploy snapshot versions to sonatype ([#625](https://github.com/HotelsDotCom/styx/issues/625))
+* Bump slf4j to 1.7.30 ([#627](https://github.com/HotelsDotCom/styx/issues/627))
+* Add dependabot badge ([#621](https://github.com/HotelsDotCom/styx/issues/621))
+* Bump kotlin.version from 1.3.21 to 1.3.61 ([#623](https://github.com/HotelsDotCom/styx/issues/623))
+* Bump junit-platform-launcher from 1.5.2 to 1.6.0 ([#622](https://github.com/HotelsDotCom/styx/issues/622))
+* Bump ant-launcher from 1.8.0 to 1.10.7 ([#620](https://github.com/HotelsDotCom/styx/issues/620))
+* Bump jackson-dataformat-yaml from 2.10.1 to 2.10.2 ([#619](https://github.com/HotelsDotCom/styx/issues/619))
+* Bump annotations from 2.0.1 to 3.0.1u2 ([#618](https://github.com/HotelsDotCom/styx/issues/618))
+* YamlFileConfigurationService fails to start health check monitors ([#624](https://github.com/HotelsDotCom/styx/issues/624))
+* Remove "Upcoming releases" from README.md. ([#617](https://github.com/HotelsDotCom/styx/issues/617))
 
 
 <a name="1.0.0-rc1"></a>
