@@ -1,4 +1,14 @@
 
+<a name="1.0.0-rc4"></a>
+## [1.0.0-rc4](https://github.com/HotelsDotCom/styx/compare/1.0.0-rc3...1.0.0-rc4) (2020-05-14)
+
+### Pull Requests
+
+* Store target origin in request context ([#659](https://github.com/HotelsDotCom/styx/issues/659))
+
+
+
+
 <a name="1.0.0-rc1"></a>
 ## [1.0.0-rc1](https://github.com/HotelsDotCom/styx/compare/styx-1.0.0.beta9...1.0.0-rc1) (2020-02-11)
 
