@@ -1,4 +1,28 @@
 
+<a name="1.0.0-rc3"></a>
+## [1.0.0-rc3](https://github.com/HotelsDotCom/styx/compare/1.0.0-rc2...1.0.0-rc3) (2020-05-01)
+
+### Pull Requests
+
+* Reduce CI logging ([#654](https://github.com/HotelsDotCom/styx/issues/654))
+* Final RxJava removal ([#652](https://github.com/HotelsDotCom/styx/issues/652))
+* Remove RxJava - Part 4 ([#560](https://github.com/HotelsDotCom/styx/issues/560))
+* Throw exception when connection is not connected ([#647](https://github.com/HotelsDotCom/styx/issues/647))
+* Fix the broken build caused by PR [#648](https://github.com/HotelsDotCom/styx/issues/648). ([#651](https://github.com/HotelsDotCom/styx/issues/651))
+* Resolve rendering issues with YamlFileCofigurationService origin page ([#648](https://github.com/HotelsDotCom/styx/issues/648))
+* Add X-Styx-Origin-Id header to 5xx responses originated from styx. ([#645](https://github.com/HotelsDotCom/styx/issues/645))
+* Block server start until origins file is loaded. ([#643](https://github.com/HotelsDotCom/styx/issues/643))
+* Remove guava - part 1 ([#642](https://github.com/HotelsDotCom/styx/issues/642))
+* Expose styx provider object database in YAML via admin interface ([#637](https://github.com/HotelsDotCom/styx/issues/637))
+* Update docker-compose.yml to match with new styx image layout. ([#640](https://github.com/HotelsDotCom/styx/issues/640))
+* Update copyright headers. ([#639](https://github.com/HotelsDotCom/styx/issues/639))
+* Shareable executors ([#616](https://github.com/HotelsDotCom/styx/issues/616))
+* Fix issue [#636](https://github.com/HotelsDotCom/styx/issues/636): RewriteConfig ending with two consecutive placeholders ([#638](https://github.com/HotelsDotCom/styx/issues/638))
+* Upload binaries compiled with JDK8 to GitHub from the Travis release pipeline ([#632](https://github.com/HotelsDotCom/styx/issues/632))
+* Enable WARN logs in HttpRequestOperation. ([#633](https://github.com/HotelsDotCom/styx/issues/633))
+* Fix a race condition in ServerObjectSpec. ([#631](https://github.com/HotelsDotCom/styx/issues/631))
+
+
 <a name="1.0.0-rc2"></a>
 ## [1.0.0-rc2](https://github.com/HotelsDotCom/styx/compare/1.0.0-rc1...1.0.0-rc2) (2020-02-19)
 
