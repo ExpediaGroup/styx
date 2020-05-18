@@ -50,14 +50,12 @@ final class BuiltInInterceptors {
             builder.add(new HttpMessageLoggingInterceptor(longFormatEnabled, httpMessageFormatter));
         }
 
-        final HttpInterceptor viaInterceptor = config.get("via")
-                .map(ViaHeaderAppendingInterceptor::new)
-                .orElseGet(ViaHeaderAppendingInterceptor::new);
-
         builder.add(new TcpTunnelRequestRejector())
                 .add(new ConfigurationContextResolverInterceptor(EMPTY_CONFIGURATION_CONTEXT_RESOLVER))
                 .add(new UnexpectedRequestContentLengthRemover())
-                .add(viaInterceptor)
+                .add(config.proxyServerConfig().via()
+                        .map(ViaHeaderAppendingInterceptor::new)
+                        .orElseGet(ViaHeaderAppendingInterceptor::new))
                 .add(new HopByHopHeadersRemovingInterceptor())
                 .add(new RequestEnrichingInterceptor(config.styxHeaderConfig()));
 

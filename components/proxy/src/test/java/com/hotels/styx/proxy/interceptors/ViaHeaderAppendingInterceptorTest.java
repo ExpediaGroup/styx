@@ -101,12 +101,11 @@ public class ViaHeaderAppendingInterceptorTest {
     @Test
     public void addsCustomViaHeader() throws Exception {
         final String customVia = "MyAwesomeProxy";
-        final ViaHeaderAppendingInterceptor localInterceptor = new ViaHeaderAppendingInterceptor(customVia);
-        final LiveHttpRequest request = post("/foo")
-                .header(HOST, "www.example.com:8000")
-                .build();
 
-        final LiveHttpRequest interceptedRequest = interceptRequest(localInterceptor, request);
+        final LiveHttpRequest interceptedRequest = interceptRequest(new ViaHeaderAppendingInterceptor(customVia),
+                post("/foo")
+                        .header(HOST, "www.example.com:8000")
+                        .build());
 
         assertThat(interceptedRequest.headers().get(VIA), isValue("1.1 " + customVia));
     }
