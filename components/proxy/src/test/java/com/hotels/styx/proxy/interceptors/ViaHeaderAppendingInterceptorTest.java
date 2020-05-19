@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -33,10 +33,10 @@ import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class ViaHeaderAppendingInterceptorTest {
-    final ReturnResponseChain ANY_RESPONSE_HANDLER = returnsResponse(response().build());
-    final HttpInterceptor interceptor = new ViaHeaderAppendingInterceptor();
+    private final ReturnResponseChain ANY_RESPONSE_HANDLER = returnsResponse(response().build());
+    private final HttpInterceptor interceptor = new ViaHeaderAppendingInterceptor();
 
-    private LiveHttpRequest interceptRequest(LiveHttpRequest request) {
+    private LiveHttpRequest interceptRequest(final HttpInterceptor interceptor, final LiveHttpRequest request) {
         RequestRecordingChain recording = requestRecordingChain(ANY_RESPONSE_HANDLER);
         interceptor.intercept(request, recording);
         return recording.recordedRequest();
@@ -48,7 +48,7 @@ public class ViaHeaderAppendingInterceptorTest {
                 .header(HOST, "www.example.com:8000")
                 .build();
 
-        LiveHttpRequest interceptedRequest = interceptRequest(request);
+        LiveHttpRequest interceptedRequest = interceptRequest(interceptor, request);
         assertThat(interceptedRequest.headers().get(VIA), isValue("1.1 styx"));
     }
 
@@ -58,7 +58,7 @@ public class ViaHeaderAppendingInterceptorTest {
                 .header(VIA, "")
                 .build();
 
-        LiveHttpRequest interceptedRequest = interceptRequest(request);
+        LiveHttpRequest interceptedRequest = interceptRequest(interceptor, request);
         assertThat(interceptedRequest.headers().get(VIA), isValue("1.1 styx"));
     }
 
@@ -69,7 +69,7 @@ public class ViaHeaderAppendingInterceptorTest {
                 .header(VIA, "")
                 .build();
 
-        LiveHttpRequest interceptedRequest = interceptRequest(request);
+        LiveHttpRequest interceptedRequest = interceptRequest(interceptor, request);
         assertThat(interceptedRequest.headers().get(VIA), isValue("1.0 styx"));
     }
 
@@ -85,7 +85,7 @@ public class ViaHeaderAppendingInterceptorTest {
                 .header(VIA, "1.0 ricky, 1.1 mertz, 1.0 lucy")
                 .build();
 
-        LiveHttpRequest interceptedRequest = interceptRequest(request);
+        LiveHttpRequest interceptedRequest = interceptRequest(interceptor, request);
         assertThat(interceptedRequest.headers().get(VIA), isValue("1.0 ricky, 1.1 mertz, 1.0 lucy, 1.1 styx"));
     }
 
@@ -96,5 +96,17 @@ public class ViaHeaderAppendingInterceptorTest {
                         .build()))).block();
 
         assertThat(response.headers().get(VIA), isValue("1.0 ricky, 1.1 mertz, 1.0 lucy, 1.1 styx"));
+    }
+
+    @Test
+    public void addsCustomViaHeader() throws Exception {
+        final String customVia = "MyAwesomeProxy";
+
+        final LiveHttpRequest interceptedRequest = interceptRequest(new ViaHeaderAppendingInterceptor(customVia),
+                post("/foo")
+                        .header(HOST, "www.example.com:8000")
+                        .build());
+
+        assertThat(interceptedRequest.headers().get(VIA), isValue("1.1 " + customVia));
     }
 }

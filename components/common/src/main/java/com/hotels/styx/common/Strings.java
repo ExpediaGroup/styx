@@ -25,6 +25,14 @@ public final class Strings {
         return !isNullOrEmpty(s);
     }
 
+    public static final boolean isBlank(final String s) {
+        return isNullOrEmpty(s) || isNullOrEmpty(s.trim());
+    }
+
+    public static final boolean isNotBlank(final String s) {
+        return !isBlank(s);
+    }
+
     private Strings() {
         // Not used.
     }

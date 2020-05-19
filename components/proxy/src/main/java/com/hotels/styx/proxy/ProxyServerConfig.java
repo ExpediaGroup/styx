@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,15 +22,19 @@ import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpsConnectorConfig;
 import com.hotels.styx.server.netty.NettyServerConfig;
 
+import java.util.Optional;
+
 /**
  * Configuration for proxy server.
  */
 @JsonDeserialize(builder = ProxyServerConfig.Builder.class)
 public class ProxyServerConfig extends NettyServerConfig {
     private final int clientWorkerThreadsCount;
+    private final String via;
 
     public ProxyServerConfig() {
         this.clientWorkerThreadsCount = HALF_OF_AVAILABLE_PROCESSORS;
+        this.via = null;
     }
 
     private ProxyServerConfig(Builder builder) {
@@ -39,10 +43,15 @@ public class ProxyServerConfig extends NettyServerConfig {
         Integer clientThreads = builder.clientWorkerThreadsCount;
 
         this.clientWorkerThreadsCount = clientThreads == null || clientThreads == 0 ? HALF_OF_AVAILABLE_PROCESSORS : clientThreads;
+        this.via = builder.via;
     }
 
     public int clientWorkerThreadsCount() {
         return clientWorkerThreadsCount;
+    }
+
+    public Optional<String> via() {
+        return Optional.ofNullable(via);
     }
 
     /**
@@ -52,6 +61,7 @@ public class ProxyServerConfig extends NettyServerConfig {
     public static class Builder {
         private final NettyServerConfig.Builder builder = new NettyServerConfig.Builder();
         private Integer clientWorkerThreadsCount;
+        private String via;
 
         @JsonProperty("bossThreadsCount")
         public Builder setBossThreadsCount(Integer bossThreadsCount) {
@@ -132,6 +142,12 @@ public class ProxyServerConfig extends NettyServerConfig {
         @JsonProperty("compressResponses")
         public Builder setCompressResponses(boolean compressResponses) {
             builder.setCompressResponses(compressResponses);
+            return this;
+        }
+
+        @JsonProperty("via")
+        public Builder setVia(final String via) {
+            this.via = via;
             return this;
         }
 

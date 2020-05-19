@@ -20,19 +20,31 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpVersion;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import io.netty.util.AsciiString;
 
 import static com.hotels.styx.api.HttpHeaderNames.VIA;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_0;
+import static com.hotels.styx.common.Strings.isBlank;
 import static com.hotels.styx.common.Strings.isNotEmpty;
-import static io.netty.handler.codec.http.HttpHeaders.newEntity;
 
 /**
  * Add support for "Via" header as per described in Chapter 9.9 in the HTTP/1.1 specification.
  *
  */
 public class ViaHeaderAppendingInterceptor implements HttpInterceptor {
-    private static final CharSequence VIA_STYX_1_0 = newEntity("1.0 styx");
-    private static final CharSequence VIA_STYX_1_1 = newEntity("1.1 styx");
+    private static final String DEFAULT_VIA = "styx";
+    private final CharSequence via10;
+    private final CharSequence via11;
+
+    public ViaHeaderAppendingInterceptor() {
+        this(DEFAULT_VIA);
+    }
+
+    public ViaHeaderAppendingInterceptor(final String via) {
+        final String value = isBlank(via) ? DEFAULT_VIA : via;
+        via10 = AsciiString.of("1.0 " + value);
+        via11 = AsciiString.of("1.1 " + value);
+    }
 
     @Override
     public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
@@ -46,7 +58,7 @@ public class ViaHeaderAppendingInterceptor implements HttpInterceptor {
                         .build());
     }
 
-    private static CharSequence viaHeader(LiveHttpRequest httpMessage) {
+    private CharSequence viaHeader(LiveHttpRequest httpMessage) {
         CharSequence styxViaEntry = styxViaEntry(httpMessage.version());
 
         return httpMessage.headers().get(VIA)
@@ -54,7 +66,7 @@ public class ViaHeaderAppendingInterceptor implements HttpInterceptor {
                 .orElse(styxViaEntry);
     }
 
-    private static CharSequence viaHeader(LiveHttpResponse httpMessage) {
+    private CharSequence viaHeader(LiveHttpResponse httpMessage) {
         CharSequence styxViaEntry = styxViaEntry(httpMessage.version());
 
         return httpMessage.headers().get(VIA)
@@ -62,7 +74,7 @@ public class ViaHeaderAppendingInterceptor implements HttpInterceptor {
                 .orElse(styxViaEntry);
     }
 
-    private static CharSequence styxViaEntry(HttpVersion httpVersion) {
-        return httpVersion.equals(HTTP_1_0) ? VIA_STYX_1_0 : VIA_STYX_1_1;
+    private CharSequence styxViaEntry(HttpVersion httpVersion) {
+        return httpVersion.equals(HTTP_1_0) ? via10 : via11;
     }
 }

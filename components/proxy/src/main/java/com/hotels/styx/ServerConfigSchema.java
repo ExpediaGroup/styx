@@ -90,7 +90,8 @@ final class ServerConfigSchema {
                                     optional("maxContentLength", integer()),
                                     optional("requestTimeoutMillis", integer()),
                                     optional("keepAliveTimeoutMillis", integer()),
-                                    optional("maxConnectionsCount", integer())
+                                    optional("maxConnectionsCount", integer()),
+                                    optional("via", string())
                             )),
                             field("admin", object(
                                     field("connectors", serverConnectorsSchema),
