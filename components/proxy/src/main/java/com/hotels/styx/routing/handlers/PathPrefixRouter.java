@@ -24,14 +24,16 @@ import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.routing.RoutingObject;
+import com.hotels.styx.routing.RoutingObjectReference;
 import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.StyxObjectConfiguration;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
+import com.hotels.styx.routing.config.StyxObjectReference;
 import com.hotels.styx.server.NoServiceConfiguredException;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -53,9 +55,9 @@ import static java.util.Objects.requireNonNull;
  * The destination can be a routing object reference or an inline definition.
  */
 public class PathPrefixRouter implements RoutingObject {
-    private final Iterable<PrefixRoute> routes;
+    private final PrefixRoute[] routes;
 
-    PathPrefixRouter(Iterable<PrefixRoute> routes) {
+    PathPrefixRouter(PrefixRoute[] routes) {
         this.routes = routes;
     }
 
@@ -74,9 +76,11 @@ public class PathPrefixRouter implements RoutingObject {
 
     @Override
     public CompletableFuture<Void> stop() {
-        List<CompletableFuture<Void>> stopFutures = new ArrayList<>();
-        routes.forEach(prefixRoute -> stopFutures.add(prefixRoute.routingObject.stop()));
-        return CompletableFuture.allOf(stopFutures.toArray(new CompletableFuture[stopFutures.size()]));
+        CompletableFuture[] stopFutures = new CompletableFuture[routes.length];
+        for (int i = 0; i < routes.length; i++) {
+            stopFutures[i] = routes[i].routingObject.stop();
+        }
+        return CompletableFuture.allOf(stopFutures);
     }
 
     private static class PrefixRoute implements Comparable<PrefixRoute> {
@@ -112,13 +116,14 @@ public class PathPrefixRouter implements RoutingObject {
                 throw missingAttributeError(configBlock, join(".", fullName), "routes");
             }
 
-            List<PrefixRoute> routes = new ArrayList<>();
+            PrefixRoute[] routes = new PrefixRoute[config.routes().size()];
+            int i = 0;
             for (PathPrefixConfig routeConfig : config.routes()) {
                 String prefix = routeConfig.prefix();
                 RoutingObject route = Builtins.build(singletonList(""), context, routeConfig.destination());
-                routes.add(new PrefixRoute(prefix, route));
+                routes[i++] = new PrefixRoute(prefix, route);
             }
-            routes.sort(null);
+            Arrays.sort(routes);
 
             return new PathPrefixRouter(routes);
         }
