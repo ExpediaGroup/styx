@@ -46,13 +46,13 @@ public class PathPrefixRouterTest {
     private static final ObjectMapper mapper = new ObjectMapper();
 
     public Map<StyxObjectReference, RoutingObject> routingObjects = new HashMap<>();
-    public RoutingObjectFactory.Context Routingcontext;
+    public RoutingObjectFactory.Context routingContext;
     public HttpInterceptor.Context context = mock(HttpInterceptor.Context.class);
 
     @BeforeEach
     public void beforeEach() throws Exception {
-        Routingcontext = mock(RoutingObjectFactory.Context.class);
-        when(Routingcontext.refLookup()).thenReturn(ref -> routingObjects.get(ref));
+        routingContext = mock(RoutingObjectFactory.Context.class);
+        when(routingContext.refLookup()).thenReturn(ref -> routingObjects.get(ref));
     }
 
     @Test
@@ -121,7 +121,7 @@ public class PathPrefixRouterTest {
 
         StyxObjectDefinition configBlock = new StyxObjectDefinition("test", Builtins.PATH_PREFIX_ROUTER, config);
 
-        PathPrefixRouter router = (PathPrefixRouter) new PathPrefixRouter.Factory().build(singletonList("test"), Routingcontext, configBlock);
+        PathPrefixRouter router = (PathPrefixRouter) new PathPrefixRouter.Factory().build(singletonList("test"), routingContext, configBlock);
 
         return router;
     }
