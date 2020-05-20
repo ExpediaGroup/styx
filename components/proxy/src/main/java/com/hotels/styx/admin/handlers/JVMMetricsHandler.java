@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ public class JVMMetricsHandler extends JsonHandler<MetricRegistry> {
         super(new FilteredRegistry(metricRegistry), cacheExpiration, new MetricsModule(SECONDS, MILLISECONDS, DO_NOT_SHOW_SAMPLES));
     }
 
-    private static final class FilteredRegistry implements MetricRegistry {
+    private static final class FilteredRegistry extends MetricRegistry {
         private final MetricRegistry original;
 
         public FilteredRegistry(MetricRegistry original) {
@@ -137,11 +137,6 @@ public class JVMMetricsHandler extends JsonHandler<MetricRegistry> {
         @Override
         public SortedMap<String, Histogram> getHistograms(MetricFilter filter) {
             return null;
-        }
-
-        @Override
-        public SortedMap<String, Meter> getMeters() {
-            return filterKeys(original.getMeters(), STARTS_WITH_JVM);
         }
 
         @Override

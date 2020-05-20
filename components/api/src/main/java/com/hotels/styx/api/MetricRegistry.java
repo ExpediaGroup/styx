@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistryListener;
 import com.codahale.metrics.Timer;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -30,7 +31,7 @@ import java.util.SortedSet;
 /**
  * A Styx metrics registry that is based on CodaHale {@link Metric} objects.
  */
-public interface MetricRegistry {
+public abstract class MetricRegistry extends SimpleMeterRegistry {
 
     /**
      * Returns or creates a sub-scope of this metric registry.
@@ -38,7 +39,7 @@ public interface MetricRegistry {
      * @param name Name for the sub-scope.
      * @return A possibly-new metric registry, whose metrics will be 'children' of this scope.
      */
-    MetricRegistry scope(String name);
+    public abstract MetricRegistry scope(String name);
 
     /**
      * Given a {@link com.codahale.metrics.Metric}, registers it under the given name.
@@ -49,7 +50,7 @@ public interface MetricRegistry {
      * @return {@code metric}
      * @throws IllegalArgumentException if the name is already registered
      */
-    <T extends Metric> T register(String name, T metric) throws IllegalArgumentException;
+    public abstract <T extends Metric> T register(String name, T metric) throws IllegalArgumentException;
 
     /**
      * Removes the metric with the given name.
@@ -57,7 +58,7 @@ public interface MetricRegistry {
      * @param name the name of the metric
      * @return whether or not the metric was removed
      */
-    boolean deregister(String name);
+    public abstract boolean deregister(String name);
 
 
     /**
@@ -67,7 +68,7 @@ public interface MetricRegistry {
      * @param name the name of the metric
      * @return a new {@link com.codahale.metrics.Counter}
      */
-    Counter counter(String name);
+    public abstract Counter counter(String name);
 
     /**
      * Return the {@link com.codahale.metrics.Histogram} registered under {@code name} or create
@@ -76,7 +77,7 @@ public interface MetricRegistry {
      * @param name the name of the metric
      * @return a new {@link com.codahale.metrics.Histogram}
      */
-    Histogram histogram(String name);
+    public abstract Histogram histogram(String name);
 
     /**
      * Return the {@link com.codahale.metrics.Meter} registered under {@code name} or create
@@ -85,7 +86,7 @@ public interface MetricRegistry {
      * @param name the name of the metric
      * @return a new {@link com.codahale.metrics.Meter}
      */
-    Meter meter(String name);
+    public abstract Meter meter(String name);
 
     /**
      * Return the {@link com.codahale.metrics.Timer} registered under {@code name} or create
@@ -94,7 +95,7 @@ public interface MetricRegistry {
      * @param name the name of the metric
      * @return a new {@link com.codahale.metrics.Timer}
      */
-    Timer timer(String name);
+    public abstract Timer timer(String name);
 
     /**
      * Adds a {@link MetricRegistryListener} to a collection of listeners that will be notified on
@@ -104,28 +105,28 @@ public interface MetricRegistry {
      *
      * @param listener the listener that will be notified
      */
-    void addListener(MetricRegistryListener listener);
+    public abstract void addListener(MetricRegistryListener listener);
 
     /**
      * Removes a {@link MetricRegistryListener} from this registry's collection of listeners.
      *
      * @param listener the listener that will be removed
      */
-    void removeListener(MetricRegistryListener listener);
+    public abstract void removeListener(MetricRegistryListener listener);
 
     /**
      * Returns a set of the names of all the metrics in the registry.
      *
      * @return the names of all the metrics
      */
-    SortedSet<String> getNames();
+    public abstract SortedSet<String> getNames();
 
     /**
      * Returns a map of all the gauges in the registry and their names.
      *
      * @return all the gauges in the registry
      */
-    SortedMap<String, Gauge> getGauges();
+    public abstract SortedMap<String, Gauge> getGauges();
 
     /**
      * Returns a map of all the gauges in the registry and their names which match the given filter.
@@ -133,14 +134,14 @@ public interface MetricRegistry {
      * @param filter the metric filter to match
      * @return all the gauges in the registry
      */
-    SortedMap<String, Gauge> getGauges(MetricFilter filter);
+    public abstract SortedMap<String, Gauge> getGauges(MetricFilter filter);
 
     /**
      * Returns a map of all the counters in the registry and their names.
      *
      * @return all the counters in the registry
      */
-    SortedMap<String, Counter> getCounters();
+    public abstract SortedMap<String, Counter> getCounters();
 
     /**
      * Returns a map of all the counters in the registry and their names which match the given
@@ -149,14 +150,14 @@ public interface MetricRegistry {
      * @param filter the metric filter to match
      * @return all the counters in the registry
      */
-    SortedMap<String, Counter> getCounters(MetricFilter filter);
+    public abstract SortedMap<String, Counter> getCounters(MetricFilter filter);
 
     /**
      * Returns a map of all the histograms in the registry and their names.
      *
      * @return all the histograms in the registry
      */
-    SortedMap<String, Histogram> getHistograms();
+    public abstract SortedMap<String, Histogram> getHistograms();
 
     /**
      * Returns a map of all the histograms in the registry and their names which match the given
@@ -165,14 +166,14 @@ public interface MetricRegistry {
      * @param filter the metric filter to match
      * @return all the histograms in the registry
      */
-    SortedMap<String, Histogram> getHistograms(MetricFilter filter);
+    public abstract SortedMap<String, Histogram> getHistograms(MetricFilter filter);
 
     /**
      * Returns a map of all the meters in the registry and their names.
      *
      * @return all the meters in the registry
      */
-    SortedMap<String, Meter> getMeters();
+//    SortedMap<String, Meter> getMeters();
 
     /**
      * Returns a map of all the meters in the registry and their names which match the given filter.
@@ -180,14 +181,14 @@ public interface MetricRegistry {
      * @param filter the metric filter to match
      * @return all the meters in the registry
      */
-    SortedMap<String, Meter> getMeters(MetricFilter filter);
+    public abstract SortedMap<String, Meter> getMeters(MetricFilter filter);
 
     /**
      * Returns a map of all the timers in the registry and their names.
      *
      * @return all the timers in the registry
      */
-    SortedMap<String, Timer> getTimers();
+    public abstract SortedMap<String, Timer> getTimers();
 
     /**
      * Returns a map of all the timers in the registry and their names which match the given filter.
@@ -195,7 +196,7 @@ public interface MetricRegistry {
      * @param filter the metric filter to match
      * @return all the timers in the registry
      */
-    SortedMap<String, Timer> getTimers(MetricFilter filter);
+    public abstract SortedMap<String, Timer> getTimers(MetricFilter filter);
 
 
     /**
@@ -203,6 +204,6 @@ public interface MetricRegistry {
      *
      * @return the metrics
      */
-    SortedMap<String, Metric> getMetrics();
+    public abstract SortedMap<String, Metric> getMetrics();
 
 }
