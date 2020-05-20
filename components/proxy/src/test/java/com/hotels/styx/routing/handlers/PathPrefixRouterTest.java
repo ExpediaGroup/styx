@@ -31,12 +31,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -118,7 +121,8 @@ public class PathPrefixRouterTest {
         for (Map.Entry<String, String> entry : prefixRoutes.entrySet()) {
             String path = entry.getKey();
             String route = entry.getValue();
-            routes[i++] = new PathPrefixRouter.PrefixRoute(path, routingObjects.get(route));
+            RoutingObject routingObject = requireNonNull(routingObjects.get(new StyxObjectReference(route)), "No reouting object for " + route);
+            routes[i++] = new PathPrefixRouter.PrefixRoute(path, routingObject);
         }
 
         return new PathPrefixRouter(routes);

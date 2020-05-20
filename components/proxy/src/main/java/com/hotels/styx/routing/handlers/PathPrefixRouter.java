@@ -57,6 +57,7 @@ public class PathPrefixRouter implements RoutingObject {
 
     PathPrefixRouter(PrefixRoute[] routes) {
         this.routes = routes;
+        Arrays.sort(this.routes);
     }
 
     @Override
@@ -121,7 +122,6 @@ public class PathPrefixRouter implements RoutingObject {
                 RoutingObject route = Builtins.build(singletonList(""), context, routeConfig.destination());
                 routes[i++] = new PrefixRoute(prefix, route);
             }
-            Arrays.sort(routes);
 
             return new PathPrefixRouter(routes);
         }
