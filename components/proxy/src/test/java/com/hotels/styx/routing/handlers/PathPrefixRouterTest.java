@@ -113,17 +113,15 @@ public class PathPrefixRouterTest {
     }
 
     private PathPrefixRouter buildRouter(Map<String, String> prefixRoutes) {
-        ArrayNode routes = mapper.createArrayNode();
-        prefixRoutes.forEach((path, route) -> routes.add(mapper.createObjectNode()
-                .put("prefix", path)
-                .put("destination", route)));
-        ObjectNode config = mapper.createObjectNode().set("routes", routes);
+        PathPrefixRouter.PrefixRoute[] routes = new PathPrefixRouter.PrefixRoute[prefixRoutes.size()];
+        int i = 0;
+        for (Map.Entry<String, String> entry : prefixRoutes.entrySet()) {
+            String path = entry.getKey();
+            String route = entry.getValue();
+            routes[i++] = new PathPrefixRouter.PrefixRoute(path, routingObjects.get(route));
+        }
 
-        StyxObjectDefinition configBlock = new StyxObjectDefinition("test", Builtins.PATH_PREFIX_ROUTER, config);
-
-        PathPrefixRouter router = (PathPrefixRouter) new PathPrefixRouter.Factory().build(singletonList("test"), routingContext, configBlock);
-
-        return router;
+        return new PathPrefixRouter(routes);
     }
 
     private void testRequestRoute(PathPrefixRouter router, String path, RoutingObject handler) {

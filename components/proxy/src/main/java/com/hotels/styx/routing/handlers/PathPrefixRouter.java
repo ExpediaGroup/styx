@@ -83,7 +83,7 @@ public class PathPrefixRouter implements RoutingObject {
         return CompletableFuture.allOf(stopFutures);
     }
 
-    private static class PrefixRoute implements Comparable<PrefixRoute> {
+    static class PrefixRoute implements Comparable<PrefixRoute> {
         private final String prefix;
         private final RoutingObject routingObject;
 
