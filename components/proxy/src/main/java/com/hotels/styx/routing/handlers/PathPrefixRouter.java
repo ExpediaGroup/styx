@@ -24,12 +24,10 @@ import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.routing.RoutingObject;
-import com.hotels.styx.routing.RoutingObjectReference;
 import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.StyxObjectConfiguration;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
-import com.hotels.styx.routing.config.StyxObjectReference;
 import com.hotels.styx.server.NoServiceConfiguredException;
 import org.jetbrains.annotations.NotNull;
 
