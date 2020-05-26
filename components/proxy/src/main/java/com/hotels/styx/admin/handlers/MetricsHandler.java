@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 package com.hotels.styx.admin.handlers;
 
 import com.codahale.metrics.Metric;
-import com.codahale.metrics.json.MetricsModule;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,6 +28,7 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.WebServiceHandler;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.api.metrics.codahale.StyxMetricsModule;
 import com.hotels.styx.infrastructure.configuration.json.mixins.CodaHaleMetricRegistryMixin;
 
 import java.time.Duration;
@@ -55,7 +55,7 @@ public class MetricsHandler implements WebServiceHandler {
     private static final String PRETTY_PRINT_PARAM = "pretty";
 
     private final ObjectMapper metricSerialiser = new ObjectMapper()
-            .registerModule(new MetricsModule(SECONDS, MILLISECONDS, DO_NOT_SHOW_SAMPLES))
+            .registerModule(new StyxMetricsModule(SECONDS, MILLISECONDS, DO_NOT_SHOW_SAMPLES))
             .addMixIn(CodaHaleMetricRegistry.class, CodaHaleMetricRegistryMixin.class);
 
     private final MetricRegistry metricRegistry;
@@ -72,7 +72,7 @@ public class MetricsHandler implements WebServiceHandler {
                 .get(".*/metrics", new RootMetricsHandler(
                         metricRegistry,
                         cacheExpiration,
-                        new MetricsModule(SECONDS, MILLISECONDS, DO_NOT_SHOW_SAMPLES),
+                        new StyxMetricsModule(SECONDS, MILLISECONDS, DO_NOT_SHOW_SAMPLES),
                         new FullMetricsModule()))
                 .get(".*/metrics/.*", (request, context) -> Eventual.of(filteredMetricResponse(request)))
                 .build();
