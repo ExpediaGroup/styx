@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -85,8 +85,8 @@ public class HttpErrorStatusMetricsTest {
 
     @Test
     public void metricsArePreRegistered() {
-        assertThat(registry.getMeters().get("styx.errors"), is(instanceOf(Meter.class)));
-        assertThat(registry.getMeters().get("styx.errors").getCount(), is(0L));
+        assertThat(registry.getMeters(MetricFilter.ALL).get("styx.errors"), is(instanceOf(Meter.class)));
+        assertThat(registry.getMeters(MetricFilter.ALL).get("styx.errors").getCount(), is(0L));
 
         assertThat(registry.getCounters().get("styx.response.status.200"), is(instanceOf(Counter.class)));
         assertThat(registry.getCounters().get("styx.response.status.200").getCount(), is(0L));

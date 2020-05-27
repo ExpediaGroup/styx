@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import java.util.TreeMap;
 /**
  * A {@link MetricRegistry} that acts as an adapter for Codahale's {@link com.codahale.metrics.MetricRegistry}.
  */
-public class CodaHaleMetricRegistry implements MetricRegistry {
+public class CodaHaleMetricRegistry extends MetricRegistry {
 
     private final com.codahale.metrics.MetricRegistry metricRegistry;
 
@@ -158,11 +158,6 @@ public class CodaHaleMetricRegistry implements MetricRegistry {
     @Override
     public SortedMap<String, Histogram> getHistograms(MetricFilter filter) {
         return metricRegistry.getHistograms(filter);
-    }
-
-    @Override
-    public SortedMap<String, Meter> getMeters() {
-        return metricRegistry.getMeters();
     }
 
     @Override
