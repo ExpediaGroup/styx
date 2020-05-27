@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,15 +23,16 @@ import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistryListener;
 import com.codahale.metrics.Timer;
-import com.codahale.metrics.json.MetricsModule;
 import com.google.common.base.Predicate;
 import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.api.metrics.codahale.StyxMetricsModule;
 
 import java.time.Duration;
 import java.util.Optional;
 import java.util.SortedMap;
 import java.util.SortedSet;
 
+import static com.google.common.collect.Maps.filterEntries;
 import static com.google.common.collect.Maps.filterKeys;
 import static com.google.common.collect.Sets.filter;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -51,10 +52,10 @@ public class JVMMetricsHandler extends JsonHandler<MetricRegistry> {
      * @param cacheExpiration duration for which generated page content should be cached
      */
     public JVMMetricsHandler(MetricRegistry metricRegistry, Optional<Duration> cacheExpiration) {
-        super(new FilteredRegistry(metricRegistry), cacheExpiration, new MetricsModule(SECONDS, MILLISECONDS, DO_NOT_SHOW_SAMPLES));
+        super(new FilteredRegistry(metricRegistry), cacheExpiration, new StyxMetricsModule(SECONDS, MILLISECONDS, DO_NOT_SHOW_SAMPLES));
     }
 
-    private static final class FilteredRegistry implements MetricRegistry {
+    private static final class FilteredRegistry extends MetricRegistry {
         private final MetricRegistry original;
 
         public FilteredRegistry(MetricRegistry original) {
@@ -116,7 +117,7 @@ public class JVMMetricsHandler extends JsonHandler<MetricRegistry> {
 
         @Override
         public SortedMap<String, Gauge> getGauges(MetricFilter filter) {
-            return null;
+            return filterEntries(getGauges(), entry -> filter.matches(entry.getKey(), entry.getValue()));
         }
 
         @Override
@@ -126,7 +127,7 @@ public class JVMMetricsHandler extends JsonHandler<MetricRegistry> {
 
         @Override
         public SortedMap<String, Counter> getCounters(MetricFilter filter) {
-            return null;
+            return filterEntries(getCounters(), entry -> filter.matches(entry.getKey(), entry.getValue()));
         }
 
         @Override
@@ -136,17 +137,13 @@ public class JVMMetricsHandler extends JsonHandler<MetricRegistry> {
 
         @Override
         public SortedMap<String, Histogram> getHistograms(MetricFilter filter) {
-            return null;
-        }
-
-        @Override
-        public SortedMap<String, Meter> getMeters() {
-            return filterKeys(original.getMeters(), STARTS_WITH_JVM);
+            return filterEntries(getHistograms(), entry -> filter.matches(entry.getKey(), entry.getValue()));
         }
 
         @Override
         public SortedMap<String, Meter> getMeters(MetricFilter filter) {
-            return null;
+            return filterEntries(original.getMeters(MetricFilter.ALL),
+                    entry -> filter.matches(entry.getKey(), entry.getValue()) && entry.getKey().startsWith("jvm"));
         }
 
         @Override
@@ -156,7 +153,7 @@ public class JVMMetricsHandler extends JsonHandler<MetricRegistry> {
 
         @Override
         public SortedMap<String, Timer> getTimers(MetricFilter filter) {
-            return null;
+            return filterEntries(getTimers(), entry -> filter.matches(entry.getKey(), entry.getValue()));
         }
 
         @Override
