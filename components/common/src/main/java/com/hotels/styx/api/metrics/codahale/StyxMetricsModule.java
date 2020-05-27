@@ -1,5 +1,6 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (c) 2010-2013 Coda Hale, Yammer.com, 2014-2020 Dropwizard Team
+   with modifications to package name and parameterized class by Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.

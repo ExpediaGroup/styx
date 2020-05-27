@@ -169,13 +169,6 @@ public abstract class MetricRegistry extends SimpleMeterRegistry {
     public abstract SortedMap<String, Histogram> getHistograms(MetricFilter filter);
 
     /**
-     * Returns a map of all the meters in the registry and their names.
-     *
-     * @return all the meters in the registry
-     */
-//    SortedMap<String, Meter> getMeters();
-
-    /**
      * Returns a map of all the meters in the registry and their names which match the given filter.
      *
      * @param filter the metric filter to match
