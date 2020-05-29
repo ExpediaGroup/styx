@@ -132,6 +132,11 @@ public final class Environment implements com.hotels.styx.api.Environment {
             return this;
         }
 
+        public Builder meterRegistry(MeterRegistry meterRegistry) {
+            this.registry = meterRegistry;
+            return this;
+        }
+
         public Builder buildInfo(Version version) {
             this.version = version;
             return this;
