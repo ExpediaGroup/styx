@@ -15,7 +15,10 @@
  */
 package com.hotels.styx.client.applications;
 
-import com.codahale.metrics.Timer;
+
+import io.micrometer.core.instrument.Timer;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * An aggregate of two timers that starts and stops both simultaneously.
@@ -24,27 +27,24 @@ public final class AggregateTimer {
     /**
      * Aggregate timed contexts.
      */
-    public static class Stopper {
-        private final Timer.Context first;
-        private final Timer.Context second;
+    public class Stopper {
+        private final Timer.Sample sample;
 
         /**
          * Constructor.
          *
-         * @param first first timer context
-         * @param second second timer context
+         * @param sample timing sample
          */
-        public Stopper(Timer.Context first, Timer.Context second) {
-            this.first = first;
-            this.second = second;
+        public Stopper(Timer.Sample sample) {
+            this.sample = sample;
         }
 
         /**
-         * Stop both timer contexts.
+         * Stop the timing sample and record in both timers.
          */
         public void stopAndRecord() {
-            this.first.stop();
-            this.second.stop();
+            long durationNs = sample.stop(requestTimer);
+            applicationTimer.record(durationNs, TimeUnit.NANOSECONDS);
         }
     }
 
@@ -63,6 +63,6 @@ public final class AggregateTimer {
     }
 
     public Stopper time() {
-        return new Stopper(requestTimer.time(), applicationTimer.time());
+        return new Stopper(Timer.start());
     }
 }

@@ -19,6 +19,8 @@ package com.hotels.styx.client.applications;
  * An object that receives origin statistics.
  */
 public interface OriginStats {
+
+    // TODO: These are used in tests only. They will need to be qualified by tags to obtain the right meters.
     String REQUEST_SUCCESS = "requests.success-rate";
     String REQUEST_FAILURE = "requests.error-rate";
 
@@ -48,11 +50,6 @@ public interface OriginStats {
      * @param statusCode status code
      */
     void responseWithStatusCode(int statusCode);
-
-    /**
-     * One minute rate for 5xx error messages.
-     */
-    double oneMinuteErrorRate();
 
     /**
      * Called when request is cancelled.

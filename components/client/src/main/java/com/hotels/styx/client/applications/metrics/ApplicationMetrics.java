@@ -15,13 +15,13 @@
  */
 package com.hotels.styx.client.applications.metrics;
 
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.Meter;
-import com.codahale.metrics.Timer;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.MetricRegistry;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.Timer;
 
-import static com.codahale.metrics.MetricRegistry.name;
+import static com.hotels.styx.api.MetricRegistry.name;
 import static com.hotels.styx.client.applications.metrics.StatusCodes.statusCodeName;
 import static java.util.Objects.requireNonNull;
 
@@ -29,13 +29,18 @@ import static java.util.Objects.requireNonNull;
  * Reports metrics about applications to a {@link MetricRegistry}.
  */
 public class ApplicationMetrics {
-    private final MetricRegistry applicationMetrics;
-    private final MetricRegistry requestScope;
+
+    public static final String APPID_TAG_NAME = "appid";
+    public static final String REQUESTS_SCOPE = "requests";
+
+    private final Tags appTags;
+
+    private final MetricRegistry metricRegistry;
     private final Timer requestLatencyTimer;
     private final Timer requestTimeToFirstByteTimer;
-    private final Meter requestSuccessMeter;
-    private final Meter requestErrorMeter;
-    private final Meter status200OkMeter;
+    private final Counter requestSuccessMeter;
+    private final Counter requestErrorMeter;
+    private final Counter status200OkMeter;
     private final Counter requestCancellations;
 
 
@@ -49,29 +54,30 @@ public class ApplicationMetrics {
         requireNonNull(appId);
         requireNonNull(metricRegistry);
 
-        this.applicationMetrics = metricRegistry.scope(appId.toString());
+        appTags = Tags.of(APPID_TAG_NAME, appId.toString());
 
-        this.requestScope = this.applicationMetrics.scope("requests");
-        this.requestLatencyTimer = this.requestScope.timer("latency");
-        this.requestTimeToFirstByteTimer = this.requestScope.timer("time-to-first-byte");
-        this.requestSuccessMeter = this.requestScope.meter("success-rate");
-        this.requestErrorMeter = this.requestScope.meter("error-rate");
-        this.status200OkMeter = this.requestScope.meter(name("response", statusCodeName(200)));
-        this.requestCancellations = this.requestScope.counter("cancelled");
+        this.metricRegistry = metricRegistry;
+
+        requestLatencyTimer = metricRegistry.timer(name(REQUESTS_SCOPE, "latency"), appTags);
+        requestTimeToFirstByteTimer = metricRegistry.timer(name(REQUESTS_SCOPE, ".time-to-first-byte"), appTags);
+        requestSuccessMeter = metricRegistry.counter(name(REQUESTS_SCOPE, ".success-rate"), appTags);
+        requestErrorMeter = metricRegistry.counter(name(REQUESTS_SCOPE, ".error-rate"), appTags);
+        status200OkMeter = metricRegistry.counter(name(REQUESTS_SCOPE, "response", statusCodeName(200)), appTags);
+        requestCancellations = metricRegistry.counter(name(REQUESTS_SCOPE, "cancelled"), appTags);
     }
 
     /**
      * To be called when a request is successful.
      */
     public void requestSuccess() {
-        requestSuccessMeter.mark();
+        requestSuccessMeter.increment();
     }
 
     /**
      * To be called when a request encounters an error.
      */
     public void requestError() {
-        requestErrorMeter.mark();
+        requestErrorMeter.increment();
     }
 
     /**
@@ -94,7 +100,11 @@ public class ApplicationMetrics {
      * @return the metrics registry used
      */
     public MetricRegistry metricRegistry() {
-        return applicationMetrics;
+        return metricRegistry;
+    }
+
+    public Tags tags() {
+        return appTags;
     }
 
     /**
@@ -103,18 +113,18 @@ public class ApplicationMetrics {
      * @param statusCode status code
      */
     public void responseWithStatusCode(int statusCode) {
-        requestScope.meter(name("response", statusCodeName(statusCode))).mark();
+        metricRegistry.counter(name(REQUESTS_SCOPE, "response", statusCodeName(statusCode)), appTags).increment();
     }
 
     /**
      * Records a 200 OK status.
      */
     public void responseWithStatus200Ok() {
-        status200OkMeter.mark();
+        status200OkMeter.increment();
     }
 
     public void requestCancelled() {
-        requestCancellations.inc();
+        requestCancellations.increment();
     }
 }
 
