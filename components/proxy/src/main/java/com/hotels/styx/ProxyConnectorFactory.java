@@ -16,6 +16,7 @@
 package com.hotels.styx;
 
 import com.codahale.metrics.Histogram;
+import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.common.format.HttpMessageFormatter;
@@ -94,7 +95,7 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
     // CHECKSTYLE:ON
 
     @Override
-    public ServerConnector create(ConnectorConfig config) {
+    public ServerConnector create(Environment environment, ConnectorConfig config) {
         return new ProxyConnector(config, this);
     }
 

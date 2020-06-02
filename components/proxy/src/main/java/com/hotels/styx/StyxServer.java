@@ -26,6 +26,7 @@ import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
 import com.hotels.styx.api.extension.service.spi.Registry;
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.config.schema.SchemaValidationException;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
@@ -112,6 +113,7 @@ public final class StyxServer extends AbstractService {
         LOG.info("Styx logConfigLocation={}", startupConfig.logConfigLocation());
 
         StyxServerComponents components = new StyxServerComponents.Builder()
+                .metricsRegistry(new CodaHaleMetricRegistry())
                 .styxConfig(parseConfiguration(startupConfig))
                 .startupConfig(startupConfig)
                 .loggingSetUp(environment -> activateLogbackConfigurer(startupConfig))
@@ -255,7 +257,7 @@ public final class StyxServer extends AbstractService {
                 environment.configuration().get("requestTracking", Boolean.class).orElse(false),
                 environment.httpMessageFormatter(),
                 environment.configuration().styxHeaderConfig().originIdHeaderName())
-                .create(connectorConfig);
+                .create(environment, connectorConfig);
 
         return NettyServerBuilder.newBuilder()
                 .setMetricsRegistry(environment.metricRegistry())

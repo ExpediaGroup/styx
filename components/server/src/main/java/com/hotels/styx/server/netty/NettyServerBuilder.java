@@ -121,6 +121,7 @@ public final class NettyServerBuilder {
     public InetServer build() {
         checkArgument(httpConnector != null, "Must configure a protocol connector");
         checkArgument(workerExecutor != null, "Must configure a worker executor");
+        checkArgument(metricRegistry != null, "Must configure metric registry");
 
         if (bossExecutor == null) {
             bossExecutor = DEFAULT_SERVER_BOSS_EXECUTOR;

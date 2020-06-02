@@ -22,6 +22,7 @@ import com.hotels.styx.admin.AdminServerConfig;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
@@ -61,13 +62,14 @@ public final class StyxServer {
 
         MemoryBackedRegistry<com.hotels.styx.api.extension.service.BackendService> backendServicesRegistry = new MemoryBackedRegistry<>();
 
+        metricRegistry = new CodaHaleMetricRegistry();
+
         StyxServerComponents config = new StyxServerComponents.Builder()
+                .metricsRegistry(metricRegistry)
                 .styxConfig(styxConfig(builder))
                 .pluginFactories(builder.pluginFactories)
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(backendServicesRegistry)))
                 .build();
-
-        metricRegistry = config.environment().metricRegistry();
 
         this.server = new com.hotels.styx.StyxServer(config);
 

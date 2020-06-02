@@ -94,8 +94,7 @@ public class StyxBackendServiceClientTest {
 
     @BeforeEach
     public void setUp() {
-        metricRegistry = new CodaHaleMetricRegistry()
-                .scope("origins");
+        metricRegistry = new CodaHaleMetricRegistry();
     }
 
     @Test
@@ -362,8 +361,8 @@ public class StyxBackendServiceClientTest {
                 .verify();
 
         assertThat(metricRegistry.getNames(), hasItems(
-                "origins.App-X.requests.cancelled",
-                "origins.App-X.Origin-Y.requests.cancelled"));
+                "App-X.requests.cancelled",
+                "App-X.Origin-Y.requests.cancelled"));
 
         // metricRegistry is already scoped at "origins". Therefore the following metric
         // names don't need to be prefixed with it:

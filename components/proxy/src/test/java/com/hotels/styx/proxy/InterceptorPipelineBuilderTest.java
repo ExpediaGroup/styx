@@ -23,6 +23,7 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingObject;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,6 +50,7 @@ public class InterceptorPipelineBuilderTest {
     @BeforeEach
     public void setUp() {
         environment = new Environment.Builder()
+                .metricRegistry(new CodaHaleMetricRegistry())
                 .configuration(StyxConfig.defaultConfig())
                 .build();
         plugins = ImmutableList.of(

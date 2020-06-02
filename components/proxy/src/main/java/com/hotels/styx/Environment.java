@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,10 +24,10 @@ import com.hotels.styx.proxy.HttpErrorStatusCauseLogger;
 import com.hotels.styx.proxy.HttpErrorStatusMetrics;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpErrorStatusListener;
-import com.hotels.styx.server.ServerEnvironment;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
@@ -41,7 +41,7 @@ public final class Environment implements com.hotels.styx.api.Environment {
     private final List<NamedPlugin> plugins;
     private final StyxConfig configuration;
     private final HttpErrorStatusListener httpErrorStatusListener;
-    private final ServerEnvironment serverEnvironment;
+    private final MetricRegistry metricRegistry;
     private final HttpMessageFormatter httpMessageFormatter;
 
     private Environment(Builder builder) {
@@ -50,12 +50,12 @@ public final class Environment implements com.hotels.styx.api.Environment {
 
         this.configuration = builder.configuration;
         this.version = firstNonNull(builder.version, Version::newVersion);
-        this.serverEnvironment = new ServerEnvironment(firstNonNull(builder.metricRegistry, CodaHaleMetricRegistry::new));
+        this.metricRegistry = requireNonNull(builder.metricRegistry);
         this.httpMessageFormatter = builder.httpMessageFormatter;
 
         this.httpErrorStatusListener = HttpErrorStatusListener.compose(
                 new HttpErrorStatusCauseLogger(httpMessageFormatter),
-                new HttpErrorStatusMetrics(serverEnvironment.metricRegistry()));
+                new HttpErrorStatusMetrics(metricRegistry));
     }
 
     // prevent unnecessary construction of defaults
@@ -86,7 +86,7 @@ public final class Environment implements com.hotels.styx.api.Environment {
 
     @Override
     public MetricRegistry metricRegistry() {
-        return serverEnvironment.metricRegistry();
+        return metricRegistry;
     }
 
     /**
@@ -97,10 +97,6 @@ public final class Environment implements com.hotels.styx.api.Environment {
     @Deprecated
     public StyxConfig styxConfig() {
         return configuration();
-    }
-
-    public ServerEnvironment serverEnvironment() {
-        return serverEnvironment;
     }
 
     public HttpMessageFormatter httpMessageFormatter() {
@@ -143,6 +139,9 @@ public final class Environment implements com.hotels.styx.api.Environment {
         }
 
         public Environment build() {
+            if (metricRegistry == null) {
+                throw new IllegalStateException("metricRegistry must be specified");
+            }
             return new Environment(this);
         }
     }

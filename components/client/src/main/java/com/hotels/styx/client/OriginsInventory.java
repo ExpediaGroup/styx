@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.Id;
@@ -484,9 +485,10 @@ public final class OriginsInventory
         return new Builder(appId);
     }
 
-    public static Builder newOriginsInventoryBuilder(BackendService backendService) {
+    public static Builder newOriginsInventoryBuilder(Environment environment, BackendService backendService) {
         return new Builder(backendService.id())
-                .connectionPoolFactory(simplePoolFactory(backendService, new CodaHaleMetricRegistry()))
+                .metricsRegistry(environment.metricRegistry())
+                .connectionPoolFactory(simplePoolFactory(backendService, environment.metricRegistry()))
                 .initialOrigins(backendService.origins());
     }
 
@@ -496,7 +498,7 @@ public final class OriginsInventory
     public static class Builder {
         private final Id appId;
         private OriginHealthStatusMonitor originHealthMonitor = new NoOriginHealthStatusMonitor();
-        private MetricRegistry metricsRegistry = new CodaHaleMetricRegistry();
+        private MetricRegistry metricsRegistry; // TODO: purge // = new CodaHaleMetricRegistry();
         private EventBus eventBus = new EventBus();
         private ConnectionPool.Factory connectionPoolFactory = simplePoolFactory();
         private StyxHostHttpClient.Factory hostClientFactory;

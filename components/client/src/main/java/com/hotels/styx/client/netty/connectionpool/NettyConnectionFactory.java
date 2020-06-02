@@ -156,6 +156,9 @@ public class NettyConnectionFactory implements Connection.Factory {
         }
 
         public NettyConnectionFactory build() {
+            if (httpRequestOperationFactory == null) {
+                throw new IllegalStateException("httpRequestOperationFactory is required to be set");
+            }
             return new NettyConnectionFactory(this);
         }
     }

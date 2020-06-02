@@ -43,7 +43,7 @@ public class CodaHaleMetricRegistry extends MetricRegistry {
      *
      * @param metricRegistry codehale {@link com.codahale.metrics.MetricRegistry}
      */
-    public CodaHaleMetricRegistry(com.codahale.metrics.MetricRegistry metricRegistry) {
+    /*public*/ CodaHaleMetricRegistry(com.codahale.metrics.MetricRegistry metricRegistry) {
         this.metricRegistry = metricRegistry;
     }
 

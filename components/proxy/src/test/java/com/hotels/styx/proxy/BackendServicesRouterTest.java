@@ -76,7 +76,7 @@ public class BackendServicesRouterTest {
 
     @BeforeEach
     public void before() {
-        environment = new Environment.Builder().build();
+        environment = new Environment.Builder().metricRegistry(new CodaHaleMetricRegistry()).build();
     }
 
     @Test

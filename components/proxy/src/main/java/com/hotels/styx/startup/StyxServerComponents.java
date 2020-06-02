@@ -50,6 +50,7 @@ import org.slf4j.Logger;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static com.hotels.styx.StartupConfig.newStartupConfigBuilder;
 import static com.hotels.styx.Version.readVersionFrom;
@@ -289,7 +290,7 @@ public class StyxServerComponents {
         private LoggingSetUp loggingSetUp = DO_NOT_MODIFY;
         private List<ConfiguredPluginFactory> configuredPluginFactories = ImmutableList.of();
         private ServicesLoader servicesLoader = SERVICES_FROM_CONFIG;
-        private MetricRegistry metricRegistry = new CodaHaleMetricRegistry();
+        private MetricRegistry metricRegistry; // TODO: purge // = new CodaHaleMetricRegistry();
         private StartupConfig startupConfig;
 
         private final Map<String, RoutingObjectFactory> additionalRoutingObjectFactories = new HashMap<>();
@@ -363,6 +364,9 @@ public class StyxServerComponents {
         }
 
         public StyxServerComponents build() {
+            if (metricRegistry == null) {
+                throw new IllegalStateException("metricRegistry must be specified");
+            }
             return new StyxServerComponents(this);
         }
     }

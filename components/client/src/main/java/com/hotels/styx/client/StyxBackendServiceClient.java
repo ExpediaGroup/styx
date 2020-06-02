@@ -353,7 +353,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
     public static class Builder {
 
         private final Id backendServiceId;
-        private MetricRegistry metricsRegistry = new CodaHaleMetricRegistry();
+        private MetricRegistry metricsRegistry; // TODO: purge // = new CodaHaleMetricRegistry();
         private List<RewriteRule> rewriteRules = emptyList();
         private RetryPolicy retryPolicy = new RetryNTimes(3);
         private LoadBalancer loadBalancer;

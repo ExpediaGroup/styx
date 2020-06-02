@@ -118,7 +118,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
     originServer4.stop()
   }
 
-  private def activeOrigins(backendService: BackendService) = newOriginsInventoryBuilder(backendService).build()
+  private def activeOrigins(backendService: BackendService) = newOriginsInventoryBuilder(backendService.id()).build()
 
   private def stickySessionStrategy(activeOrigins: ActiveOrigins) = new StickySessionLoadBalancingStrategy(
     activeOrigins,

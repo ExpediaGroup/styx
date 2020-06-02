@@ -17,6 +17,7 @@ package com.hotels.styx.server;
 
 import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.InetServer;
+import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.server.netty.NettyServerBuilder;
 import com.hotels.styx.server.netty.WebServerConnectorFactory;
@@ -31,9 +32,10 @@ public class HttpServers {
      * @param port
      * @return {@link com.hotels.styx.server.HttpServer} object
      */
-    public static InetServer createHttpServer(int port, HttpHandler handler) {
+    public static InetServer createHttpServer(Environment environment, int port, HttpHandler handler) {
         return NettyServerBuilder.newBuilder()
-                .setProtocolConnector(new WebServerConnectorFactory().create(new HttpConnectorConfig(port)))
+                .setMetricsRegistry(environment.metricRegistry())
+                .setProtocolConnector(new WebServerConnectorFactory().create(environment, new HttpConnectorConfig(port)))
                 .handler(handler)
                 .workerExecutor(NettyExecutor.create("NettyServer", 1))
                 .build();
@@ -48,9 +50,10 @@ public class HttpServers {
      *
      * @return {@link com.hotels.styx.server.HttpServer} object
      */
-    public static InetServer createHttpServer(String name, HttpConnectorConfig httpConnectorConfig, HttpHandler handler) {
+    public static InetServer createHttpServer(Environment environment, String name, HttpConnectorConfig httpConnectorConfig, HttpHandler handler) {
         return NettyServerBuilder.newBuilder()
-                .setProtocolConnector(new WebServerConnectorFactory().create(httpConnectorConfig))
+                .setMetricsRegistry(environment.metricRegistry())
+                .setProtocolConnector(new WebServerConnectorFactory().create(environment, httpConnectorConfig))
                 .handler(handler)
                 .workerExecutor(NettyExecutor.create(name, 1))
                 .build();
@@ -65,9 +68,10 @@ public class HttpServers {
      *
      * @return {@link com.hotels.styx.server.HttpServer} object
      */
-    public static InetServer createHttpsServer(String name, HttpsConnectorConfig httpsConnectorConfig, HttpHandler handler) {
+    public static InetServer createHttpsServer(Environment environment, String name, HttpsConnectorConfig httpsConnectorConfig, HttpHandler handler) {
         return NettyServerBuilder.newBuilder()
-                .setProtocolConnector(new WebServerConnectorFactory().create(httpsConnectorConfig))
+                .setMetricsRegistry(environment.metricRegistry())
+                .setProtocolConnector(new WebServerConnectorFactory().create(environment, httpsConnectorConfig))
                 .handler(handler)
                 .workerExecutor(NettyExecutor.create(name, 1))
                 .build();

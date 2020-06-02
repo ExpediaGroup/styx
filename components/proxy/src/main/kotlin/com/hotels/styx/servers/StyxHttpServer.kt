@@ -140,7 +140,7 @@ internal class StyxHttpServerFactory : StyxServerFactory {
                                 environment.httpMessageFormatter(),
                                 // TODO: Add styx header configuration
                                 null)
-                                .create(
+                                .create(environment,
                                         if (config.tlsSettings == null) {
                                             HttpConnectorConfig(config.port)
                                         } else {

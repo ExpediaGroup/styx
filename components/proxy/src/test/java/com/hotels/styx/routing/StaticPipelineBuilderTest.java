@@ -23,6 +23,7 @@ import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.AbstractRegistry;
 import com.hotels.styx.api.extension.service.spi.Registry;
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
@@ -65,7 +66,7 @@ public class StaticPipelineBuilderTest {
 
     @BeforeEach
     public void staticPipelineBuilderTest() {
-        environment = new Environment.Builder().build();
+        environment = new Environment.Builder().metricRegistry(new CodaHaleMetricRegistry()).build();
         clientFactory = (backendService, originsInventory, originStatsFactory) -> (request, context) -> Mono.just(response(OK).build());
         registry = backendRegistry(newBackendServiceBuilder().origins(newOriginBuilder("localhost", 0).build())
                 .path("/foo").build());

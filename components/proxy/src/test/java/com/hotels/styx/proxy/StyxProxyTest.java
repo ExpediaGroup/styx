@@ -20,11 +20,14 @@ import com.hotels.styx.NettyExecutor;
 import com.google.common.util.concurrent.Service;
 import com.hotels.styx.InetServer;
 import com.hotels.styx.StyxServers;
+import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.common.http.handler.HttpAggregator;
@@ -34,12 +37,14 @@ import com.hotels.styx.server.StandardHttpRouter;
 import com.hotels.styx.server.netty.NettyServerBuilder;
 import com.hotels.styx.server.netty.ServerConnector;
 import com.hotels.styx.server.netty.WebServerConnectorFactory;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.common.StyxFutures.await;
@@ -47,15 +52,26 @@ import static com.hotels.styx.server.netty.NettyServerBuilder.newBuilder;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class StyxProxyTest extends SSLSetup {
     private static final Logger LOGGER = LoggerFactory.getLogger(StyxProxyTest.class);
     final HttpClient client = new StyxHttpClient.Builder()
             .build();
+    Environment environment;
+    MetricRegistry metricRegistry = new CodaHaleMetricRegistry();
+
+    @BeforeEach
+    public void beforeEach() throws Exception {
+        environment = mock(Environment.class);
+        when(environment.metricRegistry()).thenReturn(metricRegistry);
+    }
 
     @Test
     public void startsAndStopsAServer() {
         Service server = StyxServers.toGuavaService(new NettyServerBuilder()
+                .setMetricsRegistry(new CodaHaleMetricRegistry())
                 .setProtocolConnector(connector(0))
                 .bossExecutor(NettyExecutor.create("Test-Server-Boss", 1))
                 .workerExecutor(NettyExecutor.create("Test-Server-Worker", 0))
@@ -69,11 +85,16 @@ public class StyxProxyTest extends SSLSetup {
     }
 
     @Test
-    public void startsServerWithHttpConnector() {
-        HttpInterceptor echoInterceptor = (request, chain) -> textResponse("Response from http connector");
+    public void startsServerWithHttpConnector() throws Exception {
+        System.out.println("############### Starting #####################");
+        HttpInterceptor echoInterceptor = (request, chain) -> {
+            System.out.println("################### echoInterceptor ###################");
+            return textResponse("Response from http connector");
+        };
         StandardHttpRouter handler = new StandardHttpRouter();
 
         InetServer styxServer = newBuilder()
+                .setMetricsRegistry(new CodaHaleMetricRegistry())
                 .setProtocolConnector(connector(0))
                 .bossExecutor(NettyExecutor.create("Test-Server-Boss", 1))
                 .workerExecutor(NettyExecutor.create("Test-Server-Worker", 0))
@@ -83,16 +104,18 @@ public class StyxProxyTest extends SSLSetup {
                         false))
                 .build();
 
-        Service server = StyxServers.toGuavaService(styxServer);
+//        Service server = StyxServers.toGuavaService(styxServer);
+        styxServer.start().get(10, TimeUnit.SECONDS);
 
-        server.startAsync().awaitRunning();
-        assertThat("Server should be running", server.isRunning());
+        //server.startAsync().awaitRunning();
+//        assertThat("Server should be running", server.isRunning());
 
         HttpResponse secureResponse = get("http://localhost:" + styxServer.inetAddress().getPort());
         assertThat(secureResponse.bodyAs(UTF_8), containsString("Response from http connector"));
 
-        server.stopAsync().awaitTerminated();
-        assertThat("Server should not be running", !server.isRunning());
+//        server.stopAsync().awaitTerminated();
+        styxServer.stop().get(10, TimeUnit.SECONDS);
+//        assertThat("Server should not be running", !server.isRunning());
     }
 
     private Eventual<LiveHttpResponse> textResponse(String body) {
@@ -107,7 +130,7 @@ public class StyxProxyTest extends SSLSetup {
     }
 
     private ServerConnector connector(HttpConnectorConfig config) {
-        return new WebServerConnectorFactory().create(config);
+        return new WebServerConnectorFactory().create(environment, config);
     }
 
     @Disabled
@@ -139,6 +162,6 @@ public class StyxProxyTest extends SSLSetup {
     }
 
     private HttpResponse execute(HttpRequest request) {
-        return await(client.sendRequest(request));
+        return await(client.send(request));
     }
 }

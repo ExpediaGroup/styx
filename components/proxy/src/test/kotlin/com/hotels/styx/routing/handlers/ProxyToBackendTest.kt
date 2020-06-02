@@ -23,6 +23,7 @@ import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.client.BackendServiceClient
 import com.hotels.styx.proxy.BackendServiceClientFactory
 import com.hotels.styx.RoutingObjectFactoryContext
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry
 import com.hotels.styx.requestContext
 import com.hotels.styx.routeLookup
 import com.hotels.styx.routingObjectDef
@@ -33,7 +34,7 @@ import reactor.core.publisher.Mono
 import reactor.core.publisher.toMono
 
 class ProxyToBackendTest : StringSpec({
-    val environment = Environment.Builder().build()
+    val environment = Environment.Builder().metricRegistry(CodaHaleMetricRegistry()).build()
 
     val config = routingObjectDef("""
               name: ProxyToBackend

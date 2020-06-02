@@ -17,8 +17,10 @@ package com.hotels.styx.servers;
 
 import com.github.tomakehurst.wiremock.client.ValueMatchingStrategy;
 import com.github.tomakehurst.wiremock.client.WireMock;
+import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.extension.service.TlsSettings;
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.server.HttpConnectorConfig;
@@ -43,16 +45,23 @@ import static javax.net.ssl.HttpsURLConnection.getDefaultHostnameVerifier;
 import static javax.net.ssl.HttpsURLConnection.setDefaultHostnameVerifier;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class MockOriginServerTest {
 
     private MockOriginServer server;
+
+    private Environment environment;
     private HttpClient client;
-    private HostnameVerifier oldHostNameVerifier;
     private StyxHttpClient tlsClient;
+    private HostnameVerifier oldHostNameVerifier;
 
     @BeforeEach
     public void setUp() {
+        environment = mock(Environment.class);
+        when(environment.metricRegistry()).thenReturn(new CodaHaleMetricRegistry());
+
         client = new StyxHttpClient.Builder().build();
         tlsClient = new StyxHttpClient.Builder().tlsSettings(new TlsSettings.Builder().build()).build();
         oldHostNameVerifier = disableHostNameVerification();
@@ -66,7 +75,7 @@ public class MockOriginServerTest {
 
     @Test
     public void configuresEndpoints() {
-        server = MockOriginServer.create("", "", 0, new HttpConnectorConfig(0))
+        server = MockOriginServer.create(environment, "", "", 0, new HttpConnectorConfig(0))
                 .start()
                 .stub(WireMock.get(urlMatching("/.*")), aResponse()
                         .withStatus(200)
@@ -88,7 +97,7 @@ public class MockOriginServerTest {
 
     @Test
     public void configuresTlsEndpoints() throws Exception {
-        server = MockOriginServer.create("", "", 0,
+        server = MockOriginServer.create(environment, "", "", 0,
                 new HttpsConnectorConfig.Builder()
                         .port(0)
                         .build())

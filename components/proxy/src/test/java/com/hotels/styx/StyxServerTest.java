@@ -26,6 +26,7 @@ import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.extension.service.spi.StyxService;
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.infrastructure.RegistryServiceAdapter;
@@ -39,7 +40,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
@@ -161,6 +161,7 @@ public class StyxServerTest {
     @Test
     public void disablesResourceLeakDetectionByDefault() {
         StyxServerComponents config = new StyxServerComponents.Builder()
+                .metricsRegistry(new CodaHaleMetricRegistry())
                 .configuration(EMPTY_CONFIGURATION)
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(new MemoryBackedRegistry<>())))
                 .build();
@@ -263,6 +264,7 @@ public class StyxServerTest {
                 .configuration(styxConfig())
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(new MemoryBackedRegistry<>())))
                 .plugins(plugins)
+                .metricsRegistry(new CodaHaleMetricRegistry())
                 .build();
 
         return new StyxServer(config);
@@ -272,6 +274,7 @@ public class StyxServerTest {
         StyxServerComponents config = new StyxServerComponents.Builder()
                 .configuration(styxConfig())
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", backendServiceRegistry))
+                .metricsRegistry(new CodaHaleMetricRegistry())
                 .build();
 
         return new StyxServer(config);

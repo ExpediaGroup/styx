@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hotels.styx.api.extension.OriginsSnapshot;
 import com.hotels.styx.api.extension.RemoteHost;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetricSupplier;
 import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import org.junit.jupiter.api.Test;
@@ -46,7 +47,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class DashboardDataSupplierTest {
-    Environment environment = new Environment.Builder().build();
+    Environment environment = new Environment.Builder().metricRegistry(new CodaHaleMetricRegistry()).build();
     StyxConfig styxConfig = StyxConfig.fromYaml("jvmRouteName: STYXPRES", false);
     AtomicInteger nextPort = new AtomicInteger(9090);
 

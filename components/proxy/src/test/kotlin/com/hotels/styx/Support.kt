@@ -26,6 +26,7 @@ import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.api.WebServiceHandler
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry
 import com.hotels.styx.executors.NettyExecutorConfig
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.proxy.plugin.NamedPlugin
@@ -56,7 +57,7 @@ fun configBlock(text: String) = YamlConfig(text).`as`(JsonNode::class.java)
 
 internal data class RoutingObjectFactoryContext(
         val routeRefLookup: RouteRefLookup = DEFAULT_REFERENCE_LOOKUP,
-        val environment: Environment = Environment.Builder().build(),
+        val environment: Environment = Environment.Builder().metricRegistry(CodaHaleMetricRegistry()).build(),
         val objectStore: StyxObjectStore<RoutingObjectRecord> = StyxObjectStore(),
         val objectFactories: Map<String, RoutingObjectFactory> = BUILTIN_HANDLER_FACTORIES,
         val plugins: Iterable<NamedPlugin> = listOf(),

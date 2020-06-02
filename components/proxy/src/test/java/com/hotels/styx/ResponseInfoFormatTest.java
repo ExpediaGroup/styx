@@ -18,6 +18,7 @@ package com.hotels.styx;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.StyxHeaderConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -59,11 +60,12 @@ public class ResponseInfoFormatTest {
     }
 
     private static Environment defaultEnvironment() {
-        return new Environment.Builder().build();
+        return environment(new MapBackedConfiguration());
     }
 
     private static Environment environment(Configuration configuration) {
         return new Environment.Builder()
+                .metricRegistry(new CodaHaleMetricRegistry())
                 .configuration(new StyxConfig(configuration))
                 .build();
     }

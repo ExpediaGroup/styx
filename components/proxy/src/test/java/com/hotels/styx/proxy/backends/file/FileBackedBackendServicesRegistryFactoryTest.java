@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.extension.service.spi.Registry;
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.backends.file.FileChangeMonitor.FileMonitorSettings;
 import org.junit.jupiter.api.AfterEach;
@@ -58,7 +59,7 @@ public class FileBackedBackendServicesRegistryFactoryTest {
         tempDir = createTempDir();
         monitoredFile = Paths.get(tempDir.toString(), "origins.yml");
         write(monitoredFile, "content-v1");
-        environment = new com.hotels.styx.Environment.Builder().build();
+        environment = new com.hotels.styx.Environment.Builder().metricRegistry(new CodaHaleMetricRegistry()).build();
     }
 
     @AfterEach
@@ -72,6 +73,7 @@ public class FileBackedBackendServicesRegistryFactoryTest {
     public void instantiatesFromYaml() {
 
         environment = new com.hotels.styx.Environment.Builder()
+                .metricRegistry(environment.metricRegistry())
                 .configuration(StyxConfig.fromYaml("config: {originsFile: '${CONFIG_LOCATION:classpath:}/conf/origins/backend-factory-origins.yml'}", false))
                 .build();
 

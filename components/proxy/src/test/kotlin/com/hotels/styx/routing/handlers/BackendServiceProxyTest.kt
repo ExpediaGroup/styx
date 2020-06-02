@@ -27,6 +27,7 @@ import com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded
 import com.hotels.styx.client.BackendServiceClient
 import com.hotels.styx.proxy.BackendServiceClientFactory
 import com.hotels.styx.RoutingObjectFactoryContext
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry
 import com.hotels.styx.requestContext
 import com.hotels.styx.routingObjectDef
 import io.kotlintest.shouldBe
@@ -43,7 +44,7 @@ class BackendServiceProxyTest : StringSpec({
     val laRequest = LiveHttpRequest.get("/lp/x").build()
     val baRequest = LiveHttpRequest.get("/ba/x").build()
 
-    val environment = Environment.Builder().build()
+    val environment = Environment.Builder().metricRegistry(CodaHaleMetricRegistry()).build()
     val context = RoutingObjectFactoryContext(environment = environment).get()
 
 

@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.server.netty;
 
+import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.server.ConnectorConfig;
 import com.hotels.styx.server.HttpsConnectorConfig;
@@ -34,14 +35,16 @@ import static java.util.Objects.requireNonNull;
 public class WebServerConnectorFactory implements ServerConnectorFactory {
 
     @Override
-    public ServerConnector create(ConnectorConfig config) {
-        return new WebServerConnector(config);
+    public ServerConnector create(Environment environment, ConnectorConfig config) {
+        return new WebServerConnector(environment, config);
     }
 
     private static final class WebServerConnector implements ServerConnector {
+        private final Environment environment;
         private final ConnectorConfig config;
 
-        private WebServerConnector(ConnectorConfig config) {
+        private WebServerConnector(Environment environment, ConnectorConfig config) {
+            this.environment = environment;
             this.config = requireNonNull(config);
         }
 
@@ -65,7 +68,9 @@ public class WebServerConnectorFactory implements ServerConnectorFactory {
                     .addLast(new HttpServerCodec())
                     .addLast(new NettyToStyxRequestDecoder.Builder()
                             .build())
-                    .addLast(new HttpPipelineHandler.Builder(httpHandler).build());
+                    .addLast(new HttpPipelineHandler.Builder(httpHandler)
+                            .metricRegistry(environment.metricRegistry())
+                            .build());
         }
 
         private SslHandler sslHandler(Channel channel) {

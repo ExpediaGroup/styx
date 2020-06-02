@@ -667,7 +667,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         private HttpErrorStatusListener httpErrorStatusListener = IGNORE_ERROR_STATUS;
         private RequestProgressListener progressListener = IGNORE_REQUEST_PROGRESS;
         private HttpResponseWriterFactory responseWriterFactory = HttpResponseWriter::new;
-        private Supplier<MetricRegistry> metricRegistry = CodaHaleMetricRegistry::new;
+        private Supplier<MetricRegistry> metricRegistry; // TODO: purge // = CodaHaleMetricRegistry::new;
         private RequestTracker tracker = RequestTracker.NO_OP;
         private boolean secure;
         private CharSequence originsHeaderName;

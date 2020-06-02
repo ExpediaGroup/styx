@@ -34,6 +34,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ServiceManager;
 import com.hotels.styx.InetServer;
 import com.hotels.styx.StyxServers;
+import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.server.HttpConnectorConfig;
@@ -56,6 +57,7 @@ public final class MockOriginServer {
     private static final Logger LOGGER = LoggerFactory.getLogger(MockOriginServer.class);
     private static final int MAX_CONTENT_LENGTH = 256 * 1024;
 
+    private final Environment environment;
     private final String appId;
     private final String originId;
     private final int adminPort;
@@ -70,7 +72,8 @@ public final class MockOriginServer {
 
     private ServiceManager services;
 
-    private MockOriginServer(String appId, String originId, int adminPort, int serverPort, InetServer adminServer, InetServer mockServer) {
+    private MockOriginServer(Environment environment, String appId, String originId, int adminPort, int serverPort, InetServer adminServer, InetServer mockServer) {
+        this.environment = environment;
         this.appId = appId;
         this.originId = originId;
         this.adminPort = adminPort;
@@ -79,28 +82,30 @@ public final class MockOriginServer {
         this.mockServer = mockServer;
     }
 
-    public static MockOriginServer create(String appId, String originId, int adminPort, HttpConnectorConfig httpConfig) {
+    public static MockOriginServer create(Environment environment, String appId, String originId, int adminPort, HttpConnectorConfig httpConfig) {
         WireMockApp wireMockApp = wireMockApp();
-        InetServer adminServer = createAdminServer(originId, adminPort, wireMockApp);
+        InetServer adminServer = createAdminServer(environment, originId, adminPort, wireMockApp);
         InetServer mockServer = HttpServers.createHttpServer(
+                environment,
                 "mock-stub-" + originId,
                 httpConfig,
                 mockHandler(originId, wireMockApp, new WireMockConfiguration()));
         int serverPort = httpConfig.port();
 
-        return new MockOriginServer(appId, originId, adminPort, serverPort, adminServer, mockServer);
+        return new MockOriginServer(environment, appId, originId, adminPort, serverPort, adminServer, mockServer);
     }
 
-    public static MockOriginServer create(String appId, String originId, int adminPort, HttpsConnectorConfig httpsConfig) {
+    public static MockOriginServer create(Environment environment, String appId, String originId, int adminPort, HttpsConnectorConfig httpsConfig) {
         WireMockApp wireMockApp = wireMockApp();
-        InetServer adminServer = createAdminServer(originId, adminPort, wireMockApp);
+        InetServer adminServer = createAdminServer(environment, originId, adminPort, wireMockApp);
         InetServer mockServer = HttpServers.createHttpsServer(
+                environment,
                 "mock-stub-" + originId,
                 httpsConfig,
                 mockHandler(originId, wireMockApp, new WireMockConfiguration()));
         int serverPort = httpsConfig.port();
 
-        return new MockOriginServer(appId, originId, adminPort, serverPort, adminServer, mockServer);
+        return new MockOriginServer(environment, appId, originId, adminPort, serverPort, adminServer, mockServer);
     }
 
 
@@ -215,8 +220,9 @@ public final class MockOriginServer {
         );
     }
 
-    private static InetServer createAdminServer(String originId, int adminPort, WireMockApp wireMockApp) {
+    private static InetServer createAdminServer(Environment environment, String originId, int adminPort, WireMockApp wireMockApp) {
         return HttpServers.createHttpServer(
+                environment,
                 "mock-admin-" + originId,
                 new HttpConnectorConfig(adminPort),
                 adminHandler(wireMockApp));

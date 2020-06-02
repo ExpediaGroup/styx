@@ -137,7 +137,7 @@ public class AdminServerBuilder {
 
         // Currently admin server cannot be started over TLS protocol.
         // This appears to be an existing issue that needs rectifying.
-        adminServerConfig.httpConnectorConfig().ifPresent(it -> builder.setProtocolConnector(new WebServerConnectorFactory().create(it)));
+        adminServerConfig.httpConnectorConfig().ifPresent(it -> builder.setProtocolConnector(new WebServerConnectorFactory().create(environment, it)));
 
         return builder.build();
     }
