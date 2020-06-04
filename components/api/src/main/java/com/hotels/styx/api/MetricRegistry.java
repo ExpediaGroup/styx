@@ -60,7 +60,7 @@ public abstract class MetricRegistry extends MeterRegistry {
     private final MeterRegistry delegate; // TODO: MetricRegistry?
 
     private Iterable<Tag> scopeTags = Tags.empty();
-    private String scopePrefix = null;
+    private String scopePrefix;
 
     private final Config config = new Config();
     private final More more = new More();
@@ -429,7 +429,9 @@ public abstract class MetricRegistry extends MeterRegistry {
      */
 
     @Override
-    protected <T> io.micrometer.core.instrument.Gauge newGauge(io.micrometer.core.instrument.Meter.Id id, T obj, ToDoubleFunction<T> valueFunction) {
+    protected <T> io.micrometer.core.instrument.Gauge newGauge(io.micrometer.core.instrument.Meter.Id id,
+                                                               T obj,
+                                                               ToDoubleFunction<T> valueFunction) {
         throw new UnsupportedOperationException();
     }
 
@@ -439,27 +441,39 @@ public abstract class MetricRegistry extends MeterRegistry {
     }
 
     @Override
-    protected io.micrometer.core.instrument.Timer newTimer(io.micrometer.core.instrument.Meter.Id id, DistributionStatisticConfig distributionStatisticConfig, PauseDetector pauseDetector) {
+    protected io.micrometer.core.instrument.Timer newTimer(io.micrometer.core.instrument.Meter.Id id,
+                                                           DistributionStatisticConfig distributionStatisticConfig,
+                                                           PauseDetector pauseDetector) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    protected DistributionSummary newDistributionSummary(io.micrometer.core.instrument.Meter.Id id, DistributionStatisticConfig distributionStatisticConfig, double scale) {
+    protected DistributionSummary newDistributionSummary(io.micrometer.core.instrument.Meter.Id id,
+                                                         DistributionStatisticConfig distributionStatisticConfig,
+                                                         double scale) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    protected io.micrometer.core.instrument.Meter newMeter(io.micrometer.core.instrument.Meter.Id id, io.micrometer.core.instrument.Meter.Type type, Iterable<Measurement> measurements) {
+    protected io.micrometer.core.instrument.Meter newMeter(io.micrometer.core.instrument.Meter.Id id,
+                                                           io.micrometer.core.instrument.Meter.Type type,
+                                                           Iterable<Measurement> measurements) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    protected <T> FunctionTimer newFunctionTimer(io.micrometer.core.instrument.Meter.Id id, T obj, ToLongFunction<T> countFunction, ToDoubleFunction<T> totalTimeFunction, TimeUnit totalTimeFunctionUnit) {
+    protected <T> FunctionTimer newFunctionTimer(io.micrometer.core.instrument.Meter.Id id,
+                                                 T obj,
+                                                 ToLongFunction<T> countFunction,
+                                                 ToDoubleFunction<T> totalTimeFunction,
+                                                 TimeUnit totalTimeFunctionUnit) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    protected <T> FunctionCounter newFunctionCounter(io.micrometer.core.instrument.Meter.Id id, T obj, ToDoubleFunction<T> countFunction) {
+    protected <T> FunctionCounter newFunctionCounter(io.micrometer.core.instrument.Meter.Id id,
+                                                     T obj,
+                                                     ToDoubleFunction<T> countFunction) {
         throw new UnsupportedOperationException();
     }
 
