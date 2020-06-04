@@ -7,7 +7,7 @@
 
   <groupId>com.hotels.styx</groupId>
   <artifactId>styx-parent</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>1.0.0-MICROMETER</version>
   <url>https://github.com/HotelsDotCom/styx</url>
   <name>Styx</name>
 
@@ -56,9 +56,12 @@
 
   <distributionManagement>
     <repository>
+      <!-- TODO: Revert these changes before merging into master -->
       <id>central</id>
-      <name>libs-release</name>
-      <url>${libs.release.url}</url>
+      <!--  <name>libs-release</name>-->
+      <name>Expedia</name>
+      <!--  <url>${libs.release.url}</url>-->
+      <url>https://artylab.expedia.biz/expediagroup-maven-release-local</url>
     </repository>
 
     <snapshotRepository>
