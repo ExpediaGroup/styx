@@ -33,12 +33,6 @@ import java.util.SortedSet;
  */
 public abstract class MetricRegistry extends SimpleMeterRegistry {
 
-    // TODO: Make this more robust
-    // TODO: Maybe move this out to a utility class, so we don't pollute the registry?
-    public static String name(String... parts) {
-        return String.join(".", parts);
-    }
-
     /**
      * Returns or creates a sub-scope of this metric registry.
      *
