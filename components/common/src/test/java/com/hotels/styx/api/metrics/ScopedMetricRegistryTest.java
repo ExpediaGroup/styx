@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,19 +19,25 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistryListener;
 import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import io.micrometer.core.instrument.Tags;
 import org.junit.jupiter.api.Test;
 
 import static com.hotels.styx.api.metrics.ScopedMetricRegistry.scope;
+import static java.util.Collections.emptyList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
 public class ScopedMetricRegistryTest {
 
     @Test
     public void scopesMetricsBeforeDelegatingToUnderlyingMetricRegistry() {
-        MetricRegistry metricRegistry = mock(MetricRegistry.class);
+        MetricRegistry metricRegistry = mockRegistry();
         MetricRegistry scopedMetricRegistry = new ScopedMetricRegistry("scope", metricRegistry);
 
         scopedMetricRegistry.counter("counter");
@@ -64,7 +70,50 @@ public class ScopedMetricRegistryTest {
 
     @Test
     public void returnAllScopes() {
-        ScopedMetricRegistry metricRegistry = (ScopedMetricRegistry)scope("one", mock(MetricRegistry.class)).scope("two").scope("three");
+        ScopedMetricRegistry metricRegistry = (ScopedMetricRegistry)scope("one", mockRegistry()).scope("two").scope("three");
         assertThat(metricRegistry.scopes(), contains("one", "two", "three"));
+    }
+
+    @Test
+    public void scopesMetersBeforeDelegatingToUnderlyingMetricRegistry() {
+        MetricRegistry metricRegistry = mockRegistry();
+        MetricRegistry scopedMetricRegistry = new ScopedMetricRegistry("scope", metricRegistry);
+
+        scopedMetricRegistry.counter("counter", Tags.empty());
+        verify(metricRegistry).counter("scope.counter", Tags.empty());
+
+        scopedMetricRegistry.summary("summary", Tags.empty());
+        verify(metricRegistry).summary("scope.summary", Tags.empty());
+
+        scopedMetricRegistry.gauge("gauge", 17);
+        verify(metricRegistry).gauge(eq("scope.gauge"), eq(Tags.empty()), eq(17), any());
+
+        scopedMetricRegistry.timer("timer", Tags.empty());
+        verify(metricRegistry).timer(eq("scope.timer"), eq(Tags.empty()));
+    }
+
+    @Test
+    public void tagsMetersBeforeDelegatingToUnderlyingMetricRegistry() {
+        MetricRegistry metricRegistry = mockRegistry();
+        MetricRegistry scopedMetricRegistry = new ScopedMetricRegistry("scope", metricRegistry);
+        scopedMetricRegistry.config().scopeTags("scope", "test");
+        Tags expectedTags = Tags.of("scope", "test");
+
+        scopedMetricRegistry.counter("counter", Tags.empty());
+        verify(metricRegistry).counter("scope.counter", expectedTags);
+
+        scopedMetricRegistry.summary("summary", Tags.empty());
+        verify(metricRegistry).summary("scope.summary", expectedTags);
+
+        scopedMetricRegistry.gauge("gauge", 17);
+        verify(metricRegistry).gauge(eq("scope.gauge"), eq(expectedTags), eq(17), any());
+
+        scopedMetricRegistry.timer("timer", Tags.empty());
+        verify(metricRegistry).timer(eq("scope.timer"), eq(expectedTags));
+    }
+
+
+    MetricRegistry mockRegistry() {
+        return spy(new CodaHaleMetricRegistry());
     }
 }

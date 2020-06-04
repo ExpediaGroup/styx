@@ -46,6 +46,8 @@ public class ScopedMetricRegistry extends MetricRegistry {
      * @param parent the metric registry to delegate
      */
     public ScopedMetricRegistry(String scope, MetricRegistry parent) {
+        super(parent);
+        config().scopePrefix(scope);
         this.scope = requireNonNull(scope);
         this.parent = requireNonNull(parent);
     }

@@ -23,15 +23,64 @@ import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistryListener;
 import com.codahale.metrics.Timer;
+import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.FunctionCounter;
+import io.micrometer.core.instrument.FunctionTimer;
+import io.micrometer.core.instrument.LongTaskTimer;
+import io.micrometer.core.instrument.Measurement;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.TimeGauge;
+import io.micrometer.core.instrument.config.MeterFilter;
+import io.micrometer.core.instrument.config.NamingConvention;
+import io.micrometer.core.instrument.distribution.DistributionStatisticConfig;
+import io.micrometer.core.instrument.distribution.pause.PauseDetector;
+import io.micrometer.core.instrument.search.RequiredSearch;
+import io.micrometer.core.instrument.search.Search;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.micrometer.core.lang.Nullable;
 
+import java.util.List;
 import java.util.SortedMap;
 import java.util.SortedSet;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.ToDoubleFunction;
+import java.util.function.ToLongFunction;
+
+import static com.hotels.styx.api.Metrics.name;
 
 /**
  * A Styx metrics registry that is based on CodaHale {@link Metric} objects.
  */
-public abstract class MetricRegistry extends SimpleMeterRegistry {
+public abstract class MetricRegistry extends MeterRegistry {
+
+    private final MeterRegistry delegate; // TODO: MetricRegistry?
+
+    private Iterable<Tag> scopeTags = Tags.empty();
+    private String scopePrefix = null;
+
+    private final Config config = new Config();
+    private final More more = new More();
+
+    public MetricRegistry() {
+        this(new SimpleMeterRegistry());
+    }
+
+    public MetricRegistry(MeterRegistry delegate) {
+        super(delegate.config().clock());
+        this.delegate = delegate;
+    }
+
+    private String prefix(String name) {
+        return name(scopePrefix, name);
+    }
+
+    private Iterable<Tag> merge(Iterable<Tag> tags) {
+        return Tags.of(scopeTags).and(tags);
+    }
 
     /**
      * Returns or creates a sub-scope of this metric registry.
@@ -198,5 +247,230 @@ public abstract class MetricRegistry extends SimpleMeterRegistry {
      * @return the metrics
      */
     public abstract SortedMap<String, Metric> getMetrics();
+
+
+    /*
+     * Delegated methods from MeterRegistry
+     */
+
+    @Override
+    public List<io.micrometer.core.instrument.Meter> getMeters() {
+        return delegate.getMeters(); // TODO: Should this be filtered according to tags and prefix?
+    }
+
+    @Override
+    public void forEachMeter(Consumer<? super io.micrometer.core.instrument.Meter> consumer) {
+        delegate.forEachMeter(consumer); // TODO: Should the meter list be filtered?
+    }
+
+    @Override
+    public Config config() {
+        return config;
+    }
+
+    @Override
+    public Search find(String name) {
+        return delegate.find(name); // TODO: Should the name be scoped? Should we add the tags too?
+    }
+
+    @Override
+    public RequiredSearch get(String name) {
+        return delegate.get(name); // TODO: Should the name be scoped? Should we add the tags too?
+    }
+
+    @Override
+    public io.micrometer.core.instrument.Counter counter(String name, Iterable<Tag> tags) {
+        return delegate.counter(prefix(name), merge(tags));
+    }
+
+    @Override
+    public DistributionSummary summary(String name, Iterable<Tag> tags) {
+        return delegate.summary(prefix(name), merge(tags));
+    }
+
+    @Override
+    public io.micrometer.core.instrument.Timer timer(String name, Iterable<Tag> tags) {
+        return delegate.timer(prefix(name), merge(tags));
+    }
+
+    @Override
+    public More more() {
+        return more;
+    }
+
+    @Override
+    public <T> T gauge(String name, Iterable<Tag> tags, @Nullable T stateObject, ToDoubleFunction<T> valueFunction) {
+        return delegate.gauge(prefix(name), merge(tags), stateObject, valueFunction);
+    }
+
+    @Override
+    public io.micrometer.core.instrument.Meter remove(io.micrometer.core.instrument.Meter.Id mappedId) {
+        return delegate.remove(mappedId); // Assumes that the ID is already mapped.
+    }
+
+    @Override
+    public void clear() {
+        delegate.clear(); // TODO: Just clear according to tags and prefix?
+    }
+
+    @Override
+    public void close() {
+        delegate.close();
+    }
+
+    @Override
+    public boolean isClosed() {
+        return delegate.isClosed();
+    }
+
+    /*
+     * Delegating inner classes from MeterRegistry
+     */
+    public class Config extends MeterRegistry.Config {
+
+        public Config scopeTags(Iterable<Tag> tags) {
+            scopeTags = merge(tags);
+            return this;
+        }
+
+        public Config scopeTags(String... tags) {
+            return scopeTags(Tags.of(tags));
+        }
+
+        public Config scopePrefix(String prefix) {
+            scopePrefix = prefix;
+            return this;
+        }
+
+        @Override
+        public Config commonTags(Iterable<Tag> tags) {
+            delegate.config().commonTags(tags);
+            return this;
+        }
+
+        @Override
+        public synchronized Config meterFilter(MeterFilter filter) {
+            delegate.config().meterFilter(filter);
+            return this;
+        }
+
+        @Override
+        public Config onMeterAdded(Consumer<io.micrometer.core.instrument.Meter> meterAddedListener) {
+            return this;
+        }
+
+        @Override
+        public Config onMeterRemoved(Consumer<io.micrometer.core.instrument.Meter> meterRemovedListener) {
+            return this;
+        }
+
+        @Override
+        public Config namingConvention(NamingConvention convention) {
+            delegate.config().namingConvention(convention);
+            return this;
+        }
+
+        @Override
+        public NamingConvention namingConvention() {
+            return delegate.config().namingConvention();
+        }
+
+        @Override
+        public Clock clock() {
+            return clock;
+        }
+
+        @Override
+        public Config pauseDetector(PauseDetector detector) {
+            delegate.config().pauseDetector(detector);
+            return this;
+        }
+
+        @Override
+        public PauseDetector pauseDetector() {
+            return delegate.config().pauseDetector();
+        }
+    }
+
+    public class More extends MeterRegistry.More {
+
+        @Override
+        public LongTaskTimer longTaskTimer(String name, Iterable<Tag> tags) {
+            return delegate.more().longTaskTimer(prefix(name), merge(tags));
+        }
+
+        @Override
+        public <T> FunctionCounter counter(String name, Iterable<Tag> tags, T obj, ToDoubleFunction<T> countFunction) {
+            return delegate.more().counter(prefix(name), merge(tags), obj, countFunction);
+        }
+
+        @Override
+        public <T extends Number> FunctionCounter counter(String name, Iterable<Tag> tags, T number) {
+            return delegate.more().counter(prefix(name), merge(tags), number);
+        }
+
+        @Override
+        public <T> FunctionTimer timer(String name, Iterable<Tag> tags, T obj,
+                                       ToLongFunction<T> countFunction,
+                                       ToDoubleFunction<T> totalTimeFunction,
+                                       TimeUnit totalTimeFunctionUnit) {
+            return delegate.more().timer(prefix(name), merge(tags), obj, countFunction, totalTimeFunction, totalTimeFunctionUnit);
+        }
+
+        @Override
+        public <T> TimeGauge timeGauge(String name, Iterable<Tag> tags, T obj,
+                                       TimeUnit timeFunctionUnit, ToDoubleFunction<T> timeFunction) {
+            return delegate.more().timeGauge(prefix(name), merge(tags), obj, timeFunctionUnit, timeFunction);
+        }
+    }
+
+    /*
+     * The abstract methods from MeterRegistry are never called, because all public methods are delegated.
+     */
+
+    @Override
+    protected <T> io.micrometer.core.instrument.Gauge newGauge(io.micrometer.core.instrument.Meter.Id id, T obj, ToDoubleFunction<T> valueFunction) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected io.micrometer.core.instrument.Counter newCounter(io.micrometer.core.instrument.Meter.Id id) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected io.micrometer.core.instrument.Timer newTimer(io.micrometer.core.instrument.Meter.Id id, DistributionStatisticConfig distributionStatisticConfig, PauseDetector pauseDetector) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected DistributionSummary newDistributionSummary(io.micrometer.core.instrument.Meter.Id id, DistributionStatisticConfig distributionStatisticConfig, double scale) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected io.micrometer.core.instrument.Meter newMeter(io.micrometer.core.instrument.Meter.Id id, io.micrometer.core.instrument.Meter.Type type, Iterable<Measurement> measurements) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected <T> FunctionTimer newFunctionTimer(io.micrometer.core.instrument.Meter.Id id, T obj, ToLongFunction<T> countFunction, ToDoubleFunction<T> totalTimeFunction, TimeUnit totalTimeFunctionUnit) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected <T> FunctionCounter newFunctionCounter(io.micrometer.core.instrument.Meter.Id id, T obj, ToDoubleFunction<T> countFunction) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected TimeUnit getBaseTimeUnit() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected DistributionStatisticConfig defaultHistogramConfig() {
+        throw new UnsupportedOperationException();
+    }
 
 }
