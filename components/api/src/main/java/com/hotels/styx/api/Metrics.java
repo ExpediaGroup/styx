@@ -31,26 +31,4 @@ public final class Metrics {
         }
         return joiner.toString();
     }
-
-    /* MetricRegistry is currently abstract */
-
-//    public static MetricRegistry scope(MeterRegistry delegate, String prefix) {
-//        MetricRegistry scoped = new MetricRegistry(delegate);
-//        scoped.config().scopePrefix(prefix);
-//        return scoped;
-//    }
-
-//    public static MetricRegistry scope(MeterRegistry delegate, Iterable<Tag> tags) {
-//        MetricRegistry scoped = new MetricRegistry(delegate);
-//        scoped.config().scopeTags(tags);
-//        return scoped;
-//    }
-
-//    public static MetricRegistry scope(MeterRegistry delegate, String prefix, Iterable<Tag> tags) {
-//        MetricRegistry scoped = new MetricRegistry(delegate);
-//        scoped.config().scopePrefix(prefix);
-//        scoped.config().scopeTags(tags);
-//        return scoped;
-//    }
-
 }

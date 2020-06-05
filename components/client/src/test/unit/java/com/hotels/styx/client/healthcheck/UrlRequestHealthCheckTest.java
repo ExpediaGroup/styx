@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.client.healthcheck;
 
-import com.codahale.metrics.MetricFilter;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.MetricRegistry;
@@ -73,7 +72,7 @@ public class UrlRequestHealthCheckTest {
                 .check(client, someOrigin, state -> this.originState = state);
 
         assertThat(originState, is(HEALTHY));
-        assertThat(metricRegistry.getMeters(MetricFilter.ALL).size(), is(0));
+        assertThat(metricRegistry.getMeters().size(), is(0));
     }
 
     @Test
@@ -86,7 +85,7 @@ public class UrlRequestHealthCheckTest {
         assertThat(originState, is(UNHEALTHY));
         assertThat(metricRegistry.meter("origins.healthcheck.failure.generic-app").getCount(), is(1L));
         assertThat(metricRegistry.meter("origins.generic-app.healthcheck.failure").getCount(), is(1L));
-        assertThat(metricRegistry.getMeters(MetricFilter.ALL).size(), is(2));
+        assertThat(metricRegistry.getMeters().size(), is(2));
     }
 
     @Test
@@ -99,7 +98,7 @@ public class UrlRequestHealthCheckTest {
         assertThat(originState, is(UNHEALTHY));
         assertThat(metricRegistry.meter("origins.healthcheck.failure.generic-app").getCount(), is(1L));
         assertThat(metricRegistry.meter("origins.generic-app.healthcheck.failure").getCount(), is(1L));
-        assertThat(metricRegistry.getMeters(MetricFilter.ALL).size(), is(2));
+        assertThat(metricRegistry.getMeters().size(), is(2));
     }
 
     private static CompletableFuture<HttpResponse> respondWith(Throwable error) {

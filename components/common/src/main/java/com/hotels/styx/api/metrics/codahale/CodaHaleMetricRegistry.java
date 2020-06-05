@@ -34,7 +34,7 @@ import java.util.TreeMap;
 /**
  * A {@link MetricRegistry} that acts as an adapter for Codahale's {@link com.codahale.metrics.MetricRegistry}.
  */
-public class CodaHaleMetricRegistry extends MetricRegistry {
+public class CodaHaleMetricRegistry implements MetricRegistry {
 
     private final com.codahale.metrics.MetricRegistry metricRegistry;
 
@@ -158,6 +158,11 @@ public class CodaHaleMetricRegistry extends MetricRegistry {
     @Override
     public SortedMap<String, Histogram> getHistograms(MetricFilter filter) {
         return metricRegistry.getHistograms(filter);
+    }
+
+    @Override
+    public SortedMap<String, Meter> getMeters() {
+        return metricRegistry.getMeters();
     }
 
     @Override

@@ -35,7 +35,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * A Metric Registry that prefixes all its metrics with the scope.
  */
-public class ScopedMetricRegistry extends MetricRegistry {
+public class ScopedMetricRegistry implements MetricRegistry {
     private final String scope;
     private final MetricRegistry parent;
 
@@ -46,8 +46,6 @@ public class ScopedMetricRegistry extends MetricRegistry {
      * @param parent the metric registry to delegate
      */
     public ScopedMetricRegistry(String scope, MetricRegistry parent) {
-        super(parent);
-        config().scopePrefix(scope);
         this.scope = requireNonNull(scope);
         this.parent = requireNonNull(parent);
     }
@@ -164,6 +162,11 @@ public class ScopedMetricRegistry extends MetricRegistry {
     @Override
     public SortedMap<String, Histogram> getHistograms(MetricFilter filter) {
         return this.parent.getHistograms(filter);
+    }
+
+    @Override
+    public SortedMap<String, Meter> getMeters() {
+        return this.parent.getMeters();
     }
 
     @Override

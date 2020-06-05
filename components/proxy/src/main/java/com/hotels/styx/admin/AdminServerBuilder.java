@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.admin;
 
+import com.codahale.metrics.json.MetricsModule;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.Environment;
 import com.hotels.styx.NettyExecutor;
@@ -50,7 +51,6 @@ import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.extension.service.spi.StyxService;
-import com.hotels.styx.api.metrics.codahale.StyxMetricsModule;
 import com.hotels.styx.common.http.handler.HttpAggregator;
 import com.hotels.styx.common.http.handler.HttpMethodFilteringHandler;
 import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
@@ -206,7 +206,7 @@ public class AdminServerBuilder {
     private JsonHandler<DashboardData> dashboardDataHandler(StyxConfig styxConfig) {
         return new JsonHandler<>(new DashboardDataSupplier(backendServicesRegistry, environment, styxConfig),
                 Optional.of(Duration.ofSeconds(10)),
-                new StyxMetricsModule(SECONDS, MILLISECONDS, false));
+                new MetricsModule(SECONDS, MILLISECONDS, false));
     }
 
     private static Iterable<IndexHandler.Link> indexLinkPaths(StyxConfig styxConfig) {

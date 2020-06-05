@@ -85,8 +85,8 @@ public class HttpErrorStatusMetricsTest {
 
     @Test
     public void metricsArePreRegistered() {
-        assertThat(registry.getMeters(MetricFilter.ALL).get("styx.errors"), is(instanceOf(Meter.class)));
-        assertThat(registry.getMeters(MetricFilter.ALL).get("styx.errors").getCount(), is(0L));
+        assertThat(registry.getMeters().get("styx.errors"), is(instanceOf(Meter.class)));
+        assertThat(registry.getMeters().get("styx.errors").getCount(), is(0L));
 
         assertThat(registry.getCounters().get("styx.response.status.200"), is(instanceOf(Counter.class)));
         assertThat(registry.getCounters().get("styx.response.status.200").getCount(), is(0L));
