@@ -15,10 +15,10 @@
  */
 package com.hotels.styx.support.origins;
 
+import com.codahale.metrics.json.MetricsModule;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.admin.dashboard.JsonSupplier;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.api.metrics.codahale.StyxMetricsModule;
 import com.hotels.styx.utils.MetricsSnapshot;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,7 +39,7 @@ public class MetricsSnapshotTest {
     @BeforeEach
     public void setUp() throws Exception {
         registry = new CodaHaleMetricRegistry();
-        jsonSupplier = JsonSupplier.create(() -> registry, new StyxMetricsModule(SECONDS, MILLISECONDS, false));
+        jsonSupplier = JsonSupplier.create(() -> registry, new MetricsModule(SECONDS, MILLISECONDS, false));
     }
 
     @Test
