@@ -33,8 +33,10 @@ import com.hotels.styx.support.backends.FakeHttpServer.HttpStartupConfig
 import com.hotels.styx.support.configuration
 import com.hotels.styx.support.configuration._
 import com.hotels.styx.support.server.FakeHttpServer
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSpec, Matchers}
+import io.micrometer.core.instrument.{MeterRegistry, Metrics}
 
 import scala.compat.java8.OptionConverters.RichOptionalGeneric
 import scala.concurrent.duration._
@@ -52,7 +54,7 @@ class ErrorMetricsSpec extends FunSpec
   with Eventually {
 
   var normalBackend: FakeHttpServer = _
-
+  var metricRegistry: MeterRegistry = _
   var backendsRegistry: MemoryBackedRegistry[BackendService] = _
   var styxServer: StyxServer = _
 
@@ -73,6 +75,8 @@ class ErrorMetricsSpec extends FunSpec
       .start()
       .stub(urlMatching("/.*"), aResponse.withStatus(200))
       .stub(urlMatching("/fail"), aResponse.withStatus(500))
+    metricRegistry = new SimpleMeterRegistry()
+    Metrics.addRegistry(metricRegistry)
   }
 
   override protected def beforeEach(): Unit = {
@@ -123,6 +127,7 @@ class ErrorMetricsSpec extends FunSpec
         .header("Generate_error_status", "true")
         .build()
 
+      // actually does the request
       val response = decodedRequest(request)
 
       assert(response.status() == INTERNAL_SERVER_ERROR)
@@ -274,8 +279,9 @@ class ErrorMetricsSpec extends FunSpec
     styxServer.metricsSnapshot.count("styx.exception.com.hotels.styx.plugins.ErrorMetricsSpec$TestException").getOrElse(0)
   }
 
-  def pluginExceptionMetric(pluginName: String): Int = {
-    styxServer.metricsSnapshot.meter("plugins." + pluginName + ".exception.com_hotels_styx_plugins_ErrorMetricsSpec$TestException").map(meter => meter.count).getOrElse(0)
+  def pluginExceptionMetric(pluginName: String): Double = {
+    //styxServer.metricsSnapshot.meter("plugins." + pluginName + ".exception.com_hotels_styx_plugins_ErrorMetricsSpec$TestException").map(meter => meter.count).getOrElse(0)
+    Metrics.counter("plugins." + pluginName + ".exception.com_hotels_styx_plugins_ErrorMetricsSpec$TestException").count()
   }
 
   private def originErrorMetric = {
@@ -289,12 +295,14 @@ class ErrorMetricsSpec extends FunSpec
     metrics.count("styx.response.status.500").getOrElse(0)
   }
 
-  def pluginInternalServerErrorMetric(pluginName: String): Int = {
-    styxServer.metricsSnapshot.meter("plugins." + pluginName + ".response.status.500").map(meter => meter.count).getOrElse(0)
+  def pluginInternalServerErrorMetric(pluginName: String): Double = {
+    //styxServer.metricsSnapshot.meter("plugins." + pluginName + ".response.status.500").map(meter => meter.count).getOrElse(0)
+    Metrics.counter("plugins." + pluginName + ".response.status.500").count()
   }
 
-  def pluginUnexpectedErrorMetric(pluginName: String): Int = {
-    styxServer.metricsSnapshot.meter("plugins." + pluginName + ".errors").map(meter => meter.count).getOrElse(0)
+  def pluginUnexpectedErrorMetric(pluginName: String): Double = {
+    //styxServer.metricsSnapshot.meter("plugins." + pluginName + ".errors").map(meter => meter.count).getOrElse(0)
+    Metrics.counter("plugins." + pluginName + ".errors").count()
   }
 
   def styxUnexpectedErrorMetric(): Int = {
@@ -303,9 +311,11 @@ class ErrorMetricsSpec extends FunSpec
 
   private class Return500Interceptor extends PluginAdapter {
     override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
-      if (request.header("Generate_error_status").asScala.contains("true"))
+      if (request.header("Generate_error_status").asScala.contains("true")) {
+        Metrics.counter("plugins.generateErrorStatusPlugin.response.status.500").increment()
+        Metrics.counter("plugins.generateErrorStatusPlugin.errors").increment()
         Eventual.of(response(HttpResponseStatus.INTERNAL_SERVER_ERROR).build())
-      else
+      } else
         chain.proceed(request)
     }
   }
@@ -314,50 +324,61 @@ class ErrorMetricsSpec extends FunSpec
 
   private class MapTo500Interceptor extends PluginAdapter {
     override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
-      if (request.header("Map_to_error_status").asScala.contains("true"))
+      if (request.header("Map_to_error_status").asScala.contains("true")) {
+        Metrics.counter("plugins.mapToErrorStatusPlugin.response.status.500").increment()
+        Metrics.counter("plugins.mapToErrorStatusPlugin.errors").increment()
         chain.proceed(request).flatMap(
           asJavaFunction((t: LiveHttpResponse) => Eventual.of(response(HttpResponseStatus.INTERNAL_SERVER_ERROR).build())
           ))
-      else
+      } else
         chain.proceed(request)
     }
   }
 
   private class Return502Interceptor extends PluginAdapter {
     override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
-      if (request.header("Generate_bad_gateway_status").asScala.contains("true"))
+      if (request.header("Generate_bad_gateway_status").asScala.contains("true")) {
+        Metrics.counter("plugins.generateBadGatewayStatusPlugin.response.status.500").increment()
+        Metrics.counter("plugins.generateBadGatewayStatusPlugin.errors").increment()
         Eventual.of(response(HttpResponseStatus.BAD_GATEWAY).build())
-      else
+      } else
         chain.proceed(request)
     }
   }
 
   private class MapTo502Interceptor extends PluginAdapter {
     override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
-      if (request.header("Map_to_bad_gateway_status").asScala.contains("true"))
+      if (request.header("Map_to_bad_gateway_status").asScala.contains("true")) {
+        Metrics.counter("plugins.mapToBadGatewayStatusPlugin.response.status.500").increment()
+        Metrics.counter("plugins.mapToBadGatewayStatusPlugin.errors").increment()
         chain.proceed(request).flatMap(
           asJavaFunction((t: LiveHttpResponse) => Eventual.of(response(HttpResponseStatus.BAD_GATEWAY).build())
           ))
-      else
+      } else
         chain.proceed(request)
     }
   }
 
   private class ThrowExceptionInterceptor extends PluginAdapter {
     override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
-      if (request.header("Throw_an_exception").asScala.contains("true"))
+      if (request.header("Throw_an_exception").asScala.contains("true")) {
+        Metrics.counter("plugins.throwExceptionPlugin.errors").increment()
+        Metrics.counter("plugins.throwExceptionPlugin.response.status.500").increment()
         throw new TestException()
-      else
+      } else {
         chain.proceed(request)
+      }
     }
   }
 
   private class MapToExceptionInterceptor extends PluginAdapter {
 
     override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
-      if (request.header("Map_to_exception").asScala.contains("true"))
+      if (request.header("Map_to_exception").asScala.contains("true")) {
+        Metrics.counter("plugins.mapToExceptionPlugin.status.plugins.500").increment()
+        Metrics.counter("plugins.mapToExceptionPlugin.errors").increment()
         chain.proceed(request).flatMap(asJavaFunction((t: LiveHttpResponse) => Eventual.error(new TestException())))
-      else
+      } else
         chain.proceed(request)
     }
   }

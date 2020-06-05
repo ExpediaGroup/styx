@@ -19,6 +19,7 @@ import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
+import io.micrometer.core.instrument.Metrics;
 import reactor.core.publisher.Flux;
 
 public class OnCompleteErrorPlugin implements Plugin {
@@ -29,6 +30,7 @@ public class OnCompleteErrorPlugin implements Plugin {
         return new Eventual<>(Flux.from(chain.proceed(request))
                 .doOnComplete(() -> {
                     if (request.header("Fail_at_onCompleted").isPresent()) {
+                        Metrics.counter("plugins.failAtOnCompletedPlugin.errors").increment();
                         throw new RuntimeException("foobar");
                     }
                 }));
