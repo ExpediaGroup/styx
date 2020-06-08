@@ -75,12 +75,12 @@ class ErrorMetricsSpec extends FunSpec
       .start()
       .stub(urlMatching("/.*"), aResponse.withStatus(200))
       .stub(urlMatching("/fail"), aResponse.withStatus(500))
-    metricRegistry = new SimpleMeterRegistry()
-    Metrics.addRegistry(metricRegistry)
   }
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
+    metricRegistry = new SimpleMeterRegistry();
+    Metrics.addRegistry(metricRegistry)
     backendsRegistry = new MemoryBackedRegistry[BackendService]
     styxServer = styxConfig.startServer(new RegistryServiceAdapter(backendsRegistry))
     setBackends(
@@ -94,6 +94,8 @@ class ErrorMetricsSpec extends FunSpec
   }
 
   override protected def afterEach(): Unit = {
+    metricRegistry.clear()
+    metricRegistry.close()
     styxServer.stopAsync().awaitTerminated()
     super.afterEach()
   }
@@ -360,10 +362,13 @@ class ErrorMetricsSpec extends FunSpec
   }
 
   private class ThrowExceptionInterceptor extends PluginAdapter {
+    val pluginName: String = "throwExceptionPlugin"
+
     override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
       if (request.header("Throw_an_exception").asScala.contains("true")) {
-        Metrics.counter("plugins.throwExceptionPlugin.errors").increment()
-        Metrics.counter("plugins.throwExceptionPlugin.response.status.500").increment()
+        Metrics.counter("plugins." + pluginName + ".status.plugins.500").increment()
+        Metrics.counter("plugins." + pluginName + ".errors").increment()
+        Metrics.counter("plugins." + pluginName + ".exception.com_hotels_styx_plugins_ErrorMetricsSpec$TestException").increment()
         throw new TestException()
       } else {
         chain.proceed(request)
@@ -372,11 +377,13 @@ class ErrorMetricsSpec extends FunSpec
   }
 
   private class MapToExceptionInterceptor extends PluginAdapter {
+    val pluginName: String = "mapToExceptionPlugin"
 
     override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
       if (request.header("Map_to_exception").asScala.contains("true")) {
-        Metrics.counter("plugins.mapToExceptionPlugin.status.plugins.500").increment()
-        Metrics.counter("plugins.mapToExceptionPlugin.errors").increment()
+        Metrics.counter("plugins." + pluginName + ".status.plugins.500").increment()
+        Metrics.counter("plugins." + pluginName + ".errors").increment()
+        Metrics.counter("plugins." + pluginName + ".exception.com_hotels_styx_plugins_ErrorMetricsSpec$TestException").increment()
         chain.proceed(request).flatMap(asJavaFunction((t: LiveHttpResponse) => Eventual.error(new TestException())))
       } else
         chain.proceed(request)
