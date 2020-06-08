@@ -25,6 +25,7 @@ import com.codahale.metrics.Metered;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistryListener;
+import com.codahale.metrics.MetricSet;
 import com.codahale.metrics.Timer;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.ScopedMetricRegistry;
@@ -130,6 +131,11 @@ public class CodaHaleMetricRegistry implements MetricRegistry {
 
     @Override
     public <T extends Metric> T register(String name, T metric) throws IllegalArgumentException {
+        if (metric instanceof MetricSet) {
+            ((MetricSet)metric).getMetrics().forEach(this::register);
+            return metric;
+        }
+
         MetricAndMeters metricAndMeters = dropwizardMeters.computeIfAbsent(name, n -> new MetricAndMeters(metric, new ArrayList<>()));
 
         if (metricAndMeters.meters().isEmpty()) {
@@ -155,7 +161,7 @@ public class CodaHaleMetricRegistry implements MetricRegistry {
             notifyListenersAdd(listeners, name, metric);
         }
 
-        return (T) metricAndMeters.metric();
+        return metric;
     }
 
     @Override
@@ -179,7 +185,7 @@ public class CodaHaleMetricRegistry implements MetricRegistry {
         return getOrAdd(name, Histogram.class, () -> new Histogram(new ExponentiallyDecayingReservoir()));
     }
 
-    private <T extends Metric> T getOrAdd(String name, Class<T> tClass, Supplier<T> supplier) {
+    protected <T extends Metric> T getOrAdd(String name, Class<T> tClass, Supplier<T> supplier) {
         Metric metric = ofNullable(dropwizardMeters.get(name)).map(MetricAndMeters::metric).orElse(null);
         if (metric == null) {
             return register(name, supplier.get());

@@ -474,7 +474,7 @@ public class OriginMetricsTest {
 
         @Override
         public Meter meter(String name) {
-            return register(name, newMeter());
+            return getOrAdd(name, Meter.class, this::newMeter);
         }
 
         private Meter newMeter() {
