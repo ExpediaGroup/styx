@@ -17,6 +17,7 @@ package com.hotels.styx.admin.handlers;
 
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.api.metrics.codahale.NoopMetricRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
@@ -40,7 +41,7 @@ public class MetricsHandlerTest {
 
     @BeforeEach
     public void setUp() {
-        metricRegistry = new CodaHaleMetricRegistry();
+        metricRegistry = new NoopMetricRegistry();
         handler = new MetricsHandler(metricRegistry, Optional.empty());
     }
 

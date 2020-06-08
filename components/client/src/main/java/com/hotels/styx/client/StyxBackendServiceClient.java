@@ -353,7 +353,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
     public static class Builder {
 
         private final Id backendServiceId;
-        private MetricRegistry metricsRegistry = new CodaHaleMetricRegistry();
+        private MetricRegistry metricsRegistry;
         private List<RewriteRule> rewriteRules = emptyList();
         private RetryPolicy retryPolicy = new RetryNTimes(3);
         private LoadBalancer loadBalancer;
@@ -410,6 +410,9 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
         public StyxBackendServiceClient build() {
             if (originStatsFactory == null) {
                 originStatsFactory = new CachingOriginStatsFactory(metricsRegistry);
+            }
+            if (metricsRegistry == null) {
+                throw new IllegalStateException("metricsRegistry is required");
             }
             return new StyxBackendServiceClient(this);
         }

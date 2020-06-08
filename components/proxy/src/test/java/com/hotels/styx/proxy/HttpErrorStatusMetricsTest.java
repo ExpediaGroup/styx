@@ -22,6 +22,7 @@ import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.api.metrics.codahale.NoopMetricRegistry;
 import com.hotels.styx.api.plugins.spi.PluginException;
 import com.hotels.styx.server.HttpErrorStatusListener;
 import org.junit.jupiter.api.BeforeEach;
@@ -79,7 +80,7 @@ public class HttpErrorStatusMetricsTest {
 
     @BeforeEach
     public void setUp() {
-        registry = new CodaHaleMetricRegistry();
+        registry = new NoopMetricRegistry();
         errorListener = new HttpErrorStatusMetrics(registry);
     }
 

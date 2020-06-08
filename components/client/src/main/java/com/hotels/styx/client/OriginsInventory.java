@@ -484,9 +484,9 @@ public final class OriginsInventory
         return new Builder(appId);
     }
 
-    public static Builder newOriginsInventoryBuilder(BackendService backendService) {
+    public static Builder newOriginsInventoryBuilder(MetricRegistry metricRegistry, BackendService backendService) {
         return new Builder(backendService.id())
-                .connectionPoolFactory(simplePoolFactory(backendService, new CodaHaleMetricRegistry()))
+                .connectionPoolFactory(simplePoolFactory(backendService, metricRegistry))
                 .initialOrigins(backendService.origins());
     }
 
@@ -496,7 +496,7 @@ public final class OriginsInventory
     public static class Builder {
         private final Id appId;
         private OriginHealthStatusMonitor originHealthMonitor = new NoOriginHealthStatusMonitor();
-        private MetricRegistry metricsRegistry = new CodaHaleMetricRegistry();
+        private MetricRegistry metricsRegistry;
         private EventBus eventBus = new EventBus();
         private ConnectionPool.Factory connectionPoolFactory = simplePoolFactory();
         private StyxHostHttpClient.Factory hostClientFactory;
@@ -541,6 +541,10 @@ public final class OriginsInventory
 
             if (hostClientFactory == null) {
                 hostClientFactory = (ConnectionPool connectionPool) -> StyxHostHttpClient.create(connectionPool);
+            }
+
+            if (metricsRegistry == null) {
+                throw new IllegalStateException("metricRegistry is required");
             }
 
             OriginsInventory originsInventory = new OriginsInventory(

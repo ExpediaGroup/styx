@@ -114,7 +114,7 @@ public class StyxBackendServiceClientFactoryTest {
         BackendServiceClient styxBackendServiceClient = new StyxBackendServiceClientFactory(environment)
                 .createClient(
                         backendService,
-                        newOriginsInventoryBuilder(backendService)
+                        newOriginsInventoryBuilder(environment.metricRegistry(), backendService)
                                 .hostClientFactory((pool) -> {
                                     if (pool.getOrigin().id().equals(id("x"))) {
                                         return hostClient(response(OK).header("X-Origin-Id", "x").build());
@@ -125,7 +125,7 @@ public class StyxBackendServiceClientFactoryTest {
                                     }
                                 })
                                 .build(),
-                        new CachingOriginStatsFactory(new CodaHaleMetricRegistry()));
+                        new CachingOriginStatsFactory(environment.metricRegistry()));
 
         LiveHttpRequest requestz = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("z").toString())).build();
         LiveHttpRequest requestx = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("x").toString())).build();
@@ -159,7 +159,7 @@ public class StyxBackendServiceClientFactoryTest {
         BackendServiceClient styxBackendServiceClient = new StyxBackendServiceClientFactory(environment)
                 .createClient(
                         backendService,
-                        newOriginsInventoryBuilder(backendService)
+                        newOriginsInventoryBuilder(environment.metricRegistry(), backendService)
                                 .hostClientFactory((pool) -> {
                                     if (pool.getOrigin().id().equals(id("x"))) {
                                         return hostClient(response(OK).header("X-Origin-Id", "x").build());
@@ -170,7 +170,7 @@ public class StyxBackendServiceClientFactoryTest {
                                     }
                                 })
                                 .build(),
-                        new CachingOriginStatsFactory(new CodaHaleMetricRegistry()));
+                        new CachingOriginStatsFactory(environment.metricRegistry()));
 
         LiveHttpRequest requestz = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("z").toString())).build();
         LiveHttpRequest requestx = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("x").toString())).build();

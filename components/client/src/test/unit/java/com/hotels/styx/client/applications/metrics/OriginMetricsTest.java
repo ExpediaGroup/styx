@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hotels.styx.api.Id;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -467,25 +468,13 @@ public class OriginMetricsTest {
         private final Clock clock;
 
         public StubClockMeterMetricRegistry(Clock clock) {
+            super(new SimpleMeterRegistry());
             this.clock = clock;
         }
 
         @Override
         public Meter meter(String name) {
-            Meter metric = getMetricRegistry().getMeters().get(name);
-            if (metric != null) {
-                return metric;
-            } else {
-                try {
-                    return register(name, newMeter());
-                } catch (IllegalArgumentException e) {
-                    Meter added = getMetricRegistry().getMeters().get(name);
-                    if (added != null) {
-                        return added;
-                    }
-                }
-            }
-            throw new IllegalArgumentException(name + " is already used for a different type of metric");
+            return register(name, newMeter());
         }
 
         private Meter newMeter() {

@@ -28,6 +28,7 @@ import com.hotels.styx.api.LiveHttpRequest.get
 import com.hotels.styx.api.extension.Origin._
 import com.hotels.styx.api.extension.service.{BackendService, StickySessionConfig}
 import com.hotels.styx.api.extension.{ActiveOrigins, Origin}
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
@@ -37,6 +38,7 @@ import com.hotels.styx.common.FreePorts.freePort
 import com.hotels.styx.support.Support.requestContext
 import com.hotels.styx.support.server.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies._
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values._
@@ -118,7 +120,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
     originServer4.stop()
   }
 
-  private def activeOrigins(backendService: BackendService) = newOriginsInventoryBuilder(backendService).build()
+  private def activeOrigins(backendService: BackendService) = newOriginsInventoryBuilder(new CodaHaleMetricRegistry(new SimpleMeterRegistry()), backendService).build()
 
   private def stickySessionStrategy(activeOrigins: ActiveOrigins) = new StickySessionLoadBalancingStrategy(
     activeOrigins,

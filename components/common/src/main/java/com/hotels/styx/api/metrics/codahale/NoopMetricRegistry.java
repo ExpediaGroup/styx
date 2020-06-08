@@ -13,29 +13,14 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api;
+package com.hotels.styx.api.metrics.codahale;
 
-import com.hotels.styx.api.configuration.Configuration;
+import com.hotels.styx.api.MetricRegistry;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
-/**
- * Styx application Environment.
- */
-public interface Environment {
-    /**
-     * Returns the configuration for the current {@link Environment}.
-     *
-     * @return configuration
-     */
-    Configuration configuration();
-
-    /**
-     * Returns the application's {@link MetricRegistry}.
-     *
-     * @return metric registry
-     */
-    @Deprecated
-    MetricRegistry metricRegistry();
-
-    MeterRegistry meterRegistry();
+public class NoopMetricRegistry extends CodaHaleMetricRegistry {
+    public NoopMetricRegistry() {
+        super(new SimpleMeterRegistry());
+    }
 }

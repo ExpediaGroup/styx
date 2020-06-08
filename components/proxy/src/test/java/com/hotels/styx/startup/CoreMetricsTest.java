@@ -19,6 +19,7 @@ import com.codahale.metrics.Gauge;
 import com.hotels.styx.Version;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.api.metrics.codahale.NoopMetricRegistry;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -32,7 +33,7 @@ public class CoreMetricsTest {
 
     @Test
     public void registersVersionMetric() {
-        MetricRegistry metrics = new CodaHaleMetricRegistry();
+        MetricRegistry metrics = new NoopMetricRegistry();
         CoreMetrics.registerCoreMetrics(version, metrics);
 
         Gauge gauge = metrics.getGauges().get("styx.version.buildnumber");
@@ -42,7 +43,7 @@ public class CoreMetricsTest {
 
     @Test
     public void registersJvmMetrics() {
-        MetricRegistry metrics = new CodaHaleMetricRegistry();
+        MetricRegistry metrics = new NoopMetricRegistry();
         CoreMetrics.registerCoreMetrics(version, metrics);
 
         Map<String, Gauge> gauges = metrics.getGauges();
@@ -65,7 +66,7 @@ public class CoreMetricsTest {
 
     @Test
     public void registersOperatingSystemMetrics() {
-        MetricRegistry metrics = new CodaHaleMetricRegistry();
+        MetricRegistry metrics = new NoopMetricRegistry();
         CoreMetrics.registerCoreMetrics(version, metrics);
 
         Map<String, Gauge> gauges = metrics.getGauges();

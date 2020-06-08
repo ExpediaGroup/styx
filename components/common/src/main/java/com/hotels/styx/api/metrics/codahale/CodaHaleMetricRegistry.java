@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -51,6 +52,7 @@ import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
 import static java.util.Collections.singleton;
+import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 
 /**
@@ -96,15 +98,15 @@ public class CodaHaleMetricRegistry implements MetricRegistry {
 
     private static class MetricAndMeters {
         final Metric metric;
-        final Iterable<io.micrometer.core.instrument.Meter> meters;
+        final List<io.micrometer.core.instrument.Meter> meters;
 
-        MetricAndMeters(Metric metric, Iterable<io.micrometer.core.instrument.Meter> meters) {
+        MetricAndMeters(Metric metric, List<io.micrometer.core.instrument.Meter> meters) {
             this.metric = metric;
             this.meters = meters;
         }
 
         Metric metric() { return metric; }
-        Iterable<io.micrometer.core.instrument.Meter> meters() { return meters; }
+        List<io.micrometer.core.instrument.Meter> meters() { return meters; }
     }
 
     private final ConcurrentMap<String, MetricAndMeters> dropwizardMeters = new ConcurrentHashMap<>();
@@ -118,7 +120,7 @@ public class CodaHaleMetricRegistry implements MetricRegistry {
      * @param registry Micrometer {@link io.micrometer.core.instrument.MeterRegistry}
      */
     public CodaHaleMetricRegistry(MeterRegistry registry) {
-        this.registry = registry;
+        this.registry = requireNonNull(registry);
     }
 
     @Override
@@ -128,34 +130,32 @@ public class CodaHaleMetricRegistry implements MetricRegistry {
 
     @Override
     public <T extends Metric> T register(String name, T metric) throws IllegalArgumentException {
-        Tags tags = Tags.of("metricSource", "dropwizard");
-        List<io.micrometer.core.instrument.Meter> meters = new ArrayList<>();
+        MetricAndMeters metricAndMeters = dropwizardMeters.computeIfAbsent(name, n -> new MetricAndMeters(metric, new ArrayList<>()));
 
-        if (metric instanceof com.codahale.metrics.Gauge) {
-            meters.addAll(addAttributes(name, (com.codahale.metrics.Gauge) metric, gaugeAttributes));
-        }
-        if (metric instanceof com.codahale.metrics.Counting) {
-            meters.addAll(this.addAttributes(name, (com.codahale.metrics.Counting) metric, countingAttributes));
-        }
-        if (metric instanceof com.codahale.metrics.Sampling) {
-            meters.addAll(addAttributes(name, (com.codahale.metrics.Sampling) metric, samplingAttributes));
-        }
-        if (metric instanceof com.codahale.metrics.Metered) {
-            meters.addAll(addAttributes(name, (com.codahale.metrics.Metered) metric, meteredAttributes));
+        if (metricAndMeters.meters().isEmpty()) {
+            List<io.micrometer.core.instrument.Meter> meters = metricAndMeters.meters();
+
+            if (metric instanceof com.codahale.metrics.Gauge) {
+                meters.addAll(addAttributes(name, (com.codahale.metrics.Gauge) metric, gaugeAttributes));
+            }
+            if (metric instanceof com.codahale.metrics.Counting) {
+                meters.addAll(this.addAttributes(name, (com.codahale.metrics.Counting) metric, countingAttributes));
+            }
+            if (metric instanceof com.codahale.metrics.Sampling) {
+                meters.addAll(addAttributes(name, (com.codahale.metrics.Sampling) metric, samplingAttributes));
+            }
+            if (metric instanceof com.codahale.metrics.Metered) {
+                meters.addAll(addAttributes(name, (com.codahale.metrics.Metered) metric, meteredAttributes));
+            }
+
+            if (meters.isEmpty()) {
+                log.warn("Attempt to register an unknown type of Dropwizard metric for \"{}\" of type {}", name, metric.getClass().getName());
+            }
+
+            notifyListenersAdd(listeners, name, metric);
         }
 
-        if (meters.isEmpty()) {
-            log.warn("Attempt to register an unknown type of Dropwizard metric for \"{}\" of type {}", name, metric.getClass().getName());
-        }
-
-        MetricAndMeters oldMeters = dropwizardMeters.put(name, new MetricAndMeters(metric, meters));
-        if (oldMeters != null) {
-            oldMeters.meters().forEach(registry::remove);
-            notifyListenersRemove(listeners, name, oldMeters.metric());
-        }
-        notifyListenersAdd(listeners, name, metric);
-
-        return metric;
+        return (T) metricAndMeters.metric();
     }
 
     @Override

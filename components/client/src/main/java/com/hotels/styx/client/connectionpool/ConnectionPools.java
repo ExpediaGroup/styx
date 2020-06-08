@@ -63,17 +63,18 @@ public final class ConnectionPools {
                 metricRegistry);
     }
 
-    public static ConnectionPool create(String hostname, int port, ConnectionPoolSettings poolSettings) {
-        return new SimpleConnectionPoolFactory.Builder()
-                .connectionPoolSettings(poolSettings)
-                .connectionFactory(new NettyConnectionFactory.Builder().build())
-                .metricRegistry(new CodaHaleMetricRegistry())
-                .build()
-                .create(Origin.newOriginBuilder(hostname, port)
-                        .applicationId(format("%s:%d", hostname, port))
-                        .id(format("%s:%d-01", hostname, port))
-                        .build());
-    }
+    // TODO: James
+//    public static ConnectionPool create(String hostname, int port, ConnectionPoolSettings poolSettings) {
+//        return new SimpleConnectionPoolFactory.Builder()
+//                .connectionPoolSettings(poolSettings)
+//                .connectionFactory(new NettyConnectionFactory.Builder().build())
+//                .metricRegistry(new CodaHaleMetricRegistry())
+//                .build()
+//                .create(Origin.newOriginBuilder(hostname, port)
+//                        .applicationId(format("%s:%d", hostname, port))
+//                        .id(format("%s:%d-01", hostname, port))
+//                        .build());
+//    }
 
     private static ConnectionPool poolForOrigin(Origin origin, MetricRegistry metricRegistry, NettyConnectionFactory connectionFactory) {
         return new StatsReportingConnectionPool(
