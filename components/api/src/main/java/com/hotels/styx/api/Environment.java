@@ -33,6 +33,7 @@ public interface Environment {
      * Returns the application's {@link MetricRegistry}.
      *
      * @return metric registry
+     * @deprecated deprecated in favor of MicroMeter via {@link Environment#meterRegistry()}
      */
     @Deprecated
     MetricRegistry metricRegistry();
