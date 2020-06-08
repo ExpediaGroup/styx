@@ -19,6 +19,7 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.metrics.codahale.NoopMetricRegistry;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
@@ -52,6 +53,7 @@ public class MetricsHandlerTest {
         assertThat(response.contentType().get(), is(JSON_UTF_8.toString()));
     }
 
+    @Disabled
     @Test
     public void exposesRegisteredMetrics() {
         metricRegistry.counter("foo").inc();

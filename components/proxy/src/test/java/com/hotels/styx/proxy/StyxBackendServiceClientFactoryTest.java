@@ -33,6 +33,7 @@ import com.hotels.styx.client.OriginStatsFactory.CachingOriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.StyxBackendServiceClient;
 import com.hotels.styx.client.StyxHostHttpClient;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
@@ -67,7 +68,7 @@ public class StyxBackendServiceClientFactoryTest {
     @BeforeEach
     public void setUp() {
         connectionFactory = mock(Connection.Factory.class);
-        environment = new Environment.Builder().build();
+        environment = new Environment.Builder().registry(new SimpleMeterRegistry()).build();
         backendService = newBackendServiceBuilder()
                 .origins(newOriginBuilder("localhost", 8081).build())
                 .build();
@@ -81,6 +82,7 @@ public class StyxBackendServiceClientFactoryTest {
         StyxBackendServiceClientFactory factory = new StyxBackendServiceClientFactory(environment);
 
         OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
+                .metricsRegistry(environment.metricRegistry())
                 .connectionPoolFactory(simplePoolFactory())
                 .initialOrigins(backendService.origins())
                 .build();
@@ -115,6 +117,7 @@ public class StyxBackendServiceClientFactoryTest {
                 .createClient(
                         backendService,
                         newOriginsInventoryBuilder(environment.metricRegistry(), backendService)
+                                .metricsRegistry(environment.metricRegistry())
                                 .hostClientFactory((pool) -> {
                                     if (pool.getOrigin().id().equals(id("x"))) {
                                         return hostClient(response(OK).header("X-Origin-Id", "x").build());
@@ -146,6 +149,7 @@ public class StyxBackendServiceClientFactoryTest {
         config.set("originRestrictionCookie", ORIGINS_RESTRICTION_COOKIE);
 
         environment = new Environment.Builder()
+                .registry(new SimpleMeterRegistry())
                 .configuration(new StyxConfig(config))
                 .build();
 
@@ -160,6 +164,7 @@ public class StyxBackendServiceClientFactoryTest {
                 .createClient(
                         backendService,
                         newOriginsInventoryBuilder(environment.metricRegistry(), backendService)
+                                .metricsRegistry(environment.metricRegistry())
                                 .hostClientFactory((pool) -> {
                                     if (pool.getOrigin().id().equals(id("x"))) {
                                         return hostClient(response(OK).header("X-Origin-Id", "x").build());

@@ -80,7 +80,7 @@ public class BackendServicesRouterTest {
 
     @BeforeEach
     public void before() {
-        environment = new Environment.Builder().build();
+        environment = new Environment.Builder().registry(new SimpleMeterRegistry()).build();
     }
 
     @Test
