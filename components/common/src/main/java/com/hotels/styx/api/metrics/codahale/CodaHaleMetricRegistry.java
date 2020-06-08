@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -49,6 +50,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
+import static java.util.Collections.singleton;
 import static java.util.Optional.ofNullable;
 
 /**
@@ -149,9 +151,9 @@ public class CodaHaleMetricRegistry implements MetricRegistry {
         MetricAndMeters oldMeters = dropwizardMeters.put(name, new MetricAndMeters(metric, meters));
         if (oldMeters != null) {
             oldMeters.meters().forEach(registry::remove);
-            notifyListenersRemove(name, oldMeters.metric());
+            notifyListenersRemove(listeners, name, oldMeters.metric());
         }
-        notifyListenersAdd(name, metric);
+        notifyListenersAdd(listeners, name, metric);
 
         return metric;
     }
@@ -163,7 +165,7 @@ public class CodaHaleMetricRegistry implements MetricRegistry {
             return false;
         }
         removed.meters().forEach(registry::remove);
-        notifyListenersRemove(name, removed.metric());
+        notifyListenersRemove(listeners, name, removed.metric());
         return true;
     }
 
@@ -205,6 +207,7 @@ public class CodaHaleMetricRegistry implements MetricRegistry {
     @Override
     public void addListener(MetricRegistryListener listener) {
         listeners.add(listener);
+        dropwizardMeters.forEach((name, metricAndMeters) -> notifyListenersAdd(singleton(listener), name, metricAndMeters.metric()));
     }
 
     @Override
@@ -296,7 +299,7 @@ public class CodaHaleMetricRegistry implements MetricRegistry {
         return meters;
     }
 
-    private void notifyListenersAdd(String name, Metric metric) {
+    private void notifyListenersAdd(Iterable<MetricRegistryListener> listeners, String name, Metric metric) {
         Consumer<MetricRegistryListener> notifier = l -> {};
         if (metric instanceof Gauge) {
             notifier = l -> l.onGaugeAdded(name, (Gauge) metric);
@@ -313,7 +316,7 @@ public class CodaHaleMetricRegistry implements MetricRegistry {
         listeners.forEach(notifier);
     }
 
-    private void notifyListenersRemove(String name, Metric metric) {
+    private void notifyListenersRemove(Iterable<MetricRegistryListener> listeners, String name, Metric metric) {
         Consumer<MetricRegistryListener> notifier = l -> {};
         if (metric instanceof Gauge) {
             notifier = l -> l.onGaugeRemoved(name);
