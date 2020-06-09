@@ -35,12 +35,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -60,15 +58,15 @@ import static java.util.Optional.ofNullable;
  * A {@link MetricRegistry} that acts as an adapter for Codahale's {@link com.codahale.metrics.MetricRegistry}.
  */
 public class CodaHaleMetricRegistry implements MetricRegistry {
-    private static final Logger log = LoggerFactory.getLogger(CodaHaleMetricRegistry.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CodaHaleMetricRegistry.class);
 
-    private static final Map<String, ToDoubleFunction<Gauge>> gaugeAttributes = new HashMap<>();
-    private static final Map<String, ToDoubleFunction<com.codahale.metrics.Counting>> countingAttributes = new HashMap<>();
-    private static final Map<String, ToDoubleFunction<com.codahale.metrics.Sampling>> samplingAttributes = new HashMap<>();
-    private static final Map<String, ToDoubleFunction<com.codahale.metrics.Metered>> meteredAttributes = new HashMap<>();
+    private static final Map<String, ToDoubleFunction<Gauge>> GAUGE_ATTRIBUTES = new HashMap<>();
+    private static final Map<String, ToDoubleFunction<com.codahale.metrics.Counting>> COUNTING_ATTRIBUTES = new HashMap<>();
+    private static final Map<String, ToDoubleFunction<com.codahale.metrics.Sampling>> SAMPLING_ATTRIBUTES = new HashMap<>();
+    private static final Map<String, ToDoubleFunction<com.codahale.metrics.Metered>> METERED_ATTRIBUTES = new HashMap<>();
 
     static {
-        gaugeAttributes.put("value", gauge -> {
+        GAUGE_ATTRIBUTES.put("value", gauge -> {
             Object value = gauge.getValue();
             if (value instanceof Number) {
                 return ((Number) value).doubleValue();
@@ -77,24 +75,24 @@ public class CodaHaleMetricRegistry implements MetricRegistry {
             }
         });
 
-        countingAttributes.put("count", Counting::getCount);
+        COUNTING_ATTRIBUTES.put("count", Counting::getCount);
 
-        samplingAttributes.put("max", h -> h.getSnapshot().getMax());
-        samplingAttributes.put("mean", h -> h.getSnapshot().getMean());
-        samplingAttributes.put("min", h -> h.getSnapshot().getMin());
-        samplingAttributes.put("stddev", h -> h.getSnapshot().getStdDev());
-        samplingAttributes.put("p50", h -> h.getSnapshot().getMedian());
-        samplingAttributes.put("p75", h -> h.getSnapshot().get75thPercentile());
-        samplingAttributes.put("p95", h -> h.getSnapshot().get95thPercentile());
-        samplingAttributes.put("p98", h -> h.getSnapshot().get98thPercentile());
-        samplingAttributes.put("p99", h -> h.getSnapshot().get99thPercentile());
-        samplingAttributes.put("p999", h -> h.getSnapshot().get999thPercentile());
+        SAMPLING_ATTRIBUTES.put("max", h -> h.getSnapshot().getMax());
+        SAMPLING_ATTRIBUTES.put("mean", h -> h.getSnapshot().getMean());
+        SAMPLING_ATTRIBUTES.put("min", h -> h.getSnapshot().getMin());
+        SAMPLING_ATTRIBUTES.put("stddev", h -> h.getSnapshot().getStdDev());
+        SAMPLING_ATTRIBUTES.put("p50", h -> h.getSnapshot().getMedian());
+        SAMPLING_ATTRIBUTES.put("p75", h -> h.getSnapshot().get75thPercentile());
+        SAMPLING_ATTRIBUTES.put("p95", h -> h.getSnapshot().get95thPercentile());
+        SAMPLING_ATTRIBUTES.put("p98", h -> h.getSnapshot().get98thPercentile());
+        SAMPLING_ATTRIBUTES.put("p99", h -> h.getSnapshot().get99thPercentile());
+        SAMPLING_ATTRIBUTES.put("p999", h -> h.getSnapshot().get999thPercentile());
 
-        meteredAttributes.put("count", Metered::getCount);
-        meteredAttributes.put("m1_rate", Metered::getOneMinuteRate);
-        meteredAttributes.put("m5_rate", Metered::getFiveMinuteRate);
-        meteredAttributes.put("m15_rate", Metered::getFifteenMinuteRate);
-        meteredAttributes.put("mean_rate", Metered::getMeanRate);
+        METERED_ATTRIBUTES.put("count", Metered::getCount);
+        METERED_ATTRIBUTES.put("m1_rate", Metered::getOneMinuteRate);
+        METERED_ATTRIBUTES.put("m5_rate", Metered::getFiveMinuteRate);
+        METERED_ATTRIBUTES.put("m15_rate", Metered::getFifteenMinuteRate);
+        METERED_ATTRIBUTES.put("mean_rate", Metered::getMeanRate);
     }
 
     private static class MetricAndMeters {
@@ -106,8 +104,13 @@ public class CodaHaleMetricRegistry implements MetricRegistry {
             this.meters = meters;
         }
 
-        Metric metric() { return metric; }
-        List<io.micrometer.core.instrument.Meter> meters() { return meters; }
+        Metric metric() {
+            return metric;
+        }
+
+        List<io.micrometer.core.instrument.Meter> meters() {
+            return meters;
+        }
     }
 
     private final ConcurrentMap<String, MetricAndMeters> dropwizardMeters = new ConcurrentHashMap<>();
@@ -132,7 +135,7 @@ public class CodaHaleMetricRegistry implements MetricRegistry {
     @Override
     public <T extends Metric> T register(String name, T metric) throws IllegalArgumentException {
         if (metric instanceof MetricSet) {
-            ((MetricSet)metric).getMetrics().forEach(this::register);
+            ((MetricSet) metric).getMetrics().forEach(this::register);
             return metric;
         }
 
@@ -142,20 +145,20 @@ public class CodaHaleMetricRegistry implements MetricRegistry {
             List<io.micrometer.core.instrument.Meter> meters = metricAndMeters.meters();
 
             if (metric instanceof com.codahale.metrics.Gauge) {
-                meters.addAll(addAttributes(name, (com.codahale.metrics.Gauge) metric, gaugeAttributes));
+                meters.addAll(addAttributes(name, (com.codahale.metrics.Gauge) metric, GAUGE_ATTRIBUTES));
             }
             if (metric instanceof com.codahale.metrics.Counting) {
-                meters.addAll(this.addAttributes(name, (com.codahale.metrics.Counting) metric, countingAttributes));
+                meters.addAll(this.addAttributes(name, (com.codahale.metrics.Counting) metric, COUNTING_ATTRIBUTES));
             }
             if (metric instanceof com.codahale.metrics.Sampling) {
-                meters.addAll(addAttributes(name, (com.codahale.metrics.Sampling) metric, samplingAttributes));
+                meters.addAll(addAttributes(name, (com.codahale.metrics.Sampling) metric, SAMPLING_ATTRIBUTES));
             }
             if (metric instanceof com.codahale.metrics.Metered) {
-                meters.addAll(addAttributes(name, (com.codahale.metrics.Metered) metric, meteredAttributes));
+                meters.addAll(addAttributes(name, (com.codahale.metrics.Metered) metric, METERED_ATTRIBUTES));
             }
 
             if (meters.isEmpty()) {
-                log.warn("Attempt to register an unknown type of Dropwizard metric for \"{}\" of type {}", name, metric.getClass().getName());
+                LOGGER.warn("Attempt to register an unknown type of Dropwizard metric for \"{}\" of type {}", name, metric.getClass().getName());
             }
 
             notifyListenersAdd(listeners, name, metric);
@@ -237,7 +240,7 @@ public class CodaHaleMetricRegistry implements MetricRegistry {
     }
 
     private <T extends Metric> SortedMap<String, T> getMetrics(Class<T> tClass, MetricFilter filter) {
-        final TreeMap<String, T> metrics = new TreeMap<>();
+        SortedMap<String, T> metrics = new TreeMap<>();
         dropwizardMeters.forEach((name, metricAndMeters) -> {
             Metric metric = metricAndMeters.metric();
             if (tClass.isInstance(metric) && filter.matches(name, metric)) {
@@ -306,7 +309,8 @@ public class CodaHaleMetricRegistry implements MetricRegistry {
     }
 
     private void notifyListenersAdd(Iterable<MetricRegistryListener> listeners, String name, Metric metric) {
-        Consumer<MetricRegistryListener> notifier = l -> {};
+        Consumer<MetricRegistryListener> notifier = l -> {
+        };
         if (metric instanceof Gauge) {
             notifier = l -> l.onGaugeAdded(name, (Gauge) metric);
         } else if (metric instanceof Counter) {
@@ -323,7 +327,8 @@ public class CodaHaleMetricRegistry implements MetricRegistry {
     }
 
     private void notifyListenersRemove(Iterable<MetricRegistryListener> listeners, String name, Metric metric) {
-        Consumer<MetricRegistryListener> notifier = l -> {};
+        Consumer<MetricRegistryListener> notifier = l -> {
+        };
         if (metric instanceof Gauge) {
             notifier = l -> l.onGaugeRemoved(name);
         } else if (metric instanceof Counter) {
