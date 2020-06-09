@@ -38,7 +38,7 @@ public interface HttpRequestOperationFactory {
      * Builds HttpRequestOperationFactory objects.
      */
     class Builder {
-        OriginStatsFactory originStatsFactory; // TODO: James //= new CachingOriginStatsFactory(new CodaHaleMetricRegistry());
+        OriginStatsFactory originStatsFactory;
         int responseTimeoutMillis = 60000;
         boolean flowControlEnabled;
         boolean requestLoggingEnabled;
