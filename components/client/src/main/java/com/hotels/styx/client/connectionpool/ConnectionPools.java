@@ -18,14 +18,11 @@ package com.hotels.styx.client.connectionpool;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.BackendService;
-import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
 import static com.hotels.styx.client.HttpConfig.newHttpConfigBuilder;
 import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
-import static java.lang.String.format;
 
 /**
  * Helper routines for building connection pools with default settings.

@@ -15,11 +15,9 @@
  */
 package com.hotels.styx.server;
 
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import io.micrometer.core.instrument.MeterRegistry;
-
-import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
@@ -39,5 +37,7 @@ public final class ServerEnvironment {
         return metricRegistry;
     }
 
-    public MeterRegistry registry() { return registry; }
+    public MeterRegistry registry() {
+        return registry;
+    }
 }

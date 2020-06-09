@@ -47,7 +47,9 @@ class PluginEnvironment implements PluginFactory.Environment {
     }
 
     @Override
-    public MeterRegistry meterRegistry() { return environment.meterRegistry(); }
+    public MeterRegistry meterRegistry() {
+        return environment.meterRegistry();
+    }
 
     @Override
     public <T> T pluginConfig(Class<T> clazz) {

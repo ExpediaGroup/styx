@@ -65,6 +65,7 @@ class HttpResponseSpec extends FunSuite
       responseTimeout = responseTimeout)
 
     client = newHttpClientBuilder(id(backendService.appId))
+        .metricsRegistry(new NoopMetricRegistry())
       .loadBalancer(busyConnectionStrategy(activeOrigins(backendService.asJava)))
       .build
   }

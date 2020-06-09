@@ -17,7 +17,6 @@ package com.hotels.styx.metrics.reporting;
 
 import com.codahale.metrics.MetricRegistry;
 import com.hotels.styx.api.Environment;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 
 /**
  * As the metrics reporters require {@link com.codahale.metrics.MetricRegistry}, this class extracts it from the Styx Metric Registry if possible.

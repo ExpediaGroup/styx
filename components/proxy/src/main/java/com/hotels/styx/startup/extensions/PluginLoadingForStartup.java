@@ -116,7 +116,9 @@ public final class PluginLoadingForStartup {
             }
 
             @Override
-            public MeterRegistry meterRegistry() { return environment.meterRegistry(); }
+            public MeterRegistry meterRegistry() {
+                return environment.meterRegistry();
+            }
         };
 
         Plugin plugin = factory.pluginFactory().create(pluginEnvironment);

@@ -66,6 +66,7 @@ class ExpiringConnectionSpec extends FunSpec
       .build()
 
     pooledClient = newHttpClientBuilder(backendService.id)
+        .metricsRegistry(new NoopMetricRegistry())
       .loadBalancer(roundRobinStrategy(activeOrigins(backendService)))
       .build
   }

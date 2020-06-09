@@ -22,8 +22,6 @@ import com.hotels.styx.api.extension.service.spi.StyxService;
 
 import java.util.concurrent.CompletableFuture;
 
-import static com.hotels.styx.metrics.reporting.MetricRegistryConstraints.codaHaleMetricRegistry;
-
 /**
  * A factory that produces JmxReporterService.
  */
@@ -32,10 +30,14 @@ public class JmxReporterServiceFactory implements ServiceFactory<StyxService> {
     public StyxService create(Environment environment, Configuration serviceConfiguration) {
         return new StyxService() {
             @Override
-            public CompletableFuture<Void> start() { return CompletableFuture.completedFuture(null); }
+            public CompletableFuture<Void> start() {
+                return CompletableFuture.completedFuture(null);
+            }
 
             @Override
-            public CompletableFuture<Void> stop() { return CompletableFuture.completedFuture(null); }
+            public CompletableFuture<Void> stop() {
+                return CompletableFuture.completedFuture(null);
+            }
         };
         // String domain = serviceConfiguration.get("domain").orElse("com.hotels.styx");
 
