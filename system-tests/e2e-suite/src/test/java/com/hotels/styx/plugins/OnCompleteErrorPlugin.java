@@ -23,6 +23,15 @@ import io.micrometer.core.instrument.Metrics;
 import reactor.core.publisher.Flux;
 
 public class OnCompleteErrorPlugin implements Plugin {
+    private String token;
+
+    OnCompleteErrorPlugin() {
+        this.token = "";
+    }
+
+    OnCompleteErrorPlugin(String token) {
+        this.token = token;
+    }
 
     @Override
     public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
@@ -30,7 +39,7 @@ public class OnCompleteErrorPlugin implements Plugin {
         return new Eventual<>(Flux.from(chain.proceed(request))
                 .doOnComplete(() -> {
                     if (request.header("Fail_at_onCompleted").isPresent()) {
-                        Metrics.counter("plugins.failAtOnCompletedPlugin.errors").increment();
+                        Metrics.counter("plugins.failAtOnCompletedPlugin" + token + ".errors").increment();
                         throw new RuntimeException("foobar");
                     }
                 }));

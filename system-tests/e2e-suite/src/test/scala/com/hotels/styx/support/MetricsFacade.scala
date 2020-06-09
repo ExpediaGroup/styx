@@ -15,9 +15,7 @@
  */
 package com.hotels.styx.support
 
-import com.codahale.metrics.Counter
 import com.hotels.styx.metrics.StyxMetrics
-import io.micrometer.core.instrument.Metrics
 
 import scala.compat.java8.OptionConverters._
 
