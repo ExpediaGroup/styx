@@ -486,6 +486,7 @@ public final class OriginsInventory
 
     public static Builder newOriginsInventoryBuilder(MetricRegistry metricRegistry, BackendService backendService) {
         return new Builder(backendService.id())
+                .metricsRegistry(metricRegistry)
                 .connectionPoolFactory(simplePoolFactory(backendService, metricRegistry))
                 .initialOrigins(backendService.origins());
     }
