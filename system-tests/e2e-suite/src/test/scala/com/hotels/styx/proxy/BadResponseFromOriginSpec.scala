@@ -68,7 +68,7 @@ class BadResponseFromOriginSpec extends FunSpec
     originOneServer.stopAsync().awaitTerminated()
     // This test is failing intermittently. Print the metrics snapshot in case it fails,
     // to offer insight into what is going wrong:
-    LOGGER.info("Styx metrics after BadResponseFromOriginSpec: " + styxServer.metricsSnapshot)
+    // LOGGER.info("Styx metrics after BadResponseFromOriginSpec: " + styxServer.metricsSnapshot)
     super.afterAll()
   }
 

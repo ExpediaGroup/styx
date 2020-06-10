@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,24 +15,29 @@
  */
 package com.hotels.styx.server;
 
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import io.micrometer.core.instrument.MeterRegistry;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * ServerEnvironment providing a default metric registry of CodaHaleMetricRegistry.
  */
 public final class ServerEnvironment {
+    private final MeterRegistry registry;
     private final MetricRegistry metricRegistry;
 
-    public ServerEnvironment() {
-        this(new CodaHaleMetricRegistry());
-    }
-
-    public ServerEnvironment(MetricRegistry metricRegistry) {
-        this.metricRegistry = metricRegistry;
+    public ServerEnvironment(MeterRegistry registry) {
+        this.registry = requireNonNull(registry);
+        this.metricRegistry = new CodaHaleMetricRegistry(registry);
     }
 
     public MetricRegistry metricRegistry() {
         return metricRegistry;
+    }
+
+    public MeterRegistry registry() {
+        return registry;
     }
 }

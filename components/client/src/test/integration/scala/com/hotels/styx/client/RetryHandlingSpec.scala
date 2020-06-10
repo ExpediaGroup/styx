@@ -28,6 +28,7 @@ import com.hotels.styx.api.LiveHttpRequest.get
 import com.hotels.styx.api.extension.Origin._
 import com.hotels.styx.api.extension.service.{BackendService, StickySessionConfig}
 import com.hotels.styx.api.extension.{ActiveOrigins, Origin}
+import com.hotels.styx.api.metrics.codahale.{CodaHaleMetricRegistry, NoopMetricRegistry}
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
@@ -37,6 +38,7 @@ import com.hotels.styx.common.FreePorts.freePort
 import com.hotels.styx.support.Support.requestContext
 import com.hotels.styx.support.server.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies._
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values._
@@ -50,6 +52,8 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
   val LOGGER = LoggerFactory.getLogger(classOf[RetryHandlingSpec])
 
   val response = "Response From localhost"
+
+  val metricsRegistry = new NoopMetricRegistry()
 
   val server1 = new FakeHttpServer(0, "app", "HEALTHY_ORIGIN_ONE")
   val server2 = new FakeHttpServer(0, "app", "HEALTHY_ORIGIN_TWO")
@@ -118,7 +122,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
     originServer4.stop()
   }
 
-  private def activeOrigins(backendService: BackendService) = newOriginsInventoryBuilder(backendService).build()
+  private def activeOrigins(backendService: BackendService) = newOriginsInventoryBuilder(metricsRegistry, backendService).build()
 
   private def stickySessionStrategy(activeOrigins: ActiveOrigins) = new StickySessionLoadBalancingStrategy(
     activeOrigins,
@@ -130,6 +134,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
       .build()
 
     val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id)
+      .metricsRegistry(metricsRegistry)
       .retryPolicy(new RetryNTimes(3))
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .build
@@ -143,6 +148,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
       .origins(unhealthyOriginOne, unhealthyOriginTwo, unhealthyOriginThree)
       .build()
     val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id)
+      .metricsRegistry(metricsRegistry)
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .retryPolicy(new RetryNTimes(2))
       .build
@@ -159,6 +165,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
       .build()
 
     val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id)
+      .metricsRegistry(metricsRegistry)
       .retryPolicy(new RetryNTimes(3))
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .build

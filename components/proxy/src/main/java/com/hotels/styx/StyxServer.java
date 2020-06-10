@@ -33,6 +33,7 @@ import com.hotels.styx.server.ConnectorConfig;
 import com.hotels.styx.server.netty.NettyServerBuilder;
 import com.hotels.styx.server.netty.ServerConnector;
 import com.hotels.styx.startup.StyxServerComponents;
+import io.micrometer.core.instrument.Metrics;
 import io.netty.util.ResourceLeakDetector;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -112,6 +113,7 @@ public final class StyxServer extends AbstractService {
         LOG.info("Styx logConfigLocation={}", startupConfig.logConfigLocation());
 
         StyxServerComponents components = new StyxServerComponents.Builder()
+                .registry(Metrics.globalRegistry)
                 .styxConfig(parseConfiguration(startupConfig))
                 .startupConfig(startupConfig)
                 .loggingSetUp(environment -> activateLogbackConfigurer(startupConfig))

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package com.hotels.styx;
 
 import com.google.common.eventbus.EventBus;
 import com.hotels.styx.api.MetricRegistry;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.common.format.DefaultHttpMessageFormatter;
 import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.proxy.HttpErrorStatusCauseLogger;
@@ -25,6 +24,7 @@ import com.hotels.styx.proxy.HttpErrorStatusMetrics;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpErrorStatusListener;
 import com.hotels.styx.server.ServerEnvironment;
+import io.micrometer.core.instrument.MeterRegistry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,7 +50,7 @@ public final class Environment implements com.hotels.styx.api.Environment {
 
         this.configuration = builder.configuration;
         this.version = firstNonNull(builder.version, Version::newVersion);
-        this.serverEnvironment = new ServerEnvironment(firstNonNull(builder.metricRegistry, CodaHaleMetricRegistry::new));
+        this.serverEnvironment = new ServerEnvironment(builder.registry);
         this.httpMessageFormatter = builder.httpMessageFormatter;
 
         this.httpErrorStatusListener = HttpErrorStatusListener.compose(
@@ -89,6 +89,11 @@ public final class Environment implements com.hotels.styx.api.Environment {
         return serverEnvironment.metricRegistry();
     }
 
+    @Override
+    public MeterRegistry meterRegistry() {
+        return serverEnvironment.registry();
+    }
+
     /**
      * @deprecated Use {@link #configuration()}
      *
@@ -111,7 +116,7 @@ public final class Environment implements com.hotels.styx.api.Environment {
      * Builder for {@link com.hotels.styx.Environment}.
      */
     public static class Builder {
-        private MetricRegistry metricRegistry;
+        private MeterRegistry registry;
         private Version version;
         private EventBus eventBus;
         private StyxConfig configuration = StyxConfig.defaultConfig();
@@ -122,8 +127,8 @@ public final class Environment implements com.hotels.styx.api.Environment {
             return this;
         }
 
-        public Builder metricRegistry(MetricRegistry metricRegistry) {
-            this.metricRegistry = metricRegistry;
+        public Builder registry(MeterRegistry registry) {
+            this.registry = registry;
             return this;
         }
 
@@ -143,6 +148,9 @@ public final class Environment implements com.hotels.styx.api.Environment {
         }
 
         public Environment build() {
+            if (registry == null) {
+                throw new IllegalStateException("Meter registry must be specified");
+            }
             return new Environment(this);
         }
     }

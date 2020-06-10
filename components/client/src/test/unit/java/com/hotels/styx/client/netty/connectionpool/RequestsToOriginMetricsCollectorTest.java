@@ -22,6 +22,7 @@ import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.applications.metrics.ApplicationMetrics;
 import com.hotels.styx.client.applications.metrics.OriginMetrics;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
@@ -96,7 +97,7 @@ public class RequestsToOriginMetricsCollectorTest {
 
     @BeforeEach
     private void setUp() {
-        this.metricRegistry = new CodaHaleMetricRegistry();
+        this.metricRegistry = new CodaHaleMetricRegistry(new SimpleMeterRegistry());
         ApplicationMetrics appMetrics = new ApplicationMetrics(this.appId, this.metricRegistry);
         this.originMetrics = new OriginMetrics(appMetrics, originPrefix(this.origin));
     }

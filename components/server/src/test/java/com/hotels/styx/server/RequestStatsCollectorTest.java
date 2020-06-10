@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package com.hotels.styx.server;
 
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.api.metrics.codahale.NoopMetricRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -36,7 +37,7 @@ public class RequestStatsCollectorTest {
 
     @BeforeEach
     public void setUp() {
-        metrics = new CodaHaleMetricRegistry();
+        metrics = new NoopMetricRegistry();
         clock.setNanoTime(0);
         sink = new RequestStatsCollector(metrics, clock);
     }

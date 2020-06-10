@@ -25,6 +25,9 @@ import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginException;
+import com.hotels.styx.client.connectionpool.SimpleConnectionPool;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
@@ -50,6 +53,7 @@ import static org.mockito.Mockito.verify;
 public class InstrumentedPluginTest {
     private static final String SOME_EXCEPTION = formattedExceptionName(SomeException.class);
 
+    private MeterRegistry registry;
     private MetricRegistry metricRegistry;
     private Environment environment;
     private LiveHttpRequest someRequest;
@@ -57,11 +61,13 @@ public class InstrumentedPluginTest {
 
     @BeforeEach
     public void setUp() {
-        metricRegistry = new CodaHaleMetricRegistry();
+        registry = new SimpleMeterRegistry();
 
         environment = new Environment.Builder()
-                .metricRegistry(metricRegistry)
+                .registry(registry)
                 .build();
+
+        metricRegistry = environment.metricRegistry();
 
         someRequest = get("/").build();
         chain = mock(Chain.class);
