@@ -15,14 +15,11 @@
  */
 package com.hotels.styx.client;
 
-import com.codahale.metrics.Gauge;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.EventBus;
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.OriginsChangeListener;
 import com.hotels.styx.api.extension.OriginsSnapshot;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.client.connectionpool.SimpleConnectionPoolFactory;
 import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory;
@@ -30,6 +27,9 @@ import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 import com.hotels.styx.client.origincommands.DisableOrigin;
 import com.hotels.styx.client.origincommands.EnableOrigin;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,7 +64,7 @@ public class OriginsInventoryTest {
 
     private final ConnectionPool.Factory connectionFactory = connectionPoolFactory();
 
-    private MetricRegistry metricRegistry;
+    private MeterRegistry meterRegistry;
     private LoggingTestSupport logger;
     private OriginHealthStatusMonitor monitor;
     private EventBus eventBus;
@@ -73,11 +73,11 @@ public class OriginsInventoryTest {
 
     @BeforeEach
     public void setUp() {
-        metricRegistry = new CodaHaleMetricRegistry(new SimpleMeterRegistry()).scope("origins");
+        meterRegistry = new SimpleMeterRegistry();
         logger = new LoggingTestSupport(OriginsInventory.class);
         monitor = mock(OriginHealthStatusMonitor.class);
         eventBus = mock(EventBus.class);
-        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, hostClientFactory, metricRegistry);
+        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, hostClientFactory, meterRegistry);
     }
 
     @AfterEach
@@ -96,8 +96,8 @@ public class OriginsInventoryTest {
         verify(monitor).monitor(singleton(ORIGIN_1));
         verify(monitor).monitor(singleton(ORIGIN_2));
 
-        assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(1));
-        assertThat(gaugeValue("origins.generic-app.app-02.status"), isValue(1));
+        assertThat(gaugeValue("generic-app", "app-01"), isValue(1.0));
+        assertThat(gaugeValue("generic-app", "app-02"), isValue(1.0));
 
         verify(eventBus).post(any(OriginsSnapshot.class));
     }
@@ -111,7 +111,7 @@ public class OriginsInventoryTest {
 
         assertThat(inventory.originCount(ACTIVE), is(1));
         verify(monitor).monitor(singleton(originV1));
-        assertThat(gaugeValue("origins.generic-app.acme-01.status"), isValue(1));
+        assertThat(gaugeValue("generic-app", "acme-01"), isValue(1.0));
         verify(eventBus).post(any(OriginsSnapshot.class));
 
         inventory.setOrigins(originV2);
@@ -119,7 +119,7 @@ public class OriginsInventoryTest {
         assertThat(inventory.originCount(ACTIVE), is(1));
         verify(monitor).stopMonitoring(singleton(originV1));
         verify(monitor).monitor(singleton(originV2));
-        assertThat(gaugeValue("origins.generic-app.acme-01.status"), isValue(1));
+        assertThat(gaugeValue("generic-app", "acme-01"), isValue(1.0));
         verify(eventBus, times(2)).post(any(OriginsSnapshot.class));
     }
 
@@ -132,7 +132,7 @@ public class OriginsInventoryTest {
 
         assertThat(inventory.originCount(ACTIVE), is(1));
         verify(monitor).monitor(singleton(originV1));
-        assertThat(gaugeValue("origins.generic-app.acme-01.status"), isValue(1));
+        assertThat(gaugeValue("generic-app", "acme-01"), isValue(1.0));
         verify(eventBus).post(any(OriginsSnapshot.class));
 
         inventory.setOrigins(originV2);
@@ -140,7 +140,7 @@ public class OriginsInventoryTest {
         assertThat(inventory.originCount(ACTIVE), is(1));
         verify(monitor).stopMonitoring(singleton(originV1));
         verify(monitor).monitor(singleton(originV2));
-        assertThat(gaugeValue("origins.generic-app.acme-01.status"), isValue(1));
+        assertThat(gaugeValue("generic-app", "acme-01"), isValue(1.0));
         verify(eventBus, times(2)).post(any(OriginsSnapshot.class));
     }
 
@@ -170,7 +170,7 @@ public class OriginsInventoryTest {
         when(connectionFactory.create(eq(originV1))).thenReturn(pool1);
         when(connectionFactory.create(eq(originV2))).thenReturn(pool2);
 
-        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, hostClientFactory, metricRegistry);
+        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, hostClientFactory, meterRegistry);
 
         inventory.setOrigins(originV1);
         verify(connectionFactory).create(eq(originV1));
@@ -189,8 +189,8 @@ public class OriginsInventoryTest {
         assertThat(inventory.originCount(ACTIVE), is(2));
         verify(monitor).monitor(singleton(ORIGIN_1));
         verify(monitor).monitor(singleton(ORIGIN_2));
-        assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(1));
-        assertThat(gaugeValue("origins.generic-app.app-02.status"), isValue(1));
+        assertThat(gaugeValue("generic-app", "app-01"), isValue(1.0));
+        assertThat(gaugeValue("generic-app", "app-02"), isValue(1.0));
         verify(eventBus).post(any(OriginsSnapshot.class));
 
         inventory.setOrigins(ORIGIN_1, ORIGIN_2);
@@ -208,16 +208,16 @@ public class OriginsInventoryTest {
         assertThat(inventory.originCount(ACTIVE), is(2));
         verify(monitor).monitor(singleton(ORIGIN_1));
         verify(monitor).monitor(singleton(ORIGIN_2));
-        assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(1));
-        assertThat(gaugeValue("origins.generic-app.app-02.status"), isValue(1));
+        assertThat(gaugeValue("generic-app", "app-01"), isValue(1.0));
+        assertThat(gaugeValue("generic-app", "app-02"), isValue(1.0));
         verify(eventBus).post(any(OriginsSnapshot.class));
 
         inventory.setOrigins(ORIGIN_2);
 
         assertThat(inventory.originCount(ACTIVE), is(1));
         verify(monitor).stopMonitoring(singleton(ORIGIN_1));
-        assertThat(gaugeValue("origins.generic-app.app-01.status"), isAbsent());
-        assertThat(gaugeValue("origins.generic-app.app-02.status"), isValue(1));
+        assertThat(gaugeValue("generic-app", "app-01"), isAbsent());
+        assertThat(gaugeValue("generic-app", "app-02"), isValue(1.0));
         verify(eventBus, times(2)).post(any(OriginsSnapshot.class));
     }
 
@@ -251,7 +251,7 @@ public class OriginsInventoryTest {
         when(connectionFactory.create(eq(originV1))).thenReturn(pool1);
         when(connectionFactory.create(eq(originV2))).thenReturn(pool2);
 
-        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, hostClientFactory, metricRegistry);
+        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, hostClientFactory, meterRegistry);
 
         inventory.setOrigins(originV1, originV2);
 
@@ -292,7 +292,7 @@ public class OriginsInventoryTest {
         assertThat(inventory.originCount(DISABLED), is(1));
 
         verify(monitor).stopMonitoring(singleton(ORIGIN_1));
-        assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(-1));
+        assertThat(gaugeValue("generic-app", "app-01"), isValue(-1.0));
         verify(eventBus, times(2)).post(any(OriginsSnapshot.class));
     }
 
@@ -307,7 +307,7 @@ public class OriginsInventoryTest {
         assertThat(inventory.originCount(DISABLED), is(1));
 
         verify(monitor).stopMonitoring(singleton(ORIGIN_1));
-        assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(-1));
+        assertThat(gaugeValue("generic-app", "app-01"), isValue(-1.0));
         verify(eventBus, times(3)).post(any(OriginsSnapshot.class));
     }
 
@@ -319,7 +319,7 @@ public class OriginsInventoryTest {
         inventory.onCommand(new EnableOrigin(ORIGIN_1.applicationId(), ORIGIN_1.id()));
 
         verify(monitor, times(2)).monitor(singleton(ORIGIN_1));
-        assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(0));
+        assertThat(gaugeValue("generic-app", "app-01"), isValue(0.0));
         verify(eventBus, times(3)).post(any(OriginsSnapshot.class));
     }
 
@@ -331,7 +331,7 @@ public class OriginsInventoryTest {
         inventory.originUnhealthy(ORIGIN_1);
 
         assertThat(inventory.originCount(ACTIVE), is(0));
-        assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(0));
+        assertThat(gaugeValue("generic-app", "app-01"), isValue(0.0));
         verify(eventBus, times(2)).post(any(OriginsSnapshot.class));
     }
 
@@ -344,7 +344,7 @@ public class OriginsInventoryTest {
         inventory.originHealthy(ORIGIN_1);
 
         assertThat(inventory.originCount(ACTIVE), is(1));
-        assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(1));
+        assertThat(gaugeValue("generic-app", "app-01"), isValue(1.0));
         verify(eventBus, times(3)).post(any(OriginsSnapshot.class));
     }
 
@@ -458,14 +458,14 @@ public class OriginsInventoryTest {
         when(connectionFactory.create(eq(ORIGIN_1))).thenReturn(pool1);
         when(connectionFactory.create(eq(ORIGIN_2))).thenReturn(pool2);
 
-        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, hostClientFactory, metricRegistry);
+        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, hostClientFactory, meterRegistry);
         inventory.setOrigins(ORIGIN_1, ORIGIN_2);
         inventory.close();
 
         verify(monitor).stopMonitoring(eq(ImmutableSet.of(ORIGIN_1)));
         verify(monitor).stopMonitoring(eq(ImmutableSet.of(ORIGIN_2)));
-        assertThat(gaugeValue("origins.generic-app.app-01.status"), isAbsent());
-        assertThat(gaugeValue("origins.generic-app.app-02.status"), isAbsent());
+        assertThat(gaugeValue("generic-app", "app-01"), isAbsent());
+        assertThat(gaugeValue("generic-app", "app-02"), isAbsent());
 
         verify(pool1).close();
         verify(pool2).close();
@@ -474,15 +474,14 @@ public class OriginsInventoryTest {
         verify(eventBus).unregister(eq(inventory));
     }
 
-    private Optional<Integer> gaugeValue(String name) {
-        return gauge(name)
-                .map(Gauge::getValue)
-                .map(value -> (Integer) value);
+    private Optional<Double> gaugeValue(String appId, String originId) {
+        String name = "status";
+        Tags tags = Tags.of("appid", appId, "originid", originId);
+        return gauge(name, tags).map(Gauge::value);
     }
 
-    private <T> Optional<Gauge<T>> gauge(String name) {
-        Gauge<T> gauge = metricRegistry.getGauges().get(name);
-
+    private Optional<Gauge> gauge(String name, Tags tags) {
+        Gauge gauge = meterRegistry.find(name).tags(tags).gauge();
         return Optional.ofNullable(gauge);
     }
 
@@ -490,7 +489,7 @@ public class OriginsInventoryTest {
         return new SimpleConnectionPoolFactory.Builder()
                 .connectionFactory(new StubConnectionFactory())
                 .connectionPoolSettings(defaultConnectionPoolSettings())
-                .metricRegistry(new CodaHaleMetricRegistry(new SimpleMeterRegistry()))
+                .meterRegistry(new SimpleMeterRegistry())
                 .build();
     }
 

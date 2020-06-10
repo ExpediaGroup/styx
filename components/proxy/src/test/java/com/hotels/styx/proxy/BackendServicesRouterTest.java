@@ -30,6 +30,7 @@ import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,6 +42,8 @@ import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
+import static com.hotels.styx.api.metrics.CommonTags.APPID;
+import static com.hotels.styx.api.metrics.CommonTags.ORIGINID;
 import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
@@ -286,21 +289,24 @@ public class BackendServicesRouterTest {
         Environment environment = new Environment.Builder()
                 .registry(metrics)
                 .build();
-        MetricRegistry metricRegistry = environment.metricRegistry();
+        MeterRegistry meterRegistry = environment.meterRegistry();
         BackendServicesRouter router = new BackendServicesRouter(
                 new StyxBackendServiceClientFactory(environment), environment, executor);
 
         router.onChange(added(backendService(APP_B, "/appB/", 9094, "appB-01", 9095, "appB-02")));
 
-        assertThat(metricRegistry.getGauges().get("origins.appB.appB-01.status").getValue(), is(1));
-        assertThat(metricRegistry.getGauges().get("origins.appB.appB-02.status").getValue(), is(1));
+        Tags tags01 = Tags.of(APPID, APP_B, ORIGINID, "appB-01");
+        Tags tags02 = Tags.of(APPID, APP_B, ORIGINID, "appB-02");
+
+        assertThat(meterRegistry.find("status").tags(tags01).gauge().value(), is(1.0));
+        assertThat(meterRegistry.find("status").tags(tags02).gauge().value(), is(1.0));
 
         BackendService appMinusOneOrigin = backendService(APP_B, "/appB/", 9094, "appB-01");
 
         router.onChange(updated(appMinusOneOrigin));
 
-        assertThat(metricRegistry.getGauges().get("origins.appB.appB-01.status").getValue(), is(1));
-        assertThat(metricRegistry.getGauges().get("origins.appB.appB-02.status"), is(nullValue()));
+        assertThat(meterRegistry.find("status").tags(tags01).gauge().value(), is(1.0));
+        assertThat(meterRegistry.find("status").tags(tags02).gauge(), is(nullValue()));
     }
 
     private static Registry.Changes<BackendService> added(BackendService... backendServices) {

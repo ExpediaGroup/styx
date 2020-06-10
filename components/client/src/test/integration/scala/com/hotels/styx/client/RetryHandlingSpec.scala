@@ -54,6 +54,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
   val response = "Response From localhost"
 
   val metricsRegistry = new NoopMetricRegistry()
+  val meterRegistry = new SimpleMeterRegistry()
 
   val server1 = new FakeHttpServer(0, "app", "HEALTHY_ORIGIN_ONE")
   val server2 = new FakeHttpServer(0, "app", "HEALTHY_ORIGIN_TWO")
@@ -122,7 +123,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
     originServer4.stop()
   }
 
-  private def activeOrigins(backendService: BackendService) = newOriginsInventoryBuilder(metricsRegistry, backendService).build()
+  private def activeOrigins(backendService: BackendService) = newOriginsInventoryBuilder(meterRegistry, backendService).build()
 
   private def stickySessionStrategy(activeOrigins: ActiveOrigins) = new StickySessionLoadBalancingStrategy(
     activeOrigins,

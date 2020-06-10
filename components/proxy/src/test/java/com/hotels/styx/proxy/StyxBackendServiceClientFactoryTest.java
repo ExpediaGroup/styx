@@ -24,7 +24,6 @@ import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetric;
 import com.hotels.styx.api.extension.service.BackendService;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
@@ -82,7 +81,7 @@ public class StyxBackendServiceClientFactoryTest {
         StyxBackendServiceClientFactory factory = new StyxBackendServiceClientFactory(environment);
 
         OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
-                .metricsRegistry(environment.metricRegistry())
+                .meterRegistry(environment.meterRegistry())
                 .connectionPoolFactory(simplePoolFactory())
                 .initialOrigins(backendService.origins())
                 .build();
@@ -116,8 +115,7 @@ public class StyxBackendServiceClientFactoryTest {
         BackendServiceClient styxBackendServiceClient = new StyxBackendServiceClientFactory(environment)
                 .createClient(
                         backendService,
-                        newOriginsInventoryBuilder(environment.metricRegistry(), backendService)
-                                .metricsRegistry(environment.metricRegistry())
+                        newOriginsInventoryBuilder(environment.meterRegistry(), backendService)
                                 .hostClientFactory((pool) -> {
                                     if (pool.getOrigin().id().equals(id("x"))) {
                                         return hostClient(response(OK).header("X-Origin-Id", "x").build());
@@ -163,8 +161,7 @@ public class StyxBackendServiceClientFactoryTest {
         BackendServiceClient styxBackendServiceClient = new StyxBackendServiceClientFactory(environment)
                 .createClient(
                         backendService,
-                        newOriginsInventoryBuilder(environment.metricRegistry(), backendService)
-                                .metricsRegistry(environment.metricRegistry())
+                        newOriginsInventoryBuilder(environment.meterRegistry(), backendService)
                                 .hostClientFactory((pool) -> {
                                     if (pool.getOrigin().id().equals(id("x"))) {
                                         return hostClient(response(OK).header("X-Origin-Id", "x").build());

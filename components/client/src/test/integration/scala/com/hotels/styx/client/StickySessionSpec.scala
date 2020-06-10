@@ -46,6 +46,7 @@ import scala.collection.JavaConverters._
 class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with OriginSupport with MockitoSugar {
 
   val metricsRegistry = new NoopMetricRegistry()
+  val meterRegistry = new SimpleMeterRegistry()
 
   val server1 = new FakeHttpServer(0, "app", "app-01")
   val server2 = new FakeHttpServer(0, "app", "app-02")
@@ -96,7 +97,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
     server2.stop
   }
 
-  def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(metricsRegistry, backendService).build()
+  def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(meterRegistry, backendService).build()
 
   def roundRobinStrategy(activeOrigins: ActiveOrigins): LoadBalancer = new RoundRobinStrategy(activeOrigins, activeOrigins.snapshot())
 
