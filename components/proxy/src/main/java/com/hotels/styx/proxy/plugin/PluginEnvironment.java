@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.spi.config.SpiExtension;
+import io.micrometer.core.instrument.MeterRegistry;
 
 import static com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry.name;
 import static java.util.Objects.requireNonNull;
@@ -43,6 +44,11 @@ class PluginEnvironment implements PluginFactory.Environment {
     @Override
     public MetricRegistry metricRegistry() {
         return pluginMetricsScope;
+    }
+
+    @Override
+    public MeterRegistry meterRegistry() {
+        return environment.meterRegistry();
     }
 
     @Override

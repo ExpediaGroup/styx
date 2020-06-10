@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.Connection;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
@@ -35,7 +36,7 @@ public class SimpleConnectionPoolFactoryTest {
 
     @Test
     public void registersMetricsUnderOriginsScope() {
-        MetricRegistry metricRegistry = new CodaHaleMetricRegistry()
+        MetricRegistry metricRegistry = new CodaHaleMetricRegistry(new SimpleMeterRegistry())
                 .scope("origins");
 
         SimpleConnectionPoolFactory factory = new SimpleConnectionPoolFactory.Builder()

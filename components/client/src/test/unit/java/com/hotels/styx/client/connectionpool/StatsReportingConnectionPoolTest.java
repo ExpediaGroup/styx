@@ -19,6 +19,7 @@ import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.netty.connectionpool.StubConnectionPool;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
@@ -32,7 +33,7 @@ public class StatsReportingConnectionPoolTest {
             .id("backend-01")
             .build();
 
-    final MetricRegistry metricRegistry = new CodaHaleMetricRegistry()
+    final MetricRegistry metricRegistry = new CodaHaleMetricRegistry(new SimpleMeterRegistry())
             .scope("origins");
 
     final ConnectionPool delegate = new StubConnectionPool(origin);

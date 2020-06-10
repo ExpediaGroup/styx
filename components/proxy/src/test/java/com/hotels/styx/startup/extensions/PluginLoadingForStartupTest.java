@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,18 +16,20 @@
 package com.hotels.styx.startup.extensions;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.ConfigurationException;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -50,11 +52,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class PluginLoadingForStartupTest {
     private static final Path FIXTURES_CLASS_PATH = fixturesHome(PluginLoadingForStartupTest.class, "/");
 
-    private MetricRegistry styxMetricsRegistry;
+    private MeterRegistry registry;
 
     @BeforeEach
     public void setUp() {
-        styxMetricsRegistry = new CodaHaleMetricRegistry();
+        registry = new SimpleMeterRegistry();
     }
 
     @Test
@@ -286,17 +288,17 @@ public class PluginLoadingForStartupTest {
                 "      config:\n" +
                 "        testConfiguration: test-foo-bar\n";
 
+        Environment environment = environment(yaml);
+        PluginLoadingForStartup.loadPlugins(environment);
 
-        PluginLoadingForStartup.loadPlugins(environment(yaml));
-
-        assertThat(styxMetricsRegistry.counter("styx.plugins.myPlugin.initialised").getCount(), is(1L));
-        assertThat(styxMetricsRegistry.counter("styx.plugins.myAnotherPlugin.initialised").getCount(), is(1L));
+        assertThat(environment.metricRegistry().counter("styx.plugins.myPlugin.initialised").getCount(), is(1L));
+        assertThat(environment.metricRegistry().counter("styx.plugins.myAnotherPlugin.initialised").getCount(), is(1L));
     }
 
     private com.hotels.styx.Environment environment(String yaml) {
         return new com.hotels.styx.Environment.Builder()
                 .configuration(new StyxConfig(new MyConfiguration(yaml)))
-                .metricRegistry(styxMetricsRegistry)
+                .registry(registry)
                 .build();
     }
 

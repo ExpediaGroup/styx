@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import com.hotels.styx.proxy.plugin.FileSystemPluginFactoryLoader;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.proxy.plugin.PluginsMetadata;
 import com.hotels.styx.spi.config.SpiExtension;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 
 import java.util.List;
@@ -112,6 +113,11 @@ public final class PluginLoadingForStartup {
             @Override
             public MetricRegistry metricRegistry() {
                 return environment.metricRegistry().scope(DEFAULT_PLUGINS_METRICS_SCOPE + "." + factory.name());
+            }
+
+            @Override
+            public MeterRegistry meterRegistry() {
+                return environment.meterRegistry();
             }
         };
 

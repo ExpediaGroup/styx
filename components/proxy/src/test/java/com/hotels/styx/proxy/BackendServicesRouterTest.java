@@ -21,12 +21,16 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.api.metrics.codahale.NoopMetricRegistry;
 import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -76,7 +80,7 @@ public class BackendServicesRouterTest {
 
     @BeforeEach
     public void before() {
-        environment = new Environment.Builder().build();
+        environment = new Environment.Builder().registry(new SimpleMeterRegistry()).build();
     }
 
     @Test
@@ -277,25 +281,26 @@ public class BackendServicesRouterTest {
     // This test exists due to a real bug we had when reloading in prod
     @Test
     public void deregistersAndReregistersMetricsAppropriately() {
-        CodaHaleMetricRegistry metrics = new CodaHaleMetricRegistry();
+        MeterRegistry metrics = new SimpleMeterRegistry();
 
         Environment environment = new Environment.Builder()
-                .metricRegistry(metrics)
+                .registry(metrics)
                 .build();
+        MetricRegistry metricRegistry = environment.metricRegistry();
         BackendServicesRouter router = new BackendServicesRouter(
                 new StyxBackendServiceClientFactory(environment), environment, executor);
 
         router.onChange(added(backendService(APP_B, "/appB/", 9094, "appB-01", 9095, "appB-02")));
 
-        assertThat(metrics.getGauges().get("origins.appB.appB-01.status").getValue(), is(1));
-        assertThat(metrics.getGauges().get("origins.appB.appB-02.status").getValue(), is(1));
+        assertThat(metricRegistry.getGauges().get("origins.appB.appB-01.status").getValue(), is(1));
+        assertThat(metricRegistry.getGauges().get("origins.appB.appB-02.status").getValue(), is(1));
 
         BackendService appMinusOneOrigin = backendService(APP_B, "/appB/", 9094, "appB-01");
 
         router.onChange(updated(appMinusOneOrigin));
 
-        assertThat(metrics.getGauges().get("origins.appB.appB-01.status").getValue(), is(1));
-        assertThat(metrics.getGauges().get("origins.appB.appB-02.status"), is(nullValue()));
+        assertThat(metricRegistry.getGauges().get("origins.appB.appB-01.status").getValue(), is(1));
+        assertThat(metricRegistry.getGauges().get("origins.appB.appB-02.status"), is(nullValue()));
     }
 
     private static Registry.Changes<BackendService> added(BackendService... backendServices) {
