@@ -31,6 +31,7 @@ import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins}
 import com.hotels.styx.support.server.UrlMatchingStrategies._
 import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
+import io.micrometer.core.instrument.Tags
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.hamcrest.MatcherAssert._
 import org.hamcrest.Matchers._
@@ -90,9 +91,11 @@ class ExpiringConnectionSpec extends FunSpec
     assertThat(response1.status(), is(OK))
 
     // Ensure that a connection got created in pool:
+    val meterTags = Tags.of("appid", "appOne", "originid", "generic-app-01")
+
     eventually(timeout(1.seconds)) {
-      styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.available-connections").get should be(1)
-      styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.connections-closed").get should be(0)
+      meterRegistry.find("connectionspool.available-connections").tags(meterTags).gauge().value() should be(1.0)
+      meterRegistry.find("connectionspool.connections-closed").tags(meterTags).gauge().value() should be(0.0)
     }
 
     Thread.sleep(1000)
@@ -111,11 +114,11 @@ class ExpiringConnectionSpec extends FunSpec
 
     eventually(timeout(2.seconds)) {
       withClue("A connection should be available in pool") {
-        styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.available-connections").get should be(1)
+        meterRegistry.find("connectionspool.available-connections").tags(meterTags).gauge().value() should be(1.0)
       }
 
       withClue("A previous connection should have been terminated") {
-        styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.connections-terminated").get should be(1)
+        meterRegistry.find("connectionspool.connections-terminated").tags(meterTags).gauge().value() should be(1.0)
       }
     }
   }
