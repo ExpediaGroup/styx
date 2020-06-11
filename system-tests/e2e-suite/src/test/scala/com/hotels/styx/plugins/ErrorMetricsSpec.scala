@@ -299,7 +299,6 @@ class ErrorMetricsSpec extends FunSpec
   }
 
   def pluginExceptionMetric(pluginName: String): Double = {
-    //styxServer.metricsSnapshot.meter("plugins." + pluginName + ".exception.com_hotels_styx_plugins_ErrorMetricsSpec$TestException").map(meter => meter.count).getOrElse(0)
     Metrics.counter("plugins." + pluginName + ".exception.com_hotels_styx_plugins_ErrorMetricsSpec$TestException").count()
   }
 
@@ -315,12 +314,10 @@ class ErrorMetricsSpec extends FunSpec
   }
 
   def pluginInternalServerErrorMetric(pluginName: String): Double = {
-    //styxServer.metricsSnapshot.meter("plugins." + pluginName + ".response.status.500").map(meter => meter.count).getOrElse(0)
     Metrics.counter("plugins." + pluginName + ".response.status.500").count()
   }
 
   def pluginUnexpectedErrorMetric(pluginName: String): Double = {
-    //styxServer.metricsSnapshot.meter("plugins." + pluginName + ".errors").map(meter => meter.count).getOrElse(0)
     Metrics.counter("plugins." + pluginName + ".errors").count()
   }
 
