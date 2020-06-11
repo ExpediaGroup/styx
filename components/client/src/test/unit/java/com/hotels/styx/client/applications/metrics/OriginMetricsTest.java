@@ -29,8 +29,8 @@ import java.time.Duration;
 import java.util.Collection;
 
 import static com.hotels.styx.client.applications.metrics.OriginMetrics.APP_TAG;
-import static com.hotels.styx.client.applications.metrics.OriginMetrics.ORIGIN_TAG;
 import static com.hotels.styx.client.applications.metrics.OriginMetrics.CANCELLATION_COUNTER_NAME;
+import static com.hotels.styx.client.applications.metrics.OriginMetrics.ORIGIN_TAG;
 import static com.hotels.styx.client.applications.metrics.OriginMetrics.STATUS_CLASS_TAG;
 import static com.hotels.styx.client.applications.metrics.OriginMetrics.STATUS_COUNTER_NAME;
 import static com.hotels.styx.client.applications.metrics.OriginMetrics.STATUS_TAG;

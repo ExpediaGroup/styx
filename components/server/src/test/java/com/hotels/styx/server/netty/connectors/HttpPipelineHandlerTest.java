@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.api.metrics.codahale.NoopMetricRegistry;
 import com.hotels.styx.client.StyxClientException;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.HttpErrorStatusListener;
@@ -973,7 +974,7 @@ public class HttpPipelineHandlerTest {
     }
 
     private HttpPipelineHandler createHandler(HttpHandler pipeline) throws Exception {
-        metrics = new CodaHaleMetricRegistry();
+        metrics = new NoopMetricRegistry();
         HttpPipelineHandler handler = handlerWithMocks(pipeline)
                 .responseWriterFactory(responseWriterFactory)
                 .build();

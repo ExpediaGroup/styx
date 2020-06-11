@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package com.hotels.styx.server.netty.handlers;
 
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.api.metrics.codahale.NoopMetricRegistry;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
@@ -37,7 +38,7 @@ public class ChannelStatisticsHandlerTest {
 
     @BeforeEach
     public void createHandler() {
-        this.metricRegistry = new CodaHaleMetricRegistry();
+        this.metricRegistry = new NoopMetricRegistry();
         this.handler = new ChannelStatisticsHandler(this.metricRegistry);
     }
 

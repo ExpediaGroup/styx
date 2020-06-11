@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ServiceFactory;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 
-import static com.hotels.styx.metrics.reporting.MetricRegistryConstraints.codaHaleMetricRegistry;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * A factory that produces JmxReporterService.
@@ -28,8 +28,19 @@ import static com.hotels.styx.metrics.reporting.MetricRegistryConstraints.codaHa
 public class JmxReporterServiceFactory implements ServiceFactory<StyxService> {
     @Override
     public StyxService create(Environment environment, Configuration serviceConfiguration) {
-        String domain = serviceConfiguration.get("domain").orElse("com.hotels.styx");
+        return new StyxService() {
+            @Override
+            public CompletableFuture<Void> start() {
+                return CompletableFuture.completedFuture(null);
+            }
 
-        return new JmxReporterService(domain, codaHaleMetricRegistry(environment));
+            @Override
+            public CompletableFuture<Void> stop() {
+                return CompletableFuture.completedFuture(null);
+            }
+        };
+        // String domain = serviceConfiguration.get("domain").orElse("com.hotels.styx");
+
+        // return new JmxReporterService(domain, codaHaleMetricRegistry(environment));
     }
 }

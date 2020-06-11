@@ -19,6 +19,7 @@ import com.codahale.metrics.Gauge;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.api.metrics.codahale.NoopMetricRegistry;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
@@ -46,7 +47,7 @@ public class JVMMetricsHandlerTest {
 
     @BeforeEach
     public void setUp() {
-        CodaHaleMetricRegistry metricRegistry = new CodaHaleMetricRegistry();
+        CodaHaleMetricRegistry metricRegistry = new NoopMetricRegistry();
         metricRegistry.register("irrelevant.gauge", (Gauge<Object>) () -> null);
         metricRegistry.counter("irrelevant.counter");
         metricRegistry.meter("irrelevant.meter");

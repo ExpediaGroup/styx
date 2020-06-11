@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.node.IntNode;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.api.metrics.codahale.NoopMetricRegistry;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.spi.config.SpiExtension;
 import com.hotels.styx.spi.config.SpiExtensionFactory;
@@ -39,7 +40,7 @@ public class PluginEnvironmentTest {
 
     @BeforeEach
     public void setUp() throws Exception {
-        styxMetrics = new CodaHaleMetricRegistry();
+        styxMetrics = new NoopMetricRegistry();
         styxEnvironment = mock(PluginFactory.Environment.class);
         when(styxEnvironment.metricRegistry()).thenReturn(styxMetrics);
     }

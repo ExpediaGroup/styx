@@ -22,6 +22,7 @@ import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -45,7 +46,7 @@ public class UrlRequestHealthCheckTest {
 
     @BeforeEach
     public void setUp() {
-        metricRegistry = new CodaHaleMetricRegistry();
+        metricRegistry = new CodaHaleMetricRegistry(new SimpleMeterRegistry());
         originState = null;
         requestedUrl = null;
     }

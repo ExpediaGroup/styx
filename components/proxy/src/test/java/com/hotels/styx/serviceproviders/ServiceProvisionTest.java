@@ -26,6 +26,7 @@ import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicyFactory;
 import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
 import com.hotels.styx.api.extension.service.spi.StyxService;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
@@ -328,6 +329,7 @@ public class ServiceProvisionTest {
 
     private static Environment environmentWithConfig(String yaml) {
         return new com.hotels.styx.Environment.Builder()
+                .registry(new SimpleMeterRegistry())
                 .configuration(StyxConfig.fromYaml(yaml, false))
                 .build();
     }

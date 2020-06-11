@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 package com.hotels.styx.client;
 
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.client.OriginStatsFactory.CachingOriginStatsFactory;
 import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
 import com.hotels.styx.common.format.DefaultHttpMessageFormatter;
 import com.hotels.styx.common.format.HttpMessageFormatter;
@@ -40,7 +38,7 @@ public interface HttpRequestOperationFactory {
      * Builds HttpRequestOperationFactory objects.
      */
     class Builder {
-        OriginStatsFactory originStatsFactory = new CachingOriginStatsFactory(new CodaHaleMetricRegistry());
+        OriginStatsFactory originStatsFactory;
         int responseTimeoutMillis = 60000;
         boolean flowControlEnabled;
         boolean requestLoggingEnabled;

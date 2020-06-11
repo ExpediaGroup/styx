@@ -27,6 +27,7 @@ import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetricSuppli
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.api.metrics.codahale.NoopMetricRegistry;
 import com.hotels.styx.applications.BackendServices;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
@@ -63,7 +64,7 @@ public class DashboardDataTest {
 
     @BeforeEach
     public void setUp() {
-        metricRegistry = new CodaHaleMetricRegistry();
+        metricRegistry = new NoopMetricRegistry();
         eventBus = new EventBus();
         backendServicesRegistry = new MemoryBackedRegistry<>();
 

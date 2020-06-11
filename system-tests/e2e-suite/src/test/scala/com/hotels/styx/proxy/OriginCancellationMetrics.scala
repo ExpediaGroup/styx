@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ class OriginCancellationMetrics extends FunSpec
     originOneServer.stopAsync().awaitTerminated()
     // This test is failing intermittently. Print the metrics snapshot in case it fails,
     // to offer insight into what is going wrong:
-    LOGGER.info("Styx metrics after BadResponseFromOriginSpec: " + styxServer.metricsSnapshot)
+    // LOGGER.info("Styx metrics after BadResponseFromOriginSpec: " + styxServer.metricsSnapshot)
     super.afterAll()
   }
 

@@ -56,7 +56,7 @@ public final class ResponseCookie {
 
     private ResponseCookie(Builder builder) {
         if (builder.name == null || builder.name.isEmpty()) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Cookie name must be specified");
         }
 
         this.name = builder.name;

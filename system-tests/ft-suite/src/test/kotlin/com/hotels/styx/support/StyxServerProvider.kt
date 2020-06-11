@@ -27,10 +27,12 @@ import com.hotels.styx.api.HttpResponse
 import com.hotels.styx.api.HttpResponseStatus
 import com.hotels.styx.api.HttpResponseStatus.CREATED
 import com.hotels.styx.api.HttpResponseStatus.OK
+import com.hotels.styx.api.metrics.codahale.NoopMetricRegistry
 import com.hotels.styx.api.plugins.spi.Plugin
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.startup.StyxServerComponents
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
@@ -99,6 +101,7 @@ class StyxServerProvider(
         }
 
         var components = StyxServerComponents.Builder()
+                .registry(SimpleMeterRegistry())
                 .styxConfig(StyxConfig.fromYaml(configuration, validateConfig))
                 .additionalRoutingObjects(additionalRoutingObjects)
                 .plugins(additionalPlugins)

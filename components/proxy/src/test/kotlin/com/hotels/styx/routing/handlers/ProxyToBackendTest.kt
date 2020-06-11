@@ -29,11 +29,12 @@ import com.hotels.styx.routingObjectDef
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import io.kotlintest.specs.StringSpec
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import reactor.core.publisher.Mono
 import reactor.core.publisher.toMono
 
 class ProxyToBackendTest : StringSpec({
-    val environment = Environment.Builder().build()
+    val environment = Environment.Builder().registry(SimpleMeterRegistry()).build()
 
     val config = routingObjectDef("""
               name: ProxyToBackend
