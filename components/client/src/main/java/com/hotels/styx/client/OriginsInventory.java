@@ -53,8 +53,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
-import static com.hotels.styx.api.metrics.CommonTags.APPID;
-import static com.hotels.styx.api.metrics.CommonTags.ORIGINID;
+import static com.hotels.styx.api.Metrics.APPID_TAG;
+import static com.hotels.styx.api.Metrics.ORIGINID_TAG;
 import static com.hotels.styx.client.OriginsInventory.OriginState.ACTIVE;
 import static com.hotels.styx.client.OriginsInventory.OriginState.DISABLED;
 import static com.hotels.styx.client.OriginsInventory.OriginState.INACTIVE;
@@ -470,7 +470,7 @@ public final class OriginsInventory
         }
 
         private void registerMeters() {
-            Tags gaugeTags = Tags.of(APPID, appId.toString(), ORIGINID, origin.id().toString());
+            Tags gaugeTags = Tags.of(APPID_TAG, appId.toString(), ORIGINID_TAG, origin.id().toString());
             meterRegistry.gauge(GAUGE_NAME, gaugeTags, this, o -> o.state().gaugeValue);
             statusGauge = meterRegistry.find(GAUGE_NAME).tags(gaugeTags).gauge();
         }

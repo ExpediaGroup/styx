@@ -26,8 +26,8 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import static com.hotels.styx.api.Metrics.name;
-import static com.hotels.styx.api.metrics.CommonTags.APPID;
-import static com.hotels.styx.api.metrics.CommonTags.ORIGINID;
+import static com.hotels.styx.api.Metrics.APPID_TAG;
+import static com.hotels.styx.api.Metrics.ORIGINID_TAG;
 
 class StatsReportingConnectionPool implements ConnectionPool {
     private static final String PREFIX = "connectionspool";
@@ -39,8 +39,8 @@ class StatsReportingConnectionPool implements ConnectionPool {
     public StatsReportingConnectionPool(ConnectionPool connectionPool, MeterRegistry meterRegistry) {
         this.connectionPool = connectionPool;
         this.meterRegistry = meterRegistry;
-        this.tags = Tags.of(APPID, connectionPool.getOrigin().applicationId().toString(),
-                ORIGINID, connectionPool.getOrigin().id().toString());
+        this.tags = Tags.of(APPID_TAG, connectionPool.getOrigin().applicationId().toString(),
+                ORIGINID_TAG, connectionPool.getOrigin().id().toString());
         registerMetrics();
     }
 

@@ -21,11 +21,8 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.api.metrics.codahale.NoopMetricRegistry;
 import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
@@ -42,8 +39,8 @@ import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
-import static com.hotels.styx.api.metrics.CommonTags.APPID;
-import static com.hotels.styx.api.metrics.CommonTags.ORIGINID;
+import static com.hotels.styx.api.Metrics.APPID_TAG;
+import static com.hotels.styx.api.Metrics.ORIGINID_TAG;
 import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
@@ -295,8 +292,8 @@ public class BackendServicesRouterTest {
 
         router.onChange(added(backendService(APP_B, "/appB/", 9094, "appB-01", 9095, "appB-02")));
 
-        Tags tags01 = Tags.of(APPID, APP_B, ORIGINID, "appB-01");
-        Tags tags02 = Tags.of(APPID, APP_B, ORIGINID, "appB-02");
+        Tags tags01 = Tags.of(APPID_TAG, APP_B, ORIGINID_TAG, "appB-01");
+        Tags tags02 = Tags.of(APPID_TAG, APP_B, ORIGINID_TAG, "appB-02");
 
         assertThat(meterRegistry.find("status").tags(tags01).gauge().value(), is(1.0));
         assertThat(meterRegistry.find("status").tags(tags02).gauge().value(), is(1.0));
