@@ -68,36 +68,6 @@ class ErrorMetricsSpec extends FunSpec
     "mapToBadGatewayStatusPlugin" -> new MapTo502Interceptor()
   ))
 
-
-  private def customServer(tok: String): StyxServer = {
-    val config = configuration.StyxConfig(ProxyConfig(), plugins = Map(
-      "failAtOnCompletedPlugin" -> new OnCompleteErrorPlugin(tok),
-      "generateErrorStatusPlugin" -> new Return500Interceptor(tok),
-      "mapToErrorStatusPlugin" -> new MapTo500Interceptor(tok),
-      "throwExceptionPlugin" -> new ThrowExceptionInterceptor(tok),
-      "mapToExceptionPlugin" -> new MapToExceptionInterceptor(tok),
-      "generateBadGatewayStatusPlugin" -> new Return502Interceptor(tok),
-      "mapToBadGatewayStatusPlugin" -> new MapTo502Interceptor(tok)
-    ))
-    val bregistry = new MemoryBackedRegistry[BackendService]
-    val server: StyxServer = config.startServer(new RegistryServiceAdapter(bregistry))
-    setBackends(
-      bregistry,
-      "/" -> HttpBackend(
-        "appOne",
-        Origins(normalBackend),
-        responseTimeout = 5.seconds,
-        connectionPoolConfig = ConnectionPoolSettings(maxConnectionsPerHost = 2)
-      ))
-
-    server
-  }
-
-  private def customTeardown(server: StyxServer) = {
-    server.stopAsync().awaitTerminated()
-  }
-
-
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     normalBackend = HttpStartupConfig(appId = "appOne", originId = "01")
@@ -109,7 +79,6 @@ class ErrorMetricsSpec extends FunSpec
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
-
     backendsRegistry = new MemoryBackedRegistry[BackendService]
     styxServer = styxConfig.startServer(new RegistryServiceAdapter(backendsRegistry))
     setBackends(
@@ -124,14 +93,14 @@ class ErrorMetricsSpec extends FunSpec
 
 
   override protected def afterEach(): Unit = {
-    metricRegistry.clear()
     styxServer.stopAsync().awaitTerminated()
     super.afterEach()
   }
 
   override protected def afterAll(): Unit = {
-    metricRegistry.close()
     Metrics.removeRegistry(metricRegistry)
+    metricRegistry.clear()
+    metricRegistry.close()
     normalBackend.stop()
     super.afterAll()
   }
@@ -288,9 +257,8 @@ class ErrorMetricsSpec extends FunSpec
 
       assert(response.status() == INTERNAL_SERVER_ERROR)
 
-        assert(pluginExceptionMetric("throwExceptionPlugin6") == 1)
-//        assert(pluginInternalServerErrorMetric("throwExceptionPlugin6") == 1)
-        assert(pluginUnexpectedErrorMetric("throwExceptionPlugin6") == 1)
+      assert(pluginExceptionMetric("throwExceptionPlugin6") == 1)
+      assert(pluginUnexpectedErrorMetric("throwExceptionPlugin6") == 1)
 
       sleep(1000)
 
@@ -313,9 +281,8 @@ class ErrorMetricsSpec extends FunSpec
 
       assert(response.status() == INTERNAL_SERVER_ERROR)
 
-        assert(pluginExceptionMetric("mapToExceptionPlugin7") == 1)
-   //     assert(pluginInternalServerErrorMetric("mapToExceptionPlugin7") == 1)
-        assert(pluginUnexpectedErrorMetric("mapToExceptionPlugin7") == 1)
+      assert(pluginExceptionMetric("mapToExceptionPlugin7") == 1)
+      assert(pluginUnexpectedErrorMetric("mapToExceptionPlugin7") == 1)
 
       sleep(1000)
 
@@ -438,6 +405,34 @@ class ErrorMetricsSpec extends FunSpec
       } else
         chain.proceed(request)
     }
+  }
+
+  private def customServer(tok: String): StyxServer = {
+    val config = configuration.StyxConfig(ProxyConfig(), plugins = Map(
+      "failAtOnCompletedPlugin" -> new OnCompleteErrorPlugin(tok),
+      "generateErrorStatusPlugin" -> new Return500Interceptor(tok),
+      "mapToErrorStatusPlugin" -> new MapTo500Interceptor(tok),
+      "throwExceptionPlugin" -> new ThrowExceptionInterceptor(tok),
+      "mapToExceptionPlugin" -> new MapToExceptionInterceptor(tok),
+      "generateBadGatewayStatusPlugin" -> new Return502Interceptor(tok),
+      "mapToBadGatewayStatusPlugin" -> new MapTo502Interceptor(tok)
+    ))
+    val bregistry = new MemoryBackedRegistry[BackendService]
+    val server: StyxServer = config.startServer(new RegistryServiceAdapter(bregistry))
+    setBackends(
+      bregistry,
+      "/" -> HttpBackend(
+        "appOne",
+        Origins(normalBackend),
+        responseTimeout = 5.seconds,
+        connectionPoolConfig = ConnectionPoolSettings(maxConnectionsPerHost = 2)
+      ))
+
+    server
+  }
+
+  private def customTeardown(server: StyxServer) = {
+    server.stopAsync().awaitTerminated()
   }
 
   private class TestException extends RuntimeException {
