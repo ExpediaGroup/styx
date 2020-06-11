@@ -31,7 +31,6 @@ public final class ServerEnvironment {
     public ServerEnvironment(MeterRegistry registry) {
         this.registry = requireNonNull(registry);
         this.metricRegistry = new CodaHaleMetricRegistry(registry);
-
     }
 
     public MetricRegistry metricRegistry() {

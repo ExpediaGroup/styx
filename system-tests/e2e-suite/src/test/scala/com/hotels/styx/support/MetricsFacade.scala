@@ -20,7 +20,6 @@ import com.hotels.styx.metrics.StyxMetrics
 import scala.compat.java8.OptionConverters._
 
 sealed trait CodaHaleMetrics
-sealed trait Metrics
 
 case class Meter(count: Int,
                  m1Rate: Double,
@@ -47,7 +46,6 @@ case class Timer(count: Int,
                  durationUnits: String,
                  rateUnits: String) extends CodaHaleMetrics
 
-
 class CodaHaleMetricsFacade(val metrics: StyxMetrics) {
   def count(name: String) : Option[Long] = {
     metrics.counter(name).asScala.map(_.longValue())
@@ -67,4 +65,3 @@ class CodaHaleMetricsFacade(val metrics: StyxMetrics) {
 
   override def toString: String = metrics.toString
 }
-

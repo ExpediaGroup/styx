@@ -53,8 +53,6 @@ public class InstrumentedPlugin implements Plugin {
 
         Metrics.addRegistry(environment.meterRegistry());
 
-        // TODO get tags from scoped registry in environment
-
         this.errorStatusMetrics = new SimpleCache<>(statusCode ->
                 Metrics.counter("plugins." + plugin.name() + ".response.status." + statusCode.code()));
 

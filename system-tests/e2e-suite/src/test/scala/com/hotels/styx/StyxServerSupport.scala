@@ -148,7 +148,6 @@ trait StyxServerSupplements {
     new CodaHaleMetricsFacade(StyxMetrics.downloadFrom(adminHostName, adminPort))
   }
 
-
   private def portNumberOrElse(address: InetSocketAddress) = Option(address)
     .map(_.getPort)
     .orElse(Some(-1))
