@@ -15,12 +15,21 @@
  */
 package com.hotels.styx.client.applications;
 
+import io.micrometer.core.instrument.Timer;
+
 /**
  * An object that receives origin statistics.
  */
 public interface OriginStats {
     String REQUEST_SUCCESS = "requests.success-rate";
     String REQUEST_FAILURE = "requests.error-rate";
+
+    /**
+     * Return a {@link Timer.Sample} based on the current registry's Clock.
+     *
+     * @return A {@link Timer.Sample}
+     */
+    Timer.Sample startTimer();
 
     /**
      * To be called when a request is successful.
@@ -35,12 +44,13 @@ public interface OriginStats {
     /**
      * Returns a request latency timer.
      */
-    AggregateTimer requestLatencyTimer();
+    Timer requestLatencyTimer();
 
     /**
      * Returns a time-to-first-byte timer.
+     * @return
      */
-    AggregateTimer timeToFirstByteTimer();
+    Timer timeToFirstByteTimer();
 
     /**
      * records a response with a status code.
@@ -52,7 +62,7 @@ public interface OriginStats {
     /**
      * One minute rate for 5xx error messages.
      */
-    double oneMinuteErrorRate();
+//    double oneMinuteErrorRate();
 
     /**
      * Called when request is cancelled.
