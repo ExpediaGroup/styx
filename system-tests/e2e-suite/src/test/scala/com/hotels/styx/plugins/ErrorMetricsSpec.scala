@@ -299,7 +299,7 @@ class ErrorMetricsSpec extends FunSpec
   }
 
   def pluginExceptionMetric(pluginName: String): Double = {
-    Metrics.counter("plugins." + pluginName + ".exception.com_hotels_styx_plugins_ErrorMetricsSpec$TestException").count()
+    Metrics.counter("plugins.exception", "plugin", pluginName, "type", "com_hotels_styx_plugins_ErrorMetricsSpec$TestException").count()
   }
 
   private def originErrorMetric(server: StyxServer) = {
@@ -314,11 +314,11 @@ class ErrorMetricsSpec extends FunSpec
   }
 
   def pluginInternalServerErrorMetric(pluginName: String): Double = {
-    Metrics.counter("plugins." + pluginName + ".response.status.500").count()
+    Metrics.counter("plugins.response.status", "plugin", pluginName, "status", "500").count()
   }
 
   def pluginUnexpectedErrorMetric(pluginName: String): Double = {
-    Metrics.counter("plugins." + pluginName + ".errors").count()
+    Metrics.counter("plugins.errors", "plugin", pluginName).count()
   }
 
   def styxUnexpectedErrorMetric(server: StyxServer): Int = {
@@ -326,10 +326,11 @@ class ErrorMetricsSpec extends FunSpec
   }
 
   class Return500Interceptor(token: String = "") extends PluginAdapter {
+    val pluginName = "generateErrorStatusPlugin" + token
     override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
       if (request.header("Generate_error_status").asScala.contains("true")) {
-        Metrics.counter("plugins.generateErrorStatusPlugin" + token + ".response.status.500").increment()
-        Metrics.counter("plugins.generateErrorStatusPlugin" + token + ".errors").increment()
+        Metrics.counter("plugins.response.status", "plugin", pluginName, "status", "500").increment()
+        Metrics.counter("plugins.errors", "plugin", pluginName).increment()
         Eventual.of(response(HttpResponseStatus.INTERNAL_SERVER_ERROR).build())
       } else
         chain.proceed(request)
@@ -339,10 +340,11 @@ class ErrorMetricsSpec extends FunSpec
   import scala.compat.java8.FunctionConverters.asJavaFunction
 
   class MapTo500Interceptor(token: String = "") extends PluginAdapter {
+    val pluginName = "mapToErrorStatusPlugin" + token
     override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
       if (request.header("Map_to_error_status").asScala.contains("true")) {
-        Metrics.counter("plugins.mapToErrorStatusPlugin" + token + ".response.status.500").increment()
-        Metrics.counter("plugins.mapToErrorStatusPlugin" + token + ".errors").increment()
+        Metrics.counter("plugins.response.status", "plugin", pluginName, "status", "500").increment()
+        Metrics.counter("plugins.errors", "plugin", pluginName).increment()
         chain.proceed(request).flatMap(
           asJavaFunction((t: LiveHttpResponse) => Eventual.of(response(HttpResponseStatus.INTERNAL_SERVER_ERROR).build())
           ))
@@ -352,10 +354,10 @@ class ErrorMetricsSpec extends FunSpec
   }
 
   class Return502Interceptor(token: String = "") extends PluginAdapter {
+    val pluginName = "generateBadGatewayStatusPlugin" + token
     override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
       if (request.header("Generate_bad_gateway_status").asScala.contains("true")) {
-        Metrics.counter("plugins.generateBadGatewayStatusPlugin" + token + ".response.status.500").increment()
-//        Metrics.counter("plugins.generateBadGatewayStatusPlugin" + token + ".errors").increment()
+        Metrics.counter("plugins.response.status", "plugin", pluginName, "status", "502").increment()
         Eventual.of(response(HttpResponseStatus.BAD_GATEWAY).build())
       } else
         chain.proceed(request)
@@ -363,10 +365,11 @@ class ErrorMetricsSpec extends FunSpec
   }
 
   class MapTo502Interceptor(token: String = "") extends PluginAdapter {
+    val pluginName = "mapToBadGatewayStatusPlugin" + token
     override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
       if (request.header("Map_to_bad_gateway_status").asScala.contains("true")) {
-        Metrics.counter("plugins.mapToBadGatewayStatusPlugin" + token + ".response.status.500").increment()
-        Metrics.counter("plugins.mapToBadGatewayStatusPlugin" + token + ".errors").increment()
+        Metrics.counter("plugins.response.status", "plugin", pluginName, "status", "502").increment()
+        Metrics.counter("plugins.errors", "plugin", pluginName).increment()
         chain.proceed(request).flatMap(
           asJavaFunction((t: LiveHttpResponse) => Eventual.of(response(HttpResponseStatus.BAD_GATEWAY).build())
           ))
@@ -380,9 +383,9 @@ class ErrorMetricsSpec extends FunSpec
 
     override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
       if (request.header("Throw_an_exception").asScala.contains("true")) {
-        Metrics.counter("plugins." + pluginName + ".status.plugins.500").increment()
-        Metrics.counter("plugins." + pluginName + ".errors").increment()
-        Metrics.counter("plugins." + pluginName + ".exception.com_hotels_styx_plugins_ErrorMetricsSpec$TestException").increment()
+        Metrics.counter("plugins.response.status", "plugin", pluginName, "status", "500").increment()
+        Metrics.counter("plugins.errors", "plugin", pluginName).increment()
+        Metrics.counter("plugins.exception", "plugin", pluginName, "type", "com_hotels_styx_plugins_ErrorMetricsSpec$TestException").increment()
         throw new TestException()
       } else {
         chain.proceed(request)
@@ -395,9 +398,9 @@ class ErrorMetricsSpec extends FunSpec
 
     override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
       if (request.header("Map_to_exception").asScala.contains("true")) {
-        Metrics.counter("plugins." + pluginName + ".status.plugins.500").increment()
-        Metrics.counter("plugins." + pluginName + ".errors").increment()
-        Metrics.counter("plugins." + pluginName + ".exception.com_hotels_styx_plugins_ErrorMetricsSpec$TestException").increment()
+        Metrics.counter("plugins.response.status", "plugin", pluginName, "status", "500").increment()
+        Metrics.counter("plugins.errors", "plugin", pluginName).increment()
+        Metrics.counter("plugins.exception", "plugin", pluginName, "type", "com_hotels_styx_plugins_ErrorMetricsSpec$TestException").increment()
         chain.proceed(request).flatMap(asJavaFunction((t: LiveHttpResponse) => Eventual.error(new TestException())))
       } else
         chain.proceed(request)

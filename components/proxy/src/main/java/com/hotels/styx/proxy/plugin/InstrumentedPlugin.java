@@ -54,12 +54,12 @@ public class InstrumentedPlugin implements Plugin {
         Metrics.addRegistry(environment.meterRegistry());
 
         this.errorStatusMetrics = new SimpleCache<>(statusCode ->
-                Metrics.counter("plugins." + plugin.name() + ".response.status." + statusCode.code()));
+                Metrics.counter("plugins.response.status", "plugin", plugin.name(), "status", Integer.toString(statusCode.code())));
 
         this.exceptionMetrics = new SimpleCache<>(type ->
-                Metrics.counter("plugins." + plugin.name() + ".exception." + formattedExceptionName(type)));
+                Metrics.counter("plugins.exception", "plugin", plugin.name(), "type", formattedExceptionName(type)));
 
-        this.errors = Metrics.counter("plugins." + plugin.name() + ".errors");
+        this.errors = Metrics.counter("plugins.errors", "plugin", plugin.name());
 
         LOGGER.info("Plugin {} instrumented", plugin.name());
     }
