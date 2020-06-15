@@ -28,9 +28,10 @@ import com.hotels.styx.client.StyxBackendServiceClient
 import com.hotels.styx.client.StyxBackendServiceClient._
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
-import com.hotels.styx.server.HttpInterceptorContext
 import com.hotels.styx.support.NettyOrigins
+import com.hotels.styx.support.Support.requestContext
 import com.hotels.styx.support.configuration.{BackendService, ImplicitOriginConversions, Origins}
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.netty.buffer.Unpooled._
 import io.netty.channel.ChannelFutureListener.CLOSE
 import io.netty.channel.ChannelHandlerContext
@@ -38,7 +39,6 @@ import io.netty.handler.codec.http.HttpVersion._
 import io.netty.handler.codec.http._
 import org.scalatest._
 import reactor.core.publisher.Mono
-import com.hotels.styx.support.Support.requestContext
 
 import scala.concurrent.duration._
 
@@ -70,7 +70,7 @@ class HttpResponseSpec extends FunSuite
       .build
   }
 
-  def activeOrigins(backendService: service.BackendService): ActiveOrigins = newOriginsInventoryBuilder(new NoopMetricRegistry, backendService).build()
+  def activeOrigins(backendService: service.BackendService): ActiveOrigins = newOriginsInventoryBuilder(new SimpleMeterRegistry(), backendService).build()
 
   def busyConnectionStrategy(activeOrigins: ActiveOrigins): LoadBalancer = new BusyConnectionsStrategy(activeOrigins)
 

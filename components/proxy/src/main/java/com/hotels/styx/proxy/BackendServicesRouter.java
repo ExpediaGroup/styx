@@ -128,14 +128,14 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
             ConnectionPool.Factory connectionPoolFactory = new SimpleConnectionPoolFactory.Builder()
                     .connectionFactory(connectionFactory)
                     .connectionPoolSettings(backendService.connectionPoolConfig())
-                    .metricRegistry(originsMetrics)
+                    .meterRegistry(environment.meterRegistry())
                     .build();
 
             OriginHealthStatusMonitor healthStatusMonitor = healthStatusMonitor(backendService);
 
             OriginsInventory inventory = new OriginsInventory.Builder(backendService.id())
                     .eventBus(environment.eventBus())
-                    .metricsRegistry(originsMetrics)
+                    .meterRegistry(environment.meterRegistry())
                     .connectionPoolFactory(connectionPoolFactory)
                     .originHealthMonitor(healthStatusMonitor)
                     .initialOrigins(backendService.origins())
