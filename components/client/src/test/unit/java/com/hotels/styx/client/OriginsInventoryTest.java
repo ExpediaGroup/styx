@@ -40,6 +40,8 @@ import java.util.Optional;
 import static ch.qos.logback.classic.Level.INFO;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.Id.id;
+import static com.hotels.styx.api.Metrics.APPID_TAG;
+import static com.hotels.styx.api.Metrics.ORIGINID_TAG;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
 import static com.hotels.styx.client.OriginsInventory.OriginState.ACTIVE;
@@ -476,7 +478,7 @@ public class OriginsInventoryTest {
 
     private Optional<Double> gaugeValue(String appId, String originId) {
         String name = "status";
-        Tags tags = Tags.of("appid", appId, "originid", originId);
+        Tags tags = Tags.of(APPID_TAG, appId, ORIGINID_TAG, originId);
         return gauge(name, tags).map(Gauge::value);
     }
 

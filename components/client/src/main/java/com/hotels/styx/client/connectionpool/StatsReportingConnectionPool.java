@@ -18,12 +18,15 @@ package com.hotels.styx.client.connectionpool;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.client.Connection;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import org.reactivestreams.Publisher;
 
-import java.util.Objects;
-import java.util.stream.Stream;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.function.Supplier;
 
 import static com.hotels.styx.api.Metrics.name;
 import static com.hotels.styx.api.Metrics.APPID_TAG;
@@ -34,6 +37,7 @@ class StatsReportingConnectionPool implements ConnectionPool {
 
     private final ConnectionPool connectionPool;
     private final MeterRegistry meterRegistry;
+    private final Set<Meter> meters = new HashSet<>();
     private final Tags tags;
 
     public StatsReportingConnectionPool(ConnectionPool connectionPool, MeterRegistry meterRegistry) {
@@ -87,22 +91,22 @@ class StatsReportingConnectionPool implements ConnectionPool {
 
     private void registerMetrics() {
         ConnectionPool.Stats stats = connectionPool.stats();
-        meterRegistry.gauge(name(PREFIX, "busy-connections"), tags, stats, Stats::busyConnectionCount);
-        meterRegistry.gauge(name(PREFIX, "pending-connections"), tags, stats, Stats::pendingConnectionCount);
-        meterRegistry.gauge(name(PREFIX, "available-connections"), tags, stats, Stats::availableConnectionCount);
-        meterRegistry.gauge(name(PREFIX, "connection-attempts"), tags, stats, Stats::connectionAttempts);
-        meterRegistry.gauge(name(PREFIX, "connection-failures"), tags, stats, Stats::connectionFailures);
-        meterRegistry.gauge(name(PREFIX, "connections-closed"), tags, stats, Stats::closedConnections);
-        meterRegistry.gauge(name(PREFIX, "connections-terminated"), tags, stats, Stats::terminatedConnections);
-        meterRegistry.gauge(name(PREFIX, "connections-in-establishment"), tags, stats, Stats::connectionsInEstablishment);
+        registerGauge("busy-connections", stats::busyConnectionCount);
+        registerGauge("pending-connections", stats::pendingConnectionCount);
+        registerGauge("available-connections", stats::availableConnectionCount);
+        registerGauge("connection-attempts", stats::connectionAttempts);
+        registerGauge("connection-failures", stats::connectionFailures);
+        registerGauge("connections-closed", stats::closedConnections);
+        registerGauge("connections-terminated", stats::terminatedConnections);
+        registerGauge("connections-in-establishment", stats::connectionsInEstablishment);
+    }
+
+    private void registerGauge(String name, Supplier<Number> supplier) {
+        meters.add(Gauge.builder(name(PREFIX, name), supplier).tags(tags).register(meterRegistry));
     }
 
     private void removeMetrics() {
-        Stream.of("busy-connections", "pending-connections", "available-connections",
-                "connection-attempts", "connection-failures", "connections-closed", "connections-terminated",
-                "connections-in-establishment")
-                .map(n -> meterRegistry.find(name(PREFIX, n)).tags(tags).gauge())
-                .filter(Objects::nonNull)
-                .forEach(meterRegistry::remove);
+        meters.forEach(meterRegistry::remove);
+        meters.clear();
     }
 }

@@ -110,7 +110,7 @@ public final class OriginsInventory
      * @param appId                     the application that this inventory's origins are associated with
      * @param originHealthStatusMonitor origin health status monitor
      * @param hostConnectionPoolFactory factory to create connection pools for origins
-     * @param meterRegistry            metric registry
+     * @param meterRegistry             metric registry
      */
     public OriginsInventory(EventBus eventBus,
                             Id appId,
@@ -471,8 +471,9 @@ public final class OriginsInventory
 
         private void registerMeters() {
             Tags gaugeTags = Tags.of(APPID_TAG, appId.toString(), ORIGINID_TAG, origin.id().toString());
-            meterRegistry.gauge(GAUGE_NAME, gaugeTags, this, o -> o.state().gaugeValue);
-            statusGauge = meterRegistry.find(GAUGE_NAME).tags(gaugeTags).gauge();
+            statusGauge = Gauge.builder(GAUGE_NAME, () -> state().gaugeValue)
+                    .tags(gaugeTags)
+                    .register(meterRegistry);
         }
 
         private void deregisterMeters() {

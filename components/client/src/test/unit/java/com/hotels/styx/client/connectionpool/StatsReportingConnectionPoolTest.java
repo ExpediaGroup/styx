@@ -22,6 +22,8 @@ import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 
+import static com.hotels.styx.api.Metrics.APPID_TAG;
+import static com.hotels.styx.api.Metrics.ORIGINID_TAG;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
@@ -39,7 +41,7 @@ public class StatsReportingConnectionPoolTest {
 
     @Test
     public void removesRegisteredMetricsOnClose() {
-        Tags tags = Tags.of("appid", "generic-app", "originid", "backend-01");
+        Tags tags = Tags.of(APPID_TAG, "generic-app", ORIGINID_TAG, "backend-01");
 
         assertThat(meterRegistry.find("connectionspool.available-connections").tags(tags).gauge(), notNullValue());
         assertThat(meterRegistry.find("connectionspool.busy-connections").tags(tags).gauge(), notNullValue());
