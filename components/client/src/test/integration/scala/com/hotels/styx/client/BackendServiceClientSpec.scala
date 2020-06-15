@@ -28,7 +28,7 @@ import com.hotels.styx.api.extension.Origin._
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.api.extension.{ActiveOrigins, Origin}
-import com.hotels.styx.api.metrics.codahale.{CodaHaleMetricRegistry, NoopMetricRegistry}
+import com.hotels.styx.api.metrics.codahale.NoopMetricRegistry
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient._
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy
@@ -67,7 +67,7 @@ class BackendServiceClientSpec extends FunSuite with BeforeAndAfterAll with Matc
     originOneServer.stop()
   }
 
-  def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(new CodaHaleMetricRegistry(new SimpleMeterRegistry()),backendService).build()
+  def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(new SimpleMeterRegistry(),backendService).build()
 
   def busyConnectionStrategy(activeOrigins: ActiveOrigins): LoadBalancer = new BusyConnectionsStrategy(activeOrigins)
 

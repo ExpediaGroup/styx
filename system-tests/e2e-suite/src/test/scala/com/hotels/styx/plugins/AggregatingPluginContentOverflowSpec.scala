@@ -25,10 +25,11 @@ import com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.{MockServer, StyxProxySpec}
 import com.hotels.styx.api.HttpResponseStatus._
+import io.micrometer.core.instrument.Tags
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
-
 import reactor.core.publisher.Flux
+
 import scala.concurrent.duration._
 
 class AggregatingPluginContentOverflowSpec extends FunSpec
@@ -81,9 +82,9 @@ class AggregatingPluginContentOverflowSpec extends FunSpec
       assert(resp.status() == BAD_GATEWAY)
 
       eventually(timeout(3 seconds)) {
-        val metrics = styxServer.metricsSnapshot
-        metrics.gauge("origins.app1.origin-1.connectionspool.busy-connections").get should be(0)
-        metrics.gauge("origins.app1.origin-1.connectionspool.connections-closed").get should be(1)
+        val tags = Tags.of("appid", "app1", "originid", "origin-1")
+        meterRegistry.find("connectionspool.busy-connections").tags(tags).gauge().value() should be(0.0)
+        meterRegistry.find("connectionspool.connections-closed").tags(tags).gauge().value() should be(1.0)
       }
     }
   }

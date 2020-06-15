@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
  */
 package com.hotels.styx.client.connectionpool;
 
-import com.hotels.styx.client.Connection;
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
+import com.hotels.styx.client.Connection;
+import io.micrometer.core.instrument.MeterRegistry;
 
 import static java.util.Objects.requireNonNull;
 
@@ -31,19 +31,19 @@ import static java.util.Objects.requireNonNull;
 public final class SimpleConnectionPoolFactory implements ConnectionPool.Factory {
     private final Connection.Factory connectionFactory;
     private final ConnectionPoolSettings poolSettings;
-    private final MetricRegistry metricRegistry;
+    private final MeterRegistry meterRegistry;
 
     private SimpleConnectionPoolFactory(Builder builder) {
         this.connectionFactory = requireNonNull(builder.connectionFactory);
         this.poolSettings = new ConnectionPoolSettings.Builder(requireNonNull(builder.poolSettings)).build();
-        this.metricRegistry = requireNonNull(builder.metricRegistry);
+        this.meterRegistry = requireNonNull(builder.meterRegistry);
     }
 
     @Override
     public ConnectionPool create(Origin origin) {
         return new StatsReportingConnectionPool(
                 new SimpleConnectionPool(origin, poolSettings, connectionFactory),
-                metricRegistry);
+                meterRegistry);
     }
 
     /**
@@ -52,7 +52,7 @@ public final class SimpleConnectionPoolFactory implements ConnectionPool.Factory
     public static final class Builder {
         private Connection.Factory connectionFactory;
         private ConnectionPoolSettings poolSettings;
-        private MetricRegistry metricRegistry;
+        private MeterRegistry meterRegistry;
 
         public Builder connectionFactory(Connection.Factory connectionFactory) {
             this.connectionFactory = connectionFactory;
@@ -64,8 +64,8 @@ public final class SimpleConnectionPoolFactory implements ConnectionPool.Factory
             return this;
         }
 
-        public Builder metricRegistry(MetricRegistry metricRegistry) {
-            this.metricRegistry = metricRegistry;
+        public Builder meterRegistry(MeterRegistry metricRegistry) {
+            this.meterRegistry = metricRegistry;
             return this;
         }
 

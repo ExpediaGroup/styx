@@ -19,6 +19,9 @@ import java.util.StringJoiner;
 
 public final class Metrics {
 
+    public static final String APPID_TAG = "appid";
+    public static final String ORIGINID_TAG = "originid";
+
     private Metrics() {
     }
 

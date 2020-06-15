@@ -34,7 +34,9 @@ import io.kotlintest.matchers.numerics.shouldBeGreaterThan
 import io.kotlintest.matchers.shouldBeInRange
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
+import io.kotlintest.shouldNotBe
 import io.kotlintest.specs.FunSpec
+import io.micrometer.core.instrument.Gauge
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.charset.StandardCharsets.UTF_8
@@ -95,11 +97,9 @@ class MetricsSpec : FunSpec() {
                 }
 
                 eventually(1.seconds, AssertionError::class.java) {
-                    val (name, _) = styxServer().metrics()
-                            .toList()
-                            .first { (name, _) -> name.contains("connectionspool".toRegex()) }
-
-                    name shouldBe "origins.appA.appA-01.connectionspool.available-connections"
+                    styxServer.meterRegistry().find("connectionspool.available-connections")
+                            .tags("appid", "origins", "originid", "appA.appA-01")
+                            .gauge() shouldNotBe null
                 }
             }
 

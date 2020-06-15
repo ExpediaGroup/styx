@@ -15,10 +15,10 @@
  */
 package com.hotels.styx.client.connectionpool;
 
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
+import io.micrometer.core.instrument.MeterRegistry;
 
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
 import static com.hotels.styx.client.HttpConfig.newHttpConfigBuilder;
@@ -39,17 +39,17 @@ public final class ConnectionPools {
         return ConnectionPools::poolForOrigin;
     }
 
-    public static ConnectionPool poolForOrigin(Origin origin, MetricRegistry metricRegistry) {
+    public static ConnectionPool poolForOrigin(Origin origin, MeterRegistry meterRegistry) {
         return new StatsReportingConnectionPool(
                 new SimpleConnectionPool(
                         origin,
                         defaultConnectionPoolSettings(),
                         new NettyConnectionFactory.Builder()
                                 .build()),
-                metricRegistry);
+                meterRegistry);
     }
 
-    public static ConnectionPool poolForOrigin(Origin origin, MetricRegistry metricRegistry, int responseTimeoutMillis) {
+    public static ConnectionPool poolForOrigin(Origin origin, MeterRegistry meterRegistry, int responseTimeoutMillis) {
         return new StatsReportingConnectionPool(
                 new SimpleConnectionPool(
                         origin,
@@ -57,24 +57,24 @@ public final class ConnectionPools {
                         new NettyConnectionFactory.Builder()
                                 .httpRequestOperationFactory(httpRequestOperationFactoryBuilder().responseTimeoutMillis(responseTimeoutMillis).build())
                                 .build()),
-                metricRegistry);
+                meterRegistry);
     }
 
-    private static ConnectionPool poolForOrigin(Origin origin, MetricRegistry metricRegistry, NettyConnectionFactory connectionFactory) {
+    private static ConnectionPool poolForOrigin(Origin origin, MeterRegistry meterRegistry, NettyConnectionFactory connectionFactory) {
         return new StatsReportingConnectionPool(
                 new SimpleConnectionPool(
                         origin,
                         defaultConnectionPoolSettings(),
                         connectionFactory),
-                metricRegistry
+                meterRegistry
         );
     }
 
-    public static ConnectionPool.Factory simplePoolFactory(MetricRegistry metricRegistry) {
-        return origin -> poolForOrigin(origin, metricRegistry);
+    public static ConnectionPool.Factory simplePoolFactory(MeterRegistry meterRegistry) {
+        return origin -> poolForOrigin(origin, meterRegistry);
     }
 
-    public static ConnectionPool.Factory simplePoolFactory(BackendService backendService, MetricRegistry metricRegistry) {
+    public static ConnectionPool.Factory simplePoolFactory(BackendService backendService, MeterRegistry meterRegistry) {
         NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder()
                 .httpConfig(newHttpConfigBuilder().setMaxHeadersSize(backendService.maxHeaderSize()).build())
                 .httpRequestOperationFactory(
@@ -83,6 +83,6 @@ public final class ConnectionPools {
                                 .build())
                 .build();
 
-        return origin -> poolForOrigin(origin, metricRegistry, connectionFactory);
+        return origin -> poolForOrigin(origin, meterRegistry, connectionFactory);
     }
 }

@@ -41,6 +41,7 @@ import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -263,6 +264,7 @@ public class HostProxy implements RoutingObject {
             return createHostProxyHandler(
                     executor,
                     context.environment().metricRegistry(),
+                    context.environment().meterRegistry(),
                     hostAndPort,
                     poolSettings,
                     tlsSettings,
@@ -288,6 +290,7 @@ public class HostProxy implements RoutingObject {
         public static HostProxy createHostProxyHandler(
                 NettyExecutor executor,
                 MetricRegistry metricRegistry,
+                MeterRegistry meterRegistry,
                 HostAndPort hostAndPort,
                 ConnectionPoolSettings poolSettings,
                 TlsSettings tlsSettings,
@@ -316,7 +319,7 @@ public class HostProxy implements RoutingObject {
                                     theOrigin -> originMetrics,
                                     poolSettings.connectionExpirationSeconds()))
                     .connectionPoolSettings(poolSettings)
-                    .metricRegistry(metricRegistry)
+                    .meterRegistry(meterRegistry)
                     .build();
 
             return new HostProxy(host, port, StyxHostHttpClient.create(connectionPoolFactory.create(origin)), originMetrics);
