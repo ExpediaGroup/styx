@@ -17,26 +17,27 @@ package com.hotels.styx.client
 
 import com.github.tomakehurst.wiremock.client.WireMock.{get => _, _}
 import com.hotels.styx.api.HttpResponseStatus.OK
-import com.hotels.styx.api.{HttpHeaderNames, HttpHeaderValues, HttpResponse}
 import com.hotels.styx.api.LiveHttpRequest.get
 import com.hotels.styx.api.extension.ActiveOrigins
 import com.hotels.styx.api.extension.Origin.newOriginBuilder
 import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.api.metrics.codahale.NoopMetricRegistry
+import com.hotels.styx.api.{HttpHeaderNames, HttpHeaderValues, HttpResponse}
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
-import com.hotels.styx.support.ResourcePaths.fixturesHome
+import com.hotels.styx.support.Support.requestContext
 import com.hotels.styx.support.backends.FakeHttpServer
-import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins, StyxConfig}
+import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins}
 import com.hotels.styx.support.server.UrlMatchingStrategies._
 import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
+import io.micrometer.core.instrument.Tags
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.hamcrest.MatcherAssert._
 import org.hamcrest.Matchers._
-import org.scalatest.{FixtureContext, FunSpec, Succeeded}
+import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
 import reactor.core.publisher.Mono
-import com.hotels.styx.support.Support.requestContext
 
 import scala.concurrent.duration._
 
@@ -90,9 +91,11 @@ class ExpiringConnectionSpec extends FunSpec
     assertThat(response1.status(), is(OK))
 
     // Ensure that a connection got created in pool:
+    val meterTags = Tags.of("appid", "appOne", "originid", "generic-app-01")
+
     eventually(timeout(1.seconds)) {
-      styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.available-connections").get should be(1)
-      styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.connections-closed").get should be(0)
+      meterRegistry.find("connectionspool.available-connections").tags(meterTags).gauge().value() should be(1.0)
+      meterRegistry.find("connectionspool.connections-closed").tags(meterTags).gauge().value() should be(0.0)
     }
 
     Thread.sleep(1000)
@@ -111,16 +114,16 @@ class ExpiringConnectionSpec extends FunSpec
 
     eventually(timeout(2.seconds)) {
       withClue("A connection should be available in pool") {
-        styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.available-connections").get should be(1)
+        meterRegistry.find("connectionspool.available-connections").tags(meterTags).gauge().value() should be(1.0)
       }
 
       withClue("A previous connection should have been terminated") {
-        styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.connections-terminated").get should be(1)
+        meterRegistry.find("connectionspool.connections-terminated").tags(meterTags).gauge().value() should be(1.0)
       }
     }
   }
 
-  def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(new NoopMetricRegistry, backendService).build()
+  def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(new SimpleMeterRegistry(), backendService).build()
 
   def roundRobinStrategy(activeOrigins: ActiveOrigins): RoundRobinStrategy = new RoundRobinStrategy(activeOrigins, activeOrigins.snapshot())
 }

@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.client;
 
-import com.codahale.metrics.Gauge;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -24,7 +23,6 @@ import com.google.common.eventbus.Subscribe;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.ActiveOrigins;
 import com.hotels.styx.api.extension.Announcer;
 import com.hotels.styx.api.extension.Origin;
@@ -41,6 +39,9 @@ import com.hotels.styx.client.origincommands.GetOriginsInventorySnapshot;
 import com.hotels.styx.common.EventProcessor;
 import com.hotels.styx.common.QueueDrainingEventProcessor;
 import com.hotels.styx.common.StateMachine;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import org.slf4j.Logger;
 
 import javax.annotation.concurrent.ThreadSafe;
@@ -52,6 +53,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
+import static com.hotels.styx.api.Metrics.APPID_TAG;
+import static com.hotels.styx.api.Metrics.ORIGINID_TAG;
 import static com.hotels.styx.client.OriginsInventory.OriginState.ACTIVE;
 import static com.hotels.styx.client.OriginsInventory.OriginState.DISABLED;
 import static com.hotels.styx.client.OriginsInventory.OriginState.INACTIVE;
@@ -93,7 +96,7 @@ public final class OriginsInventory
     private final OriginHealthStatusMonitor originHealthStatusMonitor;
     private final ConnectionPool.Factory hostConnectionPoolFactory;
     private final StyxHostHttpClient.Factory hostClientFactory;
-    private final MetricRegistry metricRegistry;
+    private final MeterRegistry meterRegistry;
     private final QueueDrainingEventProcessor eventQueue;
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
@@ -107,20 +110,20 @@ public final class OriginsInventory
      * @param appId                     the application that this inventory's origins are associated with
      * @param originHealthStatusMonitor origin health status monitor
      * @param hostConnectionPoolFactory factory to create connection pools for origins
-     * @param metricRegistry            metric registry
+     * @param meterRegistry             metric registry
      */
     public OriginsInventory(EventBus eventBus,
                             Id appId,
                             OriginHealthStatusMonitor originHealthStatusMonitor,
                             ConnectionPool.Factory hostConnectionPoolFactory,
                             StyxHostHttpClient.Factory hostClientFactory,
-                            MetricRegistry metricRegistry) {
+                            MeterRegistry meterRegistry) {
         this.eventBus = requireNonNull(eventBus);
         this.appId = requireNonNull(appId);
         this.originHealthStatusMonitor = requireNonNull(originHealthStatusMonitor);
         this.hostConnectionPoolFactory = requireNonNull(hostConnectionPoolFactory);
         this.hostClientFactory = requireNonNull(hostClientFactory);
-        this.metricRegistry = requireNonNull(metricRegistry);
+        this.meterRegistry = requireNonNull(meterRegistry);
 
         this.eventBus.register(this);
         this.originHealthStatusMonitor.addOriginStatusListener(this);
@@ -311,9 +314,9 @@ public final class OriginsInventory
 
     private MonitoredOrigin addMonitoredEndpoint(Origin origin) {
         MonitoredOrigin monitoredOrigin = new MonitoredOrigin(origin);
-        metricRegistry.register(monitoredOrigin.gaugeName, (Gauge<Integer>) () -> monitoredOrigin.state().gaugeValue);
         monitoredOrigin.startMonitoring();
         LOG.info("New origin added and activated. Origin={}:{}", appId, monitoredOrigin.origin.id());
+
         return monitoredOrigin;
     }
 
@@ -333,7 +336,6 @@ public final class OriginsInventory
         host.close();
 
         LOG.info("Existing origin has been removed. Origin={}:{}", appId, host.origin.id());
-        metricRegistry.deregister(host.gaugeName);
     }
 
     private boolean isNewOrigin(Id originId, Origin newOrigin) {
@@ -416,11 +418,15 @@ public final class OriginsInventory
     }
 
     private final class MonitoredOrigin {
+
+        private static final String GAUGE_NAME = "status"; // TODO: AppId and OriginId will be tags - is "status" enough of a name?
+
         private final Origin origin;
         private final ConnectionPool connectionPool;
         private final StateMachine<OriginState> machine;
-        private final String gaugeName;
         private final StyxHostHttpClient hostClient;
+
+        private Gauge statusGauge;
 
         private MonitoredOrigin(Origin origin) {
             this.origin = origin;
@@ -440,12 +446,13 @@ public final class OriginsInventory
 
                     .build();
 
-            this.gaugeName = appId + "." + origin.id() + ".status";
+            registerMeters();
         }
 
         private void close() {
             stopMonitoring();
             connectionPool.close();
+            deregisterMeters();
         }
 
         private void onStateChange(OriginState oldState, OriginState newState, Object event) {
@@ -460,6 +467,17 @@ public final class OriginsInventory
 
                 notifyStateChange();
             }
+        }
+
+        private void registerMeters() {
+            Tags gaugeTags = Tags.of(APPID_TAG, appId.toString(), ORIGINID_TAG, origin.id().toString());
+            statusGauge = Gauge.builder(GAUGE_NAME, () -> state().gaugeValue)
+                    .tags(gaugeTags)
+                    .register(meterRegistry);
+        }
+
+        private void deregisterMeters() {
+            meterRegistry.remove(statusGauge);
         }
 
         void startMonitoring() {
@@ -483,9 +501,9 @@ public final class OriginsInventory
         return new Builder(appId);
     }
 
-    public static Builder newOriginsInventoryBuilder(MetricRegistry metricRegistry, BackendService backendService) {
+    public static Builder newOriginsInventoryBuilder(MeterRegistry metricRegistry, BackendService backendService) {
         return new Builder(backendService.id())
-                .metricsRegistry(metricRegistry)
+                .meterRegistry(metricRegistry)
                 .connectionPoolFactory(simplePoolFactory(backendService, metricRegistry))
                 .initialOrigins(backendService.origins());
     }
@@ -496,14 +514,14 @@ public final class OriginsInventory
     public static class Builder {
         private final Id appId;
         private OriginHealthStatusMonitor originHealthMonitor = new NoOriginHealthStatusMonitor();
-        private MetricRegistry metricsRegistry;
+        private MeterRegistry meterRegistry;
         private EventBus eventBus = new EventBus();
         private ConnectionPool.Factory connectionPoolFactory = simplePoolFactory();
         private StyxHostHttpClient.Factory hostClientFactory;
         private Set<Origin> initialOrigins = emptySet();
 
-        public Builder metricsRegistry(MetricRegistry metricsRegistry) {
-            this.metricsRegistry = metricsRegistry;
+        public Builder meterRegistry(MeterRegistry meterRegistry) {
+            this.meterRegistry = meterRegistry;
             return this;
         }
 
@@ -543,7 +561,7 @@ public final class OriginsInventory
                 hostClientFactory = (ConnectionPool connectionPool) -> StyxHostHttpClient.create(connectionPool);
             }
 
-            if (metricsRegistry == null) {
+            if (meterRegistry == null) {
                 throw new IllegalStateException("metricRegistry is required");
             }
 
@@ -553,7 +571,7 @@ public final class OriginsInventory
                     originHealthMonitor,
                     connectionPoolFactory,
                     hostClientFactory,
-                    metricsRegistry);
+                    meterRegistry);
 
             originsInventory.setOrigins(initialOrigins);
 

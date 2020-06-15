@@ -123,12 +123,12 @@ public class ProxyToBackend implements RoutingObject {
             ConnectionPool.Factory connectionPoolFactory = new SimpleConnectionPoolFactory.Builder()
                     .connectionFactory(connectionFactory)
                     .connectionPoolSettings(poolSettings)
-                    .metricRegistry(context.environment().metricRegistry())
+                    .meterRegistry(context.environment().meterRegistry())
                     .build();
 
             OriginsInventory inventory = new OriginsInventory.Builder(backendService.id())
                     .eventBus(context.environment().eventBus())
-                    .metricsRegistry(context.environment().metricRegistry())
+                    .meterRegistry(context.environment().meterRegistry())
                     .connectionPoolFactory(connectionPoolFactory)
                     .initialOrigins(backendService.origins())
                     .build();

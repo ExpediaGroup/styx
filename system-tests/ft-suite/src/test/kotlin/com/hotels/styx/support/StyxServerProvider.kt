@@ -32,6 +32,8 @@ import com.hotels.styx.api.plugins.spi.Plugin
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.startup.StyxServerComponents
+import io.micrometer.core.instrument.Meter
+import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.toMono
@@ -70,11 +72,16 @@ class StyxServerProvider(
         val defaultLoggingConfig: Path? = logConfigPath,
         val validateConfig: Boolean = true) {
     val serverRef: AtomicReference<StyxServer?> = AtomicReference()
+    val meterRegistryRef: AtomicReference<MeterRegistry?> = AtomicReference()
 
     operator fun invoke() = get()
 
     fun get(): StyxServer {
         return serverRef.get()!!
+    }
+
+    fun meterRegistry(): MeterRegistry {
+        return meterRegistryRef.get()!!
     }
 
     fun started() = (serverRef.get() == null) || serverRef.get()!!.isRunning
@@ -100,8 +107,9 @@ class StyxServerProvider(
             stop()
         }
 
+        val meterRegistry = SimpleMeterRegistry()
         var components = StyxServerComponents.Builder()
-                .registry(SimpleMeterRegistry())
+                .registry(meterRegistry)
                 .styxConfig(StyxConfig.fromYaml(configuration, validateConfig))
                 .additionalRoutingObjects(additionalRoutingObjects)
                 .plugins(additionalPlugins)
@@ -111,6 +119,7 @@ class StyxServerProvider(
 
         val newServer = StyxServer(components.build())
         newServer.startAsync()
+        meterRegistryRef.set(meterRegistry)
         serverRef.set(newServer)
 
         return this

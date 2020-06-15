@@ -206,9 +206,9 @@ class HostProxySpec : FeatureSpec() {
                 }
 
                 withClue("Styx Server routing.objects.hostProxy.connectionspool.connection-attempts") {
-                    styxServer().metrics().let {
-                        (it["routing.objects.hostProxy.connectionspool.connection-attempts"]!!.get("value") as Int) shouldBeInRange 1..2
-                    }
+                    styxServer.meterRegistry().find("connectionspool.connection-attempts")
+                            .tags("appid", "routing.objects", "originid", "hostProxy")
+                            .gauge().value().toInt() shouldBeInRange 1..2
                 }
             }
 
@@ -242,10 +242,12 @@ class HostProxySpec : FeatureSpec() {
                         .status() shouldBe OK
 
                 eventually(1.seconds, AssertionError::class.java) {
-                    styxServer().metrics().let {
-                        it["routing.objects.hostProxy.connectionspool.available-connections"]!!.get("value") shouldBe 1
-                        it["routing.objects.hostProxy.connectionspool.connections-closed"]!!.get("value") shouldBe 0
-                    }
+                    styxServer.meterRegistry().find("connectionspool.available-connections")
+                            .tags("appid", "routing.objects", "originid", "hostProxy")
+                            .gauge().value().toInt() shouldBe 1
+                    styxServer.meterRegistry().find("connectionspool.connections-closed")
+                            .tags("appid", "routing.objects", "originid", "hostProxy")
+                            .gauge().value().toInt() shouldBe 0
                 }
 
                 // Wait for connection to expiry
@@ -258,10 +260,12 @@ class HostProxySpec : FeatureSpec() {
                         .status() shouldBe OK
 
                 eventually(1.seconds, AssertionError::class.java) {
-                    styxServer().metrics().let {
-                        it["routing.objects.hostProxy.connectionspool.available-connections"]!!.get("value") shouldBe 1
-                        it["routing.objects.hostProxy.connectionspool.connections-terminated"]!!.get("value") shouldBe 1
-                    }
+                    styxServer.meterRegistry().find("connectionspool.available-connections")
+                            .tags("appid", "routing.objects", "originid", "hostProxy")
+                            .gauge().value().toInt() shouldBe 1
+                    styxServer.meterRegistry().find("connectionspool.connections-terminated")
+                            .tags("appid", "routing.objects", "originid", "hostProxy")
+                            .gauge().value().toInt() shouldBe 1
                 }
             }
         }
@@ -292,16 +296,18 @@ class HostProxySpec : FeatureSpec() {
             }
 
             scenario("... and provides connection pool metrics") {
-                styxServer().metrics().let {
-                    it["routing.objects.hostProxy.connectionspool.connection-attempts"]!!.get("value") shouldBe 1
-                }
+                styxServer.meterRegistry().find("connectionspool.connection-attempts")
+                        .tags("appid", "routing.objects", "originid", "hostProxy")
+                        .gauge().value().toInt() shouldBe 1
             }
 
             scenario("... and provides origin and application metrics") {
                 styxServer().metrics().let {
                     it["routing.objects.hostProxy.requests.response.status.200"]!!.get("count") shouldBe 1
-                    it["routing.objects.hostProxy.connectionspool.connection-attempts"]!!.get("value") shouldBe 1
                 }
+                styxServer.meterRegistry().find("connectionspool.connection-attempts")
+                        .tags("appid", "routing.objects", "originid", "hostProxy")
+                        .gauge().value().toInt() shouldBe 1
             }
 
             scenario("... and unregisters connection pool metrics") {
@@ -354,9 +360,9 @@ class HostProxySpec : FeatureSpec() {
             }
 
             scenario("... and provides connection pool metrics with metric prefix") {
-                styxServer().metrics().let {
-                    it["origins.myApp.hostProxy.connectionspool.connection-attempts"]!!.get("value") shouldBe 1
-                }
+                styxServer.meterRegistry().find("connectionspool.connection-attempts")
+                        .tags("appid", "origins.myApp", "originid", "hostProxy")
+                        .gauge().value().toInt() shouldBe 1
             }
 
             scenario("... and provides origin/application metrics with metric prefix") {

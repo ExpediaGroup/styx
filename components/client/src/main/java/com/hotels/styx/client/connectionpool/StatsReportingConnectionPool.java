@@ -15,28 +15,36 @@
  */
 package com.hotels.styx.client.connectionpool;
 
-import com.codahale.metrics.Gauge;
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.client.Connection;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import org.reactivestreams.Publisher;
-import org.slf4j.Logger;
 
-import static com.codahale.metrics.MetricRegistry.name;
-import static java.util.Arrays.asList;
-import static org.slf4j.LoggerFactory.getLogger;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.function.Supplier;
+
+import static com.hotels.styx.api.Metrics.name;
+import static com.hotels.styx.api.Metrics.APPID_TAG;
+import static com.hotels.styx.api.Metrics.ORIGINID_TAG;
 
 class StatsReportingConnectionPool implements ConnectionPool {
-    private static final String METRICS_NAME = "connectionspool";
-    private static final Logger LOGGER = getLogger(StatsReportingConnectionPool.class);
+    private static final String PREFIX = "connectionspool";
 
     private final ConnectionPool connectionPool;
-    private final MetricRegistry metricRegistry;
+    private final MeterRegistry meterRegistry;
+    private final Set<Meter> meters = new HashSet<>();
+    private final Tags tags;
 
-    public StatsReportingConnectionPool(ConnectionPool connectionPool, MetricRegistry metricRegistry) {
+    public StatsReportingConnectionPool(ConnectionPool connectionPool, MeterRegistry meterRegistry) {
         this.connectionPool = connectionPool;
-        this.metricRegistry = metricRegistry;
+        this.meterRegistry = meterRegistry;
+        this.tags = Tags.of(APPID_TAG, connectionPool.getOrigin().applicationId().toString(),
+                ORIGINID_TAG, connectionPool.getOrigin().id().toString());
         registerMetrics();
     }
 
@@ -81,40 +89,24 @@ class StatsReportingConnectionPool implements ConnectionPool {
         removeMetrics();
     }
 
-    private static void registerMetrics(ConnectionPool hostConnectionPool, MetricRegistry scopedRegistry) {
-        ConnectionPool.Stats stats = hostConnectionPool.stats();
-        scopedRegistry.register("busy-connections", (Gauge<Integer>) stats::busyConnectionCount);
-        scopedRegistry.register("pending-connections", (Gauge<Integer>) stats::pendingConnectionCount);
-        scopedRegistry.register("available-connections", (Gauge<Integer>) stats::availableConnectionCount);
-        scopedRegistry.register("connection-attempts", (Gauge<Integer>) () -> (int) stats.connectionAttempts());
-        scopedRegistry.register("connection-failures", (Gauge<Integer>) () -> (int) stats.connectionFailures());
-        scopedRegistry.register("connections-closed", (Gauge<Integer>) () -> (int) stats.closedConnections());
-        scopedRegistry.register("connections-terminated", (Gauge<Integer>) () -> (int) stats.terminatedConnections());
-        scopedRegistry.register("connections-in-establishment", (Gauge<Integer>) () -> (int) stats.connectionsInEstablishment());
+    private void registerMetrics() {
+        ConnectionPool.Stats stats = connectionPool.stats();
+        registerGauge("busy-connections", stats::busyConnectionCount);
+        registerGauge("pending-connections", stats::pendingConnectionCount);
+        registerGauge("available-connections", stats::availableConnectionCount);
+        registerGauge("connection-attempts", stats::connectionAttempts);
+        registerGauge("connection-failures", stats::connectionFailures);
+        registerGauge("connections-closed", stats::closedConnections);
+        registerGauge("connections-terminated", stats::terminatedConnections);
+        registerGauge("connections-in-establishment", stats::connectionsInEstablishment);
     }
 
-    private void registerMetrics() {
-        MetricRegistry scopedRegistry = getMetricScope(connectionPool);
-        try {
-            registerMetrics(connectionPool, scopedRegistry);
-        } catch (IllegalArgumentException e) {
-            // metrics already registered.
-            LOGGER.debug("IllegalArgumentException when registering metrics with CodaHale: {}", e);
-        }
+    private void registerGauge(String name, Supplier<Number> supplier) {
+        meters.add(Gauge.builder(name(PREFIX, name), supplier).tags(tags).register(meterRegistry));
     }
 
     private void removeMetrics() {
-        MetricRegistry scopedRegistry = getMetricScope(connectionPool);
-        asList("busy-connections", "pending-connections", "available-connections", "ttfb",
-                "connection-attempts", "connection-failures", "connections-closed", "connections-terminated",
-                "connections-in-establishment")
-                .forEach(scopedRegistry::deregister);
-    }
-
-    private MetricRegistry getMetricScope(ConnectionPool hostConnectionPool) {
-        return this.metricRegistry.scope(
-                name(hostConnectionPool.getOrigin().applicationId().toString(),
-                        hostConnectionPool.getOrigin().id().toString(),
-                        METRICS_NAME));
+        meters.forEach(meterRegistry::remove);
+        meters.clear();
     }
 }

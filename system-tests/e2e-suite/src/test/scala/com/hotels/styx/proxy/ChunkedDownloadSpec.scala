@@ -35,6 +35,7 @@ import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.extension.Origin
+import io.micrometer.core.instrument.Tags
 
 import scala.concurrent.duration.{Duration, _}
 
@@ -112,15 +113,19 @@ class ChunkedDownloadSpec extends FunSpec
   }
 
   def busyConnections(origin: Origin) = {
-    styxServer.metricsSnapshot.gauge(s"origins.appTwo.localhost:${origin.port}.connectionspool.busy-connections").get
+    meterRegistry.find("connectionspool.busy-connections").tags(meterTags(origin)).gauge().value()
   }
 
   def closedConnections(origin: Origin) = {
-    styxServer.metricsSnapshot.gauge(s"origins.appTwo.localhost:${origin.port}.connectionspool.connections-closed").get
+    meterRegistry.find("connectionspool.connections-closed").tags(meterTags(origin)).gauge().value()
   }
 
   def noAvailableConnectionsInPool(origin: Origin) = {
-    styxServer.metricsSnapshot.gauge(s"origins.appTwo.localhost:${origin.port}.connectionspool.available-connections").get == 0
+    meterRegistry.find("connectionspool.available-connections").tags(meterTags(origin)).gauge().value() == 0.0
+  }
+
+  def meterTags(origin: Origin): Tags = {
+    Tags.of("appid", "appTwo", "originid", s"localhost:${origin.port}")
   }
 
   def ensureResponseDidNotArrive(client: HttpTestClient) = {

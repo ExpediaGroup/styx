@@ -15,43 +15,53 @@
  */
 package com.hotels.styx.client.connectionpool;
 
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.netty.connectionpool.StubConnectionPool;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 
+import static com.hotels.styx.api.Metrics.APPID_TAG;
+import static com.hotels.styx.api.Metrics.ORIGINID_TAG;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItems;
-import static org.hamcrest.collection.IsEmptyCollection.empty;
-import static org.hamcrest.core.Is.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
 public class StatsReportingConnectionPoolTest {
     final Origin origin = newOriginBuilder("localhost", 9090)
             .id("backend-01")
             .build();
 
-    final MetricRegistry metricRegistry = new CodaHaleMetricRegistry(new SimpleMeterRegistry())
-            .scope("origins");
+    final MeterRegistry meterRegistry = new SimpleMeterRegistry();
 
     final ConnectionPool delegate = new StubConnectionPool(origin);
-    final StatsReportingConnectionPool pool = new StatsReportingConnectionPool(delegate, metricRegistry);
+    final StatsReportingConnectionPool pool = new StatsReportingConnectionPool(delegate, meterRegistry);
 
     @Test
     public void removesRegisteredMetricsOnClose() {
-        assertThat(metricRegistry.getNames(), hasItems(
-                "origins.generic-app.backend-01.connectionspool.available-connections",
-                "origins.generic-app.backend-01.connectionspool.busy-connections",
-                "origins.generic-app.backend-01.connectionspool.pending-connections",
-                "origins.generic-app.backend-01.connectionspool.connection-attempts",
-                "origins.generic-app.backend-01.connectionspool.connections-in-establishment",
-                "origins.generic-app.backend-01.connectionspool.connection-failures",
-                "origins.generic-app.backend-01.connectionspool.connections-closed",
-                "origins.generic-app.backend-01.connectionspool.connections-terminated"
-        ));
+        Tags tags = Tags.of(APPID_TAG, "generic-app", ORIGINID_TAG, "backend-01");
+
+        assertThat(meterRegistry.find("connectionspool.available-connections").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("connectionspool.busy-connections").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("connectionspool.pending-connections").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("connectionspool.connection-attempts").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("connectionspool.connections-in-establishment").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("connectionspool.connection-failures").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("connectionspool.connections-closed").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("connectionspool.connections-terminated").tags(tags).gauge(), notNullValue());
+
         pool.close();
-        assertThat(metricRegistry.getNames(), is(empty()));
+
+        assertThat(meterRegistry.find("connectionspool.available-connections").tags(tags).gauge(), nullValue());
+        assertThat(meterRegistry.find("connectionspool.busy-connections").tags(tags).gauge(), nullValue());
+        assertThat(meterRegistry.find("connectionspool.pending-connections").tags(tags).gauge(), nullValue());
+        assertThat(meterRegistry.find("connectionspool.connection-attempts").tags(tags).gauge(), nullValue());
+        assertThat(meterRegistry.find("connectionspool.connections-in-establishment").tags(tags).gauge(), nullValue());
+        assertThat(meterRegistry.find("connectionspool.connection-failures").tags(tags).gauge(), nullValue());
+        assertThat(meterRegistry.find("connectionspool.connections-closed").tags(tags).gauge(), nullValue());
+        assertThat(meterRegistry.find("connectionspool.connections-terminated").tags(tags).gauge(), nullValue());
+
     }
 }

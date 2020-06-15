@@ -27,6 +27,7 @@ import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration
 import com.hotels.styx.proxy.ProxyServerConfig
 import com.hotels.styx.startup.StyxServerComponents
 import com.hotels.styx.support.ResourcePaths
+import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 
 import scala.collection.JavaConverters._
@@ -45,6 +46,8 @@ sealed trait StyxBaseConfig {
   def logbackXmlLocation: Path
   def additionalServices: Map[String, StyxService]
   def plugins: Map[String, Plugin]
+
+  def startServer(backendsRegistry: StyxService, meterRegistry: MeterRegistry): StyxServer
 
   def startServer(backendsRegistry: StyxService): StyxServer
 
@@ -72,7 +75,7 @@ case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),
                       additionalServices: Map[String, StyxService] = Map.empty
                      ) extends StyxBaseConfig {
 
-  override def startServer(backendsRegistry: StyxService): StyxServer = {
+  override def startServer(backendsRegistry: StyxService, meterRegistry: MeterRegistry): StyxServer = {
 
     val proxyConfig = this.proxyConfig.copy(connectors = Connectors(httpConnectorWithPort(), httpsConnectorWithPort()))
 
@@ -99,11 +102,15 @@ case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),
 
     val styxServer = new StyxServer(
       serverComponents(styxConfig, backendsRegistry, this.plugins)
-        .registry(new SimpleMeterRegistry())
+        .registry(meterRegistry)
         .additionalServices(java)
         .loggingSetUp(this.logbackXmlLocation.toString).build())
     styxServer.startAsync().awaitRunning()
     styxServer
+  }
+
+  override def startServer(backendsRegistry: StyxService): StyxServer = {
+    startServer(backendsRegistry, new SimpleMeterRegistry())
   }
 
   override def startServer(): StyxServer = {
@@ -147,12 +154,12 @@ case class StyxYamlConfig(yamlConfig: String,
                           plugins: Map[String, Plugin] = Map.empty
                          ) extends StyxBaseConfig {
 
-  override def startServer(backendsRegistry: StyxService): StyxServer = {
+  override def startServer(backendsRegistry: StyxService, meterRegistry: MeterRegistry): StyxServer = {
     val config: YamlConfiguration = Config.config(yamlConfig)
     val styxConfig = com.hotels.styx.StyxConfig.fromYaml(yamlConfig)
 
     val styxServer = new StyxServer(new StyxServerComponents.Builder()
-      .registry(new SimpleMeterRegistry())
+      .registry(meterRegistry)
       .styxConfig(styxConfig)
       .additionalServices(services(backendsRegistry).asJava)
       .loggingSetUp(logbackXmlLocation.toString)
@@ -160,6 +167,10 @@ case class StyxYamlConfig(yamlConfig: String,
 
     styxServer.startAsync().awaitRunning()
     styxServer
+  }
+
+  override def startServer(backendsRegistry: StyxService): StyxServer = {
+    startServer(backendsRegistry, new SimpleMeterRegistry())
   }
 
   override def startServer(): StyxServer = {
