@@ -23,13 +23,15 @@ import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginException;
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+
+import java.util.Optional;
 
 import static com.hotels.styx.api.Eventual.error;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
@@ -81,8 +83,8 @@ public class InstrumentedPluginTest {
 
         assertThat(response.status(), is(INTERNAL_SERVER_ERROR));
 
-        assertThat(Metrics.counter("plugins.response.status", "plugin", pluginName, "status", "500").count(), is(1.0));
-        assertThat(Metrics.counter("plugins.errors", "plugin", pluginName).count(), is(1.0));
+        assertThat(getStatusCount(pluginName, "500"), is(1.0));
+        assertThat(getErrorCount(pluginName), is(1.0));
     }
 
     @Test
@@ -95,8 +97,8 @@ public class InstrumentedPluginTest {
 
         verify(chain, never()).proceed(any(LiveHttpRequest.class));
         assertThat(response.status(), is(INTERNAL_SERVER_ERROR));
-        assertThat(Metrics.counter("plugins.response.status", "plugin", pluginName, "status", "500").count(), is(1.0));
-        assertThat(Metrics.counter("plugins.errors", "plugin", pluginName).count(), is(1.0));
+        assertThat(getStatusCount(pluginName, "500"), is(1.0));
+        assertThat(getErrorCount(pluginName), is(1.0));
     }
 
     @Test
@@ -108,8 +110,8 @@ public class InstrumentedPluginTest {
         LiveHttpResponse response = Mono.from(plugin.intercept(someRequest, chain)).block();
 
         assertThat(response.status(), is(INTERNAL_SERVER_ERROR));
-        assertThat(Metrics.counter("plugins.response.status", "plugin", pluginName, "status", "500").count(), is(0.0));
-        assertThat(Metrics.counter("plugins.errors", "plugin", pluginName).count(), is(0.0));
+        assertThat(getStatusCount(pluginName, "500"), is(0.0));
+        assertThat(getErrorCount(pluginName), is(0.0));
     }
 
     @Test
@@ -123,8 +125,8 @@ public class InstrumentedPluginTest {
         LiveHttpResponse response = Mono.from(plugin.intercept(someRequest, chain)).block();
 
         assertThat(response.status(), is(BAD_GATEWAY));
-        assertThat(Metrics.counter("plugins.response.status", "plugin", pluginName, "status", "502").count(), is(1.0));
-        assertThat(Metrics.counter("plugins.errors", "plugin", pluginName).count(), is(0.0));
+        assertThat(getStatusCount(pluginName, "502"), is(1.0));
+        assertThat(getErrorCount(pluginName), is(0.0));
     }
 
     @Test
@@ -136,8 +138,8 @@ public class InstrumentedPluginTest {
 
         verify(chain, never()).proceed(any(LiveHttpRequest.class));
         assertThat(response.status(), is(BAD_GATEWAY));
-        assertThat(Metrics.counter("plugins.response.status", "plugin", pluginName, "status", "502").count(), is(1.0));
-        assertThat(Metrics.counter("plugins.errors", "plugin", pluginName).count(), is(0.0));
+        assertThat(getStatusCount(pluginName, "502"), is(1.0));
+        assertThat(getErrorCount(pluginName), is(0.0));
     }
 
     @Test
@@ -151,9 +153,9 @@ public class InstrumentedPluginTest {
                 plugin.intercept(someRequest, chain));
 
         verify(chain, never()).proceed(any(LiveHttpRequest.class));
-        assertThat(Metrics.counter("plugins.exception", "plugin", pluginName, "type", SOME_EXCEPTION).count(), is(1.0));
-        assertThat(Metrics.counter("plugins.response.status", "plugin", pluginName, "status", "500").count(), is(1.0));
-        assertThat(Metrics.counter("plugins.errors", "plugin", pluginName).count(), is(1.0));
+        assertThat(getExceptionCount(pluginName, SOME_EXCEPTION), is(1.0));
+        assertThat(getStatusCount(pluginName, "500"), is(1.0));
+        assertThat(getErrorCount(pluginName), is(1.0));
     }
 
     @Test
@@ -166,9 +168,9 @@ public class InstrumentedPluginTest {
                 plugin.intercept(someRequest, chain));
 
         verify(chain, never()).proceed(any(LiveHttpRequest.class));
-        assertThat(Metrics.counter("plugins.exception", "plugin", pluginName, "type", SOME_EXCEPTION).count(), is(1.0));
-        assertThat(Metrics.counter("plugins.response.status", "plugin", pluginName, "status", "500").count(), is(1.0));
-        assertThat(Metrics.counter("plugins.errors", "plugin", pluginName).count(), is(1.0));
+        assertThat(getExceptionCount(pluginName, SOME_EXCEPTION), is(1.0));
+        assertThat(getStatusCount(pluginName, "500"), is(1.0));
+        assertThat(getErrorCount(pluginName), is(1.0));
     }
 
     @Test
@@ -180,9 +182,9 @@ public class InstrumentedPluginTest {
 
         assertThatEventualHasErrorOnly(PluginException.class,
                 plugin.intercept(someRequest, request -> aResponse(OK)));
-        assertThat(Metrics.counter("plugins.exception", "plugin", pluginName, "type", SOME_EXCEPTION).count(), is(1.0));
-        assertThat(Metrics.counter("plugins.response.status", "plugin", pluginName, "status", "500").count(), is(1.0));
-        assertThat(Metrics.counter("plugins.errors", "plugin", pluginName).count(), is(1.0));
+        assertThat(getExceptionCount(pluginName, SOME_EXCEPTION), is(1.0));
+        assertThat(getStatusCount(pluginName, "500"), is(1.0));
+        assertThat(getErrorCount(pluginName), is(1.0));
     }
 
     @Test
@@ -195,9 +197,8 @@ public class InstrumentedPluginTest {
         assertThatEventualHasErrorOnly(SomeException.class,
                 plugin.intercept(someRequest, chain));
 
-
-        assertThat(Metrics.counter("plugins.exception", "plugin", pluginName, "type", SOME_EXCEPTION).count(), is(0.0));
-        assertThat(Metrics.counter("plugins.errors", "plugin", pluginName).count(), is(0.0));
+        assertThat(getExceptionCount(pluginName, SOME_EXCEPTION), is(0.0));
+        assertThat(getErrorCount(pluginName), is(0.0));
     }
 
     private static Eventual<LiveHttpResponse> aResponse(HttpResponseStatus status) {
@@ -222,5 +223,29 @@ public class InstrumentedPluginTest {
 
     private static class SomeException extends RuntimeException {
 
+    }
+
+    private double getStatusCount(String pluginName, String status) {
+        return Optional.ofNullable(registry.find("plugins.response.status")
+                .tags("plugin", pluginName, "status", status)
+                .counter())
+                .map(Counter::count)
+                .orElse(0.0);
+    }
+
+    private double getErrorCount(String pluginName) {
+        return Optional.ofNullable(registry.find("plugins.errors")
+                .tags("plugin", pluginName)
+                .counter())
+                .map(Counter::count)
+                .orElse(0.0);
+    }
+
+    private double getExceptionCount(String pluginName, String type) {
+        return Optional.ofNullable(registry.find("plugins.exception")
+                .tags("plugin", pluginName, "type", type)
+                .counter())
+                .map(Counter::count)
+                .orElse(0.0);
     }
 }

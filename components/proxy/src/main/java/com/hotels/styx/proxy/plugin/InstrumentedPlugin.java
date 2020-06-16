@@ -25,7 +25,6 @@ import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginException;
 import com.hotels.styx.common.SimpleCache;
 import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.Metrics;
 import org.slf4j.Logger;
 import reactor.core.publisher.Flux;
 
@@ -51,15 +50,24 @@ public class InstrumentedPlugin implements Plugin {
         this.plugin = requireNonNull(plugin);
         requireNonNull(environment);
 
-        Metrics.addRegistry(environment.meterRegistry());
-
         this.errorStatusMetrics = new SimpleCache<>(statusCode ->
-                Metrics.counter("plugins.response.status", "plugin", plugin.name(), "status", Integer.toString(statusCode.code())));
+                Counter.builder("plugins.response.status")
+                        .tag("plugin", plugin.name())
+                        .tag("status", Integer.toString(statusCode.code()))
+                        .register(environment.meterRegistry())
+        );
 
         this.exceptionMetrics = new SimpleCache<>(type ->
-                Metrics.counter("plugins.exception", "plugin", plugin.name(), "type", formattedExceptionName(type)));
+                Counter.builder("plugins.exception")
+                        .tag("plugin", plugin.name())
+                        .tag("type", formattedExceptionName(type))
+                        .register(environment.meterRegistry())
+        );
 
-        this.errors = Metrics.counter("plugins.errors", "plugin", plugin.name());
+        this.errors =
+                Counter.builder("plugins.errors")
+                        .tag("plugin", plugin.name())
+                        .register(environment.meterRegistry());
 
         LOGGER.info("Plugin {} instrumented", plugin.name());
     }
