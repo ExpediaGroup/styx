@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Group
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hotels.styx.support
 import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.common.collect.ImmutableSet
 import com.hotels.styx.StyxConfig
 import com.hotels.styx.StyxServer
 import com.hotels.styx.api.HttpHeaderNames
@@ -31,8 +32,10 @@ import com.hotels.styx.api.plugins.spi.Plugin
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.startup.StyxServerComponents
+import io.micrometer.core.instrument.Clock
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
@@ -105,7 +108,7 @@ class StyxServerProvider(
             stop()
         }
 
-        val meterRegistry = CompositeMeterRegistry()
+        val meterRegistry = CompositeMeterRegistry(Clock.SYSTEM, ImmutableSet.of(SimpleMeterRegistry()))
         var components = StyxServerComponents.Builder()
                 .registry(meterRegistry)
                 .styxConfig(StyxConfig.fromYaml(configuration, validateConfig))
