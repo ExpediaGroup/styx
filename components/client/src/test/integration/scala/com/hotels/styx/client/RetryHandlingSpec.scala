@@ -38,7 +38,7 @@ import com.hotels.styx.common.FreePorts.freePort
 import com.hotels.styx.support.Support.requestContext
 import com.hotels.styx.support.server.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies._
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values._
@@ -54,7 +54,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
   val response = "Response From localhost"
 
   val metricsRegistry = new NoopMetricRegistry()
-  val meterRegistry = new SimpleMeterRegistry()
+  val meterRegistry = new CompositeMeterRegistry()
 
   val server1 = new FakeHttpServer(0, "app", "HEALTHY_ORIGIN_ONE")
   val server2 = new FakeHttpServer(0, "app", "HEALTHY_ORIGIN_TWO")

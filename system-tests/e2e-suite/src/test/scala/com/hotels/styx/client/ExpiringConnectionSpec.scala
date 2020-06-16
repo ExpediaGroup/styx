@@ -32,7 +32,7 @@ import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBacken
 import com.hotels.styx.support.server.UrlMatchingStrategies._
 import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
 import io.micrometer.core.instrument.Tags
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 import org.hamcrest.MatcherAssert._
 import org.hamcrest.Matchers._
 import org.scalatest.FunSpec
@@ -123,7 +123,7 @@ class ExpiringConnectionSpec extends FunSpec
     }
   }
 
-  def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(new SimpleMeterRegistry(), backendService).build()
+  def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(new CompositeMeterRegistry(), backendService).build()
 
   def roundRobinStrategy(activeOrigins: ActiveOrigins): RoundRobinStrategy = new RoundRobinStrategy(activeOrigins, activeOrigins.snapshot())
 }

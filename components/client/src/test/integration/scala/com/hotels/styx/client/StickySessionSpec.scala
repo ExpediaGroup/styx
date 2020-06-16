@@ -39,14 +39,14 @@ import org.scalatest.mock.MockitoSugar
 import org.scalatest.{BeforeAndAfter, FunSuite, Matchers}
 import reactor.core.publisher.Mono
 import com.hotels.styx.support.Support.requestContext
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 
 import scala.collection.JavaConverters._
 
 class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with OriginSupport with MockitoSugar {
 
   val metricsRegistry = new NoopMetricRegistry()
-  val meterRegistry = new SimpleMeterRegistry()
+  val meterRegistry = new CompositeMeterRegistry()
 
   val server1 = new FakeHttpServer(0, "app", "app-01")
   val server2 = new FakeHttpServer(0, "app", "app-02")

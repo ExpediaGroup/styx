@@ -34,8 +34,7 @@ import com.hotels.styx.server.netty.NettyServerConfig.Connectors
 import com.hotels.styx.server.{HttpConnectorConfig, HttpsConnectorConfig}
 import com.hotels.styx.startup.StyxServerComponents
 import com.hotels.styx.support.CodaHaleMetricsFacade
-import com.hotels.styx.support.configuration.StyxBaseConfig
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 
 import scala.collection.JavaConverters._
 
@@ -86,7 +85,7 @@ object StyxServerSupport {
     val plugins1 = plugins.asJava
 
     val builder = new StyxServerComponents.Builder()
-      .registry(new SimpleMeterRegistry())
+      .registry(new CompositeMeterRegistry())
       .styxConfig(styxConfig)
       .additionalServices(ImmutableMap.of("backendServiceRegistry", styxService))
 
@@ -101,7 +100,7 @@ object StyxServerSupport {
     val plugins1 = plugins.asJava
 
     val builder = new StyxServerComponents.Builder()
-      .registry(new SimpleMeterRegistry())
+      .registry(new CompositeMeterRegistry())
       .styxConfig(styxConfig)
 
     if (plugins.nonEmpty) {

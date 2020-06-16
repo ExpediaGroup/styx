@@ -41,7 +41,7 @@ import com.hotels.styx.routing.config.StyxObjectReference
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.RouteRefLookup
 import com.hotels.styx.server.HttpInterceptorContext
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 import io.mockk.CapturingSlot
 import io.mockk.every
 import io.mockk.mockk
@@ -57,7 +57,7 @@ fun configBlock(text: String) = YamlConfig(text).`as`(JsonNode::class.java)
 
 internal data class RoutingObjectFactoryContext(
         val routeRefLookup: RouteRefLookup = DEFAULT_REFERENCE_LOOKUP,
-        val environment: Environment = Environment.Builder().registry(SimpleMeterRegistry()).build(),
+        val environment: Environment = Environment.Builder().registry(CompositeMeterRegistry()).build(),
         val objectStore: StyxObjectStore<RoutingObjectRecord> = StyxObjectStore(),
         val objectFactories: Map<String, RoutingObjectFactory> = BUILTIN_HANDLER_FACTORIES,
         val plugins: Iterable<NamedPlugin> = listOf(),
