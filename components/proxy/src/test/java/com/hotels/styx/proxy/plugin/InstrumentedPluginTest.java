@@ -21,17 +21,17 @@ import com.hotels.styx.api.HttpInterceptor.Chain;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.MetricRegistry;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginException;
-import com.hotels.styx.client.connectionpool.SimpleConnectionPool;
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+
+import java.util.Optional;
 
 import static com.hotels.styx.api.Eventual.error;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
@@ -54,7 +54,6 @@ public class InstrumentedPluginTest {
     private static final String SOME_EXCEPTION = formattedExceptionName(SomeException.class);
 
     private MeterRegistry registry;
-    private MetricRegistry metricRegistry;
     private Environment environment;
     private LiveHttpRequest someRequest;
     private Chain chain;
@@ -67,7 +66,6 @@ public class InstrumentedPluginTest {
                 .registry(registry)
                 .build();
 
-        metricRegistry = environment.metricRegistry();
 
         someRequest = get("/").build();
         chain = mock(Chain.class);
@@ -76,75 +74,78 @@ public class InstrumentedPluginTest {
     @Test
     public void metricIsRecordedWhenResponseIsMappedToErrorStatus() {
         Chain chain = request -> aResponse(OK);
-
-        InstrumentedPlugin plugin = instrumentedPlugin("replaceStatusCode", (request, aChain) ->
+        String pluginName = "replaceStatus1";
+        InstrumentedPlugin plugin = instrumentedPlugin(pluginName, (request, aChain) ->
                 aChain.proceed(request)
                         .map(response -> responseWithNewStatusCode(response, INTERNAL_SERVER_ERROR)));
 
         LiveHttpResponse response = Mono.from(plugin.intercept(someRequest, chain)).block();
 
         assertThat(response.status(), is(INTERNAL_SERVER_ERROR));
-        assertThat(metricRegistry.meter("plugins.replaceStatusCode.response.status.500").getCount(), is(1L));
-        assertThat(metricRegistry.meter("plugins.replaceStatusCode.errors").getCount(), is(1L));
+
+        assertThat(getStatusCount(pluginName, "500"), is(1.0));
+        assertThat(getErrorCount(pluginName), is(1.0));
     }
 
     @Test
     public void metricIsRecordedWhenPluginReturnsErrorStatusEarly() {
-        InstrumentedPlugin plugin = instrumentedPlugin("returnEarly",
+        String pluginName = "returnEarly1";
+        InstrumentedPlugin plugin = instrumentedPlugin(pluginName,
                 (request, chain) -> aResponse(INTERNAL_SERVER_ERROR));
 
         LiveHttpResponse response = Mono.from(plugin.intercept(someRequest, chain)).block();
 
         verify(chain, never()).proceed(any(LiveHttpRequest.class));
         assertThat(response.status(), is(INTERNAL_SERVER_ERROR));
-        assertThat(metricRegistry.meter("plugins.returnEarly.response.status.500").getCount(), is(1L));
-        assertThat(metricRegistry.meter("plugins.returnEarly.errors").getCount(), is(1L));
+        assertThat(getStatusCount(pluginName, "500"), is(1.0));
+        assertThat(getErrorCount(pluginName), is(1.0));
     }
 
     @Test
     public void metricIsNotRecordedWhenErrorStatusIsReturnedByChain() {
         Chain chain = request -> aResponse(INTERNAL_SERVER_ERROR);
-
-        InstrumentedPlugin plugin = instrumentedPlugin("doNotRecordMe", PASS_THROUGH);
+        String pluginName = "doNotRecordMe";
+        InstrumentedPlugin plugin = instrumentedPlugin(pluginName, PASS_THROUGH);
 
         LiveHttpResponse response = Mono.from(plugin.intercept(someRequest, chain)).block();
 
         assertThat(response.status(), is(INTERNAL_SERVER_ERROR));
-        assertThat(metricRegistry.meter("plugins.doNotRecordMe.response.status.500").getCount(), is(0L));
-        assertThat(metricRegistry.meter("plugins.doNotRecordMe.errors").getCount(), is(0L));
+        assertThat(getStatusCount(pluginName, "500"), is(0.0));
+        assertThat(getErrorCount(pluginName), is(0.0));
     }
 
     @Test
     public void errorsMetricIsNotRecordedWhenResponseIsMappedToNon5005xxStatus() {
         Chain chain = request -> aResponse(OK);
-
-        InstrumentedPlugin plugin = instrumentedPlugin("replaceStatusCode", (request, aChain) ->
+        String pluginName = "replaceStatusCodeY";
+        InstrumentedPlugin plugin = instrumentedPlugin("replaceStatusCodeY", (request, aChain) ->
                 aChain.proceed(request)
                         .map(response -> responseWithNewStatusCode(response, BAD_GATEWAY)));
 
         LiveHttpResponse response = Mono.from(plugin.intercept(someRequest, chain)).block();
 
         assertThat(response.status(), is(BAD_GATEWAY));
-        assertThat(metricRegistry.meter("plugins.replaceStatusCode.response.status.502").getCount(), is(1L));
-        assertThat(metricRegistry.meter("plugins.replaceStatusCode.errors").getCount(), is(0L));
+        assertThat(getStatusCount(pluginName, "502"), is(1.0));
+        assertThat(getErrorCount(pluginName), is(0.0));
     }
 
     @Test
     public void errorsMetricIsNotRecordedWhenPluginReturnsNon5005xxStatusEarly() {
-        InstrumentedPlugin plugin = instrumentedPlugin("returnEarly",
+        String pluginName = "returnEarly";
+        InstrumentedPlugin plugin = instrumentedPlugin(pluginName,
                 (request, chain) -> aResponse(BAD_GATEWAY));
-
         LiveHttpResponse response = Mono.from(plugin.intercept(someRequest, chain)).block();
 
         verify(chain, never()).proceed(any(LiveHttpRequest.class));
         assertThat(response.status(), is(BAD_GATEWAY));
-        assertThat(metricRegistry.meter("plugins.returnEarly.response.status.502").getCount(), is(1L));
-        assertThat(metricRegistry.meter("plugins.returnEarly.errors").getCount(), is(0L));
+        assertThat(getStatusCount(pluginName, "502"), is(1.0));
+        assertThat(getErrorCount(pluginName), is(0.0));
     }
 
     @Test
     public void metricsAreRecordedWhenPluginThrowsException() {
-        InstrumentedPlugin plugin = instrumentedPlugin("immediateException", (request, chain) -> {
+        String pluginName = "immediateException1";
+        InstrumentedPlugin plugin = instrumentedPlugin(pluginName, (request, chain) -> {
             throw new SomeException();
         });
 
@@ -152,52 +153,52 @@ public class InstrumentedPluginTest {
                 plugin.intercept(someRequest, chain));
 
         verify(chain, never()).proceed(any(LiveHttpRequest.class));
-
-        assertThat(metricRegistry.meter("plugins.immediateException.response.status.500").getCount(), is(1L));
-        assertThat(metricRegistry.meter("plugins.immediateException.exception." + SOME_EXCEPTION).getCount(), is(1L));
-        assertThat(metricRegistry.meter("plugins.immediateException.errors").getCount(), is(1L));
+        assertThat(getExceptionCount(pluginName, SOME_EXCEPTION), is(1.0));
+        assertThat(getStatusCount(pluginName, "500"), is(1.0));
+        assertThat(getErrorCount(pluginName), is(1.0));
     }
 
     @Test
     public void metricsAreRecordedWhenPluginReturnsException() {
-        InstrumentedPlugin plugin = instrumentedPlugin("immediateException", (request, chain) ->
+        String pluginName = "immediateException";
+        InstrumentedPlugin plugin = instrumentedPlugin(pluginName, (request, chain) ->
                 error(new SomeException()));
 
         assertThatEventualHasErrorOnly(PluginException.class,
                 plugin.intercept(someRequest, chain));
 
         verify(chain, never()).proceed(any(LiveHttpRequest.class));
-
-        assertThat(metricRegistry.meter("plugins.immediateException.response.status.500").getCount(), is(1L));
-        assertThat(metricRegistry.meter("plugins.immediateException.exception." + SOME_EXCEPTION).getCount(), is(1L));
-        assertThat(metricRegistry.meter("plugins.immediateException.errors").getCount(), is(1L));
+        assertThat(getExceptionCount(pluginName, SOME_EXCEPTION), is(1.0));
+        assertThat(getStatusCount(pluginName, "500"), is(1.0));
+        assertThat(getErrorCount(pluginName), is(1.0));
     }
 
     @Test
     public void metricsAreRecordedWhenPluginMapsToException() {
-        InstrumentedPlugin plugin = instrumentedPlugin("observableError", (request, chain) ->
+        String pluginName = "observableError";
+        InstrumentedPlugin plugin = instrumentedPlugin(pluginName, (request, chain) ->
                 chain.proceed(request)
                         .flatMap(response -> error(new SomeException())));
 
         assertThatEventualHasErrorOnly(PluginException.class,
                 plugin.intercept(someRequest, request -> aResponse(OK)));
-
-        assertThat(metricRegistry.meter("plugins.observableError.response.status.500").getCount(), is(1L));
-        assertThat(metricRegistry.meter("plugins.observableError.exception." + SOME_EXCEPTION).getCount(), is(1L));
-        assertThat(metricRegistry.meter("plugins.observableError.errors").getCount(), is(1L));
+        assertThat(getExceptionCount(pluginName, SOME_EXCEPTION), is(1.0));
+        assertThat(getStatusCount(pluginName, "500"), is(1.0));
+        assertThat(getErrorCount(pluginName), is(1.0));
     }
 
     @Test
     public void metricsAreNotRecordedWhenExceptionIsReturnedByChain() {
+        String pluginName = "passThrough";
         Chain chain = request -> error(new SomeException());
 
-        InstrumentedPlugin plugin = instrumentedPlugin("passThrough", PASS_THROUGH);
+        InstrumentedPlugin plugin = instrumentedPlugin(pluginName, PASS_THROUGH);
 
         assertThatEventualHasErrorOnly(SomeException.class,
                 plugin.intercept(someRequest, chain));
 
-        assertThat(metricRegistry.meter("plugins.passThrough.exception." + SOME_EXCEPTION).getCount(), is(0L));
-        assertThat(metricRegistry.meter("plugins.passThrough.errors").getCount(), is(0L));
+        assertThat(getExceptionCount(pluginName, SOME_EXCEPTION), is(0.0));
+        assertThat(getErrorCount(pluginName), is(0.0));
     }
 
     private static Eventual<LiveHttpResponse> aResponse(HttpResponseStatus status) {
@@ -222,5 +223,29 @@ public class InstrumentedPluginTest {
 
     private static class SomeException extends RuntimeException {
 
+    }
+
+    private double getStatusCount(String pluginName, String status) {
+        return Optional.ofNullable(registry.find("plugins.response.status")
+                .tags("plugin", pluginName, "status", status)
+                .counter())
+                .map(Counter::count)
+                .orElse(0.0);
+    }
+
+    private double getErrorCount(String pluginName) {
+        return Optional.ofNullable(registry.find("plugins.errors")
+                .tags("plugin", pluginName)
+                .counter())
+                .map(Counter::count)
+                .orElse(0.0);
+    }
+
+    private double getExceptionCount(String pluginName, String type) {
+        return Optional.ofNullable(registry.find("plugins.exception")
+                .tags("plugin", pluginName, "type", type)
+                .counter())
+                .map(Counter::count)
+                .orElse(0.0);
     }
 }
