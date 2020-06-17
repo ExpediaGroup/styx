@@ -35,6 +35,7 @@ import com.hotels.styx.admin.handlers.OriginsInventoryHandler;
 import com.hotels.styx.admin.handlers.PingHandler;
 import com.hotels.styx.admin.handlers.PluginListHandler;
 import com.hotels.styx.admin.handlers.PluginToggleHandler;
+import com.hotels.styx.admin.handlers.PrometheusHandler;
 import com.hotels.styx.admin.handlers.ProviderRoutingHandler;
 import com.hotels.styx.admin.handlers.RoutingObjectHandler;
 import com.hotels.styx.admin.handlers.ServiceProviderHandler;
@@ -200,6 +201,8 @@ public class AdminServerBuilder {
         httpRouter.aggregate("/admin/servers", serverHandler);
         httpRouter.aggregate("/admin/servers/", serverHandler);
 
+        httpRouter.aggregate("/prometheus", new PrometheusHandler(environment.meterRegistry()));
+
         return httpRouter;
     }
 
@@ -223,6 +226,7 @@ public class AdminServerBuilder {
         builder.add(link("JVM", "/admin/jvm?pretty"));
         builder.add(link("Plugins", "/admin/plugins"));
         builder.add(link("Providers", "/admin/providers"));
+        builder.add(link("Prometheus", "/prometheus"));
 
         if (configVersion(styxConfig) == ROUTING_CONFIG_V1) {
             builder.add(link("Dashboard", "/admin/dashboard/index.html"))
