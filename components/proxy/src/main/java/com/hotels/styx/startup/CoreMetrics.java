@@ -30,11 +30,9 @@ import io.netty.buffer.UnpooledByteBufAllocator;
 import org.slf4j.Logger;
 
 import java.lang.management.RuntimeMXBean;
-import java.time.Duration;
 import java.util.Optional;
 
 import static com.hotels.styx.api.Metrics.name;
-import static java.lang.String.format;
 import static java.lang.management.ManagementFactory.getRuntimeMXBean;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -76,7 +74,7 @@ public final class CoreMetrics {
         new ClassLoaderMetrics().bindTo(registry);
 
         RuntimeMXBean runtimeMxBean = getRuntimeMXBean();
-        registry.gauge(name(JVM_METRICS_ROOT, "uptime"), Tags.of("formatted", formatTime(runtimeMxBean.getUptime())), runtimeMxBean, RuntimeMXBean::getUptime);
+        registry.gauge(name(JVM_METRICS_ROOT, "uptime"), Tags.empty(), runtimeMxBean, RuntimeMXBean::getUptime);
 
         new NettyAllocatorMetrics(
                 name(JVM_METRICS_ROOT, "netty", "pooled-allocator"),
@@ -88,15 +86,4 @@ public final class CoreMetrics {
                 UnpooledByteBufAllocator.DEFAULT.metric()
         ).bindTo(registry);
     }
-
-    private static String formatTime(long timeInMilliseconds) {
-        Duration duration = Duration.ofMillis(timeInMilliseconds);
-
-        long days = duration.toDays();
-        long hours = duration.minusDays(days).toHours();
-        long minutes = duration.minusHours(duration.toHours()).toMinutes();
-
-        return format("%dd %dh %dm", days, hours, minutes);
-    }
-
 }

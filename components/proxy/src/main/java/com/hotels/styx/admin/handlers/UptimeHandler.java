@@ -20,7 +20,10 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.WebServiceHandler;
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
+
+import java.time.Duration;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
@@ -39,12 +42,23 @@ public class UptimeHandler implements WebServiceHandler {
 
     @Override
     public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-        Object uptime = registry.find("jvm.uptime").gauge().getId().getTag("formatted");
+        Gauge gauge = registry.find("jvm.uptime").gauge();
+        String uptime = gauge == null ? "The uptime metric is missing!" : formatTime((long) gauge.value());
 
         return Eventual.of(HttpResponse.response(OK)
                 .disableCaching()
                 .addHeader(CONTENT_TYPE, "application/json")
                 .body(format("\"%s\"", uptime), UTF_8)
                 .build());
+    }
+
+    private String formatTime(long timeInMilliseconds) {
+        Duration duration = Duration.ofMillis(timeInMilliseconds);
+
+        long days = duration.toDays();
+        long hours = duration.minusDays(days).toHours();
+        long minutes = duration.minusHours(duration.toHours()).toMinutes();
+
+        return format("%dd %dh %dm", days, hours, minutes);
     }
 }
