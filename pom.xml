@@ -111,6 +111,7 @@
     <jackson.module.scala.version>2.10.1</jackson.module.scala.version>
     <jackson-module-kotlin.version>2.10.1</jackson-module-kotlin.version>
     <metrics.version>4.0.5</metrics.version>
+    <micrometer.version>1.5.1</micrometer.version>
     <antlr.version>4.5.1-1</antlr.version>
     <netty.version>4.1.42.Final</netty.version>
     <netty-tcnative.version>2.0.26.Final</netty-tcnative.version>
@@ -329,7 +330,7 @@
       <dependency>
         <groupId>io.micrometer</groupId>
         <artifactId>micrometer-core</artifactId>
-        <version>1.5.1</version>
+        <version>${micrometer.version}</version>
       </dependency>
 
       <dependency>
@@ -390,6 +391,12 @@
         <groupId>org.hdrhistogram</groupId>
         <artifactId>HdrHistogram</artifactId>
         <version>2.1.4</version>
+      </dependency>
+
+      <dependency>
+        <groupId>io.micrometer</groupId>
+        <artifactId>micrometer-registry-prometheus</artifactId>
+        <version>${micrometer.version}</version>
       </dependency>
 
       <dependency>

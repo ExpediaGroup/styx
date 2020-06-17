@@ -28,7 +28,7 @@ import com.hotels.styx.proxy.ProxyServerConfig
 import com.hotels.styx.startup.StyxServerComponents
 import com.hotels.styx.support.ResourcePaths
 import io.micrometer.core.instrument.MeterRegistry
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 
 import scala.collection.JavaConverters._
 
@@ -110,7 +110,7 @@ case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),
   }
 
   override def startServer(backendsRegistry: StyxService): StyxServer = {
-    startServer(backendsRegistry, new SimpleMeterRegistry())
+    startServer(backendsRegistry, new CompositeMeterRegistry())
   }
 
   override def startServer(): StyxServer = {
@@ -170,7 +170,7 @@ case class StyxYamlConfig(yamlConfig: String,
   }
 
   override def startServer(backendsRegistry: StyxService): StyxServer = {
-    startServer(backendsRegistry, new SimpleMeterRegistry())
+    startServer(backendsRegistry, new CompositeMeterRegistry())
   }
 
   override def startServer(): StyxServer = {

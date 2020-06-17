@@ -35,7 +35,7 @@ import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
 import com.hotels.styx.support.Support.requestContext
 import com.hotels.styx.support.server.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{BeforeAndAfter, FunSuite, Matchers}
 import reactor.core.publisher.Mono
@@ -44,7 +44,7 @@ import scala.collection.JavaConverters._
 
 class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with OriginSupport with MockitoSugar {
 
-  val meterRegistry = new SimpleMeterRegistry()
+  val meterRegistry = new CompositeMeterRegistry()
 
   val server1 = new FakeHttpServer(0, "app", "app-01")
   val server2 = new FakeHttpServer(0, "app", "app-02")

@@ -31,7 +31,7 @@ import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpsConnectorConfig;
 import com.hotels.styx.startup.StyxServerComponents;
 import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -63,7 +63,7 @@ public final class StyxServer {
         MemoryBackedRegistry<com.hotels.styx.api.extension.service.BackendService> backendServicesRegistry = new MemoryBackedRegistry<>();
 
         StyxServerComponents config = new StyxServerComponents.Builder()
-                .registry(new SimpleMeterRegistry())
+                .registry(new CompositeMeterRegistry())
                 .styxConfig(styxConfig(builder))
                 .pluginFactories(builder.pluginFactories)
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(backendServicesRegistry)))

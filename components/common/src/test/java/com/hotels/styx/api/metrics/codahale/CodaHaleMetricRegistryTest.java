@@ -23,7 +23,7 @@ import com.codahale.metrics.MetricRegistryListener;
 import com.codahale.metrics.Timer;
 import com.hotels.styx.api.MetricRegistry;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -40,7 +40,7 @@ import static org.mockito.Mockito.verify;
 public class CodaHaleMetricRegistryTest {
     private final Gauge<String> gauge = () -> "someValue";
 
-    private MeterRegistry registry = new SimpleMeterRegistry();
+    private MeterRegistry registry = new CompositeMeterRegistry();
     private MetricRegistry metricRegistry;
     private MetricRegistryListener listener;
 

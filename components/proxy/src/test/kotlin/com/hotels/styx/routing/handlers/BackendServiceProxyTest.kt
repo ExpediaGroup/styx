@@ -32,7 +32,7 @@ import com.hotels.styx.routingObjectDef
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import io.kotlintest.specs.StringSpec
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 import reactor.core.publisher.Mono
 import reactor.core.publisher.toMono
 import java.util.concurrent.CompletableFuture
@@ -44,7 +44,7 @@ class BackendServiceProxyTest : StringSpec({
     val laRequest = LiveHttpRequest.get("/lp/x").build()
     val baRequest = LiveHttpRequest.get("/ba/x").build()
 
-    val environment = Environment.Builder().registry(SimpleMeterRegistry()).build()
+    val environment = Environment.Builder().registry(CompositeMeterRegistry()).build()
     val context = RoutingObjectFactoryContext(environment = environment).get()
 
 

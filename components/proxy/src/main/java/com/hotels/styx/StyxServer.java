@@ -33,7 +33,9 @@ import com.hotels.styx.server.ConnectorConfig;
 import com.hotels.styx.server.netty.NettyServerBuilder;
 import com.hotels.styx.server.netty.ServerConnector;
 import com.hotels.styx.startup.StyxServerComponents;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.netty.util.ResourceLeakDetector;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -172,7 +174,11 @@ public final class StyxServer extends AbstractService {
         this.stopwatch = stopwatch;
         this.components = components;
 
-        registerCoreMetrics(components.environment().buildInfo(), components.environment().metricRegistry());
+        if (!(components.environment().meterRegistry() instanceof CompositeMeterRegistry)) {
+            throw new IllegalStateException("The base meter registry should be a micrometer composite registry!");
+        }
+
+        registerCoreMetrics(components.environment().buildInfo(), components.environment().meterRegistry());
 
         // The plugins are loaded, but not initialised. And therefore not able to accept traffic.
         // This handler is for the "old" proxy servers, that are started from proxy.connectors configuration.
@@ -237,6 +243,10 @@ public final class StyxServer extends AbstractService {
         return Optional.ofNullable(httpsServer)
                 .map(InetServer::inetAddress)
                 .orElse(null);
+    }
+
+    public MeterRegistry meterRegistry() {
+        return components.environment().meterRegistry();
     }
 
     public InetSocketAddress adminHttpAddress() {
