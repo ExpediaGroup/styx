@@ -21,7 +21,6 @@ import com.hotels.styx.api.LiveHttpRequest.get
 import com.hotels.styx.api.extension.ActiveOrigins
 import com.hotels.styx.api.extension.Origin.newOriginBuilder
 import com.hotels.styx.api.extension.service.BackendService
-import com.hotels.styx.api.metrics.codahale.NoopMetricRegistry
 import com.hotels.styx.api.{HttpHeaderNames, HttpHeaderValues, HttpResponse}
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient.newHttpClientBuilder
@@ -67,7 +66,7 @@ class ExpiringConnectionSpec extends FunSpec
       .build()
 
     pooledClient = newHttpClientBuilder(backendService.id)
-        .metricsRegistry(new NoopMetricRegistry())
+      .meterRegistry(new SimpleMeterRegistry())
       .loadBalancer(roundRobinStrategy(activeOrigins(backendService)))
       .build
   }

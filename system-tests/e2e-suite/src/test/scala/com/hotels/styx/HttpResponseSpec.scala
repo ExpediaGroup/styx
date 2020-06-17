@@ -22,7 +22,6 @@ import com.hotels.styx.api.Id.id
 import com.hotels.styx.api.LiveHttpRequest.get
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.extension.{ActiveOrigins, service}
-import com.hotels.styx.api.metrics.codahale.NoopMetricRegistry
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient
 import com.hotels.styx.client.StyxBackendServiceClient._
@@ -65,7 +64,7 @@ class HttpResponseSpec extends FunSuite
       responseTimeout = responseTimeout)
 
     client = newHttpClientBuilder(id(backendService.appId))
-        .metricsRegistry(new NoopMetricRegistry())
+      .meterRegistry(new SimpleMeterRegistry())
       .loadBalancer(busyConnectionStrategy(activeOrigins(backendService.asJava)))
       .build
   }

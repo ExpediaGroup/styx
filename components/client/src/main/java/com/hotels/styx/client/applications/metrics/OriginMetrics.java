@@ -43,8 +43,8 @@ public class OriginMetrics implements OriginStats {
 
     public static final String SUCCESS_COUNTER_NAME = "request_success_count";
     public static final String FAILURE_COUNTER_NAME = "request_error_count";
-    public static final String STATUS_COUNTER_NAME = "response_status_count";
-    public static final String CANCELLATION_COUNTER_NAME = "request_cancellation_count";
+    public static final String STATUS_COUNTER_NAME = "response.status.count";
+    public static final String CANCELLATION_COUNTER_NAME = "request.cancellation.count";
     public static final String LATENCY_TIMER_NAME = "request_latency";
     public static final String TTFB_TIMER_NAME = "request_time_to_first_byte";
 

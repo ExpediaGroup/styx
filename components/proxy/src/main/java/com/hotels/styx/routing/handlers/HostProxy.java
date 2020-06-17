@@ -48,7 +48,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
 import static com.hotels.styx.client.HttpConfig.newHttpConfigBuilder;
@@ -307,7 +306,7 @@ public class HostProxy implements RoutingObject {
                     .id(objectName)
                     .build();
 
-            OriginMetrics originMetrics = OriginMetrics.create(id(metricPrefix), objectName, metricRegistry);
+            OriginMetrics originMetrics = new OriginMetrics(meterRegistry, origin.id().toString(), origin.applicationId().toString());
 
             ConnectionPool.Factory connectionPoolFactory = new SimpleConnectionPoolFactory.Builder()
                     .connectionFactory(
