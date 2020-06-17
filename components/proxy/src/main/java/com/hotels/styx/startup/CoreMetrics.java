@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,25 +15,24 @@
  */
 package com.hotels.styx.startup;
 
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.jvm.BufferPoolMetricSet;
-import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
-import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
-import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 import com.hotels.styx.Version;
-import com.hotels.styx.api.MetricRegistry;
-import com.hotels.styx.metrics.reporting.sets.NettyAllocatorMetricSet;
-import com.hotels.styx.metrics.reporting.sets.OperatingSystemMetricSet;
+import com.hotels.styx.metrics.reporting.sets.NettyAllocatorMetrics;
+import com.hotels.styx.metrics.reporting.sets.OperatingSystemMetrics;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import org.slf4j.Logger;
 
 import java.lang.management.RuntimeMXBean;
-import java.time.Duration;
 import java.util.Optional;
 
-import static java.lang.String.format;
-import static java.lang.management.ManagementFactory.getPlatformMBeanServer;
+import static com.hotels.styx.api.Metrics.name;
 import static java.lang.management.ManagementFactory.getRuntimeMXBean;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -41,55 +40,50 @@ import static org.slf4j.LoggerFactory.getLogger;
  * Core metrics - JVM details, Styx version.
  */
 public final class CoreMetrics {
+    private static final String JVM_METRICS_ROOT = "jvm";
     private static final Logger LOG = getLogger(CoreMetrics.class);
 
     private CoreMetrics() {
     }
 
-    public static void registerCoreMetrics(Version buildInfo, MetricRegistry metrics) {
-        registerVersionMetric(buildInfo, metrics);
-        registerJvmMetrics(metrics);
-        metrics.register("os", new OperatingSystemMetricSet());
+    public static void registerCoreMetrics(Version buildInfo, MeterRegistry registry) {
+        registerVersionMetric(buildInfo, registry);
+        registerJvmMetrics(registry);
+        new OperatingSystemMetrics().bindTo(registry);
     }
 
-    private static void registerVersionMetric(Version buildInfo, MetricRegistry metrics) {
+    private static void registerVersionMetric(Version buildInfo, MeterRegistry registry) {
         Optional<Integer> buildNumber = buildInfo.buildNumber();
 
         if (buildNumber.isPresent()) {
-            registerVersionMetric(metrics, buildNumber.get());
+            registerVersionMetric(registry, buildNumber.get());
         } else {
             LOG.warn("Could not acquire build number from release version: {}", buildInfo);
         }
     }
 
-    private static void registerVersionMetric(MetricRegistry metricRegistry, Integer buildNumber) {
-        Gauge<Integer> versionGauge = () -> buildNumber;
-
-        metricRegistry.scope("styx").register("version.buildnumber", versionGauge);
+    private static void registerVersionMetric(MeterRegistry registry, Integer buildNumber) {
+        Counter versionMeter = registry.counter("styx.version", Tags.of("buildnumber", buildNumber.toString()));
+        versionMeter.increment();
     }
 
-    private static void registerJvmMetrics(MetricRegistry metricRegistry) {
+    private static void registerJvmMetrics(MeterRegistry registry) {
+        new JvmMemoryMetrics().bindTo(registry);
+        new JvmThreadMetrics().bindTo(registry);
+        new JvmGcMetrics().bindTo(registry);
+        new ClassLoaderMetrics().bindTo(registry);
+
         RuntimeMXBean runtimeMxBean = getRuntimeMXBean();
+        registry.gauge(name(JVM_METRICS_ROOT, "uptime"), Tags.empty(), runtimeMxBean, RuntimeMXBean::getUptime);
 
-        MetricRegistry scoped = metricRegistry.scope("jvm");
-        scoped.register("bufferpool", new BufferPoolMetricSet(getPlatformMBeanServer()));
-        scoped.register("memory", new MemoryUsageGaugeSet());
-        scoped.register("thread", new ThreadStatesGaugeSet());
-        scoped.register("gc", new GarbageCollectorMetricSet());
-        scoped.register("uptime", (Gauge<Long>) runtimeMxBean::getUptime);
-        scoped.register("uptime.formatted", (Gauge<String>) () -> formatTime(runtimeMxBean.getUptime()));
-        scoped.register("netty", new NettyAllocatorMetricSet("pooled-allocator", PooledByteBufAllocator.DEFAULT.metric()));
-        scoped.register("netty", new NettyAllocatorMetricSet("unpooled-allocator", UnpooledByteBufAllocator.DEFAULT.metric()));
+        new NettyAllocatorMetrics(
+                name(JVM_METRICS_ROOT, "netty", "pooled-allocator"),
+                PooledByteBufAllocator.DEFAULT.metric()
+        ).bindTo(registry);
+
+        new NettyAllocatorMetrics(
+                name(JVM_METRICS_ROOT, "netty", "unpooled-allocator"),
+                UnpooledByteBufAllocator.DEFAULT.metric()
+        ).bindTo(registry);
     }
-
-    private static String formatTime(long timeInMilliseconds) {
-        Duration duration = Duration.ofMillis(timeInMilliseconds);
-
-        long days = duration.toDays();
-        long hours = duration.minusDays(days).toHours();
-        long minutes = duration.minusHours(duration.toHours()).toMinutes();
-
-        return format("%dd %dh %dm", days, hours, minutes);
-    }
-
 }

@@ -15,66 +15,65 @@
  */
 package com.hotels.styx.startup;
 
-import com.codahale.metrics.Gauge;
 import com.hotels.styx.Version;
-import com.hotels.styx.api.MetricRegistry;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.api.metrics.codahale.NoopMetricRegistry;
-import org.junit.jupiter.api.Disabled;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 
-import java.util.Map;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CoreMetricsTest {
     private final Version version = new Version("STYX.1.2.3");
 
     @Test
     public void registersVersionMetric() {
-        MetricRegistry metrics = new NoopMetricRegistry();
-        CoreMetrics.registerCoreMetrics(version, metrics);
+        MeterRegistry registry = new SimpleMeterRegistry();
+        CoreMetrics.registerCoreMetrics(version, registry);
 
-        Gauge gauge = metrics.getGauges().get("styx.version.buildnumber");
+        Counter counter = registry.find("styx.version").counter();
 
-        assertThat(gauge.getValue(), is(3));
+        assertThat(counter.count(), is(1.0));
+        assertTrue(counter.getId().getTag("buildnumber").equals("3"));
     }
 
     @Test
-    @Disabled("Scoped metrics are broken") // TODO: Enable when scoped metrics are back
     public void registersJvmMetrics() {
-        MetricRegistry metrics = new NoopMetricRegistry();
-        CoreMetrics.registerCoreMetrics(version, metrics);
+        MeterRegistry registry = new SimpleMeterRegistry();
+        CoreMetrics.registerCoreMetrics(version, registry);
 
-        Map<String, Gauge> gauges = metrics.getGauges();
+        List<String> gauges = registry.getMeters()
+                .stream()
+                .map(meter -> meter.getId().getName())
+                .collect(Collectors.toList());
 
-        assertThat(gauges.keySet(), hasItems(
-                "jvm.thread.blocked.count",
-                "jvm.thread.count",
-                "jvm.thread.daemon.count",
-                "jvm.thread.deadlock.count",
-                "jvm.thread.deadlocks",
-                "jvm.thread.new.count",
-                "jvm.thread.runnable.count",
-                "jvm.thread.terminated.count",
-                "jvm.thread.timed_waiting.count",
-                "jvm.thread.waiting.count",
+        assertThat(gauges, hasItems(
                 "jvm.uptime",
-                "jvm.uptime.formatted"
+                "jvm.netty.pooled-allocator.usedDirectMemory",
+                "jvm.netty.pooled-allocator.usedHeapMemory",
+                "jvm.netty.unpooled-allocator.usedDirectMemory",
+                "jvm.netty.unpooled-allocator.usedHeapMemory"
         ));
     }
 
     @Test
-    @Disabled("Scoped metrics are broken") // TODO: Enable when scoped metrics are back
     public void registersOperatingSystemMetrics() {
-        MetricRegistry metrics = new NoopMetricRegistry();
-        CoreMetrics.registerCoreMetrics(version, metrics);
+        MeterRegistry registry = new SimpleMeterRegistry();
+        CoreMetrics.registerCoreMetrics(version, registry);
 
-        Map<String, Gauge> gauges = metrics.getGauges();
+        List<String> gauges = registry.getMeters()
+                .stream()
+                .map(meter -> meter.getId().getName())
+                .collect(Collectors.toList());
 
-        assertThat(gauges.keySet(), hasItems(
+
+        assertThat(gauges, hasItems(
 // Unix system only
 //                "os.fileDescriptors.max",
 //                "os.fileDescriptors.open",

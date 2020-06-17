@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,7 +15,9 @@
  */
 package com.hotels.styx.metrics.reporting.sets;
 
-import com.codahale.metrics.Gauge;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.netty.buffer.ByteBufAllocatorMetric;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,7 +27,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.when;
 
-public class NettyAllocatorMetricSetTest {
+public class NettyAllocatorMetricsTest {
 
     private ByteBufAllocatorMetric metricUnderTest;
 
@@ -36,19 +38,23 @@ public class NettyAllocatorMetricSetTest {
 
     @Test
     public void gaugeReportsDirectMemoryUsageValue() throws Exception {
-        when(metricUnderTest.usedDirectMemory()).thenReturn(1L);
-        NettyAllocatorMetricSet metricSet = new NettyAllocatorMetricSet("test-metric", metricUnderTest);
+        MeterRegistry registry = new SimpleMeterRegistry();
 
-        Gauge<Long> metric = (Gauge<Long>) metricSet.getMetrics().get("test-metric.usedDirectMemory");
-        assertThat(metric.getValue(), is(1L));
+        when(metricUnderTest.usedDirectMemory()).thenReturn(1L);
+        new NettyAllocatorMetrics("test-metric", metricUnderTest).bindTo(registry);
+
+        Gauge metric = registry.find("test-metric.usedDirectMemory").gauge();
+        assertThat(metric.value(), is(1.0));
     }
 
     @Test
     public void gaugeReportsHeapMemoryUsageValue() throws Exception {
-        when(metricUnderTest.usedHeapMemory()).thenReturn(1L);
-        NettyAllocatorMetricSet metricSet = new NettyAllocatorMetricSet("test-metric", metricUnderTest);
+        MeterRegistry registry = new SimpleMeterRegistry();
 
-        Gauge<Long> metric = (Gauge<Long>) metricSet.getMetrics().get("test-metric.usedHeapMemory");
-        assertThat(metric.getValue(), is(1L));
+        when(metricUnderTest.usedHeapMemory()).thenReturn(1L);
+        new NettyAllocatorMetrics("test-metric", metricUnderTest).bindTo(registry);
+
+        Gauge metric = registry.find("test-metric.usedHeapMemory").gauge();
+        assertThat(metric.value(), is(1.0));
     }
 }
