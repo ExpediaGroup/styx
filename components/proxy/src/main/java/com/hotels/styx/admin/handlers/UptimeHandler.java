@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,8 +19,11 @@ import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.WebServiceHandler;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+
+import java.time.Duration;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
@@ -31,20 +34,31 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * Provides an uptime via admin interface.
  */
 public class UptimeHandler implements WebServiceHandler {
-    private final MetricRegistry metricRegistry;
+    private final MeterRegistry registry;
 
-    public UptimeHandler(MetricRegistry metricRegistry) {
-        this.metricRegistry = metricRegistry;
+    public UptimeHandler(MeterRegistry registry) {
+        this.registry = registry;
     }
 
     @Override
     public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-        Object uptime = metricRegistry.getGauges().get("jvm.uptime.formatted").getValue();
+        Gauge gauge = registry.find("jvm.uptime").gauge();
+        String uptime = gauge == null ? "The uptime metric is missing!" : formatTime((long) gauge.value());
 
         return Eventual.of(HttpResponse.response(OK)
                 .disableCaching()
                 .addHeader(CONTENT_TYPE, "application/json")
                 .body(format("\"%s\"", uptime), UTF_8)
                 .build());
+    }
+
+    private String formatTime(long timeInMilliseconds) {
+        Duration duration = Duration.ofMillis(timeInMilliseconds);
+
+        long days = duration.toDays();
+        long hours = duration.minusDays(days).toHours();
+        long minutes = duration.minusHours(duration.toHours()).toMinutes();
+
+        return format("%dd %dh %dm", days, hours, minutes);
     }
 }
