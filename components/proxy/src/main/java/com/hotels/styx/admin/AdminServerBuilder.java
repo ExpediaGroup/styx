@@ -201,7 +201,7 @@ public class AdminServerBuilder {
         httpRouter.aggregate("/admin/servers", serverHandler);
         httpRouter.aggregate("/admin/servers/", serverHandler);
 
-        httpRouter.aggregate("/prometheus", new PrometheusHandler(environment.meterRegistry()));
+        httpRouter.aggregate("/metrics", new PrometheusHandler(environment.meterRegistry()));
 
         return httpRouter;
     }
@@ -226,7 +226,7 @@ public class AdminServerBuilder {
         builder.add(link("JVM", "/admin/jvm?pretty"));
         builder.add(link("Plugins", "/admin/plugins"));
         builder.add(link("Providers", "/admin/providers"));
-        builder.add(link("Prometheus", "/prometheus"));
+        builder.add(link("Prometheus", "/metrics"));
 
         if (configVersion(styxConfig) == ROUTING_CONFIG_V1) {
             builder.add(link("Dashboard", "/admin/dashboard/index.html"))
