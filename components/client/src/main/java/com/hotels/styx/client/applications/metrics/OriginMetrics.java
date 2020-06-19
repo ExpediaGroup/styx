@@ -106,11 +106,6 @@ public class OriginMetrics implements OriginStats {
 
         registry.counter(STATUS_COUNTER_NAME, tags).increment();
     }
-//
-//    @Override
-//    public double oneMinuteErrorRate() {
-//        return errorsCatchAll.getOneMinuteRate();
-//    }
 
     @Override
     public void requestCancelled() {
