@@ -37,12 +37,12 @@ public class GraphiteConfig {
                    @JsonProperty("port") Integer port,
                    @JsonProperty("intervalMillis") Long intervalMillis,
                    @JsonProperty("prefix") String prefix,
-                   @JsonProperty("enabled") boolean enabled) {
+                   @JsonProperty("enabled") String enabled) {
         this.host = host;
         this.port = Optional.ofNullable(port).orElse(9090);
         this.intervalMillis = Optional.ofNullable(intervalMillis).orElse(SECONDS.toMillis(5));
         this.prefix = Optional.ofNullable(prefix).orElse("");
-        this.enabled = Optional.ofNullable(enabled).orElse(true);
+        this.enabled = !"false".equalsIgnoreCase(enabled);
     }
 
     @JsonProperty("prefix")
@@ -72,7 +72,7 @@ public class GraphiteConfig {
 
     @Override
     public String toString() {
-        return new StringBuilder(96)
+        return new StringBuilder()
                 .append(this.getClass().getSimpleName())
                 .append("{host=")
                 .append(host)

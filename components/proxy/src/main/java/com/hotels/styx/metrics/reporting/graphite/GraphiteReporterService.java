@@ -19,7 +19,6 @@ import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import io.micrometer.core.instrument.util.HierarchicalNameMapper;
 import io.micrometer.graphite.GraphiteConfig;
 import io.micrometer.graphite.GraphiteMeterRegistry;
 import org.jetbrains.annotations.NotNull;
@@ -37,20 +36,21 @@ import static org.slf4j.LoggerFactory.getLogger;
 public final class GraphiteReporterService extends AbstractStyxService {
     private static final Logger LOGGER = getLogger(GraphiteReporterService.class);
     private final MeterRegistry meterRegistry;
-    private final GraphiteMeterRegistry graphiteMeterRegistry;
+    private GraphiteMeterRegistry graphiteMeterRegistry;
+    private MicrometerGraphiteConfig graphiteConfig;
 
     private GraphiteReporterService(Builder builder) {
         super(builder.serviceName);
 
         this.meterRegistry = requireNonNull(builder.meterRegistry);
-        this.graphiteMeterRegistry = new GraphiteMeterRegistry(new MicrometerGraphiteConfig(builder), Clock.SYSTEM, HierarchicalNameMapper.DEFAULT);
+        this.graphiteConfig = new MicrometerGraphiteConfig(builder);
     }
 
     @Override
     protected CompletableFuture<Void> startService() {
         return CompletableFuture.runAsync(() -> {
+            this.graphiteMeterRegistry = new GraphiteMeterRegistry(graphiteConfig, Clock.SYSTEM);
             ((CompositeMeterRegistry) meterRegistry).add(graphiteMeterRegistry);
-            this.graphiteMeterRegistry.start();
             LOGGER.info("Graphite service started, service name=\"{}\"", serviceName());
         });
     }
