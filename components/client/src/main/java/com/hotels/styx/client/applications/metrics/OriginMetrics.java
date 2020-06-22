@@ -41,12 +41,12 @@ public class OriginMetrics implements OriginStats {
     public static final String STATUS_TAG = "statusCode";
     public static final String STATUS_CLASS_TAG = "statusClass";
 
-    public static final String SUCCESS_COUNTER_NAME = "request_success_count";
-    public static final String FAILURE_COUNTER_NAME = "request_error_count";
-    public static final String STATUS_COUNTER_NAME = "response.status.count";
-    public static final String CANCELLATION_COUNTER_NAME = "request.cancellation.count";
-    public static final String LATENCY_TIMER_NAME = "request_latency";
-    public static final String TTFB_TIMER_NAME = "request_time_to_first_byte";
+    public static final String SUCCESS_COUNTER_NAME = "request.success";
+    public static final String FAILURE_COUNTER_NAME = "request.error";
+    public static final String STATUS_COUNTER_NAME = "response.status";
+    public static final String CANCELLATION_COUNTER_NAME = "request.cancellation";
+    public static final String LATENCY_TIMER_NAME = "request.latency";
+    public static final String TTFB_TIMER_NAME = "request.timetofirstbyte";
 
     private final MeterRegistry registry;
 
@@ -98,8 +98,8 @@ public class OriginMetrics implements OriginStats {
         Tags tags = this.tags.and(STATUS_TAG, valueOf(statusCode));
 
         if (statusCode >= 100 && statusCode < 600) {
-            String staticClass = (statusCode / 100) + "xx";
-            tags = tags.and(STATUS_CLASS_TAG, staticClass);
+            String statusClass = (statusCode / 100) + "xx";
+            tags = tags.and(STATUS_CLASS_TAG, statusClass);
         }
 
         registry.counter(STATUS_COUNTER_NAME, tags).increment();

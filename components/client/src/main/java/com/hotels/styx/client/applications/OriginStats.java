@@ -21,9 +21,6 @@ import io.micrometer.core.instrument.Timer;
  * An object that receives origin statistics.
  */
 public interface OriginStats {
-    String REQUEST_SUCCESS = "requests.success-rate";
-    String REQUEST_FAILURE = "requests.error-rate";
-
     /**
      * Return a {@link Timer.Sample} based on the current registry's Clock.
      *
