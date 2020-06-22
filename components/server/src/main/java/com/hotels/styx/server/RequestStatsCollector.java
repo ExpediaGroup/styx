@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -56,11 +56,11 @@ public class RequestStatsCollector implements RequestProgressListener {
 
     RequestStatsCollector(MetricRegistry metrics, NanoClock nanoClock) {
         this.nanoClock = nanoClock;
-        this.outstandingRequests = metrics.counter("outstanding");
-        this.latencyTimer = metrics.timer("latency");
-        this.requestsIncoming = metrics.meter("received");
-        this.responseErrorRate = metrics.meter("error-rate.500");
-        this.responsesSent = metrics.counter("response.sent");
+        this.outstandingRequests = metrics.counter("requests.outstanding");
+        this.latencyTimer = metrics.timer("requests.latency");
+        this.requestsIncoming = metrics.meter("requests.received");
+        this.responseErrorRate = metrics.meter("requests.error-rate.500");
+        this.responsesSent = metrics.counter("requests.response.sent");
 
         httpResponseStatusClassCounters[0] = metrics.counter(responseCountName("status.unrecognised"));
         httpResponseStatusClassCounters[1] = metrics.counter(responseCountName("status.1xx"));
@@ -133,7 +133,7 @@ public class RequestStatsCollector implements RequestProgressListener {
     }
 
     private String responseCountName(String counterName) {
-        return "response." + counterName;
+        return "requests.response." + counterName;
     }
 
     private String responseCountNameForStatus(int code) {

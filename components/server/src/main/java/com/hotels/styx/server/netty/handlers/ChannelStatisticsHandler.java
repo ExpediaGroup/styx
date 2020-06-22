@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -43,11 +43,11 @@ public class ChannelStatisticsHandler extends ChannelDuplexHandler {
     private final Counter totalConnections;
 
     public ChannelStatisticsHandler(MetricRegistry metricRegistry) {
-        this.metricRegistry = metricRegistry.scope("connections");
+        this.metricRegistry = metricRegistry;
 
-        this.receivedBytesCount = this.metricRegistry.counter("bytes-received");
-        this.sentBytesCount = this.metricRegistry.counter("bytes-sent");
-        this.totalConnections = this.metricRegistry.counter("total-connections");
+        this.receivedBytesCount = this.metricRegistry.counter("connections.bytes-received");
+        this.sentBytesCount = this.metricRegistry.counter("connections.bytes-sent");
+        this.totalConnections = this.metricRegistry.counter("connections.total-connections");
     }
 
     @Override
@@ -108,6 +108,6 @@ public class ChannelStatisticsHandler extends ChannelDuplexHandler {
     }
 
     private static String counterPrefix(Thread thread) {
-        return name("eventloop", thread.getName());
+        return name("connections.eventloop", thread.getName());
     }
 }

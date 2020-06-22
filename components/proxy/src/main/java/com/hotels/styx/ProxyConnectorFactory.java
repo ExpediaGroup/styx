@@ -120,7 +120,7 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
             this.metrics = requireNonNull(factory.metrics);
             this.httpErrorStatusListener = requireNonNull(factory.errorStatusListener);
             this.channelStatsHandler = new ChannelStatisticsHandler(metrics);
-            this.requestStatsCollector = new RequestStatsCollector(metrics.scope("requests"));
+            this.requestStatsCollector = new RequestStatsCollector(metrics);
             this.excessConnectionRejector = new ExcessConnectionRejector(new DefaultChannelGroup(GlobalEventExecutor.INSTANCE), serverConfig.maxConnectionsCount());
             this.unwiseCharEncoder = new ConfigurableUnwiseCharsEncoder(factory.unwiseCharacters);
             if (isHttps()) {
@@ -196,8 +196,8 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
             private volatile boolean httpTransactionOngoing;
 
             IdleTransactionConnectionCloser(MetricRegistry metricRegistry) {
-                this.metricRegistry = metricRegistry.scope("connections");
-                this.idleConnectionClosed = this.metricRegistry.histogram("idleClosed");
+                this.metricRegistry = metricRegistry;
+                this.idleConnectionClosed = this.metricRegistry.histogram("connections.idleClosed");
             }
 
             @Override
