@@ -18,8 +18,7 @@ package com.hotels.styx.metrics.reporting.graphite;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.Optional;
-
+import static java.util.Optional.ofNullable;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -37,12 +36,12 @@ public class GraphiteConfig {
                    @JsonProperty("port") Integer port,
                    @JsonProperty("intervalMillis") Long intervalMillis,
                    @JsonProperty("prefix") String prefix,
-                   @JsonProperty("enabled") String enabled) {
+                   @JsonProperty("enabled") Boolean enabled) {
         this.host = host;
-        this.port = Optional.ofNullable(port).orElse(9090);
-        this.intervalMillis = Optional.ofNullable(intervalMillis).orElse(SECONDS.toMillis(5));
-        this.prefix = Optional.ofNullable(prefix).orElse("");
-        this.enabled = !"false".equalsIgnoreCase(enabled);
+        this.port = ofNullable(port).orElse(9090);
+        this.intervalMillis = ofNullable(intervalMillis).orElse(SECONDS.toMillis(5));
+        this.prefix = ofNullable(prefix).orElse("");
+        this.enabled = ofNullable(enabled).orElse(true);
     }
 
     @JsonProperty("prefix")
@@ -72,17 +71,12 @@ public class GraphiteConfig {
 
     @Override
     public String toString() {
-        return new StringBuilder()
-                .append(this.getClass().getSimpleName())
-                .append("{host=")
-                .append(host)
-                .append(", port=")
-                .append(port)
-                .append(", intervalMillis=")
-                .append(intervalMillis)
-                .append(", enabled=")
-                .append(enabled)
-                .append('}')
-                .toString();
+        return this.getClass().getSimpleName()
+                + "{"
+                + "host=" + host + ","
+                + "port=" + port + ","
+                + "intervalMillis=" + intervalMillis + ","
+                + "enabled=" + enabled + ","
+                + "}";
     }
 }
