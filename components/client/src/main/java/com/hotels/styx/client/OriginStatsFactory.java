@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 package com.hotels.styx.client;
 
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.client.applications.OriginStats;
 import com.hotels.styx.client.applications.metrics.OriginMetrics;
+import io.micrometer.core.instrument.MeterRegistry;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -40,15 +40,15 @@ public interface OriginStatsFactory {
      */
     class CachingOriginStatsFactory implements OriginStatsFactory {
         private final ConcurrentMap<Origin, OriginMetrics> metricsByOrigin = new ConcurrentHashMap<>();
-        private final MetricRegistry metricRegistry;
+        private final MeterRegistry meterRegistry;
 
         /**
          * Constructs a new instance.
          *
-         * @param metricRegistry a metric registry
+         * @param meterRegistry a meter registry
          */
-        public CachingOriginStatsFactory(MetricRegistry metricRegistry) {
-            this.metricRegistry = requireNonNull(metricRegistry);
+        public CachingOriginStatsFactory(MeterRegistry meterRegistry) {
+            this.meterRegistry = requireNonNull(meterRegistry);
         }
 
         /**
@@ -58,7 +58,7 @@ public interface OriginStatsFactory {
          * @return the {@link OriginStats}
          */
         public OriginStats originStats(Origin origin) {
-            return metricsByOrigin.computeIfAbsent(origin, theOrigin -> OriginMetrics.create(theOrigin.applicationId(), theOrigin.id().toString(), metricRegistry));
+            return metricsByOrigin.computeIfAbsent(origin, theOrigin -> new OriginMetrics(meterRegistry, theOrigin.id().toString(), theOrigin.applicationId().toString()));
         }
     }
 }

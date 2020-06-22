@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ public class StyxBackendServiceClientFactory implements BackendServiceClientFact
         return new StyxBackendServiceClient.Builder(backendService.id())
                 .loadBalancer(loadBalancingStrategy)
                 .stickySessionConfig(backendService.stickySessionConfig())
-                .metricsRegistry(environment.metricRegistry())
+                .meterRegistry(environment.meterRegistry())
                 .retryPolicy(retryPolicy)
                 .rewriteRules(backendService.rewrites())
                 .originStatsFactory(originStatsFactory)

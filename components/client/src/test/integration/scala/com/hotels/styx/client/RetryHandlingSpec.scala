@@ -28,7 +28,6 @@ import com.hotels.styx.api.LiveHttpRequest.get
 import com.hotels.styx.api.extension.Origin._
 import com.hotels.styx.api.extension.service.{BackendService, StickySessionConfig}
 import com.hotels.styx.api.extension.{ActiveOrigins, Origin}
-import com.hotels.styx.api.metrics.codahale.{CodaHaleMetricRegistry, NoopMetricRegistry}
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
@@ -53,7 +52,6 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
 
   val response = "Response From localhost"
 
-  val metricsRegistry = new NoopMetricRegistry()
   val meterRegistry = new CompositeMeterRegistry()
 
   val server1 = new FakeHttpServer(0, "app", "HEALTHY_ORIGIN_ONE")
@@ -135,7 +133,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
       .build()
 
     val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id)
-      .metricsRegistry(metricsRegistry)
+      .meterRegistry(meterRegistry)
       .retryPolicy(new RetryNTimes(3))
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .build
@@ -149,7 +147,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
       .origins(unhealthyOriginOne, unhealthyOriginTwo, unhealthyOriginThree)
       .build()
     val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id)
-      .metricsRegistry(metricsRegistry)
+      .meterRegistry(meterRegistry)
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .retryPolicy(new RetryNTimes(2))
       .build
@@ -166,7 +164,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
       .build()
 
     val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id)
-      .metricsRegistry(metricsRegistry)
+      .meterRegistry(meterRegistry)
       .retryPolicy(new RetryNTimes(3))
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .build

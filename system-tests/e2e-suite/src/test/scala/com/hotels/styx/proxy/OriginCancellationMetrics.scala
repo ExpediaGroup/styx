@@ -15,9 +15,10 @@
  */
 package com.hotels.styx.proxy
 
-import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.OK
+import com.hotels.styx.client.applications.metrics.OriginMetrics.{APP_TAG, CANCELLATION_COUNTER_NAME}
 import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins}
 import com.hotels.styx.support.{NettyOrigins, TestClientSupport}
 import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
@@ -65,7 +66,7 @@ class OriginCancellationMetrics extends FunSpec
       val response = decodedRequest(request)
       response.status() should be(OK)
 
-      styxServer.metricsSnapshot.count("origins.app-1.requests.cancelled").get should be(0)
+      styxServer.meterRegistry().get(CANCELLATION_COUNTER_NAME).tag(APP_TAG, "app-1").counter().count() should be(0.0)
     }
 
 

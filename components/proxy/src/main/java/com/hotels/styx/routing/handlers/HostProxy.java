@@ -23,7 +23,6 @@ import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.ResponseEventListener;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
@@ -48,7 +47,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
 import static com.hotels.styx.client.HttpConfig.newHttpConfigBuilder;
@@ -263,7 +261,6 @@ public class HostProxy implements RoutingObject {
 
             return createHostProxyHandler(
                     executor,
-                    context.environment().metricRegistry(),
                     context.environment().meterRegistry(),
                     hostAndPort,
                     poolSettings,
@@ -289,25 +286,24 @@ public class HostProxy implements RoutingObject {
         @NotNull
         public static HostProxy createHostProxyHandler(
                 NettyExecutor executor,
-                MetricRegistry metricRegistry,
                 MeterRegistry meterRegistry,
                 HostAndPort hostAndPort,
                 ConnectionPoolSettings poolSettings,
                 TlsSettings tlsSettings,
                 int responseTimeoutMillis,
                 int maxHeaderSize,
-                String metricPrefix,
-                String objectName) {
+                String appId,
+                String originId) {
 
             String host = hostAndPort.getHostText();
             int port = hostAndPort.getPort();
 
             Origin origin = newOriginBuilder(host, port)
-                    .applicationId(metricPrefix)
-                    .id(objectName)
+                    .applicationId(appId)
+                    .id(originId)
                     .build();
 
-            OriginMetrics originMetrics = OriginMetrics.create(id(metricPrefix), objectName, metricRegistry);
+            OriginMetrics originMetrics = new OriginMetrics(meterRegistry, origin.id().toString(), origin.applicationId().toString());
 
             ConnectionPool.Factory connectionPoolFactory = new SimpleConnectionPoolFactory.Builder()
                     .connectionFactory(
