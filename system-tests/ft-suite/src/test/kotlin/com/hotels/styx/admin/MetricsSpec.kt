@@ -19,24 +19,23 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.OK
+import com.hotels.styx.client.applications.metrics.OriginMetrics.APP_TAG
+import com.hotels.styx.client.applications.metrics.OriginMetrics.ORIGIN_TAG
+import com.hotels.styx.client.applications.metrics.OriginMetrics.TTFB_TIMER_NAME
 import com.hotels.styx.server.HttpConnectorConfig
 import com.hotels.styx.servers.MockOriginServer
 import com.hotels.styx.support.ResourcePaths
 import com.hotels.styx.support.StyxServerProvider
-import com.hotels.styx.support.metrics
 import com.hotels.styx.support.proxyHttpHostHeader
 import com.hotels.styx.support.testClient
 import com.hotels.styx.support.wait
 import io.kotlintest.Spec
 import io.kotlintest.eventually
-import io.kotlintest.matchers.doubles.shouldBeGreaterThan
 import io.kotlintest.matchers.numerics.shouldBeGreaterThan
-import io.kotlintest.matchers.shouldBeInRange
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.specs.FunSpec
-import io.micrometer.core.instrument.Gauge
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.charset.StandardCharsets.UTF_8
@@ -97,19 +96,18 @@ class MetricsSpec : FunSpec() {
                 }
 
                 eventually(1.seconds, AssertionError::class.java) {
-                    styxServer.meterRegistry().find("connectionspool.available-connections")
-                            .tags("appid", "origins", "originid", "appA.appA-01")
+                    styxServer.meterRegistry().get("connectionspool.available-connections")
+                            .tag("appid", "origins")
+                            .tag("originid", "appA.appA-01")
                             .gauge() shouldNotBe null
                 }
             }
 
             test("time-to-first-byte metrics are reported") {
-                styxServer().metrics().let {
-                    (it["origins.appA.appA-01.requests.time-to-first-byte"]!!["count"] as Int) shouldBeGreaterThan 0
-                    (it["origins.appA.appA-01.requests.time-to-first-byte"]!!["mean"] as Double) shouldBeGreaterThan 0.0
-                    (it["origins.requests.time-to-first-byte"]!!["count"] as Int) shouldBeGreaterThan 0
-                    (it["origins.requests.time-to-first-byte"]!!["mean"] as Double) shouldBeGreaterThan 0.0
-                }
+                styxServer.meterRegistry().get(TTFB_TIMER_NAME)
+                        .tag(APP_TAG, "origins")
+                        .tag(ORIGIN_TAG, "appA.appA-01")
+                        .timer().count() as Long shouldBeGreaterThan 0L
             }
         }
     }

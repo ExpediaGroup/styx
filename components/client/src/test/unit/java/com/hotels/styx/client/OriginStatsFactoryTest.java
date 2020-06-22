@@ -16,7 +16,6 @@
 package com.hotels.styx.client;
 
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.OriginStatsFactory.CachingOriginStatsFactory;
 import com.hotels.styx.client.applications.OriginStats;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -29,7 +28,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class OriginStatsFactoryTest {
 
-    final OriginStatsFactory originStatsFactory = new CachingOriginStatsFactory(new CodaHaleMetricRegistry(new SimpleMeterRegistry()));
+    final OriginStatsFactory originStatsFactory = new CachingOriginStatsFactory(new SimpleMeterRegistry());
 
     @Test
     public void returnTheSameStatsForSameOrigin() {

@@ -126,7 +126,7 @@ public class StyxBackendServiceClientFactoryTest {
                                     }
                                 })
                                 .build(),
-                        new CachingOriginStatsFactory(environment.metricRegistry()));
+                        new CachingOriginStatsFactory(environment.meterRegistry()));
 
         LiveHttpRequest requestz = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("z").toString())).build();
         LiveHttpRequest requestx = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("x").toString())).build();
@@ -172,7 +172,7 @@ public class StyxBackendServiceClientFactoryTest {
                                     }
                                 })
                                 .build(),
-                        new CachingOriginStatsFactory(environment.metricRegistry()));
+                        new CachingOriginStatsFactory(environment.meterRegistry()));
 
         LiveHttpRequest requestz = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("z").toString())).build();
         LiveHttpRequest requestx = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("x").toString())).build();

@@ -15,18 +15,14 @@
  */
 package com.hotels.styx.client.applications.metrics;
 
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.Meter;
-import com.codahale.metrics.Timer;
-import com.hotels.styx.api.Id;
 import com.hotels.styx.api.MetricRegistry;
-import com.hotels.styx.client.applications.AggregateTimer;
 import com.hotels.styx.client.applications.OriginStats;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.Timer;
 
-import static com.codahale.metrics.MetricRegistry.name;
-import static com.hotels.styx.client.applications.metrics.StatusCodes.statusCodeName;
+import static java.lang.String.valueOf;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -40,114 +36,87 @@ import static java.util.Objects.requireNonNull;
  * connections scheduled on different event loops.
  */
 public class OriginMetrics implements OriginStats {
-    private static final Logger LOG = LoggerFactory.getLogger(OriginMetrics.class);
-    private static final int SERVER_ERROR_CLASS = 5;
+    public static final String ORIGIN_TAG = "origin";
+    public static final String APP_TAG = "appId";
+    public static final String STATUS_TAG = "statusCode";
+    public static final String STATUS_CLASS_TAG = "statusClass";
 
-    private final ApplicationMetrics applicationMetrics;
+    public static final String SUCCESS_COUNTER_NAME = "request.success";
+    public static final String FAILURE_COUNTER_NAME = "request.error";
+    public static final String STATUS_COUNTER_NAME = "response.status";
+    public static final String CANCELLATION_COUNTER_NAME = "request.cancellation";
+    public static final String LATENCY_TIMER_NAME = "request.latency";
+    public static final String TTFB_TIMER_NAME = "request.timetofirstbyte";
 
-    private final String requestMetricPrefix;
+    private final MeterRegistry registry;
 
-    private final Meter requestSuccessMeter;
-    private final Meter requestErrorMeter;
+    private final Tags tags;
+
+    private final Counter requestSuccessMeter;
+    private final Counter requestErrorMeter;
+    private final Counter requestCancellations;
     private final Timer requestLatency;
     private final Timer timeToFirstByte;
-    private final Meter status200OkMeter;
-    private final Meter errorsCatchAll;
-
-    private final MetricRegistry registry;
-    private final Counter requestCancellations;
 
     /**
      * Constructor.
      *
-     * @param applicationMetrics application metrics
-     * @param originId           an origin
+     * @param registry       a meter registry
+     * @param originId       an origin
+     * @param appId          application ID
      */
-    public OriginMetrics(ApplicationMetrics applicationMetrics, String originId) {
-        this.applicationMetrics = requireNonNull(applicationMetrics);
+    public OriginMetrics(MeterRegistry registry, String originId, String appId) {
         requireNonNull(originId);
 
-        this.registry = this.applicationMetrics.metricRegistry();
-        this.requestMetricPrefix = name(originId, "requests");
+        this.registry = registry;
 
-        this.requestSuccessMeter = this.registry.meter(name(this.requestMetricPrefix, "success-rate"));
-        this.requestErrorMeter = this.registry.meter(name(this.requestMetricPrefix, "error-rate"));
-        this.requestLatency = this.registry.timer(name(this.requestMetricPrefix, "latency"));
-        this.timeToFirstByte = this.registry.timer(name(this.requestMetricPrefix, "time-to-first-byte"));
-        this.status200OkMeter = this.registry.meter(name(this.requestMetricPrefix, "response", statusCodeName(200)));
-        this.errorsCatchAll = this.registry.meter(name(this.requestMetricPrefix, "response.status.5xx"));
+        tags = Tags.of(ORIGIN_TAG, originId).and(APP_TAG, appId);
 
-        this.requestCancellations = this.registry.counter(name(this.requestMetricPrefix, "cancelled"));
+        requestSuccessMeter = registry.counter(SUCCESS_COUNTER_NAME, tags);
+        requestErrorMeter = registry.counter(FAILURE_COUNTER_NAME, tags);
+        requestCancellations = registry.counter(CANCELLATION_COUNTER_NAME, tags);
+        requestLatency = registry.timer(LATENCY_TIMER_NAME, tags);
+        timeToFirstByte = registry.timer(TTFB_TIMER_NAME, tags);
     }
 
-    /**
-     * Create a new OriginMetrics.
-     *
-     * @param appId          application ID
-     * @param originId       an origin
-     * @param metricRegistry a metrics registry
-     * @return a new OriginMetrics
-     */
-    public static OriginMetrics create(Id appId, String originId, MetricRegistry metricRegistry) {
-        ApplicationMetrics appMetrics = new ApplicationMetrics(appId, metricRegistry);
-        return new OriginMetrics(appMetrics, originId);
+    public Timer.Sample startTimer() {
+        return Timer.start(registry);
     }
 
     @Override
     public void requestSuccess() {
-        requestSuccessMeter.mark();
-        applicationMetrics.requestSuccess();
+        requestSuccessMeter.increment();
     }
 
     @Override
     public void requestError() {
-        requestErrorMeter.mark();
-        applicationMetrics.requestError();
+        requestErrorMeter.increment();
     }
 
     @Override
     public void responseWithStatusCode(int statusCode) {
-        if (statusCode == 200) {
-            // Optimise for common case:
-            this.status200OkMeter.mark();
-            this.applicationMetrics.responseWithStatus200Ok();
-        } else {
-            this.registry.meter(name(this.requestMetricPrefix, "response", statusCodeName(statusCode))).mark();
-            this.applicationMetrics.responseWithStatusCode(statusCode);
+        Tags tags = this.tags.and(STATUS_TAG, valueOf(statusCode));
 
-            if (httpStatusCodeClass(statusCode) == SERVER_ERROR_CLASS) {
-                errorsCatchAll.mark();
-            }
+        if (statusCode >= 100 && statusCode < 600) {
+            String statusClass = (statusCode / 100) + "xx";
+            tags = tags.and(STATUS_CLASS_TAG, statusClass);
         }
-    }
 
-    @Override
-    public double oneMinuteErrorRate() {
-        return errorsCatchAll.getOneMinuteRate();
+        registry.counter(STATUS_COUNTER_NAME, tags).increment();
     }
 
     @Override
     public void requestCancelled() {
-        this.requestCancellations.inc();
-        this.applicationMetrics.requestCancelled();
+        this.requestCancellations.increment();
     }
 
     @Override
-    public AggregateTimer requestLatencyTimer() {
-        return new AggregateTimer(requestLatency, applicationMetrics.requestLatencyTimer());
+    public Timer requestLatencyTimer() {
+        return requestLatency;
     }
 
     @Override
-    public AggregateTimer timeToFirstByteTimer() {
-        return new AggregateTimer(timeToFirstByte, applicationMetrics.requestTimeToFirstByteTimer());
+    public Timer timeToFirstByteTimer() {
+        return timeToFirstByte;
     }
-
-    private int httpStatusCodeClass(int code) {
-        if (code < 100 || code >= 600) {
-            return 0;
-        }
-
-        return code / 100;
-    }
-
 }

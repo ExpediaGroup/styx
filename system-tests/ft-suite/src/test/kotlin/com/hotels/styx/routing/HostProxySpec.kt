@@ -27,6 +27,7 @@ import com.hotels.styx.api.HttpResponseStatus.CREATED
 import com.hotels.styx.api.HttpResponseStatus.GATEWAY_TIMEOUT
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.client.StyxHttpClient
+import com.hotels.styx.client.applications.metrics.OriginMetrics
 import com.hotels.styx.server.HttpConnectorConfig
 import com.hotels.styx.servers.MockOriginServer
 import com.hotels.styx.support.StyxServerProvider
@@ -296,17 +297,21 @@ class HostProxySpec : FeatureSpec() {
             }
 
             scenario("... and provides connection pool metrics") {
-                styxServer.meterRegistry().find("connectionspool.connection-attempts")
-                        .tags("appid", "routing.objects", "originid", "hostProxy")
+                styxServer.meterRegistry().get("connectionspool.connection-attempts")
+                        .tag("appid", "routing.objects")
+                        .tag("originid", "hostProxy")
                         .gauge().value().toInt() shouldBe 1
             }
 
             scenario("... and provides origin and application metrics") {
-                styxServer().metrics().let {
-                    it["routing.objects.hostProxy.requests.response.status.200"]!!.get("count") shouldBe 1
-                }
-                styxServer.meterRegistry().find("connectionspool.connection-attempts")
-                        .tags("appid", "routing.objects", "originid", "hostProxy")
+                styxServer.meterRegistry().get(OriginMetrics.STATUS_COUNTER_NAME)
+                        .tag(OriginMetrics.APP_TAG, "routing.objects")
+                        .tag(OriginMetrics.ORIGIN_TAG, "hostProxy")
+                        .tag(OriginMetrics.STATUS_TAG, "200")
+                        .counter().count().toInt() shouldBe 1
+                styxServer.meterRegistry().get("connectionspool.connection-attempts")
+                        .tag("appid", "routing.objects")
+                        .tag("originid", "hostProxy")
                         .gauge().value().toInt() shouldBe 1
             }
 
@@ -360,16 +365,18 @@ class HostProxySpec : FeatureSpec() {
             }
 
             scenario("... and provides connection pool metrics with metric prefix") {
-                styxServer.meterRegistry().find("connectionspool.connection-attempts")
-                        .tags("appid", "origins.myApp", "originid", "hostProxy")
+                styxServer.meterRegistry().get("connectionspool.connection-attempts")
+                        .tag("appid", "origins.myApp")
+                        .tag("originid", "hostProxy")
                         .gauge().value().toInt() shouldBe 1
             }
 
             scenario("... and provides origin/application metrics with metric prefix") {
-                styxServer().metrics().let {
-                    it["origins.myApp.hostProxy.requests.response.status.200"]!!.get("count") shouldBe 1
-                    it["origins.myApp.requests.response.status.200"]!!.get("count") shouldBe 1
-                }
+                styxServer.meterRegistry().get(OriginMetrics.STATUS_COUNTER_NAME)
+                        .tag(OriginMetrics.APP_TAG, "origins.myApp")
+                        .tag(OriginMetrics.ORIGIN_TAG, "hostProxy")
+                        .tag(OriginMetrics.STATUS_TAG, "200")
+                        .counter().count().toInt() shouldBe 1
             }
 
             scenario("... and unregisters prefixed connection pool metrics") {

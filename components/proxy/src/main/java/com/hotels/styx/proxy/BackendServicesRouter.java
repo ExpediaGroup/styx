@@ -114,8 +114,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
             boolean longFormat = environment.styxConfig().get("request-logging.outbound.longFormat", Boolean.class)
                     .orElse(false);
 
-            MetricRegistry originsMetrics = environment.metricRegistry().scope("origins");
-            OriginStatsFactory originStatsFactory = new CachingOriginStatsFactory(originsMetrics);
+            OriginStatsFactory originStatsFactory = new CachingOriginStatsFactory(environment.meterRegistry());
             ConnectionPoolSettings poolSettings = backendService.connectionPoolConfig();
 
             Connection.Factory connectionFactory = connectionFactory(

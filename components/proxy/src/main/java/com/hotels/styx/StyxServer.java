@@ -33,6 +33,7 @@ import com.hotels.styx.server.ConnectorConfig;
 import com.hotels.styx.server.netty.NettyServerBuilder;
 import com.hotels.styx.server.netty.ServerConnector;
 import com.hotels.styx.startup.StyxServerComponents;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.netty.util.ResourceLeakDetector;
@@ -242,6 +243,10 @@ public final class StyxServer extends AbstractService {
         return Optional.ofNullable(httpsServer)
                 .map(InetServer::inetAddress)
                 .orElse(null);
+    }
+
+    public MeterRegistry meterRegistry() {
+        return components.environment().meterRegistry();
     }
 
     public InetSocketAddress adminHttpAddress() {
