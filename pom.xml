@@ -163,7 +163,7 @@
     <maven-surefire-plugin.version>3.0.0-M3</maven-surefire-plugin.version>
 
     <!-- non apache plugin versions and configurations, please sort alphabetically -->
-    <build-helper-maven-plugin.version>1.9.1</build-helper-maven-plugin.version>
+    <build-helper-maven-plugin.version>3.0.0</build-helper-maven-plugin.version>
     <jacoco-maven-plugin.version>0.8.5</jacoco-maven-plugin.version>
     <nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
 
@@ -607,7 +607,6 @@
                   <sourceDir>${project.basedir}/src/main/java</sourceDir>
                 </sourceDirs>
               </configuration>
-
             </execution>
             <execution>
               <id>test-compile</id>
@@ -825,11 +824,11 @@
           </executions>
         </plugin>
 
-        <plugin>
-          <groupId>org.codehaus.mojo</groupId>
-          <artifactId>build-helper-maven-plugin</artifactId>
-          <version>${build-helper-maven-plugin.version}</version>
-        </plugin>
+<!--        <plugin>-->
+<!--          <groupId>org.codehaus.mojo</groupId>-->
+<!--          <artifactId>build-helper-maven-plugin</artifactId>-->
+<!--          <version>${build-helper-maven-plugin.version}</version>-->
+<!--        </plugin>-->
 
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
