@@ -86,13 +86,11 @@ public class OriginMetrics implements OriginStats {
     @Override
     public void requestSuccess() {
         requestSuccessMeter.increment();
-//        applicationMetrics.requestSuccess();
     }
 
     @Override
     public void requestError() {
         requestErrorMeter.increment();
-//        applicationMetrics.requestError();
     }
 
     @Override
@@ -110,16 +108,15 @@ public class OriginMetrics implements OriginStats {
     @Override
     public void requestCancelled() {
         this.requestCancellations.increment();
-//        this.applicationMetrics.requestCancelled();
     }
 
     @Override
     public Timer requestLatencyTimer() {
-        return requestLatency; //new AggregateTimer(requestLatency, applicationMetrics.requestLatencyTimer());
+        return requestLatency;
     }
 
     @Override
     public Timer timeToFirstByteTimer() {
-        return timeToFirstByte; //new AggregateTimer(timeToFirstByte, applicationMetrics.requestTimeToFirstByteTimer());
+        return timeToFirstByte;
     }
 }
