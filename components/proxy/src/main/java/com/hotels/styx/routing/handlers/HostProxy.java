@@ -281,7 +281,7 @@ public class HostProxy implements RoutingObject {
                     .map(it -> DEFAULT_TLS_PORT)
                     .orElse(DEFAULT_HTTP_PORT);
 
-            return HostAndPort.fromParts(hostAndPort.getHostText(), defaultPort);
+            return HostAndPort.fromParts(hostAndPort.getHost(), defaultPort);
         }
 
         @NotNull
@@ -296,7 +296,7 @@ public class HostProxy implements RoutingObject {
                 String metricPrefix,
                 String objectName) {
 
-            String host = hostAndPort.getHostText();
+            String host = hostAndPort.getHost();
             int port = hostAndPort.getPort();
 
             Origin origin = newOriginBuilder(host, port)

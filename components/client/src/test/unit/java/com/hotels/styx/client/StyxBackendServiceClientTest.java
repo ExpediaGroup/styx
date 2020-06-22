@@ -497,7 +497,7 @@ public class StyxBackendServiceClientTest {
 
     private static Origin originWithId(String host, String appId, String originId) {
         HostAndPort hap = HostAndPort.fromString(host);
-        return newOriginBuilder(hap.getHostText(), hap.getPort())
+        return newOriginBuilder(hap.getHost(), hap.getPort())
                 .applicationId(appId)
                 .id(originId)
                 .build();
