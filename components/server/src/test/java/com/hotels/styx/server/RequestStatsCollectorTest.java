@@ -45,58 +45,58 @@ public class RequestStatsCollectorTest {
     @Test
     public void maintainsOutstandingRequestsCount() {
         sink.onRequest(requestId);
-        assertThat(metrics.counter("outstanding").getCount(), is(1L));
+        assertThat(metrics.counter("requests.outstanding").getCount(), is(1L));
 
         sink.onComplete(requestId, 200);
-        assertThat(metrics.counter("outstanding").getCount(), is(0L));
+        assertThat(metrics.counter("requests.outstanding").getCount(), is(0L));
     }
 
     @Test
     public void ignoresAdditionalCallsToOnRequestWithSameRequestId() {
         sink.onRequest(requestId);
-        assertThat(metrics.counter("outstanding").getCount(), is(1L));
+        assertThat(metrics.counter("requests.outstanding").getCount(), is(1L));
 
         sink.onRequest(requestId);
-        assertThat(metrics.counter("outstanding").getCount(), is(1L));
+        assertThat(metrics.counter("requests.outstanding").getCount(), is(1L));
     }
 
     @Test
     public void maintainsOutstandingRequestsCountForSeveralSimultaneousRequests() {
         sink.onRequest(requestId);
-        assertThat(metrics.counter("outstanding").getCount(), is(1L));
+        assertThat(metrics.counter("requests.outstanding").getCount(), is(1L));
 
         sink.onRequest(requestId2);
-        assertThat(metrics.counter("outstanding").getCount(), is(2L));
+        assertThat(metrics.counter("requests.outstanding").getCount(), is(2L));
 
         sink.onComplete(requestId, 200);
-        assertThat(metrics.counter("outstanding").getCount(), is(1L));
+        assertThat(metrics.counter("requests.outstanding").getCount(), is(1L));
 
         sink.onTerminate(requestId2);
-        assertThat(metrics.counter("outstanding").getCount(), is(0L));
+        assertThat(metrics.counter("requests.outstanding").getCount(), is(0L));
     }
 
     @Test
     public void doesNotDecrementOutstandingRequestForUnknownRequestIds() {
         sink.onRequest(requestId);
-        assertThat(metrics.counter("outstanding").getCount(), is(1L));
+        assertThat(metrics.counter("requests.outstanding").getCount(), is(1L));
 
         sink.onComplete(requestId2, 200);
-        assertThat(metrics.counter("outstanding").getCount(), is(1L));
+        assertThat(metrics.counter("requests.outstanding").getCount(), is(1L));
 
         sink.onTerminate(requestId2);
-        assertThat(metrics.counter("outstanding").getCount(), is(1L));
+        assertThat(metrics.counter("requests.outstanding").getCount(), is(1L));
 
         sink.onComplete(requestId, 200);
-        assertThat(metrics.counter("outstanding").getCount(), is(0L));
+        assertThat(metrics.counter("requests.outstanding").getCount(), is(0L));
     }
 
     @Test
     public void decrementsOutstandingRequestCountWithOnTerminated() {
         sink.onRequest(requestId);
-        assertThat(metrics.counter("outstanding").getCount(), is(1L));
+        assertThat(metrics.counter("requests.outstanding").getCount(), is(1L));
 
         sink.onTerminate(requestId);
-        assertThat(metrics.counter("outstanding").getCount(), is(0L));
+        assertThat(metrics.counter("requests.outstanding").getCount(), is(0L));
     }
 
     @Test
@@ -105,8 +105,8 @@ public class RequestStatsCollectorTest {
         clock.setNanoTime(100, MILLISECONDS);
         sink.onComplete(requestId, 200);
 
-        assertThat(metrics.timer("latency").getCount(), is(1L));
-        assertThat(metrics.timer("latency").getSnapshot().getMean(), is(closeTo(MILLISECONDS.toNanos(100), MILLISECONDS.toNanos(2))));
+        assertThat(metrics.timer("requests.latency").getCount(), is(1L));
+        assertThat(metrics.timer("requests.latency").getSnapshot().getMean(), is(closeTo(MILLISECONDS.toNanos(100), MILLISECONDS.toNanos(2))));
     }
 
     @Test
@@ -117,14 +117,14 @@ public class RequestStatsCollectorTest {
         clock.setNanoTime(100, MILLISECONDS);
 
         sink.onComplete(requestId, 200);
-        assertThat(metrics.timer("latency").getCount(), is(1L));
-        assertThat(metrics.timer("latency").getSnapshot().getMean(), is(closeTo(MILLISECONDS.toNanos(100), MILLISECONDS.toNanos(2))));
+        assertThat(metrics.timer("requests.latency").getCount(), is(1L));
+        assertThat(metrics.timer("requests.latency").getSnapshot().getMean(), is(closeTo(MILLISECONDS.toNanos(100), MILLISECONDS.toNanos(2))));
 
         clock.setNanoTime(200, MILLISECONDS);
 
         sink.onTerminate(requestId2);
-        assertThat(metrics.timer("latency").getCount(), is(2L));
-        assertThat(metrics.timer("latency").getSnapshot().getMean(), is(closeTo(MILLISECONDS.toNanos(150), MILLISECONDS.toNanos(2))));
+        assertThat(metrics.timer("requests.latency").getCount(), is(2L));
+        assertThat(metrics.timer("requests.latency").getSnapshot().getMean(), is(closeTo(MILLISECONDS.toNanos(150), MILLISECONDS.toNanos(2))));
     }
 
     @Test
@@ -133,8 +133,8 @@ public class RequestStatsCollectorTest {
         clock.setNanoTime(100, MILLISECONDS);
         sink.onTerminate(requestId);
 
-        assertThat(metrics.timer("latency").getCount(), is(1L));
-        assertThat(metrics.timer("latency").getSnapshot().getMean(), is(closeTo(MILLISECONDS.toNanos(100), MILLISECONDS.toNanos(2))));
+        assertThat(metrics.timer("requests.latency").getCount(), is(1L));
+        assertThat(metrics.timer("requests.latency").getSnapshot().getMean(), is(closeTo(MILLISECONDS.toNanos(100), MILLISECONDS.toNanos(2))));
     }
 
     @Test
@@ -144,86 +144,86 @@ public class RequestStatsCollectorTest {
         sink.onRequest(requestId);
         sink.onComplete(requestId, 200);
 
-        assertThat(metrics.meter("received").getCount(), is(2L));
+        assertThat(metrics.meter("requests.received").getCount(), is(2L));
     }
 
     @Test
     public void reports200ResponsesAs2xx() {
         sink.onRequest(requestId);
         sink.onComplete(requestId, 200);
-        assertThat(metrics.counter("response.status.2xx").getCount(), is(1L));
+        assertThat(metrics.counter("requests.response.status.2xx").getCount(), is(1L));
     }
 
     @Test
     public void reports201ResponsesAs2xx() {
         sink.onRequest(requestId);
         sink.onComplete(requestId, 201);
-        assertThat(metrics.counter("response.status.2xx").getCount(), is(1L));
+        assertThat(metrics.counter("requests.response.status.2xx").getCount(), is(1L));
     }
 
     @Test
     public void reports204ResponsesAs2xx() {
         sink.onRequest(requestId);
         sink.onComplete(requestId, 204);
-        assertThat(metrics.counter("response.status.2xx").getCount(), is(1L));
+        assertThat(metrics.counter("requests.response.status.2xx").getCount(), is(1L));
     }
 
     @Test
     public void reports400ResponsesAs4xx() {
         sink.onRequest(requestId);
         sink.onComplete(requestId, 400);
-        assertThat(metrics.counter("response.status.4xx").getCount(), is(1L));
+        assertThat(metrics.counter("requests.response.status.4xx").getCount(), is(1L));
     }
 
     @Test
     public void reports404ResponsesAs4xx() {
         sink.onRequest(requestId);
         sink.onComplete(requestId, 404);
-        assertThat(metrics.counter("response.status.4xx").getCount(), is(1L));
+        assertThat(metrics.counter("requests.response.status.4xx").getCount(), is(1L));
     }
 
     @Test
     public void reports500Responses() {
         sink.onRequest(requestId);
         sink.onComplete(requestId, 500);
-        assertThat(metrics.counter("response.status.500").getCount(), is(1L));
-        assertThat(metrics.counter("response.status.5xx").getCount(), is(1L));
+        assertThat(metrics.counter("requests.response.status.500").getCount(), is(1L));
+        assertThat(metrics.counter("requests.response.status.5xx").getCount(), is(1L));
     }
 
     @Test
     public void reports504Responses() {
         sink.onRequest(requestId);
         sink.onComplete(requestId, 504);
-        assertThat(metrics.counter("response.status.504").getCount(), is(1L));
-        assertThat(metrics.counter("response.status.5xx").getCount(), is(1L));
+        assertThat(metrics.counter("requests.response.status.504").getCount(), is(1L));
+        assertThat(metrics.counter("requests.response.status.5xx").getCount(), is(1L));
     }
 
     @Test
     public void reportsUnknownServerErrorCodesAs5xx() {
         sink.onRequest(requestId);
         sink.onComplete(requestId, 566);
-        assertThat(metrics.counter("response.status.5xx").getCount(), is(1L));
+        assertThat(metrics.counter("requests.response.status.5xx").getCount(), is(1L));
     }
 
     @Test
     public void reportsUnrecognisedHttpSatusCodesLessThan100() throws Exception {
         sink.onRequest(requestId);
         sink.onComplete(requestId, 99);
-        assertThat(metrics.counter("response.status.unrecognised").getCount(), is(1L));
+        assertThat(metrics.counter("requests.response.status.unrecognised").getCount(), is(1L));
     }
 
     @Test
     public void reportsUnrecognisedHttpSatusCodesGreaterThan599() throws Exception {
         sink.onRequest(requestId);
         sink.onComplete(requestId, 600);
-        assertThat(metrics.counter("response.status.unrecognised").getCount(), is(1L));
+        assertThat(metrics.counter("requests.response.status.unrecognised").getCount(), is(1L));
     }
 
     @Test
     public void maintainsResponsesSentCount() {
         sink.onRequest(requestId);
         sink.onComplete(requestId, 200);
-        assertThat(metrics.counter("response.sent").getCount(), is(1L));
+        assertThat(metrics.counter("requests.response.sent").getCount(), is(1L));
     }
 
     @Test
@@ -234,7 +234,7 @@ public class RequestStatsCollectorTest {
         sink.onRequest(requestId2);
         sink.onComplete(requestId2, 501);
 
-        assertThat(metrics.meter("error-rate.500").getCount(), is(1L));
+        assertThat(metrics.meter("requests.error-rate.500").getCount(), is(1L));
     }
 
     private static final class TestClock implements RequestStatsCollector.NanoClock {

@@ -250,7 +250,7 @@ public class HttpPipelineHandlerTest {
         pipelineHandler.channelActive(ctx);
         pipelineHandler.channelRead0(ctx, get("/foo").build());
 
-        assertThat(metrics.counter("outstanding").getCount(), is(1L));
+        assertThat(metrics.counter("requests.outstanding").getCount(), is(1L));
     }
 
     @Test
@@ -279,10 +279,10 @@ public class HttpPipelineHandlerTest {
 
         adapter.channelActive(ctx);
         adapter.channelRead0(ctx, get("/foo").build());
-        assertThat(metrics.counter("outstanding").getCount(), is(1L));
+        assertThat(metrics.counter("requests.outstanding").getCount(), is(1L));
 
         adapter.channelInactive(ctx);
-        assertThat(metrics.counter("outstanding").getCount(), is(0L));
+        assertThat(metrics.counter("requests.outstanding").getCount(), is(0L));
     }
 
     @Test
@@ -364,13 +364,13 @@ public class HttpPipelineHandlerTest {
 
         LiveHttpRequest request = get("/foo").build();
         adapter.channelRead0(ctx, request);
-        assertThat(metrics.counter("outstanding").getCount(), is(1L));
+        assertThat(metrics.counter("requests.outstanding").getCount(), is(1L));
 
         adapter.exceptionCaught(ctx, new Throwable("Exception"));
-        assertThat(metrics.counter("outstanding").getCount(), is(0L));
+        assertThat(metrics.counter("requests.outstanding").getCount(), is(0L));
 
         adapter.channelInactive(ctx);
-        assertThat(metrics.counter("outstanding").getCount(), is(0L));
+        assertThat(metrics.counter("requests.outstanding").getCount(), is(0L));
 
         verify(responseEnhancer).enhance(any(LiveHttpResponse.Transformer.class), eq(request));
     }

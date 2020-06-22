@@ -31,12 +31,16 @@ import java.io.File;
 import java.security.cert.CertificateException;
 import java.util.List;
 
+import static com.hotels.styx.api.Metrics.name;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Methods for producing {@link SslContext} classes.
  */
 public final class SslContexts {
+
+    public static final String METRIC_PREFIX = "connections.openssl.session";
+
     private SslContexts() {
     }
 
@@ -75,16 +79,15 @@ public final class SslContexts {
         SSLSessionContext sslSessionContext = sslContext.sessionContext();
         if (sslSessionContext instanceof OpenSslSessionContext) {
             OpenSslSessionStats stats = ((OpenSslSessionContext) sslSessionContext).stats();
-            MetricRegistry sessionStatsRegistry = metricRegistry.scope("connections.openssl.session");
-            sessionStatsRegistry.register("number", (Gauge<Long>) stats::number);
-            sessionStatsRegistry.register("accept", (Gauge<Long>) stats::accept);
-            sessionStatsRegistry.register("acceptGood", (Gauge<Long>) stats::acceptGood);
-            sessionStatsRegistry.register("acceptRenegotiate", (Gauge<Long>) stats::acceptRenegotiate);
-            sessionStatsRegistry.register("hits", (Gauge<Long>) stats::hits);
-            sessionStatsRegistry.register("misses", (Gauge<Long>) stats::misses);
-            sessionStatsRegistry.register("cbHits", (Gauge<Long>) stats::cbHits);
-            sessionStatsRegistry.register("cacheFull", (Gauge<Long>) stats::cacheFull);
-            sessionStatsRegistry.register("timeouts", (Gauge<Long>) stats::timeouts);
+            metricRegistry.register(name(METRIC_PREFIX, "number"), (Gauge<Long>) stats::number);
+            metricRegistry.register(name(METRIC_PREFIX, "accept"), (Gauge<Long>) stats::accept);
+            metricRegistry.register(name(METRIC_PREFIX, "acceptGood"), (Gauge<Long>) stats::acceptGood);
+            metricRegistry.register(name(METRIC_PREFIX, "acceptRenegotiate"), (Gauge<Long>) stats::acceptRenegotiate);
+            metricRegistry.register(name(METRIC_PREFIX, "hits"), (Gauge<Long>) stats::hits);
+            metricRegistry.register(name(METRIC_PREFIX, "misses"), (Gauge<Long>) stats::misses);
+            metricRegistry.register(name(METRIC_PREFIX, "cbHits"), (Gauge<Long>) stats::cbHits);
+            metricRegistry.register(name(METRIC_PREFIX, "cacheFull"), (Gauge<Long>) stats::cacheFull);
+            metricRegistry.register(name(METRIC_PREFIX, "timeouts"), (Gauge<Long>) stats::timeouts);
         }
     }
 
