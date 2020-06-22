@@ -60,11 +60,6 @@ public interface OriginStats {
     void responseWithStatusCode(int statusCode);
 
     /**
-     * One minute rate for 5xx error messages.
-     */
-//    double oneMinuteErrorRate();
-
-    /**
      * Called when request is cancelled.
      */
     void requestCancelled();
