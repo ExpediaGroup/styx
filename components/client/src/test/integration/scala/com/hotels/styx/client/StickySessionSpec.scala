@@ -28,24 +28,22 @@ import com.hotels.styx.api.RequestCookie.requestCookie
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.extension.service.{BackendService, StickySessionConfig}
 import com.hotels.styx.api.extension.{ActiveOrigins, Origin}
-import com.hotels.styx.api.metrics.codahale.{CodaHaleMetricRegistry, NoopMetricRegistry}
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
+import com.hotels.styx.support.Support.requestContext
 import com.hotels.styx.support.server.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{BeforeAndAfter, FunSuite, Matchers}
 import reactor.core.publisher.Mono
-import com.hotels.styx.support.Support.requestContext
-import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 
 import scala.collection.JavaConverters._
 
 class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with OriginSupport with MockitoSugar {
 
-  val metricsRegistry = new NoopMetricRegistry()
   val meterRegistry = new CompositeMeterRegistry()
 
   val server1 = new FakeHttpServer(0, "app", "app-01")
@@ -107,7 +105,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
     val stickySessionConfig = StickySessionConfig.newStickySessionConfigBuilder().timeout(100, TimeUnit.SECONDS).build()
 
     val client = newHttpClientBuilder(backendService.id)
-      .metricsRegistry(metricsRegistry)
+      .meterRegistry(meterRegistry)
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .stickySessionConfig(stickySessionConfig)
       .build
@@ -129,7 +127,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
 
   test("Responds without sticky session cookie when sticky session is not enabled") {
     val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id)
-      .metricsRegistry(metricsRegistry)
+      .meterRegistry(meterRegistry)
       .loadBalancer(roundRobinStrategy(activeOrigins(backendService)))
       .build
 
@@ -143,7 +141,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
 
   test("Routes to origins indicated by sticky session cookie.") {
     val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id)
-      .metricsRegistry(metricsRegistry)
+      .meterRegistry(meterRegistry)
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .build
 
@@ -162,7 +160,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
 
   test("Routes to origins indicated by sticky session cookie when other cookies are provided.") {
     val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id)
-      .metricsRegistry(metricsRegistry)
+      .meterRegistry(meterRegistry)
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .build
 
@@ -185,7 +183,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
 
   test("Routes to new origin when the origin indicated by sticky session cookie does not exist.") {
     val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id)
-      .metricsRegistry(metricsRegistry)
+      .meterRegistry(meterRegistry)
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .build
 

@@ -23,7 +23,6 @@ import com.hotels.styx.api.exceptions.TransportException
 import com.hotels.styx.api.extension
 import com.hotels.styx.api.extension.ActiveOrigins
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
-import com.hotels.styx.api.metrics.codahale.NoopMetricRegistry
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy
@@ -35,6 +34,7 @@ import com.hotels.styx.support.configuration.{BackendService, HttpBackend, Origi
 import com.hotels.styx.support.matchers.LoggingTestSupport
 import com.hotels.styx.{DefaultStyxConfiguration, StyxClientSupplier, StyxProxySpec}
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.netty.buffer.Unpooled._
 import io.netty.channel.ChannelFutureListener.CLOSE
 import io.netty.channel.ChannelHandlerContext
@@ -114,7 +114,7 @@ class OriginClosesConnectionSpec extends FunSuite
       responseTimeout = TWO_SECONDS.milliseconds).asJava
 
     val styxClient = newHttpClientBuilder(backendService.id)
-        .metricsRegistry(new NoopMetricRegistry())
+        .meterRegistry(new SimpleMeterRegistry())
         .loadBalancer(busyConnectionStrategy(activeOrigins(backendService)))
       .build
 

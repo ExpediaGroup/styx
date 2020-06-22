@@ -100,7 +100,7 @@ internal class LoadBalancingGroup(val client: StyxBackendServiceClient, val chan
 
             val client = StyxBackendServiceClient.Builder(Id.id(appId))
                     .loadBalancer(loadBalancer(config, ActiveOrigins { remoteHosts.get() }))
-                    .metricsRegistry(context.environment().metricRegistry())
+                    .meterRegistry(context.environment().meterRegistry())
                     .originIdHeader(context.environment().configuration().styxHeaderConfig().originIdHeaderName())
                     .stickySessionConfig(config.stickySession ?: StickySessionConfig.stickySessionDisabled())
                     .originsRestrictionCookieName(config.originRestrictionCookie)

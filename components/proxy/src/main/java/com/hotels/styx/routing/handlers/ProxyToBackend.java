@@ -98,7 +98,7 @@ public class ProxyToBackend implements RoutingObject {
                     .get("backend.origins", JsonNode.class)
                     .orElseThrow(() -> missingAttributeError(configBlock, join(".", append(parents, "backend")), "origins"));
 
-            OriginStatsFactory originStatsFactory = new CachingOriginStatsFactory(context.environment().metricRegistry());
+            OriginStatsFactory originStatsFactory = new CachingOriginStatsFactory(context.environment().meterRegistry());
 
             Connection.Factory connectionFactory = new NettyConnectionFactory.Builder()
                     .executor(NettyExecutor.create("Styx", clientWorkerThreadsCount))
