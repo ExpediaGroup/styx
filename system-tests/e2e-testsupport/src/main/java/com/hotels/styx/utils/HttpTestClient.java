@@ -80,7 +80,7 @@ public class HttpTestClient {
     }
 
     public HttpTestClient connect() throws InterruptedException {
-        return connect(this.destination.getHostText(), this.destination.getPort());
+        return connect(this.destination.getHost(), this.destination.getPort());
     }
 
     public CompletableFuture<Void> disconnect() {

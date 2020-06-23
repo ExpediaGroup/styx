@@ -51,7 +51,7 @@ public class Origin implements Comparable<Origin> {
         HostAndPort hostAndPort = HostAndPort.fromString(host);
 
         this.originId = Id.id(originId);
-        this.host = hostAndPort.getHostText();
+        this.host = hostAndPort.getHost();
         this.port = hostAndPort.getPort();
         this.hostAsString = hostAndPort.toString();
         this.applicationId = GENERIC_APP;
