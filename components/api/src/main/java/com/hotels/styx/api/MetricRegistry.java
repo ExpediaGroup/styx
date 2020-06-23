@@ -23,6 +23,7 @@ import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistryListener;
 import com.codahale.metrics.Timer;
+import io.micrometer.core.instrument.MeterRegistry;
 
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -31,6 +32,8 @@ import java.util.SortedSet;
  * A Styx metrics registry that is based on CodaHale {@link Metric} objects.
  */
 public interface MetricRegistry {
+
+    MeterRegistry micrometerRegistry();
 
     /**
      * Returns or creates a sub-scope of this metric registry.

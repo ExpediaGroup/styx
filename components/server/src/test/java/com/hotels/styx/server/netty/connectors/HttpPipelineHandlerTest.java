@@ -33,6 +33,10 @@ import com.hotels.styx.server.netty.codec.NettyToStyxRequestDecoder;
 import com.hotels.styx.server.netty.connectors.HttpPipelineHandler.HttpResponseWriterFactory;
 import com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
@@ -73,6 +77,7 @@ import static com.hotels.styx.api.HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE;
 import static com.hotels.styx.api.HttpResponseStatus.REQUEST_TIMEOUT;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
+import static com.hotels.styx.server.RequestStatsCollector.REQUEST_OUTSTANDING;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE_CLIENT_CLOSED;
@@ -241,16 +246,18 @@ public class HttpPipelineHandlerTest {
 
     @Test
     public void updatesRequestsOngoingCountOnChannelReadEvent() throws Exception {
+
+        MeterRegistry registry = new SimpleMeterRegistry();
         HttpPipelineHandler pipelineHandler = handlerWithMocks(doNotRespondHandler)
                 .responseEnhancer(DO_NOT_MODIFY_RESPONSE)
-                .progressListener(new RequestStatsCollector(metrics))
+                .progressListener(new RequestStatsCollector(registry, Tags.empty()))
                 .build();
 
         ChannelHandlerContext ctx = mockCtx();
         pipelineHandler.channelActive(ctx);
         pipelineHandler.channelRead0(ctx, get("/foo").build());
 
-        assertThat(metrics.counter("requests.outstanding").getCount(), is(1L));
+        assertThat(requestOutstandingValue(registry), is(1.0));
     }
 
     @Test
@@ -271,18 +278,19 @@ public class HttpPipelineHandlerTest {
 
     @Test
     public void decrementsRequestsOngoingCountOnChannelInactiveWhenRequestIsOngoing() throws Exception {
+        MeterRegistry registry = new SimpleMeterRegistry();
         HttpPipelineHandler adapter = handlerWithMocks(doNotRespondHandler)
                 .responseEnhancer(DO_NOT_MODIFY_RESPONSE)
-                .progressListener(new RequestStatsCollector(metrics))
+                .progressListener(new RequestStatsCollector(registry, Tags.empty()))
                 .build();
         ChannelHandlerContext ctx = mockCtx();
 
         adapter.channelActive(ctx);
         adapter.channelRead0(ctx, get("/foo").build());
-        assertThat(metrics.counter("requests.outstanding").getCount(), is(1L));
+        assertThat(requestOutstandingValue(registry), is(1.0));
 
         adapter.channelInactive(ctx);
-        assertThat(metrics.counter("requests.outstanding").getCount(), is(0L));
+        assertThat(requestOutstandingValue(registry), is(0.0));
     }
 
     @Test
@@ -355,8 +363,9 @@ public class HttpPipelineHandlerTest {
 
     @Test
     public void decrementsRequestsOngoingOnExceptionCaught() throws Exception {
+        MeterRegistry registry = new SimpleMeterRegistry();
         HttpPipelineHandler adapter = handlerWithMocks(doNotRespondHandler)
-                .progressListener(new RequestStatsCollector(metrics))
+                .progressListener(new RequestStatsCollector(registry, Tags.empty()))
                 .build();
 
         ChannelHandlerContext ctx = mockCtx();
@@ -364,13 +373,13 @@ public class HttpPipelineHandlerTest {
 
         LiveHttpRequest request = get("/foo").build();
         adapter.channelRead0(ctx, request);
-        assertThat(metrics.counter("requests.outstanding").getCount(), is(1L));
+        assertThat(requestOutstandingValue(registry), is(1.0));
 
         adapter.exceptionCaught(ctx, new Throwable("Exception"));
-        assertThat(metrics.counter("requests.outstanding").getCount(), is(0L));
+        assertThat(requestOutstandingValue(registry), is(0.0));
 
         adapter.channelInactive(ctx);
-        assertThat(metrics.counter("requests.outstanding").getCount(), is(0L));
+        assertThat(requestOutstandingValue(registry), is(0.0));
 
         verify(responseEnhancer).enhance(any(LiveHttpResponse.Transformer.class), eq(request));
     }
@@ -1046,4 +1055,9 @@ public class HttpPipelineHandlerTest {
 
         return new EmbeddedChannel(toArray(concat(commonHandlers, asList(lastHandlers)), ChannelHandler.class));
     }
+
+    private double requestOutstandingValue(MeterRegistry registry) {
+        return Optional.ofNullable(registry.find(REQUEST_OUTSTANDING).gauge()).map(Gauge::value).orElse(0.0);
+    }
+
 }

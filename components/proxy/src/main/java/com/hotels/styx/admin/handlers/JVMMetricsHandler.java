@@ -26,6 +26,7 @@ import com.codahale.metrics.Timer;
 import com.codahale.metrics.json.MetricsModule;
 import com.google.common.base.Predicate;
 import com.hotels.styx.api.MetricRegistry;
+import io.micrometer.core.instrument.MeterRegistry;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -61,6 +62,10 @@ public class JVMMetricsHandler extends JsonHandler<MetricRegistry> {
             this.original = original;
         }
 
+        public MeterRegistry micrometerRegistry() {
+            return original.micrometerRegistry();
+        }
+        
         @Override
         public MetricRegistry scope(String name) {
             return null;

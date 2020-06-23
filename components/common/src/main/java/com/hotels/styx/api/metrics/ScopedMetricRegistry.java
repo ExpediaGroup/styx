@@ -24,6 +24,7 @@ import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistryListener;
 import com.codahale.metrics.Timer;
 import com.hotels.styx.api.MetricRegistry;
+import io.micrometer.core.instrument.MeterRegistry;
 
 import java.util.List;
 import java.util.SortedMap;
@@ -48,6 +49,10 @@ public class ScopedMetricRegistry implements MetricRegistry {
     public ScopedMetricRegistry(String scope, MetricRegistry parent) {
         this.scope = requireNonNull(scope);
         this.parent = requireNonNull(parent);
+    }
+
+    public MeterRegistry micrometerRegistry() {
+        return parent.micrometerRegistry();
     }
 
     /**
