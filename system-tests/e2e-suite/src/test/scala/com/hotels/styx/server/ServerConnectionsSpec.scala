@@ -15,15 +15,14 @@
  */
 package com.hotels.styx.server
 
-import java.nio.charset.StandardCharsets.UTF_8
 import java.util
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit.SECONDS
 
 import com.hotels.styx.StyxProxySpec
-import com.hotels.styx.api.{HttpRequest, HttpResponse}
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.exceptions.TransportLostException
+import com.hotels.styx.api.{HttpRequest, HttpResponse}
 import com.hotels.styx.client.BadHttpResponseException
 import com.hotels.styx.support.TestClientSupport
 import com.hotels.styx.support.backends.FakeHttpServer
@@ -31,8 +30,8 @@ import com.hotels.styx.support.configuration.{HttpBackend, Origins, ProxyConfig,
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
 
-import scala.concurrent.duration._
 import scala.concurrent.ExecutionException
+import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 
 class ServerConnectionsSpec extends FunSpec
@@ -79,7 +78,7 @@ class ServerConnectionsSpec extends FunSpec
       })
 
       eventually(timeout(1 second)) {
-        getTotalConnectionsMetric.bodyAs(UTF_8) should be("{\"connections.total-connections\":{\"count\":0}}")
+        styxServer.meterRegistry().find("proxy.connection.total-connections").gauge().value() should be(0.0)
       }
     }
   }
@@ -97,12 +96,6 @@ class ServerConnectionsSpec extends FunSpec
     // when the connection is rejected we expect to end up with Success("ignore this: BadHttpResponseException ....")
 
     outcome.get
-  }
-
-  private def getTotalConnectionsMetric = {
-    val request: HttpRequest = get("http://localhost:" + styxServer.adminHttpAddress().getPort + "/admin/metrics/connections.total-connections").build()
-
-    client.send(request).get(1, SECONDS)
   }
 }
 
