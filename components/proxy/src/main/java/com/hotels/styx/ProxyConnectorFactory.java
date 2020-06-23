@@ -121,7 +121,7 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
             this.metrics = requireNonNull(factory.metrics);
             this.httpErrorStatusListener = requireNonNull(factory.errorStatusListener);
             this.channelStatsHandler = new ChannelStatisticsHandler(metrics);
-            this.requestStatsCollector = new RequestStatsCollector(metrics.micrometerRegistry(), Tags.of("proxyPort", Integer.toString(config.port())));
+            this.requestStatsCollector = new RequestStatsCollector(metrics.micrometerRegistry(), "proxy");
             this.excessConnectionRejector = new ExcessConnectionRejector(new DefaultChannelGroup(GlobalEventExecutor.INSTANCE), serverConfig.maxConnectionsCount());
             this.unwiseCharEncoder = new ConfigurableUnwiseCharsEncoder(factory.unwiseCharacters);
             if (isHttps()) {

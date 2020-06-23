@@ -77,6 +77,7 @@ import static com.hotels.styx.api.HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE;
 import static com.hotels.styx.api.HttpResponseStatus.REQUEST_TIMEOUT;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
+import static com.hotels.styx.api.Metrics.name;
 import static com.hotels.styx.server.RequestStatsCollector.REQUEST_OUTSTANDING;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE;
@@ -250,7 +251,7 @@ public class HttpPipelineHandlerTest {
         MeterRegistry registry = new SimpleMeterRegistry();
         HttpPipelineHandler pipelineHandler = handlerWithMocks(doNotRespondHandler)
                 .responseEnhancer(DO_NOT_MODIFY_RESPONSE)
-                .progressListener(new RequestStatsCollector(registry, Tags.empty()))
+                .progressListener(new RequestStatsCollector(registry, "test"))
                 .build();
 
         ChannelHandlerContext ctx = mockCtx();
@@ -281,7 +282,7 @@ public class HttpPipelineHandlerTest {
         MeterRegistry registry = new SimpleMeterRegistry();
         HttpPipelineHandler adapter = handlerWithMocks(doNotRespondHandler)
                 .responseEnhancer(DO_NOT_MODIFY_RESPONSE)
-                .progressListener(new RequestStatsCollector(registry, Tags.empty()))
+                .progressListener(new RequestStatsCollector(registry, "test"))
                 .build();
         ChannelHandlerContext ctx = mockCtx();
 
@@ -365,7 +366,7 @@ public class HttpPipelineHandlerTest {
     public void decrementsRequestsOngoingOnExceptionCaught() throws Exception {
         MeterRegistry registry = new SimpleMeterRegistry();
         HttpPipelineHandler adapter = handlerWithMocks(doNotRespondHandler)
-                .progressListener(new RequestStatsCollector(registry, Tags.empty()))
+                .progressListener(new RequestStatsCollector(registry, "test"))
                 .build();
 
         ChannelHandlerContext ctx = mockCtx();
@@ -1057,7 +1058,7 @@ public class HttpPipelineHandlerTest {
     }
 
     private double requestOutstandingValue(MeterRegistry registry) {
-        return Optional.ofNullable(registry.find(REQUEST_OUTSTANDING).gauge()).map(Gauge::value).orElse(0.0);
+        return Optional.ofNullable(registry.find(name("test", REQUEST_OUTSTANDING)).gauge()).map(Gauge::value).orElse(0.0);
     }
 
 }
