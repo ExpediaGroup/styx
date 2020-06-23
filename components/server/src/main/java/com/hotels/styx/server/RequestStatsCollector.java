@@ -86,7 +86,7 @@ public class RequestStatsCollector implements RequestProgressListener {
             this.outstandingRequests.incrementAndGet();
             this.requestsIncoming.increment();
         }
-    }   
+    }
 
     @Override
     public void onComplete(Object requestId, int responseStatus) {
