@@ -38,7 +38,6 @@ import com.hotels.styx.server.netty.handlers.ExcessConnectionRejector;
 import com.hotels.styx.server.netty.handlers.RequestTimeoutHandler;
 import com.hotels.styx.server.track.CurrentRequestTracker;
 import com.hotels.styx.server.track.RequestTracker;
-import io.micrometer.core.instrument.Tags;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
