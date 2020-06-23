@@ -90,7 +90,7 @@ class OriginClosesConnectionSpec extends FunSuite
     }
 
     eventually {
-      styxServer.metricsSnapshot.meter("requests.received").get.count should be(10)
+      styxServer.meterRegistry().counter("proxy.request.received").count should be(10)
     }
 
     val errorCount = loggingSupport.log().stream().toScala[Seq]

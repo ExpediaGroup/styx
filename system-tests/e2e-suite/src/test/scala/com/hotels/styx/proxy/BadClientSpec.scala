@@ -70,7 +70,7 @@ class BadClientSpec extends FunSpec
         testClient.disconnect()
 
         eventually(timeout(1.second)) {
-          styxServer.metricsSnapshot.count("requests.response.status.5xx").get should be(0)
+          styxServer.meterRegistry().counter("proxy.response.status.5xx").count() should be(0)
         }
       }
     }
