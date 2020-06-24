@@ -18,6 +18,7 @@ package com.hotels.styx.server.netty;
 import com.codahale.metrics.Gauge;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.server.HttpsConnectorConfig;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.netty.handler.ssl.OpenSslSessionContext;
 import io.netty.handler.ssl.OpenSslSessionStats;
 import io.netty.handler.ssl.SslContext;
@@ -39,7 +40,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 public final class SslContexts {
 
-    public static final String METRIC_PREFIX = "connections.openssl.session";
+    public static final String SSL_PREFIX = "connections.openssl.session";
 
     private SslContexts() {
     }
@@ -69,25 +70,25 @@ public final class SslContexts {
      * @param metricRegistry       metric registry
      * @return SslContext
      */
-    public static SslContext newSSLContext(HttpsConnectorConfig httpsConnectorConfig, MetricRegistry metricRegistry) {
+    public static SslContext newSSLContext(HttpsConnectorConfig httpsConnectorConfig, MeterRegistry metricRegistry, String metricPrefix) {
         SslContext sslContext = newSSLContext(httpsConnectorConfig);
-        registerOpenSslStats(sslContext, metricRegistry);
+        registerOpenSslStats(sslContext, metricRegistry, metricPrefix);
         return sslContext;
     }
 
-    private static void registerOpenSslStats(SslContext sslContext, MetricRegistry metricRegistry) {
+    private static void registerOpenSslStats(SslContext sslContext, MeterRegistry metricRegistry, String metricPrefix) {
         SSLSessionContext sslSessionContext = sslContext.sessionContext();
         if (sslSessionContext instanceof OpenSslSessionContext) {
             OpenSslSessionStats stats = ((OpenSslSessionContext) sslSessionContext).stats();
-            metricRegistry.register(name(METRIC_PREFIX, "number"), (Gauge<Long>) stats::number);
-            metricRegistry.register(name(METRIC_PREFIX, "accept"), (Gauge<Long>) stats::accept);
-            metricRegistry.register(name(METRIC_PREFIX, "acceptGood"), (Gauge<Long>) stats::acceptGood);
-            metricRegistry.register(name(METRIC_PREFIX, "acceptRenegotiate"), (Gauge<Long>) stats::acceptRenegotiate);
-            metricRegistry.register(name(METRIC_PREFIX, "hits"), (Gauge<Long>) stats::hits);
-            metricRegistry.register(name(METRIC_PREFIX, "misses"), (Gauge<Long>) stats::misses);
-            metricRegistry.register(name(METRIC_PREFIX, "cbHits"), (Gauge<Long>) stats::cbHits);
-            metricRegistry.register(name(METRIC_PREFIX, "cacheFull"), (Gauge<Long>) stats::cacheFull);
-            metricRegistry.register(name(METRIC_PREFIX, "timeouts"), (Gauge<Long>) stats::timeouts);
+            metricRegistry.gauge(name(metricPrefix, SSL_PREFIX, "number"), stats, OpenSslSessionStats::number);
+            metricRegistry.gauge(name(metricPrefix, SSL_PREFIX, "accept"), stats, OpenSslSessionStats::accept);
+            metricRegistry.gauge(name(metricPrefix, SSL_PREFIX, "acceptGood"), stats, OpenSslSessionStats::acceptGood);
+            metricRegistry.gauge(name(metricPrefix, SSL_PREFIX, "acceptRenegotiate"), stats, OpenSslSessionStats::acceptRenegotiate);
+            metricRegistry.gauge(name(metricPrefix, SSL_PREFIX, "hits"), stats, OpenSslSessionStats::hits);
+            metricRegistry.gauge(name(metricPrefix, SSL_PREFIX, "misses"), stats, OpenSslSessionStats::misses);
+            metricRegistry.gauge(name(metricPrefix, SSL_PREFIX, "cbHits"), stats, OpenSslSessionStats::cbHits);
+            metricRegistry.gauge(name(metricPrefix, SSL_PREFIX, "cacheFull"), stats, OpenSslSessionStats::cacheFull);
+            metricRegistry.gauge(name(metricPrefix, SSL_PREFIX, "timeouts"), stats, OpenSslSessionStats::timeouts);
         }
     }
 

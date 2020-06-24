@@ -124,7 +124,7 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
             this.excessConnectionRejector = new ExcessConnectionRejector(new DefaultChannelGroup(GlobalEventExecutor.INSTANCE), serverConfig.maxConnectionsCount());
             this.unwiseCharEncoder = new ConfigurableUnwiseCharsEncoder(factory.unwiseCharacters);
             if (isHttps()) {
-                this.sslContext = Optional.of(newSSLContext((HttpsConnectorConfig) config, metrics));
+                this.sslContext = Optional.of(newSSLContext((HttpsConnectorConfig) config, metrics.micrometerRegistry(), "proxy"));
             } else {
                 this.sslContext = Optional.empty();
             }
