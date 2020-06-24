@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.server.netty;
 
-import com.codahale.metrics.Gauge;
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.server.HttpsConnectorConfig;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.netty.handler.ssl.OpenSslSessionContext;
@@ -68,6 +66,7 @@ public final class SslContexts {
      *
      * @param httpsConnectorConfig configuration
      * @param metricRegistry       metric registry
+     * @param metricPrefix         prepended to all meter names
      * @return SslContext
      */
     public static SslContext newSSLContext(HttpsConnectorConfig httpsConnectorConfig, MeterRegistry metricRegistry, String metricPrefix) {
