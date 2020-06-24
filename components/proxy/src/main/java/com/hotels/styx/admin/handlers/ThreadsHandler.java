@@ -15,13 +15,17 @@
  */
 package com.hotels.styx.admin.handlers;
 
-import com.codahale.metrics.jvm.ThreadDump;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.common.http.handler.BaseHttpHandler;
 
 import java.io.ByteArrayOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
 
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
@@ -32,13 +36,13 @@ import static java.lang.management.ManagementFactory.getThreadMXBean;
  * Provides an HTTP response with a body consisting of a thread dump.
  */
 public class ThreadsHandler extends BaseHttpHandler {
-    private final ThreadDump threadDump;
+    private final ThreadMXBean threadMxBean;
 
     /**
      * Constructs an instance.
      */
     public ThreadsHandler() {
-        this.threadDump = new ThreadDump(getThreadMXBean());
+        this.threadMxBean = getThreadMXBean();
     }
 
     @Override
@@ -52,7 +56,16 @@ public class ThreadsHandler extends BaseHttpHandler {
 
     private byte[] threadDumpContent() {
         ByteArrayOutputStream contents = new ByteArrayOutputStream();
-        threadDump.dump(contents);
+        PrintWriter writer = new PrintWriter(new OutputStreamWriter(contents));
+
+        writer.println();
+        ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
+        for(ThreadInfo threadInfo : threadMXBean.dumpAllThreads(true, true)) {
+            writer.println(threadInfo.toString());
+        }
+
+        writer.println();
+        writer.flush();
         return contents.toByteArray();
     }
 }
