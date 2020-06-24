@@ -30,20 +30,11 @@ import java.lang.management.ThreadMXBean;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
-import static java.lang.management.ManagementFactory.getThreadMXBean;
 
 /**
  * Provides an HTTP response with a body consisting of a thread dump.
  */
 public class ThreadsHandler extends BaseHttpHandler {
-    private final ThreadMXBean threadMxBean;
-
-    /**
-     * Constructs an instance.
-     */
-    public ThreadsHandler() {
-        this.threadMxBean = getThreadMXBean();
-    }
 
     @Override
     public HttpResponse doHandle(HttpRequest request, HttpInterceptor.Context context) {
@@ -54,13 +45,13 @@ public class ThreadsHandler extends BaseHttpHandler {
                 .build();
     }
 
-    private byte[] threadDumpContent() {
+    private static byte[] threadDumpContent() {
         ByteArrayOutputStream contents = new ByteArrayOutputStream();
         PrintWriter writer = new PrintWriter(new OutputStreamWriter(contents));
 
         writer.println();
         ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
-        for(ThreadInfo threadInfo : threadMXBean.dumpAllThreads(true, true)) {
+        for (ThreadInfo threadInfo : threadMXBean.dumpAllThreads(true, true)) {
             writer.println(threadInfo.toString());
         }
 
