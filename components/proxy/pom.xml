@@ -186,13 +186,11 @@
     <dependency>
       <groupId>io.micrometer</groupId>
       <artifactId>micrometer-registry-prometheus</artifactId>
-      <version>${micrometer.version}</version>
     </dependency>
 
     <dependency>
       <groupId>io.micrometer</groupId>
       <artifactId>micrometer-registry-graphite</artifactId>
-      <version>${micrometer.version}</version>
     </dependency>
 
   </dependencies>
