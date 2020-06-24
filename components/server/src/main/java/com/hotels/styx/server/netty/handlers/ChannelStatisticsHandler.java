@@ -49,20 +49,20 @@ public class ChannelStatisticsHandler extends ChannelDuplexHandler {
     public static final String CHANNELS_SUMMARY = "connection.channels";
 
 
-    private final MeterRegistry metricRegistry;
+    private final MeterRegistry meterRegistry;
     private final String prefix;
 
     private final Counter receivedBytesCount;
     private final Counter sentBytesCount;
     private final AtomicLong totalConnections;
 
-    public ChannelStatisticsHandler(MeterRegistry metricRegistry, String prefix) {
-        this.metricRegistry = metricRegistry;
-        this.prefix = prefix;
+    public ChannelStatisticsHandler(MeterRegistry meterRegistry, String meterPrefix) {
+        this.meterRegistry = meterRegistry;
+        this.prefix = meterPrefix;
 
-        this.receivedBytesCount = this.metricRegistry.counter(name(prefix, BYTES_RECEIVED));
-        this.sentBytesCount = this.metricRegistry.counter(name(prefix, BYTES_SENT));
-        this.totalConnections = this.metricRegistry.gauge(name(prefix, TOTAL_CONNECTIONS), new AtomicLong());
+        this.receivedBytesCount = this.meterRegistry.counter(name(meterPrefix, BYTES_RECEIVED));
+        this.sentBytesCount = this.meterRegistry.counter(name(meterPrefix, BYTES_SENT));
+        this.totalConnections = this.meterRegistry.gauge(name(meterPrefix, TOTAL_CONNECTIONS), new AtomicLong());
     }
 
     @Override
@@ -79,11 +79,11 @@ public class ChannelStatisticsHandler extends ChannelDuplexHandler {
 
     private void updateChannelPerThreadCounters(int amount) {
         Thread thread = Thread.currentThread();
-        Counter channelCount = this.metricRegistry
+        Counter channelCount = this.meterRegistry
                 .counter(name(prefix, REGISTERED_CHANNEL_COUNT), counterTags(thread));
         channelCount.increment(amount);
 
-        DistributionSummary channels = metricRegistry.summary(name(prefix, CHANNELS_SUMMARY), counterTags(thread));
+        DistributionSummary channels = meterRegistry.summary(name(prefix, CHANNELS_SUMMARY), counterTags(thread));
         channels.record(channelCount.count());
     }
 

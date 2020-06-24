@@ -33,12 +33,12 @@ import static org.mockito.Mockito.mock;
 
 public class ChannelStatisticsHandlerTest {
     private ChannelStatisticsHandler handler;
-    private MeterRegistry metricRegistry;
+    private MeterRegistry meterRegistry;
 
     @BeforeEach
     public void createHandler() {
-        this.metricRegistry = new SimpleMeterRegistry();
-        this.handler = new ChannelStatisticsHandler(this.metricRegistry, "test");
+        this.meterRegistry = new SimpleMeterRegistry();
+        this.handler = new ChannelStatisticsHandler(this.meterRegistry, "test");
     }
 
     @Test
@@ -56,7 +56,7 @@ public class ChannelStatisticsHandlerTest {
     }
 
     private double countOf(String counter) {
-        return this.metricRegistry.counter(counter).count();
+        return this.meterRegistry.counter(counter).count();
     }
 
 }

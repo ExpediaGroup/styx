@@ -62,6 +62,7 @@ public class JVMMetricsHandler extends JsonHandler<MetricRegistry> {
             this.original = original;
         }
 
+        @Override
         public MeterRegistry micrometerRegistry() {
             return original.micrometerRegistry();
         }

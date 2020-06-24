@@ -118,6 +118,7 @@ public class CodaHaleMetricRegistry implements MetricRegistry {
     private final MeterRegistry registry;
     private final Set<MetricRegistryListener> listeners = new HashSet<>();
 
+    @Override
     public MeterRegistry micrometerRegistry() {
         return registry;
     }

@@ -65,29 +65,29 @@ public final class SslContexts {
      * Produce an SslContext that will record metrics, based on the provided configuration.
      *
      * @param httpsConnectorConfig configuration
-     * @param metricRegistry       metric registry
-     * @param metricPrefix         prepended to all meter names
+     * @param meterRegistry       metric registry
+     * @param meterPrefix         prepended to all meter names
      * @return SslContext
      */
-    public static SslContext newSSLContext(HttpsConnectorConfig httpsConnectorConfig, MeterRegistry metricRegistry, String metricPrefix) {
+    public static SslContext newSSLContext(HttpsConnectorConfig httpsConnectorConfig, MeterRegistry meterRegistry, String meterPrefix) {
         SslContext sslContext = newSSLContext(httpsConnectorConfig);
-        registerOpenSslStats(sslContext, metricRegistry, metricPrefix);
+        registerOpenSslStats(sslContext, meterRegistry, meterPrefix);
         return sslContext;
     }
 
-    private static void registerOpenSslStats(SslContext sslContext, MeterRegistry metricRegistry, String metricPrefix) {
+    private static void registerOpenSslStats(SslContext sslContext, MeterRegistry meterRegistry, String meterPrefix) {
         SSLSessionContext sslSessionContext = sslContext.sessionContext();
         if (sslSessionContext instanceof OpenSslSessionContext) {
             OpenSslSessionStats stats = ((OpenSslSessionContext) sslSessionContext).stats();
-            metricRegistry.gauge(name(metricPrefix, SSL_PREFIX, "number"), stats, OpenSslSessionStats::number);
-            metricRegistry.gauge(name(metricPrefix, SSL_PREFIX, "accept"), stats, OpenSslSessionStats::accept);
-            metricRegistry.gauge(name(metricPrefix, SSL_PREFIX, "acceptGood"), stats, OpenSslSessionStats::acceptGood);
-            metricRegistry.gauge(name(metricPrefix, SSL_PREFIX, "acceptRenegotiate"), stats, OpenSslSessionStats::acceptRenegotiate);
-            metricRegistry.gauge(name(metricPrefix, SSL_PREFIX, "hits"), stats, OpenSslSessionStats::hits);
-            metricRegistry.gauge(name(metricPrefix, SSL_PREFIX, "misses"), stats, OpenSslSessionStats::misses);
-            metricRegistry.gauge(name(metricPrefix, SSL_PREFIX, "cbHits"), stats, OpenSslSessionStats::cbHits);
-            metricRegistry.gauge(name(metricPrefix, SSL_PREFIX, "cacheFull"), stats, OpenSslSessionStats::cacheFull);
-            metricRegistry.gauge(name(metricPrefix, SSL_PREFIX, "timeouts"), stats, OpenSslSessionStats::timeouts);
+            meterRegistry.gauge(name(meterPrefix, SSL_PREFIX, "number"), stats, OpenSslSessionStats::number);
+            meterRegistry.gauge(name(meterPrefix, SSL_PREFIX, "accept"), stats, OpenSslSessionStats::accept);
+            meterRegistry.gauge(name(meterPrefix, SSL_PREFIX, "acceptGood"), stats, OpenSslSessionStats::acceptGood);
+            meterRegistry.gauge(name(meterPrefix, SSL_PREFIX, "acceptRenegotiate"), stats, OpenSslSessionStats::acceptRenegotiate);
+            meterRegistry.gauge(name(meterPrefix, SSL_PREFIX, "hits"), stats, OpenSslSessionStats::hits);
+            meterRegistry.gauge(name(meterPrefix, SSL_PREFIX, "misses"), stats, OpenSslSessionStats::misses);
+            meterRegistry.gauge(name(meterPrefix, SSL_PREFIX, "cbHits"), stats, OpenSslSessionStats::cbHits);
+            meterRegistry.gauge(name(meterPrefix, SSL_PREFIX, "cacheFull"), stats, OpenSslSessionStats::cacheFull);
+            meterRegistry.gauge(name(meterPrefix, SSL_PREFIX, "timeouts"), stats, OpenSslSessionStats::timeouts);
         }
     }
 

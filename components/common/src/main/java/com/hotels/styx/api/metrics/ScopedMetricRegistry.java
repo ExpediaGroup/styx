@@ -51,6 +51,7 @@ public class ScopedMetricRegistry implements MetricRegistry {
         this.parent = requireNonNull(parent);
     }
 
+    @Override
     public MeterRegistry micrometerRegistry() {
         return parent.micrometerRegistry();
     }
