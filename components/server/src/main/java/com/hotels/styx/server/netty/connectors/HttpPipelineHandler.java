@@ -26,13 +26,11 @@ import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.api.exceptions.OriginUnreachableException;
 import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.exceptions.StyxException;
 import com.hotels.styx.api.exceptions.TransportLostException;
-import com.hotels.styx.api.metrics.codahale.NoopMetricRegistry;
 import com.hotels.styx.api.plugins.spi.PluginException;
 import com.hotels.styx.client.BadHttpResponseException;
 import com.hotels.styx.client.StyxClientException;
@@ -48,6 +46,8 @@ import com.hotels.styx.server.NoServiceConfiguredException;
 import com.hotels.styx.server.RequestProgressListener;
 import com.hotels.styx.server.RequestTimeoutException;
 import com.hotels.styx.server.track.RequestTracker;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -76,6 +76,7 @@ import static com.hotels.styx.api.HttpResponseStatus.REQUEST_TIMEOUT;
 import static com.hotels.styx.api.HttpResponseStatus.SERVICE_UNAVAILABLE;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.LiveHttpResponse.response;
+import static com.hotels.styx.api.Metrics.name;
 import static com.hotels.styx.server.HttpErrorStatusListener.IGNORE_ERROR_STATUS;
 import static com.hotels.styx.server.RequestProgressListener.IGNORE_REQUEST_PROGRESS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
@@ -118,7 +119,8 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
     private final HttpResponseWriterFactory responseWriterFactory;
 
     private final RequestProgressListener statsSink;
-    private final MetricRegistry metrics;
+    private final MeterRegistry meterRegistry;
+    private final String meterPrefix;
 
     private final StateMachine<State> stateMachine;
     private final ResponseEnhancer responseEnhancer;
@@ -142,7 +144,8 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         this.responseWriterFactory = requireNonNull(builder.responseWriterFactory);
         this.statsSink = requireNonNull(builder.progressListener);
         this.stateMachine = createStateMachine();
-        this.metrics = builder.metricRegistry.get();
+        this.meterRegistry = builder.meterRegistrySupplier.get();
+        this.meterPrefix = builder.meterPrefix;
         this.secure = builder.secure;
         this.tracker = tracker;
         this.originsHeaderName = builder.originsHeaderName;
@@ -235,7 +238,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
     private State onSpuriousRequest(LiveHttpRequest request, State state) {
         LOGGER.warn(warningMessage("message='Spurious request received while handling another request', spuriousRequest=" + request));
 
-        metrics.counter("requests.cancelled.spuriousRequest").inc();
+        meterRegistry.counter(name(meterPrefix, "request.cancelled.spuriousRequest")).increment();
         statsSink.onTerminate(ongoingRequest.id());
         tracker.endTrack(ongoingRequest);
         cancelSubscription();
@@ -246,7 +249,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         if (prematureRequest != null) {
             LOGGER.warn(warningMessage("message='Spurious request received while handling another request', spuriousRequest=%s" + request));
 
-            metrics.counter("requests.cancelled.spuriousRequest").inc();
+            meterRegistry.counter(name(meterPrefix, "request.cancelled.spuriousRequest")).increment();
             cancelSubscription();
             statsSink.onTerminate(ongoingRequest.id());
             tracker.endTrack(ongoingRequest);
@@ -354,7 +357,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
     }
 
     private State onResponseWriteError(ChannelHandlerContext ctx, Throwable cause) {
-        metrics.counter("requests.cancelled.responseWriteError").inc();
+        meterRegistry.counter(name(meterPrefix, "request.cancelled.responseWriteError")).increment();
         cancelSubscription();
         statsSink.onTerminate(ongoingRequest.id());
         tracker.endTrack(ongoingRequest);
@@ -366,7 +369,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
     }
 
     private State onChannelInactive() {
-        metrics.counter("requests.cancelled.channelInactive").inc();
+        meterRegistry.counter(name(meterPrefix, "request.cancelled.channelInactive")).increment();
         if (future != null) {
             LOGGER.warn(warningMessage("message=onChannelInactive"));
             future.cancel(false);
@@ -378,7 +381,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
     }
 
     private State onChannelExceptionWhenSendingResponse(ChannelHandlerContext ctx, Throwable cause) {
-        metrics.counter("requests.cancelled.channelExceptionWhileSendingResponse").inc();
+        meterRegistry.counter(name(meterPrefix, "request.cancelled.channelExceptionWhileSendingResponse")).increment();
         cancelSubscription();
         statsSink.onTerminate(ongoingRequest.id());
         tracker.endTrack(ongoingRequest);
@@ -389,7 +392,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
     }
 
     private State onChannelExceptionWhenWaitingForResponse(ChannelHandlerContext ctx, Throwable cause) {
-        metrics.counter("requests.cancelled.channelExceptionWhileWaitingForResponse").inc();
+        meterRegistry.counter(name(meterPrefix, "request.cancelled.channelExceptionWhileWaitingForResponse")).increment();
         statsSink.onTerminate(ongoingRequest.id());
         tracker.endTrack(ongoingRequest);
         cancelSubscription();
@@ -455,7 +458,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
             return this.state();
         }
 
-        metrics.counter("requests.cancelled.responseError").inc();
+        meterRegistry.counter(name(meterPrefix, "request.cancelled.responseError")).increment();
         cancelSubscription();
 
         LOGGER.error(warningMessage(format("message='Error proxying request', requestId=%s cause=%s", requestId, cause)));
@@ -492,7 +495,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
     }
 
     private State onResponseObservableCompletedTooSoon(ChannelHandlerContext ctx, Object requestId) {
-        metrics.counter("requests.cancelled.observableCompletedTooSoon").inc();
+        meterRegistry.counter(name(meterPrefix, "request.cancelled.observableCompletedTooSoon")).increment();
 
         if (!ongoingRequest.id().equals(requestId)) {
             return this.state();
@@ -667,7 +670,8 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         private HttpErrorStatusListener httpErrorStatusListener = IGNORE_ERROR_STATUS;
         private RequestProgressListener progressListener = IGNORE_REQUEST_PROGRESS;
         private HttpResponseWriterFactory responseWriterFactory = HttpResponseWriter::new;
-        private Supplier<MetricRegistry> metricRegistry = NoopMetricRegistry::new;
+        private Supplier<MeterRegistry> meterRegistrySupplier = CompositeMeterRegistry::new;
+        private String meterPrefix;
         private RequestTracker tracker = RequestTracker.NO_OP;
         private boolean secure;
         private CharSequence originsHeaderName;
@@ -726,14 +730,19 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         }
 
         /**
-         * Sets the metric registry. By default, the metrics will not be available.
+         * Sets the meter registry. By default, the metrics will not be available.
          *
-         * @param metricRegistry the metric registry
+         * @param meterRegistry the meter registry
          * @return this builder
          */
-        public Builder metricRegistry(MetricRegistry metricRegistry) {
-            requireNonNull(metricRegistry);
-            this.metricRegistry = () -> metricRegistry;
+        public Builder meterRegistry(MeterRegistry meterRegistry) {
+            requireNonNull(meterRegistry);
+            this.meterRegistrySupplier = () -> meterRegistry;
+            return this;
+        }
+
+        public Builder meterPrefix(String meterPrefix) {
+            this.meterPrefix = meterPrefix;
             return this;
         }
 

@@ -22,8 +22,6 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.api.metrics.codahale.NoopMetricRegistry;
 import com.hotels.styx.client.StyxClientException;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.HttpErrorStatusListener;
@@ -35,7 +33,6 @@ import com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -114,7 +111,7 @@ public class HttpPipelineHandlerTest {
     private final HttpHandler doNotRespondHandler = (request, context) -> new Eventual<>(Mono.never());
 
     private HttpErrorStatusListener errorListener;
-    private CodaHaleMetricRegistry metrics;
+    private MeterRegistry metrics;
 
     // Cannot use lambda expression below, because spy() does not understand them.
     private final HttpHandler respondingPipeline = spy(new HttpHandler() {
@@ -333,8 +330,7 @@ public class HttpPipelineHandlerTest {
         writerFuture.completeExceptionally(cause);
         verify(statsCollector).onTerminate(eq(request.id()));
         verify(statsCollector, never()).onComplete(eq(request.id()), eq(200));
-        assertThat(metrics.counter("outstanding").getCount(), is(0L));
-        assertThat(metrics.counter("requests.cancelled.responseWriteError").getCount(), is(1L));
+        assertThat(metrics.counter("test.request.cancelled.responseWriteError").count(), is(1.0));
 
         assertThat(responseUnsubscribed.get(), is(true));
     }
@@ -490,7 +486,7 @@ public class HttpPipelineHandlerTest {
         handler.channelRead0(ctx, request2);
 
         // Assert that the third request triggers an error.
-        assertThat(metrics.counter("requests.cancelled.spuriousRequest").getCount(), is(1L));
+        assertThat(metrics.counter("test.request.cancelled.spuriousRequest").count(), is(1.0));
         assertThat(writerFuture.isCancelled(), is(true));
         assertThat(responseUnsubscribed.get(), is(true));
         verify(statsCollector).onTerminate(request.id());
@@ -984,7 +980,7 @@ public class HttpPipelineHandlerTest {
     }
 
     private HttpPipelineHandler createHandler(HttpHandler pipeline) throws Exception {
-        metrics = new NoopMetricRegistry();
+        metrics = new SimpleMeterRegistry();
         HttpPipelineHandler handler = handlerWithMocks(pipeline)
                 .responseWriterFactory(responseWriterFactory)
                 .build();
@@ -1003,7 +999,8 @@ public class HttpPipelineHandlerTest {
                 .errorStatusListener(errorListener)
                 .responseEnhancer(responseEnhancer)
                 .progressListener(statsCollector)
-                .metricRegistry(metrics);
+                .meterRegistry(metrics)
+                .meterPrefix("test");
     }
 
     private static HttpResponseWriterFactory responseWriterFactory(CompletableFuture<Void> future) {

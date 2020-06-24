@@ -15,15 +15,16 @@
  */
 package com.hotels.styx.proxy
 
-import java.util.function.Consumer
-
 import com.google.common.base.Charsets
 import com.google.common.base.Charsets._
 import com.hotels.styx._
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus._
+import com.hotels.styx.api.extension.Origin
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
 import com.hotels.styx.support.{NettyOrigins, TestClientSupport}
 import com.hotels.styx.utils.HttpTestClient
+import io.micrometer.core.instrument.Tags
 import io.netty.buffer.Unpooled
 import io.netty.buffer.Unpooled._
 import io.netty.channel.ChannelHandlerContext
@@ -35,9 +36,6 @@ import io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT
 import io.netty.handler.codec.http._
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
-import com.hotels.styx.api.HttpRequest.get
-import com.hotels.styx.api.extension.Origin
-import io.micrometer.core.instrument.{Meter, Tags}
 
 import scala.concurrent.duration.{Duration, _}
 
@@ -109,7 +107,7 @@ class ChunkedDownloadSpec extends FunSpec
       eventually(timeout(5 seconds)) {
         assert(busyConnections(originTwo) == 0, "Connection remains busy.")
         assert(closedConnections(originTwo) == 1)
-        styxServer.meterRegistry().get("requests.cancelled.responseWriteError").gauge().value() should be(1.0)
+        styxServer.meterRegistry().get("proxy.request.cancelled.responseWriteError").counter().count() should be(1.0)
       }
     }
   }
