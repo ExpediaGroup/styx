@@ -29,7 +29,7 @@ import org.slf4j.Logger;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.codahale.metrics.MetricRegistry.name;
+import static com.hotels.styx.api.Metrics.name;
 import static java.lang.String.format;
 import static org.slf4j.LoggerFactory.getLogger;
 
