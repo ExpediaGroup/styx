@@ -201,8 +201,8 @@ class HostProxySpec : FeatureSpec() {
                         }
 
                 withClue("Origin connections.total-connections") {
-                    styxServer.meterRegistry().find("proxy.connection.total-connections")
-                            .gauge().value().toInt() shouldBeInRange 0..2
+                    testServer.meterRegistry().find("proxy.connection.total-connections")
+                            .gauge().value().toInt() shouldBeInRange 1..2
                 }
 
                 withClue("Styx Server routing.objects.hostProxy.connectionspool.connection-attempts") {
