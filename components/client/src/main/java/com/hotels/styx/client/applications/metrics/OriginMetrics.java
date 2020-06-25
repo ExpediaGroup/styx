@@ -23,6 +23,10 @@ import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 
 import static java.lang.String.valueOf;
+import static java.time.Duration.ZERO;
+import static java.time.Duration.of;
+import static java.time.temporal.ChronoUnit.MICROS;
+import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -75,8 +79,18 @@ public class OriginMetrics implements OriginStats {
         requestSuccessMeter = registry.counter(SUCCESS_COUNTER_NAME, tags);
         requestErrorMeter = registry.counter(FAILURE_COUNTER_NAME, tags);
         requestCancellations = registry.counter(CANCELLATION_COUNTER_NAME, tags);
-        requestLatency = registry.timer(LATENCY_TIMER_NAME, tags);
-        timeToFirstByte = registry.timer(TTFB_TIMER_NAME, tags);
+        requestLatency = Timer.builder(LATENCY_TIMER_NAME)
+                .tags(tags)
+                .publishPercentileHistogram()
+                .minimumExpectedValue(of(100, MICROS))
+                .maximumExpectedValue(of(1, SECONDS))
+                .register(registry);
+        timeToFirstByte = Timer.builder(TTFB_TIMER_NAME)
+                .tags(tags)
+                .publishPercentileHistogram()
+                .minimumExpectedValue(of(100, MICROS))
+                .maximumExpectedValue(of(1, SECONDS))
+                .register(registry);
     }
 
     public Timer.Sample startTimer() {
