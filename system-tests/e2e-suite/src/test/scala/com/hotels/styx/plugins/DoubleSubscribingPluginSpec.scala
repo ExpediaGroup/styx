@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hotels.styx.MockServer.responseSupplier
 import com.hotels.styx.api.HttpResponseStatus._
 import com.hotels.styx.api.{HttpResponse, LiveHttpResponse}
 import com.hotels.styx.proxy.HttpErrorStatusCauseLogger
+import com.hotels.styx.proxy.HttpErrorStatusMetrics.{TYPE_TAG, EXCEPTION}
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, ProxyConfig, StyxConfig}
 import com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent
 import com.hotels.styx.support.matchers.LoggingTestSupport
@@ -103,7 +104,7 @@ class DoubleSubscribingPluginSpec extends FunSpec
         }
 
         eventually(timeout(3.seconds)) {
-          styxServer.metricsSnapshot.count("styx.exception.java_lang_IllegalStateException").getOrElse(0) should be(1)
+          styxServer.meterRegistry().counter(EXCEPTION, TYPE_TAG, "java_lang_IllegalStateException").count() should be(1.0)
 
           assertThat(logger.log(), hasItem(
             loggingEvent(
