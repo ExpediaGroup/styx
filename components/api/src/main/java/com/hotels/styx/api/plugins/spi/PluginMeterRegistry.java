@@ -36,12 +36,16 @@ public class PluginMeterRegistry {
     public static final String DEFAULT_TAG_KEY = "plugin";
     private final MeterRegistry meterRegistry;
     private final Tag defaultTag;
-    private final Tags commonTags;
+    private Tags commonTags;
 
     public PluginMeterRegistry(MeterRegistry meterRegistry, String pluginName) {
+        this(meterRegistry, pluginName, Tags.empty());
+    }
+
+    public PluginMeterRegistry(MeterRegistry meterRegistry, String pluginName, Tags commonTags) {
         this.meterRegistry = meterRegistry;
         this.defaultTag = Tag.of(DEFAULT_TAG_KEY, pluginName);
-        this.commonTags = Tags.empty();
+        this.commonTags = commonTags;
     }
 
     public MeterRegistry getMeterRegistry() {
@@ -50,6 +54,14 @@ public class PluginMeterRegistry {
 
     public Tags getCommonTags() {
         return commonTags;
+    }
+
+    public void setCommonTags(Tags commonTags) {
+        this.commonTags = commonTags;
+    }
+
+    public Tag getDefaultTag() {
+        return defaultTag;
     }
 
     public Collection<Meter> getMeters() {
