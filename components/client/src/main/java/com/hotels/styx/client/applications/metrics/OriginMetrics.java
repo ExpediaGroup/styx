@@ -23,7 +23,6 @@ import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 
 import static java.lang.String.valueOf;
-import static java.time.Duration.ZERO;
 import static java.time.Duration.of;
 import static java.time.temporal.ChronoUnit.MICROS;
 import static java.time.temporal.ChronoUnit.SECONDS;
