@@ -25,6 +25,9 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hotels.styx.api.Metrics.name;
 import static java.lang.String.valueOf;
+import static java.time.Duration.of;
+import static java.time.temporal.ChronoUnit.MICROS;
+import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
@@ -74,7 +77,12 @@ public class RequestStatsCollector implements RequestProgressListener {
 
         this.nanoClock = nanoClock;
         this.outstandingRequests = registry.gauge(name(prefix, REQUEST_OUTSTANDING), new AtomicLong());
-        this.latencyTimer = registry.timer(name(prefix, REQUEST_LATENCY));
+        this.latencyTimer = Timer.builder(name(prefix, REQUEST_LATENCY))
+                .publishPercentileHistogram()
+                .minimumExpectedValue(of(100, MICROS))
+                .maximumExpectedValue(of(1, SECONDS))
+                .register(registry);
+
         this.requestsIncoming = registry.counter(name(prefix, REQUEST_RECEIVED));
         this.responsesSent = registry.counter(name(prefix, RESPONSE_SENT));
     }
