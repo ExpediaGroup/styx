@@ -15,9 +15,22 @@
  */
 package com.hotels.styx.api;
 
-/**
- * Styx application Environment.
- */
-public interface Environment extends ConfigurableEnvironment, MeteredEnvironment {
+import io.micrometer.core.instrument.MeterRegistry;
 
+public interface MeteredEnvironment {
+    /**
+     * Returns the application's {@link MetricRegistry}.
+     *
+     * @return metric registry
+     * @deprecated deprecated in favor of MicroMeter via {@link #meterRegistry()}
+     */
+    @Deprecated
+    MetricRegistry metricRegistry();
+
+    /**
+     * Returns the application's {@link MeterRegistry}.
+     *
+     * @return meter registry
+     */
+    MeterRegistry meterRegistry();
 }

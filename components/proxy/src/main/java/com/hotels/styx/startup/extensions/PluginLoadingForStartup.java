@@ -17,7 +17,6 @@ package com.hotels.styx.startup.extensions;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hotels.styx.Environment;
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
@@ -27,7 +26,6 @@ import com.hotels.styx.proxy.plugin.FileSystemPluginFactoryLoader;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.proxy.plugin.PluginsMetadata;
 import com.hotels.styx.spi.config.SpiExtension;
-import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 
 import java.util.List;
@@ -109,20 +107,6 @@ public final class PluginLoadingForStartup {
             @Override
             public Configuration configuration() {
                 return environment.configuration();
-            }
-
-            @Override
-            public MetricRegistry metricRegistry() {
-                return environment.metricRegistry().scope(DEFAULT_PLUGINS_METRICS_SCOPE + "." + factory.name());
-            }
-
-            /**
-             * @deprecated deprecated in favor of {@link PluginFactory.Environment#pluginMeterRegistry()}
-             */
-            @Deprecated
-            @Override
-            public MeterRegistry meterRegistry() {
-                return environment.meterRegistry();
             }
 
             @Override

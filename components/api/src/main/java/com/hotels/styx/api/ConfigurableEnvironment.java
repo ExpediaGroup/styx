@@ -15,9 +15,16 @@
  */
 package com.hotels.styx.api;
 
+import com.hotels.styx.api.configuration.Configuration;
+
 /**
  * Styx application Environment.
  */
-public interface Environment extends ConfigurableEnvironment, MeteredEnvironment {
-
+public interface ConfigurableEnvironment {
+    /**
+     * Returns the configuration for the current {@link ConfigurableEnvironment}.
+     *
+     * @return configuration
+     */
+    Configuration configuration();
 }

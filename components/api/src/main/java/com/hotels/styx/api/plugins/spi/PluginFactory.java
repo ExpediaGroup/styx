@@ -23,7 +23,7 @@ public interface PluginFactory {
      * Provides global configuration objects for plugins. An example of a configuration object could be a shared
      * {@link com.hotels.styx.api.MetricRegistry}.
      */
-    interface Environment extends com.hotels.styx.api.Environment {
+    interface Environment extends com.hotels.styx.api.ConfigurableEnvironment {
         /**
          * Get the plugin's configuration, converted to class {@code clazz}.
          * @param clazz class to convert to
