@@ -16,6 +16,7 @@
 package com.hotels.styx.api.plugins.spi;
 
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
@@ -73,7 +74,7 @@ public class PluginMeterRegistryTest {
     @Test
     void forEachMeterShouldOnlyAffectPluginMeters() {
         Counter unrelatedCounter = backingRegistry.counter(NON_PLUGIN_METER_NAME);
-        Counter pluginCounter = pluginMeterRegistry.counter(PLUGIN_METER_NAME);
+        Counter pluginCounter = pluginMeterRegistry.counter(PLUGIN_METER_NAME, Tags.empty());
 
         unrelatedCounter.increment();
         pluginCounter.increment();
@@ -90,7 +91,7 @@ public class PluginMeterRegistryTest {
     @Test
     void findShouldOnlySearchInPluginMeters() {
         backingRegistry.gauge(NON_PLUGIN_METER_NAME, 0D);
-        pluginMeterRegistry.gauge(PLUGIN_METER_NAME, 0D);
+        pluginMeterRegistry.gauge(PLUGIN_METER_NAME, Tags.empty(),  0D);
 
         assertEquals(0,pluginMeterRegistry.find(NON_PLUGIN_METER_NAME).gauges().size());
         assertEquals(1,backingRegistry.find(PLUGIN_METER_NAME).gauges().size());
@@ -100,7 +101,7 @@ public class PluginMeterRegistryTest {
     @Test
     void getShouldOnlyReturnPluginMeters() {
         backingRegistry.gauge(NON_PLUGIN_METER_NAME, 0D);
-        pluginMeterRegistry.gauge(PLUGIN_METER_NAME, 0D);
+        pluginMeterRegistry.gauge(PLUGIN_METER_NAME, Tags.empty(), 0D);
 
         assertThrows(MeterNotFoundException.class, () -> pluginMeterRegistry.get(NON_PLUGIN_METER_NAME).gauge());
         assertNotNull(backingRegistry.get(PLUGIN_METER_NAME).gauge());
@@ -110,7 +111,7 @@ public class PluginMeterRegistryTest {
     @Test
     void clearShouldOnlyRemovePluginMeters() {
         Timer unrelatedTimer = backingRegistry.timer(NON_PLUGIN_METER_NAME);
-        Timer pluginTimer = pluginMeterRegistry.timer(PLUGIN_METER_NAME);
+        Timer pluginTimer = pluginMeterRegistry.timer(PLUGIN_METER_NAME, Tags.empty());
 
         assertEquals(2, backingRegistry.getMeters().size());
 
@@ -125,9 +126,10 @@ public class PluginMeterRegistryTest {
         pluginMeterRegistry.counter("counter");
         pluginMeterRegistry.timer("timer");
         pluginMeterRegistry.gauge("gauge", 0D);
+        pluginMeterRegistry.summary("summary", Tags.empty());
 
         backingRegistry.getMeters().forEach(meter -> {
-            assertTrue(meter.getId().getTags().contains(pluginMeterRegistry.getDefaultTag()));
+            assertTrue(meter.getId().getTags().contains(pluginMeterRegistry.getDefaultPluginTag().iterator().next()));
         });
     }
 
@@ -138,13 +140,14 @@ public class PluginMeterRegistryTest {
         Timer timer = pluginMeterRegistry.timer("timer");
         Double gauge = pluginMeterRegistry.gauge("gauge", 0D);
         Counter counter = pluginMeterRegistry.counter("counter");
+        DistributionSummary summary = pluginMeterRegistry.summary("summary");
         Collection<String> collectionGauge = pluginMeterRegistry.gaugeCollectionSize(PLUGIN_METER_NAME, Tags.empty(), new ArrayList<>());
         Map<String, String> mapGauge = pluginMeterRegistry.gaugeMapSize(PLUGIN_METER_NAME, Tags.empty(), new HashMap<>());
 
         backingRegistry.getMeters().forEach(meter -> {
             final List<Tag> meterTags = meter.getId().getTags();
 
-            assertTrue(meterTags.contains(pluginMeterRegistry.getDefaultTag()));
+            assertTrue(meterTags.contains(pluginMeterRegistry.getDefaultPluginTag().iterator().next()));
             assertTrue(meterTags.contains(Tag.of("Common", "Tags")));
         });
     }

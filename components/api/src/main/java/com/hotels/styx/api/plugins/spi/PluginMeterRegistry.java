@@ -35,8 +35,9 @@ import java.util.function.ToDoubleFunction;
 public class PluginMeterRegistry {
     public static final String DEFAULT_TAG_KEY = "plugin";
     private final MeterRegistry meterRegistry;
-    private final Tag defaultTag;
+    private final Tags defaultPluginTag;
     private Tags commonTags;
+    private Tags baseTags;
 
     public PluginMeterRegistry(MeterRegistry meterRegistry, String pluginName) {
         this(meterRegistry, pluginName, Tags.empty());
@@ -44,8 +45,9 @@ public class PluginMeterRegistry {
 
     public PluginMeterRegistry(MeterRegistry meterRegistry, String pluginName, Tags commonTags) {
         this.meterRegistry = meterRegistry;
-        this.defaultTag = Tag.of(DEFAULT_TAG_KEY, pluginName);
+        this.defaultPluginTag = Tags.of(DEFAULT_TAG_KEY, pluginName);
         this.commonTags = commonTags;
+        this.baseTags = defaultPluginTag.and(commonTags);
     }
 
     public MeterRegistry getMeterRegistry() {
@@ -58,14 +60,15 @@ public class PluginMeterRegistry {
 
     public void setCommonTags(Tags commonTags) {
         this.commonTags = commonTags;
+        this.baseTags = defaultPluginTag.and(commonTags);
     }
 
-    public Tag getDefaultTag() {
-        return defaultTag;
+    public Tags getDefaultPluginTag() {
+        return defaultPluginTag;
     }
 
     public Collection<Meter> getMeters() {
-        return Search.in(meterRegistry).tags(Tags.of(defaultTag)).meters();
+        return Search.in(meterRegistry).tags(defaultPluginTag).meters();
     }
 
     public void forEachMeter(Consumer<? super Meter> consumer) {
@@ -77,65 +80,65 @@ public class PluginMeterRegistry {
     }
 
     public Search find(String name) {
-        return Search.in(meterRegistry).tags(Tags.of(defaultTag)).name(name);
+        return Search.in(meterRegistry).tags(defaultPluginTag).name(name);
     }
 
     public RequiredSearch get(String name) {
-        return RequiredSearch.in(meterRegistry).tags(Tags.of(defaultTag)).name(name);
+        return RequiredSearch.in(meterRegistry).tags(defaultPluginTag).name(name);
     }
 
     public Counter counter(String name, Iterable<Tag> tags) {
-        return meterRegistry.counter(name, commonTags.and(defaultTag).and(tags));
+        return meterRegistry.counter(name, baseTags.and(tags));
     }
 
     public Counter counter(String name, String... tags) {
-        return meterRegistry.counter(name, commonTags.and(defaultTag).and(tags));
+        return meterRegistry.counter(name, baseTags.and(tags));
     }
 
     public DistributionSummary summary(String name, Iterable<Tag> tags) {
-        return meterRegistry.summary(name, commonTags.and(defaultTag).and(tags));
+        return meterRegistry.summary(name, baseTags.and(tags));
     }
 
     public DistributionSummary summary(String name, String... tags) {
-        return meterRegistry.summary(name, commonTags.and(defaultTag).and(tags));
+        return meterRegistry.summary(name, baseTags.and(tags));
     }
 
     public Timer timer(String name, Iterable<Tag> tags) {
-        return meterRegistry.timer(name, commonTags.and(defaultTag).and(tags));
+        return meterRegistry.timer(name, baseTags.and(tags));
     }
 
     public Timer timer(String name, String... tags) {
-        return meterRegistry.timer(name, commonTags.and(defaultTag).and(tags));
+        return meterRegistry.timer(name, baseTags.and(tags));
     }
 
     @Nullable
     public <T> T gauge(String name, Iterable<Tag> tags, T stateObject, ToDoubleFunction<T> valueFunction) {
-        return meterRegistry.gauge(name, commonTags.and(defaultTag).and(tags), stateObject, valueFunction);
+        return meterRegistry.gauge(name, baseTags.and(tags), stateObject, valueFunction);
     }
 
     @Nullable
     public <T extends Number> T gauge(String name, Iterable<Tag> tags, T number) {
-        return meterRegistry.gauge(name, commonTags.and(defaultTag).and(tags), number);
+        return meterRegistry.gauge(name, baseTags.and(tags), number);
     }
 
     @Nullable
     public <T extends Number> T gauge(String name, T number) {
-        return meterRegistry.gauge(name, commonTags.and(defaultTag), number);
+        return meterRegistry.gauge(name, baseTags, number);
     }
 
     @Nullable
     public <T> T gauge(String name, T stateObject, ToDoubleFunction<T> valueFunction) {
-        return meterRegistry.gauge(name, commonTags.and(defaultTag), stateObject, valueFunction);
+        return meterRegistry.gauge(name, baseTags, stateObject, valueFunction);
     }
 
     @Nullable
     public <T extends Collection<?>> T gaugeCollectionSize(String name, Iterable<Tag> tags, T collection) {
-        return meterRegistry.gaugeCollectionSize(name, commonTags.and(defaultTag).and(tags), collection);
+        return meterRegistry.gaugeCollectionSize(name, baseTags.and(tags), collection);
     }
 
     @Nullable
     public <T extends Map<?, ?>> T gaugeMapSize(String name, Iterable<Tag> tags, T map) {
-        return meterRegistry.gaugeMapSize(name, commonTags.and(defaultTag).and(tags), map);
+        return meterRegistry.gaugeMapSize(name, baseTags.and(tags), map);
     }
 
     @Incubating(since = "1.1.0")
