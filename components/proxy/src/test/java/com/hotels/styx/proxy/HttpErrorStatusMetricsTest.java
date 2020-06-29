@@ -15,16 +15,13 @@
  */
 package com.hotels.styx.proxy;
 
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.Meter;
-import com.codahale.metrics.MetricFilter;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.MetricRegistry;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.api.metrics.codahale.NoopMetricRegistry;
 import com.hotels.styx.api.plugins.spi.PluginException;
 import com.hotels.styx.server.HttpErrorStatusListener;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -63,37 +60,42 @@ import static com.hotels.styx.api.HttpResponseStatus.REQUEST_URI_TOO_LONG;
 import static com.hotels.styx.api.HttpResponseStatus.UNAUTHORIZED;
 import static com.hotels.styx.api.HttpResponseStatus.UNSUPPORTED_MEDIA_TYPE;
 import static com.hotels.styx.api.LiveHttpRequest.get;
+import static com.hotels.styx.proxy.HttpErrorStatusMetrics.TYPE_TAG;
+import static com.hotels.styx.proxy.HttpErrorStatusMetrics.STATUS_TAG;
+import static com.hotels.styx.proxy.HttpErrorStatusMetrics.ERROR;
+import static com.hotels.styx.proxy.HttpErrorStatusMetrics.EXCEPTION;
+import static com.hotels.styx.proxy.HttpErrorStatusMetrics.RESPONSE_STATUS;
 import static com.hotels.styx.proxy.HttpErrorStatusMetrics.formattedExceptionName;
 import static java.lang.System.arraycopy;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.everyItem;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verifyZeroInteractions;
 
 public class HttpErrorStatusMetricsTest {
-    private MetricRegistry registry;
+    private MeterRegistry registry;
     private HttpErrorStatusListener errorListener;
 
     @BeforeEach
     public void setUp() {
-        registry = new NoopMetricRegistry();
+        registry = new SimpleMeterRegistry();
         errorListener = new HttpErrorStatusMetrics(registry);
     }
 
     @Test
     public void metricsArePreRegistered() {
-        assertThat(registry.getMeters().get("styx.errors"), is(instanceOf(Meter.class)));
-        assertThat(registry.getMeters().get("styx.errors").getCount(), is(0L));
+        assertThat(registry.get(ERROR).counter(), is(notNullValue()));
+        assertThat(registry.get(ERROR).counter().count(), is(0.0));
 
-        assertThat(registry.getCounters().get("styx.response.status.200"), is(instanceOf(Counter.class)));
-        assertThat(registry.getCounters().get("styx.response.status.200").getCount(), is(0L));
+        assertThat(registry.get(RESPONSE_STATUS).tag(STATUS_TAG, "200").counter(), is(notNullValue()));
+        assertThat(registry.get(RESPONSE_STATUS).tag(STATUS_TAG, "200").counter().count(), is(0.0));
 
-        assertThat(registry.getCounters().get("styx.exception.java_lang_Exception"), is(instanceOf(Counter.class)));
-        assertThat(registry.getCounters().get("styx.exception.java_lang_Exception").getCount(), is(0L));
+        assertThat(registry.get(EXCEPTION).tag(TYPE_TAG, "java_lang_Exception").counter(), is(notNullValue()));
+        assertThat(registry.get(EXCEPTION).tag(TYPE_TAG, "java_lang_Exception").counter().count(), is(0.0));
     }
 
     @ParameterizedTest
@@ -101,26 +103,26 @@ public class HttpErrorStatusMetricsTest {
     public void exceptionsReportedWithNon500CodesAreNotRecordedAsUnexpectedErrors(HttpResponseStatus status) {
         errorListener.proxyErrorOccurred(status, new CustomException());
 
-        assertThat(meterCount("styx.errors"), is(0));
+        assertThat(count(ERROR), is(0));
     }
 
     @Test
     public void styxErrorsWithExceptionsPropagateBothStatusCodeAndExceptionClass() {
         errorListener.proxyErrorOccurred(INTERNAL_SERVER_ERROR, new CustomException());
 
-        assertThat(count("styx.response.status.500"), is(1));
-        assertThat(statusCountsExcluding("styx.response.status.500"), everyItem(is(0)));
-        assertThat(count("styx.exception." + formattedExceptionName(CustomException.class)), is(1));
-        assertThat(meterCount("styx.errors"), is(1));
+        assertThat(count(RESPONSE_STATUS, STATUS_TAG, "500"), is(1));
+        assertThat(statusCountsExcluding("500"), everyItem(is(0)));
+        assertThat(count(EXCEPTION, TYPE_TAG, formattedExceptionName(CustomException.class)), is(1));
+        assertThat(count(ERROR), is(1));
     }
 
     @Test
     public void pluginExceptionsAreNotRecordedAsStyxUnexpectedErrors() {
         errorListener.proxyErrorOccurred(INTERNAL_SERVER_ERROR, new PluginException("bad"));
 
-        assertThat(count("styx.response.status.500"), is(1));
-        assertThat(statusCountsExcluding("styx.response.status.500"), everyItem(is(0)));
-        assertThat(meterCount("styx.errors"), is(0));
+        assertThat(count(RESPONSE_STATUS, STATUS_TAG, "500"), is(1));
+        assertThat(statusCountsExcluding("500"), everyItem(is(0)));
+        assertThat(count(ERROR), is(0));
     }
 
     @Test
@@ -128,13 +130,13 @@ public class HttpErrorStatusMetricsTest {
         errorListener.proxyErrorOccurred(INTERNAL_SERVER_ERROR, new CustomException());
         errorListener.proxyErrorOccurred(INTERNAL_SERVER_ERROR, new CustomException());
 
-        assertThat(count("styx.exception." + formattedExceptionName(CustomException.class)), is(2));
-        assertThat(meterCount("styx.errors"), is(2));
+        assertThat(count(EXCEPTION, TYPE_TAG, formattedExceptionName(CustomException.class)), is(2));
+        assertThat(count(ERROR), is(2));
     }
 
     @Test
     public void nonErrorStatusesIsNotRecordedForProxyEvenIfExceptionIsSupplied() {
-        MetricRegistry registry = mock(MetricRegistry.class);
+        MeterRegistry registry = mock(MeterRegistry.class);
         HttpErrorStatusMetrics reporter = new HttpErrorStatusMetrics(registry);
         reset(registry);
         reporter.proxyErrorOccurred(OK, new RuntimeException("This shouldn't happen"));
@@ -146,18 +148,14 @@ public class HttpErrorStatusMetricsTest {
         LiveHttpRequest request = get("/foo").build();
         errorListener.proxyErrorOccurred(request, InetSocketAddress.createUnresolved("127.0.0.1", 0), INTERNAL_SERVER_ERROR, new CustomException());
 
-        assertThat(count("styx.response.status.500"), is(1));
-        assertThat(statusCountsExcluding("styx.response.status.500"), everyItem(is(0)));
-        assertThat(count("styx.exception." + formattedExceptionName(CustomException.class)), is(1));
-        assertThat(meterCount("styx.errors"), is(1));
+        assertThat(count(RESPONSE_STATUS, STATUS_TAG, "500"), is(1));
+        assertThat(statusCountsExcluding("500"), everyItem(is(0)));
+        assertThat(count(EXCEPTION, TYPE_TAG, formattedExceptionName(CustomException.class)), is(1));
+        assertThat(count(ERROR), is(1));
     }
 
-    private int meterCount(String meterName) {
-        return (int) registry.meter(meterName).getCount();
-    }
-
-    private int count(String counterName) {
-        return (int) registry.counter(counterName).getCount();
+    private int count(String counterName, String... tagKeyValue) {
+        return (int) registry.counter(counterName, tagKeyValue).count();
     }
 
     private static Stream<Arguments> non500ServerErrors() {
@@ -215,12 +213,10 @@ public class HttpErrorStatusMetricsTest {
     }
 
     private Collection<Integer> statusCountsExcluding(String excluded) {
-        MetricFilter filter = (name, metric) ->
-                (name.startsWith("styx.response.status.") || name.startsWith("origins.response.status.")) && !name.equals(excluded);
-
-        return registry.getCounters(filter).values().stream()
-                .map(Counter::getCount)
-                .map(Long::intValue)
+        return registry.find(RESPONSE_STATUS).counters().stream()
+                .filter(c -> !c.getId().getTag(STATUS_TAG).equals(excluded))
+                .map(Counter::count)
+                .map(Double::intValue)
                 .collect(toList());
     }
 

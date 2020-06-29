@@ -15,9 +15,7 @@
  */
 package com.hotels.styx;
 
-import com.codahale.metrics.Histogram;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.proxy.HttpCompressor;
 import com.hotels.styx.proxy.ServerProtocolDistributionRecorder;
@@ -38,6 +36,8 @@ import com.hotels.styx.server.netty.handlers.ExcessConnectionRejector;
 import com.hotels.styx.server.netty.handlers.RequestTimeoutHandler;
 import com.hotels.styx.server.track.CurrentRequestTracker;
 import com.hotels.styx.server.track.RequestTracker;
+import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -64,7 +64,10 @@ import static org.slf4j.LoggerFactory.getLogger;
  * Factory for proxy connectors.
  */
 public class ProxyConnectorFactory implements ServerConnectorFactory {
-    private final MetricRegistry metrics;
+
+    public static final String METER_PREFIX = "proxy";
+
+    private final MeterRegistry meterRegistry;
     private final HttpErrorStatusListener errorStatusListener;
     private final NettyServerConfig serverConfig;
     private final String unwiseCharacters;
@@ -75,7 +78,7 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
 
     // CHECKSTYLE:OFF
     public ProxyConnectorFactory(NettyServerConfig serverConfig,
-                                 MetricRegistry metrics,
+                                 MeterRegistry meterRegistry,
                                  HttpErrorStatusListener errorStatusListener,
                                  String unwiseCharacters,
                                  ResponseEnhancer responseEnhancer,
@@ -83,7 +86,7 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
                                  HttpMessageFormatter httpMessageFormatter,
                                  CharSequence originsHeader) {
         this.serverConfig = requireNonNull(serverConfig);
-        this.metrics = requireNonNull(metrics);
+        this.meterRegistry = requireNonNull(meterRegistry);
         this.errorStatusListener = requireNonNull(errorStatusListener);
         this.unwiseCharacters = requireNonNull(unwiseCharacters);
         this.responseEnhancer = requireNonNull(responseEnhancer);
@@ -101,7 +104,7 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
     private static final class ProxyConnector implements ServerConnector {
         private final ConnectorConfig config;
         private final NettyServerConfig serverConfig;
-        private final MetricRegistry metrics;
+        private final MeterRegistry meterRegistry;
         private final HttpErrorStatusListener httpErrorStatusListener;
         private final ChannelStatisticsHandler channelStatsHandler;
         private final ExcessConnectionRejector excessConnectionRejector;
@@ -117,14 +120,14 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
             this.config = requireNonNull(config);
             this.responseEnhancer = requireNonNull(factory.responseEnhancer);
             this.serverConfig = requireNonNull(factory.serverConfig);
-            this.metrics = requireNonNull(factory.metrics);
+            this.meterRegistry = requireNonNull(factory.meterRegistry);
             this.httpErrorStatusListener = requireNonNull(factory.errorStatusListener);
-            this.channelStatsHandler = new ChannelStatisticsHandler(metrics);
-            this.requestStatsCollector = new RequestStatsCollector(metrics);
+            this.channelStatsHandler = new ChannelStatisticsHandler(meterRegistry, METER_PREFIX);
+            this.requestStatsCollector = new RequestStatsCollector(meterRegistry, METER_PREFIX);
             this.excessConnectionRejector = new ExcessConnectionRejector(new DefaultChannelGroup(GlobalEventExecutor.INSTANCE), serverConfig.maxConnectionsCount());
             this.unwiseCharEncoder = new ConfigurableUnwiseCharsEncoder(factory.unwiseCharacters);
             if (isHttps()) {
-                this.sslContext = Optional.of(newSSLContext((HttpsConnectorConfig) config, metrics));
+                this.sslContext = Optional.of(newSSLContext((HttpsConnectorConfig) config, meterRegistry, METER_PREFIX));
             } else {
                 this.sslContext = Optional.empty();
             }
@@ -157,14 +160,15 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
                     .addLast("channel-stats", channelStatsHandler)
                     .addLast("http-server-codec", new HttpServerCodec(serverConfig.maxInitialLength(), serverConfig.maxHeaderSize(), serverConfig.maxChunkSize(), true))
                     .addLast("timeout-handler", new RequestTimeoutHandler())
-                    .addLast("keep-alive-handler", new IdleTransactionConnectionCloser(metrics))
-                    .addLast("server-protocol-distribution-recorder", new ServerProtocolDistributionRecorder(metrics, sslContext.isPresent()))
+                    .addLast("keep-alive-handler", new IdleTransactionConnectionCloser(meterRegistry))
+                    .addLast("server-protocol-distribution-recorder", new ServerProtocolDistributionRecorder(meterRegistry, sslContext.isPresent()))
                     .addLast("styx-decoder", requestTranslator(serverConfig.keepAliveTimeoutMillis()))
                     .addLast("proxy", new HttpPipelineHandler.Builder(httpPipeline)
                             .responseEnhancer(responseEnhancer)
                             .errorStatusListener(httpErrorStatusListener)
                             .progressListener(requestStatsCollector)
-                            .metricRegistry(metrics)
+                            .meterRegistry(meterRegistry)
+                            .meterPrefix(METER_PREFIX)
                             .secure(sslContext.isPresent())
                             .requestTracker(requestTracker)
                             .xOriginsHeader(originsHeader)
@@ -190,14 +194,12 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
 
         private static class IdleTransactionConnectionCloser extends ChannelDuplexHandler {
             private static final Logger LOGGER = getLogger(IdleTransactionConnectionCloser.class);
-            private final Histogram idleConnectionClosed;
-            private final MetricRegistry metricRegistry;
+            private final DistributionSummary idleConnectionClosed;
 
             private volatile boolean httpTransactionOngoing;
 
-            IdleTransactionConnectionCloser(MetricRegistry metricRegistry) {
-                this.metricRegistry = metricRegistry;
-                this.idleConnectionClosed = this.metricRegistry.histogram("connections.idleClosed");
+            IdleTransactionConnectionCloser(MeterRegistry meterRegistry) {
+                this.idleConnectionClosed = meterRegistry.summary("proxy.connections.idleClosed");
             }
 
             @Override
@@ -224,7 +226,7 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
                         if (ctx.channel().isActive()) {
                             LOGGER.warn("Closing an idle connection={}", ctx.channel().remoteAddress());
                             ctx.close();
-                            idleConnectionClosed.update(1);
+                            idleConnectionClosed.record(1);
                         }
                     }
                 }

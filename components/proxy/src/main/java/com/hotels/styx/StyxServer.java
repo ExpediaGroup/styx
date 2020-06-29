@@ -260,7 +260,7 @@ public final class StyxServer extends AbstractService {
 
         ServerConnector proxyConnector = new ProxyConnectorFactory(
                 environment.configuration().proxyServerConfig(),
-                environment.metricRegistry(),
+                environment.meterRegistry(),
                 environment.errorListener(),
                 environment.configuration().get(ENCODE_UNWISECHARS).orElse(""),
                 (builder, request) -> builder.header(styxInfoHeaderName, responseInfoFormat.format(request)),

@@ -55,7 +55,7 @@ public final class Environment implements com.hotels.styx.api.Environment {
 
         this.httpErrorStatusListener = HttpErrorStatusListener.compose(
                 new HttpErrorStatusCauseLogger(httpMessageFormatter),
-                new HttpErrorStatusMetrics(serverEnvironment.metricRegistry()));
+                new HttpErrorStatusMetrics(serverEnvironment.registry()));
     }
 
     // prevent unnecessary construction of defaults
