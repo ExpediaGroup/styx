@@ -15,9 +15,10 @@
  */
 package com.hotels.styx.server.netty.handlers;
 
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.Histogram;
-import com.hotels.styx.api.MetricRegistry;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.channel.ChannelDuplexHandler;
@@ -26,7 +27,9 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import org.slf4j.Logger;
 
-import static com.codahale.metrics.MetricRegistry.name;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static com.hotels.styx.api.Metrics.name;
 import static java.lang.String.format;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -37,17 +40,29 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class ChannelStatisticsHandler extends ChannelDuplexHandler {
     private static final Logger LOGGER = getLogger(ChannelStatisticsHandler.class);
 
-    private final MetricRegistry metricRegistry;
+    public static final String EVENTLOOP_TAG = "eventloop";
+
+    public static final String BYTES_RECEIVED = "connection.bytes-received";
+    public static final String BYTES_SENT = "connection.bytes-sent";
+    public static final String TOTAL_CONNECTIONS = "connection.total-connections";
+    public static final String REGISTERED_CHANNEL_COUNT = "connection.registered-channel-count";
+    public static final String CHANNELS_SUMMARY = "connection.channels";
+
+
+    private final MeterRegistry meterRegistry;
+    private final String prefix;
+
     private final Counter receivedBytesCount;
     private final Counter sentBytesCount;
-    private final Counter totalConnections;
+    private final AtomicLong totalConnections;
 
-    public ChannelStatisticsHandler(MetricRegistry metricRegistry) {
-        this.metricRegistry = metricRegistry;
+    public ChannelStatisticsHandler(MeterRegistry meterRegistry, String meterPrefix) {
+        this.meterRegistry = meterRegistry;
+        this.prefix = meterPrefix;
 
-        this.receivedBytesCount = this.metricRegistry.counter("connections.bytes-received");
-        this.sentBytesCount = this.metricRegistry.counter("connections.bytes-sent");
-        this.totalConnections = this.metricRegistry.counter("connections.total-connections");
+        this.receivedBytesCount = this.meterRegistry.counter(name(meterPrefix, BYTES_RECEIVED));
+        this.sentBytesCount = this.meterRegistry.counter(name(meterPrefix, BYTES_SENT));
+        this.totalConnections = this.meterRegistry.gauge(name(meterPrefix, TOTAL_CONNECTIONS), new AtomicLong());
     }
 
     @Override
@@ -64,23 +79,24 @@ public class ChannelStatisticsHandler extends ChannelDuplexHandler {
 
     private void updateChannelPerThreadCounters(int amount) {
         Thread thread = Thread.currentThread();
-        Counter channelCount = this.metricRegistry.counter(name(counterPrefix(thread), "registered-channel-count"));
-        channelCount.inc(amount);
+        Counter channelCount = this.meterRegistry
+                .counter(name(prefix, REGISTERED_CHANNEL_COUNT), counterTags(thread));
+        channelCount.increment(amount);
 
-        Histogram histogram = metricRegistry.histogram(name(counterPrefix(thread), "channels"));
-        histogram.update(channelCount.getCount());
+        DistributionSummary channels = meterRegistry.summary(name(prefix, CHANNELS_SUMMARY), counterTags(thread));
+        channels.record(channelCount.count());
     }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        totalConnections.inc();
+        totalConnections.incrementAndGet();
 
         super.channelActive(ctx);
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        totalConnections.dec();
+        totalConnections.decrementAndGet();
 
         super.channelInactive(ctx);
     }
@@ -88,9 +104,9 @@ public class ChannelStatisticsHandler extends ChannelDuplexHandler {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof ByteBuf) {
-            receivedBytesCount.inc(((ByteBuf) msg).readableBytes());
+            receivedBytesCount.increment(((ByteBuf) msg).readableBytes());
         } else if (msg instanceof ByteBufHolder) {
-            receivedBytesCount.inc(((ByteBufHolder) msg).content().readableBytes());
+            receivedBytesCount.increment(((ByteBufHolder) msg).content().readableBytes());
         } else {
             LOGGER.warn(format("channelRead(): Expected byte buffers, but got [%s]", msg));
         }
@@ -100,14 +116,14 @@ public class ChannelStatisticsHandler extends ChannelDuplexHandler {
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
         if (msg instanceof ByteBuf) {
-            sentBytesCount.inc(((ByteBuf) msg).readableBytes());
+            sentBytesCount.increment(((ByteBuf) msg).readableBytes());
         } else if (msg instanceof ByteBufHolder) {
-            sentBytesCount.inc(((ByteBufHolder) msg).content().readableBytes());
+            sentBytesCount.increment(((ByteBufHolder) msg).content().readableBytes());
         }
         super.write(ctx, msg, promise);
     }
 
-    private static String counterPrefix(Thread thread) {
-        return name("connections.eventloop", thread.getName());
+    private static Tags counterTags(Thread thread) {
+        return Tags.of(EVENTLOOP_TAG, thread.getName());
     }
 }

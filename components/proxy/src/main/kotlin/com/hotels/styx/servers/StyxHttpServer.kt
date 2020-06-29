@@ -128,7 +128,7 @@ internal class StyxHttpServerFactory : StyxServerFactory {
                                         .setKeepAliveTimeoutMillis(config.keepAliveTimeoutMillis)
                                         .setMaxConnectionsCount(config.maxConnectionsCount)
                                         .build(),
-                                environment.metricRegistry(),
+                                environment.meterRegistry(),
                                 environment.errorListener(),
                                 environment.configuration().get(ENCODE_UNWISECHARS).orElse(""),
                                 ResponseEnhancer { builder, request ->
