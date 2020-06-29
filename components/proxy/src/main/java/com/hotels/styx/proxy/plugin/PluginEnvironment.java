@@ -19,6 +19,7 @@ import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
+import com.hotels.styx.api.plugins.spi.PluginMeterRegistry;
 import com.hotels.styx.spi.config.SpiExtension;
 import io.micrometer.core.instrument.MeterRegistry;
 
@@ -29,11 +30,13 @@ class PluginEnvironment implements PluginFactory.Environment {
     private final Environment environment;
     private final SpiExtension spiExtension;
     private final MetricRegistry pluginMetricsScope;
+    private final PluginMeterRegistry pluginMeterRegistry;
 
     PluginEnvironment(String name, Environment environment, SpiExtension spiExtension, String scope) {
         this.spiExtension = requireNonNull(spiExtension);
         this.environment = requireNonNull(environment);
         this.pluginMetricsScope = environment.metricRegistry().scope(name(scope, name));
+        this.pluginMeterRegistry = new PluginMeterRegistry(requireNonNull(environment.meterRegistry()), name);
     }
 
     @Override
@@ -46,6 +49,10 @@ class PluginEnvironment implements PluginFactory.Environment {
         return pluginMetricsScope;
     }
 
+    /**
+     * @deprecated deprecated in favor of {@link #pluginMeterRegistry()}
+     */
+    @Deprecated
     @Override
     public MeterRegistry meterRegistry() {
         return environment.meterRegistry();
@@ -54,5 +61,10 @@ class PluginEnvironment implements PluginFactory.Environment {
     @Override
     public <T> T pluginConfig(Class<T> clazz) {
         return spiExtension.config(clazz);
+    }
+
+    @Override
+    public PluginMeterRegistry pluginMeterRegistry() {
+        return pluginMeterRegistry;
     }
 }
