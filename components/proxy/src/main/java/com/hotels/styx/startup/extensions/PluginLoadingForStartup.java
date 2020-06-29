@@ -21,6 +21,7 @@ import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
+import com.hotels.styx.api.plugins.spi.PluginMeterRegistry;
 import com.hotels.styx.common.Pair;
 import com.hotels.styx.proxy.plugin.FileSystemPluginFactoryLoader;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
@@ -115,9 +116,18 @@ public final class PluginLoadingForStartup {
                 return environment.metricRegistry().scope(DEFAULT_PLUGINS_METRICS_SCOPE + "." + factory.name());
             }
 
+            /**
+             * @deprecated deprecated in favor of {@link PluginFactory.Environment#pluginMeterRegistry()}
+             */
+            @Deprecated
             @Override
             public MeterRegistry meterRegistry() {
                 return environment.meterRegistry();
+            }
+
+            @Override
+            public PluginMeterRegistry pluginMeterRegistry() {
+                return new PluginMeterRegistry(environment.meterRegistry(), factory.name());
             }
         };
 

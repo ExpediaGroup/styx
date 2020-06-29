@@ -24,6 +24,7 @@ import com.hotels.styx.api.metrics.codahale.NoopMetricRegistry;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.spi.config.SpiExtension;
 import com.hotels.styx.spi.config.SpiExtensionFactory;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -43,6 +44,7 @@ public class PluginEnvironmentTest {
         styxMetrics = new NoopMetricRegistry();
         styxEnvironment = mock(PluginFactory.Environment.class);
         when(styxEnvironment.metricRegistry()).thenReturn(styxMetrics);
+        when(styxEnvironment.meterRegistry()).thenReturn(new SimpleMeterRegistry());
     }
 
     @Test
