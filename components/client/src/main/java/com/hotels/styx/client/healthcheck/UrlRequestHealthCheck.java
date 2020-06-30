@@ -43,8 +43,8 @@ public class UrlRequestHealthCheck implements OriginHealthCheckFunction {
     public UrlRequestHealthCheck(String healthCheckUri, MeterRegistry meterRegistry) {
         this.healthCheckUri = uriWithInitialSlash(healthCheckUri);
         this.meterCache = new SimpleCache<>(origin -> Counter.builder("origins.healthcheck.failures")
-        .tag("host", origin.host())
-        .tag("port", Integer.toString(origin.port()))
+        .tag("origin", origin.id().toString())
+        .tag("application", origin.applicationId().toString())
         .register(meterRegistry));
     }
 

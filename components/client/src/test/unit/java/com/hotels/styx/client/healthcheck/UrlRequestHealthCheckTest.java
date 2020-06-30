@@ -17,9 +17,7 @@ package com.hotels.styx.client.healthcheck;
 
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -86,7 +84,7 @@ public class UrlRequestHealthCheckTest {
 
         assertThat(originState, is(UNHEALTHY));
         assertThat(meterRegistry.find("origins.healthcheck.failures")
-                .tags("host", "localhost", "port", "12345").counter().count(), is(1.0));
+                .tags("origin", someOrigin.id().toString(), "application", someOrigin.applicationId().toString()).counter().count(), is(1.0));
         assertThat(meterRegistry.getMeters().size(), is(1));
     }
 
@@ -99,7 +97,7 @@ public class UrlRequestHealthCheckTest {
 
         assertThat(originState, is(UNHEALTHY));
         assertThat(meterRegistry.find("origins.healthcheck.failures")
-                .tags("host", "localhost", "port", "12345").counter().count(), is(1.0));
+                .tags("origin", someOrigin.id().toString(), "application", someOrigin.applicationId().toString()).counter().count(), is(1.0));
         assertThat(meterRegistry.getMeters().size(), is(1));
     }
 
