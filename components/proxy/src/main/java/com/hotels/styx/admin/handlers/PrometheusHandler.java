@@ -19,7 +19,6 @@ import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.WebServiceHandler;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
@@ -28,6 +27,7 @@ import io.micrometer.prometheus.PrometheusMeterRegistry;
 
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class PrometheusHandler implements WebServiceHandler {
@@ -42,7 +42,7 @@ public class PrometheusHandler implements WebServiceHandler {
     @Override
     public Eventual<HttpResponse> handle(final HttpRequest request, final HttpInterceptor.Context context) {
         return Eventual.of(HttpResponse
-                .response(HttpResponseStatus.OK)
+                .response(OK)
                 .disableCaching()
                 .header(CONTENT_TYPE, PLAIN_TEXT_UTF_8)
                 .body(prometheusRegistry.scrape(), UTF_8, true)
