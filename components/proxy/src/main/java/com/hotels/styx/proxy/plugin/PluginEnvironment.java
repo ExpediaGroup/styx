@@ -16,46 +16,27 @@
 package com.hotels.styx.proxy.plugin;
 
 import com.hotels.styx.api.Environment;
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.api.plugins.spi.PluginMeterRegistry;
 import com.hotels.styx.spi.config.SpiExtension;
-import io.micrometer.core.instrument.MeterRegistry;
 
-import static com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry.name;
 import static java.util.Objects.requireNonNull;
 
 class PluginEnvironment implements PluginFactory.Environment {
     private final Environment environment;
     private final SpiExtension spiExtension;
-    private final MetricRegistry pluginMetricsScope;
     private final PluginMeterRegistry pluginMeterRegistry;
 
-    PluginEnvironment(String name, Environment environment, SpiExtension spiExtension, String scope) {
+    PluginEnvironment(String name, Environment environment, SpiExtension spiExtension) {
         this.spiExtension = requireNonNull(spiExtension);
         this.environment = requireNonNull(environment);
-        this.pluginMetricsScope = environment.metricRegistry().scope(name(scope, name));
         this.pluginMeterRegistry = new PluginMeterRegistry(requireNonNull(environment.meterRegistry()), name);
     }
 
     @Override
     public Configuration configuration() {
         return environment.configuration();
-    }
-
-    @Override
-    public MetricRegistry metricRegistry() {
-        return pluginMetricsScope;
-    }
-
-    /**
-     * @deprecated deprecated in favor of {@link #pluginMeterRegistry()}
-     */
-    @Deprecated
-    @Override
-    public MeterRegistry meterRegistry() {
-        return environment.meterRegistry();
     }
 
     @Override

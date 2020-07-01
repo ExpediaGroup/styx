@@ -25,10 +25,13 @@ import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
+import com.hotels.styx.api.plugins.spi.PluginMeterRegistry;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,6 +41,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static ch.qos.logback.classic.Level.ERROR;
+import static com.hotels.styx.api.plugins.spi.PluginMeterRegistry.DEFAULT_TAG_KEY;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static java.util.stream.Collectors.toList;
@@ -291,8 +295,8 @@ public class PluginLoadingForStartupTest {
         Environment environment = environment(yaml);
         PluginLoadingForStartup.loadPlugins(environment);
 
-        assertThat(environment.metricRegistry().counter("styx.plugins.myPlugin.initialised").getCount(), is(1L));
-        assertThat(environment.metricRegistry().counter("styx.plugins.myAnotherPlugin.initialised").getCount(), is(1L));
+        assertThat(environment.meterRegistry().find("initialised").tags(Tags.of(DEFAULT_TAG_KEY, "myPlugin")).counter().count(), is(1D));
+        assertThat(environment.meterRegistry().find("initialised").tags(Tags.of(DEFAULT_TAG_KEY, "myAnotherPlugin")).counter().count(), is(1D));
     }
 
     private com.hotels.styx.Environment environment(String yaml) {
@@ -314,9 +318,9 @@ public class PluginLoadingForStartupTest {
         @Override
         public Plugin create(Environment environment) {
             MyPluginConfig myPluginConfig = environment.pluginConfig(MyPluginConfig.class);
-            MetricRegistry metrics = environment.metricRegistry();
+            PluginMeterRegistry registry = environment.pluginMeterRegistry();
 
-            return new MyPlugin(myPluginConfig, metrics);
+            return new MyPlugin(myPluginConfig, registry);
         }
     }
 
@@ -348,9 +352,10 @@ public class PluginLoadingForStartupTest {
     static class MyPlugin implements Plugin {
         private final MyPluginConfig myPluginConfig;
 
-        public MyPlugin(MyPluginConfig myPluginConfig, MetricRegistry metrics) {
+        public MyPlugin(MyPluginConfig myPluginConfig, PluginMeterRegistry registry) {
             this.myPluginConfig = myPluginConfig;
-            metrics.counter("initialised").inc();
+            Counter counter = registry.counter("initialised");
+            counter.increment();
         }
 
         @Override
