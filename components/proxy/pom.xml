@@ -193,6 +193,11 @@
       <artifactId>micrometer-registry-graphite</artifactId>
     </dependency>
 
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-registry-jmx</artifactId>
+    </dependency>
+
   </dependencies>
 
   <build>

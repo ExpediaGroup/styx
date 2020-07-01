@@ -20,27 +20,14 @@ import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ServiceFactory;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 
-import java.util.concurrent.CompletableFuture;
-
 /**
  * A factory that produces JmxReporterService.
  */
 public class JmxReporterServiceFactory implements ServiceFactory<StyxService> {
     @Override
     public StyxService create(Environment environment, Configuration serviceConfiguration) {
-        return new StyxService() {
-            @Override
-            public CompletableFuture<Void> start() {
-                return CompletableFuture.completedFuture(null);
-            }
+        String domain = serviceConfiguration.get("domain").orElse("com.hotels.styx");
 
-            @Override
-            public CompletableFuture<Void> stop() {
-                return CompletableFuture.completedFuture(null);
-            }
-        };
-        // String domain = serviceConfiguration.get("domain").orElse("com.hotels.styx");
-
-        // return new JmxReporterService(domain, codaHaleMetricRegistry(environment));
+        return new JmxReporterService(domain, environment.meterRegistry());
     }
 }
