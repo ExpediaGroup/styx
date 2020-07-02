@@ -173,7 +173,7 @@ public final class StyxHttpClient implements HttpClient {
             host = host.withDefaultPort(isHttps ? DEFAULT_HTTPS_PORT : DEFAULT_HTTP_PORT);
         }
 
-        return newOriginBuilder(host.getHostText(), host.getPort()).build();
+        return newOriginBuilder(host.getHost(), host.getPort()).build();
     }
 
     /**
