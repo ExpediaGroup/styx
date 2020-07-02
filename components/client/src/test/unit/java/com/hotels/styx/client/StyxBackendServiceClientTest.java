@@ -30,7 +30,6 @@ import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.StickySessionConfig;
-import com.hotels.styx.client.applications.metrics.OriginMetrics;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.hamcrest.Matchers;
@@ -62,12 +61,12 @@ import static com.hotels.styx.api.RequestCookie.requestCookie;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
 import static com.hotels.styx.api.extension.service.StickySessionConfig.stickySessionDisabled;
+import static com.hotels.styx.client.applications.metrics.OriginMetrics.CANCELLATION_COUNTER_NAME;
 import static com.hotels.styx.support.Support.requestContext;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Matchers.any;
@@ -361,7 +360,7 @@ public class StyxBackendServiceClientTest {
                 .thenCancel()
                 .verify();
 
-        assertThat(meterRegistry.get(OriginMetrics.CANCELLATION_COUNTER_NAME).counter().count(), is(1.0));
+        assertThat(meterRegistry.get(CANCELLATION_COUNTER_NAME).counter().count(), is(1.0));
     }
 
     @Test
