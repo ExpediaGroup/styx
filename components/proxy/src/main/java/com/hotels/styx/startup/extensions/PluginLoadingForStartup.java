@@ -17,6 +17,7 @@ package com.hotels.styx.startup.extensions;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hotels.styx.Environment;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
@@ -112,6 +113,12 @@ public final class PluginLoadingForStartup {
             @Override
             public PluginMeterRegistry pluginMeterRegistry() {
                 return new PluginMeterRegistry(environment.meterRegistry(), factory.name());
+            }
+
+            @Override
+            @Deprecated
+            public MetricRegistry metricRegistry() {
+                return environment.metricRegistry();
             }
         };
 

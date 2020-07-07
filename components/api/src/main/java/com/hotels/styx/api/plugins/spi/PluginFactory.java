@@ -15,6 +15,8 @@
  */
 package com.hotels.styx.api.plugins.spi;
 
+import com.hotels.styx.api.MetricRegistry;
+
 /**
  * A factory that creates {@link Plugin}s.
  */
@@ -36,6 +38,15 @@ public interface PluginFactory {
          * Get a meter registry that injects a default {"plugin":"plugin_name"} tag to all meter types.
          */
         PluginMeterRegistry pluginMeterRegistry();
+
+        /**
+         * Returns the application's {@link MetricRegistry}.
+         *
+         * @return metric registry
+         * @deprecated deprecated in favor of MicroMeter via {@link #pluginMeterRegistry()}
+         */
+        @Deprecated
+        MetricRegistry metricRegistry();
     }
 
     /**

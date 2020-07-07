@@ -16,6 +16,7 @@
 package com.hotels.styx.proxy.plugin;
 
 import com.hotels.styx.api.Environment;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.api.plugins.spi.PluginMeterRegistry;
@@ -47,5 +48,11 @@ class PluginEnvironment implements PluginFactory.Environment {
     @Override
     public PluginMeterRegistry pluginMeterRegistry() {
         return pluginMeterRegistry;
+    }
+
+    @Override
+    @Deprecated
+    public MetricRegistry metricRegistry() {
+        return environment.metricRegistry();
     }
 }
