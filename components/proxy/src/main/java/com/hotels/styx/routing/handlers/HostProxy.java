@@ -30,10 +30,11 @@ import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.StyxHostHttpClient;
-import com.hotels.styx.client.applications.metrics.OriginMetrics;
+import com.hotels.styx.client.applications.metrics.RequestMetrics;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.client.connectionpool.ExpiringConnectionFactory;
-import com.hotels.styx.client.connectionpool.SimpleConnectionPoolFactory;
+import com.hotels.styx.client.connectionpool.SimpleConnectionPool;
+import com.hotels.styx.client.connectionpool.StatsReportingConnectionPool;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
@@ -41,6 +42,7 @@ import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -62,6 +64,7 @@ import static com.hotels.styx.config.schema.SchemaDsl.string;
 import static com.hotels.styx.routing.config.RoutingSupport.missingAttributeError;
 import static java.lang.String.format;
 import static java.lang.String.join;
+import static java.lang.String.valueOf;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
@@ -113,7 +116,7 @@ public class HostProxy implements RoutingObject {
 
     private final String errorMessage;
     private final StyxHostHttpClient client;
-    private final OriginMetrics originMetrics;
+    private final RequestMetrics requestMetrics;
     private volatile boolean active = true;
 
     @VisibleForTesting
@@ -121,12 +124,12 @@ public class HostProxy implements RoutingObject {
     @VisibleForTesting
     final int port;
 
-    public HostProxy(String host, int port, StyxHostHttpClient client, OriginMetrics originMetrics) {
+    public HostProxy(String host, int port, StyxHostHttpClient client, RequestMetrics requestMetrics) {
         this.host = requireNonNull(host);
         this.port = port;
         this.errorMessage = format("HostProxy %s:%d is stopped but received traffic.", host, port);
         this.client = requireNonNull(client);
-        this.originMetrics = requireNonNull(originMetrics);
+        this.requestMetrics = requireNonNull(requestMetrics);
     }
 
     @Override
@@ -134,7 +137,7 @@ public class HostProxy implements RoutingObject {
         if (active) {
             return new Eventual<>(
                     ResponseEventListener.from(client.sendRequest(request, context))
-                            .whenCancelled(originMetrics::requestCancelled)
+                            .whenCancelled(requestMetrics::requestCancelled)
                             .apply());
         } else {
             return Eventual.error(new IllegalStateException(errorMessage));
@@ -303,22 +306,19 @@ public class HostProxy implements RoutingObject {
                     .id(originId)
                     .build();
 
-            OriginMetrics originMetrics = new OriginMetrics(meterRegistry, origin.id().toString(), origin.applicationId().toString());
+            Tags tags = Tags.of("host", host).and("port", valueOf(port));
+            RequestMetrics requestMetrics = new RequestMetrics(meterRegistry, tags);
 
-            ConnectionPool.Factory connectionPoolFactory = new SimpleConnectionPoolFactory.Builder()
-                    .connectionFactory(
-                            connectionFactory(
-                                    executor,
-                                    tlsSettings,
-                                    responseTimeoutMillis,
-                                    maxHeaderSize,
-                                    theOrigin -> originMetrics,
-                                    poolSettings.connectionExpirationSeconds()))
-                    .connectionPoolSettings(poolSettings)
-                    .meterRegistry(meterRegistry)
-                    .build();
-
-            return new HostProxy(host, port, StyxHostHttpClient.create(connectionPoolFactory.create(origin)), originMetrics);
+            Connection.Factory connectionFactory = connectionFactory(
+                    executor,
+                    tlsSettings,
+                    responseTimeoutMillis,
+                    maxHeaderSize,
+                    o -> requestMetrics,
+                    poolSettings.connectionExpirationSeconds());
+            ConnectionPool connectionPool = new SimpleConnectionPool(origin, poolSettings, connectionFactory);
+            connectionPool = new StatsReportingConnectionPool(connectionPool, meterRegistry, tags);
+            return new HostProxy(host, port, StyxHostHttpClient.create(connectionPool), requestMetrics);
         }
 
         private static Connection.Factory connectionFactory(

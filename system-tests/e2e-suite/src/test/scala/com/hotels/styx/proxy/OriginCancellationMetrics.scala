@@ -18,7 +18,7 @@ package com.hotels.styx.proxy
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.OK
-import com.hotels.styx.client.applications.metrics.OriginMetrics.{APP_TAG, CANCELLATION_COUNTER_NAME}
+import com.hotels.styx.client.applications.metrics.RequestMetrics.{APP_TAG, CANCELLATION_COUNTER_NAME}
 import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins}
 import com.hotels.styx.support.{NettyOrigins, TestClientSupport}
 import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}

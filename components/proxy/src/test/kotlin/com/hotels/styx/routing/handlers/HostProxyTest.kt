@@ -24,7 +24,7 @@ import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.client.StyxHostHttpClient
-import com.hotels.styx.client.applications.metrics.OriginMetrics
+import com.hotels.styx.client.applications.metrics.RequestMetrics
 import com.hotels.styx.RoutingObjectFactoryContext
 import com.hotels.styx.api.HttpInterceptor.Context
 import com.hotels.styx.handle
@@ -76,7 +76,7 @@ class HostProxyTest : FeatureSpec() {
 
             scenario("Updates metrics for cancelled responses") {
                 val client = mockk<StyxHostHttpClient>()
-                val originMetrics = mockk<OriginMetrics>()
+                val originMetrics = mockk<RequestMetrics>()
 
                 every { client.sendRequest(any(), any()) } returns Eventual(Mono.never())
 
@@ -92,7 +92,7 @@ class HostProxyTest : FeatureSpec() {
 
             scenario("Updates metrics for cancelled response content") {
                 val client = mockk<StyxHostHttpClient>()
-                val originMetrics = mockk<OriginMetrics>()
+                val originMetrics = mockk<RequestMetrics>()
 
                 every { client.sendRequest(any(), any()) } returns Eventual.of(
                         LiveHttpResponse

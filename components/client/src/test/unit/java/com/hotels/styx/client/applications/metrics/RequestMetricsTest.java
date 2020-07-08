@@ -28,12 +28,12 @@ import org.junit.jupiter.api.Test;
 import java.time.Duration;
 import java.util.Collection;
 
-import static com.hotels.styx.client.applications.metrics.OriginMetrics.APP_TAG;
-import static com.hotels.styx.client.applications.metrics.OriginMetrics.CANCELLATION_COUNTER_NAME;
-import static com.hotels.styx.client.applications.metrics.OriginMetrics.ORIGIN_TAG;
-import static com.hotels.styx.client.applications.metrics.OriginMetrics.STATUS_CLASS_TAG;
-import static com.hotels.styx.client.applications.metrics.OriginMetrics.STATUS_COUNTER_NAME;
-import static com.hotels.styx.client.applications.metrics.OriginMetrics.STATUS_TAG;
+import static com.hotels.styx.client.applications.metrics.RequestMetrics.APP_TAG;
+import static com.hotels.styx.client.applications.metrics.RequestMetrics.CANCELLATION_COUNTER_NAME;
+import static com.hotels.styx.client.applications.metrics.RequestMetrics.ORIGIN_TAG;
+import static com.hotels.styx.client.applications.metrics.RequestMetrics.STATUS_CLASS_TAG;
+import static com.hotels.styx.client.applications.metrics.RequestMetrics.STATUS_COUNTER_NAME;
+import static com.hotels.styx.client.applications.metrics.RequestMetrics.STATUS_TAG;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -41,14 +41,14 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class OriginMetricsTest {
+public class RequestMetricsTest {
     public static final String APP_ID = "test-id";
     public static final String ORIGIN_ID = "h1";
 
     private final MockClock clock;
     private final MeterRegistry registry;
 
-    public OriginMetricsTest() {
+    public RequestMetricsTest() {
         clock = new MockClock();
         registry = new SimpleMeterRegistry(SimpleConfig.DEFAULT, clock);
     }
@@ -56,18 +56,18 @@ public class OriginMetricsTest {
     @Test
     public void failsIfCreatedWithNullOrigin() {
         assertThrows(NullPointerException.class,
-                () -> new OriginMetrics(registry, null, APP_ID));
+                () -> new RequestMetrics(registry, null, APP_ID));
     }
 
     @Test
     public void successfullyCreated() {
-        assertThat(new OriginMetrics(registry, ORIGIN_ID, APP_ID), is(notNullValue()));
+        assertThat(new RequestMetrics(registry, ORIGIN_ID, APP_ID), is(notNullValue()));
     }
 
     @Test
     public void requestWithSuccessGetsTaggedOnApplicationAndOrigin() {
-        OriginMetrics originMetricsA = new OriginMetrics(registry, "h1", APP_ID);
-        OriginMetrics originMetricsB = new OriginMetrics(registry, "h2", APP_ID);
+        RequestMetrics originMetricsA = new RequestMetrics(registry, "h1", APP_ID);
+        RequestMetrics originMetricsB = new RequestMetrics(registry, "h2", APP_ID);
 
         originMetricsA.requestSuccess();
         originMetricsA.requestSuccess();
@@ -75,13 +75,13 @@ public class OriginMetricsTest {
         originMetricsB.requestSuccess();
         originMetricsB.requestSuccess();
 
-        double originACount= sumCounters(OriginMetrics.SUCCESS_COUNTER_NAME, Tags.of(ORIGIN_TAG, "h1"));
+        double originACount= sumCounters(RequestMetrics.SUCCESS_COUNTER_NAME, Tags.of(ORIGIN_TAG, "h1"));
         assertThat(originACount, is(2.0));
 
-        double originBCount = sumCounters(OriginMetrics.SUCCESS_COUNTER_NAME, Tags.of(ORIGIN_TAG, "h2"));
+        double originBCount = sumCounters(RequestMetrics.SUCCESS_COUNTER_NAME, Tags.of(ORIGIN_TAG, "h2"));
         assertThat(originBCount, is(3.0));
 
-        double appCount = sumCounters(OriginMetrics.SUCCESS_COUNTER_NAME, Tags.of(APP_TAG, APP_ID));
+        double appCount = sumCounters(RequestMetrics.SUCCESS_COUNTER_NAME, Tags.of(APP_TAG, APP_ID));
         assertThat(appCount, is(5.0));
     }
 
@@ -92,8 +92,8 @@ public class OriginMetricsTest {
 
     @Test
     public void requestWithFailureGetsAggregatedToApplication() {
-        OriginMetrics originMetricsA = new OriginMetrics(registry, "h1", APP_ID);
-        OriginMetrics originMetricsB = new OriginMetrics(registry, "h2", APP_ID);
+        RequestMetrics originMetricsA = new RequestMetrics(registry, "h1", APP_ID);
+        RequestMetrics originMetricsB = new RequestMetrics(registry, "h2", APP_ID);
 
         originMetricsA.requestError();
         originMetricsA.requestError();
@@ -101,19 +101,19 @@ public class OriginMetricsTest {
         originMetricsB.requestError();
         originMetricsB.requestError();
 
-        double originACount= sumCounters(OriginMetrics.FAILURE_COUNTER_NAME, Tags.of(ORIGIN_TAG, "h1"));
+        double originACount= sumCounters(RequestMetrics.FAILURE_COUNTER_NAME, Tags.of(ORIGIN_TAG, "h1"));
         assertThat(originACount, is(2.0));
 
-        double originBCount = sumCounters(OriginMetrics.FAILURE_COUNTER_NAME, Tags.of(ORIGIN_TAG, "h2"));
+        double originBCount = sumCounters(RequestMetrics.FAILURE_COUNTER_NAME, Tags.of(ORIGIN_TAG, "h2"));
         assertThat(originBCount, is(3.0));
 
-        double appCount = sumCounters(OriginMetrics.FAILURE_COUNTER_NAME, Tags.of(APP_TAG, APP_ID));
+        double appCount = sumCounters(RequestMetrics.FAILURE_COUNTER_NAME, Tags.of(APP_TAG, APP_ID));
         assertThat(appCount, is(5.0));
     }
 
     @Test
     public void responseWithStatusCodeTagsCounterWithCode() {
-        OriginMetrics originMetrics = new OriginMetrics(registry, "h1", APP_ID);
+        RequestMetrics originMetrics = new RequestMetrics(registry, "h1", APP_ID);
 
         originMetrics.responseWithStatusCode(100);
         originMetrics.responseWithStatusCode(101);
@@ -135,7 +135,7 @@ public class OriginMetricsTest {
 
     @Test
     public void responseWithStatusCodeTagsCounterWithStatusCode() {
-        OriginMetrics originMetrics = new OriginMetrics(registry, "h1", APP_ID);
+        RequestMetrics originMetrics = new RequestMetrics(registry, "h1", APP_ID);
 
         originMetrics.responseWithStatusCode(500);
         originMetrics.responseWithStatusCode(503);
@@ -147,7 +147,7 @@ public class OriginMetricsTest {
 
     @Test
     public void responseWithStatusCodeTagsCounterIgnoresInvalidStatusClasses() {
-        OriginMetrics originMetrics = new OriginMetrics(registry, "h1", APP_ID);
+        RequestMetrics originMetrics = new RequestMetrics(registry, "h1", APP_ID);
 
         originMetrics.responseWithStatusCode(99);
         originMetrics.responseWithStatusCode(600);
@@ -170,7 +170,7 @@ public class OriginMetricsTest {
 
     @Test
     public void countsCanceledRequests() {
-        OriginMetrics originMetrics = new OriginMetrics(registry, "h1", APP_ID);
+        RequestMetrics originMetrics = new RequestMetrics(registry, "h1", APP_ID);
 
         originMetrics.requestCancelled();
 
@@ -180,24 +180,24 @@ public class OriginMetricsTest {
 
     @Test
     public void requestLatencyTimerTagsAppAndOrigin() {
-        OriginMetrics originMetrics = new OriginMetrics(registry, "h1", APP_ID);
+        RequestMetrics originMetrics = new RequestMetrics(registry, "h1", APP_ID);
         Timer.Sample timerSample = originMetrics.startTimer();
         clock.add(Duration.ofMillis(100));
         timerSample.stop(originMetrics.requestLatencyTimer());
 
-        Timer latencyTimer = registry.get(OriginMetrics.LATENCY_TIMER_NAME).tag(ORIGIN_TAG, "h1").tag(APP_TAG, APP_ID).timer();
+        Timer latencyTimer = registry.get(RequestMetrics.LATENCY_TIMER_NAME).tag(ORIGIN_TAG, "h1").tag(APP_TAG, APP_ID).timer();
         assertThat(latencyTimer.count(), is(1L));
         assertThat(latencyTimer.totalTime(MILLISECONDS), is(100.0));
     }
 
     @Test
     public void timeToFirstByteTimerTagsAppAndOrigin() {
-        OriginMetrics originMetrics = new OriginMetrics(registry, "h1", APP_ID);
+        RequestMetrics originMetrics = new RequestMetrics(registry, "h1", APP_ID);
         Timer.Sample timerSample = originMetrics.startTimer();
         clock.add(Duration.ofMillis(100));
         timerSample.stop(originMetrics.timeToFirstByteTimer());
 
-        Timer latencyTimer = registry.get(OriginMetrics.TTFB_TIMER_NAME).tag(ORIGIN_TAG, "h1").tag(APP_TAG, APP_ID).timer();
+        Timer latencyTimer = registry.get(RequestMetrics.TTFB_TIMER_NAME).tag(ORIGIN_TAG, "h1").tag(APP_TAG, APP_ID).timer();
         assertThat(latencyTimer.count(), is(1L));
         assertThat(latencyTimer.totalTime(MILLISECONDS), is(100.0));
     }

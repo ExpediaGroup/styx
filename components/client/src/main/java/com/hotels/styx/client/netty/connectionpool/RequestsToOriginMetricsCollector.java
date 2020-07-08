@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.client.netty.connectionpool;
 
-import com.hotels.styx.client.applications.OriginStats;
+import com.hotels.styx.client.applications.RequestStats;
 import io.micrometer.core.instrument.Timer;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -37,7 +37,7 @@ class RequestsToOriginMetricsCollector extends ChannelDuplexHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(RequestsToOriginMetricsCollector.class);
 
-    private final OriginStats originStats;
+    private final RequestStats originStats;
     private volatile Timer.Sample requestLatencyTiming;
     private volatile Timer.Sample timeToFirstByteTiming;
     private volatile boolean firstContentChunkReceived;
@@ -48,7 +48,7 @@ class RequestsToOriginMetricsCollector extends ChannelDuplexHandler {
      *
      * @param originStats object to record statistics in
      */
-    public RequestsToOriginMetricsCollector(OriginStats originStats) {
+    public RequestsToOriginMetricsCollector(RequestStats originStats) {
         this.originStats = requireNonNull(originStats);
     }
 

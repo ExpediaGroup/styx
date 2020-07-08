@@ -16,9 +16,10 @@
 package com.hotels.styx.client.applications.metrics;
 
 import com.hotels.styx.api.MetricRegistry;
-import com.hotels.styx.client.applications.OriginStats;
+import com.hotels.styx.client.applications.RequestStats;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 
@@ -38,7 +39,7 @@ import static java.util.Objects.requireNonNull;
  * Consider twice before caching. The reference could accidentally being shared by two
  * connections scheduled on different event loops.
  */
-public class OriginMetrics implements OriginStats {
+public class RequestMetrics implements RequestStats {
     public static final String ORIGIN_TAG = "origin";
     public static final String APP_TAG = "appId";
     public static final String STATUS_TAG = "statusCode";
@@ -53,7 +54,7 @@ public class OriginMetrics implements OriginStats {
 
     private final MeterRegistry registry;
 
-    private final Tags tags;
+    private final Iterable<Tag> tags;
 
     private final Counter requestSuccessMeter;
     private final Counter requestErrorMeter;
@@ -68,12 +69,13 @@ public class OriginMetrics implements OriginStats {
      * @param originId       an origin
      * @param appId          application ID
      */
-    public OriginMetrics(MeterRegistry registry, String originId, String appId) {
-        requireNonNull(originId);
+    public RequestMetrics(MeterRegistry registry, String originId, String appId) {
+        this(registry, Tags.of(ORIGIN_TAG, requireNonNull(originId)).and(APP_TAG, requireNonNull(appId)));
+    }
 
+    public RequestMetrics(MeterRegistry registry, Iterable<Tag> tags) {
         this.registry = registry;
-
-        tags = Tags.of(ORIGIN_TAG, originId).and(APP_TAG, appId);
+        this.tags = tags;
 
         requestSuccessMeter = registry.counter(SUCCESS_COUNTER_NAME, tags);
         requestErrorMeter = registry.counter(FAILURE_COUNTER_NAME, tags);
@@ -108,7 +110,7 @@ public class OriginMetrics implements OriginStats {
 
     @Override
     public void responseWithStatusCode(int statusCode) {
-        Tags tags = this.tags.and(STATUS_TAG, valueOf(statusCode));
+        Tags tags = Tags.of(this.tags).and(STATUS_TAG, valueOf(statusCode));
 
         if (statusCode >= 100 && statusCode < 600) {
             String statusClass = (statusCode / 100) + "xx";

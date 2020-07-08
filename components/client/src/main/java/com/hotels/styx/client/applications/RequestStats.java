@@ -20,7 +20,7 @@ import io.micrometer.core.instrument.Timer;
 /**
  * An object that receives origin statistics.
  */
-public interface OriginStats {
+public interface RequestStats {
     /**
      * Return a {@link Timer.Sample} based on the current registry's Clock.
      *

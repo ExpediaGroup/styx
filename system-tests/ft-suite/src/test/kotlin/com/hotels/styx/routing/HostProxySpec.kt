@@ -27,7 +27,7 @@ import com.hotels.styx.api.HttpResponseStatus.CREATED
 import com.hotels.styx.api.HttpResponseStatus.GATEWAY_TIMEOUT
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.client.StyxHttpClient
-import com.hotels.styx.client.applications.metrics.OriginMetrics
+import com.hotels.styx.client.applications.metrics.RequestMetrics
 import com.hotels.styx.server.HttpConnectorConfig
 import com.hotels.styx.servers.MockOriginServer
 import com.hotels.styx.support.StyxServerProvider
@@ -53,6 +53,7 @@ import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
 import org.slf4j.LoggerFactory
+import java.lang.String.valueOf
 import java.nio.charset.StandardCharsets.UTF_8
 import kotlin.system.measureTimeMillis
 
@@ -201,13 +202,14 @@ class HostProxySpec : FeatureSpec() {
                         }
 
                 withClue("Origin connections.total-connections") {
-                    testServer.meterRegistry().find("proxy.connection.total-connections")
+                    testServer.meterRegistry().get("proxy.connection.total-connections")
                             .gauge().value().toInt() shouldBeInRange 1..2
                 }
 
                 withClue("Styx Server routing.objects.hostProxy.connectionspool.connection-attempts") {
-                    styxServer.meterRegistry().find("connectionspool.connection-attempts")
-                            .tags("appid", "routing.objects", "originid", "hostProxy")
+                    styxServer.meterRegistry().get("connectionspool.connection-attempts")
+                            .tag("host", testServer().proxyHttpAddress().hostString)
+                            .tag("port", valueOf(testServer().proxyHttpAddress().port))
                             .gauge().value().toInt() shouldBeInRange 1..2
                 }
             }
@@ -242,11 +244,13 @@ class HostProxySpec : FeatureSpec() {
                         .status() shouldBe OK
 
                 eventually(1.seconds, AssertionError::class.java) {
-                    styxServer.meterRegistry().find("connectionspool.available-connections")
-                            .tags("appid", "routing.objects", "originid", "hostProxy")
+                    styxServer.meterRegistry().get("connectionspool.available-connections")
+                            .tag("host", testServer().proxyHttpAddress().hostString)
+                            .tag("port", valueOf(testServer().proxyHttpAddress().port))
                             .gauge().value().toInt() shouldBe 1
-                    styxServer.meterRegistry().find("connectionspool.connections-closed")
-                            .tags("appid", "routing.objects", "originid", "hostProxy")
+                    styxServer.meterRegistry().get("connectionspool.connections-closed")
+                            .tag("host", testServer().proxyHttpAddress().hostString)
+                            .tag("port", valueOf(testServer().proxyHttpAddress().port))
                             .gauge().value().toInt() shouldBe 0
                 }
 
@@ -260,11 +264,13 @@ class HostProxySpec : FeatureSpec() {
                         .status() shouldBe OK
 
                 eventually(1.seconds, AssertionError::class.java) {
-                    styxServer.meterRegistry().find("connectionspool.available-connections")
-                            .tags("appid", "routing.objects", "originid", "hostProxy")
+                    styxServer.meterRegistry().get("connectionspool.available-connections")
+                            .tag("host", testServer().proxyHttpAddress().hostString)
+                            .tag("port", valueOf(testServer().proxyHttpAddress().port))
                             .gauge().value().toInt() shouldBe 1
-                    styxServer.meterRegistry().find("connectionspool.connections-terminated")
-                            .tags("appid", "routing.objects", "originid", "hostProxy")
+                    styxServer.meterRegistry().get("connectionspool.connections-terminated")
+                            .tag("host", testServer().proxyHttpAddress().hostString)
+                            .tag("port", valueOf(testServer().proxyHttpAddress().port))
                             .gauge().value().toInt() shouldBe 1
                 }
             }
@@ -297,20 +303,20 @@ class HostProxySpec : FeatureSpec() {
 
             scenario("... and provides connection pool metrics") {
                 styxServer.meterRegistry().get("connectionspool.connection-attempts")
-                        .tag("appid", "routing.objects")
-                        .tag("originid", "hostProxy")
+                        .tag("host", "localhost")
+                        .tag("port", valueOf(mockServer.port()))
                         .gauge().value().toInt() shouldBe 1
             }
 
             scenario("... and provides origin and application metrics") {
-                styxServer.meterRegistry().get(OriginMetrics.STATUS_COUNTER_NAME)
-                        .tag(OriginMetrics.APP_TAG, "routing.objects")
-                        .tag(OriginMetrics.ORIGIN_TAG, "hostProxy")
-                        .tag(OriginMetrics.STATUS_TAG, "200")
+                styxServer.meterRegistry().get(RequestMetrics.STATUS_COUNTER_NAME)
+                        .tag("host", "localhost")
+                        .tag("port", valueOf(mockServer.port()))
+                        .tag(RequestMetrics.STATUS_TAG, "200")
                         .counter().count().toInt() shouldBe 1
                 styxServer.meterRegistry().get("connectionspool.connection-attempts")
-                        .tag("appid", "routing.objects")
-                        .tag("originid", "hostProxy")
+                        .tag("host", "localhost")
+                        .tag("port", valueOf(mockServer.port()))
                         .gauge().value().toInt() shouldBe 1
             }
 
@@ -365,16 +371,16 @@ class HostProxySpec : FeatureSpec() {
 
             scenario("... and provides connection pool metrics with metric prefix") {
                 styxServer.meterRegistry().get("connectionspool.connection-attempts")
-                        .tag("appid", "origins.myApp")
-                        .tag("originid", "hostProxy")
+                        .tag("host", "localhost")
+                        .tag("port", valueOf(mockServer.port()))
                         .gauge().value().toInt() shouldBe 1
             }
 
             scenario("... and provides origin/application metrics with metric prefix") {
-                styxServer.meterRegistry().get(OriginMetrics.STATUS_COUNTER_NAME)
-                        .tag(OriginMetrics.APP_TAG, "origins.myApp")
-                        .tag(OriginMetrics.ORIGIN_TAG, "hostProxy")
-                        .tag(OriginMetrics.STATUS_TAG, "200")
+                styxServer.meterRegistry().get(RequestMetrics.STATUS_COUNTER_NAME)
+                        .tag("host", "localhost")
+                        .tag("port", valueOf(mockServer.port()))
+                        .tag(RequestMetrics.STATUS_TAG, "200")
                         .counter().count().toInt() shouldBe 1
             }
 

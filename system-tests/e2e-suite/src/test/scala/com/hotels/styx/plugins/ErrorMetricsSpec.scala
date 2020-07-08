@@ -25,7 +25,7 @@ import com.hotels.styx.api.HttpResponseStatus.{BAD_GATEWAY, INTERNAL_SERVER_ERRO
 import com.hotels.styx.api.LiveHttpResponse.response
 import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.api.{HttpResponseStatus, _}
-import com.hotels.styx.client.applications.metrics.OriginMetrics
+import com.hotels.styx.client.applications.metrics.RequestMetrics
 import com.hotels.styx.infrastructure.{MemoryBackedRegistry, RegistryServiceAdapter}
 import com.hotels.styx.support.backends.FakeHttpServer.HttpStartupConfig
 import com.hotels.styx.support.configuration.{StyxConfig, _}
@@ -291,9 +291,9 @@ class ErrorMetricsSpec extends FunSpec
   private def originErrorMetric = {
     try {
       styxServer.meterRegistry()
-        .get(OriginMetrics.FAILURE_COUNTER_NAME)
-        .tag(OriginMetrics.APP_TAG, "appOne")
-        .tag(OriginMetrics.ORIGIN_TAG, "01")
+        .get(RequestMetrics.FAILURE_COUNTER_NAME)
+        .tag(RequestMetrics.APP_TAG, "appOne")
+        .tag(RequestMetrics.ORIGIN_TAG, "01")
         .counter().count()
     } catch {
       case _: io.micrometer.core.instrument.search.MeterNotFoundException => 0.0

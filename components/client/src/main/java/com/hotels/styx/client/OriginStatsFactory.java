@@ -16,8 +16,8 @@
 package com.hotels.styx.client;
 
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.client.applications.OriginStats;
-import com.hotels.styx.client.applications.metrics.OriginMetrics;
+import com.hotels.styx.client.applications.RequestStats;
+import com.hotels.styx.client.applications.metrics.RequestMetrics;
 import io.micrometer.core.instrument.MeterRegistry;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,19 +27,19 @@ import static java.util.Objects.requireNonNull;
 
 
 /**
- * A factory that creates {@link OriginStats} instances using a metric registry it wraps. If an {@link OriginStats} already
+ * A factory that creates {@link RequestStats} instances using a metric registry it wraps. If an {@link RequestStats} already
  * exists for an origin, the same instance will be returned again.
  */
 
 public interface OriginStatsFactory {
-    OriginStats originStats(Origin origin);
+    RequestStats originStats(Origin origin);
 
     /**
      * A caching OriginStatsFactory. A newly created OriginStats object is cached,
      * and the cached copy is returned for future invocations.
      */
     class CachingOriginStatsFactory implements OriginStatsFactory {
-        private final ConcurrentMap<Origin, OriginMetrics> metricsByOrigin = new ConcurrentHashMap<>();
+        private final ConcurrentMap<Origin, RequestMetrics> metricsByOrigin = new ConcurrentHashMap<>();
         private final MeterRegistry meterRegistry;
 
         /**
@@ -52,13 +52,13 @@ public interface OriginStatsFactory {
         }
 
         /**
-         * Construct a new {@link OriginStats} for an origin, or return a previously created one if it exists.
+         * Construct a new {@link RequestStats} for an origin, or return a previously created one if it exists.
          *
          * @param origin origin to collect stats for
-         * @return the {@link OriginStats}
+         * @return the {@link RequestStats}
          */
-        public OriginStats originStats(Origin origin) {
-            return metricsByOrigin.computeIfAbsent(origin, theOrigin -> new OriginMetrics(meterRegistry, theOrigin.id().toString(), theOrigin.applicationId().toString()));
+        public RequestStats originStats(Origin origin) {
+            return metricsByOrigin.computeIfAbsent(origin, theOrigin -> new RequestMetrics(meterRegistry, theOrigin.id().toString(), theOrigin.applicationId().toString()));
         }
     }
 }

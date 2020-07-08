@@ -17,7 +17,7 @@ package com.hotels.styx.client;
 
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.OriginStatsFactory.CachingOriginStatsFactory;
-import com.hotels.styx.client.applications.OriginStats;
+import com.hotels.styx.client.applications.RequestStats;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 
@@ -32,15 +32,15 @@ public class OriginStatsFactoryTest {
 
     @Test
     public void returnTheSameStatsForSameOrigin() {
-        OriginStats originStatsOne = originStatsFactory.originStats(newOrigin(9090));
-        OriginStats originStatsTwo = originStatsFactory.originStats(newOrigin(9090));
+        RequestStats originStatsOne = originStatsFactory.originStats(newOrigin(9090));
+        RequestStats originStatsTwo = originStatsFactory.originStats(newOrigin(9090));
         assertThat(originStatsOne, sameInstance(originStatsTwo));
     }
 
     @Test
     public void createsANewOriginStatsForNewOrigins() {
-        OriginStats originStatsOne = originStatsFactory.originStats(newOrigin(9090));
-        OriginStats originStatsTwo = originStatsFactory.originStats(newOrigin(9091));
+        RequestStats originStatsOne = originStatsFactory.originStats(newOrigin(9090));
+        RequestStats originStatsTwo = originStatsFactory.originStats(newOrigin(9091));
         assertThat(originStatsOne, not(sameInstance(originStatsTwo)));
     }
 

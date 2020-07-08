@@ -21,6 +21,7 @@ import com.hotels.styx.client.Connection;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import org.reactivestreams.Publisher;
 
@@ -28,27 +29,31 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import static com.hotels.styx.api.Metrics.name;
 import static com.hotels.styx.api.Metrics.APPID_TAG;
 import static com.hotels.styx.api.Metrics.ORIGINID_TAG;
+import static com.hotels.styx.api.Metrics.name;
 
-class StatsReportingConnectionPool implements ConnectionPool {
+public class StatsReportingConnectionPool implements ConnectionPool {
     private static final String PREFIX = "connectionspool";
 
     private final ConnectionPool connectionPool;
     private final MeterRegistry meterRegistry;
+
     private final Set<Meter> meters = new HashSet<>();
-    private final Tags tags;
 
     public StatsReportingConnectionPool(ConnectionPool connectionPool, MeterRegistry meterRegistry) {
-        this.connectionPool = connectionPool;
-        this.meterRegistry = meterRegistry;
-        this.tags = Tags.of(APPID_TAG, connectionPool.getOrigin().applicationId().toString(),
-                ORIGINID_TAG, connectionPool.getOrigin().id().toString());
-        registerMetrics();
+        this(connectionPool, meterRegistry, Tags.
+                of(APPID_TAG, connectionPool.getOrigin().applicationId().toString()).
+                and(ORIGINID_TAG, connectionPool.getOrigin().id().toString()));
     }
 
-    @Override
+    public StatsReportingConnectionPool(ConnectionPool connectionPool, MeterRegistry meterRegistry, Iterable<Tag> tags) {
+        this.connectionPool = connectionPool;
+        this.meterRegistry = meterRegistry;
+        registerMetrics(tags);
+    }
+
+        @Override
     public Origin getOrigin() {
         return connectionPool.getOrigin();
     }
@@ -89,19 +94,19 @@ class StatsReportingConnectionPool implements ConnectionPool {
         removeMetrics();
     }
 
-    private void registerMetrics() {
+    private void registerMetrics(Iterable<Tag> tags) {
         ConnectionPool.Stats stats = connectionPool.stats();
-        registerGauge("busy-connections", stats::busyConnectionCount);
-        registerGauge("pending-connections", stats::pendingConnectionCount);
-        registerGauge("available-connections", stats::availableConnectionCount);
-        registerGauge("connection-attempts", stats::connectionAttempts);
-        registerGauge("connection-failures", stats::connectionFailures);
-        registerGauge("connections-closed", stats::closedConnections);
-        registerGauge("connections-terminated", stats::terminatedConnections);
-        registerGauge("connections-in-establishment", stats::connectionsInEstablishment);
+        registerGauge("busy-connections", tags, stats::busyConnectionCount);
+        registerGauge("pending-connections", tags, stats::pendingConnectionCount);
+        registerGauge("available-connections", tags, stats::availableConnectionCount);
+        registerGauge("connection-attempts", tags, stats::connectionAttempts);
+        registerGauge("connection-failures", tags, stats::connectionFailures);
+        registerGauge("connections-closed", tags, stats::closedConnections);
+        registerGauge("connections-terminated", tags, stats::terminatedConnections);
+        registerGauge("connections-in-establishment", tags, stats::connectionsInEstablishment);
     }
 
-    private void registerGauge(String name, Supplier<Number> supplier) {
+    private void registerGauge(String name, Iterable<Tag> tags, Supplier<Number> supplier) {
         meters.add(Gauge.builder(name(PREFIX, name), supplier).tags(tags).register(meterRegistry));
     }
 

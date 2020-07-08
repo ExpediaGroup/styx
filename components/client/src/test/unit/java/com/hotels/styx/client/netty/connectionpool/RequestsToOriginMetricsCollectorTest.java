@@ -17,7 +17,7 @@ package com.hotels.styx.client.netty.connectionpool;
 
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.client.applications.metrics.OriginMetrics;
+import com.hotels.styx.client.applications.metrics.RequestMetrics;
 import io.micrometer.core.instrument.Timer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
@@ -53,13 +53,12 @@ import static org.mockito.Mockito.atMostOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 public class RequestsToOriginMetricsCollectorTest {
     private final Origin origin;
 
-    private final OriginMetrics originMetrics = mock(OriginMetrics.class);
+    private final RequestMetrics requestMetrics = mock(RequestMetrics.class);
     private final ChannelHandlerContext ctx;
 
     private static final String STOCK_BODY =
@@ -83,7 +82,7 @@ public class RequestsToOriginMetricsCollectorTest {
     private EmbeddedChannel buildEmbeddedChannel() {
         return new EmbeddedChannel(
                 new HttpClientCodec(),
-                new RequestsToOriginMetricsCollector(originMetrics),
+                new RequestsToOriginMetricsCollector(requestMetrics),
                 new NettyToStyxResponsePropagator(mock(FluxSink.class), this.origin)
         );
     }
@@ -135,7 +134,7 @@ public class RequestsToOriginMetricsCollectorTest {
         //
         // Ensure that counters are updated:
         //
-        verify(originMetrics).requestSuccess();
+        verify(requestMetrics).requestSuccess();
     }
 
     @Test
@@ -157,14 +156,14 @@ public class RequestsToOriginMetricsCollectorTest {
         // the first chunk is received:
         //
         channel.writeInbound(response.slice(0, 100));
-        verify(originMetrics).requestSuccess();
+        verify(requestMetrics).requestSuccess();
 
         //
         // Send the next chunk. Demonstrate that counters remain unchanged. This is to ensure
         // they don't get incremented twice:
         //
         channel.writeInbound(response.slice(100, len - 100));
-        verify(originMetrics, atMostOnce()).requestSuccess();
+        verify(requestMetrics, atMostOnce()).requestSuccess();
     }
 
     @Test
@@ -188,9 +187,9 @@ public class RequestsToOriginMetricsCollectorTest {
         // Ensure that counters are not updated. The error is on the client side rather than
         // in applications/origins. Therefore we don't count this as an error.
         //
-        verify(originMetrics, never()).requestError();
+        verify(requestMetrics, never()).requestError();
 
-        verify(originMetrics).requestSuccess();
+        verify(requestMetrics).requestSuccess();
     }
 
     @Test
@@ -213,22 +212,22 @@ public class RequestsToOriginMetricsCollectorTest {
         // the first chunk is received:
         //
         channel.writeInbound(response.slice(0, 100));
-        verify(originMetrics).requestError();
+        verify(requestMetrics).requestError();
 
         //
         // Send the next chunk. Demonstrate that counters remain unchanged. This is to ensure
         // they don't get incremented twice:
         //
         channel.writeInbound(response.slice(100, len - 100));
-        verify(originMetrics, atMostOnce()).requestError();
+        verify(requestMetrics, atMostOnce()).requestError();
     }
 
     @Test
     public void latencyHistogramUpdatedOnlyByLastHttpContent() {
         Timer.Sample sample = mock(Timer.Sample.class);
-        when(originMetrics.startTimer()).thenReturn(sample);
+        when(requestMetrics.startTimer()).thenReturn(sample);
         Timer timer = mock(Timer.class);
-        when(originMetrics.requestLatencyTimer()).thenReturn(timer);
+        when(requestMetrics.requestLatencyTimer()).thenReturn(timer);
 
         EmbeddedChannel channel = buildEmbeddedChannel();
 
@@ -238,7 +237,7 @@ public class RequestsToOriginMetricsCollectorTest {
         HttpRequest request = httpRequest(GET, "http://www.hotels.com/foo/bar/request");
         channel.writeOutbound(request);
         assertThat(grabSentBytes(channel).isPresent(), is(true));
-        verify(originMetrics, never()).requestLatencyTimer();
+        verify(requestMetrics, never()).requestLatencyTimer();
 
         ByteBuf response = httpResponseAsBuf(OK, STOCK_BODY).retain();
         int len = response.writerIndex() - response.readerIndex();
@@ -250,7 +249,7 @@ public class RequestsToOriginMetricsCollectorTest {
         // This is because the HTTP response is not yet fully received.
         //
         channel.writeInbound(response.slice(0, 100));
-        verify(originMetrics, never()).requestLatencyTimer();
+        verify(requestMetrics, never()).requestLatencyTimer();
 
         //
         // Send the next chunk. HTTP response is now fully received. Demonstrate
@@ -263,9 +262,9 @@ public class RequestsToOriginMetricsCollectorTest {
     @Test
     public void timeToFirstByteHistogramUpdatedWhenFirstContentChunkReceived() {
         Timer.Sample sample = mock(Timer.Sample.class);
-        when(originMetrics.startTimer()).thenReturn(sample);
+        when(requestMetrics.startTimer()).thenReturn(sample);
         Timer timer = mock(Timer.class);
-        when(originMetrics.timeToFirstByteTimer()).thenReturn(timer);
+        when(requestMetrics.timeToFirstByteTimer()).thenReturn(timer);
 
 //        Timer timer = this.metricRegistry.timer(name(ORIGIN_METRIC_PREFIX, "requests.time-to-first-byte"));
 //        assertThat(timer.getCount(), is(0L));
@@ -278,7 +277,7 @@ public class RequestsToOriginMetricsCollectorTest {
         HttpRequest request = httpRequest(GET, "http://www.hotels.com/foo/bar/request");
         channel.writeOutbound(request);
         assertThat(grabSentBytes(channel).isPresent(), is(true));
-        verify(originMetrics, never()).timeToFirstByteTimer();
+        verify(requestMetrics, never()).timeToFirstByteTimer();
 
         ByteBuf response = httpResponseAsBuf(OK, STOCK_BODY).retain();
         int len = response.writerIndex() - response.readerIndex();
@@ -306,8 +305,8 @@ public class RequestsToOriginMetricsCollectorTest {
         ByteBuf response = httpResponseAsBuf(CONTINUE, STOCK_BODY).retain();
         channel.writeInbound(response);
 
-        verify(originMetrics).responseWithStatusCode(100);
-        verify(originMetrics).requestSuccess();
+        verify(requestMetrics).responseWithStatusCode(100);
+        verify(requestMetrics).requestSuccess();
     }
 
     @Test
@@ -317,8 +316,8 @@ public class RequestsToOriginMetricsCollectorTest {
         ByteBuf response = httpResponseAsBuf(OK, STOCK_BODY).retain();
         channel.writeInbound(response);
 
-        verify(originMetrics).responseWithStatusCode(200);
-        verify(originMetrics).requestSuccess();
+        verify(requestMetrics).responseWithStatusCode(200);
+        verify(requestMetrics).requestSuccess();
     }
 
     @Test
@@ -328,8 +327,8 @@ public class RequestsToOriginMetricsCollectorTest {
         ByteBuf response = httpResponseAsBuf(MOVED_PERMANENTLY, STOCK_BODY).retain();
         channel.writeInbound(response);
 
-        verify(originMetrics).responseWithStatusCode(301);
-        verify(originMetrics).requestSuccess();
+        verify(requestMetrics).responseWithStatusCode(301);
+        verify(requestMetrics).requestSuccess();
     }
 
     @Test
@@ -339,8 +338,8 @@ public class RequestsToOriginMetricsCollectorTest {
         ByteBuf response = httpResponseAsBuf(BAD_REQUEST, STOCK_BODY).retain();
         channel.writeInbound(response);
 
-        verify(originMetrics).responseWithStatusCode(400);
-        verify(originMetrics).requestSuccess();
+        verify(requestMetrics).responseWithStatusCode(400);
+        verify(requestMetrics).requestSuccess();
     }
 
     @Test
@@ -350,93 +349,93 @@ public class RequestsToOriginMetricsCollectorTest {
         ByteBuf response = httpResponseAsBuf(NOT_IMPLEMENTED, STOCK_BODY).retain();
         channel.writeInbound(response);
 
-        verify(originMetrics).responseWithStatusCode(501);
-        verify(originMetrics, never()).requestSuccess();
+        verify(requestMetrics).responseWithStatusCode(501);
+        verify(requestMetrics, never()).requestSuccess();
     }
 
     @Test
     public void updateSuccessCountersWhen200OkReceived() throws Exception {
-        RequestsToOriginMetricsCollector handler = new RequestsToOriginMetricsCollector(this.originMetrics);
+        RequestsToOriginMetricsCollector handler = new RequestsToOriginMetricsCollector(this.requestMetrics);
         HttpResponse msg = mockHttpResponseWithCode(200);
         handler.channelRead(this.ctx, msg);
 
-        verify(originMetrics).requestSuccess();
+        verify(requestMetrics).requestSuccess();
     }
 
     @Test
     public void updateSuccessCountersWhen201CreatedReceived() throws Exception {
-        RequestsToOriginMetricsCollector handler = new RequestsToOriginMetricsCollector(this.originMetrics);
+        RequestsToOriginMetricsCollector handler = new RequestsToOriginMetricsCollector(this.requestMetrics);
         HttpResponse msg = mockHttpResponseWithCode(201);
         handler.channelRead(this.ctx, msg);
 
-        verify(originMetrics).requestSuccess();
+        verify(requestMetrics).requestSuccess();
     }
 
     @Test
     public void updateSuccessCountersWhen206PartialContentReceived() throws Exception {
-        RequestsToOriginMetricsCollector handler = new RequestsToOriginMetricsCollector(this.originMetrics);
+        RequestsToOriginMetricsCollector handler = new RequestsToOriginMetricsCollector(this.requestMetrics);
         HttpResponse msg = mockHttpResponseWithCode(206);
         handler.channelRead(this.ctx, msg);
 
-        verify(originMetrics).requestSuccess();
+        verify(requestMetrics).requestSuccess();
     }
 
     @Test
     public void updateSuccessCountersWhen300MultipleChoicesReceived() throws Exception {
-        RequestsToOriginMetricsCollector handler = new RequestsToOriginMetricsCollector(this.originMetrics);
+        RequestsToOriginMetricsCollector handler = new RequestsToOriginMetricsCollector(this.requestMetrics);
         HttpResponse msg = mockHttpResponseWithCode(300);
         handler.channelRead(this.ctx, msg);
 
-        verify(originMetrics).requestSuccess();
+        verify(requestMetrics).requestSuccess();
     }
 
     @Test
     public void updateSuccessCountersWhen308MultipleChoicesReceived() throws Exception {
-        RequestsToOriginMetricsCollector handler = new RequestsToOriginMetricsCollector(this.originMetrics);
+        RequestsToOriginMetricsCollector handler = new RequestsToOriginMetricsCollector(this.requestMetrics);
         HttpResponse msg = mockHttpResponseWithCode(308);
         handler.channelRead(this.ctx, msg);
 
-        verify(originMetrics).requestSuccess();
+        verify(requestMetrics).requestSuccess();
     }
 
     @Test
     public void updateErrorCountersWhen500InternalServerErrorReceived() throws Exception {
-        RequestsToOriginMetricsCollector handler = new RequestsToOriginMetricsCollector(this.originMetrics);
+        RequestsToOriginMetricsCollector handler = new RequestsToOriginMetricsCollector(this.requestMetrics);
         HttpResponse msg = mockHttpResponseWithCode(500);
         handler.channelRead(this.ctx, msg);
 
-        verify(originMetrics).requestError();
-        verify(originMetrics, never()).requestSuccess();
+        verify(requestMetrics).requestError();
+        verify(requestMetrics, never()).requestSuccess();
     }
 
     @Test
     public void updateErrorCountersWhen503ServiceUnavailableReceived() throws Exception {
-        RequestsToOriginMetricsCollector handler = new RequestsToOriginMetricsCollector(this.originMetrics);
+        RequestsToOriginMetricsCollector handler = new RequestsToOriginMetricsCollector(this.requestMetrics);
         HttpResponse msg = mockHttpResponseWithCode(503);
         handler.channelRead(this.ctx, msg);
 
-        verify(originMetrics).requestError();
-        verify(originMetrics, never()).requestSuccess();
+        verify(requestMetrics).requestError();
+        verify(requestMetrics, never()).requestSuccess();
     }
 
     @Test
     public void httpContentObjectDoesNotUpdateCounters() throws Exception {
-        RequestsToOriginMetricsCollector handler = new RequestsToOriginMetricsCollector(this.originMetrics);
+        RequestsToOriginMetricsCollector handler = new RequestsToOriginMetricsCollector(this.requestMetrics);
         HttpContent msg = mock(HttpContent.class);
         handler.channelRead(this.ctx, msg);
 
-        verify(originMetrics, never()).requestError();
-        verify(originMetrics, never()).requestSuccess();
+        verify(requestMetrics, never()).requestError();
+        verify(requestMetrics, never()).requestSuccess();
     }
 
     @Test
     public void lastHttpContentObjectDoesNotUpdateCounters() throws Exception {
-        RequestsToOriginMetricsCollector handler = new RequestsToOriginMetricsCollector(this.originMetrics);
+        RequestsToOriginMetricsCollector handler = new RequestsToOriginMetricsCollector(this.requestMetrics);
         LastHttpContent msg = mock(LastHttpContent.class);
         handler.channelRead(this.ctx, msg);
 
-        verify(originMetrics, never()).requestError();
-        verify(originMetrics, never()).requestSuccess();
+        verify(requestMetrics, never()).requestError();
+        verify(requestMetrics, never()).requestSuccess();
     }
 
     private static HttpResponse mockHttpResponseWithCode(int code) {

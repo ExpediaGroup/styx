@@ -61,7 +61,7 @@ import static com.hotels.styx.api.RequestCookie.requestCookie;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
 import static com.hotels.styx.api.extension.service.StickySessionConfig.stickySessionDisabled;
-import static com.hotels.styx.client.applications.metrics.OriginMetrics.CANCELLATION_COUNTER_NAME;
+import static com.hotels.styx.client.applications.metrics.RequestMetrics.CANCELLATION_COUNTER_NAME;
 import static com.hotels.styx.support.Support.requestContext;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;

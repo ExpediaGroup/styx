@@ -19,9 +19,9 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.OK
-import com.hotels.styx.client.applications.metrics.OriginMetrics.APP_TAG
-import com.hotels.styx.client.applications.metrics.OriginMetrics.ORIGIN_TAG
-import com.hotels.styx.client.applications.metrics.OriginMetrics.TTFB_TIMER_NAME
+import com.hotels.styx.client.applications.metrics.RequestMetrics.APP_TAG
+import com.hotels.styx.client.applications.metrics.RequestMetrics.ORIGIN_TAG
+import com.hotels.styx.client.applications.metrics.RequestMetrics.TTFB_TIMER_NAME
 import com.hotels.styx.server.HttpConnectorConfig
 import com.hotels.styx.servers.MockOriginServer
 import com.hotels.styx.support.ResourcePaths
@@ -38,6 +38,7 @@ import io.kotlintest.shouldNotBe
 import io.kotlintest.specs.FunSpec
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.lang.String.valueOf
 import java.nio.charset.StandardCharsets.UTF_8
 
 class MetricsSpec : FunSpec() {
@@ -97,16 +98,16 @@ class MetricsSpec : FunSpec() {
 
                 eventually(1.seconds, AssertionError::class.java) {
                     styxServer.meterRegistry().get("connectionspool.available-connections")
-                            .tag("appid", "origins")
-                            .tag("originid", "appA.appA-01")
+                            .tag("host", "localhost")
+                            .tag("port", valueOf(mockServerA01.port()))
                             .gauge() shouldNotBe null
                 }
             }
 
             test("time-to-first-byte metrics are reported") {
                 styxServer.meterRegistry().get(TTFB_TIMER_NAME)
-                        .tag(APP_TAG, "origins")
-                        .tag(ORIGIN_TAG, "appA.appA-01")
+                        .tag("host", "localhost")
+                        .tag("port", valueOf(mockServerA01.port()))
                         .timer().count() as Long shouldBeGreaterThan 0L
             }
         }
