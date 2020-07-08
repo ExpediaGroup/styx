@@ -53,7 +53,7 @@ public class StatsReportingConnectionPool implements ConnectionPool {
         registerMetrics(tags);
     }
 
-        @Override
+    @Override
     public Origin getOrigin() {
         return connectionPool.getOrigin();
     }
