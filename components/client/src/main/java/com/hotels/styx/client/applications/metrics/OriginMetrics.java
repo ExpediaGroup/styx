@@ -22,10 +22,12 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 
+import java.time.Duration;
+
 import static java.lang.String.valueOf;
 import static java.time.Duration.of;
-import static java.time.temporal.ChronoUnit.MICROS;
-import static java.time.temporal.ChronoUnit.SECONDS;
+import static java.time.temporal.ChronoUnit.MILLIS;
+import static java.time.temporal.ChronoUnit.MINUTES;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -50,6 +52,9 @@ public class OriginMetrics implements OriginStats {
     public static final String CANCELLATION_COUNTER_NAME = "request.cancellation";
     public static final String LATENCY_TIMER_NAME = "request.latency";
     public static final String TTFB_TIMER_NAME = "request.timetofirstbyte";
+
+    private static final Duration MIN_HISTOGRAM_BUCKET = of(10, MILLIS);
+    private static final Duration MAX_HISTOGRAM_BUCKET = of(5, MINUTES);
 
     private final MeterRegistry registry;
 
@@ -81,14 +86,14 @@ public class OriginMetrics implements OriginStats {
         requestLatency = Timer.builder(LATENCY_TIMER_NAME)
                 .tags(tags)
                 .publishPercentileHistogram()
-                .minimumExpectedValue(of(100, MICROS))
-                .maximumExpectedValue(of(1, SECONDS))
+                .minimumExpectedValue(MIN_HISTOGRAM_BUCKET)
+                .maximumExpectedValue(MAX_HISTOGRAM_BUCKET)
                 .register(registry);
         timeToFirstByte = Timer.builder(TTFB_TIMER_NAME)
                 .tags(tags)
                 .publishPercentileHistogram()
-                .minimumExpectedValue(of(100, MICROS))
-                .maximumExpectedValue(of(1, SECONDS))
+                .minimumExpectedValue(MIN_HISTOGRAM_BUCKET)
+                .maximumExpectedValue(MAX_HISTOGRAM_BUCKET)
                 .register(registry);
     }
 
