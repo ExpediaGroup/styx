@@ -15,11 +15,13 @@
  */
 package com.hotels.styx.server;
 
+import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
+import io.micrometer.core.instrument.simple.SimpleConfig;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,6 +40,7 @@ import static com.hotels.styx.server.RequestStatsCollector.STATUS_CLASS_TAG;
 import static com.hotels.styx.server.RequestStatsCollector.STATUS_CLASS_UNRECOGNISED;
 import static com.hotels.styx.server.RequestStatsCollector.STATUS_TAG;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.is;
@@ -54,9 +57,9 @@ public class RequestStatsCollectorTest {
 
     @BeforeEach
     public void setUp() {
-        metrics = new SimpleMeterRegistry();
+        metrics = new SimpleMeterRegistry(SimpleConfig.DEFAULT, clock);
         clock.setNanoTime(0);
-        sink = new RequestStatsCollector(metrics, PREFIX, clock);
+        sink = new RequestStatsCollector(metrics, PREFIX);
     }
 
     @Test
@@ -245,13 +248,8 @@ public class RequestStatsCollectorTest {
         assertThat(counterValue(RESPONSE_SENT, Tags.empty()), is(1.0));
     }
 
-    private static final class TestClock implements RequestStatsCollector.NanoClock {
+    private static final class TestClock implements Clock {
         private long nanoTime;
-
-        @Override
-        public long nanoTime() {
-            return nanoTime;
-        }
 
         public void setNanoTime(long nanoTime) {
             this.nanoTime = nanoTime;
@@ -259,6 +257,16 @@ public class RequestStatsCollectorTest {
 
         public void setNanoTime(long time, TimeUnit timeUnit) {
             this.nanoTime = timeUnit.toNanos(time);
+        }
+
+        @Override
+        public long wallTime() {
+            return MILLISECONDS.convert(nanoTime, NANOSECONDS);
+        }
+
+        @Override
+        public long monotonicTime() {
+            return nanoTime;
         }
     }
 
