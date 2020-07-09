@@ -26,10 +26,8 @@ import java.time.Duration;
 
 import static java.lang.String.valueOf;
 import static java.time.Duration.of;
-import static java.time.temporal.ChronoUnit.MICROS;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static java.time.temporal.ChronoUnit.MINUTES;
-import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.Objects.requireNonNull;
 
 /**
