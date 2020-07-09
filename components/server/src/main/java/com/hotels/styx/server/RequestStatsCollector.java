@@ -108,21 +108,15 @@ public class RequestStatsCollector implements RequestProgressListener {
     }
 
     private void updateResponseStatusCounter(int code) {
-        String statusCodeClass = httpStatusCodeClass(code);
-        Tags statusTags = Tags.of(STATUS_CLASS_TAG, statusCodeClass);
-
-        statusTags = statusTags.and(STATUS_TAG, "5xx".equals(statusCodeClass)
-                ? valueOf(code)
-                : "");
-
-        registry.counter(name(prefix, RESPONSE_STATUS), statusTags).increment();
-    }
-
-    private static String httpStatusCodeClass(int code) {
+        Tags statusTags;
         if (code < 100 || code >= 600) {
-            return STATUS_CLASS_UNRECOGNISED;
+            statusTags = Tags.of(STATUS_CLASS_TAG, code / 100 + "xx")
+                    .and(STATUS_TAG, valueOf(code));
+        } else {
+            statusTags = Tags.of(STATUS_CLASS_TAG, STATUS_CLASS_UNRECOGNISED)
+                    .and(STATUS_TAG, STATUS_CLASS_UNRECOGNISED);
         }
 
-        return code / 100 + "xx";
+        registry.counter(name(prefix, RESPONSE_STATUS), statusTags).increment();
     }
 }
