@@ -23,7 +23,6 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.api.extension.service.HealthCheckConfig;
@@ -44,6 +43,7 @@ import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitorFactory;
 import com.hotels.styx.client.healthcheck.UrlRequestHealthCheck;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.server.HttpRouter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 
 import java.util.Map;
@@ -157,7 +157,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                                 backendService.healthCheckConfig(),
                                 () -> originHealthCheckFunction(
                                         backendService.id(),
-                                        environment.metricRegistry(),
+                                        environment.meterRegistry(),
                                         backendService.healthCheckConfig()),
                                 healthCheckClient(backendService));
     }
@@ -209,14 +209,14 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
 
     private static OriginHealthCheckFunction originHealthCheckFunction(
             Id appId,
-            MetricRegistry metricRegistry,
+            MeterRegistry meterRegistry,
             HealthCheckConfig healthCheckConfig) {
 
         String healthCheckUri = healthCheckConfig
                 .uri()
                 .orElseThrow(() -> new IllegalArgumentException("Health check URI missing for " + appId));
 
-        return new UrlRequestHealthCheck(healthCheckUri, metricRegistry);
+        return new UrlRequestHealthCheck(healthCheckUri, meterRegistry);
     }
 
     private static class ProxyToClientPipeline implements HttpHandler {

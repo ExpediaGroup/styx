@@ -17,11 +17,10 @@ package com.hotels.styx.client.healthcheck;
 
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,13 +39,13 @@ import static org.hamcrest.Matchers.is;
 public class UrlRequestHealthCheckTest {
     private final Origin someOrigin = newOriginBuilder("localhost", 12345).id("foo").build();
 
-    private MetricRegistry metricRegistry;
+    private MeterRegistry meterRegistry;
     private OriginState originState;
     private String requestedUrl;
 
     @BeforeEach
     public void setUp() {
-        metricRegistry = new CodaHaleMetricRegistry(new SimpleMeterRegistry());
+        meterRegistry = new SimpleMeterRegistry();
         originState = null;
         requestedUrl = null;
     }
@@ -58,7 +57,7 @@ public class UrlRequestHealthCheckTest {
             return respondWith(NOT_FOUND);
         };
 
-        new UrlRequestHealthCheck("/version-foo.txt", metricRegistry)
+        new UrlRequestHealthCheck("/version-foo.txt", meterRegistry)
                 .check(client, someOrigin, state -> {
                 });
 
@@ -69,37 +68,37 @@ public class UrlRequestHealthCheckTest {
     public void declaresOriginHealthyOnOkResponseCode() {
         HttpClient client = request -> respondWith(OK);
 
-        new UrlRequestHealthCheck("/version.txt", metricRegistry)
+        new UrlRequestHealthCheck("/version.txt", meterRegistry)
                 .check(client, someOrigin, state -> this.originState = state);
 
         assertThat(originState, is(HEALTHY));
-        assertThat(metricRegistry.getMeters().size(), is(0));
+        assertThat(meterRegistry.getMeters().size(), is(0));
     }
 
     @Test
     public void declaresOriginUnhealthyOnNon200Ok() {
         HttpClient client = request -> respondWith(NOT_FOUND);
 
-        new UrlRequestHealthCheck("/version.txt", metricRegistry)
+        new UrlRequestHealthCheck("/version.txt", meterRegistry)
                 .check(client, someOrigin, state -> this.originState = state);
 
         assertThat(originState, is(UNHEALTHY));
-        assertThat(metricRegistry.meter("origins.healthcheck.failure.generic-app").getCount(), is(1L));
-        assertThat(metricRegistry.meter("origins.generic-app.healthcheck.failure").getCount(), is(1L));
-        assertThat(metricRegistry.getMeters().size(), is(2));
+        assertThat(meterRegistry.find("origins.healthcheck.failures")
+                .tags("origin", someOrigin.id().toString(), "application", someOrigin.applicationId().toString()).counter().count(), is(1.0));
+        assertThat(meterRegistry.getMeters().size(), is(1));
     }
 
     @Test
     public void declaredOriginUnhealthyOnTransportException() {
         HttpClient client = request -> respondWith(new RuntimeException("health check failure, as expected"));
 
-        new UrlRequestHealthCheck("/version.txt", metricRegistry)
+        new UrlRequestHealthCheck("/version.txt", meterRegistry)
                 .check(client, someOrigin, state -> this.originState = state);
 
         assertThat(originState, is(UNHEALTHY));
-        assertThat(metricRegistry.meter("origins.healthcheck.failure.generic-app").getCount(), is(1L));
-        assertThat(metricRegistry.meter("origins.generic-app.healthcheck.failure").getCount(), is(1L));
-        assertThat(metricRegistry.getMeters().size(), is(2));
+        assertThat(meterRegistry.find("origins.healthcheck.failures")
+                .tags("origin", someOrigin.id().toString(), "application", someOrigin.applicationId().toString()).counter().count(), is(1.0));
+        assertThat(meterRegistry.getMeters().size(), is(1));
     }
 
     private static CompletableFuture<HttpResponse> respondWith(Throwable error) {
