@@ -109,7 +109,7 @@ public class RequestStatsCollector implements RequestProgressListener {
 
     private void updateResponseStatusCounter(int code) {
         Tags statusTags;
-        if (code < 100 || code >= 600) {
+        if (code >= 100 && code < 600) {
             statusTags = Tags.of(STATUS_CLASS_TAG, code / 100 + "xx")
                     .and(STATUS_TAG, valueOf(code));
         } else {
