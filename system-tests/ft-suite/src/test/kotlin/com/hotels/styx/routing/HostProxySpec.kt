@@ -201,12 +201,12 @@ class HostProxySpec : FeatureSpec() {
                         }
 
                 withClue("Origin connections.total-connections") {
-                    testServer.meterRegistry().find("proxy.connection.totalConnections")
+                    testServer.meterRegistry().get("proxy.connection.totalConnections")
                             .gauge().value().toInt() shouldBeInRange 1..2
                 }
 
                 withClue("Styx Server routing.objects.hostProxy.connectionspool.connectionAttempts") {
-                    styxServer.meterRegistry().find("connectionpool.connectionAttempts")
+                    styxServer.meterRegistry().get("connectionpool.connectionAttempts")
                             .tags("appId", "routing.objects", "originId", "hostProxy")
                             .gauge().value().toInt() shouldBeInRange 1..2
                 }
@@ -242,10 +242,10 @@ class HostProxySpec : FeatureSpec() {
                         .status() shouldBe OK
 
                 eventually(1.seconds, AssertionError::class.java) {
-                    styxServer.meterRegistry().find("connectionpool.availableConnections")
+                    styxServer.meterRegistry().get("connectionpool.availableConnections")
                             .tags("appId", "routing.objects", "originId", "hostProxy")
                             .gauge().value().toInt() shouldBe 1
-                    styxServer.meterRegistry().find("connectionpool.connectionsClosed")
+                    styxServer.meterRegistry().get("connectionpool.connectionsClosed")
                             .tags("appId", "routing.objects", "originId", "hostProxy")
                             .gauge().value().toInt() shouldBe 0
                 }
@@ -260,10 +260,10 @@ class HostProxySpec : FeatureSpec() {
                         .status() shouldBe OK
 
                 eventually(1.seconds, AssertionError::class.java) {
-                    styxServer.meterRegistry().find("connectionpool.availableConnections")
+                    styxServer.meterRegistry().get("connectionpool.availableConnections")
                             .tags("appId", "routing.objects", "originId", "hostProxy")
                             .gauge().value().toInt() shouldBe 1
-                    styxServer.meterRegistry().find("connectionpool.connectionsTerminated")
+                    styxServer.meterRegistry().get("connectionpool.connectionsTerminated")
                             .tags("appId", "routing.objects", "originId", "hostProxy")
                             .gauge().value().toInt() shouldBe 1
                 }
@@ -317,11 +317,10 @@ class HostProxySpec : FeatureSpec() {
             scenario("... and unregisters connection pool metrics") {
                 styxServer().removeRoutingObject("hostProxy")
 
-                eventually(2.seconds, AssertionError::class.java) {
-                    styxServer().metrics().let {
-                        it["routing.objects.hostproxy.connectionpool.connectionAttempts"].shouldBeNull()
-                    }
-                }
+                styxServer.meterRegistry().find("connectionpool.connectionAttempts")
+                        .tag("appId", "routing.objects")
+                        .tag("originId", "hostProxy")
+                        .gauge().shouldBeNull()
             }
 
             // Continues from previous test
