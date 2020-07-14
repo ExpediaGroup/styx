@@ -96,9 +96,9 @@ class MetricsSpec : FunSpec() {
                 }
 
                 eventually(1.seconds, AssertionError::class.java) {
-                    styxServer.meterRegistry().get("connectionspool.available-connections")
-                            .tag("appid", "origins")
-                            .tag("originid", "appA.appA-01")
+                    styxServer.meterRegistry().get("connectionpool.availableConnections")
+                            .tag(APP_TAG, "origins")
+                            .tag(ORIGIN_TAG, "appA.appA-01")
                             .gauge() shouldNotBe null
                 }
             }
