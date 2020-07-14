@@ -46,7 +46,7 @@ public class RequestStatsCollector implements RequestProgressListener {
 
     public static final String STATUS_CLASS_UNRECOGNISED = "unrecognised";
 
-    private static final Duration MIN_HISTOGRAM_BUCKET = of(10, MILLIS);
+    private static final Duration MIN_HISTOGRAM_BUCKET = of(1, MILLIS);
     private static final Duration MAX_HISTOGRAM_BUCKET = of(5, MINUTES);
 
     private final MeterRegistry registry;
