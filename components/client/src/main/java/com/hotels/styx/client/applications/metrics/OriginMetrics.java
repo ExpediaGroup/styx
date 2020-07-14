@@ -53,7 +53,7 @@ public class OriginMetrics implements OriginStats {
     public static final String LATENCY_TIMER_NAME = "request.latency";
     public static final String TTFB_TIMER_NAME = "request.timetofirstbyte";
 
-    private static final Duration MIN_HISTOGRAM_BUCKET = of(10, MILLIS);
+    private static final Duration MIN_HISTOGRAM_BUCKET = of(1, MILLIS);
     private static final Duration MAX_HISTOGRAM_BUCKET = of(5, MINUTES);
 
     private final MeterRegistry registry;
