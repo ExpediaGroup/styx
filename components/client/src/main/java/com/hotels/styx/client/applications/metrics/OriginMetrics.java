@@ -41,7 +41,7 @@ import static java.util.Objects.requireNonNull;
  * connections scheduled on different event loops.
  */
 public class OriginMetrics implements OriginStats {
-    public static final String ORIGIN_TAG = "origin";
+    public static final String ORIGIN_TAG = "originId";
     public static final String APP_TAG = "appId";
     public static final String STATUS_TAG = "statusCode";
     public static final String STATUS_CLASS_TAG = "statusClass";
@@ -51,7 +51,7 @@ public class OriginMetrics implements OriginStats {
     public static final String STATUS_COUNTER_NAME = "response.status";
     public static final String CANCELLATION_COUNTER_NAME = "request.cancellation";
     public static final String LATENCY_TIMER_NAME = "request.latency";
-    public static final String TTFB_TIMER_NAME = "request.timetofirstbyte";
+    public static final String TTFB_TIMER_NAME = "request.timeToFirstByte";
 
     private static final Duration MIN_HISTOGRAM_BUCKET = of(10, MILLIS);
     private static final Duration MAX_HISTOGRAM_BUCKET = of(5, MINUTES);

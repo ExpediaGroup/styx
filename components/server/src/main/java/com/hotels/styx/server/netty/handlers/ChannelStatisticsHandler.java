@@ -42,10 +42,10 @@ public class ChannelStatisticsHandler extends ChannelDuplexHandler {
 
     public static final String EVENTLOOP_TAG = "eventloop";
 
-    public static final String BYTES_RECEIVED = "connection.bytes-received";
-    public static final String BYTES_SENT = "connection.bytes-sent";
-    public static final String TOTAL_CONNECTIONS = "connection.total-connections";
-    public static final String REGISTERED_CHANNEL_COUNT = "connection.registered-channel-count";
+    public static final String BYTES_RECEIVED = "connection.bytesReceived";
+    public static final String BYTES_SENT = "connection.bytesSent";
+    public static final String TOTAL_CONNECTIONS = "connection.totalConnections";
+    public static final String REGISTERED_CHANNEL_COUNT = "connection.registeredChannelCount";
     public static final String CHANNELS_SUMMARY = "connection.channels";
 
 

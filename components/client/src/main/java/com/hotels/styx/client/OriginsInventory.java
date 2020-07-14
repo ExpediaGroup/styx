@@ -419,7 +419,7 @@ public final class OriginsInventory
 
     private final class MonitoredOrigin {
 
-        private static final String GAUGE_NAME = "status"; // TODO: AppId and OriginId will be tags - is "status" enough of a name?
+        private static final String GAUGE_NAME = "origin.status";
 
         private final Origin origin;
         private final ConnectionPool connectionPool;

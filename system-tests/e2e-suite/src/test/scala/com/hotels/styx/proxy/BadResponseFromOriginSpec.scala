@@ -22,7 +22,7 @@ import com.hotels.styx.api.HttpHeaderNames.CONNECTION
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY
 import com.hotels.styx.client.StyxHeaderConfig.STYX_INFO_DEFAULT
-import com.hotels.styx.proxy.HttpErrorStatusMetrics.{STATUS_TAG, RESPONSE_STATUS}
+import com.hotels.styx.proxy.HttpErrorStatusMetrics.{STATUS_CODE_TAG, RESPONSE}
 import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins}
 import com.hotels.styx.support.matchers.IsOptional.matches
 import com.hotels.styx.support.matchers.RegExMatcher.matchesRegex
@@ -108,7 +108,7 @@ class BadResponseFromOriginSpec extends FunSpec
       response.header(CONNECTION) should be(Optional.of("close"))
 
       eventually(timeout(7.seconds)) {
-        styxServer.meterRegistry().counter(RESPONSE_STATUS, STATUS_TAG, "502").count() should be(1.0)
+        styxServer.meterRegistry().counter(RESPONSE, STATUS_CODE_TAG, "502").count() should be(1.0)
       }
     }
 

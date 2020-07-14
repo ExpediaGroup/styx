@@ -77,12 +77,12 @@ public final class CoreMetrics {
         registry.gauge(name(JVM_METRICS_ROOT, "uptime"), Tags.empty(), runtimeMxBean, RuntimeMXBean::getUptime);
 
         new NettyAllocatorMetrics(
-                name(JVM_METRICS_ROOT, "netty", "pooled-allocator"),
+                name(JVM_METRICS_ROOT, "netty", "pooledAllocator"),
                 PooledByteBufAllocator.DEFAULT.metric()
         ).bindTo(registry);
 
         new NettyAllocatorMetrics(
-                name(JVM_METRICS_ROOT, "netty", "unpooled-allocator"),
+                name(JVM_METRICS_ROOT, "netty", "unpooledAllocator"),
                 UnpooledByteBufAllocator.DEFAULT.metric()
         ).bindTo(registry);
     }

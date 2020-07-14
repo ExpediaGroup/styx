@@ -26,6 +26,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import java.net.InetSocketAddress;
 
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.api.Metrics.formattedExceptionName;
 import static java.lang.String.valueOf;
 import static java.util.Objects.requireNonNull;
 
@@ -36,9 +37,9 @@ public class HttpErrorStatusMetrics implements HttpErrorStatusListener {
 
     public static final String ERROR = "styx.error";
     public static final String EXCEPTION = "styx.exception";
-    public static final String RESPONSE_STATUS = "styx.response.status";
+    public static final String RESPONSE = "styx.response";
 
-    public static final String STATUS_TAG = "status";
+    public static final String STATUS_CODE_TAG = "statusCode";
     public static final String TYPE_TAG = "type";
 
     private final MeterRegistry meterRegistry;
@@ -104,11 +105,7 @@ public class HttpErrorStatusMetrics implements HttpErrorStatusListener {
     }
 
     private Counter statusCounter(int statusCode) {
-        return meterRegistry.counter(RESPONSE_STATUS, STATUS_TAG, valueOf(statusCode));
-    }
-
-    static String formattedExceptionName(Class<? extends Throwable> type) {
-        return type.getName().replace('.', '_');
+        return meterRegistry.counter(RESPONSE, STATUS_CODE_TAG, valueOf(statusCode));
     }
 
     private static boolean isError(HttpResponseStatus status) {
