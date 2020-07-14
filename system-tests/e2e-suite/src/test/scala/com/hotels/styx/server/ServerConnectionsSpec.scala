@@ -78,7 +78,7 @@ class ServerConnectionsSpec extends FunSpec
       })
 
       eventually(timeout(1 second)) {
-        styxServer.meterRegistry().find("proxy.connection.total-connections").gauge().value() should be(0.0)
+        styxServer.meterRegistry().find("proxy.connection.totalConnections").gauge().value() should be(0.0)
       }
     }
   }
