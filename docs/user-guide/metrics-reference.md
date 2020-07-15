@@ -1,5 +1,7 @@
 # Metrics Reference
 
+:warning: **Metrics are changing!** Migration notes are [here](metrics-migration.md)
+
 ## Metric Categories
 
 Styx collects performance metrics from the following functional areas:
