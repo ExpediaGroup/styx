@@ -32,6 +32,7 @@ import java.util.Map;
 
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.api.Metrics.formattedExceptionName;
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -51,29 +52,25 @@ public class InstrumentedPlugin implements Plugin {
         requireNonNull(environment);
 
         this.errorStatusMetrics = new SimpleCache<>(statusCode ->
-                Counter.builder("plugins.response.status")
+                Counter.builder("plugin.response")
                         .tag("plugin", plugin.name())
-                        .tag("status", Integer.toString(statusCode.code()))
+                        .tag("statusCode", Integer.toString(statusCode.code()))
                         .register(environment.meterRegistry())
         );
 
         this.exceptionMetrics = new SimpleCache<>(type ->
-                Counter.builder("plugins.exception")
+                Counter.builder("plugin.exception")
                         .tag("plugin", plugin.name())
                         .tag("type", formattedExceptionName(type))
                         .register(environment.meterRegistry())
         );
 
         this.errors =
-                Counter.builder("plugins.errors")
+                Counter.builder("plugin.error")
                         .tag("plugin", plugin.name())
                         .register(environment.meterRegistry());
 
         LOGGER.info("Plugin {} instrumented", plugin.name());
-    }
-
-    static String formattedExceptionName(Class<? extends Throwable> type) {
-        return type.getName().replace('.', '_');
     }
 
     @Override

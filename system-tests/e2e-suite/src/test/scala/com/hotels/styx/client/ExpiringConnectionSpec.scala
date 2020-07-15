@@ -91,11 +91,11 @@ class ExpiringConnectionSpec extends FunSpec
     assertThat(response1.status(), is(OK))
 
     // Ensure that a connection got created in pool:
-    val meterTags = Tags.of("appid", "appOne", "originid", "generic-app-01")
+    val meterTags = Tags.of("appId", "appOne", "originId", "generic-app-01")
 
     eventually(timeout(1.seconds)) {
-      meterRegistry.find("connectionspool.available-connections").tags(meterTags).gauge().value() should be(1.0)
-      meterRegistry.find("connectionspool.connections-closed").tags(meterTags).gauge().value() should be(0.0)
+      meterRegistry.find("connectionpool.availableConnections").tags(meterTags).gauge().value() should be(1.0)
+      meterRegistry.find("connectionpool.connectionsClosed").tags(meterTags).gauge().value() should be(0.0)
     }
 
     Thread.sleep(1000)
@@ -114,11 +114,11 @@ class ExpiringConnectionSpec extends FunSpec
 
     eventually(timeout(2.seconds)) {
       withClue("A connection should be available in pool") {
-        meterRegistry.find("connectionspool.available-connections").tags(meterTags).gauge().value() should be(1.0)
+        meterRegistry.find("connectionpool.availableConnections").tags(meterTags).gauge().value() should be(1.0)
       }
 
       withClue("A previous connection should have been terminated") {
-        meterRegistry.find("connectionspool.connections-terminated").tags(meterTags).gauge().value() should be(1.0)
+        meterRegistry.find("connectionpool.connectionsTerminated").tags(meterTags).gauge().value() should be(1.0)
       }
     }
   }

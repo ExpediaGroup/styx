@@ -199,7 +199,7 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
             private volatile boolean httpTransactionOngoing;
 
             IdleTransactionConnectionCloser(MeterRegistry meterRegistry) {
-                this.idleConnectionClosed = meterRegistry.summary("proxy.connections.idleClosed");
+                this.idleConnectionClosed = meterRegistry.summary("proxy.connection.idleClosed");
             }
 
             @Override

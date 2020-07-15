@@ -279,7 +279,7 @@ class ErrorMetricsSpec extends FunSpec
   def pluginExceptionMetric(pluginName: String): Double = {
     try {
       styxServer.meterRegistry()
-        .get("plugins.exception")
+        .get("plugin.exception")
         .tag("plugin", pluginName)
         .tag("type", "com_hotels_styx_plugins_ErrorMetricsSpec$TestException")
         .counter().count()
@@ -310,9 +310,9 @@ class ErrorMetricsSpec extends FunSpec
   def pluginInternalServerErrorMetric(pluginName: String): Double = {
     try {
       styxServer.meterRegistry()
-        .get("plugins.response.status")
+        .get("plugin.response")
         .tag("plugin", pluginName)
-        .tag("status", "500")
+        .tag("statusCode", "500")
         .counter().count()
     } catch {
       case _: io.micrometer.core.instrument.search.MeterNotFoundException => 0.0
@@ -321,7 +321,7 @@ class ErrorMetricsSpec extends FunSpec
 
   def pluginUnexpectedErrorMetric(pluginName: String): Double = {
     styxServer.meterRegistry()
-      .get("plugins.errors")
+      .get("plugin.error")
       .tag("plugin", pluginName)
       .counter().count()
   }

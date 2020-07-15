@@ -60,12 +60,12 @@ import static com.hotels.styx.api.HttpResponseStatus.REQUEST_URI_TOO_LONG;
 import static com.hotels.styx.api.HttpResponseStatus.UNAUTHORIZED;
 import static com.hotels.styx.api.HttpResponseStatus.UNSUPPORTED_MEDIA_TYPE;
 import static com.hotels.styx.api.LiveHttpRequest.get;
+import static com.hotels.styx.api.Metrics.formattedExceptionName;
 import static com.hotels.styx.proxy.HttpErrorStatusMetrics.TYPE_TAG;
-import static com.hotels.styx.proxy.HttpErrorStatusMetrics.STATUS_TAG;
+import static com.hotels.styx.proxy.HttpErrorStatusMetrics.STATUS_CODE_TAG;
 import static com.hotels.styx.proxy.HttpErrorStatusMetrics.ERROR;
 import static com.hotels.styx.proxy.HttpErrorStatusMetrics.EXCEPTION;
-import static com.hotels.styx.proxy.HttpErrorStatusMetrics.RESPONSE_STATUS;
-import static com.hotels.styx.proxy.HttpErrorStatusMetrics.formattedExceptionName;
+import static com.hotels.styx.proxy.HttpErrorStatusMetrics.RESPONSE;
 import static java.lang.System.arraycopy;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -91,8 +91,8 @@ public class HttpErrorStatusMetricsTest {
         assertThat(registry.get(ERROR).counter(), is(notNullValue()));
         assertThat(registry.get(ERROR).counter().count(), is(0.0));
 
-        assertThat(registry.get(RESPONSE_STATUS).tag(STATUS_TAG, "200").counter(), is(notNullValue()));
-        assertThat(registry.get(RESPONSE_STATUS).tag(STATUS_TAG, "200").counter().count(), is(0.0));
+        assertThat(registry.get(RESPONSE).tag(STATUS_CODE_TAG, "200").counter(), is(notNullValue()));
+        assertThat(registry.get(RESPONSE).tag(STATUS_CODE_TAG, "200").counter().count(), is(0.0));
 
         assertThat(registry.get(EXCEPTION).tag(TYPE_TAG, "java_lang_Exception").counter(), is(notNullValue()));
         assertThat(registry.get(EXCEPTION).tag(TYPE_TAG, "java_lang_Exception").counter().count(), is(0.0));
@@ -110,7 +110,7 @@ public class HttpErrorStatusMetricsTest {
     public void styxErrorsWithExceptionsPropagateBothStatusCodeAndExceptionClass() {
         errorListener.proxyErrorOccurred(INTERNAL_SERVER_ERROR, new CustomException());
 
-        assertThat(count(RESPONSE_STATUS, STATUS_TAG, "500"), is(1));
+        assertThat(count(RESPONSE, STATUS_CODE_TAG, "500"), is(1));
         assertThat(statusCountsExcluding("500"), everyItem(is(0)));
         assertThat(count(EXCEPTION, TYPE_TAG, formattedExceptionName(CustomException.class)), is(1));
         assertThat(count(ERROR), is(1));
@@ -120,7 +120,7 @@ public class HttpErrorStatusMetricsTest {
     public void pluginExceptionsAreNotRecordedAsStyxUnexpectedErrors() {
         errorListener.proxyErrorOccurred(INTERNAL_SERVER_ERROR, new PluginException("bad"));
 
-        assertThat(count(RESPONSE_STATUS, STATUS_TAG, "500"), is(1));
+        assertThat(count(RESPONSE, STATUS_CODE_TAG, "500"), is(1));
         assertThat(statusCountsExcluding("500"), everyItem(is(0)));
         assertThat(count(ERROR), is(0));
     }
@@ -148,7 +148,7 @@ public class HttpErrorStatusMetricsTest {
         LiveHttpRequest request = get("/foo").build();
         errorListener.proxyErrorOccurred(request, InetSocketAddress.createUnresolved("127.0.0.1", 0), INTERNAL_SERVER_ERROR, new CustomException());
 
-        assertThat(count(RESPONSE_STATUS, STATUS_TAG, "500"), is(1));
+        assertThat(count(RESPONSE, STATUS_CODE_TAG, "500"), is(1));
         assertThat(statusCountsExcluding("500"), everyItem(is(0)));
         assertThat(count(EXCEPTION, TYPE_TAG, formattedExceptionName(CustomException.class)), is(1));
         assertThat(count(ERROR), is(1));
@@ -213,8 +213,8 @@ public class HttpErrorStatusMetricsTest {
     }
 
     private Collection<Integer> statusCountsExcluding(String excluded) {
-        return registry.find(RESPONSE_STATUS).counters().stream()
-                .filter(c -> !c.getId().getTag(STATUS_TAG).equals(excluded))
+        return registry.find(RESPONSE).counters().stream()
+                .filter(c -> !c.getId().getTag(STATUS_CODE_TAG).equals(excluded))
                 .map(Counter::count)
                 .map(Double::intValue)
                 .collect(toList());

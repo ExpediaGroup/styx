@@ -33,7 +33,7 @@ import static com.hotels.styx.api.Metrics.APPID_TAG;
 import static com.hotels.styx.api.Metrics.ORIGINID_TAG;
 
 class StatsReportingConnectionPool implements ConnectionPool {
-    private static final String PREFIX = "connectionspool";
+    private static final String PREFIX = "connectionpool";
 
     private final ConnectionPool connectionPool;
     private final MeterRegistry meterRegistry;
@@ -91,14 +91,14 @@ class StatsReportingConnectionPool implements ConnectionPool {
 
     private void registerMetrics() {
         ConnectionPool.Stats stats = connectionPool.stats();
-        registerGauge("busy-connections", stats::busyConnectionCount);
-        registerGauge("pending-connections", stats::pendingConnectionCount);
-        registerGauge("available-connections", stats::availableConnectionCount);
-        registerGauge("connection-attempts", stats::connectionAttempts);
-        registerGauge("connection-failures", stats::connectionFailures);
-        registerGauge("connections-closed", stats::closedConnections);
-        registerGauge("connections-terminated", stats::terminatedConnections);
-        registerGauge("connections-in-establishment", stats::connectionsInEstablishment);
+        registerGauge("busyConnections", stats::busyConnectionCount);
+        registerGauge("pendingConnections", stats::pendingConnectionCount);
+        registerGauge("availableConnections", stats::availableConnectionCount);
+        registerGauge("connectionAttempts", stats::connectionAttempts);
+        registerGauge("connectionFailures", stats::connectionFailures);
+        registerGauge("connectionsClosed", stats::closedConnections);
+        registerGauge("connectionsTerminated", stats::terminatedConnections);
+        registerGauge("connectionsInEstablishment", stats::connectionsInEstablishment);
     }
 
     private void registerGauge(String name, Supplier<Number> supplier) {

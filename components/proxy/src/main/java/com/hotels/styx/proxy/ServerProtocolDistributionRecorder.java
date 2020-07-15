@@ -35,8 +35,8 @@ public class ServerProtocolDistributionRecorder extends ChannelDuplexHandler {
     private final SimpleCache<HttpResponseStatus, Counter> responses;
 
     public ServerProtocolDistributionRecorder(MeterRegistry meterRegistry, boolean secure) {
-        requests = meterRegistry.counter("styx.server.requests", "protocol", protocolName(secure));
-        responses = new SimpleCache<>(status -> meterRegistry.counter("styx.server.responses",
+        requests = meterRegistry.counter("styx.server.request", "protocol", protocolName(secure));
+        responses = new SimpleCache<>(status -> meterRegistry.counter("styx.server.response",
                 "protocol", protocolName(secure),
                 "statusCode", valueOf(status.code())));
     }

@@ -38,7 +38,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 public final class SslContexts {
 
-    public static final String SSL_PREFIX = "connections.openssl.session";
+    public static final String SSL_PREFIX = "connection.openssl.session";
 
     private SslContexts() {
     }

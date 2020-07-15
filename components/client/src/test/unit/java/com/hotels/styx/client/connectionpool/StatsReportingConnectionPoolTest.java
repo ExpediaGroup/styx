@@ -43,25 +43,25 @@ public class StatsReportingConnectionPoolTest {
     public void removesRegisteredMetricsOnClose() {
         Tags tags = Tags.of(APPID_TAG, "generic-app", ORIGINID_TAG, "backend-01");
 
-        assertThat(meterRegistry.find("connectionspool.available-connections").tags(tags).gauge(), notNullValue());
-        assertThat(meterRegistry.find("connectionspool.busy-connections").tags(tags).gauge(), notNullValue());
-        assertThat(meterRegistry.find("connectionspool.pending-connections").tags(tags).gauge(), notNullValue());
-        assertThat(meterRegistry.find("connectionspool.connection-attempts").tags(tags).gauge(), notNullValue());
-        assertThat(meterRegistry.find("connectionspool.connections-in-establishment").tags(tags).gauge(), notNullValue());
-        assertThat(meterRegistry.find("connectionspool.connection-failures").tags(tags).gauge(), notNullValue());
-        assertThat(meterRegistry.find("connectionspool.connections-closed").tags(tags).gauge(), notNullValue());
-        assertThat(meterRegistry.find("connectionspool.connections-terminated").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("connectionpool.availableConnections").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("connectionpool.busyConnections").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("connectionpool.pendingConnections").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("connectionpool.connectionAttempts").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("connectionpool.connectionsInEstablishment").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("connectionpool.connectionFailures").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("connectionpool.connectionsClosed").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("connectionpool.connectionsTerminated").tags(tags).gauge(), notNullValue());
 
         pool.close();
 
-        assertThat(meterRegistry.find("connectionspool.available-connections").tags(tags).gauge(), nullValue());
-        assertThat(meterRegistry.find("connectionspool.busy-connections").tags(tags).gauge(), nullValue());
-        assertThat(meterRegistry.find("connectionspool.pending-connections").tags(tags).gauge(), nullValue());
-        assertThat(meterRegistry.find("connectionspool.connection-attempts").tags(tags).gauge(), nullValue());
-        assertThat(meterRegistry.find("connectionspool.connections-in-establishment").tags(tags).gauge(), nullValue());
-        assertThat(meterRegistry.find("connectionspool.connection-failures").tags(tags).gauge(), nullValue());
-        assertThat(meterRegistry.find("connectionspool.connections-closed").tags(tags).gauge(), nullValue());
-        assertThat(meterRegistry.find("connectionspool.connections-terminated").tags(tags).gauge(), nullValue());
+        assertThat(meterRegistry.find("connectionpool.availableConnections").tags(tags).gauge(), nullValue());
+        assertThat(meterRegistry.find("connectionpool.busyConnections").tags(tags).gauge(), nullValue());
+        assertThat(meterRegistry.find("connectionpool.pendingConnections").tags(tags).gauge(), nullValue());
+        assertThat(meterRegistry.find("connectionpool.connectionAttempts").tags(tags).gauge(), nullValue());
+        assertThat(meterRegistry.find("connectionpool.connectionsInEstablishment").tags(tags).gauge(), nullValue());
+        assertThat(meterRegistry.find("connectionpool.connectionFailures").tags(tags).gauge(), nullValue());
+        assertThat(meterRegistry.find("connectionpool.connectionsClosed").tags(tags).gauge(), nullValue());
+        assertThat(meterRegistry.find("connectionpool.connectionsTerminated").tags(tags).gauge(), nullValue());
 
     }
 }
