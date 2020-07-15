@@ -83,8 +83,8 @@ public class UrlRequestHealthCheckTest {
                 .check(client, someOrigin, state -> this.originState = state);
 
         assertThat(originState, is(UNHEALTHY));
-        assertThat(meterRegistry.find("origins.healthcheck.failures")
-                .tags("origin", someOrigin.id().toString(), "application", someOrigin.applicationId().toString()).counter().count(), is(1.0));
+        assertThat(meterRegistry.find("origin.healthcheck.failures")
+                .tags("originId", someOrigin.id().toString(), "appId", someOrigin.applicationId().toString()).counter().count(), is(1.0));
         assertThat(meterRegistry.getMeters().size(), is(1));
     }
 
@@ -96,8 +96,8 @@ public class UrlRequestHealthCheckTest {
                 .check(client, someOrigin, state -> this.originState = state);
 
         assertThat(originState, is(UNHEALTHY));
-        assertThat(meterRegistry.find("origins.healthcheck.failures")
-                .tags("origin", someOrigin.id().toString(), "application", someOrigin.applicationId().toString()).counter().count(), is(1.0));
+        assertThat(meterRegistry.find("origin.healthcheck.failures")
+                .tags("originId", someOrigin.id().toString(), "appId", someOrigin.applicationId().toString()).counter().count(), is(1.0));
         assertThat(meterRegistry.getMeters().size(), is(1));
     }
 
