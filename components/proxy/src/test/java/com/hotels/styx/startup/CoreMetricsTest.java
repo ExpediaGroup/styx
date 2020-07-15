@@ -55,10 +55,10 @@ public class CoreMetricsTest {
 
         assertThat(gauges, hasItems(
                 "jvm.uptime",
-                "jvm.netty.pooled-allocator.usedDirectMemory",
-                "jvm.netty.pooled-allocator.usedHeapMemory",
-                "jvm.netty.unpooled-allocator.usedDirectMemory",
-                "jvm.netty.unpooled-allocator.usedHeapMemory"
+                "jvm.netty.pooledAllocator.usedDirectMemory",
+                "jvm.netty.pooledAllocator.usedHeapMemory",
+                "jvm.netty.unpooledAllocator.usedDirectMemory",
+                "jvm.netty.unpooledAllocator.usedHeapMemory"
         ));
     }
 

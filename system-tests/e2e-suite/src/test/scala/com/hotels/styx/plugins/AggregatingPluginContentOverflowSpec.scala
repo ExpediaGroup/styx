@@ -82,9 +82,9 @@ class AggregatingPluginContentOverflowSpec extends FunSpec
       assert(resp.status() == BAD_GATEWAY)
 
       eventually(timeout(3 seconds)) {
-        val tags = Tags.of("appid", "app1", "originid", "origin-1")
-        meterRegistry.find("connectionspool.busy-connections").tags(tags).gauge().value() should be(0.0)
-        meterRegistry.find("connectionspool.connections-closed").tags(tags).gauge().value() should be(1.0)
+        val tags = Tags.of("appId", "app1", "originId", "origin-1")
+        meterRegistry.find("connectionpool.busyConnections").tags(tags).gauge().value() should be(0.0)
+        meterRegistry.find("connectionpool.connectionsClosed").tags(tags).gauge().value() should be(1.0)
       }
     }
   }

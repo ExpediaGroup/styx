@@ -477,7 +477,7 @@ public class OriginsInventoryTest {
     }
 
     private Optional<Double> gaugeValue(String appId, String originId) {
-        String name = "status";
+        String name = "origin.status";
         Tags tags = Tags.of(APPID_TAG, appId, ORIGINID_TAG, originId);
         return gauge(name, tags).map(Gauge::value);
     }

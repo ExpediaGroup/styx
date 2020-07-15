@@ -45,14 +45,14 @@ public class ChannelStatisticsHandlerTest {
     public void countsReceivedBytes() throws Exception {
         ByteBuf buf = httpRequestAsBuf(POST, "/foo/bar", "Hello, world");
         this.handler.channelRead(mock(ChannelHandlerContext.class), buf);
-        assertThat(countOf("test.connection.bytes-received"), is((double) buf.readableBytes()));
+        assertThat(countOf("test.connection.bytesReceived"), is((double) buf.readableBytes()));
     }
 
     @Test
     public void countsSentBytes() throws Exception {
         ByteBuf buf = httpResponseAsBuf(OK, "Response from server");
         this.handler.write(mock(ChannelHandlerContext.class), buf, mock(ChannelPromise.class));
-        assertThat(countOf("test.connection.bytes-sent"), is((double) buf.readableBytes()));
+        assertThat(countOf("test.connection.bytesSent"), is((double) buf.readableBytes()));
     }
 
     private double countOf(String counter) {

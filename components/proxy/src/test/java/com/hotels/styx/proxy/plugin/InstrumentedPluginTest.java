@@ -39,8 +39,8 @@ import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
+import static com.hotels.styx.api.Metrics.formattedExceptionName;
 import static com.hotels.styx.api.plugins.spi.Plugin.PASS_THROUGH;
-import static com.hotels.styx.proxy.plugin.InstrumentedPlugin.formattedExceptionName;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -226,15 +226,15 @@ public class InstrumentedPluginTest {
     }
 
     private double getStatusCount(String pluginName, String status) {
-        return Optional.ofNullable(registry.find("plugins.response.status")
-                .tags("plugin", pluginName, "status", status)
+        return Optional.ofNullable(registry.find("plugin.response")
+                .tags("plugin", pluginName, "statusCode", status)
                 .counter())
                 .map(Counter::count)
                 .orElse(0.0);
     }
 
     private double getErrorCount(String pluginName) {
-        return Optional.ofNullable(registry.find("plugins.errors")
+        return Optional.ofNullable(registry.find("plugin.error")
                 .tags("plugin", pluginName)
                 .counter())
                 .map(Counter::count)
@@ -242,7 +242,7 @@ public class InstrumentedPluginTest {
     }
 
     private double getExceptionCount(String pluginName, String type) {
-        return Optional.ofNullable(registry.find("plugins.exception")
+        return Optional.ofNullable(registry.find("plugin.exception")
                 .tags("plugin", pluginName, "type", type)
                 .counter())
                 .map(Counter::count)

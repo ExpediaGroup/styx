@@ -19,8 +19,8 @@ import java.util.StringJoiner;
 
 public final class Metrics {
 
-    public static final String APPID_TAG = "appid";
-    public static final String ORIGINID_TAG = "originid";
+    public static final String APPID_TAG = "appId";
+    public static final String ORIGINID_TAG = "originId";
 
     private Metrics() {
     }
@@ -34,4 +34,9 @@ public final class Metrics {
         }
         return joiner.toString();
     }
+
+    public static String formattedExceptionName(Class<? extends Throwable> type) {
+        return type.getName().replace('.', '_');
+    }
+
 }

@@ -45,10 +45,10 @@ public class SimpleConnectionPoolFactoryTest {
                 .build();
         factory.create(origin);
 
-        Tags tags = Tags.of("appid", "test-app", "originid", "origin-X");
-        assertThat(meterRegistry.find("connectionspool.pending-connections").tags(tags).gauge(), notNullValue());
-        assertThat(meterRegistry.find("connectionspool.available-connections").tags(tags).gauge(), notNullValue());
-        assertThat(meterRegistry.find("connectionspool.busy-connections").tags(tags).gauge(), notNullValue());
-        assertThat(meterRegistry.find("connectionspool.connections-in-establishment").tags(tags).gauge(), notNullValue());
+        Tags tags = Tags.of("appId", "test-app", "originId", "origin-X");
+        assertThat(meterRegistry.find("connectionpool.pendingConnections").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("connectionpool.availableConnections").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("connectionpool.busyConnections").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("connectionpool.connectionsInEstablishment").tags(tags).gauge(), notNullValue());
     }
 }

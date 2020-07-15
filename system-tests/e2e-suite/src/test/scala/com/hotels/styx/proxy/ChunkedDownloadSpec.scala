@@ -113,19 +113,19 @@ class ChunkedDownloadSpec extends FunSpec
   }
 
   def busyConnections(origin: Origin) = {
-    meterRegistry.find("connectionspool.busy-connections").tags(meterTags(origin)).gauge().value()
+    meterRegistry.find("connectionpool.busyConnections").tags(meterTags(origin)).gauge().value()
   }
 
   def closedConnections(origin: Origin) = {
-    meterRegistry.find("connectionspool.connections-closed").tags(meterTags(origin)).gauge().value()
+    meterRegistry.find("connectionpool.connectionsClosed").tags(meterTags(origin)).gauge().value()
   }
 
   def noAvailableConnectionsInPool(origin: Origin) = {
-    meterRegistry.find("connectionspool.available-connections").tags(meterTags(origin)).gauge().value() == 0.0
+    meterRegistry.find("connectionpool.availableConnections").tags(meterTags(origin)).gauge().value() == 0.0
   }
 
   def meterTags(origin: Origin): Tags = {
-    Tags.of("appid", "appTwo", "originid", s"localhost:${origin.port}")
+    Tags.of("appId", "appTwo", "originId", s"localhost:${origin.port}")
   }
 
   def ensureResponseDidNotArrive(client: HttpTestClient) = {

@@ -295,15 +295,15 @@ public class BackendServicesRouterTest {
         Tags tags01 = Tags.of(APPID_TAG, APP_B, ORIGINID_TAG, "appB-01");
         Tags tags02 = Tags.of(APPID_TAG, APP_B, ORIGINID_TAG, "appB-02");
 
-        assertThat(meterRegistry.find("status").tags(tags01).gauge().value(), is(1.0));
-        assertThat(meterRegistry.find("status").tags(tags02).gauge().value(), is(1.0));
+        assertThat(meterRegistry.find("origin.status").tags(tags01).gauge().value(), is(1.0));
+        assertThat(meterRegistry.find("origin.status").tags(tags02).gauge().value(), is(1.0));
 
         BackendService appMinusOneOrigin = backendService(APP_B, "/appB/", 9094, "appB-01");
 
         router.onChange(updated(appMinusOneOrigin));
 
-        assertThat(meterRegistry.find("status").tags(tags01).gauge().value(), is(1.0));
-        assertThat(meterRegistry.find("status").tags(tags02).gauge(), is(nullValue()));
+        assertThat(meterRegistry.find("origin.status").tags(tags01).gauge().value(), is(1.0));
+        assertThat(meterRegistry.find("origin.status").tags(tags02).gauge(), is(nullValue()));
     }
 
     private static Registry.Changes<BackendService> added(BackendService... backendServices) {
