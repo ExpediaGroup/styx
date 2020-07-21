@@ -1,6 +1,6 @@
 # Metrics
 
-:warning: **Metrics are changing!** Migration notes are [here](metrics-migration.md)
+:warning: **Metrics have changed!** Migration notes are [here](metrics-migration.md)
 
 Styx collects metrics to provide insight into its operational status. They
 can be viewed via admin interface at `http://<styx-host>/admin/metrics`.
