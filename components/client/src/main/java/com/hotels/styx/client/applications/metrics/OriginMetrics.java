@@ -16,18 +16,14 @@
 package com.hotels.styx.client.applications.metrics;
 
 import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.api.metrics.MeterFactory;
 import com.hotels.styx.client.applications.OriginStats;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 
-import java.time.Duration;
-
 import static java.lang.String.valueOf;
-import static java.time.Duration.of;
-import static java.time.temporal.ChronoUnit.MILLIS;
-import static java.time.temporal.ChronoUnit.MINUTES;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -52,9 +48,6 @@ public class OriginMetrics implements OriginStats {
     public static final String CANCELLATION_COUNTER_NAME = "request.cancellation";
     public static final String LATENCY_TIMER_NAME = "request.latency";
     public static final String TTFB_TIMER_NAME = "request.timeToFirstByte";
-
-    private static final Duration MIN_HISTOGRAM_BUCKET = of(1, MILLIS);
-    private static final Duration MAX_HISTOGRAM_BUCKET = of(5, MINUTES);
 
     private final MeterRegistry registry;
 
@@ -83,18 +76,8 @@ public class OriginMetrics implements OriginStats {
         requestSuccessMeter = registry.counter(SUCCESS_COUNTER_NAME, tags);
         requestErrorMeter = registry.counter(FAILURE_COUNTER_NAME, tags);
         requestCancellations = registry.counter(CANCELLATION_COUNTER_NAME, tags);
-        requestLatency = Timer.builder(LATENCY_TIMER_NAME)
-                .tags(tags)
-                .publishPercentileHistogram()
-                .minimumExpectedValue(MIN_HISTOGRAM_BUCKET)
-                .maximumExpectedValue(MAX_HISTOGRAM_BUCKET)
-                .register(registry);
-        timeToFirstByte = Timer.builder(TTFB_TIMER_NAME)
-                .tags(tags)
-                .publishPercentileHistogram()
-                .minimumExpectedValue(MIN_HISTOGRAM_BUCKET)
-                .maximumExpectedValue(MAX_HISTOGRAM_BUCKET)
-                .register(registry);
+        requestLatency = MeterFactory.timer(registry, LATENCY_TIMER_NAME, tags);
+        timeToFirstByte = MeterFactory.timer(registry, TTFB_TIMER_NAME, tags);
     }
 
     public Timer.Sample startTimer() {
