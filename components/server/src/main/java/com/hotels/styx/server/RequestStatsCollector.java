@@ -15,20 +15,17 @@
  */
 package com.hotels.styx.server;
 
+import com.hotels.styx.api.metrics.MeterFactory;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 
-import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hotels.styx.api.Metrics.name;
 import static java.lang.String.valueOf;
-import static java.time.Duration.of;
-import static java.time.temporal.ChronoUnit.MILLIS;
-import static java.time.temporal.ChronoUnit.MINUTES;
 
 /**
  * An implementation of request event sink that maintains Styx request statistics.
@@ -45,9 +42,6 @@ public class RequestStatsCollector implements RequestProgressListener {
     public static final String RESPONSE_STATUS = "response.status";
 
     public static final String STATUS_CLASS_UNRECOGNISED = "unrecognised";
-
-    private static final Duration MIN_HISTOGRAM_BUCKET = of(1, MILLIS);
-    private static final Duration MAX_HISTOGRAM_BUCKET = of(5, MINUTES);
 
     private final MeterRegistry registry;
     private final String prefix;
@@ -70,11 +64,7 @@ public class RequestStatsCollector implements RequestProgressListener {
         this.prefix = prefix;
 
         registry.gauge(name(prefix, REQUEST_OUTSTANDING), ongoingRequests, Map::size);
-        this.latencyTimer = Timer.builder(name(prefix, REQUEST_LATENCY))
-                .publishPercentileHistogram()
-                .minimumExpectedValue(MIN_HISTOGRAM_BUCKET)
-                .maximumExpectedValue(MAX_HISTOGRAM_BUCKET)
-                .register(registry);
+        this.latencyTimer = MeterFactory.timer(registry, name(prefix, REQUEST_LATENCY));
 
         this.requestsIncoming = registry.counter(name(prefix, REQUEST_RECEIVED));
         this.responsesSent = registry.counter(name(prefix, RESPONSE_SENT));
