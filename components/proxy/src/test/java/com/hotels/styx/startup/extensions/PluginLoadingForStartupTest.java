@@ -295,8 +295,14 @@ public class PluginLoadingForStartupTest {
         Environment environment = environment(yaml);
         PluginLoadingForStartup.loadPlugins(environment);
 
-        assertThat(environment.meterRegistry().find("initialised").tags(Tags.of(DEFAULT_TAG_KEY, "myPlugin")).counter().count(), is(1D));
-        assertThat(environment.meterRegistry().find("initialised").tags(Tags.of(DEFAULT_TAG_KEY, "myAnotherPlugin")).counter().count(), is(1D));
+        assertThat(environment.meterRegistry().get("initialised").tags(Tags.of(DEFAULT_TAG_KEY, "myPlugin")).counter().count(), is(1D));
+        assertThat(environment.meterRegistry().get("initialised").tags(Tags.of(DEFAULT_TAG_KEY, "myAnotherPlugin")).counter().count(), is(1D));
+
+        assertThat(environment.meterRegistry().get("styx.plugins.myPlugin.legacy").tags(Tags.of("attribute", "count", "metricSource", "dropwizard")).gauge().value(), is(1D));
+        assertThat(environment.meterRegistry().get("styx.plugins.myAnotherPlugin.legacy").tags(Tags.of("attribute", "count", "metricSource", "dropwizard")).gauge().value(), is(1D));
+
+        assertThat(environment.metricRegistry().counter("styx.plugins.myPlugin.legacy").getCount(), is(1L));
+        assertThat(environment.metricRegistry().counter("styx.plugins.myAnotherPlugin.legacy").getCount(), is(1L));
     }
 
     private com.hotels.styx.Environment environment(String yaml) {
@@ -319,8 +325,9 @@ public class PluginLoadingForStartupTest {
         public Plugin create(Environment environment) {
             MyPluginConfig myPluginConfig = environment.pluginConfig(MyPluginConfig.class);
             PluginMeterRegistry registry = environment.pluginMeterRegistry();
+            MetricRegistry legacyMetrics = environment.metricRegistry();
 
-            return new MyPlugin(myPluginConfig, registry);
+            return new MyPlugin(myPluginConfig, registry, legacyMetrics);
         }
     }
 
@@ -352,10 +359,11 @@ public class PluginLoadingForStartupTest {
     static class MyPlugin implements Plugin {
         private final MyPluginConfig myPluginConfig;
 
-        public MyPlugin(MyPluginConfig myPluginConfig, PluginMeterRegistry registry) {
+        public MyPlugin(MyPluginConfig myPluginConfig, PluginMeterRegistry registry, MetricRegistry legacyMetrics) {
             this.myPluginConfig = myPluginConfig;
             Counter counter = registry.counter("initialised");
             counter.increment();
+            legacyMetrics.counter("legacy").inc();
         }
 
         @Override

@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 
 import java.util.List;
 
+import static com.hotels.styx.api.Metrics.name;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static com.hotels.styx.startup.extensions.FailureHandling.PLUGIN_FACTORY_LOADING_FAILURE_HANDLING_STRATEGY;
 import static com.hotels.styx.startup.extensions.FailureHandling.PLUGIN_STARTUP_FAILURE_HANDLING_STRATEGY;
@@ -118,7 +119,7 @@ public final class PluginLoadingForStartup {
             @Override
             @Deprecated
             public MetricRegistry metricRegistry() {
-                return environment.metricRegistry();
+                return environment.metricRegistry().scope(name(DEFAULT_PLUGINS_METRICS_SCOPE, factory.name()));
             }
         };
 
