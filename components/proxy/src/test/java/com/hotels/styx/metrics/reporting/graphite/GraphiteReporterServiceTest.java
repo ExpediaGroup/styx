@@ -17,10 +17,7 @@ package com.hotels.styx.metrics.reporting.graphite;
 
 import com.hotels.styx.common.StyxFutures;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import io.micrometer.graphite.GraphiteConfig;
 import io.micrometer.graphite.GraphiteDimensionalNamingConvention;
 import io.micrometer.graphite.GraphiteHierarchicalNamingConvention;
 import io.micrometer.graphite.GraphiteMeterRegistry;

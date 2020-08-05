@@ -27,7 +27,6 @@ import org.slf4j.Logger;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
-import static io.micrometer.core.instrument.config.validate.PropertyValidator.getBoolean;
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -37,8 +36,8 @@ import static org.slf4j.LoggerFactory.getLogger;
 public final class GraphiteReporterService extends AbstractStyxService {
     private static final Logger LOGGER = getLogger(GraphiteReporterService.class);
     private final MeterRegistry meterRegistry;
+    private final MicrometerGraphiteConfig graphiteConfig;
     private GraphiteMeterRegistry graphiteMeterRegistry;
-    private MicrometerGraphiteConfig graphiteConfig;
 
     private GraphiteReporterService(Builder builder) {
         super(builder.serviceName);
@@ -120,7 +119,7 @@ public final class GraphiteReporterService extends AbstractStyxService {
     private static final class MicrometerGraphiteConfig implements GraphiteConfig {
         private final Builder builder;
 
-        public MicrometerGraphiteConfig(final Builder builder) {
+        public MicrometerGraphiteConfig(Builder builder) {
             this.builder = builder;
         }
 
