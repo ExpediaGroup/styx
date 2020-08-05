@@ -28,25 +28,20 @@ public class GraphiteConfig {
     private final String host;
     private final int port;
     private final long intervalMillis;
-    private final String prefix;
     private final boolean enabled;
+    private final boolean tagsEnabled;
 
     @JsonCreator
     GraphiteConfig(@JsonProperty("host") String host,
                    @JsonProperty("port") Integer port,
                    @JsonProperty("intervalMillis") Long intervalMillis,
-                   @JsonProperty("prefix") String prefix,
-                   @JsonProperty("enabled") Boolean enabled) {
+                   @JsonProperty("enabled") Boolean enabled,
+                   @JsonProperty("tagsEnabled") Boolean tagsEnabled) {
         this.host = host;
         this.port = ofNullable(port).orElse(9090);
         this.intervalMillis = ofNullable(intervalMillis).orElse(SECONDS.toMillis(5));
-        this.prefix = ofNullable(prefix).orElse("");
         this.enabled = ofNullable(enabled).orElse(true);
-    }
-
-    @JsonProperty("prefix")
-    public String prefix() {
-        return prefix;
+        this.tagsEnabled = ofNullable(tagsEnabled).orElse(false);
     }
 
     @JsonProperty("host")
@@ -69,6 +64,11 @@ public class GraphiteConfig {
         return enabled;
     }
 
+    @JsonProperty("tagsEnabled")
+    public boolean tagsEnabled() {
+        return tagsEnabled;
+    }
+
     @Override
     public String toString() {
         return this.getClass().getSimpleName()
@@ -77,6 +77,7 @@ public class GraphiteConfig {
                 + "port=" + port + ","
                 + "intervalMillis=" + intervalMillis + ","
                 + "enabled=" + enabled + ","
+                + "tagsEnabled=" + tagsEnabled
                 + "}";
     }
 }
