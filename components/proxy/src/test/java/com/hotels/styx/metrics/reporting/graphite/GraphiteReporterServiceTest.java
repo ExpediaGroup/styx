@@ -78,7 +78,6 @@ public class GraphiteReporterServiceTest {
         } finally {
             StyxFutures.await(service.stop());
         }
-
     }
 
     @Test
@@ -92,7 +91,6 @@ public class GraphiteReporterServiceTest {
         } finally {
             StyxFutures.await(service.stop());
         }
-
     }
 
     @Test
@@ -106,9 +104,5 @@ public class GraphiteReporterServiceTest {
         } finally {
             StyxFutures.await(service.stop());
         }
-
     }
-
-
-
 }
