@@ -38,9 +38,9 @@ public class GraphiteReporterServiceFactory implements ServiceFactory<StyxServic
                 .serviceName(format("Graphite-Reporter-%s:%d", host, port))
                 .host(host)
                 .port(port)
-                .prefix(graphiteConfig.prefix())
                 .reportingIntervalMillis(graphiteConfig.intervalMillis())
                 .enabled(graphiteConfig.enabled())
+                .tagsEnabled(graphiteConfig.tagsEnabled())
                 .build();
     }
 }

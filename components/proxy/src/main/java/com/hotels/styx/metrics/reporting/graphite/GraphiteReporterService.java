@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
+import static io.micrometer.core.instrument.config.validate.PropertyValidator.getBoolean;
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -72,9 +73,9 @@ public final class GraphiteReporterService extends AbstractStyxService {
         private String serviceName;
         private String host;
         private int port;
-        private String prefix;
         private long reportingIntervalMillis;
         private boolean enabled;
+        private boolean tagsEnabled;
 
         public Builder meterRegistry(@NotNull MeterRegistry meterRegistry) {
             this.meterRegistry = meterRegistry;
@@ -96,11 +97,6 @@ public final class GraphiteReporterService extends AbstractStyxService {
             return this;
         }
 
-        public Builder prefix(String prefix) {
-            this.prefix = prefix;
-            return this;
-        }
-
         public Builder reportingIntervalMillis(long reportingIntervalMillis) {
             this.reportingIntervalMillis = reportingIntervalMillis;
             return this;
@@ -108,6 +104,11 @@ public final class GraphiteReporterService extends AbstractStyxService {
 
         public Builder enabled(boolean enabled) {
             this.enabled = enabled;
+            return this;
+        }
+
+        public Builder tagsEnabled(boolean tagsEnabled) {
+            this.tagsEnabled = tagsEnabled;
             return this;
         }
 
@@ -128,10 +129,9 @@ public final class GraphiteReporterService extends AbstractStyxService {
             return null;
         }
 
-        @NotNull
         @Override
-        public String prefix() {
-            return builder.prefix;
+        public boolean graphiteTagsEnabled() {
+            return builder.tagsEnabled;
         }
 
         @NotNull

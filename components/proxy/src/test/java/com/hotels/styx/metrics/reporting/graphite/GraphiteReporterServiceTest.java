@@ -17,8 +17,13 @@ package com.hotels.styx.metrics.reporting.graphite;
 
 import com.hotels.styx.common.StyxFutures;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.graphite.GraphiteConfig;
+import io.micrometer.graphite.GraphiteDimensionalNamingConvention;
+import io.micrometer.graphite.GraphiteHierarchicalNamingConvention;
+import io.micrometer.graphite.GraphiteMeterRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,25 +31,17 @@ import org.junit.jupiter.api.Test;
 import static ch.qos.logback.classic.Level.INFO;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 
 public class GraphiteReporterServiceTest {
-    private MeterRegistry meterRegistry;
-    private GraphiteReporterService service;
+    private CompositeMeterRegistry meterRegistry;
     private LoggingTestSupport log;
 
     @BeforeEach
     public void setUp() {
         meterRegistry = new CompositeMeterRegistry();
         log = new LoggingTestSupport(GraphiteReporterService.class);
-        service = new GraphiteReporterService.Builder()
-                .meterRegistry(meterRegistry)
-                .serviceName("Graphite-Reporter-test")
-                .prefix("test")
-                .host("localhost")
-                .port(8080)
-                .reportingIntervalMillis(10)
-                .build();
     }
 
     @AfterEach
@@ -52,8 +49,19 @@ public class GraphiteReporterServiceTest {
         log.stop();
     }
 
+    GraphiteReporterService.Builder serviceBuilder() {
+        return new GraphiteReporterService.Builder()
+                .meterRegistry(meterRegistry)
+                .serviceName("Graphite-Reporter-test")
+                .host("localhost")
+                .port(8080)
+                .reportingIntervalMillis(10);
+    }
+
     @Test
     public void logsWhenServiceStarts() {
+        GraphiteReporterService service = serviceBuilder().build();
+
         try {
             StyxFutures.await(service.start());
             assertThat(log.lastMessage(), is(loggingEvent(INFO, "Graphite service started, service name=\"Graphite\\-Reporter\\-test\"")));
@@ -61,4 +69,49 @@ public class GraphiteReporterServiceTest {
             StyxFutures.await(service.stop());
         }
     }
+
+    @Test
+    public void supportsGraphiteWithTags() {
+        GraphiteReporterService service = serviceBuilder().tagsEnabled(true).build();
+
+        try {
+            StyxFutures.await(service.start());
+            GraphiteMeterRegistry graphiteRegistry = (GraphiteMeterRegistry) meterRegistry.getRegistries().iterator().next();
+            assertThat(graphiteRegistry.config().namingConvention(), instanceOf(GraphiteDimensionalNamingConvention.class));
+        } finally {
+            StyxFutures.await(service.stop());
+        }
+
+    }
+
+    @Test
+    public void supportsGraphiteWithoutTags() {
+        GraphiteReporterService service = serviceBuilder().tagsEnabled(false).build();
+
+        try {
+            StyxFutures.await(service.start());
+            GraphiteMeterRegistry graphiteRegistry = (GraphiteMeterRegistry) meterRegistry.getRegistries().iterator().next();
+            assertThat(graphiteRegistry.config().namingConvention(), instanceOf(GraphiteHierarchicalNamingConvention.class));
+        } finally {
+            StyxFutures.await(service.stop());
+        }
+
+    }
+
+    @Test
+    public void defaultsToNoTagSupport() {
+        GraphiteReporterService service = serviceBuilder().build();
+
+        try {
+            StyxFutures.await(service.start());
+            GraphiteMeterRegistry graphiteRegistry = (GraphiteMeterRegistry) meterRegistry.getRegistries().iterator().next();
+            assertThat(graphiteRegistry.config().namingConvention(), instanceOf(GraphiteHierarchicalNamingConvention.class));
+        } finally {
+            StyxFutures.await(service.stop());
+        }
+
+    }
+
+
+
 }
