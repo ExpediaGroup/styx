@@ -28,6 +28,7 @@ public class GraphiteConfig {
     private final String host;
     private final int port;
     private final long intervalMillis;
+    private final String prefix;
     private final boolean enabled;
     private final boolean tagsEnabled;
 
@@ -35,13 +36,20 @@ public class GraphiteConfig {
     GraphiteConfig(@JsonProperty("host") String host,
                    @JsonProperty("port") Integer port,
                    @JsonProperty("intervalMillis") Long intervalMillis,
+                   @JsonProperty("prefix") String prefix,
                    @JsonProperty("enabled") Boolean enabled,
                    @JsonProperty("tagsEnabled") Boolean tagsEnabled) {
         this.host = host;
         this.port = ofNullable(port).orElse(9090);
         this.intervalMillis = ofNullable(intervalMillis).orElse(SECONDS.toMillis(5));
+        this.prefix = ofNullable(prefix).orElse("");
         this.enabled = ofNullable(enabled).orElse(true);
         this.tagsEnabled = ofNullable(tagsEnabled).orElse(false);
+    }
+
+    @JsonProperty("prefix")
+    public String prefix() {
+        return prefix;
     }
 
     @JsonProperty("host")
