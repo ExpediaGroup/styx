@@ -46,8 +46,8 @@ public final class GraphiteReporterService extends AbstractStyxService {
     private GraphiteReporterService(Builder builder) {
         super(builder.serviceName);
 
-        this.meterRegistry = requireNonNull(builder.meterRegistry);
-        this.graphiteConfig = new MicrometerGraphiteConfig(builder);
+        meterRegistry = requireNonNull(builder.meterRegistry);
+        graphiteConfig = new MicrometerGraphiteConfig(builder);
     }
 
     @Override
@@ -62,7 +62,7 @@ public final class GraphiteReporterService extends AbstractStyxService {
                     ? new GraphiteDimensionalNameMapper()
                     : new GraphiteHierarchicalNameMapper();
 
-            this.graphiteMeterRegistry = new GraphiteMeterRegistry(
+            graphiteMeterRegistry = new GraphiteMeterRegistry(
                     graphiteConfig,
                     Clock.SYSTEM,
                     (id, convention) -> metricPrefix + nameMapper.toHierarchicalName(id, convention));
@@ -75,7 +75,7 @@ public final class GraphiteReporterService extends AbstractStyxService {
     @Override
     protected CompletableFuture<Void> stopService() {
         return CompletableFuture.runAsync(() -> {
-            this.graphiteMeterRegistry.stop();
+            graphiteMeterRegistry.stop();
             ((CompositeMeterRegistry) meterRegistry).remove(graphiteMeterRegistry);
             LOGGER.info("Graphite service stopped, service name=\"{}\"", serviceName());
         });
