@@ -67,6 +67,7 @@ public final class GraphiteReporterService extends AbstractStyxService {
                     Clock.SYSTEM,
                     (id, convention) -> metricPrefix + nameMapper.toHierarchicalName(id, convention));
             ((CompositeMeterRegistry) meterRegistry).add(graphiteMeterRegistry);
+            graphiteMeterRegistry.start();
             LOGGER.info("Graphite service started, service name=\"{}\"", serviceName());
         });
     }
