@@ -19,12 +19,16 @@ import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.core.instrument.util.HierarchicalNameMapper;
 import io.micrometer.graphite.GraphiteConfig;
+import io.micrometer.graphite.GraphiteDimensionalNameMapper;
+import io.micrometer.graphite.GraphiteHierarchicalNameMapper;
 import io.micrometer.graphite.GraphiteMeterRegistry;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
 import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static java.util.Objects.requireNonNull;
@@ -49,7 +53,19 @@ public final class GraphiteReporterService extends AbstractStyxService {
     @Override
     protected CompletableFuture<Void> startService() {
         return CompletableFuture.runAsync(() -> {
-            this.graphiteMeterRegistry = new GraphiteMeterRegistry(graphiteConfig, Clock.SYSTEM);
+            String metricPrefix = Optional.ofNullable(graphiteConfig.metricNamePrefix())
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .map(s -> s + ".")
+                    .orElse("");
+            HierarchicalNameMapper nameMapper = graphiteConfig.graphiteTagsEnabled()
+                    ? new GraphiteDimensionalNameMapper()
+                    : new GraphiteHierarchicalNameMapper();
+
+            this.graphiteMeterRegistry = new GraphiteMeterRegistry(
+                    graphiteConfig,
+                    Clock.SYSTEM,
+                    (id, convention) -> metricPrefix + nameMapper.toHierarchicalName(id, convention));
             ((CompositeMeterRegistry) meterRegistry).add(graphiteMeterRegistry);
             LOGGER.info("Graphite service started, service name=\"{}\"", serviceName());
         });
@@ -72,6 +88,7 @@ public final class GraphiteReporterService extends AbstractStyxService {
         private String serviceName;
         private String host;
         private int port;
+        private String prefix;
         private long reportingIntervalMillis;
         private boolean enabled;
         private boolean tagsEnabled;
@@ -93,6 +110,11 @@ public final class GraphiteReporterService extends AbstractStyxService {
 
         public Builder port(int port) {
             this.port = port;
+            return this;
+        }
+
+        public Builder prefix(String prefix) {
+            this.prefix = prefix;
             return this;
         }
 
@@ -154,5 +176,10 @@ public final class GraphiteReporterService extends AbstractStyxService {
         public Duration step() {
             return Duration.ofMillis(builder.reportingIntervalMillis);
         }
+
+        public String metricNamePrefix() {
+            return builder.prefix;
+        }
+
     }
 }

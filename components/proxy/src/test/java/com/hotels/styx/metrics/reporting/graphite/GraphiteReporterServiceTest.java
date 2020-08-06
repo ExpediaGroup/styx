@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import static ch.qos.logback.classic.Level.INFO;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 
@@ -55,6 +56,10 @@ public class GraphiteReporterServiceTest {
                 .reportingIntervalMillis(10);
     }
 
+    GraphiteMeterRegistry graphiteRegistry() {
+        return (GraphiteMeterRegistry) meterRegistry.getRegistries().iterator().next();
+    }
+
     @Test
     public void logsWhenServiceStarts() {
         GraphiteReporterService service = serviceBuilder().build();
@@ -73,8 +78,7 @@ public class GraphiteReporterServiceTest {
 
         try {
             StyxFutures.await(service.start());
-            GraphiteMeterRegistry graphiteRegistry = (GraphiteMeterRegistry) meterRegistry.getRegistries().iterator().next();
-            assertThat(graphiteRegistry.config().namingConvention(), instanceOf(GraphiteDimensionalNamingConvention.class));
+            assertThat(graphiteRegistry().config().namingConvention(), instanceOf(GraphiteDimensionalNamingConvention.class));
         } finally {
             StyxFutures.await(service.stop());
         }
@@ -86,8 +90,7 @@ public class GraphiteReporterServiceTest {
 
         try {
             StyxFutures.await(service.start());
-            GraphiteMeterRegistry graphiteRegistry = (GraphiteMeterRegistry) meterRegistry.getRegistries().iterator().next();
-            assertThat(graphiteRegistry.config().namingConvention(), instanceOf(GraphiteHierarchicalNamingConvention.class));
+            assertThat(graphiteRegistry().config().namingConvention(), instanceOf(GraphiteHierarchicalNamingConvention.class));
         } finally {
             StyxFutures.await(service.stop());
         }
@@ -99,8 +102,50 @@ public class GraphiteReporterServiceTest {
 
         try {
             StyxFutures.await(service.start());
-            GraphiteMeterRegistry graphiteRegistry = (GraphiteMeterRegistry) meterRegistry.getRegistries().iterator().next();
-            assertThat(graphiteRegistry.config().namingConvention(), instanceOf(GraphiteHierarchicalNamingConvention.class));
+            assertThat(graphiteRegistry().config().namingConvention(), instanceOf(GraphiteHierarchicalNamingConvention.class));
+        } finally {
+            StyxFutures.await(service.stop());
+        }
+    }
+
+    @Test
+    public void appliesPrefixToHierarchicalMetricNames() {
+        GraphiteReporterService service = serviceBuilder().prefix("theprefix").build();
+
+        try {
+            StyxFutures.await(service.start());
+            meterRegistry.counter("mycounter").increment();
+            meterRegistry.counter("taggedCounter", "mytag", "myvalue").increment();
+            assertThat(graphiteRegistry().getDropwizardRegistry().meter("theprefix.mycounter").getCount(), equalTo(1L));
+            assertThat(graphiteRegistry().getDropwizardRegistry().meter("theprefix.taggedCounter.mytag.myvalue").getCount(), equalTo(1L));
+        } finally {
+            StyxFutures.await(service.stop());
+        }
+    }
+
+    @Test
+    public void appliesPrefixToDimensionalMetricNames() {
+        GraphiteReporterService service = serviceBuilder().prefix("theprefix").tagsEnabled(true).build();
+
+        try {
+            StyxFutures.await(service.start());
+            meterRegistry.counter("mycounter").increment();
+            meterRegistry.counter("taggedCounter", "mytag", "myvalue").increment();
+            assertThat(graphiteRegistry().getDropwizardRegistry().meter("theprefix.mycounter").getCount(), equalTo(1L));
+            assertThat(graphiteRegistry().getDropwizardRegistry().meter("theprefix.taggedCounter;mytag=myvalue").getCount(), equalTo(1L));
+        } finally {
+            StyxFutures.await(service.stop());
+        }
+    }
+
+    @Test
+    public void appliesNoPrefixByDefaultToMetricNames() {
+        GraphiteReporterService service = serviceBuilder().build();
+
+        try {
+            StyxFutures.await(service.start());
+            meterRegistry.counter("mycounter").increment();
+            assertThat(graphiteRegistry().getDropwizardRegistry().meter("mycounter").getCount(), equalTo(1L));
         } finally {
             StyxFutures.await(service.stop());
         }
