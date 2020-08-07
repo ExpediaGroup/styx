@@ -24,6 +24,7 @@ import io.micrometer.graphite.GraphiteConfig;
 import io.micrometer.graphite.GraphiteDimensionalNameMapper;
 import io.micrometer.graphite.GraphiteHierarchicalNameMapper;
 import io.micrometer.graphite.GraphiteMeterRegistry;
+import io.micrometer.graphite.GraphiteProtocol;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
@@ -31,6 +32,7 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import static io.micrometer.graphite.GraphiteProtocol.PLAINTEXT;
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -169,6 +171,11 @@ public final class GraphiteReporterService extends AbstractStyxService {
         @Override
         public boolean enabled() {
             return builder.enabled;
+        }
+
+        @Override
+        public GraphiteProtocol protocol() {
+            return PLAINTEXT;
         }
 
         @NotNull
