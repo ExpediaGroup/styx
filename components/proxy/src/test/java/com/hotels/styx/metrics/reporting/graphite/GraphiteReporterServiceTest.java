@@ -116,8 +116,10 @@ public class GraphiteReporterServiceTest {
             StyxFutures.await(service.start());
             meterRegistry.counter("mycounter").increment();
             meterRegistry.counter("taggedCounter", "mytag", "myvalue").increment();
+            meterRegistry.counter("counter.with.dots", "mytag", "myvalue").increment();
             assertThat(graphiteRegistry().getDropwizardRegistry().meter("theprefix.mycounter").getCount(), equalTo(1L));
             assertThat(graphiteRegistry().getDropwizardRegistry().meter("theprefix.taggedCounter.mytag.myvalue").getCount(), equalTo(1L));
+            assertThat(graphiteRegistry().getDropwizardRegistry().meter("theprefix.counter.with.dots.mytag.myvalue").getCount(), equalTo(1L));
         } finally {
             StyxFutures.await(service.stop());
         }
@@ -131,8 +133,10 @@ public class GraphiteReporterServiceTest {
             StyxFutures.await(service.start());
             meterRegistry.counter("mycounter").increment();
             meterRegistry.counter("taggedCounter", "mytag", "myvalue").increment();
+            meterRegistry.counter("counter.with.dots", "mytag", "myvalue").increment();
             assertThat(graphiteRegistry().getDropwizardRegistry().meter("theprefix.mycounter").getCount(), equalTo(1L));
             assertThat(graphiteRegistry().getDropwizardRegistry().meter("theprefix.taggedCounter;mytag=myvalue").getCount(), equalTo(1L));
+            assertThat(graphiteRegistry().getDropwizardRegistry().meter("theprefix.counter.with.dots;mytag=myvalue").getCount(), equalTo(1L));
         } finally {
             StyxFutures.await(service.stop());
         }

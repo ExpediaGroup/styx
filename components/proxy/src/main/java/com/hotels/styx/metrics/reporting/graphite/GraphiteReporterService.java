@@ -19,10 +19,13 @@ import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.core.instrument.config.NamingConvention;
 import io.micrometer.core.instrument.util.HierarchicalNameMapper;
 import io.micrometer.graphite.GraphiteConfig;
 import io.micrometer.graphite.GraphiteDimensionalNameMapper;
+import io.micrometer.graphite.GraphiteDimensionalNamingConvention;
 import io.micrometer.graphite.GraphiteHierarchicalNameMapper;
+import io.micrometer.graphite.GraphiteHierarchicalNamingConvention;
 import io.micrometer.graphite.GraphiteMeterRegistry;
 import io.micrometer.graphite.GraphiteProtocol;
 import org.jetbrains.annotations.NotNull;
@@ -32,6 +35,7 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import static io.micrometer.core.instrument.config.NamingConvention.dot;
 import static io.micrometer.graphite.GraphiteProtocol.PLAINTEXT;
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -63,11 +67,15 @@ public final class GraphiteReporterService extends AbstractStyxService {
             HierarchicalNameMapper nameMapper = graphiteConfig.graphiteTagsEnabled()
                     ? new GraphiteDimensionalNameMapper()
                     : new GraphiteHierarchicalNameMapper();
+            NamingConvention nameConvention = graphiteConfig.graphiteTagsEnabled()
+                    ? new GraphiteDimensionalNamingConvention(dot)
+                    : new GraphiteHierarchicalNamingConvention(dot);
 
             graphiteMeterRegistry = new GraphiteMeterRegistry(
                     graphiteConfig,
                     Clock.SYSTEM,
                     (id, convention) -> metricPrefix + nameMapper.toHierarchicalName(id, convention));
+            graphiteMeterRegistry.config().namingConvention(nameConvention);
             ((CompositeMeterRegistry) meterRegistry).add(graphiteMeterRegistry);
             LOGGER.info("Graphite service started, service name=\"{}\"", serviceName());
         });
