@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2017 Expedia Inc.
+# Copyright (C) 2013-2020 Expedia Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
-import os
 
 JFC_FILE = "scripts/load-test-tool/configuration/load_test.jfc"
 

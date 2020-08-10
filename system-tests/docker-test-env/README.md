@@ -53,7 +53,7 @@ $ curl http://localhost:8474/proxies | jq
 Applying toxics:
 
 ```bash
-$ curl -v -X POST -H "Content-Type: application/json" -d @system-tests/docker-test-env/toxiproxy/origin-latency.json http://localhost:8474/proxies/httpd-01/toxics
+$ curl -v -X POST -H "Content-Type: application/json" -d @system-tests/docker-test-env/toxiproxy/origin-latency.json http://localhost:8474/proxies/origin-01/toxics
 ```
 
 Removing toxics:
