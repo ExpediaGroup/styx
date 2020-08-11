@@ -47,7 +47,4 @@ public class OperatingSystemMetricsTest {
         assertThat(registry.find("os.swapSpace.free").gauge(), notNullValue());
         assertThat(registry.find("os.swapSpace.total").gauge(), notNullValue());
     }
-
-
-
 }
