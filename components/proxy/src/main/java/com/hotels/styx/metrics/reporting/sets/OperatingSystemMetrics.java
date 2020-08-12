@@ -56,7 +56,7 @@ public final class OperatingSystemMetrics implements MeterBinder {
                     .tags(tags)
                     .register(registry);
 
-            Gauge.builder(name(NAME_PREFIX, "fileDescriptors.max"), unixBean, UnixOperatingSystemMXBean::getOpenFileDescriptorCount)
+            Gauge.builder(name(NAME_PREFIX, "fileDescriptors.open"), unixBean, UnixOperatingSystemMXBean::getOpenFileDescriptorCount)
                     .tags(tags)
                     .register(registry);
         });
