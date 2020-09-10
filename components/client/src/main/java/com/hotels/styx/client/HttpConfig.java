@@ -122,9 +122,9 @@ public final class HttpConfig {
      */
     public static final class Builder {
         private boolean compress;
-        private int maxInitialLength = 4096;
-        private int maxHeadersSize = DEFAULT_MAX_HEADER_SIZE;
-        private int maxChunkSize = 8192;
+        private int maxInitialLength = 16384;
+        private int maxHeadersSize = 32768;
+        private int maxChunkSize = 32768;
         private int maxContentLength = 65536;
         private Iterable<ChannelOptionSetting> settings = emptyList();
 
