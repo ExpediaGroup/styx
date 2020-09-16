@@ -75,7 +75,10 @@ public final class ConnectionPools {
                         .build());
     }
 
-    private static ConnectionPool poolForOrigin(ConnectionPoolSettings connectionPoolSettings, Origin origin, MetricRegistry metricRegistry, NettyConnectionFactory connectionFactory) {
+    private static ConnectionPool poolForOrigin(ConnectionPoolSettings connectionPoolSettings,
+                                                Origin origin,
+                                                MetricRegistry metricRegistry,
+                                                NettyConnectionFactory connectionFactory) {
         return new StatsReportingConnectionPool(
                 new SimpleConnectionPool(
                         origin,
