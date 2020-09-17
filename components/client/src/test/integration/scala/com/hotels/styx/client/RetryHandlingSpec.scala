@@ -16,6 +16,7 @@
 package com.hotels.styx.client
 
 import java.nio.charset.Charset
+import java.util.concurrent.TimeUnit.SECONDS
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -25,6 +26,7 @@ import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpRequest.get
+import com.hotels.styx.api.`extension`.service.ConnectionPoolSettings
 import com.hotels.styx.api.extension.Origin._
 import com.hotels.styx.api.extension.service.{BackendService, StickySessionConfig}
 import com.hotels.styx.api.extension.{ActiveOrigins, Origin}
@@ -127,6 +129,11 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
   test("retries the next available origin on failure") {
     val backendService = new BackendService.Builder()
       .origins(unhealthyOriginOne, unhealthyOriginTwo, unhealthyOriginThree, healthyOriginTwo)
+      .connectionPoolConfig(
+        new ConnectionPoolSettings.Builder()
+          .pendingConnectionTimeout(10, SECONDS)
+          .build()
+      )
       .build()
 
     val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id)

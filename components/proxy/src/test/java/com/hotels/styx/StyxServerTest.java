@@ -324,7 +324,8 @@ public class StyxServerTest {
     private static void eventually(Runnable block) {
         long startTime = currentTimeMillis();
         Throwable lastError = null;
-        while (currentTimeMillis() - startTime < 3000) {
+        // Note: since this returns as soon as it completes the task without error, it will only hit the maximum time if the test fails.
+        while (currentTimeMillis() - startTime < 30000) {
             try {
                 block.run();
                 return;
