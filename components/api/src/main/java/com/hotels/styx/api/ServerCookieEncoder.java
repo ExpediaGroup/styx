@@ -51,7 +51,6 @@ import static java.util.Objects.requireNonNull;
  * </pre>
  */
 final class ServerCookieEncoder extends CookieEncoder {
-
     /**
      * Lax instance that doesn't validate name and value, and that allows multiple
      * cookies with the same name.

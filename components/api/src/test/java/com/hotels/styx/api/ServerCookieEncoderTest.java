@@ -17,7 +17,6 @@ package com.hotels.styx.api;
 
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.Cookie;
-import io.netty.handler.codec.http.cookie.CookieHeaderNames;
 import io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 import org.junit.jupiter.api.Test;
@@ -56,12 +55,4 @@ public class ServerCookieEncoderTest {
 
         assertThat(ServerCookieEncoder.LAX.encode(cookie), containsString("Lax"));
     }
-
-//    TODO why was this here?
-//    @Test
-//    public void setAnySameSite() {
-//        NettyCookie cookie = new NettyCookie("key", "value");
-//        cookie.setSameSite("Test");
-//        assertThat(ServerCookieEncoder.LAX.encode(cookie), containsString("SameSite=Test"));
-//    }
 }

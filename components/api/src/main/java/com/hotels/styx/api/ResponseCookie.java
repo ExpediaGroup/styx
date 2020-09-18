@@ -92,7 +92,7 @@ public final class ResponseCookie {
         return headerValues.stream()
                 .map(ClientCookieDecoder.LAX::decode)
                 .filter(Objects::nonNull)
-                .map(dcook -> ResponseCookie.convert(dcook))
+                .map(ResponseCookie::convert)
                 .collect(Collectors.toSet());
     }
 
