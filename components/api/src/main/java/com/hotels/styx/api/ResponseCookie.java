@@ -193,18 +193,18 @@ public final class ResponseCookie {
     }
 
     private static DefaultCookie convert(ResponseCookie cookie) {
-        DefaultCookie nCookie = new DefaultCookie(cookie.name, cookie.value);
+        DefaultCookie nettyCookie = new DefaultCookie(cookie.name, cookie.value);
 
-        nCookie.setDomain(cookie.domain);
-        nCookie.setHttpOnly(cookie.httpOnly);
-        nCookie.setSecure(cookie.secure);
+        nettyCookie.setDomain(cookie.domain);
+        nettyCookie.setHttpOnly(cookie.httpOnly);
+        nettyCookie.setSecure(cookie.secure);
         if (cookie.maxAge != null) {
-            nCookie.setMaxAge(cookie.maxAge);
+            nettyCookie.setMaxAge(cookie.maxAge);
         }
-        nCookie.setPath(cookie.path);
-        nCookie.setSameSite(cookie.sameSite);
+        nettyCookie.setPath(cookie.path);
+        nettyCookie.setSameSite(cookie.sameSite);
 
-        return nCookie;
+        return nettyCookie;
     }
 
     private static ResponseCookie convert(Cookie cookie) {
