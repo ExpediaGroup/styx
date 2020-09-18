@@ -116,10 +116,15 @@ final class ServerCookieEncoder extends CookieEncoder {
             add(buf, CookieHeaderNames.HTTPONLY);
         }
 
-        DefaultCookie dcookie = ((DefaultCookie) cookie);
-        if (dcookie.sameSite() != null) {
-            add(buf, CookieHeaderNames.SAMESITE, dcookie.sameSite().toString());
+        /* NOTE This DefaultCookie seems to be the only non-deprecated implementation of Cookie in netty,
+                so this should always evaluate to true. */
+        if(cookie instanceof DefaultCookie) {
+            DefaultCookie defaultCookie = ((DefaultCookie) cookie);
+            if (defaultCookie.sameSite() != null) {
+                add(buf, CookieHeaderNames.SAMESITE, defaultCookie.sameSite().toString());
+            }
         }
+
         return stripTrailingSeparator(buf);
     }
 

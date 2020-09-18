@@ -210,14 +210,20 @@ public final class ResponseCookie {
     private static ResponseCookie convert(Cookie cookie) {
         String value = cookie.wrap() ? quote(cookie.value()) : cookie.value();
 
-        return responseCookie(cookie.name(), value)
+        Builder builder = responseCookie(cookie.name(), value)
                 .domain(cookie.domain())
                 .path(cookie.path())
                 .maxAge(cookie.maxAge())
                 .httpOnly(cookie.isHttpOnly())
-                .secure(cookie.isSecure())
-                .sameSite(((DefaultCookie) cookie).sameSite())
-                .build();
+                .secure(cookie.isSecure());
+
+        /* NOTE This DefaultCookie seems to be the only non-deprecated implementation of Cookie in netty,
+                so this should always evaluate to true. */
+        if (cookie instanceof DefaultCookie) {
+            builder = builder.sameSite(((DefaultCookie) cookie).sameSite());
+        }
+
+        return builder.build();
     }
 
     private static String quote(String value) {
@@ -372,6 +378,7 @@ public final class ResponseCookie {
 
         /**
          * Sets/unsets the SameSite attribute.
+         *
          * @param sameSite SameSite attribute
          * @return this builder
          */
