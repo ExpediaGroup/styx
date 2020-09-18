@@ -35,13 +35,13 @@ class NettyCookie extends DefaultCookie {
     }
 
 
-    public String sameSite() {
-        return sameSite;
-    }
+//    public String sameSite() {
+//        return sameSite;
+//    }
 
-    public void setSameSite(String sameSite) {
-        this.sameSite = sameSite;
-    }
+//    public void setSameSite(String sameSite) {
+//        this.sameSite = sameSite;
+//    }
 
     @Override
     public String toString() {

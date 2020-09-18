@@ -17,7 +17,9 @@ package com.hotels.styx.api;
 
 import io.netty.handler.codec.http.HttpHeaderDateFormat;
 import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.CookieEncoder;
+import io.netty.handler.codec.http.cookie.DefaultCookie;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -68,7 +70,7 @@ final class ServerCookieEncoder extends CookieEncoder {
      * @return a single Set-Cookie header value
      */
     String encode(String name, String value) {
-        return encode(new NettyCookie(name, value));
+        return encode(new DefaultCookie(name, value));
     }
 
     /**
@@ -77,7 +79,7 @@ final class ServerCookieEncoder extends CookieEncoder {
      * @param cookie the cookie
      * @return a single Set-Cookie header value
      */
-    String encode(NettyCookie cookie) {
+    String encode(Cookie cookie) {
 
         final String name = requireNonNull(cookie, "cookie").name();
         final String value = cookie.value() != null ? cookie.value() : "";
@@ -114,8 +116,9 @@ final class ServerCookieEncoder extends CookieEncoder {
             add(buf, CookieHeaderNames.HTTPONLY);
         }
 
-        if (cookie.sameSite() != null) {
-            add(buf, CookieHeaderNames.SAMESITE, cookie.sameSite());
+        DefaultCookie dcookie = ((DefaultCookie) cookie);
+        if (dcookie.sameSite() != null) {
+            add(buf, CookieHeaderNames.SAMESITE, dcookie.sameSite().toString());
         }
         return stripTrailingSeparator(buf);
     }
@@ -147,7 +150,7 @@ final class ServerCookieEncoder extends CookieEncoder {
      * @param cookies a bunch of cookies
      * @return the corresponding bunch of Set-Cookie headers
      */
-    List<String> encode(NettyCookie... cookies) {
+    List<String> encode(DefaultCookie... cookies) {
         if (requireNonNull(cookies, "cookies").length == 0) {
             return Collections.emptyList();
         }
@@ -156,7 +159,7 @@ final class ServerCookieEncoder extends CookieEncoder {
         Map<String, Integer> nameToIndex = strict && cookies.length > 1 ? new HashMap<>() : null;
         boolean hasDupdName = false;
         for (int i = 0; i < cookies.length; i++) {
-            NettyCookie c = cookies[i];
+            DefaultCookie c = cookies[i];
             encoded.add(encode(c));
             if (nameToIndex != null) {
                 hasDupdName |= nameToIndex.put(c.name(), i) != null;
@@ -171,7 +174,7 @@ final class ServerCookieEncoder extends CookieEncoder {
      * @param cookies a bunch of cookies
      * @return the corresponding bunch of Set-Cookie headers
      */
-    List<String> encode(Collection<? extends NettyCookie> cookies) {
+    List<String> encode(Collection<? extends DefaultCookie> cookies) {
         if (requireNonNull(cookies, "cookies").isEmpty()) {
             return Collections.emptyList();
         }
@@ -180,7 +183,7 @@ final class ServerCookieEncoder extends CookieEncoder {
         Map<String, Integer> nameToIndex = strict && cookies.size() > 1 ? new HashMap<>() : null;
         int i = 0;
         boolean hasDupdName = false;
-        for (NettyCookie c : cookies) {
+        for (DefaultCookie c : cookies) {
             encoded.add(encode(c));
             if (nameToIndex != null) {
                 hasDupdName |= nameToIndex.put(c.name(), i++) != null;
@@ -195,20 +198,20 @@ final class ServerCookieEncoder extends CookieEncoder {
      * @param cookies a bunch of cookies
      * @return the corresponding bunch of Set-Cookie headers
      */
-    List<String> encode(Iterable<? extends NettyCookie> cookies) {
-        Iterator<? extends NettyCookie> cookiesIt = requireNonNull(cookies, "cookies").iterator();
+    List<String> encode(Iterable<? extends DefaultCookie> cookies) {
+        Iterator<? extends DefaultCookie> cookiesIt = requireNonNull(cookies, "cookies").iterator();
         if (!cookiesIt.hasNext()) {
             return Collections.emptyList();
         }
 
         List<String> encoded = new ArrayList<>();
-        NettyCookie firstCookie = cookiesIt.next();
+        DefaultCookie firstCookie = cookiesIt.next();
         Map<String, Integer> nameToIndex = strict && cookiesIt.hasNext() ? new HashMap<>() : null;
         int i = 0;
         encoded.add(encode(firstCookie));
         boolean hasDupdName = nameToIndex != null && nameToIndex.put(firstCookie.name(), i++) != null;
         while (cookiesIt.hasNext()) {
-            NettyCookie c = cookiesIt.next();
+            DefaultCookie c = cookiesIt.next();
             encoded.add(encode(c));
             if (nameToIndex != null) {
                 hasDupdName |= nameToIndex.put(c.name(), i++) != null;

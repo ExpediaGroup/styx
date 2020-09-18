@@ -16,6 +16,12 @@
 package com.hotels.styx.api;
 
 
+import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
+import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.handler.codec.http.cookie.CookieHeaderNames;
+import io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite;
+import io.netty.handler.codec.http.cookie.DefaultCookie;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -46,13 +52,7 @@ public final class ResponseCookie {
     private final boolean httpOnly;
     private final boolean secure;
     private final int hashCode;
-    private final String sameSite;
-
-    public enum SameSite {
-        Lax,
-        Strict,
-        None
-    }
+    private final SameSite sameSite;
 
     private ResponseCookie(Builder builder) {
         if (builder.name == null || builder.name.isEmpty()) {
@@ -92,7 +92,7 @@ public final class ResponseCookie {
         return headerValues.stream()
                 .map(ClientCookieDecoder.LAX::decode)
                 .filter(Objects::nonNull)
-                .map(ResponseCookie::convert)
+                .map(dcook -> ResponseCookie.convert(dcook))
                 .collect(Collectors.toSet());
     }
 
@@ -103,7 +103,7 @@ public final class ResponseCookie {
      * @return "Set-Cookie" header values
      */
     public static List<String> encode(Collection<ResponseCookie> cookies) {
-        Set<NettyCookie> nettyCookies = cookies.stream()
+        Set<DefaultCookie> nettyCookies = cookies.stream()
                 .map(ResponseCookie::convert)
                 .collect(toSet());
 
@@ -189,12 +189,11 @@ public final class ResponseCookie {
      * @return SameSite attribute, if present
      */
     public Optional<String> sameSite() {
-        return Optional.ofNullable(sameSite);
+        return Optional.ofNullable(sameSite).map(SameSite::name);
     }
 
-
-    private static NettyCookie convert(ResponseCookie cookie) {
-        NettyCookie nCookie = new NettyCookie(cookie.name, cookie.value);
+    private static DefaultCookie convert(ResponseCookie cookie) {
+        DefaultCookie nCookie = new DefaultCookie(cookie.name, cookie.value);
 
         nCookie.setDomain(cookie.domain);
         nCookie.setHttpOnly(cookie.httpOnly);
@@ -208,7 +207,7 @@ public final class ResponseCookie {
         return nCookie;
     }
 
-    private static ResponseCookie convert(NettyCookie cookie) {
+    private static ResponseCookie convert(Cookie cookie) {
         String value = cookie.wrap() ? quote(cookie.value()) : cookie.value();
 
         return responseCookie(cookie.name(), value)
@@ -217,7 +216,7 @@ public final class ResponseCookie {
                 .maxAge(cookie.maxAge())
                 .httpOnly(cookie.isHttpOnly())
                 .secure(cookie.isSecure())
-                .sameSiteRawValue(cookie.sameSite())
+                .sameSite(((DefaultCookie) cookie).sameSite())
                 .build();
     }
 
@@ -276,7 +275,7 @@ public final class ResponseCookie {
         private String path;
         private boolean httpOnly;
         private boolean secure;
-        private String sameSite;
+        private SameSite sameSite;
 
         private Builder(String name, String value) {
             this.name = requireNonNull(name);
@@ -367,7 +366,7 @@ public final class ResponseCookie {
          * @return this builder
          */
         public Builder sameSite(SameSite sameSite) {
-            this.sameSite = sameSite.name();
+            this.sameSite = sameSite;
             return this;
         }
 
@@ -377,7 +376,7 @@ public final class ResponseCookie {
          * @return this builder
          */
         public Builder sameSiteRawValue(String sameSite) {
-            this.sameSite = sameSite;
+            this.sameSite = SameSite.valueOf(sameSite);
             return this;
         }
 
