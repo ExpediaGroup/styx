@@ -16,7 +16,6 @@
 package com.hotels.styx.api;
 
 
-import io.netty.handler.codec.http.cookie.CookieHeaderNames;
 import io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite;
 import org.junit.jupiter.api.Test;
 
@@ -45,8 +44,8 @@ public class ResponseCookieTest {
     @Test
     public void acceptSameSiteCookie() {
         assertThat(
-                responseCookie("name", "value").sameSite(SameSite.Lax).build().sameSite().orElse(""),
-                equalTo(SameSite.Lax.name())
+                responseCookie("name", "value").sameSite(SameSite.Lax).build().sameSite().orElse(null),
+                equalTo(SameSite.Lax)
         );
     }
 

@@ -33,7 +33,6 @@ import static com.hotels.styx.api.HttpHeaderValues.CHUNKED;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.ResponseCookie.decode;
-import static com.hotels.styx.api.ResponseCookie.encode;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.lang.Long.parseLong;
 import static java.lang.String.format;
@@ -433,8 +432,7 @@ public class HttpResponse implements HttpMessage {
 
             removeCookies(cookies.stream().map(ResponseCookie::name).collect(toList()));
 
-            encode(cookies).forEach(cookie ->
-                    addHeader(SET_COOKIE, cookie));
+            cookies.forEach(cookie -> addHeader(SET_COOKIE, cookie.asSetCookieString()));
             return this;
         }
 

@@ -35,7 +35,6 @@ import static com.hotels.styx.api.HttpResponseStatus.statusWithCode;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.HttpVersion.httpVersion;
 import static com.hotels.styx.api.ResponseCookie.decode;
-import static com.hotels.styx.api.ResponseCookie.encode;
 import static io.netty.buffer.ByteBufUtil.getBytes;
 import static java.lang.Long.parseLong;
 import static java.lang.String.format;
@@ -707,8 +706,7 @@ public class LiveHttpResponse implements LiveHttpMessage {
 
             removeCookies(cookies.stream().map(ResponseCookie::name).collect(toList()));
 
-            encode(cookies).forEach(cookie ->
-                    addHeader(SET_COOKIE, cookie));
+            cookies.forEach(cookie -> addHeader(SET_COOKIE, cookie.asSetCookieString()));
             return this;
         }
 

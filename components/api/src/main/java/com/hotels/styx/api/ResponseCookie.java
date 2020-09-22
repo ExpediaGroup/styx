@@ -21,7 +21,6 @@ import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -31,7 +30,6 @@ import java.util.stream.Collectors;
 import static io.netty.handler.codec.http.cookie.Cookie.UNDEFINED_MAX_AGE;
 import static java.util.Objects.hash;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toSet;
 
 /**
  * Represents an HTTP cookie as sent in the HTTP response {@code Set-Cookie} header.
@@ -96,27 +94,12 @@ public final class ResponseCookie {
     }
 
     /**
-     * Encodes a collection of {@link ResponseCookie} objects into a list of "Set-Cookie" header values.
+     * Encodes this object into a "Set-Cookie" header value.
      *
-     * @param cookies cookies
-     * @return "Set-Cookie" header values
-     */
-    public static List<String> encode(Collection<ResponseCookie> cookies) {
-        Set<DefaultCookie> nettyCookies = cookies.stream()
-                .map(ResponseCookie::convert)
-                .collect(toSet());
-
-        return ServerCookieEncoder.LAX.encode(nettyCookies);
-    }
-
-    /**
-     * Encodes a {@link ResponseCookie} object into a "Set-Cookie" header value.
-     *
-     * @param cookie cookie
      * @return "Set-Cookie" header value
      */
-    public static String encode(ResponseCookie cookie) {
-        return ServerCookieEncoder.LAX.encode(convert(cookie));
+    String asSetCookieString() {
+        return ServerCookieEncoder.LAX.encode(asDefaultCookie());
     }
 
     /**
@@ -187,8 +170,23 @@ public final class ResponseCookie {
      *
      * @return SameSite attribute, if present
      */
-    public Optional<String> sameSite() {
-        return Optional.ofNullable(sameSite).map(SameSite::name);
+    public Optional<SameSite> sameSite() {
+        return Optional.ofNullable(sameSite);
+    }
+
+    private DefaultCookie asDefaultCookie() {
+        DefaultCookie nettyCookie = new DefaultCookie(name, value);
+
+        nettyCookie.setDomain(domain);
+        nettyCookie.setHttpOnly(httpOnly);
+        nettyCookie.setSecure(secure);
+        if (maxAge != null) {
+            nettyCookie.setMaxAge(maxAge);
+        }
+        nettyCookie.setPath(path);
+        nettyCookie.setSameSite(sameSite);
+
+        return nettyCookie;
     }
 
     private static DefaultCookie convert(ResponseCookie cookie) {
