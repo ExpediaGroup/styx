@@ -89,7 +89,7 @@ public final class ResponseCookie {
         return headerValues.stream()
                 .map(ClientCookieDecoder.LAX::decode)
                 .filter(Objects::nonNull)
-                .map(ResponseCookie::convert)
+                .map(cookie -> new Builder(cookie).build())
                 .collect(Collectors.toSet());
     }
 
@@ -189,40 +189,6 @@ public final class ResponseCookie {
         return nettyCookie;
     }
 
-    private static DefaultCookie convert(ResponseCookie cookie) {
-        DefaultCookie nettyCookie = new DefaultCookie(cookie.name, cookie.value);
-
-        nettyCookie.setDomain(cookie.domain);
-        nettyCookie.setHttpOnly(cookie.httpOnly);
-        nettyCookie.setSecure(cookie.secure);
-        if (cookie.maxAge != null) {
-            nettyCookie.setMaxAge(cookie.maxAge);
-        }
-        nettyCookie.setPath(cookie.path);
-        nettyCookie.setSameSite(cookie.sameSite);
-
-        return nettyCookie;
-    }
-
-    private static ResponseCookie convert(Cookie cookie) {
-        String value = cookie.wrap() ? quote(cookie.value()) : cookie.value();
-
-        Builder builder = responseCookie(cookie.name(), value)
-                .domain(cookie.domain())
-                .path(cookie.path())
-                .maxAge(cookie.maxAge())
-                .httpOnly(cookie.isHttpOnly())
-                .secure(cookie.isSecure());
-
-        /* NOTE This DefaultCookie seems to be the only non-deprecated implementation of Cookie in netty,
-                so this should always evaluate to true. */
-        if (cookie instanceof DefaultCookie) {
-            builder = builder.sameSite(((DefaultCookie) cookie).sameSite());
-        }
-
-        return builder.build();
-    }
-
     private static String quote(String value) {
         return "\"" + value + "\"";
     }
@@ -283,6 +249,24 @@ public final class ResponseCookie {
         private Builder(String name, String value) {
             this.name = requireNonNull(name);
             this.value = requireNonNull(value);
+        }
+
+        private Builder(Cookie cookie) {
+            String value = cookie.wrap() ? quote(cookie.value()) : cookie.value();
+
+            this.name = cookie.name();
+            this.value = value;
+
+            domain(cookie.domain());
+            path(cookie.path());
+            maxAge(cookie.maxAge());
+            httpOnly(cookie.isHttpOnly());
+            secure(cookie.isSecure());
+
+            /* NOTE This DefaultCookie seems to be the only non-deprecated implementation of Cookie in netty, so this should always evaluate to true. */
+            if (cookie instanceof DefaultCookie) {
+                sameSite(((DefaultCookie) cookie).sameSite());
+            }
         }
 
         /**
