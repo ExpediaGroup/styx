@@ -106,10 +106,10 @@
 
     <!-- General Versions -->
     <guava.version>24.1.1-jre</guava.version>
-    <jackson.version>2.10.4</jackson.version>
-    <jackson.dataformat.version>2.10.2</jackson.dataformat.version>
-    <jackson.module.scala.version>2.10.1</jackson.module.scala.version>
-    <jackson-module-kotlin.version>2.10.1</jackson-module-kotlin.version>
+    <jackson.version>2.10.5</jackson.version>
+    <jackson.dataformat.version>2.10.5</jackson.dataformat.version>
+    <jackson.module.scala.version>2.10.5</jackson.module.scala.version>
+    <jackson-module-kotlin.version>2.10.5</jackson-module-kotlin.version>
     <metrics.version>4.0.5</metrics.version>
     <antlr.version>4.5.1-1</antlr.version>
     <netty.version>4.1.49.Final</netty.version>
