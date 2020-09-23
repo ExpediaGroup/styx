@@ -21,5 +21,6 @@
   <logger name="com.hotels.styx.client.netty.connectionpool.HttpRequestOperation" level="WARN"/>
   <logger name="com.hotels.styx.support.StyxServerProvider" level="INFO"/>
   <logger name="com.hotels.styx.client.netty.connectionpool.HttpRequestOperation" level="WARN"/>
+  <logger name="io.netty.util.HashedWheelTimer" level="ERROR" />
 
 </configuration>

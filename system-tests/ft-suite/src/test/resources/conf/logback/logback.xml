@@ -18,6 +18,7 @@
   <logger name="com.hotels.styx.proxy.HttpErrorStatusCauseLogger" level="OFF"/>
   <logger name="com.hotels.styx.server.netty.connectors.HttpPipelineHandler" level="OFF"/>
   <logger name="com.hotels.styx.servers.MockOriginServer" level="OFF"/>
+  <logger name="io.netty.util.HashedWheelTimer" level="ERROR" />
 
   <root level="OFF">
     <appender-ref ref="CONSOLE"/>

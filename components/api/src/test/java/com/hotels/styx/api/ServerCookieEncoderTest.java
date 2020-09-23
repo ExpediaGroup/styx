@@ -15,7 +15,10 @@
  */
 package com.hotels.styx.api;
 
-import com.hotels.styx.api.ResponseCookie.SameSite;
+import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
+import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite;
+import io.netty.handler.codec.http.cookie.DefaultCookie;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.not;
@@ -28,7 +31,7 @@ public class ServerCookieEncoderTest {
     @Test
     public void removesMaxAgeInFavourOfExpireIfDateIsInThePast() {
         String cookieValue = "hp_pos=\"\"; Domain=.dev-hotels.com; Expires=Thu, 01-Jan-1970 00:00:10 GMT; Path=/";
-        NettyCookie cookie = ClientCookieDecoder.LAX.decode(cookieValue);
+        Cookie cookie = ClientCookieDecoder.LAX.decode(cookieValue);
 
         String encodedCookieValue = ServerCookieEncoder.LAX.encode(cookie);
         assertThat(encodedCookieValue, not(containsString("Max-Age=0")));
@@ -38,25 +41,18 @@ public class ServerCookieEncoderTest {
     @Test
     public void willNotModifyMaxAgeIfPositive() {
         String cookieValue = "hp_pos=\"\"; Domain=.dev-hotels.com; Max-Age=50; Expires=Thu, 01-Jan-1970 00:00:10 GMT; Path=/";
-        NettyCookie cookie = ClientCookieDecoder.LAX.decode(cookieValue);
+        Cookie cookie = ClientCookieDecoder.LAX.decode(cookieValue);
         assertThat(cookie.maxAge(), is(50L));
         assertThat(ServerCookieEncoder.LAX.encode(cookie), containsString("Max-Age=50"));
     }
 
     @Test
     public void setValidSameSite() {
-        NettyCookie cookie = new NettyCookie("key", "value");
-        cookie.setSameSite(SameSite.Lax.name());
+        DefaultCookie cookie = new DefaultCookie("key", "value");
+        cookie.setSameSite(SameSite.Lax);
         cookie.setDomain(".domain.com");
         cookie.setMaxAge(50);
 
         assertThat(ServerCookieEncoder.LAX.encode(cookie), containsString("Lax"));
-    }
-
-    @Test
-    public void setAnySameSite() {
-        NettyCookie cookie = new NettyCookie("key", "value");
-        cookie.setSameSite("Test");
-        assertThat(ServerCookieEncoder.LAX.encode(cookie), containsString("SameSite=Test"));
     }
 }
