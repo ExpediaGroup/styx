@@ -30,7 +30,7 @@ import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.matchers.LoggingEventMatcher._
 import com.hotels.styx.support.matchers.LoggingTestSupport
 import com.hotels.styx.support.server.UrlMatchingStrategies._
-import com.hotels.styx.{PluginAdapter, StyxClientSupplier, StyxProxySpec}
+import com.hotels.styx.{JustATestException, PluginAdapter, StyxClientSupplier, StyxProxySpec}
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values._
 import org.hamcrest.MatcherAssert._
@@ -138,10 +138,10 @@ class LoggingSpec extends FunSpec
     override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
       Option(request.header(X_THROW_AT).orElse(null)) match {
         case Some(AT_REQUEST) =>
-          throw new RuntimeException("Throw exception at Request")
+          throw new JustATestException("Throw exception at Request")
         case Some(AT_RESPONSE) =>
           chain.proceed(request)
-            .map(asJavaFunction((response: LiveHttpResponse) => throw new RuntimeException("Throw exception at Response")))
+            .map(asJavaFunction((response: LiveHttpResponse) => throw new JustATestException("Throw exception at Response")))
         case _ =>
           chain.proceed(request)
       }

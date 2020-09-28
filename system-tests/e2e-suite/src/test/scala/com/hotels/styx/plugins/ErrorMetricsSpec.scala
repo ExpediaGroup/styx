@@ -271,11 +271,11 @@ class ErrorMetricsSpec extends FunSpec
   }
 
   private def styxExceptionMetric = {
-    styxServer.metricsSnapshot.count("styx.exception.com.hotels.styx.plugins.ErrorMetricsSpec$TestException").getOrElse(0)
+    styxServer.metricsSnapshot.count("styx.exception.com.hotels.styx.JustATestException").getOrElse(0)
   }
 
   def pluginExceptionMetric(pluginName: String): Int = {
-    styxServer.metricsSnapshot.meter("plugins." + pluginName + ".exception.com_hotels_styx_plugins_ErrorMetricsSpec$TestException").map(meter => meter.count).getOrElse(0)
+    styxServer.metricsSnapshot.meter("plugins." + pluginName + ".exception.com_hotels_styx_JustATestException").map(meter => meter.count).getOrElse(0)
   }
 
   private def originErrorMetric = {
@@ -346,7 +346,7 @@ class ErrorMetricsSpec extends FunSpec
   private class ThrowExceptionInterceptor extends PluginAdapter {
     override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
       if (request.header("Throw_an_exception").asScala.contains("true"))
-        throw new TestException()
+        throw new JustATestException()
       else
         chain.proceed(request)
     }
@@ -356,14 +356,9 @@ class ErrorMetricsSpec extends FunSpec
 
     override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
       if (request.header("Map_to_exception").asScala.contains("true"))
-        chain.proceed(request).flatMap(asJavaFunction((t: LiveHttpResponse) => Eventual.error(new TestException())))
+        chain.proceed(request).flatMap(asJavaFunction((t: LiveHttpResponse) => Eventual.error(new JustATestException())))
       else
         chain.proceed(request)
     }
   }
-
-  private class TestException extends RuntimeException {
-
-  }
-
 }
