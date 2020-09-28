@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.StyxClientException;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.HttpErrorStatusListener;
+import com.hotels.styx.server.JustATestException;
 import com.hotels.styx.server.RequestStatsCollector;
 import com.hotels.styx.server.RequestTimeoutException;
 import com.hotels.styx.server.netty.codec.NettyToStyxRequestDecoder;
@@ -307,7 +308,7 @@ public class HttpPipelineHandlerTest {
 
     @Test
     public void responseFailureInSendingResponseClientConnectedState() throws Exception {
-        RuntimeException cause = new RuntimeException("Something went wrong");
+        RuntimeException cause = new JustATestException();
 
         handler.channelActive(ctx);
         handler.channelRead0(ctx, request);
@@ -331,7 +332,7 @@ public class HttpPipelineHandlerTest {
 
     @Test
     public void channelExceptionAfterClientClosed() throws Exception {
-        RuntimeException cause = new RuntimeException("Something went wrong");
+        RuntimeException cause = new JustATestException();
 
         handler.channelActive(ctx);
         handler.channelRead0(ctx, request);
@@ -691,7 +692,7 @@ public class HttpPipelineHandlerTest {
         // Then, respond with INTERNAL_SERVER_ERROR and close the channel.
         setupHandlerTo(WAITING_FOR_RESPONSE);
 
-        responseObservable.onError(new StyxClientException("Client error occurred", new RuntimeException("Something went wrong")));
+        responseObservable.onError(new StyxClientException("Client error occurred", new JustATestException()));
 
         assertThat(responseUnsubscribed.get(), is(true));
 
@@ -745,7 +746,7 @@ public class HttpPipelineHandlerTest {
         // A non-IO exception bubbles up the Netty pipeline.
         setupHandlerTo(WAITING_FOR_RESPONSE);
 
-        RuntimeException cause = new RuntimeException("Someting went wrong in the netty pipeline");
+        RuntimeException cause = new JustATestException();
         handler.exceptionCaught(ctx, cause);
 
         assertThat(responseUnsubscribed.get(), is(true));
@@ -825,7 +826,7 @@ public class HttpPipelineHandlerTest {
         // An IO exception bubbles up the Netty pipeline
         setupHandlerTo(SENDING_RESPONSE);
 
-        handler.exceptionCaught(ctx, new IOException("something went wrong"));
+        handler.exceptionCaught(ctx, new IOException(JustATestException.DEFAULT_MESSAGE));
         assertThat(responseUnsubscribed.get(), is(true));
         verify(statsCollector).onTerminate(request.id());
         assertThat(handler.state(), is(TERMINATED));
@@ -837,7 +838,7 @@ public class HttpPipelineHandlerTest {
         // A non-IO exception bubbles up the Netty pipeline
         setupHandlerTo(SENDING_RESPONSE);
 
-        handler.exceptionCaught(ctx, new RuntimeException("something went wrong"));
+        handler.exceptionCaught(ctx, new JustATestException());
         assertThat(responseUnsubscribed.get(), is(true));
         verify(statsCollector).onTerminate(request.id());
         assertThat(handler.state(), is(TERMINATED));
@@ -902,7 +903,7 @@ public class HttpPipelineHandlerTest {
         handler.channelRead0(ctx, request2);
         assertThat(handler.state(), is(WAITING_FOR_RESPONSE));
 
-        responseObservable.onError(new RuntimeException("Simulated Exception - something went wrong!"));
+        responseObservable.onError(new JustATestException());
         assertThat(handler.state(), is(WAITING_FOR_RESPONSE));
     }
 

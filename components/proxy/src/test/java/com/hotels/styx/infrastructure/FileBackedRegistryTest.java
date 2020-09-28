@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package com.hotels.styx.infrastructure;
 
 import com.google.common.collect.ImmutableList;
+import com.hotels.styx.JustATestException;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
@@ -151,7 +152,7 @@ public class FileBackedRegistryTest {
                     if (new String(bytes).equals(new String(originalContent))) {
                         return ImmutableList.of(backendService);
                     } else {
-                        throw new RuntimeException("Something went wrong...");
+                        throw new JustATestException();
                     }
                 },
                 any -> true);

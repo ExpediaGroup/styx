@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.common.content;
 
+import com.hotels.styx.JustATestException;
 import com.hotels.styx.api.exceptions.InactiveSubscriberException;
 import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
@@ -208,7 +209,7 @@ public class FlowControllingHttpContentProducerTest {
         producer.newChunk(contentChunk1);
         producer.newChunk(contentChunk2);
 
-        producer.channelException(new RuntimeException("Something went wrong - simulated exception"));
+        producer.channelException(new JustATestException());
 
         assertThat(producer.state(), is(TERMINATED));
         verify(onCompleteAction, never()).run();
@@ -422,7 +423,7 @@ public class FlowControllingHttpContentProducerTest {
         producer.newChunk(contentChunk2);
         assertThat(producer.state(), is(STREAMING));
 
-        producer.channelException(new RuntimeException("Something went wrong - simulated exception"));
+        producer.channelException(new JustATestException());
 
         assertThat(producer.state(), is(TERMINATED));
         verify(onCompleteAction, never()).run();
@@ -430,7 +431,7 @@ public class FlowControllingHttpContentProducerTest {
 
         assertThat(contentChunk1.refCnt(), is(0));
         assertThat(contentChunk2.refCnt(), is(0));
-        assertException(downstream, RuntimeException.class, "Something went wrong - simulated exception");
+        assertException(downstream, JustATestException.class, JustATestException.DEFAULT_MESSAGE);
     }
 
     @Test
@@ -537,7 +538,7 @@ public class FlowControllingHttpContentProducerTest {
         producer.lastHttpContent();
         assertThat(producer.state(), is(BUFFERING_COMPLETED));
 
-        producer.channelException(new RuntimeException("Someting went wrong - simulated exception"));
+        producer.channelException(new JustATestException());
 
         assertThat(producer.state(), is(BUFFERING_COMPLETED));
 
@@ -711,7 +712,7 @@ public class FlowControllingHttpContentProducerTest {
         producer.onSubscribed(downstream);
         assertThat(producer.state(), is(EMITTING_BUFFERED_CONTENT));
 
-        producer.channelException(new RuntimeException("Someting went wrong - simulated exception"));
+        producer.channelException(new JustATestException());
 
         // Keep the data available, since the HTTP Response has been fully received.
         producer.request(10);

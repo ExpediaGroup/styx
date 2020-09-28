@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.common;
 
+import com.hotels.styx.JustATestException;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
@@ -91,7 +92,7 @@ public class QueueDrainingEventProcessorTest {
                         Consumer<Void> lockEvent = consumerEvent((x) -> {
                             await(barrier1);
                             try {
-                                throw new RuntimeException("Something went wrong");
+                                throw new JustATestException();
                             } finally {
                                 await(barrier2);
                             }

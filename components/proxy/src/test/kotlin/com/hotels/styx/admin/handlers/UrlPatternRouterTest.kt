@@ -16,6 +16,7 @@
 package com.hotels.styx.admin.handlers
 
 import ch.qos.logback.classic.Level
+import com.hotels.styx.JustATestException
 import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpInterceptor
 import com.hotels.styx.api.HttpRequest
@@ -181,7 +182,7 @@ class UrlPatternRouterTest : FeatureSpec({
             val contextCapture = AtomicReference<HttpInterceptor.Context>()
 
             val router = UrlPatternRouter.Builder()
-                    .post("/admin/apps/:appId/:originId") { request, context -> throw RuntimeException("Something went wrong") }
+                    .post("/admin/apps/:appId/:originId") { _, _ -> throw JustATestException() }
                     .build()
 
             val response = router.handle(post("/admin/apps/appx/appx-01").build(), requestContext())
