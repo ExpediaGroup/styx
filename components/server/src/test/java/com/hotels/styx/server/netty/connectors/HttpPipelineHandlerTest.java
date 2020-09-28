@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.server.netty.connectors;
 
+import com.hotels.styx.JustATestException;
 import com.hotels.styx.api.ContentOverflowException;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
@@ -26,7 +27,6 @@ import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.StyxClientException;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.HttpErrorStatusListener;
-import com.hotels.styx.server.JustATestException;
 import com.hotels.styx.server.RequestStatsCollector;
 import com.hotels.styx.server.RequestTimeoutException;
 import com.hotels.styx.server.netty.codec.NettyToStyxRequestDecoder;
