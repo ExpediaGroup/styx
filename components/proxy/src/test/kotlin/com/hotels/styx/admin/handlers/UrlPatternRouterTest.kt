@@ -33,7 +33,7 @@ import com.hotels.styx.support.matchers.LoggingTestSupport
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
 import reactor.core.publisher.toMono
-import java.util.*
+import java.util.Optional
 import java.util.concurrent.atomic.AtomicReference
 
 class UrlPatternRouterTest : FeatureSpec({
