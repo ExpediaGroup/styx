@@ -16,11 +16,11 @@
 package com.hotels.styx.infrastructure;
 
 import com.google.common.collect.ImmutableList;
-import com.hotels.styx.JustATestException;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.extension.service.spi.Registry.ReloadResult;
+import com.hotels.styx.support.JustATestException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -38,7 +38,6 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.withSettings;
 
 
 public class FileBackedRegistryTest {

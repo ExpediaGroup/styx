@@ -16,7 +16,6 @@
 package com.hotels.styx.admin.handlers
 
 import ch.qos.logback.classic.Level
-import com.hotels.styx.JustATestException
 import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpInterceptor
 import com.hotels.styx.api.HttpRequest
@@ -29,11 +28,12 @@ import com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR
 import com.hotels.styx.api.HttpResponseStatus.NO_CONTENT
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.requestContext
+import com.hotels.styx.support.JustATestException
 import com.hotels.styx.support.matchers.LoggingTestSupport
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
 import reactor.core.publisher.toMono
-import java.util.Optional
+import java.util.*
 import java.util.concurrent.atomic.AtomicReference
 
 class UrlPatternRouterTest : FeatureSpec({

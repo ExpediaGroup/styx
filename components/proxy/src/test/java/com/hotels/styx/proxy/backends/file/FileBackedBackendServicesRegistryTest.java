@@ -16,7 +16,6 @@
 package com.hotels.styx.proxy.backends.file;
 
 import com.google.common.collect.ImmutableList;
-import com.hotels.styx.JustATestException;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
@@ -25,6 +24,7 @@ import com.hotels.styx.api.extension.service.spi.ServiceFailureException;
 import com.hotels.styx.infrastructure.FileBackedRegistry;
 import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry.RejectDuplicatePaths;
 import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry.YAMLBackendServicesReader;
+import com.hotels.styx.support.JustATestException;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -220,7 +220,7 @@ public class FileBackedBackendServicesRegistryTest {
 
         registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         Exception e = assertThrows(ExecutionException.class, () -> registry.startService().get());
-        assertEquals("java.lang.RuntimeException: com.hotels.styx.JustATestException: This is not a real exception. We are just testing exception handling", e.getMessage());
+        assertEquals("java.lang.RuntimeException: com.hotels.styx.support.JustATestException: This is not a real exception. We are just testing exception handling", e.getMessage());
     }
 
     @Test

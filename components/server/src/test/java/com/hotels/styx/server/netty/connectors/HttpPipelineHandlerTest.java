@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.server.netty.connectors;
 
-import com.hotels.styx.JustATestException;
 import com.hotels.styx.api.ContentOverflowException;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
@@ -32,6 +31,7 @@ import com.hotels.styx.server.RequestTimeoutException;
 import com.hotels.styx.server.netty.codec.NettyToStyxRequestDecoder;
 import com.hotels.styx.server.netty.connectors.HttpPipelineHandler.HttpResponseWriterFactory;
 import com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State;
+import com.hotels.styx.support.JustATestException;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;

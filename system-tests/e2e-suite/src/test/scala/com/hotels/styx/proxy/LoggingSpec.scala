@@ -21,16 +21,16 @@ import ch.qos.logback.classic.Level._
 import com.github.tomakehurst.wiremock.client.WireMock.{get => _, _}
 import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.HttpRequest.get
-import com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR
-import com.hotels.styx.api.HttpResponseStatus.OK
+import com.hotels.styx.api.HttpResponseStatus.{INTERNAL_SERVER_ERROR, OK}
 import com.hotels.styx.api.plugins.spi.PluginException
 import com.hotels.styx.api.{Eventual, LiveHttpRequest, LiveHttpResponse}
+import com.hotels.styx.support.JustATestException
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.matchers.LoggingEventMatcher._
 import com.hotels.styx.support.matchers.LoggingTestSupport
 import com.hotels.styx.support.server.UrlMatchingStrategies._
-import com.hotels.styx.{JustATestException, PluginAdapter, StyxClientSupplier, StyxProxySpec}
+import com.hotels.styx.{PluginAdapter, StyxClientSupplier, StyxProxySpec}
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values._
 import org.hamcrest.MatcherAssert._

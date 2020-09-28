@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx;
+package com.hotels.styx.support;
 
 public class JustATestException extends RuntimeException {
     public static final String DEFAULT_MESSAGE = "This is not a real exception. We are just testing exception handling";

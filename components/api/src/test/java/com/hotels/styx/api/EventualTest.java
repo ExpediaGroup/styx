@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.api;
 
-import com.hotels.styx.JustATestException;
+import com.hotels.styx.support.JustATestException;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;

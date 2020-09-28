@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.common;
 
-import com.hotels.styx.JustATestException;
+import com.hotels.styx.support.JustATestException;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;

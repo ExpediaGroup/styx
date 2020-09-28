@@ -15,9 +15,9 @@
  */
 package com.hotels.styx.common.content;
 
-import com.hotels.styx.JustATestException;
 import com.hotels.styx.api.exceptions.InactiveSubscriberException;
 import com.hotels.styx.api.exceptions.TransportLostException;
+import com.hotels.styx.support.JustATestException;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;

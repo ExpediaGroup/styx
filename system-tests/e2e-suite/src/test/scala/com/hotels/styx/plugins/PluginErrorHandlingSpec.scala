@@ -20,10 +20,11 @@ import java.util.Optional
 
 import com.hotels.styx._
 import com.hotels.styx.api.HttpRequest.get
+import com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR
 import com.hotels.styx.api._
-import HttpResponseStatus.INTERNAL_SERVER_ERROR
-import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins, StyxConfig}
+import com.hotels.styx.support.JustATestException
 import com.hotels.styx.support.backends.FakeHttpServer
+import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins, StyxConfig}
 import org.scalatest.FunSpec
 
 import scala.concurrent.duration._
