@@ -18,21 +18,19 @@ package com.hotels.styx.plugins
 import java.lang.Thread.sleep
 
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, urlMatching}
-import com.hotels.styx._
-import com.hotels.styx.{BackendServicesRegistrySupplier, StyxClientSupplier, StyxConfiguration, StyxServerSupport}
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.HttpRequest.get
-import com.hotels.styx.api.LiveHttpResponse.response
-import com.hotels.styx.api.{HttpResponseStatus, _}
 import com.hotels.styx.api.HttpResponseStatus.{BAD_GATEWAY, INTERNAL_SERVER_ERROR, OK}
+import com.hotels.styx.api.LiveHttpResponse.response
 import com.hotels.styx.api.extension.service.BackendService
+import com.hotels.styx.api.{HttpResponseStatus, _}
 import com.hotels.styx.infrastructure.{MemoryBackedRegistry, RegistryServiceAdapter}
-import com.hotels.styx.support.ImplicitStyxConversions
 import com.hotels.styx.support.backends.FakeHttpServer.HttpStartupConfig
-import com.hotels.styx.support.configuration
+import com.hotels.styx.support.{ImplicitStyxConversions, JustATestException, configuration}
 import com.hotels.styx.support.configuration._
 import com.hotels.styx.support.server.FakeHttpServer
+import com.hotels.styx.{BackendServicesRegistrySupplier, StyxClientSupplier, StyxConfiguration, StyxServerSupport, _}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSpec, Matchers}
 
@@ -271,11 +269,11 @@ class ErrorMetricsSpec extends FunSpec
   }
 
   private def styxExceptionMetric = {
-    styxServer.metricsSnapshot.count("styx.exception.com.hotels.styx.plugins.ErrorMetricsSpec$TestException").getOrElse(0)
+    styxServer.metricsSnapshot.count("styx.exception.com.hotels.styx.support.JustATestException").getOrElse(0)
   }
 
   def pluginExceptionMetric(pluginName: String): Int = {
-    styxServer.metricsSnapshot.meter("plugins." + pluginName + ".exception.com_hotels_styx_plugins_ErrorMetricsSpec$TestException").map(meter => meter.count).getOrElse(0)
+    styxServer.metricsSnapshot.meter("plugins." + pluginName + ".exception.com_hotels_styx_support_JustATestException").map(meter => meter.count).getOrElse(0)
   }
 
   private def originErrorMetric = {
@@ -346,7 +344,7 @@ class ErrorMetricsSpec extends FunSpec
   private class ThrowExceptionInterceptor extends PluginAdapter {
     override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
       if (request.header("Throw_an_exception").asScala.contains("true"))
-        throw new TestException()
+        throw new JustATestException()
       else
         chain.proceed(request)
     }
@@ -356,14 +354,9 @@ class ErrorMetricsSpec extends FunSpec
 
     override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
       if (request.header("Map_to_exception").asScala.contains("true"))
-        chain.proceed(request).flatMap(asJavaFunction((t: LiveHttpResponse) => Eventual.error(new TestException())))
+        chain.proceed(request).flatMap(asJavaFunction((t: LiveHttpResponse) => Eventual.error(new JustATestException())))
       else
         chain.proceed(request)
     }
   }
-
-  private class TestException extends RuntimeException {
-
-  }
-
 }

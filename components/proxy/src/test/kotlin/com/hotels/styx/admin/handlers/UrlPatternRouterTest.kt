@@ -28,6 +28,7 @@ import com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR
 import com.hotels.styx.api.HttpResponseStatus.NO_CONTENT
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.requestContext
+import com.hotels.styx.support.JustATestException
 import com.hotels.styx.support.matchers.LoggingTestSupport
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
@@ -181,7 +182,7 @@ class UrlPatternRouterTest : FeatureSpec({
             val contextCapture = AtomicReference<HttpInterceptor.Context>()
 
             val router = UrlPatternRouter.Builder()
-                    .post("/admin/apps/:appId/:originId") { request, context -> throw RuntimeException("Something went wrong") }
+                    .post("/admin/apps/:appId/:originId") { _, _ -> throw JustATestException() }
                     .build()
 
             val response = router.handle(post("/admin/apps/appx/appx-01").build(), requestContext())

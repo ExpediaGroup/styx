@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,10 +20,11 @@ import java.util.Optional
 
 import com.hotels.styx._
 import com.hotels.styx.api.HttpRequest.get
+import com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR
 import com.hotels.styx.api._
-import HttpResponseStatus.INTERNAL_SERVER_ERROR
-import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins, StyxConfig}
+import com.hotels.styx.support.JustATestException
 import com.hotels.styx.support.backends.FakeHttpServer
+import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins, StyxConfig}
 import org.scalatest.FunSpec
 
 import scala.concurrent.duration._
@@ -93,7 +94,7 @@ class PluginErrorHandlingSpec extends FunSpec
         asJavaFunction((response: LiveHttpResponse) => {
           val fail: Optional[String] = request.header("Fail_after_handle")
           if (isTrue(fail)) {
-            throw new RuntimeException("something went wrong")
+            throw new JustATestException()
           }
           response
         }))
@@ -103,7 +104,7 @@ class PluginErrorHandlingSpec extends FunSpec
   private def failIfHeaderPresent(request: LiveHttpRequest) {
     val fail: Optional[String] = request.header("Fail_before_handle")
     if (isTrue(fail)) {
-      throw new RuntimeException("something went wrong")
+      throw new JustATestException()
     }
   }
 

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2020 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.extension.service.spi.Registry.ReloadResult;
+import com.hotels.styx.support.JustATestException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -37,7 +38,6 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.withSettings;
 
 
 public class FileBackedRegistryTest {
@@ -151,7 +151,7 @@ public class FileBackedRegistryTest {
                     if (new String(bytes).equals(new String(originalContent))) {
                         return ImmutableList.of(backendService);
                     } else {
-                        throw new RuntimeException("Something went wrong...");
+                        throw new JustATestException();
                     }
                 },
                 any -> true);
