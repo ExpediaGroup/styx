@@ -88,6 +88,7 @@ public class StyxServerComponents {
     private final RoutingObjectFactory.Context routingObjectContext;
     private final StartupConfig startupConfig;
     private final NettyExecutor executor;
+    private final boolean showBanner;
 
     // CHECKSTYLE:OFF
     private StyxServerComponents(Builder builder) {
@@ -191,6 +192,8 @@ public class StyxServerComponents {
                     StyxObjectRecord<InetServer> record = new StyxObjectRecord<>(definition.type(), ImmutableSet.copyOf(definition.tags()), definition.config(), provider);
                     serverObjectStore.insert(name, record);
                 });
+
+        this.showBanner = builder.showBanner;
     }
     // CHECKSTYLE:ON
 
@@ -206,6 +209,10 @@ public class StyxServerComponents {
         );
 
         return handlers;
+    }
+
+    public boolean showBanner() {
+        return showBanner;
     }
 
     public Environment environment() {
@@ -291,6 +298,7 @@ public class StyxServerComponents {
         private ServicesLoader servicesLoader = SERVICES_FROM_CONFIG;
         private MetricRegistry metricRegistry = new CodaHaleMetricRegistry();
         private StartupConfig startupConfig;
+        private boolean showBanner;
 
         private final Map<String, RoutingObjectFactory> additionalRoutingObjectFactories = new HashMap<>();
         private final Map<String, StyxService> additionalServices = new HashMap<>();
@@ -334,6 +342,7 @@ public class StyxServerComponents {
             }).collect(toList());
         }
 
+
         public Builder pluginFactories(List<ConfiguredPluginFactory> configuredPluginFactories) {
             this.configuredPluginFactories = requireNonNull(configuredPluginFactories);
             return this;
@@ -359,6 +368,11 @@ public class StyxServerComponents {
         @VisibleForTesting
         public Builder additionalRoutingObjects(Map<String, RoutingObjectFactory> additionalRoutingObjectFactories) {
             this.additionalRoutingObjectFactories.putAll(additionalRoutingObjectFactories);
+            return this;
+        }
+
+        public Builder showBanner(boolean showBanner) {
+            this.showBanner = showBanner;
             return this;
         }
 

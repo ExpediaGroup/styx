@@ -15,7 +15,7 @@
   </root>
 
   <logger name="Styx-Tests" level="INFO"/>
-  <logger name="com.hotels.styx.http-messages.inbound" level="DEBUG"/>
+  <logger name="com.hotels.styx.http-messages.inbound" level="WARN"/>
   <logger name="com.hotels.styx.http-messages.outbound" level="INFO"/>
   <logger name="com.hotels.styx.proxy.backends.file.FileChangeMonitor" level="INFO"/>
   <logger name="com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder" level="INFO"/>

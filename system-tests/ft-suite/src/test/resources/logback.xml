@@ -15,7 +15,7 @@
   </root>
 
   <logger name="Styx-Tests" level="INFO"/>
-  <logger name="com.hotels.styx.http-messages.inbound" level="INFO"/>
+  <logger name="com.hotels.styx.http-messages.inbound" level="WARN"/>
   <logger name="com.hotels.styx.http-messages.outbound" level="INFO"/>
   <logger name="com.hotels.styx.StyxServer" level="ERROR"/>
   <logger name="com.hotels.styx.client.netty.connectionpool.HttpRequestOperation" level="WARN"/>
