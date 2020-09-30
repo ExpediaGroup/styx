@@ -396,7 +396,7 @@ public final class StyxServer extends AbstractService {
 
         @Override
         public void stopped() {
-            LOG.info("Stopped phase 2 services");
+            LOG.debug("Stopped phase 2 services");
         }
     }
 
@@ -409,7 +409,7 @@ public final class StyxServer extends AbstractService {
 
         @Override
         public void healthy() {
-            LOG.info("Started phase 1 services");
+            LOG.debug("Started phase 1 services");
         }
 
         @Override
@@ -420,7 +420,7 @@ public final class StyxServer extends AbstractService {
 
         @Override
         public void stopped() {
-            LOG.info("Stopped phase 1 services.");
+            LOG.debug("Stopped phase 1 services.");
             styxServer.notifyStopped();
         }
     }

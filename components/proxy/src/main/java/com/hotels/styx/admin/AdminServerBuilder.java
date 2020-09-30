@@ -118,7 +118,7 @@ public class AdminServerBuilder {
     }
 
     public InetServer build() {
-        LOG.info("event bus that will be used is {}", environment.eventBus());
+        LOG.debug("event bus that will be used is {}", environment.eventBus());
         StyxConfig styxConfig = environment.configuration();
         AdminServerConfig adminServerConfig = styxConfig.adminServerConfig();
 

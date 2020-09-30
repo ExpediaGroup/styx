@@ -83,7 +83,7 @@ public class ProviderRoutingHandler implements WebServiceHandler {
     }
 
     private void refreshRoutes(ObjectStore<? extends StyxObjectRecord<? extends StyxService>> db) {
-        LOG.info("Refreshing provider admin endpoint routes");
+        LOG.debug("Refreshing provider admin endpoint routes");
         router = buildRouter(db);
     }
 

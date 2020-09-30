@@ -102,7 +102,7 @@ final class NettyServer extends AbstractStyxService implements InetServer {
 
     @Override
     protected CompletableFuture<Void> startService() {
-        LOGGER.info("starting services");
+        LOGGER.debug("starting services");
 
         CompletableFuture<Void> serviceFuture = new CompletableFuture<>();
 
@@ -132,7 +132,7 @@ final class NettyServer extends AbstractStyxService implements InetServer {
                         Channel channel = future.channel();
                         channelGroup.add(channel);
                         address = (InetSocketAddress) channel.localAddress();
-                        LOGGER.info("server connector {} bound successfully on port {} socket port {}", new Object[]{serverConnector.getClass(), port, address});
+                        LOGGER.debug("server connector {} bound successfully on port {} socket port {}", new Object[]{serverConnector.getClass(), port, address});
                         serviceFuture.complete(null);
                     } else {
                         LOGGER.warn("Failed to start service={} cause={}", this, future.cause());

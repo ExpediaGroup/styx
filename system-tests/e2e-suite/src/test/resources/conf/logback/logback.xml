@@ -12,6 +12,7 @@
   <logger name="org.apache" level="WARN"/>
   <logger name="io.netty" level="WARN"/>
   <logger name="com.hotels.styx.proxy.backends.file.FileChangeMonitor" level="INFO"/>
+  <!-- TODO why do we have another logback config file? Do we need to include anything here? If not, leave a comment explaining -->
 
   <root level="OFF">
     <appender-ref ref="CONSOLE"/>

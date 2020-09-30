@@ -54,7 +54,7 @@ public abstract class AbstractStyxService implements StyxService {
 
     public AbstractStyxService(String name) {
         this.name = name;
-        LOGGER.info("Created {}", name);
+        LOGGER.debug("Created {}", name);
     }
 
     public StyxServiceStatus status() {
@@ -72,14 +72,14 @@ public abstract class AbstractStyxService implements StyxService {
     @Override
     public CompletableFuture<Void> start() {
         boolean changed = status.compareAndSet(CREATED, STARTING);
-        LOGGER.info("Starting {}", name);
+        LOGGER.debug("Starting {}", name);
 
         if (changed) {
             return startService()
                     .exceptionally(failWithMessage("Service failed to start."))
                     .thenAccept(na -> {
                         status.compareAndSet(STARTING, RUNNING);
-                        LOGGER.info("Started {}", name);
+                        LOGGER.debug("Started {}", name);
                     });
         } else {
             throw new IllegalStateException(format("Start '%s' called in %s state", name, status.get()));
@@ -90,13 +90,13 @@ public abstract class AbstractStyxService implements StyxService {
     public CompletableFuture<Void> stop() {
         boolean changed = status.compareAndSet(RUNNING, STOPPING);
 
-        LOGGER.info("Stopping {}", name);
+        LOGGER.debug("Stopping {}", name);
         if (changed) {
             return stopService()
                     .exceptionally(failWithMessage("Service failed to stop."))
                     .thenAccept(na -> {
                         status.compareAndSet(STOPPING, STOPPED);
-                        LOGGER.info("Stopped {}", name);
+                        LOGGER.debug("Stopped {}", name);
                     });
         } else {
             throw new IllegalStateException(format("Service '%s' stopped in %s state", name, status.get()));
