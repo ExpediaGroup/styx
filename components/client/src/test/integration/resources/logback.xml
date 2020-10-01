@@ -16,7 +16,7 @@
 
   <logger name="Styx-Tests" level="INFO"/>
   <logger name="com.hotels.styx.client.OriginsInventory" level="INFO"/>
-  <logger name="com.hotels.styx.http-messages.inbound" level="INFO"/>
+  <logger name="com.hotels.styx.http-messages.inbound" level="WARN"/>
   <logger name="com.hotels.styx.http-messages.outbound" level="INFO"/>
   <logger name="com.hotels.styx.client.OriginRestrictionLoadBalancingStrategy" level="INFO"/>
   <logger name="com.hotels.styx.common.content.FlowControllingHttpContentProducer" level="INFO"/>

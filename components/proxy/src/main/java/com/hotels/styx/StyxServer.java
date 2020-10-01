@@ -86,6 +86,7 @@ public final class StyxServer extends AbstractService {
     private final StyxServerComponents components;
     private NettyExecutor proxyBossExecutor;
     private NettyExecutor proxyWorkerExecutor;
+    private boolean showBanner;
 
     public static void main(String[] args) {
         try {
@@ -115,6 +116,7 @@ public final class StyxServer extends AbstractService {
                 .styxConfig(parseConfiguration(startupConfig))
                 .startupConfig(startupConfig)
                 .loggingSetUp(environment -> activateLogbackConfigurer(startupConfig))
+                .showBanner(true)
                 .build();
 
         return new StyxServer(components, stopwatch);
@@ -216,6 +218,7 @@ public final class StyxServer extends AbstractService {
         services2.add(toGuavaService(new ServiceProviderMonitor<>("Styx-Server-Monitor", components.serversDatabase())));
 
         this.phase2Services = new ServiceManager(services2);
+        this.showBanner = components.showBanner();
     }
 
     public InetSocketAddress serverAddress(String name) {
@@ -325,6 +328,10 @@ public final class StyxServer extends AbstractService {
     }
 
     private void printBanner() {
+        if (!showBanner) {
+            return;
+        }
+
         try {
             try (Reader reader = new InputStreamReader(getClass().getResourceAsStream("/banner.txt"))) {
                 LOG.info(format("Starting styx %n{}"), CharStreams.toString(reader));
@@ -396,7 +403,7 @@ public final class StyxServer extends AbstractService {
 
         @Override
         public void stopped() {
-            LOG.info("Stopped phase 2 services");
+            LOG.debug("Stopped phase 2 services");
         }
     }
 
@@ -409,7 +416,7 @@ public final class StyxServer extends AbstractService {
 
         @Override
         public void healthy() {
-            LOG.info("Started phase 1 services");
+            LOG.debug("Started phase 1 services");
         }
 
         @Override
@@ -420,7 +427,7 @@ public final class StyxServer extends AbstractService {
 
         @Override
         public void stopped() {
-            LOG.info("Stopped phase 1 services.");
+            LOG.debug("Stopped phase 1 services.");
             styxServer.notifyStopped();
         }
     }

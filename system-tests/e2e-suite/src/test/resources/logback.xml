@@ -15,12 +15,14 @@
   </root>
 
   <logger name="Styx-Tests" level="INFO"/>
-  <logger name="com.hotels.styx.http-messages.inbound" level="INFO"/>
+  <logger name="com.hotels.styx.http-messages.inbound" level="WARN"/>
   <logger name="com.hotels.styx.http-messages.outbound" level="INFO"/>
   <logger name="com.hotels.styx.proxy.backends.file.FileChangeMonitor" level="INFO"/>
   <logger name="com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder" level="INFO"/>
   <logger name="com.hotels.styx.server.netty.connectors.HttpPipelineHandler" level="INFO"/>
   <logger name="com.hotels.styx.proxy.HttpErrorStatusCauseLogger" level="INFO"/>
   <logger name="com.hotels.styx.server.netty.connectors.HttpPipelineHandler" level="INFO"/>
+  <logger name="com.hotels.styx.common.content.FlowControllingHttpContentProducer" level="ERROR" />
+  <logger name="com.google.common.util.concurrent.ServiceManager" level="ERROR" />
 
 </configuration>

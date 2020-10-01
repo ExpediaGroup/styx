@@ -49,13 +49,13 @@ public class NettyExecutor {
      */
     public static NettyExecutor create(String name, int count) {
         if (Epoll.isAvailable()) {
-            LOG.info("Epoll is available. Using the native socket transport.");
+            LOG.debug("Epoll is available. Using the native socket transport.");
             return new NettyExecutor(
                     epollEventLoopGroup(count, name + "-%d-Thread"),
                     EpollServerSocketChannel.class,
                     EpollSocketChannel.class);
         } else {
-            LOG.info("Epoll not available. Using nio socket transport.");
+            LOG.debug("Epoll not available. Using nio socket transport.");
             return new NettyExecutor(
                     nioEventLoopGroup(count, name + "-%d-Thread"),
                     NioServerSocketChannel.class,
