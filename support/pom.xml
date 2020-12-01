@@ -12,7 +12,6 @@
   <packaging>pom</packaging>
 
   <modules>
-    <module>test-api</module>
     <module>testsupport</module>
     <module>api-testsupport</module>
   </modules>
