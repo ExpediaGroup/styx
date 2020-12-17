@@ -63,12 +63,8 @@ public class ExceptionConverter extends ClassicConverter {
     }
 
     private String getExceptionData(final ILoggingEvent loggingEvent) {
-        IThrowableProxy throwableProxy = loggingEvent.getThrowableProxy();
-        StackTraceElementProxy loggableStackTraceElement =
-                findFirstStackTraceElementForClasses(throwableProxy, readStyxClassesFromProperty())
-                        .orElse(getTopStackTraceElement(throwableProxy));
-
-        return Optional.ofNullable(loggableStackTraceElement)
+        return Optional.ofNullable(loggingEvent.getThrowableProxy())
+                .map(throwableProxy -> findFirstStackTraceElementForClasses(throwableProxy, readStyxClassesFromProperty()).orElse(getTopStackTraceElement(throwableProxy)))
                 .map(ExceptionConverter::createExceptionMessage)
                 .orElse(NO_MSG);
     }
@@ -96,8 +92,7 @@ public class ExceptionConverter extends ClassicConverter {
                     .map(String::trim)
                     .toArray(String[]::new);
         } else {
-            addError(MessageFormat.format("The '{0}' property should be present on logback configuration. Using default classname prefixes.",
-                    TARGET_CLASSES_PROPERTY_NAME));
+            addInfo("The '" + TARGET_CLASSES_PROPERTY_NAME + "' property should be present on logback configuration. Using default classname prefixes.");
         }
         return targetClasses;
     }
