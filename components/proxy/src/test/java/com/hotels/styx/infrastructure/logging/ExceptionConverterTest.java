@@ -20,7 +20,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.LoggingEvent;
 import ch.qos.logback.classic.spi.ThrowableProxy;
 import ch.qos.logback.core.ContextBase;
-import ch.qos.logback.core.status.ErrorStatus;
+import ch.qos.logback.core.status.InfoStatus;
 import ch.qos.logback.core.status.StatusManager;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import org.junit.jupiter.api.Test;
@@ -99,7 +99,7 @@ public class ExceptionConverterTest {
         ILoggingEvent loggingEvent = newErrorLoggingEvent(new TargetClass().blow());
         converter.convert(loggingEvent);
 
-        verify(statusManager).add(any(ErrorStatus.class));
+        verify(statusManager).add(any(InfoStatus.class));
     }
 
     static class TargetClass {
