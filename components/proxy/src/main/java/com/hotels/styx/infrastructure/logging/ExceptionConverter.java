@@ -25,9 +25,9 @@ import com.google.common.hash.Hashing;
 
 import java.text.MessageFormat;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import static ch.qos.logback.core.CoreConstants.LINE_SEPARATOR;
 import static com.google.common.base.Charsets.UTF_8;
@@ -55,6 +55,14 @@ public class ExceptionConverter extends ClassicConverter {
     private static final HashFunction MD5_HASHING = Hashing.md5();
     private static final String NO_MSG = "";
 
+    private String[] styxClasses;
+
+    @Override
+    public void start() {
+        styxClasses = readStyxClassesFromProperty();
+        super.start();
+    }
+
     @Override
     public String convert(final ILoggingEvent loggingEvent) {
         return Optional.ofNullable(loggingEvent)
@@ -63,12 +71,8 @@ public class ExceptionConverter extends ClassicConverter {
     }
 
     private String getExceptionData(final ILoggingEvent loggingEvent) {
-        IThrowableProxy throwableProxy = loggingEvent.getThrowableProxy();
-        StackTraceElementProxy loggableStackTraceElement =
-                findFirstStackTraceElementForClasses(throwableProxy, readStyxClassesFromProperty())
-                        .orElse(getTopStackTraceElement(throwableProxy));
-
-        return Optional.ofNullable(loggableStackTraceElement)
+        return Optional.ofNullable(loggingEvent.getThrowableProxy())
+                .map(proxy -> findStyxStackTraceElement(proxy).orElse(getTopElement(proxy)))
                 .map(ExceptionConverter::createExceptionMessage)
                 .orElse(NO_MSG);
     }
@@ -80,10 +84,11 @@ public class ExceptionConverter extends ClassicConverter {
         return MessageFormat.format(SPLUNK_FRIENDLY_LOG_MESSAGE_TEMPLATE, exceptionClass, exceptionMethod, exceptionID);
     }
 
-    private Optional<StackTraceElementProxy> findFirstStackTraceElementForClasses(final IThrowableProxy throwableProxy, final String[] targetClasses) {
-        return StreamSupport.stream(collectThrowableProxies(throwableProxy).spliterator(), false)
-                .flatMap(proxy -> proxy != null ? Arrays.stream(proxy.getStackTraceElementProxyArray()) : Stream.empty())
-                .filter(steProxy -> contains(steProxy.getSTEAsString(), targetClasses))
+    private Optional<StackTraceElementProxy> findStyxStackTraceElement(final IThrowableProxy throwableProxy) {
+        return collectThrowableProxies(throwableProxy).stream()
+                .filter(Objects::nonNull)
+                .flatMap(proxy -> Arrays.stream(proxy.getStackTraceElementProxyArray()))
+                .filter(steProxy -> containsStyxClasses(steProxy.getSTEAsString()))
                 .findFirst();
     }
 
@@ -96,13 +101,12 @@ public class ExceptionConverter extends ClassicConverter {
                     .map(String::trim)
                     .toArray(String[]::new);
         } else {
-            addError(MessageFormat.format("The '{0}' property should be present on logback configuration. Using default classname prefixes.",
-                    TARGET_CLASSES_PROPERTY_NAME));
+            addInfo("The '" + TARGET_CLASSES_PROPERTY_NAME + "' property should be present on logback configuration. Using default classname prefixes.");
         }
         return targetClasses;
     }
 
-    private Iterable<IThrowableProxy> collectThrowableProxies(final IThrowableProxy throwableProxy) {
+    private Collection<IThrowableProxy> collectThrowableProxies(final IThrowableProxy throwableProxy) {
         IThrowableProxy[] throwableProxyArray = new IThrowableProxy[MAXIMUM_ALLOWED_DEPTH];
         IThrowableProxy actualThrowableProxy = throwableProxy;
         for (int i = 0; i < throwableProxyArray.length; i++) {
@@ -116,7 +120,7 @@ public class ExceptionConverter extends ClassicConverter {
         return asList(throwableProxyArray);
     }
 
-    private StackTraceElementProxy getTopStackTraceElement(final IThrowableProxy throwableProxy) {
+    private StackTraceElementProxy getTopElement(final IThrowableProxy throwableProxy) {
         StackTraceElementProxy stackTraceLine = null;
         StackTraceElementProxy[] stackTraceElementProxyArray = throwableProxy.getStackTraceElementProxyArray();
         if (stackTraceElementProxyArray != null && stackTraceElementProxyArray.length > 0) {
@@ -125,9 +129,9 @@ public class ExceptionConverter extends ClassicConverter {
         return stackTraceLine;
     }
 
-    private static boolean contains(final String stackTraceLine, final String[] targetClasses) {
+    private boolean containsStyxClasses(final String stackTraceLine) {
         boolean retValue = false;
-        for (String targetClass : targetClasses) {
+        for (String targetClass : styxClasses) {
             if (stackTraceLine.contains(targetClass)) {
                 retValue = true;
                 break;
