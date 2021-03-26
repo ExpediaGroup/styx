@@ -120,7 +120,7 @@
     <bytebuddy.version>1.10.6</bytebuddy.version>
 
     <!--Kotlin -->
-    <kotlin.version>1.3.61</kotlin.version>
+    <kotlin.version>1.4.32</kotlin.version>
     <kotlintest.version>3.4.2</kotlintest.version>
     <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
     <kotlinx.html.version>0.6.12</kotlinx.html.version>
