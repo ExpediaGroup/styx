@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -225,7 +225,7 @@ public class YamlApplicationsProviderTest {
     public void cannotLoadWithSyntaxErrors() throws IOException {
         Exception e = assertThrows(RuntimeException.class,
                 () -> loadFromPath("classpath:/conf/origins/origins-with-syntax-error-for-configtest.yml"));
-        assertThat(e.getMessage(), matchesPattern("Invalid YAML from classpath:conf/origins/origins-with-syntax-error-for-configtest.yml: Cannot deserialize instance of `java.util.ArrayList<com.hotels.styx.api.extension.service.BackendService>` out of VALUE_STRING token\n at \\[Source: .*\\]"));
+        assertThat(e.getMessage(), matchesPattern("Invalid YAML from classpath:conf/origins/origins-with-syntax-error-for-configtest.yml: Cannot deserialize value of type `java.util.ArrayList<com.hotels.styx.api.extension.service.BackendService>` from String value \\(token `JsonToken.VALUE_STRING`\\)\n at \\[Source: .*]"));
     }
 
     private static BackendService applicationFor(YamlApplicationsProvider provider, String appName) {
