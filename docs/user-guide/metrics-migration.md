@@ -9,6 +9,9 @@ Styx will continue to generate a similar set of metrics as it does now, but the 
 change to (a) use tags rather than some hierarchical name elements, and (b) accommodate
 different naming standards recommended for Micrometer. This page describes those name changes.
 
+[Old metrics reference](metrics-reference-old.md)
+[New metrics reference](metrics-reference-new.md)
+
 ## Server-side metrics
 
 ### HTTP-level metrics
@@ -99,6 +102,31 @@ different naming standards recommended for Micrometer. This page describes those
 | Gauge | `jvm.netty.(pooled-allocator/unpooled-allocator).(usedDirectMemory/usedHeapMemory)` | Gauge | `jvm.netty.(pooledAllocator/unpooledAllocator).(usedDirectMemory/usedHeapMemory)` |
 
 ## Plugin metrics
+
+The Styx metrics registry is available to a `PluginFactory` from the `PluginEnvironment` 
+object that is passed in the `create()` method. The existing method `metricRegistry()` has been deprecated,
+and plugins are expected to use the new `pluginMeterRegistry()` method instead, which returns a
+`PluginMeterRegistry` object.
+
+This object wraps a Micrometer `MeterRegistry` object. It provides standard methods to create
+new meters in the registry. All meters that are created using the `PluginMeterRegistry` object
+will have a standard tag automatically applied to them:
+
+| Tag name | Tag value |
+| --- | --- |
+| `plugin` | ID of the plugin from Styx config |
+
+A prefix of form `plugins.<plugin-id>` is no longer automatically added to meter names.
+You may wish to namespace your plugins meter names by adding a prefix of your own to them.
+
+You do not have to use the `PluginMeterRegistry` object to create all your metrics. You
+can instead obtain the Micrometer `MeterRegistry` from it and use that to create some
+or all of your metrics. If you do this, the `plugin` tag above will not be automatically
+applied. You must add it yourself. You can obtain it from the `PluginMeterRegistry` as well.
+
+There are a number of standard metrics that are created by Styx for each plugin. Their
+names have changed as follows:
+
 | Old type | Old name | New type | New Name | Tags | Comments |
 | --- | --- | --- | --- | --- | --- |
 | Meter | `plugins.<plugin>.response.status.<statuscode>` | Counter | `plugin.response` | `plugin=<plugin>`<br>`statusCode=<statuscode>` |

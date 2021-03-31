@@ -47,7 +47,7 @@ When Styx starts, it sets up the HTTP interceptor chain as follows:
 
 
 ## Developing a plugin
-A plugin project can be started by using one of examples in `examples` submodule. All plugins share the same skeleton of a project, containing a:
+A plugin project can be started by using one of examples in `plugin-examples` submodule. All plugins share the same skeleton of a project, containing a:
 
 * main/java/com/hotels/styx/ExamplePlugin.java - The plugin's main class which extends 
   the Plugin interface, and most notably implements the `intercept(LiveHttpRequest, Chain)` method.
