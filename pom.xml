@@ -96,10 +96,10 @@
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <java.source>1.8</java.source>
-    <java.target>1.8</java.target>
-    <java.testSource>1.8</java.testSource>
-    <java.testTarget>1.8</java.testTarget>
+    <java.source>11</java.source>
+    <java.target>11</java.target>
+    <java.testSource>11</java.testSource>
+    <java.testTarget>11</java.testTarget>
 
     <!-- Build defaults to linux platform: -->
     <netty-tcnative.classifier>linux-x86_64</netty-tcnative.classifier>
