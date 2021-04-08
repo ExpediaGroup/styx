@@ -84,7 +84,7 @@
 
   <properties>
 
-    <!-- common build properties -->
+    <!-- common build properties  -->
     <wiki.url>${project.url}</wiki.url>
     <maven.build.timestamp.format>yyyy-MM-dd|HH\:mm\:ss</maven.build.timestamp.format>
     <timestamp>${maven.build.timestamp}</timestamp>
