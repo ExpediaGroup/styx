@@ -154,7 +154,7 @@
     <maven-install-plugin.version>2.5.1</maven-install-plugin.version>
     <maven-jar-plugin.version>2.4</maven-jar-plugin.version>
     <maven-pmd-plugin.version>3.5</maven-pmd-plugin.version>
-    <maven-javadoc-plugin.version>3.1.1</maven-javadoc-plugin.version>
+    <maven-javadoc-plugin.version>3.2.0</maven-javadoc-plugin.version>
     <maven-project-info-reports-plugin.version>2.6</maven-project-info-reports-plugin.version>
     <maven-release-plugin.version>2.4</maven-release-plugin.version>
     <maven-resources-plugin.version>2.6</maven-resources-plugin.version>
@@ -1008,7 +1008,6 @@
           </execution>
         </executions>
       </plugin>
-
     </plugins>
 
   </build>
