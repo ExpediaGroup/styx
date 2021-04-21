@@ -15,7 +15,6 @@
  */
 package com.hotels.styx;
 
-import com.google.common.util.concurrent.MoreExecutors
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
 import com.google.common.util.concurrent.Service
 import com.google.common.util.concurrent.ServiceManager
@@ -25,7 +24,6 @@ import com.hotels.styx.api.extension.service.spi.AbstractStyxService
 import com.hotels.styx.api.extension.service.spi.StyxService
 import com.hotels.styx.routing.db.StyxObjectStore
 import org.slf4j.LoggerFactory.getLogger
-import java.lang.IllegalStateException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicReference
 
