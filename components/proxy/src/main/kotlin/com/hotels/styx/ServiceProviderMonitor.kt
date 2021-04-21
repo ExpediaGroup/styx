@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 package com.hotels.styx;
 
+import com.google.common.util.concurrent.MoreExecutors
+import com.google.common.util.concurrent.MoreExecutors.directExecutor
 import com.google.common.util.concurrent.Service
 import com.google.common.util.concurrent.ServiceManager
 import com.google.common.util.concurrent.ServiceManager.Listener
@@ -53,7 +55,7 @@ internal class ServiceProviderMonitor<T : StyxObjectRecord<out StyxService>>(nam
             override fun failure(service: Service) {
                 future.completeExceptionally(service.failureCause())
             }
-        })
+        }, directExecutor())
 
         manager.get().startAsync()
 
