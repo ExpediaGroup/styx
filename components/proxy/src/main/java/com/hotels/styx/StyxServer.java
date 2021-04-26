@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static com.hotels.styx.StyxServers.toGuavaService;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.shutdownLogging;
@@ -304,10 +305,10 @@ public final class StyxServer extends AbstractService {
         printBanner();
         CompletableFuture.runAsync(() -> {
             // doStart should return quicly. Therefore offload waiting on a separate thread:
-            this.phase1Services.addListener(new Phase1ServerStatusListener(this));
+            this.phase1Services.addListener(new Phase1ServerStatusListener(this), directExecutor());
             this.phase1Services.startAsync().awaitHealthy();
 
-            this.phase2Services.addListener(new Phase2ServerStatusListener(this));
+            this.phase2Services.addListener(new Phase2ServerStatusListener(this), directExecutor());
             this.phase2Services.startAsync();
         });
     }
