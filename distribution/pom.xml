@@ -30,6 +30,12 @@
       <artifactId>styx-proxy</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!-- This is necessary for the demo plugin to be picked up. There might be a more appropriate way though. -->
+    <dependency>
+      <groupId>com.hotels.styx</groupId>
+      <artifactId>styx-demo</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 
   <build>

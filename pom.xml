@@ -80,6 +80,7 @@
     <module>support</module>
     <module>system-tests</module>
     <module>plugin-examples</module>
+    <module>demo</module>
   </modules>
 
   <properties>
