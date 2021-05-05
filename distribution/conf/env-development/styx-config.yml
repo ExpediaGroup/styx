@@ -11,8 +11,33 @@ proxy:
       cipherSuites:
         - TLS_RSA_WITH_AES_128_GCM_SHA256
 
-services:
-  factories:
-    backendServiceRegistry:
+#services:
+#  factories:
+#    backendServiceRegistry:
+#      config:
+#        originsFile: ${STYX_HOME:classpath:}/conf/env-development/origins.yml
+
+providers:
+  originsFileLoader:
+    type: YamlFileConfigurationService
+    config:
+      originsFile: ${STYX_HOME:classpath:}/conf/env-development/origins.yml
+      ingressObject: pathPrefixRouter
+      monitor: True
+
+httpPipeline:
+  type: InterceptorPipeline
+  config:
+    pipeline: demo
+    handler: pathPrefixRouter
+
+#Uncommenting stops Styx from starting properly - it runs, but logging just stops and no connection can be made to Styx.
+plugins:
+  active: demo
+  all:
+    demo:
+      factory:
+        class: "com.hotels.styx.demo.DemoPluginFactory"
+        classPath: ""
       config:
-        originsFile: ${STYX_HOME:classpath:}/conf/env-development/origins.yml
+        putAnythingHere: "so it knows we configured it"
