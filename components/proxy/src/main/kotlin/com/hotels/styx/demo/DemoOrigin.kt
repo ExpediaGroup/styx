@@ -26,9 +26,7 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.extension.ResponseTransformer
 import com.github.tomakehurst.wiremock.http.Request
 import com.github.tomakehurst.wiremock.http.ResponseDefinition
-import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.HttpResponseStatus
-import java.nio.charset.Charset
 
 
 // This should probably be in a separate module, but let's just get it working first
@@ -39,20 +37,19 @@ fun main() {
     println("Demo origin started on port $port")
 }
 
-fun launchDemoOrigin(): WireMockServer {
-    val config: WireMockConfiguration = WireMockConfiguration()
-        .port(9090)
+fun launchDemoOrigin(port: Int = 9090, path: String = "/"): WireMockServer {
+    val config = WireMockConfiguration()
+        .port(port)
         .extensions(DemoTransformer())
 
-    val server = WireMockServer(config)
+    return WireMockServer(config).apply {
+        stub(path) {
+            withBody("Default Demo Origin Response Body")
+            withTransformers("demo")
+        }
 
-    server.stub("/") {
-        withBody("Body not transformed")
-        withTransformers("demo")
+        start()
     }
-
-    server.start()
-    return server
 }
 
 class DemoTransformer : ResponseTransformer() {
@@ -74,31 +71,26 @@ class DemoTransformer : ResponseTransformer() {
     override fun applyGlobally() = false
 }
 
-fun Request.queryParam(name: String): String? {
-    return queryParameter(name).run {
+fun Request.queryParam(name: String) =
+    queryParameter(name).run {
         if (isPresent) {
             firstValue()
         } else {
             null
         }
     }
-}
 
 inline fun WireMockServer.stub(startsWith: String, block: ResponseDefinitionBuilder.() -> Unit): WireMockServer {
-    val responseDefinitionBuilder = aResponse()
-    responseDefinitionBuilder.block()
-
     stubFor(
         urlMatchingPattern("$startsWith.*").willReturn(
-            responseDefinitionBuilder
+            aResponse().apply(block)
         )
     )
 
     return this
 }
 
-fun urlMatchingPattern(pattern: String): MappingBuilder {
-    val u = UrlMatchingStrategy()
-    u.setUrlPattern(pattern)
-    return WireMock.get(u)
-}
+fun urlMatchingPattern(pattern: String): MappingBuilder =
+    WireMock.get(UrlMatchingStrategy().apply {
+        setUrlPattern(pattern)
+    })
