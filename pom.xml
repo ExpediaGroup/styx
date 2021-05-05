@@ -543,7 +543,7 @@
         <groupId>com.github.tomakehurst</groupId>
         <artifactId>wiremock</artifactId>
         <version>1.54</version>
-        <scope>test</scope>
+<!--        <scope>test</scope>-->
         <exclusions>
           <exclusion>
             <groupId>junit</groupId>
