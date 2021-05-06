@@ -29,8 +29,6 @@ import com.github.tomakehurst.wiremock.http.ResponseDefinition
 import com.hotels.styx.api.HttpResponseStatus
 
 
-// This should probably be in a separate module, but let's just get it working first
-
 fun main() {
     val port = launchDemoOrigin().port()
 
