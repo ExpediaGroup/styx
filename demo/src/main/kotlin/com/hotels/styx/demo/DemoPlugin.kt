@@ -19,7 +19,7 @@ import com.hotels.styx.api.*
 import com.hotels.styx.api.plugins.spi.Plugin
 import com.hotels.styx.api.plugins.spi.PluginFactory
 import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import org.slf4j.LoggerFactory.getLogger
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -39,14 +39,14 @@ import java.util.concurrent.atomic.AtomicInteger
  * a request.
  */
 class DemoPlugin : Plugin {
-    private val logger: Logger = LoggerFactory.getLogger(DemoPlugin::class.java)
+    private val logger: Logger = getLogger(DemoPlugin::class.java)
     private val hits = AtomicInteger()
 
     init {
         logger.info("Demo plugin initialised")
     }
 
-    override fun adminInterfaceHandlers(): Map<String, HttpHandler> = mapOf(
+    override fun adminInterfaceHandlers() = mapOf(
         "hits" to respondWith {
             "Hits: ${hits.get()}"
         }

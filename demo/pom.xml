@@ -28,6 +28,15 @@
             <groupId>com.github.tomakehurst</groupId>
             <artifactId>wiremock</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-test</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.kotlintest</groupId>
+            <artifactId>kotlintest-runner-junit5</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

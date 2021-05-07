@@ -24,6 +24,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.common.FileSource
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.extension.ResponseTransformer
+import com.github.tomakehurst.wiremock.http.QueryParameter
 import com.github.tomakehurst.wiremock.http.Request
 import com.github.tomakehurst.wiremock.http.ResponseDefinition
 import com.hotels.styx.api.HttpResponseStatus
@@ -55,6 +56,7 @@ fun launchDemoOrigin(port: Int = 9090, path: String = "/"): WireMockServer {
 
     return WireMockServer(config).apply {
         stub(path) {
+            withHeader("Content-Type", "text/plain")
             withBody("Default Demo Origin Response Body")
             withTransformers("demo")
         }
@@ -63,7 +65,7 @@ fun launchDemoOrigin(port: Int = 9090, path: String = "/"): WireMockServer {
     }
 }
 
-class DemoTransformer : ResponseTransformer() {
+private class DemoTransformer : ResponseTransformer() {
     override fun name(): String = "demo"
 
     override fun transform(request: Request, responseDefinition: ResponseDefinition, files: FileSource) =
@@ -72,36 +74,25 @@ class DemoTransformer : ResponseTransformer() {
                 status = it.toInt()
             }
 
-            body = "Demo origin response. Status = ${HttpResponseStatus.statusWithCode(status)}"
-
-            request.queryParam("body")?.let {
-                body = it
-            }
+            body = request.queryParam("body")
+                ?: "Demo origin response. Status = ${HttpResponseStatus.statusWithCode(status)}"
         }
 
     override fun applyGlobally() = false
 }
 
-fun Request.queryParam(name: String) =
-    queryParameter(name).run {
-        if (isPresent) {
-            firstValue()
-        } else {
-            null
-        }
-    }
+private fun Request.queryParam(name: String): String? = queryParameter(name).value1()
+private fun QueryParameter.value1(): String? = if (isPresent) firstValue() else null
 
-inline fun WireMockServer.stub(startsWith: String, block: ResponseDefinitionBuilder.() -> Unit): WireMockServer {
+private inline fun WireMockServer.stub(startsWith: String, block: ResponseDefinitionBuilder.() -> Unit) = apply {
     stubFor(
         urlMatchingPattern("$startsWith.*").willReturn(
             aResponse().apply(block)
         )
     )
-
-    return this
 }
 
-fun urlMatchingPattern(pattern: String): MappingBuilder =
+private fun urlMatchingPattern(pattern: String): MappingBuilder =
     WireMock.get(UrlMatchingStrategy().apply {
         setUrlPattern(pattern)
     })
