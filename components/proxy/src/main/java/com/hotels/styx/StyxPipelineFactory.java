@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import com.hotels.styx.routing.StaticPipelineFactory;
 import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -64,6 +65,8 @@ public class StyxPipelineFactory {
 
     public HttpHandler create() {
         boolean requestTracking = environment.configuration().get("requestTracking", Boolean.class).orElse(false);
+
+        LoggerFactory.getLogger(getClass()).info(">>> StyxPipelineFactory is used, plugins:" + plugins);
 
         return new HttpInterceptorPipeline(
                 internalStyxInterceptors(environment.styxConfig(), environment.httpMessageFormatter()),

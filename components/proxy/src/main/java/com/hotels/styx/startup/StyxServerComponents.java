@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import com.hotels.styx.common.format.SanitisedHttpHeaderFormatter;
 import com.hotels.styx.common.format.SanitisedHttpMessageFormatter;
 import com.hotels.styx.executors.NettyExecutorConfig;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
+import com.hotels.styx.proxy.plugin.InstrumentedPlugin;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.Builtins;
@@ -145,9 +146,11 @@ public class StyxServerComponents {
 
         // TODO In further refactoring, we will probably want this loading to happen outside of this constructor call,
         //  so that it doesn't delay the admin server from starting up
-        this.plugins = builder.configuredPluginFactories.isEmpty()
+        this.plugins = (builder.configuredPluginFactories.isEmpty()
                 ? loadPlugins(environment)
-                : loadPlugins(environment, builder.configuredPluginFactories);
+                : loadPlugins(environment, builder.configuredPluginFactories)).stream().map(
+                        it -> new InstrumentedPlugin(it, environment)
+        ).collect(toList());
 
         this.plugins.forEach(plugin -> this.environment.plugins().add(plugin));
 

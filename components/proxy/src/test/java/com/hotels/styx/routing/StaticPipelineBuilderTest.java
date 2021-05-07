@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
+import com.hotels.styx.proxy.plugin.NamedPluginImpl;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -110,7 +111,7 @@ public class StaticPipelineBuilderTest {
     }
 
     private static NamedPlugin interceptor(String name, Plugin plugin) {
-        return NamedPlugin.namedPlugin(name, plugin);
+        return NamedPluginImpl.namedPlugin(name, plugin);
     }
 
     private static Plugin appendResponseHeader(String header, String value) {

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Collects metrics on plugin.
  */
-public class InstrumentedPlugin implements Plugin {
+public class InstrumentedPlugin implements NamedPlugin {
     private static final Logger LOGGER = getLogger(InstrumentedPlugin.class);
 
     private final NamedPlugin plugin;
@@ -119,6 +119,26 @@ public class InstrumentedPlugin implements Plugin {
                 errors.mark();
             }
         }
+    }
+
+    @Override
+    public Plugin originalPlugin() {
+        return plugin;
+    }
+
+    @Override
+    public String name() {
+        return plugin.name();
+    }
+
+    @Override
+    public void setEnabled(boolean enabled) {
+        plugin.setEnabled(enabled);
+    }
+
+    @Override
+    public boolean enabled() {
+        return plugin.enabled();
     }
 
     private static class StatusRecordingChain implements Chain {

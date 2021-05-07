@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ public class InterceptorPipelineBuilder {
         this.trackRequests = trackRequests;
     }
 
+    // todo Not used?
     public RoutingObject build() {
         List<HttpInterceptor> interceptors = ImmutableList.copyOf(instrument(plugins, environment));
         return new HttpInterceptorPipeline(interceptors, handler, trackRequests);

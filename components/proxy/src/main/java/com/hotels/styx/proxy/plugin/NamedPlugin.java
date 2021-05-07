@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,85 +16,15 @@
 package com.hotels.styx.proxy.plugin;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
 
-import java.util.Map;
-
-import static com.hotels.styx.common.Preconditions.checkArgument;
-import static java.util.Objects.requireNonNull;
-
-/**
- * Represents a plugin that has been loaded into styx under its configured name.
- */
-public final class NamedPlugin implements Plugin {
-    private final String name;
-    private final Plugin plugin;
-
-    private volatile boolean enabled = true;
-
-    private NamedPlugin(String name, Plugin plugin) {
-        checkArgument(!(plugin instanceof NamedPlugin), "Cannot wrap %s in %s", NamedPlugin.class.getName(), NamedPlugin.class.getName());
-
-        this.name = requireNonNull(name);
-        this.plugin = requireNonNull(plugin);
-    }
-
-    public static NamedPlugin namedPlugin(String name, Plugin plugin) {
-        return new NamedPlugin(name, plugin);
-    }
-
+public interface NamedPlugin extends Plugin {
     @VisibleForTesting
-    public Plugin originalPlugin() {
-        return plugin;
-    }
+    Plugin originalPlugin();
 
-    public String name() {
-        return name;
-    }
+    String name();
 
-    /**
-     * Enables or disables the plugin.
-     *
-     * @param enabled true to enable, false to disable
-     */
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
-    }
+    void setEnabled(boolean enabled);
 
-    /**
-     * Returns true if the plugin is enabled, false if disabled.
-     *
-     * @return true if the plugin is enabled, false if disabled
-     */
-    public boolean enabled() {
-        return enabled;
-    }
-
-    @Override
-    public void styxStarting() {
-        plugin.styxStarting();
-    }
-
-    @Override
-    public void styxStopping() {
-        plugin.styxStopping();
-    }
-
-    @Override
-    public Map<String, HttpHandler> adminInterfaceHandlers() {
-        return plugin.adminInterfaceHandlers();
-    }
-
-    @Override
-    public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
-        if (enabled) {
-            return plugin.intercept(request, chain);
-        }
-
-        return chain.proceed(request);
-    }
+    boolean enabled();
 }

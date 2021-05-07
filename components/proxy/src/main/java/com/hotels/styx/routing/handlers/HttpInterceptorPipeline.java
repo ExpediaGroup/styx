@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.routing.config.StyxObjectReference;
 import com.hotels.styx.server.track.CurrentRequestTracker;
 import com.hotels.styx.server.track.RequestTracker;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.List;
@@ -68,6 +69,7 @@ public class HttpInterceptorPipeline implements RoutingObject {
     private final RoutingObject handler;
     private final StandardHttpPipeline pipeline;
 
+    // todo find out where this is called from that does not instrument the plugins
     public HttpInterceptorPipeline(List<HttpInterceptor> interceptors, RoutingObject handler, boolean trackRequests) {
         RequestTracker tracker = trackRequests ? CurrentRequestTracker.INSTANCE : RequestTracker.NO_OP;
         this.handler = requireNonNull(handler);
@@ -98,6 +100,9 @@ public class HttpInterceptorPipeline implements RoutingObject {
             JsonNode handlerConfig = new JsonNodeConfig(configBlock.config())
                     .get("handler", JsonNode.class)
                     .orElseThrow(() -> missingAttributeError(configBlock, join(".", fullName), "handler"));
+
+            String classes = interceptors.stream().map(it -> it.getClass().getSimpleName()).collect(Collectors.joining(","));
+            LoggerFactory.getLogger(getClass()).info(">>> HttpInterceptorPipeline is used: "+classes);
 
             return new HttpInterceptorPipeline(
                     interceptors,

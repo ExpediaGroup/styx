@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.api.WebServiceHandler
 import com.hotels.styx.executors.NettyExecutorConfig
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
-import com.hotels.styx.proxy.plugin.NamedPlugin
+import com.hotels.styx.proxy.plugin.NamedPluginImpl
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.Builtins.BUILTIN_HANDLER_FACTORIES
@@ -55,14 +55,14 @@ fun routingObjectDef(text: String) = YamlConfig(text).`as`(StyxObjectDefinition:
 fun configBlock(text: String) = YamlConfig(text).`as`(JsonNode::class.java)
 
 internal data class RoutingObjectFactoryContext(
-        val routeRefLookup: RouteRefLookup = DEFAULT_REFERENCE_LOOKUP,
-        val environment: Environment = Environment.Builder().build(),
-        val objectStore: StyxObjectStore<RoutingObjectRecord> = StyxObjectStore(),
-        val objectFactories: Map<String, RoutingObjectFactory> = BUILTIN_HANDLER_FACTORIES,
-        val plugins: Iterable<NamedPlugin> = listOf(),
-        val interceptorFactories: Map<String, HttpInterceptorFactory> = INTERCEPTOR_FACTORIES,
-        val requestTracking: Boolean = false,
-        val executorObjectStore: StyxObjectStore<StyxObjectRecord<NettyExecutor>> = executorObjects()) {
+    val routeRefLookup: RouteRefLookup = DEFAULT_REFERENCE_LOOKUP,
+    val environment: Environment = Environment.Builder().build(),
+    val objectStore: StyxObjectStore<RoutingObjectRecord> = StyxObjectStore(),
+    val objectFactories: Map<String, RoutingObjectFactory> = BUILTIN_HANDLER_FACTORIES,
+    val plugins: Iterable<NamedPluginImpl> = listOf(),
+    val interceptorFactories: Map<String, HttpInterceptorFactory> = INTERCEPTOR_FACTORIES,
+    val requestTracking: Boolean = false,
+    val executorObjectStore: StyxObjectStore<StyxObjectRecord<NettyExecutor>> = executorObjects()) {
     fun get() = RoutingObjectFactory.Context(
             routeRefLookup,
             environment,
