@@ -141,6 +141,3 @@ start-demo: release-styx
 	-e $(CONFIG_ROOT)/styx-env.sh \
 	-l $(CONFIG_ROOT)/logback.xml \
 	$(CONFIG_ROOT)/styx-config.yml
-
-## TODO add "start-demo" goal - load with dummy origins, dummy plugins that can be used to simulate errors, etc.
->>>>>>> Work-in-progress: works now, can clean-up/rearrange, etc.
