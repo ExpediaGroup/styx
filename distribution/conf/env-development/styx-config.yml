@@ -1,21 +1,40 @@
-include: ${STYX_HOME:classpath:}/conf/default.yml
-
 jvmRouteName: styx-development
 
 proxy:
   connectors:
+    http:
+      port: 8080
     https:
+      port: 8443
       sslProvider: JDK
       certificateFile: ${STYX_HOME:classpath:}/conf/tls/testCredentials.crt
       certificateKeyFile: ${STYX_HOME:classpath:}/conf/tls/testCredentials.key
       cipherSuites:
         - TLS_RSA_WITH_AES_128_GCM_SHA256
+      sessionTimeoutMillis: 300000
+      sessionCacheSize: 20000
+  bossThreadsCount: 1
+  clientWorkerThreadsCount: 0
+  workerThreadsCount: 0
+  maxInitialLength: 4096
+  maxHeaderSize: 8192
+  maxChunkSize: 8192
+  requestTimeoutMillis: 12000
+  keepAliveTimeoutMillis: 12000
+  maxConnectionsCount: 4096
 
-#services:
-#  factories:
-#    backendServiceRegistry:
-#      config:
-#        originsFile: ${STYX_HOME:classpath:}/conf/env-development/origins.yml
+admin:
+  connectors:
+    http:
+      port: 9000
+  bossThreadsCount: 1
+  workerThreadsCount: 1
+  maxInitialLength: 4096
+  maxHeaderSize: 8192
+  maxChunkSize: 8192
+  metricsCache:
+    enabled: true
+    expirationMillis: 10000
 
 providers:
   originsFileLoader:
@@ -31,7 +50,6 @@ httpPipeline:
     pipeline: demo
     handler: pathPrefixRouter
 
-#Uncommenting stops Styx from starting properly - it runs, but logging just stops and no connection can be made to Styx.
 plugins:
   active: demo
   all:
@@ -39,5 +57,4 @@ plugins:
       factory:
         class: "com.hotels.styx.demo.DemoPluginFactory"
         classPath: ""
-      config:
-        putAnythingHere: "so it knows we configured it"
+      config: null

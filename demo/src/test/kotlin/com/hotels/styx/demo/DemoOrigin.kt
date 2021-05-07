@@ -28,7 +28,20 @@ import com.github.tomakehurst.wiremock.http.Request
 import com.github.tomakehurst.wiremock.http.ResponseDefinition
 import com.hotels.styx.api.HttpResponseStatus
 
-
+/**
+ * This can be executed to launch a fake backend on localhost:9090.
+ * It can be used to demonstrate Styx or for manual testing.
+ *
+ * To return particular types of responses, there are a couple of query parameters than can be sent.
+ *
+ * <ul>
+ *     <li>status - responds with whatever status code you specify</li>
+ *     <li>body - responds with a body of whatever you specify</li>
+ * </ul>
+ *
+ * Note that this is only for demonstration purposes, and should not be used in any production environment for any reason,
+ * as it could cause security issues.
+ */
 fun main() {
     val port = launchDemoOrigin().port()
 

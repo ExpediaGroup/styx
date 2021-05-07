@@ -23,6 +23,21 @@ import org.slf4j.LoggerFactory
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.concurrent.atomic.AtomicInteger
 
+/**
+ * A plugin to demonstrate how plugins work in Styx.
+ *
+ * By default, this plugin lets requests and responses pass through unmodified.
+ *
+ * To demonstrates how plugin errors are handled, the "exception" query parameter can be used with one of the following values:
+ *
+ * <ul>
+ *  <li>onRequest - throws a DemoPluginException as soon as the request is received</li>
+ *  <li>onResponse - proxies to the backend, then throws a DemoPluginException after receiving a response</li>
+ * </ul>
+ *
+ * The plugin also exposes a page on the admin interface called 'hits' which just shows how many times the plugin has received
+ * a request.
+ */
 class DemoPlugin : Plugin {
     private val logger: Logger = LoggerFactory.getLogger(DemoPlugin::class.java)
     private val hits = AtomicInteger()
