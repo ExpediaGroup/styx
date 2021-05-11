@@ -134,3 +134,10 @@ changelog:
 #
 docker-image: clean
 	mvn install -Prelease,linux,docker -DskipTests=true -Dmaven.test.skip=true
+
+## Starts a "demo" mode of Styx that can be used to explore the features, or for manual testing.
+start-demo: release-styx
+	$(STYX_HOME)/bin/startup \
+	-e $(CONFIG_ROOT)/styx-env.sh \
+	-l $(CONFIG_ROOT)/logback.xml \
+	$(CONFIG_ROOT)/styx-config.yml

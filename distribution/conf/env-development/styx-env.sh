@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2013-2017 Expedia Inc.
+# Copyright (C) 2013-2021 Expedia Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ JVM_DIRECT_MEMORY="${JVM_DIRECT_MEMORY:=-XX:MaxDirectMemorySize=512m}"
 JVM_OTHER_MEM="${JVM_OTHER_MEM:=-XX:CompressedClassSpaceSize=20m -XX:InitialCodeCacheSize=50m -XX:ReservedCodeCacheSize=50m}"
 
 # Other options
-JVM_GC_LOG="${JVM_GC_LOG:=-XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Xloggc:${APP_HOME}/logs/gc.log.$(/bin/date +%Y-%m-%d-%H%M%S)}"
+JVM_GC_LOG="${JVM_GC_LOG:=-XX:+PrintGCDetails -Xlog:gc*::time -Xloggc:${APP_HOME}/logs/gc.log.$(/bin/date +%Y-%m-%d-%H%M%S)}"
 JVM_HEAP_DUMP="${JVM_HEAP_DUMP:=-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/tmp}"
 
 # Set java flight recorder - Oracle JDK feature
@@ -52,6 +52,8 @@ JAVA_OPTS="$JAVA_OPTS -Dio.netty.threadLocalMap.stringBuilder.maxSize=71680"
 
 # Enable extended Java DTrace probes
 # JAVA_OPTS="$JAVA_OPTS -XX:+ExtendedDTraceProbes"
+
+JAVA_OPTS="$JAVA_OPTS -DvalidateServerConfig=no"
 
 export JAVA_OPTS
 

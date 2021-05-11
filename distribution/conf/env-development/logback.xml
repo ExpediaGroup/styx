@@ -35,6 +35,7 @@
   <logger name="io.netty" level="WARN"/>
   <logger name="com.hotels.styx.proxy.backends.file.FileChangeMonitor" level="INFO"/>
 
+  <!-- Change log level here -->
   <root level="DEBUG">
     <appender-ref ref="MAIN"/>
     <appender-ref ref="CONSOLE"/>

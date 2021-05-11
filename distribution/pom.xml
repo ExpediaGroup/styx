@@ -30,6 +30,11 @@
       <artifactId>styx-proxy</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.hotels.styx</groupId>
+      <artifactId>styx-demo</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 
   <build>
