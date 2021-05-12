@@ -27,4 +27,8 @@ public interface NamedPlugin extends Plugin {
     void setEnabled(boolean enabled);
 
     boolean enabled();
+
+    static NamedPlugin namedPlugin(String name, Plugin plugin) {
+        return NamedPluginImpl.namedPlugin(name, plugin);
+    }
 }

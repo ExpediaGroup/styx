@@ -42,7 +42,7 @@ public final class NamedPluginImpl implements NamedPlugin {
         this.plugin = requireNonNull(plugin);
     }
 
-    public static NamedPlugin namedPlugin(String name, Plugin plugin) {
+    static NamedPlugin namedPlugin(String name, Plugin plugin) {
         return new NamedPluginImpl(name, plugin);
     }
 

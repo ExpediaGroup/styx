@@ -30,7 +30,7 @@ import org.slf4j.Logger;
 
 import java.util.List;
 
-import static com.hotels.styx.proxy.plugin.NamedPluginImpl.namedPlugin;
+import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static com.hotels.styx.startup.extensions.FailureHandling.PLUGIN_FACTORY_LOADING_FAILURE_HANDLING_STRATEGY;
 import static com.hotels.styx.startup.extensions.FailureHandling.PLUGIN_STARTUP_FAILURE_HANDLING_STRATEGY;
 import static java.util.Collections.emptyList;

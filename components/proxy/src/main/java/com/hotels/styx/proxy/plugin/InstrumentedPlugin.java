@@ -47,6 +47,10 @@ public class InstrumentedPlugin implements NamedPlugin {
     private final Meter errors;
 
     public InstrumentedPlugin(NamedPlugin plugin, Environment environment) {
+        if (plugin instanceof InstrumentedPlugin) {
+            throw new IllegalArgumentException("Plugin " + plugin.name() + " is already instrumented");
+        }
+
         this.plugin = requireNonNull(plugin);
         requireNonNull(environment);
 
@@ -82,11 +86,15 @@ public class InstrumentedPlugin implements NamedPlugin {
 
     @Override
     public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain originalChain) {
+        int id = System.identityHashCode(this);
+
+        System.out.println(getClass().getSimpleName() + "#" + id + ": chain = " + originalChain);
+
         StatusRecordingChain chain = new StatusRecordingChain(originalChain);
         try {
             return new Eventual<>(Flux.from(plugin.intercept(request, chain))
-                            .doOnNext(response -> recordStatusCode(chain, response))
-                            .onErrorResume(error -> Flux.error(recordAndWrapError(chain, error))));
+                    .doOnNext(response -> recordStatusCode(chain, response))
+                    .onErrorResume(error -> Flux.error(recordAndWrapError(chain, error))));
         } catch (Throwable e) {
             recordException(e);
             return Eventual.error(new PluginException(e, plugin.name()));
@@ -141,6 +149,11 @@ public class InstrumentedPlugin implements NamedPlugin {
         return plugin.enabled();
     }
 
+    @Override
+    public String toString() {
+        return "InstrumentedPlugin{" + plugin + '}';
+    }
+
     private static class StatusRecordingChain implements Chain {
         private final Chain chain;
         private volatile HttpResponseStatus upstreamStatus;
@@ -159,8 +172,8 @@ public class InstrumentedPlugin implements NamedPlugin {
         public Eventual<LiveHttpResponse> proceed(LiveHttpRequest request) {
             try {
                 return new Eventual<>(Flux.from(chain.proceed(request))
-                                .doOnNext(response -> upstreamStatus = response.status())
-                                .doOnError(error -> upstreamException = true));
+                        .doOnNext(response -> upstreamStatus = response.status())
+                        .doOnError(error -> upstreamException = true));
             } catch (RuntimeException | Error e) {
                 upstreamException = true;
                 throw e;
@@ -168,6 +181,15 @@ public class InstrumentedPlugin implements NamedPlugin {
                 upstreamException = true;
                 throw new RuntimeException(e);
             }
+        }
+
+        @Override
+        public String toString() {
+            return "StatusRecordingChain{" +
+                    "chain=" + chain +
+                    ", upstreamStatus=" + upstreamStatus +
+                    ", upstreamException=" + upstreamException +
+                    '}';
         }
     }
 }

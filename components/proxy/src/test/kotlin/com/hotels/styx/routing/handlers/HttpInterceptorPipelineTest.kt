@@ -17,7 +17,7 @@ package com.hotels.styx.routing.handlers
 
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
-import com.hotels.styx.proxy.plugin.NamedPluginImpl.namedPlugin
+import com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin
 import com.hotels.styx.RoutingObjectFactoryContext
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.interceptors.RewriteInterceptor
@@ -42,8 +42,14 @@ class HttpInterceptorPipelineTest : FeatureSpec({
 
             val context = RoutingObjectFactoryContext(
                     plugins = listOf(
-                            namedPlugin("interceptor1", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "A").build() }) }),
-                            namedPlugin("interceptor2", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "A").build() }) })
+                            namedPlugin("interceptor1") { request, chain ->
+                                chain.proceed(request)
+                                    .map { response -> response.newBuilder().addHeader("X-Test-Header", "A").build() }
+                            },
+                            namedPlugin("interceptor2") { request, chain ->
+                                chain.proceed(request)
+                                    .map { response -> response.newBuilder().addHeader("X-Test-Header", "A").build() }
+                            }
                     ))
 
             val e = shouldThrow<java.lang.IllegalArgumentException> {

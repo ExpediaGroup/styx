@@ -53,7 +53,13 @@ public class InterceptorPipelineBuilder {
 
     private static List<InstrumentedPlugin> instrument(Iterable<NamedPlugin> namedPlugins, Environment environment) {
         return stream(namedPlugins.spliterator(), false)
-                .map(namedPlugin -> new InstrumentedPlugin(namedPlugin, environment))
+                .map(namedPlugin -> {
+                    if(namedPlugin instanceof InstrumentedPlugin) {
+                        return (InstrumentedPlugin) namedPlugin;
+                    }
+
+                    return new InstrumentedPlugin(namedPlugin, environment);
+                })
                 .collect(toList());
     }
 }

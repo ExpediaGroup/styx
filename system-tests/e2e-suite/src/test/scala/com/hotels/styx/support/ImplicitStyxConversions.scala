@@ -16,11 +16,10 @@
 package com.hotels.styx.support
 
 import com.hotels.styx.api.plugins.spi.Plugin
-import com.hotels.styx.proxy.plugin.NamedPluginImpl._
-import com.hotels.styx.proxy.plugin.NamedPluginImpl
+import com.hotels.styx.proxy.plugin.NamedPlugin
 
 trait ImplicitStyxConversions {
-  implicit def toNamedPlugin(plugin: (String, Plugin)): NamedPluginImpl = namedPlugin(plugin._1, plugin._2)
+  implicit def toNamedPlugin(plugin: (String, Plugin)): NamedPlugin = NamedPlugin.namedPlugin(plugin._1, plugin._2)
 }
 
 class ImplicitStyxConversionsObject extends ImplicitStyxConversions{

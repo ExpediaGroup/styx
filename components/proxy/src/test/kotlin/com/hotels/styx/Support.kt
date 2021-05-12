@@ -17,23 +17,15 @@ package com.hotels.styx
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.google.common.collect.ImmutableSet
-import com.hotels.styx.api.Eventual
-import com.hotels.styx.api.HttpHandler
-import com.hotels.styx.api.HttpRequest
-import com.hotels.styx.api.HttpResponse
+import com.hotels.styx.api.*
 import com.hotels.styx.api.HttpResponse.response
 import com.hotels.styx.api.HttpResponseStatus.OK
-import com.hotels.styx.api.LiveHttpRequest
-import com.hotels.styx.api.LiveHttpResponse
-import com.hotels.styx.api.WebServiceHandler
 import com.hotels.styx.executors.NettyExecutorConfig
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
-import com.hotels.styx.proxy.plugin.NamedPluginImpl
+import com.hotels.styx.proxy.plugin.NamedPlugin
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.routing.RoutingObjectRecord
-import com.hotels.styx.routing.config.Builtins.BUILTIN_HANDLER_FACTORIES
-import com.hotels.styx.routing.config.Builtins.DEFAULT_REFERENCE_LOOKUP
-import com.hotels.styx.routing.config.Builtins.INTERCEPTOR_FACTORIES
+import com.hotels.styx.routing.config.Builtins.*
 import com.hotels.styx.routing.config.HttpInterceptorFactory
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.config.StyxObjectDefinition
@@ -59,7 +51,7 @@ internal data class RoutingObjectFactoryContext(
     val environment: Environment = Environment.Builder().build(),
     val objectStore: StyxObjectStore<RoutingObjectRecord> = StyxObjectStore(),
     val objectFactories: Map<String, RoutingObjectFactory> = BUILTIN_HANDLER_FACTORIES,
-    val plugins: Iterable<NamedPluginImpl> = listOf(),
+    val plugins: Iterable<NamedPlugin> = listOf(),
     val interceptorFactories: Map<String, HttpInterceptorFactory> = INTERCEPTOR_FACTORIES,
     val requestTracking: Boolean = false,
     val executorObjectStore: StyxObjectStore<StyxObjectRecord<NettyExecutor>> = executorObjects()) {

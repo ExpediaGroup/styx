@@ -21,16 +21,12 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.track.RequestTracker;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
@@ -39,7 +35,6 @@ import static java.util.Objects.requireNonNull;
  * The pipeline consists of a chain of interceptors followed by a handler.
  */
 class StandardHttpPipeline implements HttpHandler {
-    // todo need to instrument before this point - don't want to do it repeatedly
     private final List<HttpInterceptor> interceptors;
     private final HttpHandler handler;
     private final RequestTracker requestTracker;
@@ -70,12 +65,6 @@ class StandardHttpPipeline implements HttpHandler {
         private final RequestTracker requestTracker;
 
         HttpInterceptorChain(List<HttpInterceptor> interceptors, int index, HttpHandler client, HttpInterceptor.Context context, RequestTracker requestTracker) {
-            LoggerFactory.getLogger(getClass())
-                    .info("Interceptor chain construct call stack:\n"
-                            + Stream.of(Thread.currentThread().getStackTrace())
-                            .map(StackTraceElement::toString)
-                            .collect(Collectors.joining("\n")));
-
             this.interceptors = interceptors;
             this.index = index;
             this.client = client;
@@ -102,7 +91,7 @@ class StandardHttpPipeline implements HttpHandler {
 
                 try {
                     /* todo here is where NamedPlugin.intercept is called.
-                    *   why is there no more InstrumentedPlugin? */
+                     *   why is there no more InstrumentedPlugin? */
                     return interceptor.intercept(request, chain);
                 } catch (Throwable e) {
                     return Eventual.error(e);
@@ -113,12 +102,17 @@ class StandardHttpPipeline implements HttpHandler {
 
             return new Eventual<>(new SingleSubscriptionPublisher(client.handle(request, this.context)));
         }
+
+        @Override
+        public String toString() {
+            return "HttpInterceptorChain[" + interceptors + ']';
+        }
     }
 
     private static final class SingleSubscriptionPublisher implements Publisher<LiveHttpResponse> {
 
-        private AtomicInteger subscriptionCounter = new AtomicInteger();
-        private Publisher<LiveHttpResponse> original;
+        private final AtomicInteger subscriptionCounter = new AtomicInteger();
+        private final Publisher<LiveHttpResponse> original;
 
         public SingleSubscriptionPublisher(Publisher<LiveHttpResponse> original) {
             this.original = original;
@@ -133,5 +127,4 @@ class StandardHttpPipeline implements HttpHandler {
             }
         }
     }
-
 }
