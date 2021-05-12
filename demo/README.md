@@ -8,4 +8,3 @@ The Demo Plugin can be used simply by starting Styx using the Makefile goal `mak
 configuration defined at `distribution/conf/env-development/styx-config.yml`.
 
 The DemoOrigin is run by executing the class directly (easiest from IDE).
-This demo can be used to demonstrate the functionality of Styx, or to perform manual testing.

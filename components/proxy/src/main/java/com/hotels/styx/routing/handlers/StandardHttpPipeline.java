@@ -90,8 +90,6 @@ class StandardHttpPipeline implements HttpHandler {
                 HttpInterceptor interceptor = interceptors.get(index);
 
                 try {
-                    /* todo here is where NamedPlugin.intercept is called.
-                     *   why is there no more InstrumentedPlugin? */
                     return interceptor.intercept(request, chain);
                 } catch (Throwable e) {
                     return Eventual.error(e);

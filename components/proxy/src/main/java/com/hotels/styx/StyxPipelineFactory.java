@@ -28,7 +28,6 @@ import com.hotels.styx.routing.StaticPipelineFactory;
 import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -42,13 +41,11 @@ import static java.util.Objects.requireNonNull;
  * Produces the pipeline for the Styx proxy server.
  */
 public class StyxPipelineFactory {
-
     private final RoutingObjectFactory.Context builtinRoutingObjects;
     private final Environment environment;
     private final Map<String, StyxService> services;
     private final List<NamedPlugin> plugins;
     private final NettyExecutor executor;
-
 
     public StyxPipelineFactory(
             RoutingObjectFactory.Context builtinRoutingObjects,
@@ -65,8 +62,6 @@ public class StyxPipelineFactory {
 
     public HttpHandler create() {
         boolean requestTracking = environment.configuration().get("requestTracking", Boolean.class).orElse(false);
-
-        LoggerFactory.getLogger(getClass()).info(">>> StyxPipelineFactory is used, plugins:" + plugins);
 
         return new HttpInterceptorPipeline(
                 internalStyxInterceptors(environment.styxConfig(), environment.httpMessageFormatter()),

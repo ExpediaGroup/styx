@@ -27,14 +27,13 @@ import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.HttpInterceptorFactory;
-import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.RoutingConfigParser;
+import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.StyxObjectConfiguration;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.routing.config.StyxObjectReference;
 import com.hotels.styx.server.track.CurrentRequestTracker;
 import com.hotels.styx.server.track.RequestTracker;
-import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.List;
@@ -69,7 +68,6 @@ public class HttpInterceptorPipeline implements RoutingObject {
     private final RoutingObject handler;
     private final StandardHttpPipeline pipeline;
 
-    // todo find out where this is called from that does not instrument the plugins
     public HttpInterceptorPipeline(List<HttpInterceptor> interceptors, RoutingObject handler, boolean trackRequests) {
         RequestTracker tracker = trackRequests ? CurrentRequestTracker.INSTANCE : RequestTracker.NO_OP;
         this.handler = requireNonNull(handler);
@@ -100,9 +98,6 @@ public class HttpInterceptorPipeline implements RoutingObject {
             JsonNode handlerConfig = new JsonNodeConfig(configBlock.config())
                     .get("handler", JsonNode.class)
                     .orElseThrow(() -> missingAttributeError(configBlock, join(".", fullName), "handler"));
-
-            String classes = interceptors.stream().map(it -> it.getClass().getSimpleName()).collect(Collectors.joining(","));
-            LoggerFactory.getLogger(getClass()).info(">>> HttpInterceptorPipeline is used: "+classes);
 
             return new HttpInterceptorPipeline(
                     interceptors,
@@ -166,5 +161,4 @@ public class HttpInterceptorPipeline implements RoutingObject {
                     .collect(Collectors.toMap(NamedPlugin::name, identity()));
         }
     }
-
 }

@@ -47,9 +47,7 @@ public class InstrumentedPlugin implements NamedPlugin {
     private final Meter errors;
 
     public InstrumentedPlugin(NamedPlugin plugin, Environment environment) {
-        if (plugin instanceof InstrumentedPlugin) {
-            throw new IllegalArgumentException("Plugin " + plugin.name() + " is already instrumented");
-        }
+        requireNotAlreadyInstrumented(plugin);
 
         this.plugin = requireNonNull(plugin);
         requireNonNull(environment);
@@ -63,6 +61,12 @@ public class InstrumentedPlugin implements NamedPlugin {
         this.errors = environment.metricRegistry().meter("plugins." + plugin.name() + ".errors");
 
         LOGGER.info("Plugin {} instrumented", plugin.name());
+    }
+
+    private void requireNotAlreadyInstrumented(NamedPlugin plugin) {
+        if (plugin instanceof InstrumentedPlugin) {
+            throw new IllegalArgumentException("Plugin " + plugin.name() + " is already instrumented");
+        }
     }
 
     static String formattedExceptionName(Class<? extends Throwable> type) {
@@ -86,10 +90,6 @@ public class InstrumentedPlugin implements NamedPlugin {
 
     @Override
     public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain originalChain) {
-        int id = System.identityHashCode(this);
-
-        System.out.println(getClass().getSimpleName() + "#" + id + ": chain = " + originalChain);
-
         StatusRecordingChain chain = new StatusRecordingChain(originalChain);
         try {
             return new Eventual<>(Flux.from(plugin.intercept(request, chain))

@@ -53,9 +53,6 @@ class DemoPlugin : Plugin {
     )
 
     override fun intercept(request: LiveHttpRequest, chain: HttpInterceptor.Chain): Eventual<LiveHttpResponse> {
-        // todo delete after investigation
-//        logger.info("Intercept call stack:\n${Thread.currentThread().stackTrace.joinToString("\n")}")
-
         logger.info("Demo plugin received request $request")
         hits.incrementAndGet()
 

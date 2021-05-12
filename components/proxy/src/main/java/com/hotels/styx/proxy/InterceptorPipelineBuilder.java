@@ -45,7 +45,6 @@ public class InterceptorPipelineBuilder {
         this.trackRequests = trackRequests;
     }
 
-    // todo Not used?
     public RoutingObject build() {
         List<HttpInterceptor> interceptors = ImmutableList.copyOf(instrument(plugins, environment));
         return new HttpInterceptorPipeline(interceptors, handler, trackRequests);
@@ -53,13 +52,10 @@ public class InterceptorPipelineBuilder {
 
     private static List<InstrumentedPlugin> instrument(Iterable<NamedPlugin> namedPlugins, Environment environment) {
         return stream(namedPlugins.spliterator(), false)
-                .map(namedPlugin -> {
-                    if(namedPlugin instanceof InstrumentedPlugin) {
-                        return (InstrumentedPlugin) namedPlugin;
-                    }
-
-                    return new InstrumentedPlugin(namedPlugin, environment);
-                })
+                .map(namedPlugin ->
+                        namedPlugin instanceof InstrumentedPlugin
+                                ? (InstrumentedPlugin) namedPlugin
+                                : new InstrumentedPlugin(namedPlugin, environment))
                 .collect(toList());
     }
 }

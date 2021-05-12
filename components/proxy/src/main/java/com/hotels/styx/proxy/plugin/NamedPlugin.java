@@ -29,6 +29,6 @@ public interface NamedPlugin extends Plugin {
     boolean enabled();
 
     static NamedPlugin namedPlugin(String name, Plugin plugin) {
-        return NamedPluginImpl.namedPlugin(name, plugin);
+        return WrappingNamedPlugin.namedPlugin(name, plugin);
     }
 }

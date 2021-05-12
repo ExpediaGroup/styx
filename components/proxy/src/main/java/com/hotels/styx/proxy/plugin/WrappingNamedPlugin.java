@@ -30,20 +30,20 @@ import static java.util.Objects.requireNonNull;
 /**
  * Represents a plugin that has been loaded into styx under its configured name.
  */
-public final class NamedPluginImpl implements NamedPlugin {
+public final class WrappingNamedPlugin implements NamedPlugin {
     private final String name;
     private final Plugin plugin;
 
     private volatile boolean enabled = true;
 
-    private NamedPluginImpl(String name, Plugin plugin) {
-        checkArgument(!(plugin instanceof NamedPluginImpl), "Cannot wrap %s in %s", NamedPluginImpl.class.getName(), NamedPluginImpl.class.getName());
+    private WrappingNamedPlugin(String name, Plugin plugin) {
+        checkArgument(!(plugin instanceof WrappingNamedPlugin), "Cannot wrap %s in %s", WrappingNamedPlugin.class.getName(), WrappingNamedPlugin.class.getName());
         this.name = requireNonNull(name);
         this.plugin = requireNonNull(plugin);
     }
 
     static NamedPlugin namedPlugin(String name, Plugin plugin) {
-        return new NamedPluginImpl(name, plugin);
+        return new WrappingNamedPlugin(name, plugin);
     }
 
     @Override
