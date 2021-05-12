@@ -13,22 +13,23 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.proxy.plugin;
+package com.hotels.styx.proxy.plugin
 
-import com.google.common.annotations.VisibleForTesting;
-import com.hotels.styx.api.plugins.spi.Plugin;
+import com.google.common.annotations.VisibleForTesting
+import com.hotels.styx.api.plugins.spi.Plugin
 
-public interface NamedPlugin extends Plugin {
+interface NamedPlugin : Plugin {
     @VisibleForTesting
-    Plugin originalPlugin();
+    fun originalPlugin(): Plugin
 
-    String name();
+    fun name(): String?
 
-    void setEnabled(boolean enabled);
+    fun setEnabled(enabled: Boolean)
 
-    boolean enabled();
+    fun enabled(): Boolean
 
-    static NamedPlugin namedPlugin(String name, Plugin plugin) {
-        return WrappingNamedPlugin.namedPlugin(name, plugin);
+    companion object {
+        @JvmStatic
+        fun namedPlugin(name: String, plugin: Plugin): NamedPlugin = wrapWithName(name, plugin)
     }
 }
