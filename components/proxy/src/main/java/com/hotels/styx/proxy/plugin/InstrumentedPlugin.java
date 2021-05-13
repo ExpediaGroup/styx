@@ -185,11 +185,11 @@ public class InstrumentedPlugin implements NamedPlugin {
 
         @Override
         public String toString() {
-            return "StatusRecordingChain{" +
-                    "chain=" + chain +
-                    ", upstreamStatus=" + upstreamStatus +
-                    ", upstreamException=" + upstreamException +
-                    '}';
+            return "StatusRecordingChain{"
+                    + "chain=" + chain
+                    + ", upstreamStatus=" + upstreamStatus
+                    + ", upstreamException=" + upstreamException
+                    + '}';
         }
     }
 }
