@@ -22,7 +22,7 @@ interface NamedPlugin : Plugin {
     @VisibleForTesting
     fun originalPlugin(): Plugin
 
-    fun name(): String?
+    fun name(): String
 
     fun setEnabled(enabled: Boolean)
 
