@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -41,13 +41,11 @@ import static java.util.Objects.requireNonNull;
  * Produces the pipeline for the Styx proxy server.
  */
 public class StyxPipelineFactory {
-
     private final RoutingObjectFactory.Context builtinRoutingObjects;
     private final Environment environment;
     private final Map<String, StyxService> services;
     private final List<NamedPlugin> plugins;
     private final NettyExecutor executor;
-
 
     public StyxPipelineFactory(
             RoutingObjectFactory.Context builtinRoutingObjects,

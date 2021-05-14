@@ -70,9 +70,7 @@ private class DemoTransformer : ResponseTransformer() {
 
     override fun transform(request: Request, responseDefinition: ResponseDefinition, files: FileSource) =
         responseDefinition.apply {
-            request.queryParam("status")?.let {
-                status = it.toInt()
-            }
+            status = request.queryParam("status")?.toInt() ?: 200
 
             body = request.queryParam("body")
                 ?: "Demo origin response. Status = ${HttpResponseStatus.statusWithCode(status)}"

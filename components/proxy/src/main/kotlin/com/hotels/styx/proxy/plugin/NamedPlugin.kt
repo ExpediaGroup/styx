@@ -13,14 +13,23 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.support
+package com.hotels.styx.proxy.plugin
 
+import com.google.common.annotations.VisibleForTesting
 import com.hotels.styx.api.plugins.spi.Plugin
-import com.hotels.styx.proxy.plugin.NamedPlugin
 
-trait ImplicitStyxConversions {
-  implicit def toNamedPlugin(plugin: (String, Plugin)): NamedPlugin = NamedPlugin.namedPlugin(plugin._1, plugin._2)
-}
+interface NamedPlugin : Plugin {
+    @VisibleForTesting
+    fun originalPlugin(): Plugin
 
-class ImplicitStyxConversionsObject extends ImplicitStyxConversions{
+    fun name(): String?
+
+    fun setEnabled(enabled: Boolean)
+
+    fun enabled(): Boolean
+
+    companion object {
+        @JvmStatic
+        fun namedPlugin(name: String, plugin: Plugin): NamedPlugin = wrapWithName(name, plugin)
+    }
 }

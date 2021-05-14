@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Collects metrics on plugin.
  */
-public class InstrumentedPlugin implements Plugin {
+public class InstrumentedPlugin implements NamedPlugin {
     private static final Logger LOGGER = getLogger(InstrumentedPlugin.class);
 
     private final NamedPlugin plugin;
@@ -47,6 +47,8 @@ public class InstrumentedPlugin implements Plugin {
     private final Meter errors;
 
     public InstrumentedPlugin(NamedPlugin plugin, Environment environment) {
+        requireNotAlreadyInstrumented(plugin);
+
         this.plugin = requireNonNull(plugin);
         requireNonNull(environment);
 
@@ -59,6 +61,12 @@ public class InstrumentedPlugin implements Plugin {
         this.errors = environment.metricRegistry().meter("plugins." + plugin.name() + ".errors");
 
         LOGGER.info("Plugin {} instrumented", plugin.name());
+    }
+
+    private void requireNotAlreadyInstrumented(NamedPlugin plugin) {
+        if (plugin instanceof InstrumentedPlugin) {
+            throw new IllegalArgumentException("Plugin " + plugin.name() + " is already instrumented");
+        }
     }
 
     static String formattedExceptionName(Class<? extends Throwable> type) {
@@ -85,8 +93,8 @@ public class InstrumentedPlugin implements Plugin {
         StatusRecordingChain chain = new StatusRecordingChain(originalChain);
         try {
             return new Eventual<>(Flux.from(plugin.intercept(request, chain))
-                            .doOnNext(response -> recordStatusCode(chain, response))
-                            .onErrorResume(error -> Flux.error(recordAndWrapError(chain, error))));
+                    .doOnNext(response -> recordStatusCode(chain, response))
+                    .onErrorResume(error -> Flux.error(recordAndWrapError(chain, error))));
         } catch (Throwable e) {
             recordException(e);
             return Eventual.error(new PluginException(e, plugin.name()));
@@ -121,6 +129,31 @@ public class InstrumentedPlugin implements Plugin {
         }
     }
 
+    @Override
+    public Plugin originalPlugin() {
+        return plugin;
+    }
+
+    @Override
+    public String name() {
+        return plugin.name();
+    }
+
+    @Override
+    public void setEnabled(boolean enabled) {
+        plugin.setEnabled(enabled);
+    }
+
+    @Override
+    public boolean enabled() {
+        return plugin.enabled();
+    }
+
+    @Override
+    public String toString() {
+        return "InstrumentedPlugin{" + plugin + '}';
+    }
+
     private static class StatusRecordingChain implements Chain {
         private final Chain chain;
         private volatile HttpResponseStatus upstreamStatus;
@@ -139,8 +172,8 @@ public class InstrumentedPlugin implements Plugin {
         public Eventual<LiveHttpResponse> proceed(LiveHttpRequest request) {
             try {
                 return new Eventual<>(Flux.from(chain.proceed(request))
-                                .doOnNext(response -> upstreamStatus = response.status())
-                                .doOnError(error -> upstreamException = true));
+                        .doOnNext(response -> upstreamStatus = response.status())
+                        .doOnError(error -> upstreamException = true));
             } catch (RuntimeException | Error e) {
                 upstreamException = true;
                 throw e;
@@ -148,6 +181,15 @@ public class InstrumentedPlugin implements Plugin {
                 upstreamException = true;
                 throw new RuntimeException(e);
             }
+        }
+
+        @Override
+        public String toString() {
+            return "StatusRecordingChain{"
+                    + "chain=" + chain
+                    + ", upstreamStatus=" + upstreamStatus
+                    + ", upstreamException=" + upstreamException
+                    + '}';
         }
     }
 }
