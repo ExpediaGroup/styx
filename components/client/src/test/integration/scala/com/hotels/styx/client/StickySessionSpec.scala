@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -32,16 +32,19 @@ import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
+import com.hotels.styx.support.Support.requestContext
 import com.hotels.styx.support.server.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{BeforeAndAfter, FunSuite, Matchers}
 import reactor.core.publisher.Mono
-import com.hotels.styx.support.Support.requestContext
 
 import scala.collection.JavaConverters._
 
 class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with OriginSupport with MockitoSugar {
+
+  val meterRegistry = new CompositeMeterRegistry()
 
   val server1 = new FakeHttpServer(0, "app", "app-01")
   val server2 = new FakeHttpServer(0, "app", "app-02")
@@ -92,7 +95,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
     server2.stop
   }
 
-  def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(backendService).build()
+  def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(meterRegistry, backendService).build()
 
   def roundRobinStrategy(activeOrigins: ActiveOrigins): LoadBalancer = new RoundRobinStrategy(activeOrigins, activeOrigins.snapshot())
 
@@ -102,6 +105,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
     val stickySessionConfig = StickySessionConfig.newStickySessionConfigBuilder().timeout(100, TimeUnit.SECONDS).build()
 
     val client = newHttpClientBuilder(backendService.id)
+      .meterRegistry(meterRegistry)
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .stickySessionConfig(stickySessionConfig)
       .build
@@ -123,6 +127,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
 
   test("Responds without sticky session cookie when sticky session is not enabled") {
     val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id)
+      .meterRegistry(meterRegistry)
       .loadBalancer(roundRobinStrategy(activeOrigins(backendService)))
       .build
 
@@ -136,6 +141,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
 
   test("Routes to origins indicated by sticky session cookie.") {
     val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id)
+      .meterRegistry(meterRegistry)
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .build
 
@@ -154,6 +160,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
 
   test("Routes to origins indicated by sticky session cookie when other cookies are provided.") {
     val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id)
+      .meterRegistry(meterRegistry)
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .build
 
@@ -176,6 +183,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
 
   test("Routes to new origin when the origin indicated by sticky session cookie does not exist.") {
     val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id)
+      .meterRegistry(meterRegistry)
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .build
 

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 package com.hotels.styx.client;
 
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.OriginStatsFactory.CachingOriginStatsFactory;
 import com.hotels.styx.client.applications.OriginStats;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
@@ -28,7 +28,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class OriginStatsFactoryTest {
 
-    final OriginStatsFactory originStatsFactory = new CachingOriginStatsFactory(new CodaHaleMetricRegistry());
+    final OriginStatsFactory originStatsFactory = new CachingOriginStatsFactory(new SimpleMeterRegistry());
 
     @Test
     public void returnTheSameStatsForSameOrigin() {

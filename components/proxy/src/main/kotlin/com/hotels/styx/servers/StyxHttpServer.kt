@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -128,7 +128,7 @@ internal class StyxHttpServerFactory : StyxServerFactory {
                                         .setKeepAliveTimeoutMillis(config.keepAliveTimeoutMillis)
                                         .setMaxConnectionsCount(config.maxConnectionsCount)
                                         .build(),
-                                environment.metricRegistry(),
+                                environment.meterRegistry(),
                                 environment.errorListener(),
                                 environment.configuration().get(ENCODE_UNWISECHARS).orElse(""),
                                 ResponseEnhancer { builder, request ->

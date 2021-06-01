@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -98,7 +98,7 @@ public class ProxyToBackend implements RoutingObject {
                     .get("backend.origins", JsonNode.class)
                     .orElseThrow(() -> missingAttributeError(configBlock, join(".", append(parents, "backend")), "origins"));
 
-            OriginStatsFactory originStatsFactory = new CachingOriginStatsFactory(context.environment().metricRegistry());
+            OriginStatsFactory originStatsFactory = new CachingOriginStatsFactory(context.environment().meterRegistry());
 
             Connection.Factory connectionFactory = new NettyConnectionFactory.Builder()
                     .executor(NettyExecutor.create("Styx", clientWorkerThreadsCount))
@@ -123,12 +123,12 @@ public class ProxyToBackend implements RoutingObject {
             ConnectionPool.Factory connectionPoolFactory = new SimpleConnectionPoolFactory.Builder()
                     .connectionFactory(connectionFactory)
                     .connectionPoolSettings(poolSettings)
-                    .metricRegistry(context.environment().metricRegistry())
+                    .meterRegistry(context.environment().meterRegistry())
                     .build();
 
             OriginsInventory inventory = new OriginsInventory.Builder(backendService.id())
                     .eventBus(context.environment().eventBus())
-                    .metricsRegistry(context.environment().metricRegistry())
+                    .meterRegistry(context.environment().meterRegistry())
                     .connectionPoolFactory(connectionPoolFactory)
                     .initialOrigins(backendService.origins())
                     .build();

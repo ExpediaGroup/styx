@@ -28,10 +28,8 @@ import com.hotels.styx.StartupConfig;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.Version;
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.extension.service.spi.StyxService;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.common.format.SanitisedHttpHeaderFormatter;
 import com.hotels.styx.common.format.SanitisedHttpMessageFormatter;
@@ -46,6 +44,7 @@ import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.RouteRefLookup.RouteDbRefLookup;
 import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 
 import java.util.HashMap;
@@ -101,7 +100,7 @@ public class StyxServerComponents {
                 .putAll(builder.additionalRoutingObjectFactories)
                 .build();
 
-        this.environment = newEnvironment(styxConfig, builder.metricRegistry);
+        this.environment = newEnvironment(styxConfig, builder.registry);
         builder.loggingSetUp.setUp(environment);
 
         this.executor = NettyExecutor.create("Styx-Client-Worker", environment.configuration().proxyServerConfig().clientWorkerThreadsCount());
@@ -259,7 +258,7 @@ public class StyxServerComponents {
         return startupConfig;
     }
 
-    private static Environment newEnvironment(StyxConfig config, MetricRegistry metricRegistry) {
+    private static Environment newEnvironment(StyxConfig config, MeterRegistry registry) {
 
         SanitisedHttpHeaderFormatter headerFormatter = new SanitisedHttpHeaderFormatter(
                 config.get("request-logging.hideHeaders", List.class).orElse(emptyList()),
@@ -269,7 +268,7 @@ public class StyxServerComponents {
 
         return new Environment.Builder()
                 .configuration(config)
-                .metricRegistry(metricRegistry)
+                .registry(registry)
                 .buildInfo(readBuildInfo())
                 .eventBus(new AsyncEventBus("styx", newSingleThreadExecutor()))
                 .httpMessageFormatter(sanitisedHttpMessageFormatter)
@@ -299,7 +298,7 @@ public class StyxServerComponents {
         private LoggingSetUp loggingSetUp = DO_NOT_MODIFY;
         private List<ConfiguredPluginFactory> configuredPluginFactories = ImmutableList.of();
         private ServicesLoader servicesLoader = SERVICES_FROM_CONFIG;
-        private MetricRegistry metricRegistry = new CodaHaleMetricRegistry();
+        private MeterRegistry registry;
         private StartupConfig startupConfig;
         private boolean showBanner;
 
@@ -311,8 +310,8 @@ public class StyxServerComponents {
             return this;
         }
 
-        public Builder metricsRegistry(MetricRegistry metricRegistry) {
-            this.metricRegistry = requireNonNull(metricRegistry);
+        public Builder registry(MeterRegistry registry) {
+            this.registry = requireNonNull(registry);
             return this;
         }
 
@@ -380,6 +379,9 @@ public class StyxServerComponents {
         }
 
         public StyxServerComponents build() {
+            if (registry == null) {
+                throw new IllegalStateException("Meter registry must be specified");
+            }
             return new StyxServerComponents(this);
         }
     }

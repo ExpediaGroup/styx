@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.client.netty.connectionpool;
 
-import com.hotels.styx.client.applications.AggregateTimer;
 import com.hotels.styx.client.applications.OriginStats;
+import io.micrometer.core.instrument.Timer;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
@@ -38,8 +38,8 @@ class RequestsToOriginMetricsCollector extends ChannelDuplexHandler {
     private static final Logger LOG = LoggerFactory.getLogger(RequestsToOriginMetricsCollector.class);
 
     private final OriginStats originStats;
-    private volatile AggregateTimer.Stopper requestLatencyTiming;
-    private volatile AggregateTimer.Stopper timeToFirstByteTiming;
+    private volatile Timer.Sample requestLatencyTiming;
+    private volatile Timer.Sample timeToFirstByteTiming;
     private volatile boolean firstContentChunkReceived;
 
 
@@ -62,7 +62,7 @@ class RequestsToOriginMetricsCollector extends ChannelDuplexHandler {
         if (msg instanceof HttpResponse) {
             HttpResponse resp = (HttpResponse) msg;
 
-            int code = resp.getStatus().code();
+            int code = resp.status().code();
             updateHttpResponseCounters(code);
         }
 
@@ -81,8 +81,8 @@ class RequestsToOriginMetricsCollector extends ChannelDuplexHandler {
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
         if (msg instanceof io.netty.handler.codec.http.HttpRequest) {
-            requestLatencyTiming = originStats.requestLatencyTimer().time();
-            timeToFirstByteTiming = originStats.timeToFirstByteTimer().time();
+            requestLatencyTiming = originStats.startTimer();
+            timeToFirstByteTiming = originStats.startTimer();
             firstContentChunkReceived = false;
         }
         super.write(ctx, msg, promise);
@@ -113,7 +113,7 @@ class RequestsToOriginMetricsCollector extends ChannelDuplexHandler {
         // but this check is also here just in case there is some weird bug, we should not interfere with the proxying
         // just because it doesn't record metrics
         if (requestLatencyTiming != null) {
-            requestLatencyTiming.stopAndRecord();
+            requestLatencyTiming.stop(originStats.requestLatencyTimer());
         } else {
             LOG.warn("Attempted to stop timer and record latency when no timing had begun");
         }
@@ -121,7 +121,7 @@ class RequestsToOriginMetricsCollector extends ChannelDuplexHandler {
 
     private void stopAndRecordTimeToFirstByte() {
         if (timeToFirstByteTiming != null) {
-            timeToFirstByteTiming.stopAndRecord();
+            timeToFirstByteTiming.stop(originStats.timeToFirstByteTimer());
         } else {
             LOG.warn("Attempted to stop timer and record time-to-first-byte when no timing had begun");
         }

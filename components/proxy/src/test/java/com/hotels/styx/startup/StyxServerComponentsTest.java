@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.startup.StyxServerComponents.LoggingSetUp;
 import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -50,6 +51,7 @@ public class StyxServerComponentsTest {
         LoggingSetUp loggingSetUp = mock(LoggingSetUp.class);
 
         new StyxServerComponents.Builder()
+                .registry(new CompositeMeterRegistry())
                 .styxConfig(new StyxConfig())
                 .loggingSetUp(loggingSetUp)
                 .build();
@@ -63,6 +65,7 @@ public class StyxServerComponentsTest {
         ConfiguredPluginFactory f2 = new ConfiguredPluginFactory("plugin2", any -> stubPlugin("MyResponse2"));
 
         StyxServerComponents components = new StyxServerComponents.Builder()
+                .registry(new CompositeMeterRegistry())
                 .styxConfig(new StyxConfig())
                 .pluginFactories(ImmutableList.of(f1, f2))
                 .build();
@@ -76,6 +79,7 @@ public class StyxServerComponentsTest {
     @Test
     public void loadsServices() {
         StyxServerComponents components = new StyxServerComponents.Builder()
+                .registry(new CompositeMeterRegistry())
                 .styxConfig(new StyxConfig())
                 .services((env, routeDb) -> ImmutableMap.of(
                         "service1", mock(StyxService.class),
@@ -90,6 +94,7 @@ public class StyxServerComponentsTest {
     @Test
     public void exposesAdditionalServices() {
         StyxServerComponents components = new StyxServerComponents.Builder()
+                .registry(new CompositeMeterRegistry())
                 .styxConfig(new StyxConfig())
                 .additionalServices(ImmutableMap.of(
                         "service1", mock(StyxService.class),
@@ -108,6 +113,7 @@ public class StyxServerComponentsTest {
                 .set("bar", "def");
 
         StyxServerComponents components = new StyxServerComponents.Builder()
+                .registry(new CompositeMeterRegistry())
                 .styxConfig(new StyxConfig(config))
                 .build();
 

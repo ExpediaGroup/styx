@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ public final class ResponseCookie {
 
     private ResponseCookie(Builder builder) {
         if (builder.name == null || builder.name.isEmpty()) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Cookie name must be specified");
         }
 
         this.name = builder.name;

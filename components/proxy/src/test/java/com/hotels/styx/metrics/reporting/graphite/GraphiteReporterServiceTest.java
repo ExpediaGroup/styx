@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,51 +15,31 @@
  */
 package com.hotels.styx.metrics.reporting.graphite;
 
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.graphite.GraphiteSender;
 import com.hotels.styx.common.StyxFutures;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.graphite.GraphiteDimensionalNamingConvention;
+import io.micrometer.graphite.GraphiteHierarchicalNamingConvention;
+import io.micrometer.graphite.GraphiteMeterRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
-
 import static ch.qos.logback.classic.Level.INFO;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
-import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
-import static java.util.Arrays.asList;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 
 public class GraphiteReporterServiceTest {
-    private StubGraphiteSender sender;
-    private GraphiteReporterService service;
-    private MetricRegistry registry;
-
+    private CompositeMeterRegistry meterRegistry;
     private LoggingTestSupport log;
 
     @BeforeEach
     public void setUp() {
+        meterRegistry = new CompositeMeterRegistry();
         log = new LoggingTestSupport(GraphiteReporterService.class);
-        sender = new StubGraphiteSender();
-        registry = new MetricRegistry();
-        service = new GraphiteReporterService.Builder()
-                .serviceName("Graphite-Reporter-test")
-                .prefix("test")
-                .reportingInterval(10, MILLISECONDS)
-                .graphiteSender(sender)
-                .metricRegistry(registry)
-                .build();
     }
 
     @AfterEach
@@ -67,8 +47,23 @@ public class GraphiteReporterServiceTest {
         log.stop();
     }
 
+    GraphiteReporterService.Builder serviceBuilder() {
+        return new GraphiteReporterService.Builder()
+                .meterRegistry(meterRegistry)
+                .serviceName("Graphite-Reporter-test")
+                .host("localhost")
+                .port(8080)
+                .reportingIntervalMillis(10);
+    }
+
+    GraphiteMeterRegistry graphiteRegistry() {
+        return (GraphiteMeterRegistry) meterRegistry.getRegistries().iterator().next();
+    }
+
     @Test
     public void logsWhenServiceStarts() {
+        GraphiteReporterService service = serviceBuilder().build();
+
         try {
             StyxFutures.await(service.start());
             assertThat(log.lastMessage(), is(loggingEvent(INFO, "Graphite service started, service name=\"Graphite\\-Reporter\\-test\"")));
@@ -78,138 +73,85 @@ public class GraphiteReporterServiceTest {
     }
 
     @Test
-    public void sendsData() throws InterruptedException {
-        registry.register("values", sequenceGauge(123L, 4567L, 8901L));
+    public void supportsGraphiteWithTags() {
+        GraphiteReporterService service = serviceBuilder().tagsEnabled(true).build();
 
-        for (int i = 0; i < 3; i++) {
-            service.report();
+        try {
+            StyxFutures.await(service.start());
+            assertThat(graphiteRegistry().config().namingConvention(), instanceOf(GraphiteDimensionalNamingConvention.class));
+        } finally {
+            StyxFutures.await(service.stop());
         }
-
-        assertThat(sender.data, contains("test.values=123", "test.values=4567", "test.values=8901"));
     }
 
     @Test
-    public void formatsDoublesToTwoDecimalPlaces() throws InterruptedException {
-        registry.register("values", sequenceGauge(78.99, 234.0, 123.456));
+    public void supportsGraphiteWithoutTags() {
+        GraphiteReporterService service = serviceBuilder().tagsEnabled(false).build();
 
-        for (int i = 0; i < 3; i++) {
-            service.report();
+        try {
+            StyxFutures.await(service.start());
+            assertThat(graphiteRegistry().config().namingConvention(), instanceOf(GraphiteHierarchicalNamingConvention.class));
+        } finally {
+            StyxFutures.await(service.stop());
         }
-
-        assertThat(sender.data, contains("test.values=78.99", "test.values=234.00", "test.values=123.46"));
     }
 
     @Test
-    public void sendsMultipleMetrics() throws InterruptedException {
-        registry.register("longs", sequenceGauge(123L, 4567L));
-        registry.register("ints", sequenceGauge(98, 654));
+    public void defaultsToNoTagSupport() {
+        GraphiteReporterService service = serviceBuilder().build();
 
-        for (int i = 0; i < 4; i++) {
-            service.report();
+        try {
+            StyxFutures.await(service.start());
+            assertThat(graphiteRegistry().config().namingConvention(), instanceOf(GraphiteHierarchicalNamingConvention.class));
+        } finally {
+            StyxFutures.await(service.stop());
         }
-
-        assertThat(sender.data, containsInAnyOrder("test.longs=123", "test.ints=98", "test.longs=4567", "test.ints=654"));
     }
 
     @Test
-    public void sendsHistogram() throws InterruptedException {
-        registry.histogram("histogram").update(1234);
+    public void appliesPrefixToHierarchicalMetricNames() {
+        GraphiteReporterService service = serviceBuilder().prefix("theprefix").build();
 
-        service.report();
-
-        assertThat(sender.data, hasItem(matchesRegex("test.histogram.count=1")));
-        assertThat(sender.data, hasItem(matchesRegex("test.histogram.max=1234")));
-        assertThat(sender.data, hasItem(matchesRegex("test.histogram.mean=1234.00")));
-        assertThat(sender.data, hasItem(matchesRegex("test.histogram.min=1234")));
-        assertThat(sender.data, hasItem(matchesRegex("test.histogram.stddev=0.00")));
-        assertThat(sender.data, hasItem(matchesRegex("test.histogram.p50=1234.00")));
-        assertThat(sender.data, hasItem(matchesRegex("test.histogram.p75=1234.00")));
-        assertThat(sender.data, hasItem(matchesRegex("test.histogram.p95=1234.00")));
-        assertThat(sender.data, hasItem(matchesRegex("test.histogram.p98=1234.00")));
-        assertThat(sender.data, hasItem(matchesRegex("test.histogram.p99=1234.00")));
-        assertThat(sender.data, hasItem(matchesRegex("test.histogram.p999=1234.00")));
+        try {
+            StyxFutures.await(service.start());
+            meterRegistry.counter("mycounter").increment();
+            meterRegistry.counter("taggedCounter", "mytag", "myvalue").increment();
+            meterRegistry.counter("counter.with.dots", "mytag", "myvalue").increment();
+            assertThat(graphiteRegistry().getDropwizardRegistry().meter("theprefix.mycounter").getCount(), equalTo(1L));
+            assertThat(graphiteRegistry().getDropwizardRegistry().meter("theprefix.taggedCounter.mytag.myvalue").getCount(), equalTo(1L));
+            assertThat(graphiteRegistry().getDropwizardRegistry().meter("theprefix.counter.with.dots.mytag.myvalue").getCount(), equalTo(1L));
+        } finally {
+            StyxFutures.await(service.stop());
+        }
     }
 
     @Test
-    public void sendsMeter() throws InterruptedException {
-        registry.meter("meter").mark(1234);
+    public void appliesPrefixToDimensionalMetricNames() {
+        GraphiteReporterService service = serviceBuilder().prefix("theprefix").tagsEnabled(true).build();
 
-        service.report();
-
-        assertThat(sender.data, hasItem(matchesRegex("test.meter.count=1234")));
-        assertThat(sender.data, hasItem(matchesRegex("test.meter.m1_rate=0.00")));
-        assertThat(sender.data, hasItem(matchesRegex("test.meter.m5_rate=0.00")));
-        assertThat(sender.data, hasItem(matchesRegex("test.meter.m15_rate=0.00")));
-        assertThat(sender.data, hasItem(matchesRegex("test.meter.mean_rate=.*")));
+        try {
+            StyxFutures.await(service.start());
+            meterRegistry.counter("mycounter").increment();
+            meterRegistry.counter("taggedCounter", "mytag", "myvalue").increment();
+            meterRegistry.counter("counter.with.dots", "mytag", "myvalue").increment();
+            assertThat(graphiteRegistry().getDropwizardRegistry().meter("theprefix.mycounter").getCount(), equalTo(1L));
+            assertThat(graphiteRegistry().getDropwizardRegistry().meter("theprefix.taggedCounter;mytag=myvalue").getCount(), equalTo(1L));
+            assertThat(graphiteRegistry().getDropwizardRegistry().meter("theprefix.counter.with.dots;mytag=myvalue").getCount(), equalTo(1L));
+        } finally {
+            StyxFutures.await(service.stop());
+        }
     }
 
     @Test
-    public void sendsTimer() throws InterruptedException {
-        registry.timer("timer").update(1234, MILLISECONDS);
+    public void appliesNoPrefixByDefaultToMetricNames() {
+        GraphiteReporterService service = serviceBuilder().build();
 
-        service.report();
-
-        assertThat(sender.data, hasItem(matchesRegex("test.timer.count=1")));
-        assertThat(sender.data, hasItem(matchesRegex("test.timer.m1_rate=0.00")));
-        assertThat(sender.data, hasItem(matchesRegex("test.timer.m5_rate=0.00")));
-        assertThat(sender.data, hasItem(matchesRegex("test.timer.m15_rate=0.00")));
-        assertThat(sender.data, hasItem(matchesRegex("test.timer.mean_rate=.*")));
-
-        assertThat(sender.data, hasItem(matchesRegex("test.timer.max=1234.00")));
-        assertThat(sender.data, hasItem(matchesRegex("test.timer.mean=1234.00")));
-        assertThat(sender.data, hasItem(matchesRegex("test.timer.min=1234.00")));
-        assertThat(sender.data, hasItem(matchesRegex("test.timer.stddev=0.00")));
-        assertThat(sender.data, hasItem(matchesRegex("test.timer.p50=1234.00")));
-        assertThat(sender.data, hasItem(matchesRegex("test.timer.p75=1234.00")));
-        assertThat(sender.data, hasItem(matchesRegex("test.timer.p95=1234.00")));
-        assertThat(sender.data, hasItem(matchesRegex("test.timer.p98=1234.00")));
-        assertThat(sender.data, hasItem(matchesRegex("test.timer.p99=1234.00")));
-        assertThat(sender.data, hasItem(matchesRegex("test.timer.p999=1234.00")));
-    }
-
-    @Test
-    public void sendsCounter() throws InterruptedException {
-        registry.counter("counter").inc(1234);
-
-        service.report();
-
-        assertThat(sender.data, hasItem(matchesRegex("test.counter.count=1234")));
-    }
-
-    private static <T extends Number> Gauge<T> sequenceGauge(T... elements) {
-        Queue<T> longs = new LinkedList<>(asList(elements));
-
-        return longs::poll;
-    }
-
-    private static class StubGraphiteSender implements GraphiteSender {
-        List<String> data = new ArrayList<>();
-
-        @Override
-        public void connect() throws IllegalStateException, IOException {
-        }
-
-        @Override
-        public void send(String name, String value, long timestamp) throws IOException {
-            data.add(name + "=" + value);
-        }
-
-        @Override
-        public void flush() throws IOException {
-        }
-
-        @Override
-        public boolean isConnected() {
-            return false;
-        }
-
-        @Override
-        public int getFailures() {
-            return 0;
-        }
-
-        @Override
-        public void close() throws IOException {
+        try {
+            StyxFutures.await(service.start());
+            meterRegistry.counter("mycounter").increment();
+            assertThat(graphiteRegistry().getDropwizardRegistry().meter("mycounter").getCount(), equalTo(1L));
+        } finally {
+            StyxFutures.await(service.stop());
         }
     }
 }

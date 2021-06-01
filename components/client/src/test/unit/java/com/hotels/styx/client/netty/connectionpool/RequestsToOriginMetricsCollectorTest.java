@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,13 +15,10 @@
  */
 package com.hotels.styx.client.netty.connectionpool;
 
-import com.codahale.metrics.Timer;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.client.applications.metrics.ApplicationMetrics;
 import com.hotels.styx.client.applications.metrics.OriginMetrics;
+import io.micrometer.core.instrument.Timer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
@@ -33,20 +30,13 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.LastHttpContent;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.FluxSink;
 
-import java.util.List;
 import java.util.Optional;
 
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
-import static com.hotels.styx.client.applications.OriginStats.REQUEST_FAILURE;
-import static com.hotels.styx.client.applications.OriginStats.REQUEST_SUCCESS;
-import static com.hotels.styx.client.netty.MetricsSupport.IsNotUpdated.hasNotReceivedUpdatesExcept;
-import static com.hotels.styx.client.netty.MetricsSupport.name;
 import static com.hotels.styx.support.netty.HttpMessageSupport.httpRequest;
 import static com.hotels.styx.support.netty.HttpMessageSupport.httpResponseAsBuf;
 import static io.netty.handler.codec.http.HttpMethod.GET;
@@ -56,24 +46,20 @@ import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERR
 import static io.netty.handler.codec.http.HttpResponseStatus.MOVED_PERMANENTLY;
 import static io.netty.handler.codec.http.HttpResponseStatus.NOT_IMPLEMENTED;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.atMostOnce;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 public class RequestsToOriginMetricsCollectorTest {
-
-    private static final List<String> APP_METRIC_PREFIX = singletonList("MyApp");
-    private static final List<String> ORIGIN_METRIC_PREFIX = asList("MyApp", "h1");
-
-    private final Id appId;
     private final Origin origin;
 
-    private MetricRegistry metricRegistry;
-    private OriginMetrics originMetrics;
+    private final OriginMetrics originMetrics = mock(OriginMetrics.class);
     private final ChannelHandlerContext ctx;
 
     private static final String STOCK_BODY =
@@ -86,36 +72,15 @@ public class RequestsToOriginMetricsCollectorTest {
                     + " vehicula eget eros posuere.";
 
     public RequestsToOriginMetricsCollectorTest() {
-        this.appId = id("MyApp");
-        this.origin = newOriginBuilder("hostA", 80)
-                .applicationId(this.appId)
+        Id appId = id("MyApp");
+        origin = newOriginBuilder("hostA", 80)
+                .applicationId(appId)
                 .id("h1")
                 .build();
-        this.ctx = mock(ChannelHandlerContext.class);
-    }
-
-    @BeforeEach
-    private void setUp() {
-        this.metricRegistry = new CodaHaleMetricRegistry();
-        ApplicationMetrics appMetrics = new ApplicationMetrics(this.appId, this.metricRegistry);
-        this.originMetrics = new OriginMetrics(appMetrics, originPrefix(this.origin));
-    }
-
-    @AfterEach
-    private void tearDown() {
-        clearMetricsRegistry();
-    }
-
-    private void clearMetricsRegistry() {
-        for (String name : this.metricRegistry.getNames()) {
-            this.metricRegistry.deregister(name);
-        }
+        ctx = mock(ChannelHandlerContext.class);
     }
 
     private EmbeddedChannel buildEmbeddedChannel() {
-        ApplicationMetrics appMetrics = new ApplicationMetrics(this.origin.applicationId(), this.metricRegistry);
-        OriginMetrics originMetrics = new OriginMetrics(appMetrics, originPrefix(this.origin));
-
         return new EmbeddedChannel(
                 new HttpClientCodec(),
                 new RequestsToOriginMetricsCollector(originMetrics),
@@ -139,7 +104,7 @@ public class RequestsToOriginMetricsCollectorTest {
         }
 
         if (outboundBytes.numComponents() > 0) {
-            return Optional.of((ByteBuf) outboundBytes);
+            return Optional.of(outboundBytes);
         }
         return Optional.empty();
     }
@@ -170,8 +135,7 @@ public class RequestsToOriginMetricsCollectorTest {
         //
         // Ensure that counters are updated:
         //
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(ORIGIN_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(1L));
+        verify(originMetrics).requestSuccess();
     }
 
     @Test
@@ -193,16 +157,14 @@ public class RequestsToOriginMetricsCollectorTest {
         // the first chunk is received:
         //
         channel.writeInbound(response.slice(0, 100));
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(ORIGIN_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(1L));
+        verify(originMetrics).requestSuccess();
 
         //
         // Send the next chunk. Demonstrate that counters remain unchanged. This is to ensure
         // they don't get incremented twice:
         //
         channel.writeInbound(response.slice(100, len - 100));
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(ORIGIN_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(1L));
+        verify(originMetrics, atMostOnce()).requestSuccess();
     }
 
     @Test
@@ -226,11 +188,9 @@ public class RequestsToOriginMetricsCollectorTest {
         // Ensure that counters are not updated. The error is on the client side rather than
         // in applications/origins. Therefore we don't count this as an error.
         //
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_FAILURE)).getCount(), is(0L));
-        assertThat(this.metricRegistry.meter(name(ORIGIN_METRIC_PREFIX, REQUEST_FAILURE)).getCount(), is(0L));
+        verify(originMetrics, never()).requestError();
 
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(ORIGIN_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(1L));
+        verify(originMetrics).requestSuccess();
     }
 
     @Test
@@ -253,25 +213,22 @@ public class RequestsToOriginMetricsCollectorTest {
         // the first chunk is received:
         //
         channel.writeInbound(response.slice(0, 100));
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_FAILURE)).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(ORIGIN_METRIC_PREFIX, REQUEST_FAILURE)).getCount(),
-                is(1L));
+        verify(originMetrics).requestError();
 
         //
         // Send the next chunk. Demonstrate that counters remain unchanged. This is to ensure
         // they don't get incremented twice:
         //
         channel.writeInbound(response.slice(100, len - 100));
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_FAILURE)).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(ORIGIN_METRIC_PREFIX, REQUEST_FAILURE)).getCount(),
-                is(1L));
+        verify(originMetrics, atMostOnce()).requestError();
     }
 
     @Test
     public void latencyHistogramUpdatedOnlyByLastHttpContent() {
-
-        Timer timer = this.metricRegistry.timer(name(ORIGIN_METRIC_PREFIX, "requests.latency"));
-        assertThat(timer.getCount(), is(0L));
+        Timer.Sample sample = mock(Timer.Sample.class);
+        when(originMetrics.startTimer()).thenReturn(sample);
+        Timer timer = mock(Timer.class);
+        when(originMetrics.requestLatencyTimer()).thenReturn(timer);
 
         EmbeddedChannel channel = buildEmbeddedChannel();
 
@@ -281,7 +238,7 @@ public class RequestsToOriginMetricsCollectorTest {
         HttpRequest request = httpRequest(GET, "http://www.hotels.com/foo/bar/request");
         channel.writeOutbound(request);
         assertThat(grabSentBytes(channel).isPresent(), is(true));
-        assertThat(timer.getCount(), is(0L));
+        verify(originMetrics, never()).requestLatencyTimer();
 
         ByteBuf response = httpResponseAsBuf(OK, STOCK_BODY).retain();
         int len = response.writerIndex() - response.readerIndex();
@@ -293,21 +250,25 @@ public class RequestsToOriginMetricsCollectorTest {
         // This is because the HTTP response is not yet fully received.
         //
         channel.writeInbound(response.slice(0, 100));
-        assertThat(timer.getCount(), is(0L));
+        verify(originMetrics, never()).requestLatencyTimer();
 
         //
         // Send the next chunk. HTTP response is now fully received. Demonstrate
         // that timer is now correctly updated.
         //
         channel.writeInbound(response.slice(100, len - 100));
-        assertThat(timer.getCount(), is(1L));
+        verify(sample).stop(timer);
     }
 
     @Test
     public void timeToFirstByteHistogramUpdatedWhenFirstContentChunkReceived() {
+        Timer.Sample sample = mock(Timer.Sample.class);
+        when(originMetrics.startTimer()).thenReturn(sample);
+        Timer timer = mock(Timer.class);
+        when(originMetrics.timeToFirstByteTimer()).thenReturn(timer);
 
-        Timer timer = this.metricRegistry.timer(name(ORIGIN_METRIC_PREFIX, "requests.time-to-first-byte"));
-        assertThat(timer.getCount(), is(0L));
+//        Timer timer = this.metricRegistry.timer(name(ORIGIN_METRIC_PREFIX, "requests.time-to-first-byte"));
+//        assertThat(timer.getCount(), is(0L));
 
         EmbeddedChannel channel = buildEmbeddedChannel();
 
@@ -317,7 +278,7 @@ public class RequestsToOriginMetricsCollectorTest {
         HttpRequest request = httpRequest(GET, "http://www.hotels.com/foo/bar/request");
         channel.writeOutbound(request);
         assertThat(grabSentBytes(channel).isPresent(), is(true));
-        assertThat(timer.getCount(), is(0L));
+        verify(originMetrics, never()).timeToFirstByteTimer();
 
         ByteBuf response = httpResponseAsBuf(OK, STOCK_BODY).retain();
         int len = response.writerIndex() - response.readerIndex();
@@ -327,14 +288,14 @@ public class RequestsToOriginMetricsCollectorTest {
         // the first chunk is received:
         //
         channel.writeInbound(response.slice(0, 100));
-        assertThat(timer.getCount(), is(1L));
+        verify(sample).stop(timer);
 
         //
         // Send the next chunk. Demonstrate that timer remains unchanged. This is to ensure
         // it doesn't get recorded twice:
         //
         channel.writeInbound(response.slice(100, len - 100));
-        assertThat(timer.getCount(), is(1L));
+        verify(sample, atMostOnce()).stop(timer);
     }
 
 
@@ -345,15 +306,8 @@ public class RequestsToOriginMetricsCollectorTest {
         ByteBuf response = httpResponseAsBuf(CONTINUE, STOCK_BODY).retain();
         channel.writeInbound(response);
 
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, "requests.response.status.100")).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(ORIGIN_METRIC_PREFIX, "requests.response.status.100")).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(ORIGIN_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(1L));
-        assertThat(this.metricRegistry, is(hasNotReceivedUpdatesExcept(
-                name(APP_METRIC_PREFIX, REQUEST_SUCCESS),
-                name(ORIGIN_METRIC_PREFIX, REQUEST_SUCCESS),
-                name(APP_METRIC_PREFIX, "requests.response.status.100"),
-                name(ORIGIN_METRIC_PREFIX, "requests.response.status.100"))));
+        verify(originMetrics).responseWithStatusCode(100);
+        verify(originMetrics).requestSuccess();
     }
 
     @Test
@@ -363,15 +317,8 @@ public class RequestsToOriginMetricsCollectorTest {
         ByteBuf response = httpResponseAsBuf(OK, STOCK_BODY).retain();
         channel.writeInbound(response);
 
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, "requests.response.status.200")).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(ORIGIN_METRIC_PREFIX, "requests.response.status.200")).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(ORIGIN_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(1L));
-        assertThat(this.metricRegistry, is(hasNotReceivedUpdatesExcept(
-                name(APP_METRIC_PREFIX, REQUEST_SUCCESS),
-                name(ORIGIN_METRIC_PREFIX, REQUEST_SUCCESS),
-                name(APP_METRIC_PREFIX, "requests.response.status.200"),
-                name(ORIGIN_METRIC_PREFIX, "requests.response.status.200"))));
+        verify(originMetrics).responseWithStatusCode(200);
+        verify(originMetrics).requestSuccess();
     }
 
     @Test
@@ -381,15 +328,8 @@ public class RequestsToOriginMetricsCollectorTest {
         ByteBuf response = httpResponseAsBuf(MOVED_PERMANENTLY, STOCK_BODY).retain();
         channel.writeInbound(response);
 
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, "requests.response.status.301")).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(ORIGIN_METRIC_PREFIX, "requests.response.status.301")).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(ORIGIN_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(1L));
-        assertThat(this.metricRegistry, is(hasNotReceivedUpdatesExcept(
-                name(APP_METRIC_PREFIX, REQUEST_SUCCESS),
-                name(ORIGIN_METRIC_PREFIX, REQUEST_SUCCESS),
-                name(APP_METRIC_PREFIX, "requests.response.status.301"),
-                name(ORIGIN_METRIC_PREFIX, "requests.response.status.301"))));
+        verify(originMetrics).responseWithStatusCode(301);
+        verify(originMetrics).requestSuccess();
     }
 
     @Test
@@ -399,15 +339,8 @@ public class RequestsToOriginMetricsCollectorTest {
         ByteBuf response = httpResponseAsBuf(BAD_REQUEST, STOCK_BODY).retain();
         channel.writeInbound(response);
 
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, "requests.response.status.400")).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(ORIGIN_METRIC_PREFIX, "requests.response.status.400")).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(ORIGIN_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(1L));
-        assertThat(this.metricRegistry, is(hasNotReceivedUpdatesExcept(
-                name(APP_METRIC_PREFIX, REQUEST_SUCCESS),
-                name(ORIGIN_METRIC_PREFIX, REQUEST_SUCCESS),
-                name(APP_METRIC_PREFIX, "requests.response.status.400"),
-                name(ORIGIN_METRIC_PREFIX, "requests.response.status.400"))));
+        verify(originMetrics).responseWithStatusCode(400);
+        verify(originMetrics).requestSuccess();
     }
 
     @Test
@@ -417,17 +350,8 @@ public class RequestsToOriginMetricsCollectorTest {
         ByteBuf response = httpResponseAsBuf(NOT_IMPLEMENTED, STOCK_BODY).retain();
         channel.writeInbound(response);
 
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, "requests.response.status.501")).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_FAILURE)).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, "requests.response.status.501")).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_FAILURE)).getCount(), is(1L));
-        assertThat(this.metricRegistry, is(hasNotReceivedUpdatesExcept(
-                name(APP_METRIC_PREFIX, REQUEST_FAILURE),
-                name(ORIGIN_METRIC_PREFIX, REQUEST_FAILURE),
-                name(APP_METRIC_PREFIX, "requests.response.status.501"),
-                name(ORIGIN_METRIC_PREFIX, "requests.response.status.501"),
-                name(ORIGIN_METRIC_PREFIX, "requests.response.status.5xx")
-                )));
+        verify(originMetrics).responseWithStatusCode(501);
+        verify(originMetrics, never()).requestSuccess();
     }
 
     @Test
@@ -436,8 +360,7 @@ public class RequestsToOriginMetricsCollectorTest {
         HttpResponse msg = mockHttpResponseWithCode(200);
         handler.channelRead(this.ctx, msg);
 
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(ORIGIN_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(1L));
+        verify(originMetrics).requestSuccess();
     }
 
     @Test
@@ -446,8 +369,7 @@ public class RequestsToOriginMetricsCollectorTest {
         HttpResponse msg = mockHttpResponseWithCode(201);
         handler.channelRead(this.ctx, msg);
 
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(ORIGIN_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(1L));
+        verify(originMetrics).requestSuccess();
     }
 
     @Test
@@ -456,8 +378,7 @@ public class RequestsToOriginMetricsCollectorTest {
         HttpResponse msg = mockHttpResponseWithCode(206);
         handler.channelRead(this.ctx, msg);
 
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(ORIGIN_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(1L));
+        verify(originMetrics).requestSuccess();
     }
 
     @Test
@@ -466,8 +387,7 @@ public class RequestsToOriginMetricsCollectorTest {
         HttpResponse msg = mockHttpResponseWithCode(300);
         handler.channelRead(this.ctx, msg);
 
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(ORIGIN_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(1L));
+        verify(originMetrics).requestSuccess();
     }
 
     @Test
@@ -476,8 +396,7 @@ public class RequestsToOriginMetricsCollectorTest {
         HttpResponse msg = mockHttpResponseWithCode(308);
         handler.channelRead(this.ctx, msg);
 
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(ORIGIN_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(1L));
+        verify(originMetrics).requestSuccess();
     }
 
     @Test
@@ -486,10 +405,8 @@ public class RequestsToOriginMetricsCollectorTest {
         HttpResponse msg = mockHttpResponseWithCode(500);
         handler.channelRead(this.ctx, msg);
 
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_FAILURE)).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(ORIGIN_METRIC_PREFIX, REQUEST_FAILURE)).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(0L));
-        assertThat(this.metricRegistry.meter(name(ORIGIN_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(0L));
+        verify(originMetrics).requestError();
+        verify(originMetrics, never()).requestSuccess();
     }
 
     @Test
@@ -498,10 +415,8 @@ public class RequestsToOriginMetricsCollectorTest {
         HttpResponse msg = mockHttpResponseWithCode(503);
         handler.channelRead(this.ctx, msg);
 
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_FAILURE)).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(ORIGIN_METRIC_PREFIX, REQUEST_FAILURE)).getCount(), is(1L));
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(0L));
-        assertThat(this.metricRegistry.meter(name(ORIGIN_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(0L));
+        verify(originMetrics).requestError();
+        verify(originMetrics, never()).requestSuccess();
     }
 
     @Test
@@ -510,10 +425,8 @@ public class RequestsToOriginMetricsCollectorTest {
         HttpContent msg = mock(HttpContent.class);
         handler.channelRead(this.ctx, msg);
 
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(0L));
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_FAILURE)).getCount(), is(0L));
-        assertThat(this.metricRegistry.meter(name(ORIGIN_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(0L));
-        assertThat(this.metricRegistry.meter(name(ORIGIN_METRIC_PREFIX, REQUEST_FAILURE)).getCount(), is(0L));
+        verify(originMetrics, never()).requestError();
+        verify(originMetrics, never()).requestSuccess();
     }
 
     @Test
@@ -522,22 +435,15 @@ public class RequestsToOriginMetricsCollectorTest {
         LastHttpContent msg = mock(LastHttpContent.class);
         handler.channelRead(this.ctx, msg);
 
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(0L));
-        assertThat(this.metricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_FAILURE)).getCount(), is(0L));
-        assertThat(this.metricRegistry.meter(name(ORIGIN_METRIC_PREFIX, REQUEST_SUCCESS)).getCount(), is(0L));
-        assertThat(this.metricRegistry.meter(name(ORIGIN_METRIC_PREFIX, REQUEST_FAILURE)).getCount(), is(0L));
+        verify(originMetrics, never()).requestError();
+        verify(originMetrics, never()).requestSuccess();
     }
 
     private static HttpResponse mockHttpResponseWithCode(int code) {
         HttpResponse msg = mock(HttpResponse.class);
         HttpResponseStatus status = mock(HttpResponseStatus.class);
         when(status.code()).thenReturn(code);
-        when(msg.getStatus()).thenReturn(status);
+        when(msg.status()).thenReturn(status);
         return msg;
     }
-
-    private static String originPrefix(Origin origin) {
-        return origin.id().toString();
-    }
-
 }

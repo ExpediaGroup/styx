@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,18 +16,23 @@
 package com.hotels.styx.startup.extensions;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.ConfigurationException;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
+import com.hotels.styx.api.plugins.spi.PluginMeterRegistry;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -36,6 +41,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static ch.qos.logback.classic.Level.ERROR;
+import static com.hotels.styx.api.plugins.spi.PluginMeterRegistry.DEFAULT_TAG_KEY;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static java.util.stream.Collectors.toList;
@@ -50,11 +56,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class PluginLoadingForStartupTest {
     private static final Path FIXTURES_CLASS_PATH = fixturesHome(PluginLoadingForStartupTest.class, "/");
 
-    private MetricRegistry styxMetricsRegistry;
+    private MeterRegistry registry;
 
     @BeforeEach
     public void setUp() {
-        styxMetricsRegistry = new CodaHaleMetricRegistry();
+        registry = new SimpleMeterRegistry();
     }
 
     @Test
@@ -286,17 +292,23 @@ public class PluginLoadingForStartupTest {
                 "      config:\n" +
                 "        testConfiguration: test-foo-bar\n";
 
+        Environment environment = environment(yaml);
+        PluginLoadingForStartup.loadPlugins(environment);
 
-        PluginLoadingForStartup.loadPlugins(environment(yaml));
+        assertThat(environment.meterRegistry().get("initialised").tags(Tags.of(DEFAULT_TAG_KEY, "myPlugin")).counter().count(), is(1D));
+        assertThat(environment.meterRegistry().get("initialised").tags(Tags.of(DEFAULT_TAG_KEY, "myAnotherPlugin")).counter().count(), is(1D));
 
-        assertThat(styxMetricsRegistry.counter("styx.plugins.myPlugin.initialised").getCount(), is(1L));
-        assertThat(styxMetricsRegistry.counter("styx.plugins.myAnotherPlugin.initialised").getCount(), is(1L));
+        assertThat(environment.meterRegistry().get("styx.plugins.myPlugin.legacy").tags(Tags.of("attribute", "count", "metricSource", "dropwizard")).gauge().value(), is(1D));
+        assertThat(environment.meterRegistry().get("styx.plugins.myAnotherPlugin.legacy").tags(Tags.of("attribute", "count", "metricSource", "dropwizard")).gauge().value(), is(1D));
+
+        assertThat(environment.metricRegistry().counter("styx.plugins.myPlugin.legacy").getCount(), is(1L));
+        assertThat(environment.metricRegistry().counter("styx.plugins.myAnotherPlugin.legacy").getCount(), is(1L));
     }
 
     private com.hotels.styx.Environment environment(String yaml) {
         return new com.hotels.styx.Environment.Builder()
                 .configuration(new StyxConfig(new MyConfiguration(yaml)))
-                .metricRegistry(styxMetricsRegistry)
+                .registry(registry)
                 .build();
     }
 
@@ -312,9 +324,10 @@ public class PluginLoadingForStartupTest {
         @Override
         public Plugin create(Environment environment) {
             MyPluginConfig myPluginConfig = environment.pluginConfig(MyPluginConfig.class);
-            MetricRegistry metrics = environment.metricRegistry();
+            PluginMeterRegistry registry = environment.pluginMeterRegistry();
+            MetricRegistry legacyMetrics = environment.metricRegistry();
 
-            return new MyPlugin(myPluginConfig, metrics);
+            return new MyPlugin(myPluginConfig, registry, legacyMetrics);
         }
     }
 
@@ -346,9 +359,11 @@ public class PluginLoadingForStartupTest {
     static class MyPlugin implements Plugin {
         private final MyPluginConfig myPluginConfig;
 
-        public MyPlugin(MyPluginConfig myPluginConfig, MetricRegistry metrics) {
+        public MyPlugin(MyPluginConfig myPluginConfig, PluginMeterRegistry registry, MetricRegistry legacyMetrics) {
             this.myPluginConfig = myPluginConfig;
-            metrics.counter("initialised").inc();
+            Counter counter = registry.counter("initialised");
+            counter.increment();
+            legacyMetrics.counter("legacy").inc();
         }
 
         @Override

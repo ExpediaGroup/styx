@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.proxy.plugin;
 
-import com.codahale.metrics.Meter;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
@@ -25,6 +24,7 @@ import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginException;
 import com.hotels.styx.common.SimpleCache;
+import io.micrometer.core.instrument.Counter;
 import org.slf4j.Logger;
 import reactor.core.publisher.Flux;
 
@@ -32,6 +32,7 @@ import java.util.Map;
 
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.api.Metrics.formattedExceptionName;
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -42,9 +43,9 @@ public class InstrumentedPlugin implements NamedPlugin {
     private static final Logger LOGGER = getLogger(InstrumentedPlugin.class);
 
     private final NamedPlugin plugin;
-    private final SimpleCache<HttpResponseStatus, Meter> errorStatusMetrics;
-    private final SimpleCache<Class<? extends Throwable>, Meter> exceptionMetrics;
-    private final Meter errors;
+    private final SimpleCache<HttpResponseStatus, Counter> errorStatusMetrics;
+    private final SimpleCache<Class<? extends Throwable>, Counter> exceptionMetrics;
+    private final Counter errors;
 
     public InstrumentedPlugin(NamedPlugin plugin, Environment environment) {
         requireNotAlreadyInstrumented(plugin);
@@ -53,12 +54,23 @@ public class InstrumentedPlugin implements NamedPlugin {
         requireNonNull(environment);
 
         this.errorStatusMetrics = new SimpleCache<>(statusCode ->
-                environment.metricRegistry().meter("plugins." + plugin.name() + ".response.status." + statusCode.code()));
+                Counter.builder("plugin.response")
+                        .tag("plugin", plugin.name())
+                        .tag("statusCode", Integer.toString(statusCode.code()))
+                        .register(environment.meterRegistry())
+        );
 
         this.exceptionMetrics = new SimpleCache<>(type ->
-                environment.metricRegistry().meter("plugins." + plugin.name() + ".exception." + formattedExceptionName(type)));
+                Counter.builder("plugin.exception")
+                        .tag("plugin", plugin.name())
+                        .tag("type", formattedExceptionName(type))
+                        .register(environment.meterRegistry())
+        );
 
-        this.errors = environment.metricRegistry().meter("plugins." + plugin.name() + ".errors");
+        this.errors =
+                Counter.builder("plugin.error")
+                        .tag("plugin", plugin.name())
+                        .register(environment.meterRegistry());
 
         LOGGER.info("Plugin {} instrumented", plugin.name());
     }
@@ -102,9 +114,9 @@ public class InstrumentedPlugin implements NamedPlugin {
     }
 
     private void recordException(Throwable e) {
-        exceptionMetrics.get(e.getClass()).mark();
-        errorStatusMetrics.get(INTERNAL_SERVER_ERROR).mark();
-        errors.mark();
+        exceptionMetrics.get(e.getClass()).increment();
+        errorStatusMetrics.get(INTERNAL_SERVER_ERROR).increment();
+        errors.increment();
     }
 
     private Throwable recordAndWrapError(StatusRecordingChain chain, Throwable error) {
@@ -121,10 +133,10 @@ public class InstrumentedPlugin implements NamedPlugin {
         boolean fromPlugin = response.status() != chain.upstreamStatus;
 
         if (isError && fromPlugin) {
-            errorStatusMetrics.get(response.status()).mark();
+            errorStatusMetrics.get(response.status()).increment();
 
             if (response.status().equals(INTERNAL_SERVER_ERROR)) {
-                errors.mark();
+                errors.increment();
             }
         }
     }

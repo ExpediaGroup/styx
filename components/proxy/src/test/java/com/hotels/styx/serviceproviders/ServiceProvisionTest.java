@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicyFactory;
 import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
 import com.hotels.styx.api.extension.service.spi.StyxService;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
@@ -328,6 +329,7 @@ public class ServiceProvisionTest {
 
     private static Environment environmentWithConfig(String yaml) {
         return new com.hotels.styx.Environment.Builder()
+                .registry(new SimpleMeterRegistry())
                 .configuration(StyxConfig.fromYaml(yaml, false))
                 .build();
     }

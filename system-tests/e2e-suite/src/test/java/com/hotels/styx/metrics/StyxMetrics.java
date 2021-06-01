@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -187,7 +187,7 @@ public class StyxMetrics {
     }
 
     private static void assertValueIsMap(Map.Entry<String, Object> entry) {
-        checkArgument(entry.getValue() instanceof Map);
+        checkArgument(entry.getValue() instanceof Map, "Entry value is not a Map");
     }
 
     @SuppressWarnings("unchecked")

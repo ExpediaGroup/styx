@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,10 +18,13 @@ package com.hotels.styx.proxy
 import com.google.common.base.Charsets
 import com.google.common.base.Charsets._
 import com.hotels.styx._
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus._
+import com.hotels.styx.api.extension.Origin
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
 import com.hotels.styx.support.{NettyOrigins, TestClientSupport}
 import com.hotels.styx.utils.HttpTestClient
+import io.micrometer.core.instrument.Tags
 import io.netty.buffer.Unpooled
 import io.netty.buffer.Unpooled._
 import io.netty.channel.ChannelHandlerContext
@@ -33,8 +36,6 @@ import io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT
 import io.netty.handler.codec.http._
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
-import com.hotels.styx.api.HttpRequest.get
-import com.hotels.styx.api.extension.Origin
 
 import scala.concurrent.duration.{Duration, _}
 
@@ -106,21 +107,25 @@ class ChunkedDownloadSpec extends FunSpec
       eventually(timeout(5 seconds)) {
         assert(busyConnections(originTwo) == 0, "Connection remains busy.")
         assert(closedConnections(originTwo) == 1)
-        styxServer.metricsSnapshot.count("origins.appTwo.requests.cancelled").get should be(1)
+        styxServer.meterRegistry().get("proxy.request.cancelled.responseWriteError").counter().count() should be(1.0)
       }
     }
   }
 
   def busyConnections(origin: Origin) = {
-    styxServer.metricsSnapshot.gauge(s"origins.appTwo.localhost:${origin.port}.connectionspool.busy-connections").get
+    meterRegistry.find("connectionpool.busyConnections").tags(meterTags(origin)).gauge().value()
   }
 
   def closedConnections(origin: Origin) = {
-    styxServer.metricsSnapshot.gauge(s"origins.appTwo.localhost:${origin.port}.connectionspool.connections-closed").get
+    meterRegistry.find("connectionpool.connectionsClosed").tags(meterTags(origin)).gauge().value()
   }
 
   def noAvailableConnectionsInPool(origin: Origin) = {
-    styxServer.metricsSnapshot.gauge(s"origins.appTwo.localhost:${origin.port}.connectionspool.available-connections").get == 0
+    meterRegistry.find("connectionpool.availableConnections").tags(meterTags(origin)).gauge().value() == 0.0
+  }
+
+  def meterTags(origin: Origin): Tags = {
+    Tags.of("appId", "appTwo", "originId", s"localhost:${origin.port}")
   }
 
   def ensureResponseDidNotArrive(client: HttpTestClient) = {
