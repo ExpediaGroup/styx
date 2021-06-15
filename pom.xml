@@ -106,7 +106,7 @@
     <netty-tcnative.classifier>linux-x86_64</netty-tcnative.classifier>
 
     <!-- General Versions -->
-    <guava.version>30.0-jre</guava.version>
+    <guava.version>24.1.1-jre</guava.version> <!-- Going higher than Guava 24 will require updating artifact: hcom.thirdparty.google:google-closure-templates which was not migrated to expedia github!!! -->
     <jackson.version>2.12.1</jackson.version>
     <jackson.dataformat.version>${jackson.version}</jackson.dataformat.version>
     <jackson.module.scala.version>${jackson.version}</jackson.module.scala.version>
