@@ -1,18 +1,19 @@
 # Metrics Reference
 
+:warning: **Metrics have changed!** Migration notes are [here](metrics-migration.md)
+
 ## Metric Categories
 
 Styx collects performance metrics from the following functional areas:
 
  - Server Side Metrics
-   - HTTP level metrics (`requests` scope)
-   - TCP connection level metrics (`connections` scope)
-   - OpenSSL metrics (when `OPENSSL` provider is configured):
-   - Server metrics (`styx` scope):
+   - HTTP level metrics (`proxy.request.*`)
+   - TCP connection level metrics (`proxy.connection.*`)
+   - OpenSSL metrics  (`proxy.request.openssl.*`)
+   - Server metrics (`styx.*`):
 
  - Origin Metrics
-   - Request metrics aggregated to back-end service
-   - Request metrics per origin origin
+   - Request metrics aggregable to back-end service or origin
    - Connection pool metrics
    - Health-check metrics
 
@@ -31,99 +32,94 @@ The server side metrics scopes are illustrated in a diagram below:
 
 ![Styx Server Metrics](../assets/styx-server-metrics.png "Styx server metrics")
 
-### HTTP level metrics (`requests` scope)
+### HTTP level metrics (`proxy.request.*`)
 
-**requests.cancelled.`<cause>`**
+####proxy.request.cancelled.`<cause>`
 
 * Requests cancelled due to an error.
 
 
-**requests.outstanding**
+####proxy.request.outstanding
 
 * Number of requests currently being served (in flight).
 
-**requests.response.sent**
+####proxy.response.sent
 
 * Total number of responses sent downstream
 
-**requests.response.status.`<code>`**
+####proxy.response.status
+`statusClass=(unrecognized/1xx/2xx/3xx/4xx/5xx)`<br>
+`statusCode=<statuscode>`
 
 * Total number or responses for each status code class (1xx, 2xx, ...)
 * Total number of responses for each error status code (code >= 400)
 * Total number of unrecognised status codes (`<code>` is `unrecognised`)
 * This metric combines statuses from origins with statuses from Styx-generated responses.
 
-**requests.received**
+####proxy.request.received
 
 * Total number of requests received
 
-**requests.error-rate.500**
-
-* The rate of 500 Internal Server Error
-* This metric combines statuses from origins with statuses from Styx-generated responses.
-
-**requests.latency**
+####proxy.request.latency
 
 * Request latency, measured on Styx server interface.
 * Measured as a time to last byte written back to downstream.
 * Timer starts when request arrives, timer stops when the response
   from origin is fully written to the socket.
 
-### TCP connection level metrics (`connections` scope)
+### TCP connection level metrics (`proxy.connection.*` )
 
-**connections.eventloop.`<thread>`.registered-channel-count**
+####proxy.connection.registeredChannelCount
+`eventloop=<thread>`
 
 * Number of TCP connections registered against the Styx server IO thread, where
 `<thread>` is the IO thread name.
 
-**connections.total-connections**
+####proxy.connection.totalConnections
 
 * Total number of TCP connections active on Styx server side.
 * Does not count client side TCP connections.
 
 
-**connections.eventloop.`<thread>`.channels**
+####proxy.connection.channels
+`eventloop=<thread>`
 
 * Measures the distribution of number of channels for a named IO thread.
   There is a counter for each thread.
 
 
-**connections.bytes-received**
+####proxy.connection.bytesReceived
 
 * Total number of bytes received.
 
-**connections.bytes-sent**
+####proxy.connection.bytesSent
 
 * Total number of bytes sent.
 
-**connections.idleClosed**
+####proxy.connection.idleClosed
 
 * Number of server side connections closed due to idleness. 
 
 
-### Styx Server metrics (`styx` scope)
+### Styx Server metrics (`styx.*`)
 
-**styx.exception.`<cause>`**
+####styx.exception
+`type=<cause>`
 
 * Number of exceptions, for each `<cause>` exception name.
 
-**styx.server.http.requests**
+####styx.server.request
+`protocol=(http/https)`
 
-* Number of requests received from http connector (port).
+* Number of requests received from http or https connector (port).
 
-**styx.server.http.responses.`<code>`**
+####styx.server.response
+`protocol=(http/https)`<br>
+`statusCode=<statuscode>`
 
-* Number of responses sent out via http connector.
+* Number of responses sent out via http or https connector.
 
-**styx.server.https.requests**
-
-* Number of requests received from https connector (port).
-
-**styx.server.https.responses.`<code>`**
-
-* Number of responses sent out via https connector.
-
-**styx.version.buildnumber**
+####styx.version.buildnumber
 
 * Styx version number.
 
@@ -151,98 +147,121 @@ The origin side metrics scopes are illustrated in a diagram below:
 
 ### Per Back-End Request Metrics
 
-**origins.`<backend>`.requests.cancelled**
-**origins.`<backend>`.`<origin>`.requests.cancelled**
+####request.cancellation
+`appId=<appid>`<br>
+`originId=<originid>`
 
 * Number of requests cancelled due to an error.
 
-**origins.`<backend>`.requests.success-rate**
-**origins.`<backend>`.`<origin>`.requests.success-rate**
+####request.success
+`appId=<appid>`<br>
+`originId=<originid>`
 
-* Rate of successful requests to the origin.
+* Number of successful requests to the origin.
 * A request is considered a success when it returns a non-5xx class status code.
 
 
-**origins.`<backend>`.requests.error-rate**
-**origins.`<backend>`.`<origin>`.requests.error-rate**
+####request.error
+`appId=<appid>`<br>
+`originId=<originid>`
 
 * Number of failed requests to the origin.
 * A request is considered a failure when origin responds with a 5xx class status code.
 
-**origins.`<backend>`.requests.response.status.`<code>`**
-**origins.`<backend>`.`<origin>`.requests.response.status.`<code>`**
+####request.status
+`appId=<appid>`<br>
+`originId=<originid>`<br>
+`statusCode=<statuscode>`<br>
+`statusClass=(1xx/2xx/3xx/4xx/5xx)`
 
 * Number of responses from origin with a status codee of `<code>`.
 * Unrecognised status codes are collapsed to a value of -1. A status
   code is unrecognised when `code < 100` or `code >= 600`.
 
 
-**origins.`<backend>`.requests.response.status.5xx**
-**origins.`<backend>`.`<origin>`.requests.response.status.5xx**
-
-* A rate of 5xx responses from an origin.
-
-**origins.`<backend>`.requests.latency**
-**origins.`<backend>`.`<origin>`.requests.latency**
+####request.latency
+`appId=<appid>`<br>
+`originId=<originid>`
 
 * A latency distribution of requests to origin.
 * Measured as time to last byte.
 * Timer started when request is sent, and stopped when the last content
   byte is received.
 
-**origins.`<backend>`.requests.time-to-first-byte**  
-**origins.`<backend>`.`<origin>`.requests.time-to-first-byte**
+####request.timeToFirstByte  
+`appId=<appid>`<br>
+`originId=<originid>`
 
 * A latency distribution of requests to origin.
 * Measured as time to first content byte.
 * Timer started when request is sent, and stopped when the first content
   byte is received.
 
-**origins.`<backend>`.`<origin>`.status**
+####origin.status
+`appId=<appid>`<br>
+`originId=<originid>`
 
 * Current [origin state](configure-health-checks.md), as follows:
    * 1 - ACTIVE,
    * 0 - INACTIVE
    * -1 - DISABLED
 
-**origins.`<backend>`.healthcheck.failure**
+####origin.healthcheck.failure
+`appId=<appid>`<br>
+`originId=<originid>`
 
-* Number of health check failure rate
+* Number of health check failures
 
 
 ### Connection pool metrics
 
-**origins.`<backend>`.`<origin>`.connectionspool.available-connections**
+####connectionpool.availableConnections
+`appId=<appid>`<br>
+`originId=<originid>`
 
 * Number of primed TCP connections readily available in the pool.
 
-**origins.`<backend>`.`<origin>`.connectionspool.busy-connections**
+####connectionpool.busyConnections
+`appId=<appid>`<br>
+`originId=<originid>`
 
 * Number of connections borrowed at the moment.
 
-**origins.`<backend>`.`<origin>`.connectionspool.connection-attempts**
+####connectionpool.connectionAttempts
+`appId=<appid>`<br>
+`originId=<originid>`
 
 * Number of TCP connection establishment attempts.
 
-**origins.`<backend>`.`<origin>`.connectionspool.connection-failures**
+####connectionpool.connectionFailures
+`appId=<appid>`<br>
+`originId=<originid>`
 
 * Number of failed TCP connection attempts.
 
-**origins.`<backend>`.`<origin>`.connectionspool.connections-closed**
+####connectionpool.connectionsClosed
+`appId=<appid>`<br>
+`originId=<originid>`
 
 * Number of TCP connection closures.
 * Counts the connections closed by *Styx*, not an origin.
 
-**origins.`<backend>`.`<origin>`.connectionspool.connections-terminated**
+####connectionpool.connectionsTerminated
+`appId=<appid>`<br>
+`originId=<originid>`
 
 * Number of times TCP connection has terminated, either because it was
   closed by styx, or by an origin, or otherwise disconnected.
 
-**origins.`<backend>`.`<origin>`.connectionspool.pending-connections**
+####connectionpool.pendingConnections
+`appId=<appid>`<br>
+`originId=<originid>`
 
 * Size of the [pending connections queue](configure-connection-pooling.md) at the moment.
 
-**origins.`<backend>`.`<origin>`.connectionspool.connections-in-establishment**
+####connectionpool.connectionsInEstablishment
+`appId=<appid>`<br>
+`originId=<originid>`
 
 * Number of connections performing a TCP handshake or an SSL/TLS handshake procedure.
 
@@ -282,10 +301,3 @@ hierarchy. The `name` is a plugin name as it is configured in the
 
 All metrics from this plugin would go under `styx.plugins.guidFixer` prefix.
 
-
-## Undocumented or unstable metrics
-
-
-Following metrics are subject to change their names:
-
-     origins.response.status.<code>

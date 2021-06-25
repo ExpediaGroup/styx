@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,116 +15,59 @@
  */
 package com.hotels.styx.client.applications.metrics;
 
-import com.codahale.metrics.Clock;
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.Meter;
-import com.hotels.styx.api.Id;
-import com.hotels.styx.api.MetricRegistry;
-import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.MockClock;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.Timer;
+import io.micrometer.core.instrument.simple.SimpleConfig;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
+import java.time.Duration;
+import java.util.Collection;
 
-import static com.hotels.styx.api.Id.id;
-import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
-import static com.hotels.styx.client.applications.OriginStats.REQUEST_FAILURE;
-import static com.hotels.styx.client.applications.OriginStats.REQUEST_SUCCESS;
-import static com.hotels.styx.client.netty.MetricsSupport.IsNotUpdated.hasNotReceivedUpdatesExcept;
-import static com.hotels.styx.client.netty.MetricsSupport.name;
-import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static com.hotels.styx.client.applications.metrics.OriginMetrics.APP_TAG;
+import static com.hotels.styx.client.applications.metrics.OriginMetrics.CANCELLATION_COUNTER_NAME;
+import static com.hotels.styx.client.applications.metrics.OriginMetrics.ORIGIN_TAG;
+import static com.hotels.styx.client.applications.metrics.OriginMetrics.STATUS_CLASS_TAG;
+import static com.hotels.styx.client.applications.metrics.OriginMetrics.STATUS_COUNTER_NAME;
+import static com.hotels.styx.client.applications.metrics.OriginMetrics.STATUS_TAG;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class OriginMetricsTest {
-    private final Id appId;
-    private final Origin origin;
+    public static final String APP_ID = "test-id";
+    public static final String ORIGIN_ID = "h1";
 
-    private MetricRegistry rootMetricRegistry;
-    private ApplicationMetrics appMetrics;
-    private OriginMetrics originMetrics;
-
-    public static final List<String> APP_METRIC_PREFIX = singletonList("test-id");
-    public static final List<String> ORIGIN_METRIC_PREFIX = asList("test-id", "h1");
-    private final StubClock clock;
+    private final MockClock clock;
+    private final MeterRegistry registry;
 
     public OriginMetricsTest() {
-        appId = id("test-id");
-        this.origin = newOriginBuilder("localhost", 1234)
-                .applicationId(this.appId)
-                .id("h1")
-                .build();
-        clock = new StubClock();
-    }
-
-    @BeforeEach
-    private void setUp() {
-        rootMetricRegistry = new StubClockMeterMetricRegistry(clock);
-        appMetrics = new ApplicationMetrics(appId, rootMetricRegistry);
-        originMetrics = new OriginMetrics(appMetrics, originPrefix(origin));
-    }
-
-    @AfterEach
-    private void tearDown() {
-        clearMetricsRegistry();
-    }
-
-    private void clearMetricsRegistry() {
-        for (String name : rootMetricRegistry.getNames()) {
-            rootMetricRegistry.deregister(name);
-        }
-    }
-
-    @Test
-    public void failsIfCreatedWithNullApplicationMetrics() {
-        assertThrows(NullPointerException.class,
-                () -> new OriginMetrics(null, originPrefix(origin)));
+        clock = new MockClock();
+        registry = new SimpleMeterRegistry(SimpleConfig.DEFAULT, clock);
     }
 
     @Test
     public void failsIfCreatedWithNullOrigin() {
         assertThrows(NullPointerException.class,
-                () -> new OriginMetrics(appMetrics, null));
+                () -> new OriginMetrics(registry, null, APP_ID));
     }
 
     @Test
     public void successfullyCreated() {
-        assertThat(new OriginMetrics(appMetrics, originPrefix(origin)), is(notNullValue()));
+        assertThat(new OriginMetrics(registry, ORIGIN_ID, APP_ID), is(notNullValue()));
     }
 
     @Test
-    public void requestSuccessIsCountedInOriginAndApplication() {
-        originMetrics.requestSuccess();
-        originMetrics.requestSuccess();
-        originMetrics.requestSuccess();
-
-        Meter meter = rootMetricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_SUCCESS));
-        assertThat(meter.getCount(), is(3L));
-
-        meter = rootMetricRegistry.meter(name(ORIGIN_METRIC_PREFIX, REQUEST_SUCCESS));
-        assertThat(meter.getCount(), is(3L));
-    }
-
-    @Test
-    public void requestWithSuccessGetsAggregatedToApplication() {
-        Origin originA = newOriginBuilder("hostA", 8080)
-                .applicationId(this.appId)
-                .id("h1")
-                .build();
-
-        Origin originB = newOriginBuilder("hostB", 8080)
-                .applicationId(this.appId)
-                .id("h2")
-                .build();
-
-        OriginMetrics originMetricsA = new OriginMetrics(appMetrics, originPrefix(originA));
-        OriginMetrics originMetricsB = new OriginMetrics(appMetrics, originPrefix(originB));
+    public void requestWithSuccessGetsTaggedOnApplicationAndOrigin() {
+        OriginMetrics originMetricsA = new OriginMetrics(registry, "h1", APP_ID);
+        OriginMetrics originMetricsB = new OriginMetrics(registry, "h2", APP_ID);
 
         originMetricsA.requestSuccess();
         originMetricsA.requestSuccess();
@@ -132,43 +75,25 @@ public class OriginMetricsTest {
         originMetricsB.requestSuccess();
         originMetricsB.requestSuccess();
 
-        Meter meter = rootMetricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_SUCCESS));
-        assertThat(meter.getCount(), is(5L));
+        double originACount= sumCounters(OriginMetrics.SUCCESS_COUNTER_NAME, Tags.of(ORIGIN_TAG, "h1"));
+        assertThat(originACount, is(2.0));
 
-        meter = rootMetricRegistry.meter(name(asList("test-id", "h1"), REQUEST_SUCCESS));
-        assertThat(meter.getCount(), is(2L));
+        double originBCount = sumCounters(OriginMetrics.SUCCESS_COUNTER_NAME, Tags.of(ORIGIN_TAG, "h2"));
+        assertThat(originBCount, is(3.0));
 
-        meter = rootMetricRegistry.meter(name(asList("test-id", "h2"), REQUEST_SUCCESS));
-        assertThat(meter.getCount(), is(3L));
+        double appCount = sumCounters(OriginMetrics.SUCCESS_COUNTER_NAME, Tags.of(APP_TAG, APP_ID));
+        assertThat(appCount, is(5.0));
     }
 
-    @Test
-    public void requestErrorIsCountedInOriginAndApplication() {
-        originMetrics.requestError();
-        originMetrics.requestError();
-        originMetrics.requestError();
-
-        Meter meter = rootMetricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_FAILURE));
-        assertThat(meter.getCount(), is(3L));
-
-        meter = rootMetricRegistry.meter(name(ORIGIN_METRIC_PREFIX, REQUEST_FAILURE));
-        assertThat(meter.getCount(), is(3L));
+    private double sumCounters(String name, Iterable<Tag> tags) {
+        Collection<Counter> counters = registry.get(name).tags(tags).counters();
+        return counters.stream().mapToDouble(Counter::count).sum();
     }
 
     @Test
     public void requestWithFailureGetsAggregatedToApplication() {
-        Origin originA = newOriginBuilder("hostA", 8080)
-                .applicationId(this.appId)
-                .id("h1")
-                .build();
-
-        Origin originB = newOriginBuilder("hostB", 8080)
-                .id("h2")
-                .applicationId(this.appId)
-                .build();
-
-        OriginMetrics originMetricsA = new OriginMetrics(appMetrics, originPrefix(originA));
-        OriginMetrics originMetricsB = new OriginMetrics(appMetrics, originPrefix(originB));
+        OriginMetrics originMetricsA = new OriginMetrics(registry, "h1", APP_ID);
+        OriginMetrics originMetricsB = new OriginMetrics(registry, "h2", APP_ID);
 
         originMetricsA.requestError();
         originMetricsA.requestError();
@@ -176,325 +101,104 @@ public class OriginMetricsTest {
         originMetricsB.requestError();
         originMetricsB.requestError();
 
-        Meter meter = rootMetricRegistry.meter(name(APP_METRIC_PREFIX, REQUEST_FAILURE));
-        assertThat(meter.getCount(), is(5L));
+        double originACount= sumCounters(OriginMetrics.FAILURE_COUNTER_NAME, Tags.of(ORIGIN_TAG, "h1"));
+        assertThat(originACount, is(2.0));
 
-        meter = rootMetricRegistry.meter(name(asList("test-id", "h1"), REQUEST_FAILURE));
-        assertThat(meter.getCount(), is(2L));
+        double originBCount = sumCounters(OriginMetrics.FAILURE_COUNTER_NAME, Tags.of(ORIGIN_TAG, "h2"));
+        assertThat(originBCount, is(3.0));
 
-        meter = rootMetricRegistry.meter(name(asList("test-id", "h2"), REQUEST_FAILURE));
-        assertThat(meter.getCount(), is(3L));
+        double appCount = sumCounters(OriginMetrics.FAILURE_COUNTER_NAME, Tags.of(APP_TAG, APP_ID));
+        assertThat(appCount, is(5.0));
     }
 
     @Test
-    public void response100ContinueUpdatesInformationalMeterOnly() {
+    public void responseWithStatusCodeTagsCounterWithCode() {
+        OriginMetrics originMetrics = new OriginMetrics(registry, "h1", APP_ID);
+
         originMetrics.responseWithStatusCode(100);
-
-        Meter meter = rootMetricRegistry.meter(name(APP_METRIC_PREFIX, "requests.response.status.100"));
-        assertThat(meter.getCount(), is(1L));
-
-        meter = rootMetricRegistry.meter(name(ORIGIN_METRIC_PREFIX, "requests.response.status.100"));
-        assertThat(meter.getCount(), is(1L));
-
-        assertThat(rootMetricRegistry, is(hasNotReceivedUpdatesExcept(
-                name(APP_METRIC_PREFIX, "requests.response.status.100"),
-                name(ORIGIN_METRIC_PREFIX, "requests.response.status.100"))));
-    }
-
-    @Test
-    public void response101SwitchingProtocolsUpdatesInformationalMeterOnly() {
         originMetrics.responseWithStatusCode(101);
-
-        Meter meter = rootMetricRegistry.meter(name(APP_METRIC_PREFIX, "requests.response.status.101"));
-        assertThat(meter.getCount(), is(1L));
-
-        meter = rootMetricRegistry.meter(name(ORIGIN_METRIC_PREFIX, "requests.response.status.101"));
-        assertThat(meter.getCount(), is(1L));
-
-        assertThat(rootMetricRegistry, is(hasNotReceivedUpdatesExcept(
-                name(APP_METRIC_PREFIX, "requests.response.status.101"),
-                name(ORIGIN_METRIC_PREFIX, "requests.response.status.101"))));
-    }
-
-    @Test
-    public void response200OkUpdatesSuccessfulMeterOnly() {
         originMetrics.responseWithStatusCode(200);
+        originMetrics.responseWithStatusCode(200);
+        originMetrics.responseWithStatusCode(401);
+        originMetrics.responseWithStatusCode(503);
 
-        Meter meter = rootMetricRegistry.meter(name(APP_METRIC_PREFIX, "requests.response.status.200"));
-        assertThat(meter.getCount(), is(1L));
+        double allCount= sumCounters(STATUS_COUNTER_NAME, Tags.of(ORIGIN_TAG, "h1").and(APP_TAG, APP_ID));
+        assertThat(allCount, is(6.0));
 
-        meter = rootMetricRegistry.meter(name(ORIGIN_METRIC_PREFIX, "requests.response.status.200"));
-        assertThat(meter.getCount(), is(1L));
+        double _100Count= sumCounters(STATUS_COUNTER_NAME, Tags.of(ORIGIN_TAG, "h1").and(APP_TAG, APP_ID).and(STATUS_TAG, "100"));
+        assertThat(_100Count, is(1.0));
 
-        assertThat(rootMetricRegistry, is(hasNotReceivedUpdatesExcept(
-                name(APP_METRIC_PREFIX, "requests.response.status.200"),
-                name(ORIGIN_METRIC_PREFIX, "requests.response.status.200"))));
-    }
-
-    @Test
-    public void response204NoContentUpdatesSuccessfulMeterOnly() {
-        originMetrics.responseWithStatusCode(204);
-
-        Meter meter = rootMetricRegistry.meter(name(APP_METRIC_PREFIX, "requests.response.status.204"));
-        assertThat(meter.getCount(), is(1L));
-
-        meter = rootMetricRegistry.meter(name(ORIGIN_METRIC_PREFIX, "requests.response.status.204"));
-        assertThat(meter.getCount(), is(1L));
-
-        assertThat(rootMetricRegistry, is(hasNotReceivedUpdatesExcept(
-                name(APP_METRIC_PREFIX, "requests.response.status.204"),
-                name(ORIGIN_METRIC_PREFIX, "requests.response.status.204"))));
-    }
-
-    @Test
-    public void response300MultipleChoicesUpdatesRedirectionMeterOnly() {
-        originMetrics.responseWithStatusCode(300);
-
-        Meter meter = rootMetricRegistry.meter(name(APP_METRIC_PREFIX, "requests.response.status.300"));
-        assertThat(meter.getCount(), is(1L));
-
-        meter = rootMetricRegistry.meter(name(ORIGIN_METRIC_PREFIX, "requests.response.status.300"));
-        assertThat(meter.getCount(), is(1L));
-
-        assertThat(rootMetricRegistry, is(hasNotReceivedUpdatesExcept(
-                name(APP_METRIC_PREFIX, "requests.response.status.300"),
-                name(ORIGIN_METRIC_PREFIX, "requests.response.status.300"))));
-    }
-
-    @Test
-    public void response305UseProxyUpdatesRedirectionMeterOnly() {
-        originMetrics.responseWithStatusCode(305);
-
-        Meter meter = rootMetricRegistry.meter(name(APP_METRIC_PREFIX, "requests.response.status.305"));
-        assertThat(meter.getCount(), is(1L));
-
-        meter = rootMetricRegistry.meter(name(ORIGIN_METRIC_PREFIX, "requests.response.status.305"));
-        assertThat(meter.getCount(), is(1L));
-
-        assertThat(rootMetricRegistry, is(hasNotReceivedUpdatesExcept(
-                name(APP_METRIC_PREFIX, "requests.response.status.305"),
-                name(ORIGIN_METRIC_PREFIX, "requests.response.status.305"))));
-    }
-
-    @Test
-    public void response400BadRequestUpdatesClientErrorOnly() {
-        originMetrics.responseWithStatusCode(400);
-
-        Meter meter = rootMetricRegistry.meter(name(APP_METRIC_PREFIX, "requests.response.status.400"));
-        assertThat(meter.getCount(), is(1L));
-
-        meter = rootMetricRegistry.meter(name(ORIGIN_METRIC_PREFIX, "requests.response.status.400"));
-        assertThat(meter.getCount(), is(1L));
-
-        assertThat(rootMetricRegistry, is(hasNotReceivedUpdatesExcept(
-                name(APP_METRIC_PREFIX, "requests.response.status.400"),
-                name(ORIGIN_METRIC_PREFIX, "requests.response.status.400"))));
-    }
-
-    @Test
-    public void response403ForbiddenUpdatesClientErrorOnly() {
-        originMetrics.responseWithStatusCode(403);
-
-        Meter meter = rootMetricRegistry.meter(name(APP_METRIC_PREFIX, "requests.response.status.403"));
-        assertThat(meter.getCount(), is(1L));
-
-        meter = rootMetricRegistry.meter(name(ORIGIN_METRIC_PREFIX, "requests.response.status.403"));
-        assertThat(meter.getCount(), is(1L));
-
-        assertThat(rootMetricRegistry, is(hasNotReceivedUpdatesExcept(
-                name(APP_METRIC_PREFIX, "requests.response.status.403"),
-                name(ORIGIN_METRIC_PREFIX, "requests.response.status.403"))));
-    }
-
-    @Test
-    public void response500InternalServerErrorUpdatesServerErrorOnly() {
-        originMetrics.responseWithStatusCode(500);
-
-        Meter meter = rootMetricRegistry.meter(name(APP_METRIC_PREFIX, "requests.response.status.500"));
-        assertThat(meter.getCount(), is(1L));
-
-        meter = rootMetricRegistry.meter(name(ORIGIN_METRIC_PREFIX, "requests.response.status.500"));
-        assertThat(meter.getCount(), is(1L));
-
-        assertThat(rootMetricRegistry, is(hasNotReceivedUpdatesExcept(
-                name(ORIGIN_METRIC_PREFIX, "requests.response.status.5xx"),
-                name(APP_METRIC_PREFIX, "requests.response.status.500"),
-                name(ORIGIN_METRIC_PREFIX, "requests.response.status.500"))));
-    }
-
-    @Test
-    public void response505HttpVersionNotSupportedUpdatesServerErrorOnly() {
-        originMetrics.responseWithStatusCode(505);
-
-        Meter meter = rootMetricRegistry.meter(name(APP_METRIC_PREFIX, "requests.response.status.505"));
-        assertThat(meter.getCount(), is(1L));
-
-        meter = rootMetricRegistry.meter(name(ORIGIN_METRIC_PREFIX, "requests.response.status.505"));
-        assertThat(meter.getCount(), is(1L));
-
-        assertThat(rootMetricRegistry, is(hasNotReceivedUpdatesExcept(
-                name(ORIGIN_METRIC_PREFIX, "requests.response.status.5xx"),
-                name(APP_METRIC_PREFIX, "requests.response.status.505"),
-                name(ORIGIN_METRIC_PREFIX, "requests.response.status.505"))));
+        double _200Count= sumCounters(STATUS_COUNTER_NAME, Tags.of(ORIGIN_TAG, "h1").and(APP_TAG, APP_ID).and(STATUS_TAG, "200"));
+        assertThat(_200Count, is(2.0));
     }
 
 
     @Test
-    public void collectsDifferent5xxErrorCodesUnderSeparate5xxRateMeter() {
+    public void responseWithStatusCodeTagsCounterWithStatusCode() {
+        OriginMetrics originMetrics = new OriginMetrics(registry, "h1", APP_ID);
+
         originMetrics.responseWithStatusCode(500);
         originMetrics.responseWithStatusCode(503);
         originMetrics.responseWithStatusCode(505);
 
-        Meter meter = rootMetricRegistry.meter(name(ORIGIN_METRIC_PREFIX, "requests.response.status.5xx"));
-        assertThat(meter.getCount(), is(3L));
+        double allCount= sumCounters(STATUS_COUNTER_NAME, Tags.of(ORIGIN_TAG, "h1").and(APP_TAG, APP_ID).and(STATUS_CLASS_TAG, "5xx"));
+        assertThat(allCount, is(3.0));
     }
 
     @Test
-    public void returnsLastOneMinuteErrorRate() {
-        originMetrics.responseWithStatusCode(500);
-        originMetrics.responseWithStatusCode(503);
-        originMetrics.responseWithStatusCode(505);
-        clock.advance();
+    public void responseWithStatusCodeTagsCounterIgnoresInvalidStatusClasses() {
+        OriginMetrics originMetrics = new OriginMetrics(registry, "h1", APP_ID);
 
-        assertThat(originMetrics.oneMinuteErrorRate(), is(0.6));
-    }
-
-    @Test
-    public void invalidStatusCode600UpdatesNothing() {
+        originMetrics.responseWithStatusCode(99);
         originMetrics.responseWithStatusCode(600);
+        originMetrics.responseWithStatusCode(999);
+        originMetrics.responseWithStatusCode(9999);
 
-        Meter meter = rootMetricRegistry.meter(name(APP_METRIC_PREFIX, "requests.response.status.-1"));
-        assertThat(meter.getCount(), is(1L));
+        Counter counter99 = registry.get(STATUS_COUNTER_NAME).tags(Tags.of(ORIGIN_TAG, "h1").and(APP_TAG, APP_ID).and(STATUS_TAG, "99")).counter();
+        assertThat(counter99.getId().getTag(STATUS_CLASS_TAG), is(nullValue()));
 
-        meter = rootMetricRegistry.meter(name(ORIGIN_METRIC_PREFIX, "requests.response.status.-1"));
-        assertThat(meter.getCount(), is(1L));
+        Counter counter600 = registry.get(STATUS_COUNTER_NAME).tags(Tags.of(ORIGIN_TAG, "h1").and(APP_TAG, APP_ID).and(STATUS_TAG, "600")).counter();
+        assertThat(counter600.getId().getTag(STATUS_CLASS_TAG), is(nullValue()));
 
-        assertThat(rootMetricRegistry, is(hasNotReceivedUpdatesExcept(
-                name(APP_METRIC_PREFIX, "requests.response.status.-1"),
-                name(ORIGIN_METRIC_PREFIX, "requests.response.status.-1"))));
+        Counter counter999 = registry.get(STATUS_COUNTER_NAME).tags(Tags.of(ORIGIN_TAG, "h1").and(APP_TAG, APP_ID).and(STATUS_TAG, "999")).counter();
+        assertThat(counter999.getId().getTag(STATUS_CLASS_TAG), is(nullValue()));
+
+        Counter counter9999 = registry.get(STATUS_COUNTER_NAME).tags(Tags.of(ORIGIN_TAG, "h1").and(APP_TAG, APP_ID).and(STATUS_TAG, "9999")).counter();
+        assertThat(counter9999.getId().getTag(STATUS_CLASS_TAG), is(nullValue()));
     }
 
-    @Test
-    public void invalidStatusCodeMinus100UpdatesNothing() {
-        originMetrics.responseWithStatusCode(-100);
-
-        Meter meter = rootMetricRegistry.meter(name(APP_METRIC_PREFIX, "requests.response.status.-1"));
-        assertThat(meter.getCount(), is(1L));
-
-        meter = rootMetricRegistry.meter(name(ORIGIN_METRIC_PREFIX, "requests.response.status.-1"));
-        assertThat(meter.getCount(), is(1L));
-
-        assertThat(rootMetricRegistry, is(hasNotReceivedUpdatesExcept(
-                name(APP_METRIC_PREFIX, "requests.response.status.-1"),
-                name(ORIGIN_METRIC_PREFIX, "requests.response.status.-1"))));
-    }
 
     @Test
-    public void invalidStatusCode1UpdatesNothing() {
-        originMetrics.responseWithStatusCode(1);
+    public void countsCanceledRequests() {
+        OriginMetrics originMetrics = new OriginMetrics(registry, "h1", APP_ID);
 
-        Meter meter = rootMetricRegistry.meter(name(APP_METRIC_PREFIX, "requests.response.status.-1"));
-        assertThat(meter.getCount(), is(1L));
-
-        meter = rootMetricRegistry.meter(name(ORIGIN_METRIC_PREFIX, "requests.response.status.-1"));
-        assertThat(meter.getCount(), is(1L));
-
-        assertThat(rootMetricRegistry, is(hasNotReceivedUpdatesExcept(
-                name(APP_METRIC_PREFIX, "requests.response.status.-1"),
-                name(ORIGIN_METRIC_PREFIX, "requests.response.status.-1"))));
-    }
-
-    @Test
-    public void invalidStatusCode0UpdatesNothing() {
-        originMetrics.responseWithStatusCode(0);
-
-        Meter meter = rootMetricRegistry.meter(name(APP_METRIC_PREFIX, "requests.response.status.-1"));
-        assertThat(meter.getCount(), is(1L));
-
-        meter = rootMetricRegistry.meter(name(ORIGIN_METRIC_PREFIX, "requests.response.status.-1"));
-        assertThat(meter.getCount(), is(1L));
-
-        assertThat(rootMetricRegistry, is(hasNotReceivedUpdatesExcept(
-                name(APP_METRIC_PREFIX, "requests.response.status.-1"),
-                name(ORIGIN_METRIC_PREFIX, "requests.response.status.-1"))));
-    }
-
-    @Test
-    public void invalidStatusCode10UpdatesNothing() {
-        originMetrics.responseWithStatusCode(10);
-
-        Meter meter = rootMetricRegistry.meter(name(APP_METRIC_PREFIX, "requests.response.status.-1"));
-        assertThat(meter.getCount(), is(1L));
-
-        meter = rootMetricRegistry.meter(name(ORIGIN_METRIC_PREFIX, "requests.response.status.-1"));
-        assertThat(meter.getCount(), is(1L));
-
-        assertThat(rootMetricRegistry, is(hasNotReceivedUpdatesExcept(
-                name(APP_METRIC_PREFIX, "requests.response.status.-1"),
-                name(ORIGIN_METRIC_PREFIX, "requests.response.status.-1"))));
-    }
-
-    @Test
-    public void countsCanceledRequests() throws Exception {
         originMetrics.requestCancelled();
 
-        Counter counter = rootMetricRegistry.counter(name(APP_METRIC_PREFIX, "requests.cancelled"));
-        assertThat(counter.getCount(), is(1L));
-
-        counter = rootMetricRegistry.counter(name(ORIGIN_METRIC_PREFIX, "requests.cancelled"));
-        assertThat(counter.getCount(), is(1L));
-
-        assertThat(rootMetricRegistry, is(hasNotReceivedUpdatesExcept(
-                name(APP_METRIC_PREFIX, "requests.cancelled"),
-                name(ORIGIN_METRIC_PREFIX, "requests.cancelled"))));
+        double allCount= sumCounters(CANCELLATION_COUNTER_NAME, Tags.of(ORIGIN_TAG, "h1").and(APP_TAG, APP_ID));
+        assertThat(allCount, is(1.0));
     }
 
-    private static class StubClock extends Clock {
-        private static final int CODAHALE_METER_ADVANCE_TIME_SECONDS = 5;
-        private long lastTick = 100;
+    @Test
+    public void requestLatencyTimerTagsAppAndOrigin() {
+        OriginMetrics originMetrics = new OriginMetrics(registry, "h1", APP_ID);
+        Timer.Sample timerSample = originMetrics.startTimer();
+        clock.add(Duration.ofMillis(100));
+        timerSample.stop(originMetrics.requestLatencyTimer());
 
-        @Override
-        public long getTick() {
-            return lastTick;
-        }
-
-        public void advance() {
-            lastTick += SECONDS.toNanos(CODAHALE_METER_ADVANCE_TIME_SECONDS + 1);
-        }
+        Timer latencyTimer = registry.get(OriginMetrics.LATENCY_TIMER_NAME).tag(ORIGIN_TAG, "h1").tag(APP_TAG, APP_ID).timer();
+        assertThat(latencyTimer.count(), is(1L));
+        assertThat(latencyTimer.totalTime(MILLISECONDS), is(100.0));
     }
 
-    private static class StubClockMeterMetricRegistry extends CodaHaleMetricRegistry {
-        private final Clock clock;
+    @Test
+    public void timeToFirstByteTimerTagsAppAndOrigin() {
+        OriginMetrics originMetrics = new OriginMetrics(registry, "h1", APP_ID);
+        Timer.Sample timerSample = originMetrics.startTimer();
+        clock.add(Duration.ofMillis(100));
+        timerSample.stop(originMetrics.timeToFirstByteTimer());
 
-        public StubClockMeterMetricRegistry(Clock clock) {
-            this.clock = clock;
-        }
-
-        @Override
-        public Meter meter(String name) {
-            Meter metric = getMetricRegistry().getMeters().get(name);
-            if (metric != null) {
-                return metric;
-            } else {
-                try {
-                    return register(name, newMeter());
-                } catch (IllegalArgumentException e) {
-                    Meter added = getMetricRegistry().getMeters().get(name);
-                    if (added != null) {
-                        return added;
-                    }
-                }
-            }
-            throw new IllegalArgumentException(name + " is already used for a different type of metric");
-        }
-
-        private Meter newMeter() {
-            return new Meter(clock);
-        }
+        Timer latencyTimer = registry.get(OriginMetrics.TTFB_TIMER_NAME).tag(ORIGIN_TAG, "h1").tag(APP_TAG, APP_ID).timer();
+        assertThat(latencyTimer.count(), is(1L));
+        assertThat(latencyTimer.totalTime(MILLISECONDS), is(100.0));
     }
-
-    private static String originPrefix(Origin origin) {
-        return origin.id().toString();
-    }
-
 }

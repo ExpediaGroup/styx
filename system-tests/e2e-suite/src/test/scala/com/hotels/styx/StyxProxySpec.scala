@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,11 +17,15 @@ package com.hotels.styx
 
 import java.nio.file.Paths
 
+import com.google.common.collect.ImmutableList
 import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.infrastructure.{MemoryBackedRegistry, RegistryServiceAdapter}
 import com.hotels.styx.plugins.PluginPipelineSpec
 import com.hotels.styx.support.configuration.{ImplicitOriginConversions, StyxBackend, StyxBaseConfig}
 import com.hotels.styx.support.{ImplicitStyxConversions, configuration}
+import io.micrometer.core.instrument.{Clock, MeterRegistry}
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.scalatest._
 import org.slf4j.LoggerFactory
 
@@ -39,6 +43,7 @@ trait StyxProxySpec extends StyxClientSupplier
   private val LOGGER = LoggerFactory.getLogger(getClass)
   var backendsRegistry = new MemoryBackedRegistry[BackendService]
   var styxServer: StyxServer = _
+  var meterRegistry: MeterRegistry = _
 
   implicit class StyxServerOperations(val styxServer: StyxServer) extends StyxServerSupplements
     with BackendServicesRegistrySupplier {
@@ -51,7 +56,8 @@ trait StyxProxySpec extends StyxClientSupplier
   }
 
   override protected def beforeAll() = {
-    styxServer = styxConfig.startServer(new RegistryServiceAdapter(backendsRegistry))
+    meterRegistry = new CompositeMeterRegistry(Clock.SYSTEM, ImmutableList.of(new SimpleMeterRegistry()))
+    styxServer = styxConfig.startServer(new RegistryServiceAdapter(backendsRegistry), meterRegistry)
     LOGGER.info("Styx http port is: [%d]".format(styxServer.httpPort))
     LOGGER.info("Styx https port is: [%d]".format(styxServer.secureHttpPort))
     super.beforeAll()

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,38 +15,37 @@
  */
 package com.hotels.styx.client.healthcheck;
 
-import com.codahale.metrics.Meter;
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.common.SimpleCache;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.HEALTHY;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.UNHEALTHY;
-import static java.lang.String.format;
 
 /**
  * Health-check that works by making a request to a URL and ensuring that it gets an HTTP 200 OK code back.
  */
 public class UrlRequestHealthCheck implements OriginHealthCheckFunction {
-    private static final MeterFormat DEPRECATED_METER_FORMAT = new MeterFormat("origins.healthcheck.failure.%s");
-    private static final MeterFormat CORRECTED_METER_FORMAT = new MeterFormat("origins.%s.healthcheck.failure");
-
     private final String healthCheckUri;
-    private final SimpleCache<Origin, FailureMeter> meterCache;
+    private final SimpleCache<Origin, Counter> meterCache;
 
     /**
      * Construct an instance.
      *
      * @param healthCheckUri URI to make health-check requests to
-     * @param metricRegistry metric registry
+     * @param meterRegistry meter registry
      */
-    public UrlRequestHealthCheck(String healthCheckUri, MetricRegistry metricRegistry) {
+    public UrlRequestHealthCheck(String healthCheckUri, MeterRegistry meterRegistry) {
         this.healthCheckUri = uriWithInitialSlash(healthCheckUri);
-        this.meterCache = new SimpleCache<>(origin -> new FailureMeter(origin, metricRegistry));
+        this.meterCache = new SimpleCache<>(origin -> Counter.builder("origin.healthcheck.failures")
+        .tag("originId", origin.id().toString())
+        .tag("appId", origin.applicationId().toString())
+        .register(meterRegistry));
     }
 
     private static String uriWithInitialSlash(String uri) {
@@ -63,11 +62,11 @@ public class UrlRequestHealthCheck implements OriginHealthCheckFunction {
                         if (response.status().equals(OK)) {
                             responseCallback.originStateResponse(HEALTHY);
                         } else {
-                            meterCache.get(origin).mark();
+                            meterCache.get(origin).increment();
                             responseCallback.originStateResponse(UNHEALTHY);
                         }
                     } else if (cause != null) {
-                        meterCache.get(origin).mark();
+                        meterCache.get(origin).increment();
                         responseCallback.originStateResponse(UNHEALTHY);
                     }
                     return null;
@@ -78,34 +77,5 @@ public class UrlRequestHealthCheck implements OriginHealthCheckFunction {
         return HttpRequest.get(healthCheckUri)
                 .header(HOST, origin.hostAndPortString())
                 .build();
-    }
-
-    private static final class FailureMeter {
-        private final Meter deprecatedMeter;
-        private final Meter correctedMeter;
-
-        FailureMeter(Origin origin, MetricRegistry metricRegistry) {
-            this.deprecatedMeter = DEPRECATED_METER_FORMAT.meter(origin, metricRegistry);
-            this.correctedMeter = CORRECTED_METER_FORMAT.meter(origin, metricRegistry);
-        }
-
-        void mark() {
-            deprecatedMeter.mark();
-            correctedMeter.mark();
-        }
-    }
-
-    private static final class MeterFormat {
-        private final String format;
-
-        MeterFormat(String format) {
-            this.format = format;
-        }
-
-        public Meter meter(Origin origin, MetricRegistry metricRegistry) {
-            String name = format(format, origin.applicationId());
-
-            return metricRegistry.meter(name);
-        }
     }
 }

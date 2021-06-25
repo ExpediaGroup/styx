@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,9 +15,9 @@
  */
 package com.hotels.styx.proxy;
 
-import com.codahale.metrics.Meter;
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.common.SimpleCache;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
@@ -25,22 +25,26 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
+import static java.lang.String.valueOf;
+
 /**
  * Records request and response count with protocol.
  */
 public class ServerProtocolDistributionRecorder extends ChannelDuplexHandler {
-    private final Meter requests;
-    private final SimpleCache<HttpResponseStatus, Meter> responses;
+    private final Counter requests;
+    private final SimpleCache<HttpResponseStatus, Counter> responses;
 
-    public ServerProtocolDistributionRecorder(MetricRegistry metricRegistry, boolean secure) {
-        requests = metricRegistry.meter("styx.server." + protocolName(secure) + ".requests");
-        responses = new SimpleCache<>(status -> metricRegistry.meter("styx.server." + protocolName(secure) + ".responses." + status.code()));
+    public ServerProtocolDistributionRecorder(MeterRegistry meterRegistry, boolean secure) {
+        requests = meterRegistry.counter("styx.server.request", "protocol", protocolName(secure));
+        responses = new SimpleCache<>(status -> meterRegistry.counter("styx.server.response",
+                "protocol", protocolName(secure),
+                "statusCode", valueOf(status.code())));
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof HttpRequest) {
-            requests.mark();
+            requests.increment();
         }
 
         super.channelRead(ctx, msg);
@@ -49,7 +53,7 @@ public class ServerProtocolDistributionRecorder extends ChannelDuplexHandler {
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
         if (msg instanceof HttpResponse) {
-            responses.get(((HttpResponse) msg).status()).mark();
+            responses.get(((HttpResponse) msg).status()).increment();
         }
 
         super.write(ctx, msg, promise);

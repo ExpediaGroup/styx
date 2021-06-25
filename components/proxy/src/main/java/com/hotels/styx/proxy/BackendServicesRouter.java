@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.api.extension.service.HealthCheckConfig;
@@ -44,6 +43,7 @@ import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitorFactory;
 import com.hotels.styx.client.healthcheck.UrlRequestHealthCheck;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.server.HttpRouter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 
 import java.util.Map;
@@ -114,8 +114,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
             boolean longFormat = environment.styxConfig().get("request-logging.outbound.longFormat", Boolean.class)
                     .orElse(false);
 
-            MetricRegistry originsMetrics = environment.metricRegistry().scope("origins");
-            OriginStatsFactory originStatsFactory = new CachingOriginStatsFactory(originsMetrics);
+            OriginStatsFactory originStatsFactory = new CachingOriginStatsFactory(environment.meterRegistry());
             ConnectionPoolSettings poolSettings = backendService.connectionPoolConfig();
 
             Connection.Factory connectionFactory = connectionFactory(
@@ -128,14 +127,14 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
             ConnectionPool.Factory connectionPoolFactory = new SimpleConnectionPoolFactory.Builder()
                     .connectionFactory(connectionFactory)
                     .connectionPoolSettings(backendService.connectionPoolConfig())
-                    .metricRegistry(originsMetrics)
+                    .meterRegistry(environment.meterRegistry())
                     .build();
 
             OriginHealthStatusMonitor healthStatusMonitor = healthStatusMonitor(backendService);
 
             OriginsInventory inventory = new OriginsInventory.Builder(backendService.id())
                     .eventBus(environment.eventBus())
-                    .metricsRegistry(originsMetrics)
+                    .meterRegistry(environment.meterRegistry())
                     .connectionPoolFactory(connectionPoolFactory)
                     .originHealthMonitor(healthStatusMonitor)
                     .initialOrigins(backendService.origins())
@@ -158,7 +157,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                                 backendService.healthCheckConfig(),
                                 () -> originHealthCheckFunction(
                                         backendService.id(),
-                                        environment.metricRegistry(),
+                                        environment.meterRegistry(),
                                         backendService.healthCheckConfig()),
                                 healthCheckClient(backendService));
     }
@@ -210,14 +209,14 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
 
     private static OriginHealthCheckFunction originHealthCheckFunction(
             Id appId,
-            MetricRegistry metricRegistry,
+            MeterRegistry meterRegistry,
             HealthCheckConfig healthCheckConfig) {
 
         String healthCheckUri = healthCheckConfig
                 .uri()
                 .orElseThrow(() -> new IllegalArgumentException("Health check URI missing for " + appId));
 
-        return new UrlRequestHealthCheck(healthCheckUri, metricRegistry);
+        return new UrlRequestHealthCheck(healthCheckUri, meterRegistry);
     }
 
     private static class ProxyToClientPipeline implements HttpHandler {

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import com.hotels.styx.api.HttpInterceptor.Context;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.api.exceptions.OriginUnreachableException;
 import com.hotels.styx.api.extension.Origin;
@@ -31,7 +30,8 @@ import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.StickySessionConfig;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -61,12 +61,12 @@ import static com.hotels.styx.api.RequestCookie.requestCookie;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
 import static com.hotels.styx.api.extension.service.StickySessionConfig.stickySessionDisabled;
+import static com.hotels.styx.client.applications.metrics.OriginMetrics.CANCELLATION_COUNTER_NAME;
 import static com.hotels.styx.support.Support.requestContext;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Matchers.any;
@@ -87,15 +87,14 @@ public class StyxBackendServiceClientTest {
     private static final Origin ORIGIN_4 = newOriginBuilder("localhost", 9094).applicationId("app").id("app-04").build();
 
     private final StickySessionConfig stickySessionConfig = stickySessionDisabled();
-    private MetricRegistry metricRegistry;
+    private MeterRegistry meterRegistry;
     private final BackendService backendService = backendBuilderWithOrigins(SOME_ORIGIN.port())
             .stickySessionConfig(stickySessionConfig)
             .build();
 
     @BeforeEach
     public void setUp() {
-        metricRegistry = new CodaHaleMetricRegistry()
-                .scope("origins");
+        meterRegistry = new SimpleMeterRegistry();
     }
 
     @Test
@@ -103,7 +102,7 @@ public class StyxBackendServiceClientTest {
         StyxHostHttpClient hostClient = mockHostClient(Flux.just(response(OK).build()));
 
         StyxBackendServiceClient styxHttpClient = new StyxBackendServiceClient.Builder(backendService.id())
-                .metricsRegistry(metricRegistry)
+                .meterRegistry(meterRegistry)
                 .loadBalancer(
                         mockLoadBalancer(
                                 Optional.of(remoteHost(SOME_ORIGIN, toHandler(hostClient), hostClient))
@@ -122,7 +121,7 @@ public class StyxBackendServiceClientTest {
         StyxHostHttpClient hostClient = mockHostClient(Flux.just(response(OK).build()));
 
         StyxBackendServiceClient styxHttpClient = new StyxBackendServiceClient.Builder(backendService.id())
-                .metricsRegistry(metricRegistry)
+                .meterRegistry(meterRegistry)
                 .loadBalancer(
                         mockLoadBalancer(
                                 Optional.empty(),
@@ -160,7 +159,7 @@ public class StyxBackendServiceClientTest {
         StyxHostHttpClient secondClient = mockHostClient(Flux.just(response(OK).build()));
 
         StyxBackendServiceClient styxHttpClient = new StyxBackendServiceClient.Builder(backendService.id())
-                .metricsRegistry(metricRegistry)
+                .meterRegistry(meterRegistry)
                 .loadBalancer(
                         mockLoadBalancer(
                                 Optional.of(remoteHost(ORIGIN_1, toHandler(firstClient), firstClient)),
@@ -200,7 +199,7 @@ public class StyxBackendServiceClientTest {
         StyxHostHttpClient thirdClient = mockHostClient(Flux.error(new OriginUnreachableException(ORIGIN_2, new RuntimeException("An error occurred"))));
 
         StyxBackendServiceClient styxHttpClient = new StyxBackendServiceClient.Builder(backendService.id())
-                .metricsRegistry(metricRegistry)
+                .meterRegistry(meterRegistry)
                 .loadBalancer(
                         mockLoadBalancer(
                                 Optional.of(remoteHost(ORIGIN_1, toHandler(firstClient), firstClient)),
@@ -227,7 +226,7 @@ public class StyxBackendServiceClientTest {
         StyxHostHttpClient fourthClient = mockHostClient(Flux.error(new OriginUnreachableException(ORIGIN_4, new RuntimeException("An error occurred"))));
 
         StyxBackendServiceClient styxHttpClient = new StyxBackendServiceClient.Builder(backendService.id())
-                .metricsRegistry(metricRegistry)
+                .meterRegistry(meterRegistry)
                 .loadBalancer(
                         mockLoadBalancer(
                                 Optional.of(remoteHost(ORIGIN_1, toHandler(firstClient), firstClient)),
@@ -255,7 +254,7 @@ public class StyxBackendServiceClientTest {
         StyxHostHttpClient hostClient = mockHostClient(Flux.just(response(BAD_REQUEST).build()));
 
         StyxBackendServiceClient styxHttpClient = new StyxBackendServiceClient.Builder(backendService.id())
-                .metricsRegistry(metricRegistry)
+                .meterRegistry(meterRegistry)
                 .loadBalancer(
                         mockLoadBalancer(Optional.of(remoteHost(SOME_ORIGIN, toHandler(hostClient), hostClient))))
                 .build();
@@ -264,7 +263,7 @@ public class StyxBackendServiceClientTest {
 
         assertThat(response.status(), is(BAD_REQUEST));
         verify(hostClient).sendRequest(eq(SOME_REQ), any(Context.class));
-        assertThat(metricRegistry.counter("origins.response.status.400").getCount(), is(1L));
+        assertThat(meterRegistry.get("origins.response.status.count").tag("statusCode", "400").counter(), is(notNullValue()));
     }
 
     @Test
@@ -272,7 +271,7 @@ public class StyxBackendServiceClientTest {
         StyxHostHttpClient hostClient = mockHostClient(Flux.just(response(UNAUTHORIZED).build()));
 
         StyxBackendServiceClient styxHttpClient = new StyxBackendServiceClient.Builder(backendService.id())
-                .metricsRegistry(metricRegistry)
+                .meterRegistry(meterRegistry)
                 .loadBalancer(
                         mockLoadBalancer(Optional.of(remoteHost(SOME_ORIGIN, toHandler(hostClient), hostClient)))
                 )
@@ -282,7 +281,7 @@ public class StyxBackendServiceClientTest {
 
         assertThat(response.status(), is(UNAUTHORIZED));
         verify(hostClient).sendRequest(eq(SOME_REQ), any(Context.class));
-        assertThat(metricRegistry.counter("origins.response.status.401").getCount(), is(1L));
+        assertThat(meterRegistry.get("origins.response.status.count").tag("statusCode", "401").counter(), is(notNullValue()));
     }
 
     @Test
@@ -290,7 +289,7 @@ public class StyxBackendServiceClientTest {
         StyxHostHttpClient hostClient = mockHostClient(Flux.just(response(INTERNAL_SERVER_ERROR).build()));
 
         StyxBackendServiceClient styxHttpClient = new StyxBackendServiceClient.Builder(backendService.id())
-                .metricsRegistry(metricRegistry)
+                .meterRegistry(meterRegistry)
                 .loadBalancer(
                         mockLoadBalancer(Optional.of(remoteHost(SOME_ORIGIN, toHandler(hostClient), hostClient)))
                 )
@@ -300,7 +299,7 @@ public class StyxBackendServiceClientTest {
 
         assertThat(response.status(), is(INTERNAL_SERVER_ERROR));
         verify(hostClient).sendRequest(eq(SOME_REQ), any(Context.class));
-        assertThat(metricRegistry.counter("origins.response.status.500").getCount(), is(1L));
+        assertThat(meterRegistry.get("origins.response.status.count").tag("statusCode", "500").counter(), is(notNullValue()));
     }
 
     @Test
@@ -308,7 +307,7 @@ public class StyxBackendServiceClientTest {
         StyxHostHttpClient hostClient = mockHostClient(Flux.just(response(NOT_IMPLEMENTED).build()));
 
         StyxBackendServiceClient styxHttpClient = new StyxBackendServiceClient.Builder(backendService.id())
-                .metricsRegistry(metricRegistry)
+                .meterRegistry(meterRegistry)
                 .loadBalancer(
                         mockLoadBalancer(Optional.of(remoteHost(SOME_ORIGIN, toHandler(hostClient), hostClient)))
                 )
@@ -317,7 +316,7 @@ public class StyxBackendServiceClientTest {
         LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ, requestContext())).block();
         assertThat(response.status(), is(NOT_IMPLEMENTED));
         verify(hostClient).sendRequest(eq(SOME_REQ), any(Context.class));
-        assertThat(metricRegistry.counter("origins.response.status.501").getCount(), is(1L));
+        assertThat(meterRegistry.get("origins.response.status.count").tag("statusCode","501").counter(), is(notNullValue()));
     }
 
     @Test
@@ -329,7 +328,7 @@ public class StyxBackendServiceClientTest {
                         .build()));
 
         StyxBackendServiceClient styxHttpClient = new StyxBackendServiceClient.Builder(backendService.id())
-                .metricsRegistry(metricRegistry)
+                .meterRegistry(meterRegistry)
                 .loadBalancer(
                         mockLoadBalancer(Optional.of(remoteHost(SOME_ORIGIN, toHandler(hostClient), hostClient)))
                 )
@@ -354,21 +353,14 @@ public class StyxBackendServiceClientTest {
                 .loadBalancer(
                         mockLoadBalancer(Optional.of(remoteHost(origin, toHandler(hostClient), hostClient)))
                 )
-                .metricsRegistry(metricRegistry)
+                .meterRegistry(meterRegistry)
                 .build();
 
         StepVerifier.create(styxHttpClient.sendRequest(SOME_REQ, requestContext()))
                 .thenCancel()
                 .verify();
 
-        assertThat(metricRegistry.getNames(), hasItems(
-                "origins.App-X.requests.cancelled",
-                "origins.App-X.Origin-Y.requests.cancelled"));
-
-        // metricRegistry is already scoped at "origins". Therefore the following metric
-        // names don't need to be prefixed with it:
-        assertThat(metricRegistry.counter("App-X.requests.cancelled").getCount(), is(1L));
-        assertThat(metricRegistry.counter("App-X.Origin-Y.requests.cancelled").getCount(), is(1L));
+        assertThat(meterRegistry.get(CANCELLATION_COUNTER_NAME).counter().count(), is(1.0));
     }
 
     @Test
@@ -380,7 +372,7 @@ public class StyxBackendServiceClientTest {
 
         StyxBackendServiceClient styxHttpClient = new StyxBackendServiceClient.Builder(backendService.id())
                 .loadBalancer(loadBalancer)
-                .metricsRegistry(metricRegistry)
+                .meterRegistry(meterRegistry)
                 .build();
 
         LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(
@@ -406,7 +398,7 @@ public class StyxBackendServiceClientTest {
 
         StyxBackendServiceClient styxHttpClient = new StyxBackendServiceClient.Builder(backendService.id())
                 .loadBalancer(loadBalancer)
-                .metricsRegistry(metricRegistry)
+                .meterRegistry(meterRegistry)
                 .originsRestrictionCookieName("restrictedOrigin")
                 .build();
 
@@ -432,7 +424,7 @@ public class StyxBackendServiceClientTest {
         StyxBackendServiceClient styxHttpClient = new StyxBackendServiceClient.Builder(backendService.id())
                 .originsRestrictionCookieName("restrictedOrigin")
                 .loadBalancer(loadBalancer)
-                .metricsRegistry(metricRegistry)
+                .meterRegistry(meterRegistry)
                 .build();
 
         LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(

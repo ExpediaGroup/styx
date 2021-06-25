@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,10 +23,12 @@ import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,6 +39,8 @@ import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
+import static com.hotels.styx.api.Metrics.APPID_TAG;
+import static com.hotels.styx.api.Metrics.ORIGINID_TAG;
 import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
@@ -76,7 +80,7 @@ public class BackendServicesRouterTest {
 
     @BeforeEach
     public void before() {
-        environment = new Environment.Builder().build();
+        environment = new Environment.Builder().registry(new SimpleMeterRegistry()).build();
     }
 
     @Test
@@ -277,25 +281,29 @@ public class BackendServicesRouterTest {
     // This test exists due to a real bug we had when reloading in prod
     @Test
     public void deregistersAndReregistersMetricsAppropriately() {
-        CodaHaleMetricRegistry metrics = new CodaHaleMetricRegistry();
+        MeterRegistry metrics = new SimpleMeterRegistry();
 
         Environment environment = new Environment.Builder()
-                .metricRegistry(metrics)
+                .registry(metrics)
                 .build();
+        MeterRegistry meterRegistry = environment.meterRegistry();
         BackendServicesRouter router = new BackendServicesRouter(
                 new StyxBackendServiceClientFactory(environment), environment, executor);
 
         router.onChange(added(backendService(APP_B, "/appB/", 9094, "appB-01", 9095, "appB-02")));
 
-        assertThat(metrics.getGauges().get("origins.appB.appB-01.status").getValue(), is(1));
-        assertThat(metrics.getGauges().get("origins.appB.appB-02.status").getValue(), is(1));
+        Tags tags01 = Tags.of(APPID_TAG, APP_B, ORIGINID_TAG, "appB-01");
+        Tags tags02 = Tags.of(APPID_TAG, APP_B, ORIGINID_TAG, "appB-02");
+
+        assertThat(meterRegistry.find("origin.status").tags(tags01).gauge().value(), is(1.0));
+        assertThat(meterRegistry.find("origin.status").tags(tags02).gauge().value(), is(1.0));
 
         BackendService appMinusOneOrigin = backendService(APP_B, "/appB/", 9094, "appB-01");
 
         router.onChange(updated(appMinusOneOrigin));
 
-        assertThat(metrics.getGauges().get("origins.appB.appB-01.status").getValue(), is(1));
-        assertThat(metrics.getGauges().get("origins.appB.appB-02.status"), is(nullValue()));
+        assertThat(meterRegistry.find("origin.status").tags(tags01).gauge().value(), is(1.0));
+        assertThat(meterRegistry.find("origin.status").tags(tags02).gauge(), is(nullValue()));
     }
 
     private static Registry.Changes<BackendService> added(BackendService... backendServices) {

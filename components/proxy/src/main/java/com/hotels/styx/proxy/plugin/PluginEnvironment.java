@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,20 +19,20 @@ import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
+import com.hotels.styx.api.plugins.spi.PluginMeterRegistry;
 import com.hotels.styx.spi.config.SpiExtension;
 
-import static com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry.name;
 import static java.util.Objects.requireNonNull;
 
 class PluginEnvironment implements PluginFactory.Environment {
     private final Environment environment;
     private final SpiExtension spiExtension;
-    private final MetricRegistry pluginMetricsScope;
+    private final PluginMeterRegistry pluginMeterRegistry;
 
-    PluginEnvironment(String name, Environment environment, SpiExtension spiExtension, String scope) {
+    PluginEnvironment(String name, Environment environment, SpiExtension spiExtension) {
         this.spiExtension = requireNonNull(spiExtension);
         this.environment = requireNonNull(environment);
-        this.pluginMetricsScope = environment.metricRegistry().scope(name(scope, name));
+        this.pluginMeterRegistry = new PluginMeterRegistry(requireNonNull(environment.meterRegistry()), name);
     }
 
     @Override
@@ -41,12 +41,18 @@ class PluginEnvironment implements PluginFactory.Environment {
     }
 
     @Override
-    public MetricRegistry metricRegistry() {
-        return pluginMetricsScope;
+    public <T> T pluginConfig(Class<T> clazz) {
+        return spiExtension.config(clazz);
     }
 
     @Override
-    public <T> T pluginConfig(Class<T> clazz) {
-        return spiExtension.config(clazz);
+    public PluginMeterRegistry pluginMeterRegistry() {
+        return pluginMeterRegistry;
+    }
+
+    @Override
+    @Deprecated
+    public MetricRegistry metricRegistry() {
+        return environment.metricRegistry();
     }
 }

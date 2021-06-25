@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,32 +15,46 @@
  */
 package com.hotels.styx.metrics.reporting.jmx;
 
-import com.codahale.metrics.jmx.JmxReporter;
-import com.codahale.metrics.MetricRegistry;
 import com.hotels.styx.api.extension.service.spi.StyxService;
+import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.core.instrument.util.HierarchicalNameMapper;
+import io.micrometer.jmx.JmxMeterRegistry;
 
 import java.util.concurrent.CompletableFuture;
+
+import static java.lang.String.join;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Builds JMX reporter from configuration and wraps it in service interface.
  */
 public class JmxReporterService implements StyxService {
 
-    private final JmxReporter reporter;
+    private final HierarchicalNameMapper nameMapper;
+    private final MeterRegistry meterRegistry;
+    private JmxMeterRegistry jmxMeterRegistry;
 
-    public JmxReporterService(String domain, MetricRegistry metricRegistry) {
-        this.reporter = JmxReporter.forRegistry(metricRegistry)
-                .inDomain(domain)
-                .build();
+    public JmxReporterService(String domain, MeterRegistry registry) {
+        this.nameMapper = (id, convention) ->
+                join(".", requireNonNull(domain), HierarchicalNameMapper.DEFAULT.toHierarchicalName(id, convention));
+        this.meterRegistry = requireNonNull(registry);
     }
 
     @Override
     public CompletableFuture<Void> start() {
-        return CompletableFuture.runAsync(reporter::start);
+        return CompletableFuture.runAsync(() -> {
+            jmxMeterRegistry = new JmxMeterRegistry(key -> null, Clock.SYSTEM, nameMapper);
+            ((CompositeMeterRegistry) meterRegistry).add(jmxMeterRegistry);
+        });
     }
 
     @Override
     public CompletableFuture<Void> stop() {
-        return CompletableFuture.runAsync(reporter::stop);
+        return CompletableFuture.runAsync(() -> {
+            jmxMeterRegistry.stop();
+            ((CompositeMeterRegistry) meterRegistry).remove(jmxMeterRegistry);
+        });
     }
 }

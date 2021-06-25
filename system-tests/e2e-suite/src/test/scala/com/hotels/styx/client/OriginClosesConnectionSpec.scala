@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -33,6 +33,8 @@ import com.hotels.styx.support.Support.requestContext
 import com.hotels.styx.support.configuration.{BackendService, HttpBackend, Origins}
 import com.hotels.styx.support.matchers.LoggingTestSupport
 import com.hotels.styx.{DefaultStyxConfiguration, StyxClientSupplier, StyxProxySpec}
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.netty.buffer.Unpooled._
 import io.netty.channel.ChannelFutureListener.CLOSE
 import io.netty.channel.ChannelHandlerContext
@@ -88,7 +90,7 @@ class OriginClosesConnectionSpec extends FunSuite
     }
 
     eventually {
-      styxServer.metricsSnapshot.meter("requests.received").get.count should be(10)
+      styxServer.meterRegistry().counter("proxy.request.received").count should be(10)
     }
 
     val errorCount = loggingSupport.log().stream().toScala[Seq]
@@ -97,7 +99,7 @@ class OriginClosesConnectionSpec extends FunSuite
     errorCount should be(0)
   }
 
-  def activeOrigins(backendService: extension.service.BackendService): ActiveOrigins = newOriginsInventoryBuilder(backendService).build()
+  def activeOrigins(backendService: extension.service.BackendService): ActiveOrigins = newOriginsInventoryBuilder(new CompositeMeterRegistry(), backendService).build()
 
   def busyConnectionStrategy(activeOrigins: ActiveOrigins): LoadBalancer = new BusyConnectionsStrategy(activeOrigins)
 
@@ -112,6 +114,7 @@ class OriginClosesConnectionSpec extends FunSuite
       responseTimeout = TWO_SECONDS.milliseconds).asJava
 
     val styxClient = newHttpClientBuilder(backendService.id)
+        .meterRegistry(new SimpleMeterRegistry())
         .loadBalancer(busyConnectionStrategy(activeOrigins(backendService)))
       .build
 

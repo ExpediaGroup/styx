@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.client.StyxHeaderConfig;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -59,11 +60,12 @@ public class ResponseInfoFormatTest {
     }
 
     private static Environment defaultEnvironment() {
-        return new Environment.Builder().build();
+        return new Environment.Builder().registry(new SimpleMeterRegistry()).build();
     }
 
     private static Environment environment(Configuration configuration) {
         return new Environment.Builder()
+                .registry(new SimpleMeterRegistry())
                 .configuration(new StyxConfig(configuration))
                 .build();
     }

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpsConnectorConfig;
 import com.hotels.styx.startup.StyxServerComponents;
 import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,6 +63,7 @@ public final class StyxServer {
         MemoryBackedRegistry<com.hotels.styx.api.extension.service.BackendService> backendServicesRegistry = new MemoryBackedRegistry<>();
 
         StyxServerComponents config = new StyxServerComponents.Builder()
+                .registry(new CompositeMeterRegistry())
                 .styxConfig(styxConfig(builder))
                 .pluginFactories(builder.pluginFactories)
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(backendServicesRegistry)))
