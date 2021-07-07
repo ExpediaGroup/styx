@@ -16,7 +16,7 @@
 package com.hotels.styx.client.netty.connectionpool;
 
 import com.hotels.styx.client.applications.OriginStats;
-import io.micrometer.core.instrument.Timer;
+import com.hotels.styx.metrics.TimerMetric;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
@@ -38,10 +38,9 @@ class RequestsToOriginMetricsCollector extends ChannelDuplexHandler {
     private static final Logger LOG = LoggerFactory.getLogger(RequestsToOriginMetricsCollector.class);
 
     private final OriginStats originStats;
-    private volatile Timer.Sample requestLatencyTiming;
-    private volatile Timer.Sample timeToFirstByteTiming;
+    private volatile TimerMetric.Stopper requestLatencyTiming;
+    private volatile TimerMetric.Stopper timeToFirstByteTiming;
     private volatile boolean firstContentChunkReceived;
-
 
     /**
      * Constructs a new instance.
@@ -81,8 +80,8 @@ class RequestsToOriginMetricsCollector extends ChannelDuplexHandler {
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
         if (msg instanceof io.netty.handler.codec.http.HttpRequest) {
-            requestLatencyTiming = originStats.startTimer();
-            timeToFirstByteTiming = originStats.startTimer();
+            requestLatencyTiming = originStats.requestLatencyTimer().startTiming();
+            timeToFirstByteTiming = originStats.timeToFirstByteTimer().startTiming();
             firstContentChunkReceived = false;
         }
         super.write(ctx, msg, promise);
@@ -113,7 +112,7 @@ class RequestsToOriginMetricsCollector extends ChannelDuplexHandler {
         // but this check is also here just in case there is some weird bug, we should not interfere with the proxying
         // just because it doesn't record metrics
         if (requestLatencyTiming != null) {
-            requestLatencyTiming.stop(originStats.requestLatencyTimer());
+            requestLatencyTiming.stop();
         } else {
             LOG.warn("Attempted to stop timer and record latency when no timing had begun");
         }
@@ -121,7 +120,7 @@ class RequestsToOriginMetricsCollector extends ChannelDuplexHandler {
 
     private void stopAndRecordTimeToFirstByte() {
         if (timeToFirstByteTiming != null) {
-            timeToFirstByteTiming.stop(originStats.timeToFirstByteTimer());
+            timeToFirstByteTiming.stop();
         } else {
             LOG.warn("Attempted to stop timer and record time-to-first-byte when no timing had begun");
         }

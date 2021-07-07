@@ -18,7 +18,7 @@ package com.hotels.styx.client.connectionpool;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.client.Connection;
-import io.micrometer.core.instrument.MeterRegistry;
+import com.hotels.styx.metrics.CentralisedMetrics;
 
 import static java.util.Objects.requireNonNull;
 
@@ -31,19 +31,17 @@ import static java.util.Objects.requireNonNull;
 public final class SimpleConnectionPoolFactory implements ConnectionPool.Factory {
     private final Connection.Factory connectionFactory;
     private final ConnectionPoolSettings poolSettings;
-    private final MeterRegistry meterRegistry;
+    private final CentralisedMetrics metrics;
 
     private SimpleConnectionPoolFactory(Builder builder) {
         this.connectionFactory = requireNonNull(builder.connectionFactory);
         this.poolSettings = new ConnectionPoolSettings.Builder(requireNonNull(builder.poolSettings)).build();
-        this.meterRegistry = requireNonNull(builder.meterRegistry);
+        this.metrics = requireNonNull(builder.metrics);
     }
 
     @Override
     public ConnectionPool create(Origin origin) {
-        return new StatsReportingConnectionPool(
-                new SimpleConnectionPool(origin, poolSettings, connectionFactory),
-                meterRegistry);
+        return new StatsReportingConnectionPool(new SimpleConnectionPool(origin, poolSettings, connectionFactory), metrics);
     }
 
     /**
@@ -52,7 +50,7 @@ public final class SimpleConnectionPoolFactory implements ConnectionPool.Factory
     public static final class Builder {
         private Connection.Factory connectionFactory;
         private ConnectionPoolSettings poolSettings;
-        private MeterRegistry meterRegistry;
+        private CentralisedMetrics metrics;
 
         public Builder connectionFactory(Connection.Factory connectionFactory) {
             this.connectionFactory = connectionFactory;
@@ -64,8 +62,8 @@ public final class SimpleConnectionPoolFactory implements ConnectionPool.Factory
             return this;
         }
 
-        public Builder meterRegistry(MeterRegistry metricRegistry) {
-            this.meterRegistry = metricRegistry;
+        public Builder metrics(CentralisedMetrics metrics) {
+            this.metrics = requireNonNull(metrics);
             return this;
         }
 

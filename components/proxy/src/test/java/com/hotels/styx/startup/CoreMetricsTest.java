@@ -16,7 +16,7 @@
 package com.hotels.styx.startup;
 
 import com.hotels.styx.Version;
-import io.micrometer.core.instrument.Counter;
+import com.hotels.styx.metrics.CentralisedMetrics;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
@@ -26,46 +26,44 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
-import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.Matchers.hasSize;
 
 public class CoreMetricsTest {
     private final Version version = new Version("STYX.1.2.3");
 
     @Test
-    public void registersVersionMetric() {
-        MeterRegistry registry = new SimpleMeterRegistry();
-        CoreMetrics.registerCoreMetrics(version, registry);
-
-        Counter counter = registry.find("styx.version").counter();
-
-        assertThat(counter.count(), is(1.0));
-        assertTrue(counter.getId().getTag("buildnumber").equals("3"));
-    }
-
-    @Test
     public void registersJvmMetrics() {
         MeterRegistry registry = new SimpleMeterRegistry();
-        CoreMetrics.registerCoreMetrics(version, registry);
+        CoreMetricsKt.registerCoreMetrics(new CentralisedMetrics(registry));
 
-        List<String> gauges = registry.getMeters()
-                .stream()
-                .map(meter -> meter.getId().getName())
-                .collect(Collectors.toList());
+        assertThat(registry.find("jvm.uptime").gauges(),
+                hasSize(1));
 
-        assertThat(gauges, hasItems(
-                "jvm.uptime",
-                "jvm.netty.pooledAllocator.usedDirectMemory",
-                "jvm.netty.pooledAllocator.usedHeapMemory",
-                "jvm.netty.unpooledAllocator.usedDirectMemory",
-                "jvm.netty.unpooledAllocator.usedHeapMemory"
-        ));
+        assertThat(registry.find("proxy.netty.buffers.memory")
+                        .tags("allocator", "pooled", "memoryType", "direct")
+                        .gauges(),
+                hasSize(1));
+
+        assertThat(registry.find("proxy.netty.buffers.memory")
+                        .tags("allocator", "pooled", "memoryType", "heap")
+                        .gauges(),
+                hasSize(1));
+
+        assertThat(registry.find("proxy.netty.buffers.memory")
+                        .tags("allocator", "unpooled", "memoryType", "direct")
+                        .gauges(),
+                hasSize(1));
+
+        assertThat(registry.find("proxy.netty.buffers.memory")
+                        .tags("allocator", "unpooled", "memoryType", "heap")
+                        .gauges(),
+                hasSize(1));
     }
 
     @Test
     public void registersOperatingSystemMetrics() {
         MeterRegistry registry = new SimpleMeterRegistry();
-        CoreMetrics.registerCoreMetrics(version, registry);
+        CoreMetricsKt.registerCoreMetrics(new CentralisedMetrics(registry));
 
         List<String> gauges = registry.getMeters()
                 .stream()

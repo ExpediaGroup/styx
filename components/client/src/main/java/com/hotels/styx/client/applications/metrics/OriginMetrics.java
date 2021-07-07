@@ -16,14 +16,13 @@
 package com.hotels.styx.client.applications.metrics;
 
 import com.hotels.styx.api.MetricRegistry;
-import com.hotels.styx.api.metrics.MeterFactory;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.applications.OriginStats;
+import com.hotels.styx.common.SimpleCache;
+import com.hotels.styx.metrics.CentralisedMetrics;
+import com.hotels.styx.metrics.TimerMetric;
 import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tags;
-import io.micrometer.core.instrument.Timer;
 
-import static java.lang.String.valueOf;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -37,51 +36,30 @@ import static java.util.Objects.requireNonNull;
  * connections scheduled on different event loops.
  */
 public class OriginMetrics implements OriginStats {
-    public static final String ORIGIN_TAG = "originId";
-    public static final String APP_TAG = "appId";
-    public static final String STATUS_TAG = "statusCode";
-    public static final String STATUS_CLASS_TAG = "statusClass";
-
-    public static final String SUCCESS_COUNTER_NAME = "request.success";
-    public static final String FAILURE_COUNTER_NAME = "request.error";
-    public static final String STATUS_COUNTER_NAME = "response.status";
-    public static final String CANCELLATION_COUNTER_NAME = "request.cancellation";
-    public static final String LATENCY_TIMER_NAME = "request.latency";
-    public static final String TTFB_TIMER_NAME = "request.timeToFirstByte";
-
-    private final MeterRegistry registry;
-
-    private final Tags tags;
-
     private final Counter requestSuccessMeter;
     private final Counter requestErrorMeter;
     private final Counter requestCancellations;
-    private final Timer requestLatency;
-    private final Timer timeToFirstByte;
+    private final TimerMetric requestLatency;
+    private final TimerMetric timeToFirstByte;
+    private final SimpleCache<Integer, Counter> responseStatus;
 
     /**
      * Constructor.
      *
-     * @param registry       a meter registry
-     * @param originId       an origin
-     * @param appId          application ID
+     * @param metrics a meter registry
+     * @param origin  an origin
      */
-    public OriginMetrics(MeterRegistry registry, String originId, String appId) {
-        requireNonNull(originId);
+    public OriginMetrics(CentralisedMetrics metrics, Origin origin) {
+        requireNonNull(origin);
 
-        this.registry = registry;
+        CentralisedMetrics.Proxy.Client clientMetrics = metrics.proxy().client();
 
-        tags = Tags.of(ORIGIN_TAG, originId).and(APP_TAG, appId);
-
-        requestSuccessMeter = registry.counter(SUCCESS_COUNTER_NAME, tags);
-        requestErrorMeter = registry.counter(FAILURE_COUNTER_NAME, tags);
-        requestCancellations = registry.counter(CANCELLATION_COUNTER_NAME, tags);
-        requestLatency = MeterFactory.timer(registry, LATENCY_TIMER_NAME, tags);
-        timeToFirstByte = MeterFactory.timer(registry, TTFB_TIMER_NAME, tags);
-    }
-
-    public Timer.Sample startTimer() {
-        return Timer.start(registry);
+        requestSuccessMeter = clientMetrics.originResponseNot5xx(origin);
+        requestErrorMeter = clientMetrics.originResponse5xx(origin);
+        requestCancellations = clientMetrics.requestsCancelled(origin);
+        requestLatency = clientMetrics.originRequestLatency(origin);
+        timeToFirstByte = clientMetrics.timeToFirstByte(origin);
+        responseStatus = clientMetrics.responsesByStatus(origin);
     }
 
     @Override
@@ -96,28 +74,21 @@ public class OriginMetrics implements OriginStats {
 
     @Override
     public void responseWithStatusCode(int statusCode) {
-        Tags tags = this.tags.and(STATUS_TAG, valueOf(statusCode));
-
-        if (statusCode >= 100 && statusCode < 600) {
-            String statusClass = (statusCode / 100) + "xx";
-            tags = tags.and(STATUS_CLASS_TAG, statusClass);
-        }
-
-        registry.counter(STATUS_COUNTER_NAME, tags).increment();
+        responseStatus.get(statusCode).increment();
     }
 
     @Override
     public void requestCancelled() {
-        this.requestCancellations.increment();
+        requestCancellations.increment();
     }
 
     @Override
-    public Timer requestLatencyTimer() {
+    public TimerMetric requestLatencyTimer() {
         return requestLatency;
     }
 
     @Override
-    public Timer timeToFirstByteTimer() {
+    public TimerMetric timeToFirstByteTimer() {
         return timeToFirstByte;
     }
 }

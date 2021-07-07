@@ -83,8 +83,8 @@ class AggregatingPluginContentOverflowSpec extends FunSpec
 
       eventually(timeout(3 seconds)) {
         val tags = Tags.of("appId", "app1", "originId", "origin-1")
-        meterRegistry.find("connectionpool.busyConnections").tags(tags).gauge().value() should be(0.0)
-        meterRegistry.find("connectionpool.connectionsClosed").tags(tags).gauge().value() should be(1.0)
+        meterRegistry.find("proxy.client.connectionpool.busyConnections").tags(tags).gauge().value() should be(0.0)
+        meterRegistry.find("proxy.client.connectionpool.connectionsClosed").tags(tags).gauge().value() should be(1.0)
       }
     }
   }

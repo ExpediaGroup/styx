@@ -19,8 +19,8 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.common.SimpleCache;
+import com.hotels.styx.metrics.CentralisedMetrics;
 import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
 
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
@@ -38,14 +38,10 @@ public class UrlRequestHealthCheck implements OriginHealthCheckFunction {
      * Construct an instance.
      *
      * @param healthCheckUri URI to make health-check requests to
-     * @param meterRegistry meter registry
      */
-    public UrlRequestHealthCheck(String healthCheckUri, MeterRegistry meterRegistry) {
+    public UrlRequestHealthCheck(String healthCheckUri, CentralisedMetrics metrics) {
         this.healthCheckUri = uriWithInitialSlash(healthCheckUri);
-        this.meterCache = new SimpleCache<>(origin -> Counter.builder("origin.healthcheck.failures")
-        .tag("originId", origin.id().toString())
-        .tag("appId", origin.applicationId().toString())
-        .register(meterRegistry));
+        this.meterCache = metrics.proxy().client().originHealthCheckFailures();
     }
 
     private static String uriWithInitialSlash(String uri) {
@@ -56,7 +52,7 @@ public class UrlRequestHealthCheck implements OriginHealthCheckFunction {
     public void check(HttpClient client, Origin origin, OriginHealthCheckFunction.Callback responseCallback) {
         HttpRequest request = newHealthCheckRequestFor(origin);
 
-        client.sendRequest(request)
+        client.send(request)
                 .handle((response, cause) -> {
                     if (response != null) {
                         if (response.status().equals(OK)) {

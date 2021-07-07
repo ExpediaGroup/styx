@@ -26,6 +26,7 @@ import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 import com.hotels.styx.client.origincommands.DisableOrigin;
 import com.hotels.styx.client.origincommands.EnableOrigin;
+import com.hotels.styx.metrics.CentralisedMetrics;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -79,7 +80,7 @@ public class OriginsInventoryTest {
         logger = new LoggingTestSupport(OriginsInventory.class);
         monitor = mock(OriginHealthStatusMonitor.class);
         eventBus = mock(EventBus.class);
-        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, hostClientFactory, meterRegistry);
+        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, hostClientFactory, new CentralisedMetrics(meterRegistry));
     }
 
     @AfterEach
@@ -126,7 +127,7 @@ public class OriginsInventoryTest {
     }
 
     @Test
-    public void updatesOriginHostName() throws Exception {
+    public void updatesOriginHostName() {
         Origin originV1 = newOriginBuilder("acme01.com", 80).applicationId(GENERIC_APP).id("acme-01").build();
         Origin originV2 = newOriginBuilder("acme02.com", 80).applicationId(GENERIC_APP).id("acme-01").build();
 
@@ -172,7 +173,7 @@ public class OriginsInventoryTest {
         when(connectionFactory.create(eq(originV1))).thenReturn(pool1);
         when(connectionFactory.create(eq(originV2))).thenReturn(pool2);
 
-        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, hostClientFactory, meterRegistry);
+        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, hostClientFactory, new CentralisedMetrics(meterRegistry));
 
         inventory.setOrigins(originV1);
         verify(connectionFactory).create(eq(originV1));
@@ -204,7 +205,7 @@ public class OriginsInventoryTest {
     }
 
     @Test
-    public void removesOrigin() throws Exception {
+    public void removesOrigin() {
         inventory.setOrigins(ORIGIN_1, ORIGIN_2);
 
         assertThat(inventory.originCount(ACTIVE), is(2));
@@ -253,7 +254,7 @@ public class OriginsInventoryTest {
         when(connectionFactory.create(eq(originV1))).thenReturn(pool1);
         when(connectionFactory.create(eq(originV2))).thenReturn(pool2);
 
-        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, hostClientFactory, meterRegistry);
+        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, hostClientFactory, new CentralisedMetrics(meterRegistry));
 
         inventory.setOrigins(originV1, originV2);
 
@@ -460,7 +461,7 @@ public class OriginsInventoryTest {
         when(connectionFactory.create(eq(ORIGIN_1))).thenReturn(pool1);
         when(connectionFactory.create(eq(ORIGIN_2))).thenReturn(pool2);
 
-        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, hostClientFactory, meterRegistry);
+        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, hostClientFactory, new CentralisedMetrics(meterRegistry));
         inventory.setOrigins(ORIGIN_1, ORIGIN_2);
         inventory.close();
 
@@ -477,7 +478,7 @@ public class OriginsInventoryTest {
     }
 
     private Optional<Double> gaugeValue(String appId, String originId) {
-        String name = "origin.status";
+        String name = "proxy.client.originHealthStatus";
         Tags tags = Tags.of(APPID_TAG, appId, ORIGINID_TAG, originId);
         return gauge(name, tags).map(Gauge::value);
     }
@@ -491,7 +492,7 @@ public class OriginsInventoryTest {
         return new SimpleConnectionPoolFactory.Builder()
                 .connectionFactory(new StubConnectionFactory())
                 .connectionPoolSettings(defaultConnectionPoolSettings())
-                .meterRegistry(new SimpleMeterRegistry())
+                .metrics(new CentralisedMetrics(new SimpleMeterRegistry()))
                 .build();
     }
 

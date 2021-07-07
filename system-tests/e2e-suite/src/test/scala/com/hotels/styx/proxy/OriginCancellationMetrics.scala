@@ -18,13 +18,11 @@ package com.hotels.styx.proxy
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.OK
-import com.hotels.styx.client.applications.metrics.OriginMetrics.{APP_TAG, CANCELLATION_COUNTER_NAME}
 import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins}
 import com.hotels.styx.support.{NettyOrigins, TestClientSupport}
 import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
-import org.slf4j.LoggerFactory
 
 class OriginCancellationMetrics extends FunSpec
   with StyxProxySpec
@@ -32,8 +30,6 @@ class OriginCancellationMetrics extends FunSpec
   with NettyOrigins
   with TestClientSupport
   with Eventually {
-
-  private val LOGGER = LoggerFactory.getLogger(classOf[OriginCancellationMetrics])
 
   val (originOne, originOneServer) = originAndCustomResponseWebServer("NettyOrigin")
 
@@ -66,7 +62,10 @@ class OriginCancellationMetrics extends FunSpec
       val response = decodedRequest(request)
       response.status() should be(OK)
 
-      styxServer.meterRegistry().get(CANCELLATION_COUNTER_NAME).tag(APP_TAG, "app-1").counter().count() should be(0.0)
+      styxServer.meterRegistry().get("proxy.client.requests.cancelled")
+        .tag("appId", "app-1")
+        .tag("originId", "NettyOrigin")
+        .counter().count() should be(0.0)
     }
 
 

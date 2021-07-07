@@ -113,6 +113,45 @@
 
     <plugins>
       <plugin>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-maven-plugin</artifactId>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>${build-helper-maven-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>add-source</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>src/main/kotlin</source>
+                <source>src/main/java</source>
+              </sources>
+            </configuration>
+          </execution>
+          <execution>
+            <id>add-test-source</id>
+            <phase>generate-test-sources</phase>
+            <goals>
+              <goal>add-test-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>src/test/kotlin</source>
+                <source>src/test/java</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
         <groupId>org.antlr</groupId>
         <artifactId>antlr4-maven-plugin</artifactId>
       </plugin>

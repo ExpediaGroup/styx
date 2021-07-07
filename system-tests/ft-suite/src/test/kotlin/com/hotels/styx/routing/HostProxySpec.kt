@@ -27,7 +27,6 @@ import com.hotels.styx.api.HttpResponseStatus.CREATED
 import com.hotels.styx.api.HttpResponseStatus.GATEWAY_TIMEOUT
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.client.StyxHttpClient
-import com.hotels.styx.client.applications.metrics.OriginMetrics
 import com.hotels.styx.server.HttpConnectorConfig
 import com.hotels.styx.servers.MockOriginServer
 import com.hotels.styx.support.StyxServerProvider
@@ -200,16 +199,8 @@ class HostProxySpec : FeatureSpec() {
                             clientResponse.bodyAs(UTF_8) shouldBe "Hello - HTTP"
                         }
 
-                withClue("Origin connections.total-connections") {
-                    testServer.meterRegistry().get("proxy.connection.totalConnections")
-                            .gauge().value().toInt() shouldBeInRange 1..2
-                }
-
-                withClue("Styx Server routing.objects.hostProxy.connectionspool.connectionAttempts") {
-                    styxServer.meterRegistry().get("connectionpool.connectionAttempts")
-                            .tags("appId", "routing.objects", "originId", "hostProxy")
-                            .gauge().value().toInt() shouldBeInRange 1..2
-                }
+                /* Not sure if this is testing anything useful now, since the metrics-based assertions had to be
+                * removed after the metrics were removed */
             }
 
             scenario("Applies connection expiration settings") {
@@ -242,10 +233,10 @@ class HostProxySpec : FeatureSpec() {
                         .status() shouldBe OK
 
                 eventually(1.seconds, AssertionError::class.java) {
-                    styxServer.meterRegistry().get("connectionpool.availableConnections")
+                    styxServer.meterRegistry().get("proxy.client.connectionpool.availableConnections")
                             .tags("appId", "routing.objects", "originId", "hostProxy")
                             .gauge().value().toInt() shouldBe 1
-                    styxServer.meterRegistry().get("connectionpool.connectionsClosed")
+                    styxServer.meterRegistry().get("proxy.client.connectionpool.connectionsClosed")
                             .tags("appId", "routing.objects", "originId", "hostProxy")
                             .gauge().value().toInt() shouldBe 0
                 }
@@ -260,10 +251,10 @@ class HostProxySpec : FeatureSpec() {
                         .status() shouldBe OK
 
                 eventually(1.seconds, AssertionError::class.java) {
-                    styxServer.meterRegistry().get("connectionpool.availableConnections")
+                    styxServer.meterRegistry().get("proxy.client.connectionpool.availableConnections")
                             .tags("appId", "routing.objects", "originId", "hostProxy")
                             .gauge().value().toInt() shouldBe 1
-                    styxServer.meterRegistry().get("connectionpool.connectionsTerminated")
+                    styxServer.meterRegistry().get("proxy.client.connectionpool.connectionsTerminated")
                             .tags("appId", "routing.objects", "originId", "hostProxy")
                             .gauge().value().toInt() shouldBe 1
                 }
@@ -296,19 +287,14 @@ class HostProxySpec : FeatureSpec() {
             }
 
             scenario("... and provides connection pool metrics") {
-                styxServer.meterRegistry().get("connectionpool.connectionAttempts")
+                styxServer.meterRegistry().get("proxy.client.connectionpool.connectionAttempts")
                         .tag("appId", "routing.objects")
                         .tag("originId", "hostProxy")
                         .gauge().value().toInt() shouldBe 1
             }
 
             scenario("... and provides origin and application metrics") {
-                styxServer.meterRegistry().get(OriginMetrics.STATUS_COUNTER_NAME)
-                        .tag(OriginMetrics.APP_TAG, "routing.objects")
-                        .tag(OriginMetrics.ORIGIN_TAG, "hostProxy")
-                        .tag(OriginMetrics.STATUS_TAG, "200")
-                        .counter().count().toInt() shouldBe 1
-                styxServer.meterRegistry().get("connectionpool.connectionAttempts")
+                styxServer.meterRegistry().get("proxy.client.connectionpool.connectionAttempts")
                         .tag("appId", "routing.objects")
                         .tag("originId", "hostProxy")
                         .gauge().value().toInt() shouldBe 1
@@ -317,7 +303,7 @@ class HostProxySpec : FeatureSpec() {
             scenario("... and unregisters connection pool metrics") {
                 styxServer().removeRoutingObject("hostProxy")
 
-                styxServer.meterRegistry().find("connectionpool.connectionAttempts")
+                styxServer.meterRegistry().find("proxy.client.connectionpool.connectionAttempts")
                         .tag("appId", "routing.objects")
                         .tag("originId", "hostProxy")
                         .gauge().shouldBeNull()
@@ -363,24 +349,16 @@ class HostProxySpec : FeatureSpec() {
             }
 
             scenario("... and provides connection pool metrics with metric prefix") {
-                styxServer.meterRegistry().get("connectionpool.connectionAttempts")
+                styxServer.meterRegistry().get("proxy.client.connectionpool.connectionAttempts")
                         .tag("appId", "origins.myApp")
                         .tag("originId", "hostProxy")
                         .gauge().value().toInt() shouldBe 1
             }
 
-            scenario("... and provides origin/application metrics with metric prefix") {
-                styxServer.meterRegistry().get(OriginMetrics.STATUS_COUNTER_NAME)
-                        .tag(OriginMetrics.APP_TAG, "origins.myApp")
-                        .tag(OriginMetrics.ORIGIN_TAG, "hostProxy")
-                        .tag(OriginMetrics.STATUS_TAG, "200")
-                        .counter().count().toInt() shouldBe 1
-            }
-
             scenario("... and unregisters prefixed connection pool metrics") {
                 styxServer().removeRoutingObject("hostProxy")
 
-                styxServer.meterRegistry().find("connectionpool.connectionAttempts")
+                styxServer.meterRegistry().find("proxy.client.connectionpool.connectionAttempts")
                         .tag("appId", "origins.myApp")
                         .tag("originId", "hostProxy")
                         .gauge().shouldBeNull()

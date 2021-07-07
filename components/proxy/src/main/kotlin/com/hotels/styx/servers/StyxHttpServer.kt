@@ -20,13 +20,7 @@ import com.hotels.styx.InetServer
 import com.hotels.styx.ProxyConnectorFactory
 import com.hotels.styx.ResponseInfoFormat
 import com.hotels.styx.StyxObjectRecord
-import com.hotels.styx.config.schema.SchemaDsl.`object`
-import com.hotels.styx.config.schema.SchemaDsl.bool
-import com.hotels.styx.config.schema.SchemaDsl.field
-import com.hotels.styx.config.schema.SchemaDsl.integer
-import com.hotels.styx.config.schema.SchemaDsl.list
-import com.hotels.styx.config.schema.SchemaDsl.optional
-import com.hotels.styx.config.schema.SchemaDsl.string
+import com.hotels.styx.config.schema.SchemaDsl.*
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig
 import com.hotels.styx.proxy.ProxyServerConfig
 import com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder.ENCODE_UNWISECHARS
@@ -36,7 +30,6 @@ import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.server.HttpConnectorConfig
 import com.hotels.styx.server.HttpsConnectorConfig
 import com.hotels.styx.server.netty.NettyServerBuilder
-import com.hotels.styx.server.netty.connectors.ResponseEnhancer
 import com.hotels.styx.serviceproviders.StyxServerFactory
 import org.slf4j.LoggerFactory
 
@@ -128,10 +121,10 @@ internal class StyxHttpServerFactory : StyxServerFactory {
                                         .setKeepAliveTimeoutMillis(config.keepAliveTimeoutMillis)
                                         .setMaxConnectionsCount(config.maxConnectionsCount)
                                         .build(),
-                                environment.meterRegistry(),
+                                environment.centralisedMetrics(),
                                 environment.errorListener(),
                                 environment.configuration().get(ENCODE_UNWISECHARS).orElse(""),
-                                ResponseEnhancer { builder, request ->
+                                { builder, request ->
                                     builder.header(
                                             environment.configuration().styxHeaderConfig().styxInfoHeaderName(),
                                             ResponseInfoFormat(environment).format(request))
@@ -155,11 +148,11 @@ internal class StyxHttpServerFactory : StyxServerFactory {
                                         }))
                 .bossExecutor(bossExecutor)
                 .workerExecutor(workerExecutor)
-                .handler({ request, ctx ->
-                    context.refLookup()
-                            .apply(StyxObjectReference(config.handler))
-                            .handle(request, ctx)
-                })
+                .handler { request, ctx ->
+                        context.refLookup()
+                                .apply(StyxObjectReference(config.handler))
+                                .handle(request, ctx)
+                }
                 .build();
     }
 }

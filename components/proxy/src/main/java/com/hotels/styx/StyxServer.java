@@ -55,7 +55,7 @@ import static com.hotels.styx.StyxServers.toGuavaService;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.shutdownLogging;
 import static com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder.ENCODE_UNWISECHARS;
-import static com.hotels.styx.startup.CoreMetrics.registerCoreMetrics;
+import static com.hotels.styx.startup.CoreMetricsKt.registerCoreMetrics;
 import static io.netty.util.ResourceLeakDetector.Level.DISABLED;
 import static java.lang.Runtime.getRuntime;
 import static java.lang.String.format;
@@ -181,7 +181,7 @@ public final class StyxServer extends AbstractService {
             throw new IllegalStateException("The base meter registry should be a micrometer composite registry!");
         }
 
-        registerCoreMetrics(components.environment().buildInfo(), components.environment().meterRegistry());
+        registerCoreMetrics(components.environment().centralisedMetrics());
 
         // The plugins are loaded, but not initialised. And therefore not able to accept traffic.
         // This handler is for the "old" proxy servers, that are started from proxy.connectors configuration.
@@ -264,7 +264,7 @@ public final class StyxServer extends AbstractService {
 
         ServerConnector proxyConnector = new ProxyConnectorFactory(
                 environment.configuration().proxyServerConfig(),
-                environment.meterRegistry(),
+                environment.centralisedMetrics(),
                 environment.errorListener(),
                 environment.configuration().get(ENCODE_UNWISECHARS).orElse(""),
                 (builder, request) -> builder.header(styxInfoHeaderName, responseInfoFormat.format(request)),

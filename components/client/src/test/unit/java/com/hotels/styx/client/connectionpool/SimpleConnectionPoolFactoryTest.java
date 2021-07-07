@@ -17,6 +17,7 @@ package com.hotels.styx.client.connectionpool;
 
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.Connection;
+import com.hotels.styx.metrics.CentralisedMetrics;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -41,14 +42,14 @@ public class SimpleConnectionPoolFactoryTest {
         SimpleConnectionPoolFactory factory = new SimpleConnectionPoolFactory.Builder()
                 .connectionFactory(mock(Connection.Factory.class))
                 .connectionPoolSettings(defaultConnectionPoolSettings())
-                .meterRegistry(meterRegistry)
+                .metrics(new CentralisedMetrics(meterRegistry))
                 .build();
         factory.create(origin);
 
         Tags tags = Tags.of("appId", "test-app", "originId", "origin-X");
-        assertThat(meterRegistry.find("connectionpool.pendingConnections").tags(tags).gauge(), notNullValue());
-        assertThat(meterRegistry.find("connectionpool.availableConnections").tags(tags).gauge(), notNullValue());
-        assertThat(meterRegistry.find("connectionpool.busyConnections").tags(tags).gauge(), notNullValue());
-        assertThat(meterRegistry.find("connectionpool.connectionsInEstablishment").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("proxy.client.connectionpool.pendingConnections").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("proxy.client.connectionpool.availableConnections").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("proxy.client.connectionpool.busyConnections").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("proxy.client.connectionpool.connectionsInEstablishment").tags(tags).gauge(), notNullValue());
     }
 }

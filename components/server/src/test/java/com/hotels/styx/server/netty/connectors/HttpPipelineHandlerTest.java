@@ -23,6 +23,7 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.client.StyxClientException;
+import com.hotels.styx.metrics.CentralisedMetrics;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.HttpErrorStatusListener;
 import com.hotels.styx.server.RequestStatsCollector;
@@ -76,7 +77,6 @@ import static com.hotels.styx.api.HttpResponseStatus.REQUEST_TIMEOUT;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.Metrics.name;
-import static com.hotels.styx.server.RequestStatsCollector.REQUEST_OUTSTANDING;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE_CLIENT_CLOSED;
@@ -141,6 +141,7 @@ public class HttpPipelineHandlerTest {
     private ResponseEnhancer responseEnhancer;
 
     private LoggingTestSupport logger;
+    private CentralisedMetrics centralisedMetrics;
 
     @BeforeEach
     public void setUp() throws Exception {
@@ -235,7 +236,7 @@ public class HttpPipelineHandlerTest {
         MeterRegistry registry = new SimpleMeterRegistry();
         HttpPipelineHandler pipelineHandler = handlerWithMocks(doNotRespondHandler)
                 .responseEnhancer(DO_NOT_MODIFY_RESPONSE)
-                .progressListener(new RequestStatsCollector(registry, "test"))
+                .progressListener(new RequestStatsCollector(new CentralisedMetrics(registry)))
                 .build();
 
         ChannelHandlerContext ctx = mockCtx();
@@ -266,7 +267,7 @@ public class HttpPipelineHandlerTest {
         MeterRegistry registry = new SimpleMeterRegistry();
         HttpPipelineHandler adapter = handlerWithMocks(doNotRespondHandler)
                 .responseEnhancer(DO_NOT_MODIFY_RESPONSE)
-                .progressListener(new RequestStatsCollector(registry, "test"))
+                .progressListener(new RequestStatsCollector(new CentralisedMetrics(registry)))
                 .build();
         ChannelHandlerContext ctx = mockCtx();
 
@@ -317,7 +318,7 @@ public class HttpPipelineHandlerTest {
         writerFuture.completeExceptionally(cause);
         verify(statsCollector).onTerminate(eq(request.id()));
         verify(statsCollector, never()).onComplete(eq(request.id()), eq(200));
-        assertThat(metrics.counter("test.request.cancelled.responseWriteError").count(), is(1.0));
+        assertThat(metrics.counter("proxy.server.requests.cancelled", "cause", "responseWriteError").count(), is(1.0));
 
         assertThat(responseUnsubscribed.get(), is(true));
     }
@@ -349,7 +350,7 @@ public class HttpPipelineHandlerTest {
     public void decrementsRequestsOngoingOnExceptionCaught() throws Exception {
         MeterRegistry registry = new SimpleMeterRegistry();
         HttpPipelineHandler adapter = handlerWithMocks(doNotRespondHandler)
-                .progressListener(new RequestStatsCollector(registry, "test"))
+                .progressListener(new RequestStatsCollector(new CentralisedMetrics(registry)))
                 .build();
 
         ChannelHandlerContext ctx = mockCtx();
@@ -473,7 +474,7 @@ public class HttpPipelineHandlerTest {
         handler.channelRead0(ctx, request2);
 
         // Assert that the third request triggers an error.
-        assertThat(metrics.counter("test.request.cancelled.spuriousRequest").count(), is(1.0));
+        assertThat(metrics.counter("proxy.server.requests.cancelled", "cause", "spuriousRequest").count(), is(1.0));
         assertThat(writerFuture.isCancelled(), is(true));
         assertThat(responseUnsubscribed.get(), is(true));
         verify(statsCollector).onTerminate(request.id());
@@ -986,8 +987,7 @@ public class HttpPipelineHandlerTest {
                 .errorStatusListener(errorListener)
                 .responseEnhancer(responseEnhancer)
                 .progressListener(statsCollector)
-                .meterRegistry(metrics)
-                .meterPrefix("test");
+                .metrics(new CentralisedMetrics(metrics));
     }
 
     private static HttpResponseWriterFactory responseWriterFactory(CompletableFuture<Void> future) {
@@ -1042,7 +1042,7 @@ public class HttpPipelineHandlerTest {
     }
 
     private double requestOutstandingValue(MeterRegistry registry) {
-        return Optional.ofNullable(registry.find(name("test", REQUEST_OUTSTANDING)).gauge()).map(Gauge::value).orElse(0.0);
+        return Optional.ofNullable(registry.find("proxy.requestsInProgress").gauge()).map(Gauge::value).orElse(0.0);
     }
 
 }

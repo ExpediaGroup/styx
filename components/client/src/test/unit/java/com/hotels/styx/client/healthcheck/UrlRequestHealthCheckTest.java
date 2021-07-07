@@ -20,12 +20,16 @@ import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState;
-import io.micrometer.core.instrument.MeterRegistry;
+import com.hotels.styx.metrics.CentralisedMetrics;
+import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
@@ -33,19 +37,20 @@ import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.HEALTHY;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.UNHEALTHY;
+import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class UrlRequestHealthCheckTest {
     private final Origin someOrigin = newOriginBuilder("localhost", 12345).id("foo").build();
 
-    private MeterRegistry meterRegistry;
+    private CentralisedMetrics metrics;
     private OriginState originState;
     private String requestedUrl;
 
     @BeforeEach
     public void setUp() {
-        meterRegistry = new SimpleMeterRegistry();
+        metrics = new CentralisedMetrics(new SimpleMeterRegistry());
         originState = null;
         requestedUrl = null;
     }
@@ -57,7 +62,7 @@ public class UrlRequestHealthCheckTest {
             return respondWith(NOT_FOUND);
         };
 
-        new UrlRequestHealthCheck("/version-foo.txt", meterRegistry)
+        new UrlRequestHealthCheck("/version-foo.txt", metrics)
                 .check(client, someOrigin, state -> {
                 });
 
@@ -68,37 +73,44 @@ public class UrlRequestHealthCheckTest {
     public void declaresOriginHealthyOnOkResponseCode() {
         HttpClient client = request -> respondWith(OK);
 
-        new UrlRequestHealthCheck("/version.txt", meterRegistry)
+        new UrlRequestHealthCheck("/version.txt", metrics)
                 .check(client, someOrigin, state -> this.originState = state);
 
         assertThat(originState, is(HEALTHY));
-        assertThat(meterRegistry.getMeters().size(), is(0));
+        assertThat(meters(id -> id.getName().equals("proxy.client.originHealthCheckFailures")).size(), is(0));
     }
 
     @Test
     public void declaresOriginUnhealthyOnNon200Ok() {
         HttpClient client = request -> respondWith(NOT_FOUND);
 
-        new UrlRequestHealthCheck("/version.txt", meterRegistry)
+        new UrlRequestHealthCheck("/version.txt", metrics)
                 .check(client, someOrigin, state -> this.originState = state);
 
         assertThat(originState, is(UNHEALTHY));
-        assertThat(meterRegistry.find("origin.healthcheck.failures")
+        assertThat(metrics.getRegistry().find("proxy.client.originHealthCheckFailures")
                 .tags("originId", someOrigin.id().toString(), "appId", someOrigin.applicationId().toString()).counter().count(), is(1.0));
-        assertThat(meterRegistry.getMeters().size(), is(1));
+        assertThat(meters(id -> id.getName().equals("proxy.client.originHealthCheckFailures")).size(), is(1));
     }
 
     @Test
     public void declaredOriginUnhealthyOnTransportException() {
         HttpClient client = request -> respondWith(new RuntimeException("health check failure, as expected"));
 
-        new UrlRequestHealthCheck("/version.txt", meterRegistry)
+        new UrlRequestHealthCheck("/version.txt", metrics)
                 .check(client, someOrigin, state -> this.originState = state);
 
         assertThat(originState, is(UNHEALTHY));
-        assertThat(meterRegistry.find("origin.healthcheck.failures")
+        assertThat(metrics.getRegistry().find("proxy.client.originHealthCheckFailures")
                 .tags("originId", someOrigin.id().toString(), "appId", someOrigin.applicationId().toString()).counter().count(), is(1.0));
-        assertThat(meterRegistry.getMeters().size(), is(1));
+
+        assertThat(meters(id -> id.getName().equals("proxy.client.originHealthCheckFailures")).size(), is(1));
+    }
+
+    private List<Meter> meters(Predicate<Meter.Id> predicate) {
+        return metrics.getRegistry().getMeters().stream()
+                .filter(meter -> predicate.test(meter.getId()))
+                .collect(toList());
     }
 
     private static CompletableFuture<HttpResponse> respondWith(Throwable error) {

@@ -18,34 +18,39 @@ package com.hotels.styx.client.connectionpool;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.client.Connection;
-import io.micrometer.core.instrument.Gauge;
-import io.micrometer.core.instrument.Meter;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tags;
+import com.hotels.styx.metrics.CentralisedMetrics;
+import com.hotels.styx.metrics.Deleter;
 import org.reactivestreams.Publisher;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.function.Supplier;
 
-import static com.hotels.styx.api.Metrics.name;
-import static com.hotels.styx.api.Metrics.APPID_TAG;
-import static com.hotels.styx.api.Metrics.ORIGINID_TAG;
+import static java.util.Arrays.asList;
+import static java.util.Objects.requireNonNull;
 
 class StatsReportingConnectionPool implements ConnectionPool {
-    private static final String PREFIX = "connectionpool";
-
     private final ConnectionPool connectionPool;
-    private final MeterRegistry meterRegistry;
-    private final Set<Meter> meters = new HashSet<>();
-    private final Tags tags;
+    private final Set<Deleter> deleters = new HashSet<>();
 
-    public StatsReportingConnectionPool(ConnectionPool connectionPool, MeterRegistry meterRegistry) {
-        this.connectionPool = connectionPool;
-        this.meterRegistry = meterRegistry;
-        this.tags = Tags.of(APPID_TAG, connectionPool.getOrigin().applicationId().toString(),
-                ORIGINID_TAG, connectionPool.getOrigin().id().toString());
-        registerMetrics();
+    public StatsReportingConnectionPool(ConnectionPool connectionPool, CentralisedMetrics metrics) {
+        this.connectionPool = requireNonNull(connectionPool);
+        requireNonNull(metrics);
+
+        Stats stats = this.connectionPool.stats();
+        Origin origin = this.connectionPool.getOrigin();
+
+        CentralisedMetrics.Proxy.Client clientMetrics = metrics.proxy().client();
+
+        deleters.addAll(asList(
+                clientMetrics.busyConnections(origin).register(stats::busyConnectionCount),
+                clientMetrics.pendingConnections(origin).register(stats::pendingConnectionCount),
+                clientMetrics.availableConnections(origin).register(stats::availableConnectionCount),
+                clientMetrics.connectionAttempts(origin).register(stats::connectionAttempts),
+                clientMetrics.connectionFailures(origin).register(stats::connectionFailures),
+                clientMetrics.connectionsClosed(origin).register(stats::closedConnections),
+                clientMetrics.connectionsTerminated(origin).register(stats::terminatedConnections),
+                clientMetrics.connectionsInEstablishment(origin).register(stats::connectionsInEstablishment)
+        ));
     }
 
     @Override
@@ -89,24 +94,8 @@ class StatsReportingConnectionPool implements ConnectionPool {
         removeMetrics();
     }
 
-    private void registerMetrics() {
-        ConnectionPool.Stats stats = connectionPool.stats();
-        registerGauge("busyConnections", stats::busyConnectionCount);
-        registerGauge("pendingConnections", stats::pendingConnectionCount);
-        registerGauge("availableConnections", stats::availableConnectionCount);
-        registerGauge("connectionAttempts", stats::connectionAttempts);
-        registerGauge("connectionFailures", stats::connectionFailures);
-        registerGauge("connectionsClosed", stats::closedConnections);
-        registerGauge("connectionsTerminated", stats::terminatedConnections);
-        registerGauge("connectionsInEstablishment", stats::connectionsInEstablishment);
-    }
-
-    private void registerGauge(String name, Supplier<Number> supplier) {
-        meters.add(Gauge.builder(name(PREFIX, name), supplier).tags(tags).register(meterRegistry));
-    }
-
     private void removeMetrics() {
-        meters.forEach(meterRegistry::remove);
-        meters.clear();
+        deleters.forEach(Deleter::delete);
+        deleters.clear();
     }
 }

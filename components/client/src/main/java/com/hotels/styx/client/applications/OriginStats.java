@@ -15,19 +15,12 @@
  */
 package com.hotels.styx.client.applications;
 
-import io.micrometer.core.instrument.Timer;
+import com.hotels.styx.metrics.TimerMetric;
 
 /**
  * An object that receives origin statistics.
  */
 public interface OriginStats {
-    /**
-     * Return a {@link Timer.Sample} based on the current registry's Clock.
-     *
-     * @return A {@link Timer.Sample}
-     */
-    Timer.Sample startTimer();
-
     /**
      * To be called when a request is successful.
      */
@@ -41,13 +34,12 @@ public interface OriginStats {
     /**
      * Returns a request latency timer.
      */
-    Timer requestLatencyTimer();
+    TimerMetric requestLatencyTimer();
 
     /**
      * Returns a time-to-first-byte timer.
-     * @return
      */
-    Timer timeToFirstByteTimer();
+    TimerMetric timeToFirstByteTimer();
 
     /**
      * records a response with a status code.

@@ -76,7 +76,7 @@ class OutstandingRequestsSpec extends FunSpec
         assert(response.getStatus == OK)
 
         eventually(timeout(1.seconds)) {
-          styxServer.meterRegistry().get("proxy.request.outstanding").gauge().value() should be(0)
+          styxServer.meterRegistry().get("proxy.requestsInProgress").gauge().value() should be(0)
         }
       }
     }
@@ -93,11 +93,11 @@ class OutstandingRequestsSpec extends FunSpec
       client.write(request)
 
       eventually(timeout(1 seconds)) {
-        styxServer.meterRegistry().get("proxy.request.outstanding").gauge().value() should be(1)
+        styxServer.meterRegistry().get("proxy.requestsInProgress").gauge().value() should be(1)
       }
 
       eventually(timeout((requestTimeoutMillis + 500) millis)) {
-        styxServer.meterRegistry().get("proxy.request.outstanding").gauge().value() should be(0)
+        styxServer.meterRegistry().get("proxy.requestsInProgress").gauge().value() should be(0)
       }
     }
 
@@ -112,14 +112,14 @@ class OutstandingRequestsSpec extends FunSpec
       response.status.code() should be(200)
 
       eventually(timeout(1 seconds)) {
-        styxServer.meterRegistry().get("proxy.request.outstanding").gauge().value() should be(1)
+        styxServer.meterRegistry().get("proxy.requestsInProgress").gauge().value() should be(1)
       }
 
       client.disconnect()
 
       // Eventually times out as per responseTimeout configuration:
       eventually(timeout(4 seconds)) {
-        styxServer.meterRegistry().get("proxy.request.outstanding").gauge().value() should be(0)
+        styxServer.meterRegistry().get("proxy.requestsInProgress").gauge().value() should be(0)
       }
     }
   }

@@ -16,29 +16,26 @@
 package com.hotels.styx.proxy;
 
 import com.hotels.styx.common.SimpleCache;
+import com.hotels.styx.metrics.CentralisedMetrics;
 import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.HttpResponseStatus;
-
-import static java.lang.String.valueOf;
 
 /**
  * Records request and response count with protocol.
  */
 public class ServerProtocolDistributionRecorder extends ChannelDuplexHandler {
     private final Counter requests;
-    private final SimpleCache<HttpResponseStatus, Counter> responses;
+    private final SimpleCache<Integer, Counter> responses;
 
-    public ServerProtocolDistributionRecorder(MeterRegistry meterRegistry, boolean secure) {
-        requests = meterRegistry.counter("styx.server.request", "protocol", protocolName(secure));
-        responses = new SimpleCache<>(status -> meterRegistry.counter("styx.server.response",
-                "protocol", protocolName(secure),
-                "statusCode", valueOf(status.code())));
+    public ServerProtocolDistributionRecorder(CentralisedMetrics metrics, boolean secure) {
+        CentralisedMetrics.Proxy.Server serverMetrics = metrics.proxy().server();
+
+        requests = secure ? serverMetrics.httpsRequests() : serverMetrics.httpRequests();
+        responses = secure ? serverMetrics.httpsResponses() : serverMetrics.httpResponses();
     }
 
     @Override
@@ -53,13 +50,9 @@ public class ServerProtocolDistributionRecorder extends ChannelDuplexHandler {
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
         if (msg instanceof HttpResponse) {
-            responses.get(((HttpResponse) msg).status()).increment();
+            responses.get(((HttpResponse) msg).status().code()).increment();
         }
 
         super.write(ctx, msg, promise);
-    }
-
-    private static String protocolName(boolean secure) {
-        return secure ? "https" : "http";
     }
 }

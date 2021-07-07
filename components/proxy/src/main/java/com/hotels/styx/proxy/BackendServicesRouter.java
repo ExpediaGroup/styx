@@ -42,8 +42,8 @@ import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitorFactory;
 import com.hotels.styx.client.healthcheck.UrlRequestHealthCheck;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
+import com.hotels.styx.metrics.CentralisedMetrics;
 import com.hotels.styx.server.HttpRouter;
-import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 
 import java.util.Map;
@@ -114,7 +114,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
             boolean longFormat = environment.styxConfig().get("request-logging.outbound.longFormat", Boolean.class)
                     .orElse(false);
 
-            OriginStatsFactory originStatsFactory = new CachingOriginStatsFactory(environment.meterRegistry());
+            OriginStatsFactory originStatsFactory = new CachingOriginStatsFactory(environment.centralisedMetrics());
             ConnectionPoolSettings poolSettings = backendService.connectionPoolConfig();
 
             Connection.Factory connectionFactory = connectionFactory(
@@ -127,14 +127,14 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
             ConnectionPool.Factory connectionPoolFactory = new SimpleConnectionPoolFactory.Builder()
                     .connectionFactory(connectionFactory)
                     .connectionPoolSettings(backendService.connectionPoolConfig())
-                    .meterRegistry(environment.meterRegistry())
+                    .metrics(environment.centralisedMetrics())
                     .build();
 
             OriginHealthStatusMonitor healthStatusMonitor = healthStatusMonitor(backendService);
 
             OriginsInventory inventory = new OriginsInventory.Builder(backendService.id())
                     .eventBus(environment.eventBus())
-                    .meterRegistry(environment.meterRegistry())
+                    .metrics(environment.centralisedMetrics())
                     .connectionPoolFactory(connectionPoolFactory)
                     .originHealthMonitor(healthStatusMonitor)
                     .initialOrigins(backendService.origins())
@@ -157,7 +157,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                                 backendService.healthCheckConfig(),
                                 () -> originHealthCheckFunction(
                                         backendService.id(),
-                                        environment.meterRegistry(),
+                                        environment.centralisedMetrics(),
                                         backendService.healthCheckConfig()),
                                 healthCheckClient(backendService));
     }
@@ -207,16 +207,12 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
         return (request, context) -> new Eventual<>(client.sendRequest(request, context));
     }
 
-    private static OriginHealthCheckFunction originHealthCheckFunction(
-            Id appId,
-            MeterRegistry meterRegistry,
-            HealthCheckConfig healthCheckConfig) {
-
+    private static OriginHealthCheckFunction originHealthCheckFunction(Id appId, CentralisedMetrics metrics, HealthCheckConfig healthCheckConfig) {
         String healthCheckUri = healthCheckConfig
                 .uri()
                 .orElseThrow(() -> new IllegalArgumentException("Health check URI missing for " + appId));
 
-        return new UrlRequestHealthCheck(healthCheckUri, meterRegistry);
+        return new UrlRequestHealthCheck(healthCheckUri, metrics);
     }
 
     private static class ProxyToClientPipeline implements HttpHandler {

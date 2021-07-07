@@ -25,7 +25,7 @@ import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 
-import static com.hotels.styx.server.netty.SslContexts.newSSLContext;
+import static com.hotels.styx.server.netty.SslContextsKt.newSSLContext;
 import static java.util.Objects.requireNonNull;
 
 /**

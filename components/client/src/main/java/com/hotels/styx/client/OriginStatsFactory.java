@@ -18,10 +18,8 @@ package com.hotels.styx.client;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.applications.OriginStats;
 import com.hotels.styx.client.applications.metrics.OriginMetrics;
-import io.micrometer.core.instrument.MeterRegistry;
-
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import com.hotels.styx.common.SimpleCache;
+import com.hotels.styx.metrics.CentralisedMetrics;
 
 import static java.util.Objects.requireNonNull;
 
@@ -39,16 +37,16 @@ public interface OriginStatsFactory {
      * and the cached copy is returned for future invocations.
      */
     class CachingOriginStatsFactory implements OriginStatsFactory {
-        private final ConcurrentMap<Origin, OriginMetrics> metricsByOrigin = new ConcurrentHashMap<>();
-        private final MeterRegistry meterRegistry;
+        private final SimpleCache<Origin, OriginMetrics> metricsByOrigin;
 
         /**
          * Constructs a new instance.
          *
-         * @param meterRegistry a meter registry
+         * @param metrics centralised meter registry
          */
-        public CachingOriginStatsFactory(MeterRegistry meterRegistry) {
-            this.meterRegistry = requireNonNull(meterRegistry);
+        public CachingOriginStatsFactory(CentralisedMetrics metrics) {
+            requireNonNull(metrics);
+            this.metricsByOrigin = new SimpleCache<>(origin -> new OriginMetrics(metrics, origin));
         }
 
         /**
@@ -58,7 +56,7 @@ public interface OriginStatsFactory {
          * @return the {@link OriginStats}
          */
         public OriginStats originStats(Origin origin) {
-            return metricsByOrigin.computeIfAbsent(origin, theOrigin -> new OriginMetrics(meterRegistry, theOrigin.id().toString(), theOrigin.applicationId().toString()));
+            return metricsByOrigin.get(origin);
         }
     }
 }

@@ -54,16 +54,6 @@ class AdminInterfaceSpec : FeatureSpec() {
                         .shouldContain("<a href='/admin/uptime'>uptime</a>".toRegex())
             }
         }
-
-        feature("Styx Server Admin Interface Endpoints") {
-            styxServer.restart()
-
-            scenario("Uptime endpoint") {
-                styxServer.adminRequest("/admin/uptime")
-                        .bodyAs(UTF_8)
-                        .shouldMatch("\"[0-9]{1,2}d [0-9]{1,2}h [0-9]{1,2}m\"".toRegex())
-            }
-        }
     }
 
     override fun afterSpec(spec: Spec) {

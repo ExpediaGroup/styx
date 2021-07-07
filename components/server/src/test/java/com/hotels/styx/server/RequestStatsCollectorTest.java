@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.server;
 
+import com.hotels.styx.metrics.CentralisedMetrics;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
@@ -30,15 +31,6 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static com.hotels.styx.api.LiveHttpRequest.get;
-import static com.hotels.styx.api.Metrics.name;
-import static com.hotels.styx.server.RequestStatsCollector.REQUEST_LATENCY;
-import static com.hotels.styx.server.RequestStatsCollector.REQUEST_OUTSTANDING;
-import static com.hotels.styx.server.RequestStatsCollector.REQUEST_RECEIVED;
-import static com.hotels.styx.server.RequestStatsCollector.RESPONSE_SENT;
-import static com.hotels.styx.server.RequestStatsCollector.RESPONSE_STATUS;
-import static com.hotels.styx.server.RequestStatsCollector.STATUS_CLASS_TAG;
-import static com.hotels.styx.server.RequestStatsCollector.STATUS_CLASS_UNRECOGNISED;
-import static com.hotels.styx.server.RequestStatsCollector.STATUS_TAG;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -46,9 +38,6 @@ import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.is;
 
 public class RequestStatsCollectorTest {
-
-    static final String PREFIX = "test";
-
     MeterRegistry metrics;
     Object requestId = get("/requestId1").build().id();
     Object requestId2 = get("/requestId2").build().id();
@@ -59,7 +48,8 @@ public class RequestStatsCollectorTest {
     public void setUp() {
         metrics = new SimpleMeterRegistry(SimpleConfig.DEFAULT, clock);
         clock.setNanoTime(0);
-        sink = new RequestStatsCollector(metrics, PREFIX);
+        CentralisedMetrics centralisedMetrics = new CentralisedMetrics(metrics);
+        sink = new RequestStatsCollector(centralisedMetrics);
     }
 
     @Test
@@ -125,7 +115,7 @@ public class RequestStatsCollectorTest {
         clock.setNanoTime(100, MILLISECONDS);
         sink.onComplete(requestId, 200);
 
-        Timer timer = metrics.get(name(PREFIX, REQUEST_LATENCY)).timer();
+        Timer timer = metrics.get("proxy.latency").timer();
         assertThat(timer.count(), is(1L));
         assertThat(timer.mean(MILLISECONDS), is(closeTo(100, 2)));
     }
@@ -138,14 +128,14 @@ public class RequestStatsCollectorTest {
         clock.setNanoTime(100, MILLISECONDS);
 
         sink.onComplete(requestId, 200);
-        Timer timer = metrics.get(name(PREFIX, REQUEST_LATENCY)).timer();
+        Timer timer = metrics.get("proxy.latency").timer();
         assertThat(timer.count(), is(1L));
         assertThat(timer.mean(MILLISECONDS), is(closeTo(100, 2)));
 
         clock.setNanoTime(200, MILLISECONDS);
 
         sink.onTerminate(requestId2);
-        timer = metrics.get(name(PREFIX, REQUEST_LATENCY)).timer();
+        timer = metrics.get("proxy.latency").timer();
         assertThat(timer.count(), is(2L));
         assertThat(timer.mean(MILLISECONDS), is(closeTo(150, 2)));
     }
@@ -156,7 +146,7 @@ public class RequestStatsCollectorTest {
         clock.setNanoTime(100, MILLISECONDS);
         sink.onTerminate(requestId);
 
-        Timer timer = metrics.get(name(PREFIX, REQUEST_LATENCY)).timer();
+        Timer timer = metrics.get("proxy.latency").timer();
         assertThat(timer.count(), is(1L));
         assertThat(timer.mean(MILLISECONDS), is(closeTo(100, 2)));
     }
@@ -168,84 +158,77 @@ public class RequestStatsCollectorTest {
         sink.onRequest(requestId);
         sink.onComplete(requestId, 200);
 
-        assertThat(counterValue(REQUEST_RECEIVED, Tags.empty()), is(2.0));
+        assertThat(counterValue("proxy.server.requestsReceived", Tags.empty()), is(2.0));
     }
 
     @Test
     public void reports200ResponsesAs2xx() {
         sink.onRequest(requestId);
         sink.onComplete(requestId, 200);
-        assertThat(counterValue(RESPONSE_STATUS, Tags.of(STATUS_CLASS_TAG, "2xx")), is(1.0));
+        assertThat(counterValue("proxy.server.responses", Tags.of("statusClass", "2xx")), is(1.0));
     }
 
     @Test
     public void reports201ResponsesAs2xx() {
         sink.onRequest(requestId);
         sink.onComplete(requestId, 201);
-        assertThat(counterValue(RESPONSE_STATUS, Tags.of(STATUS_CLASS_TAG, "2xx")), is(1.0));
+        assertThat(counterValue("proxy.server.responses", Tags.of("statusClass", "2xx")), is(1.0));
     }
 
     @Test
     public void reports204ResponsesAs2xx() {
         sink.onRequest(requestId);
         sink.onComplete(requestId, 204);
-        assertThat(counterValue(RESPONSE_STATUS, Tags.of(STATUS_CLASS_TAG, "2xx")), is(1.0));
+        assertThat(counterValue("proxy.server.responses", Tags.of("statusClass", "2xx")), is(1.0));
     }
 
     @Test
     public void reports400ResponsesAs4xx() {
         sink.onRequest(requestId);
         sink.onComplete(requestId, 400);
-        assertThat(counterValue(RESPONSE_STATUS, Tags.of(STATUS_CLASS_TAG, "4xx")), is(1.0));
+        assertThat(counterValue("proxy.server.responses", Tags.of("statusClass", "4xx")), is(1.0));
     }
 
     @Test
     public void reports404ResponsesAs4xx() {
         sink.onRequest(requestId);
         sink.onComplete(requestId, 404);
-        assertThat(counterValue(RESPONSE_STATUS, Tags.of(STATUS_CLASS_TAG, "4xx")), is(1.0));
+        assertThat(counterValue("proxy.server.responses", Tags.of("statusClass", "4xx")), is(1.0));
     }
 
     @Test
     public void reports500Responses() {
         sink.onRequest(requestId);
         sink.onComplete(requestId, 500);
-        assertThat(counterValue(RESPONSE_STATUS, Tags.of(STATUS_CLASS_TAG, "5xx").and(STATUS_TAG, "500")), is(1.0));
+        assertThat(counterValue("proxy.server.responses", Tags.of("statusClass", "5xx").and("statusCode", "500")), is(1.0));
     }
 
     @Test
     public void reports504Responses() {
         sink.onRequest(requestId);
         sink.onComplete(requestId, 504);
-        assertThat(counterValue(RESPONSE_STATUS, Tags.of(STATUS_CLASS_TAG, "5xx").and(STATUS_TAG, "504")), is(1.0));
+        assertThat(counterValue("proxy.server.responses", Tags.of("statusClass", "5xx").and("statusCode", "504")), is(1.0));
     }
 
     @Test
     public void reportsUnknownServerErrorCodesAs5xx() {
         sink.onRequest(requestId);
         sink.onComplete(requestId, 566);
-        assertThat(counterValue(RESPONSE_STATUS, Tags.of(STATUS_CLASS_TAG, "5xx").and(STATUS_TAG, "566")), is(1.0));
+        assertThat(counterValue("proxy.server.responses", Tags.of("statusClass", "5xx").and("statusCode", "566")), is(1.0));
     }
 
     @Test
     public void reportsUnrecognisedHttpSatusCodesLessThan100() {
         sink.onRequest(requestId);
         sink.onComplete(requestId, 99);
-        assertThat(counterValue(RESPONSE_STATUS, Tags.of(STATUS_CLASS_TAG, STATUS_CLASS_UNRECOGNISED)), is(1.0));
+        assertThat(counterValue("proxy.server.responses", Tags.of("statusClass", "unrecognised")), is(1.0));
     }
 
     @Test
     public void reportsUnrecognisedHttpSatusCodesGreaterThan599() {
         sink.onRequest(requestId);
         sink.onComplete(requestId, 600);
-        assertThat(counterValue(RESPONSE_STATUS, Tags.of(STATUS_CLASS_TAG, STATUS_CLASS_UNRECOGNISED)), is(1.0));
-    }
-
-    @Test
-    public void maintainsResponsesSentCount() {
-        sink.onRequest(requestId);
-        sink.onComplete(requestId, 200);
-        assertThat(counterValue(RESPONSE_SENT, Tags.empty()), is(1.0));
+        assertThat(counterValue("proxy.server.responses", Tags.of("statusClass", "unrecognised")), is(1.0));
     }
 
     private static final class TestClock implements Clock {
@@ -270,18 +253,14 @@ public class RequestStatsCollectorTest {
         }
     }
 
-
-    private double counterValue(String baseName, Tags tags) {
-        return Optional.ofNullable(metrics.get(name(PREFIX, baseName))
-                .tags(tags)
-                .counter())
+    private double counterValue(String name, Tags tags) {
+        return Optional.of(metrics.get(name).tags(tags).counter())
                 .map(Counter::count)
                 .orElse(0.0);
     }
 
     private double requestOutstandingValue() {
-        return Optional.ofNullable(metrics.get(name(PREFIX, REQUEST_OUTSTANDING))
-                .gauge())
+        return Optional.of(metrics.get("proxy.requestsInProgress").gauge())
                 .map(Gauge::value)
                 .orElse(0.0);
     }

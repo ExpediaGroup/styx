@@ -69,7 +69,6 @@ public class InstrumentedPluginTest {
                 .registry(registry)
                 .build();
 
-
         someRequest = get("/").build();
         chain = mock(Chain.class);
     }
@@ -106,6 +105,7 @@ public class InstrumentedPluginTest {
         LiveHttpResponse response = Mono.from(plugin.intercept(someRequest, chain)).block();
 
         verify(chain, never()).proceed(any(LiveHttpRequest.class));
+
         assertThat(response.status(), is(INTERNAL_SERVER_ERROR));
         assertThat(getStatusCount(pluginName, "500"), is(1.0));
         assertThat(getErrorCount(pluginName), is(1.0));
@@ -236,7 +236,7 @@ public class InstrumentedPluginTest {
     }
 
     private double getStatusCount(String pluginName, String status) {
-        return Optional.ofNullable(registry.find("plugin.response")
+        return Optional.ofNullable(registry.find("proxy.plugins.errorResponses")
                 .tags("plugin", pluginName, "statusCode", status)
                 .counter())
                 .map(Counter::count)
@@ -244,7 +244,7 @@ public class InstrumentedPluginTest {
     }
 
     private double getErrorCount(String pluginName) {
-        return Optional.ofNullable(registry.find("plugin.error")
+        return Optional.ofNullable(registry.find("proxy.plugins.errors")
                 .tags("plugin", pluginName)
                 .counter())
                 .map(Counter::count)
@@ -252,7 +252,7 @@ public class InstrumentedPluginTest {
     }
 
     private double getExceptionCount(String pluginName, String type) {
-        return Optional.ofNullable(registry.find("plugin.exception")
+        return Optional.ofNullable(registry.find("proxy.plugins.exceptions")
                 .tags("plugin", pluginName, "type", type)
                 .counter())
                 .map(Counter::count)

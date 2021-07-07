@@ -16,7 +16,6 @@
 package com.hotels.styx.client
 
 import java.util.concurrent.atomic.AtomicLong
-
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.google.common.base.Charsets._
@@ -31,6 +30,7 @@ import com.hotels.styx.api.extension.{ActiveOrigins, Origin}
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient._
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy
+import com.hotels.styx.metrics.CentralisedMetrics
 import com.hotels.styx.support.Support.requestContext
 import com.hotels.styx.support.server.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies._
@@ -67,7 +67,7 @@ class BackendServiceClientSpec extends FunSuite with BeforeAndAfterAll with Matc
     originOneServer.stop()
   }
 
-  def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(new CompositeMeterRegistry(),backendService).build()
+  def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(new CentralisedMetrics(new CompositeMeterRegistry()),backendService).build()
 
   def busyConnectionStrategy(activeOrigins: ActiveOrigins): LoadBalancer = new BusyConnectionsStrategy(activeOrigins)
 
@@ -80,7 +80,7 @@ class BackendServiceClientSpec extends FunSuite with BeforeAndAfterAll with Matc
       .build()
 
     client = newHttpClientBuilder(backendService.id())
-      .meterRegistry(new SimpleMeterRegistry())
+      .metrics(new CentralisedMetrics(new SimpleMeterRegistry()))
       .loadBalancer(busyConnectionStrategy(activeOrigins(backendService)))
       .build
   }
