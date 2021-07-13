@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,11 +16,15 @@
 package com.hotels.styx.routing.config;
 
 import com.google.common.collect.ImmutableMap;
+import com.hotels.styx.ExecutorFactory;
 import com.hotels.styx.InetServer;
+import com.hotels.styx.StyxObjectRecord;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.config.schema.Schema;
+import com.hotels.styx.executors.NettyExecutorFactory;
 import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.ConditionRouter;
@@ -31,7 +35,6 @@ import com.hotels.styx.routing.handlers.PathPrefixRouter;
 import com.hotels.styx.routing.handlers.ProxyToBackend;
 import com.hotels.styx.routing.handlers.RouteRefLookup;
 import com.hotels.styx.routing.handlers.StaticResponseHandler;
-import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.routing.interceptors.RewriteInterceptor;
 import com.hotels.styx.servers.StyxHttpServer;
 import com.hotels.styx.servers.StyxHttpServerFactory;
@@ -45,9 +48,9 @@ import com.hotels.styx.services.YamlFileConfigurationServiceFactory;
 import java.util.List;
 import java.util.Map;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
+import static com.hotels.styx.common.Preconditions.checkArgument;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -92,6 +95,14 @@ public final class Builtins {
 
     public static final ImmutableMap<String, Schema.FieldType> BUILTIN_SERVER_SCHEMAS = ImmutableMap.of(
             "HttpServer", StyxHttpServer.SCHEMA
+    );
+
+    public static final ImmutableMap<String, ExecutorFactory> BUILTIN_EXECUTOR_FACTORIES = ImmutableMap.of(
+            "NettyExecutor", new NettyExecutorFactory()
+    );
+
+    public static final ImmutableMap<String, Schema.FieldType> BUILTIN_EXECUTOR_SCHEMAS = ImmutableMap.of(
+            "NettyExecutor", NettyExecutorFactory.SCHEMA
     );
 
     public static final RouteRefLookup DEFAULT_REFERENCE_LOOKUP = reference -> (request, ctx) ->
@@ -219,5 +230,25 @@ public final class Builtins {
         checkArgument(constructor != null, format("Unknown server type '%s' for '%s' provider", serverDef.type(), serverDef.name()));
 
         return constructor.create(name, context, serverDef.config(), serverDb);
+    }
+
+    /**
+     * Builds a Styx executor object.
+     *
+     * Styx server is a service that can accept incoming traffic from the client hosts.
+     *
+     * @param name Styx service name
+     * @param serverDef Styx service object configuration
+     * @param factories Service provider factories by name
+     *
+     * @return a Styx service
+     */
+    public static NettyExecutor buildExecutor(
+            String name,
+            StyxObjectDefinition serverDef,
+            Map<String, ExecutorFactory> factories) {
+        ExecutorFactory constructor = factories.get(serverDef.type());
+        checkArgument(constructor != null, format("Unknown executor type '%s' for '%s' provider", serverDef.type(), serverDef.name()));
+        return constructor.create(name, serverDef.config());
     }
 }

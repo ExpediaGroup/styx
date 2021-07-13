@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,22 +17,34 @@ package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.HttpVersion;
 import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
+import io.netty.util.AsciiString;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.hotels.styx.api.HttpHeaderNames.VIA;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_0;
-import static io.netty.handler.codec.http.HttpHeaders.newEntity;
+import static com.hotels.styx.common.Strings.isBlank;
+import static com.hotels.styx.common.Strings.isNotEmpty;
 
 /**
  * Add support for "Via" header as per described in Chapter 9.9 in the HTTP/1.1 specification.
  *
  */
 public class ViaHeaderAppendingInterceptor implements HttpInterceptor {
-    private static final CharSequence VIA_STYX_1_0 = newEntity("1.0 styx");
-    private static final CharSequence VIA_STYX_1_1 = newEntity("1.1 styx");
+    private static final String DEFAULT_VIA = "styx";
+    private final CharSequence via10;
+    private final CharSequence via11;
+
+    public ViaHeaderAppendingInterceptor() {
+        this(DEFAULT_VIA);
+    }
+
+    public ViaHeaderAppendingInterceptor(final String via) {
+        final String value = isBlank(via) ? DEFAULT_VIA : via;
+        via10 = AsciiString.of("1.0 " + value);
+        via11 = AsciiString.of("1.1 " + value);
+    }
 
     @Override
     public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
@@ -46,23 +58,23 @@ public class ViaHeaderAppendingInterceptor implements HttpInterceptor {
                         .build());
     }
 
-    private static CharSequence viaHeader(LiveHttpRequest httpMessage) {
+    private CharSequence viaHeader(LiveHttpRequest httpMessage) {
         CharSequence styxViaEntry = styxViaEntry(httpMessage.version());
 
         return httpMessage.headers().get(VIA)
-                .map(viaHeader -> !isNullOrEmpty(viaHeader) ? viaHeader + ", " + styxViaEntry : styxViaEntry)
+                .map(viaHeader -> isNotEmpty(viaHeader) ? viaHeader + ", " + styxViaEntry : styxViaEntry)
                 .orElse(styxViaEntry);
     }
 
-    private static CharSequence viaHeader(LiveHttpResponse httpMessage) {
+    private CharSequence viaHeader(LiveHttpResponse httpMessage) {
         CharSequence styxViaEntry = styxViaEntry(httpMessage.version());
 
         return httpMessage.headers().get(VIA)
-                .map(viaHeader -> !isNullOrEmpty(viaHeader) ? viaHeader + ", " + styxViaEntry : styxViaEntry)
+                .map(viaHeader -> isNotEmpty(viaHeader) ? viaHeader + ", " + styxViaEntry : styxViaEntry)
                 .orElse(styxViaEntry);
     }
 
-    private static CharSequence styxViaEntry(HttpVersion httpVersion) {
-        return httpVersion.equals(HTTP_1_0) ? VIA_STYX_1_0 : VIA_STYX_1_1;
+    private CharSequence styxViaEntry(HttpVersion httpVersion) {
+        return httpVersion.equals(HTTP_1_0) ? via10 : via11;
     }
 }

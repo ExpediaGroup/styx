@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hotels.styx.support
 import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.common.collect.ImmutableSet
 import com.hotels.styx.StyxConfig
 import com.hotels.styx.StyxServer
 import com.hotels.styx.api.HttpHeaderNames
@@ -31,6 +32,10 @@ import com.hotels.styx.api.plugins.spi.Plugin
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.startup.StyxServerComponents
+import io.micrometer.core.instrument.Clock
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
@@ -68,11 +73,16 @@ class StyxServerProvider(
         val defaultLoggingConfig: Path? = logConfigPath,
         val validateConfig: Boolean = true) {
     val serverRef: AtomicReference<StyxServer?> = AtomicReference()
+    val meterRegistryRef: AtomicReference<MeterRegistry?> = AtomicReference()
 
     operator fun invoke() = get()
 
     fun get(): StyxServer {
         return serverRef.get()!!
+    }
+
+    fun meterRegistry(): MeterRegistry {
+        return meterRegistryRef.get()!!
     }
 
     fun started() = (serverRef.get() == null) || serverRef.get()!!.isRunning
@@ -98,7 +108,9 @@ class StyxServerProvider(
             stop()
         }
 
+        val meterRegistry = CompositeMeterRegistry(Clock.SYSTEM, ImmutableSet.of(SimpleMeterRegistry()))
         var components = StyxServerComponents.Builder()
+                .registry(meterRegistry)
                 .styxConfig(StyxConfig.fromYaml(configuration, validateConfig))
                 .additionalRoutingObjects(additionalRoutingObjects)
                 .plugins(additionalPlugins)
@@ -108,6 +120,7 @@ class StyxServerProvider(
 
         val newServer = StyxServer(components.build())
         newServer.startAsync()
+        meterRegistryRef.set(meterRegistry)
         serverRef.set(newServer)
 
         return this
@@ -135,7 +148,7 @@ fun StyxServerProvider.adminRequest(endpoint: String, debug: Boolean = false): H
 fun CompletableFuture<HttpResponse>.wait(debug: Boolean = false) = this.toMono()
         .doOnNext {
             if (debug) {
-                LOGGER.debug("${it.status()} - ${it.headers()} - ${it.bodyAs(UTF_8)}")
+                LOGGER.info("${it.status()} - ${it.headers()} - ${it.bodyAs(UTF_8)}")
             }
         }
         .block()
@@ -227,7 +240,16 @@ fun StyxServer.routingObjects(debug: Boolean = false): Optional<String> = StyxHt
             }
         }
 
-fun threadCount(namePattern: String) = Thread.getAllStackTraces().keys
+fun StyxServer.serverPort(name: String, debug: Boolean = false) = testClient
+        .send(HttpRequest.get("/admin/servers/$name/port")
+                .header(HOST, this.adminHostHeader()).build())
+        .wait()
+        .bodyAs(UTF_8)
+        .toInt()
+
+fun threadNames() = Thread.getAllStackTraces().keys
         .map { it.name }
+
+fun threadCount(namePattern: String) = threadNames()
         .filter { it.contains(namePattern) }
         .count()

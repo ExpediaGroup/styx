@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,8 +23,6 @@ import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
-import static com.google.common.base.Objects.toStringHelper;
 
 /**
  * A stub {@link Connection.Factory}.
@@ -80,9 +78,13 @@ public class StubConnectionFactory implements Connection.Factory {
 
         @Override
         public String toString() {
-            return toStringHelper(this)
-                    .add("origin", origin)
-                    .add("connected", connected)
+            return new StringBuilder(64)
+                    .append(this.getClass().getSimpleName())
+                    .append("{origin=")
+                    .append(origin)
+                    .append(", connected=")
+                    .append(connected)
+                    .append('}')
                     .toString();
         }
     }

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -30,13 +30,13 @@ internal data class RoutingObjectRecord(
     companion object {
         fun create(type: String, tags: Set<String>, config: JsonNode, routingObject: RoutingObject) = RoutingObjectRecord(
                 type,
-                tags + "created:${timestamp()}",
+                tags + "created=${timestamp()}",
                 config,
                 RoutingMetadataDecorator(routingObject))
     }
 
     fun creationTime() = tags
-            .filter { it.startsWith("created:") }
+            .filter { it.startsWith("created=") }
             .first()
 }
 

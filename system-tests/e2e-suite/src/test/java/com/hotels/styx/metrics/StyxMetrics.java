@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hotels.styx.metrics;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Joiner;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.support.Meter;
@@ -35,14 +34,15 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.common.Preconditions.checkArgument;
 import static com.hotels.styx.common.StyxFutures.await;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyMap;
 import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
@@ -173,7 +173,7 @@ public class StyxMetrics {
 
     @Override
     public String toString() {
-        return Joiner.on('\n').join(entries());
+        return entries().stream().map(Object::toString).collect(joining("\n"));
     }
 
     private List<Map.Entry<String, ?>> entries() {
@@ -187,7 +187,7 @@ public class StyxMetrics {
     }
 
     private static void assertValueIsMap(Map.Entry<String, Object> entry) {
-        checkArgument(entry.getValue() instanceof Map);
+        checkArgument(entry.getValue() instanceof Map, "Entry value is not a Map");
     }
 
     @SuppressWarnings("unchecked")

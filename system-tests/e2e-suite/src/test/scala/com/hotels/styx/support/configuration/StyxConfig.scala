@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hotels.styx.support.configuration
 import java.nio.file.Path
 import java.util
 
-import com.hotels.styx.StyxServer
+import com.hotels.styx.{NettyExecutor, StyxServer}
 import com.hotels.styx.StyxServerSupport._
 import com.hotels.styx.api.extension.service.spi.StyxService
 import com.hotels.styx.api.plugins.spi.Plugin
@@ -27,6 +27,8 @@ import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration
 import com.hotels.styx.proxy.ProxyServerConfig
 import com.hotels.styx.startup.StyxServerComponents
 import com.hotels.styx.support.ResourcePaths
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 
 import scala.collection.JavaConverters._
 
@@ -45,6 +47,8 @@ sealed trait StyxBaseConfig {
   def additionalServices: Map[String, StyxService]
   def plugins: Map[String, Plugin]
 
+  def startServer(backendsRegistry: StyxService, meterRegistry: MeterRegistry): StyxServer
+
   def startServer(backendsRegistry: StyxService): StyxServer
 
   def startServer(): StyxServer
@@ -58,6 +62,9 @@ sealed trait StyxBaseConfig {
 
 object StyxBaseConfig {
   val defaultLogbackXml = ResourcePaths.fixturesHome(this.getClass, "/logback.xml")
+  val globalBossExecutor = NettyExecutor.create("StyxServer-Boss", 1)
+  val globalWorkerExecutor = NettyExecutor.create("StyxServer-Worker", 1)
+
 }
 
 case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),
@@ -68,7 +75,7 @@ case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),
                       additionalServices: Map[String, StyxService] = Map.empty
                      ) extends StyxBaseConfig {
 
-  override def startServer(backendsRegistry: StyxService): StyxServer = {
+  override def startServer(backendsRegistry: StyxService, meterRegistry: MeterRegistry): StyxServer = {
 
     val proxyConfig = this.proxyConfig.copy(connectors = Connectors(httpConnectorWithPort(), httpsConnectorWithPort()))
 
@@ -95,10 +102,15 @@ case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),
 
     val styxServer = new StyxServer(
       serverComponents(styxConfig, backendsRegistry, this.plugins)
+        .registry(meterRegistry)
         .additionalServices(java)
         .loggingSetUp(this.logbackXmlLocation.toString).build())
     styxServer.startAsync().awaitRunning()
     styxServer
+  }
+
+  override def startServer(backendsRegistry: StyxService): StyxServer = {
+    startServer(backendsRegistry, new CompositeMeterRegistry())
   }
 
   override def startServer(): StyxServer = {
@@ -142,11 +154,12 @@ case class StyxYamlConfig(yamlConfig: String,
                           plugins: Map[String, Plugin] = Map.empty
                          ) extends StyxBaseConfig {
 
-  override def startServer(backendsRegistry: StyxService): StyxServer = {
+  override def startServer(backendsRegistry: StyxService, meterRegistry: MeterRegistry): StyxServer = {
     val config: YamlConfiguration = Config.config(yamlConfig)
     val styxConfig = com.hotels.styx.StyxConfig.fromYaml(yamlConfig)
 
     val styxServer = new StyxServer(new StyxServerComponents.Builder()
+      .registry(meterRegistry)
       .styxConfig(styxConfig)
       .additionalServices(services(backendsRegistry).asJava)
       .loggingSetUp(logbackXmlLocation.toString)
@@ -154,6 +167,10 @@ case class StyxYamlConfig(yamlConfig: String,
 
     styxServer.startAsync().awaitRunning()
     styxServer
+  }
+
+  override def startServer(backendsRegistry: StyxService): StyxServer = {
+    startServer(backendsRegistry, new CompositeMeterRegistry())
   }
 
   override def startServer(): StyxServer = {

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,11 +18,11 @@ package com.hotels.styx.routing.handlers;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.net.HostAndPort;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.ResponseEventListener;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
@@ -40,13 +40,13 @@ import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
 import static com.hotels.styx.client.HttpConfig.newHttpConfigBuilder;
@@ -74,6 +74,8 @@ public class HostProxy implements RoutingObject {
             optional("tlsSettings", object(
                     optional("trustAllCerts", bool()),
                     optional("sslProvider", string()),
+
+                    // We could pull them out to a separate configuration block:
                     optional("trustStorePath", string()),
                     optional("trustStorePassword", string()),
                     optional("protocols", list(string())),
@@ -105,7 +107,8 @@ public class HostProxy implements RoutingObject {
             )),
             optional("responseTimeoutMillis", integer()),
             optional("maxHeaderSize", integer()),
-            optional("metricPrefix", string())
+            optional("metricPrefix", string()),
+            optional("executor", string())
     );
 
     private final String errorMessage;
@@ -130,7 +133,7 @@ public class HostProxy implements RoutingObject {
     public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
         if (active) {
             return new Eventual<>(
-                    ResponseEventListener.from(client.sendRequest(request))
+                    ResponseEventListener.from(client.sendRequest(request, context))
                             .whenCancelled(originMetrics::requestCancelled)
                             .apply());
         } else {
@@ -155,6 +158,7 @@ public class HostProxy implements RoutingObject {
         private final int responseTimeoutMillis;
         private final int maxHeaderSize;
         private final String metricPrefix;
+        private final String executor;
 
         public HostProxyConfiguration(
                 String host,
@@ -162,13 +166,15 @@ public class HostProxy implements RoutingObject {
                 TlsSettings tlsSettings,
                 int responseTimeoutMillis,
                 int maxHeaderSize,
-                String metricPrefix) {
+                String metricPrefix,
+                String executor) {
             this.host = host;
             this.connectionPool = connectionPool;
             this.tlsSettings = tlsSettings;
             this.responseTimeoutMillis = responseTimeoutMillis;
             this.maxHeaderSize = maxHeaderSize;
             this.metricPrefix = metricPrefix;
+            this.executor = executor;
         }
 
         @JsonProperty("host")
@@ -201,6 +207,11 @@ public class HostProxy implements RoutingObject {
             return metricPrefix;
         }
 
+        @JsonProperty("executor")
+        public String executor() {
+            return executor;
+        }
+
     }
 
     /**
@@ -230,15 +241,27 @@ public class HostProxy implements RoutingObject {
             String metricPrefix = config.get("metricPrefix", String.class)
                     .orElse("routing.objects");
 
+            String executorName = config.get("executor", String.class)
+                    .orElse("Styx-Client-Global-Worker");
+
+            String objectName = fullName.get(fullName.size() - 1);
+
+            NettyExecutor executor = context.executors().get(executorName)
+                    .orElseThrow(() ->
+                            new IllegalArgumentException(
+                                    format("HostProxy(%s) configuration error: executor='%s' not declared.",
+                                            objectName,
+                                            executorName)))
+                    .component4();
+
             HostAndPort hostAndPort = config.get("host")
                     .map(HostAndPort::fromString)
                     .map(it -> addDefaultPort(it, tlsSettings))
                     .orElseThrow(() -> missingAttributeError(configBlock, join(".", fullName), "host"));
 
-            String objectName = fullName.get(fullName.size() - 1);
-
             return createHostProxyHandler(
-                    context.environment().metricRegistry(),
+                    executor,
+                    context.environment().meterRegistry(),
                     hostAndPort,
                     poolSettings,
                     tlsSettings,
@@ -257,46 +280,49 @@ public class HostProxy implements RoutingObject {
                     .map(it -> DEFAULT_TLS_PORT)
                     .orElse(DEFAULT_HTTP_PORT);
 
-            return HostAndPort.fromParts(hostAndPort.getHostText(), defaultPort);
+            return HostAndPort.fromParts(hostAndPort.getHost(), defaultPort);
         }
 
         @NotNull
         public static HostProxy createHostProxyHandler(
-                MetricRegistry metricRegistry,
+                NettyExecutor executor,
+                MeterRegistry meterRegistry,
                 HostAndPort hostAndPort,
                 ConnectionPoolSettings poolSettings,
                 TlsSettings tlsSettings,
                 int responseTimeoutMillis,
                 int maxHeaderSize,
-                String metricPrefix,
-                String objectName) {
+                String appId,
+                String originId) {
 
-            String host = hostAndPort.getHostText();
+            String host = hostAndPort.getHost();
             int port = hostAndPort.getPort();
 
             Origin origin = newOriginBuilder(host, port)
-                    .applicationId(metricPrefix)
-                    .id(objectName)
+                    .applicationId(appId)
+                    .id(originId)
                     .build();
 
-            OriginMetrics originMetrics = OriginMetrics.create(id(metricPrefix), objectName, metricRegistry);
+            OriginMetrics originMetrics = new OriginMetrics(meterRegistry, origin.id().toString(), origin.applicationId().toString());
 
             ConnectionPool.Factory connectionPoolFactory = new SimpleConnectionPoolFactory.Builder()
                     .connectionFactory(
                             connectionFactory(
+                                    executor,
                                     tlsSettings,
                                     responseTimeoutMillis,
                                     maxHeaderSize,
                                     theOrigin -> originMetrics,
                                     poolSettings.connectionExpirationSeconds()))
                     .connectionPoolSettings(poolSettings)
-                    .metricRegistry(metricRegistry)
+                    .meterRegistry(meterRegistry)
                     .build();
 
             return new HostProxy(host, port, StyxHostHttpClient.create(connectionPoolFactory.create(origin)), originMetrics);
         }
 
         private static Connection.Factory connectionFactory(
+                NettyExecutor executor,
                 TlsSettings tlsSettings,
                 int responseTimeoutMillis,
                 int maxHeaderSize,
@@ -312,6 +338,7 @@ public class HostProxy implements RoutingObject {
                                     .responseTimeoutMillis(responseTimeoutMillis)
                                     .build()
                     )
+                    .executor(executor)
                     .tlsSettings(tlsSettings)
                     .httpConfig(newHttpConfigBuilder().setMaxHeadersSize(maxHeaderSize).build())
                     .build();

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,7 +16,11 @@
 package com.hotels.styx.api;
 
 
-import java.util.Collection;
+import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
+import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite;
+import io.netty.handler.codec.http.cookie.DefaultCookie;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -26,7 +30,6 @@ import java.util.stream.Collectors;
 import static io.netty.handler.codec.http.cookie.Cookie.UNDEFINED_MAX_AGE;
 import static java.util.Objects.hash;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toSet;
 
 /**
  * Represents an HTTP cookie as sent in the HTTP response {@code Set-Cookie} header.
@@ -46,17 +49,11 @@ public final class ResponseCookie {
     private final boolean httpOnly;
     private final boolean secure;
     private final int hashCode;
-    private final String sameSite;
-
-    public enum SameSite {
-        Lax,
-        Strict,
-        None
-    }
+    private final SameSite sameSite;
 
     private ResponseCookie(Builder builder) {
         if (builder.name == null || builder.name.isEmpty()) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Cookie name must be specified");
         }
 
         this.name = builder.name;
@@ -92,32 +89,17 @@ public final class ResponseCookie {
         return headerValues.stream()
                 .map(ClientCookieDecoder.LAX::decode)
                 .filter(Objects::nonNull)
-                .map(ResponseCookie::convert)
+                .map(cookie -> new Builder(cookie).build())
                 .collect(Collectors.toList());
     }
 
     /**
-     * Encodes a collection of {@link ResponseCookie} objects into a list of "Set-Cookie" header values.
+     * Encodes this object into a "Set-Cookie" header value.
      *
-     * @param cookies cookies
-     * @return "Set-Cookie" header values
-     */
-    public static List<String> encode(Collection<ResponseCookie> cookies) {
-        List<NettyCookie> nettyCookies = cookies.stream()
-                .map(ResponseCookie::convert)
-                .collect(Collectors.toList());
-
-        return ServerCookieEncoder.LAX.encode(nettyCookies);
-    }
-
-    /**
-     * Encodes a {@link ResponseCookie} object into a "Set-Cookie" header value.
-     *
-     * @param cookie cookie
      * @return "Set-Cookie" header value
      */
-    public static String encode(ResponseCookie cookie) {
-        return ServerCookieEncoder.LAX.encode(convert(cookie));
+    String asSetCookieString() {
+        return ServerCookieEncoder.LAX.encode(asDefaultCookie());
     }
 
     /**
@@ -188,37 +170,23 @@ public final class ResponseCookie {
      *
      * @return SameSite attribute, if present
      */
-    public Optional<String> sameSite() {
+    public Optional<SameSite> sameSite() {
         return Optional.ofNullable(sameSite);
     }
 
+    private DefaultCookie asDefaultCookie() {
+        DefaultCookie nettyCookie = new DefaultCookie(name, value);
 
-    private static NettyCookie convert(ResponseCookie cookie) {
-        NettyCookie nCookie = new NettyCookie(cookie.name, cookie.value);
-
-        nCookie.setDomain(cookie.domain);
-        nCookie.setHttpOnly(cookie.httpOnly);
-        nCookie.setSecure(cookie.secure);
-        if (cookie.maxAge != null) {
-            nCookie.setMaxAge(cookie.maxAge);
+        nettyCookie.setDomain(domain);
+        nettyCookie.setHttpOnly(httpOnly);
+        nettyCookie.setSecure(secure);
+        if (maxAge != null) {
+            nettyCookie.setMaxAge(maxAge);
         }
-        nCookie.setPath(cookie.path);
-        nCookie.setSameSite(cookie.sameSite);
+        nettyCookie.setPath(path);
+        nettyCookie.setSameSite(sameSite);
 
-        return nCookie;
-    }
-
-    private static ResponseCookie convert(NettyCookie cookie) {
-        String value = cookie.wrap() ? quote(cookie.value()) : cookie.value();
-
-        return responseCookie(cookie.name(), value)
-                .domain(cookie.domain())
-                .path(cookie.path())
-                .maxAge(cookie.maxAge())
-                .httpOnly(cookie.isHttpOnly())
-                .secure(cookie.isSecure())
-                .sameSiteRawValue(cookie.sameSite())
-                .build();
+        return nettyCookie;
     }
 
     private static String quote(String value) {
@@ -276,11 +244,29 @@ public final class ResponseCookie {
         private String path;
         private boolean httpOnly;
         private boolean secure;
-        private String sameSite;
+        private SameSite sameSite;
 
         private Builder(String name, String value) {
             this.name = requireNonNull(name);
             this.value = requireNonNull(value);
+        }
+
+        private Builder(Cookie cookie) {
+            String value = cookie.wrap() ? quote(cookie.value()) : cookie.value();
+
+            this.name = cookie.name();
+            this.value = value;
+
+            domain(cookie.domain());
+            path(cookie.path());
+            maxAge(cookie.maxAge());
+            httpOnly(cookie.isHttpOnly());
+            secure(cookie.isSecure());
+
+            /* NOTE This DefaultCookie seems to be the only non-deprecated implementation of Cookie in netty, so this should always evaluate to true. */
+            if (cookie instanceof DefaultCookie) {
+                sameSite(((DefaultCookie) cookie).sameSite());
+            }
         }
 
         /**
@@ -367,17 +353,18 @@ public final class ResponseCookie {
          * @return this builder
          */
         public Builder sameSite(SameSite sameSite) {
-            this.sameSite = sameSite.name();
+            this.sameSite = sameSite;
             return this;
         }
 
         /**
          * Sets/unsets the SameSite attribute.
+         *
          * @param sameSite SameSite attribute
          * @return this builder
          */
         public Builder sameSiteRawValue(String sameSite) {
-            this.sameSite = sameSite;
+            this.sameSite = SameSite.valueOf(sameSite);
             return this;
         }
 

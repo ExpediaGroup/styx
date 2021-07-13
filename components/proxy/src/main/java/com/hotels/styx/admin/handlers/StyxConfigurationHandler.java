@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
 
 import java.util.Map;
 
-import static com.google.common.base.Throwables.propagate;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.hotels.styx.admin.support.Json.PRETTY_PRINTER;
 
@@ -75,8 +74,10 @@ public class StyxConfigurationHandler implements WebServiceHandler {
             return objectMapper
                     .writer(PRETTY_PRINTER)
                     .writeValueAsString(objectMapper.readValue(body(configuration), Map.class));
-        } catch (Throwable cause) {
-            throw propagate(cause);
+        } catch (RuntimeException | Error cause) {
+            throw cause;
+        } catch (Exception cause) {
+            throw new RuntimeException(cause);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import com.hotels.styx.routingObjectDef
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import io.kotlintest.specs.StringSpec
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 import reactor.core.publisher.Mono
 import reactor.core.publisher.toMono
 import java.util.concurrent.CompletableFuture
@@ -43,7 +44,7 @@ class BackendServiceProxyTest : StringSpec({
     val laRequest = LiveHttpRequest.get("/lp/x").build()
     val baRequest = LiveHttpRequest.get("/ba/x").build()
 
-    val environment = Environment.Builder().build()
+    val environment = Environment.Builder().registry(CompositeMeterRegistry()).build()
     val context = RoutingObjectFactoryContext(environment = environment).get()
 
 

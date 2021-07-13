@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@ package com.hotels.styx.common;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-
-import static com.google.common.base.Throwables.propagate;
 
 /**
  * Utility class to find free ports.
@@ -39,7 +37,7 @@ public final class FreePorts {
             serverSocket.close();
             return localPort;
         } catch (IOException e) {
-            throw propagate(e);
+            throw new RuntimeException(e);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,28 +16,25 @@
 package com.hotels.styx.proxy.plugin;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.common.Pair;
+import com.hotels.styx.common.Strings;
 import com.hotels.styx.spi.config.SpiExtension;
 
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.common.Pair.pair;
+import static com.hotels.styx.common.Preconditions.checkArgument;
+import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Plugins metadata.
  */
 public class PluginsMetadata implements Iterable<SpiExtension> {
-    private static final Splitter SPLITTER = Splitter.on(",")
-            .omitEmptyStrings()
-            .trimResults();
     private final List<String> activePluginsNames;
     private final List<String> allPluginNames;
     private final Map<String, SpiExtension> plugins;
@@ -46,7 +43,11 @@ public class PluginsMetadata implements Iterable<SpiExtension> {
                     @JsonProperty("all") Map<String, SpiExtension> plugins) {
         requireNonNull(plugins, "No list of all plugins specified");
 
-        this.activePluginsNames = SPLITTER.splitToList(Optional.ofNullable(active).orElse(""));
+        this.activePluginsNames = stream((active == null ? "" : active).split(","))
+                .map(String::trim)
+                .filter(Strings::isNotEmpty)
+                .collect(toList());
+
         this.allPluginNames = ImmutableList.copyOf(plugins.keySet());
         this.plugins = plugins;
 
@@ -62,13 +63,13 @@ public class PluginsMetadata implements Iterable<SpiExtension> {
     public List<Pair<String, SpiExtension>> plugins() {
         return allPluginNames.stream()
                 .map(name -> pair(name, plugins.get(name)))
-                .collect(Collectors.toList());
+                .collect(toList());
     }
 
     public List<Pair<String, SpiExtension>> activePlugins() {
         return activePluginsNames.stream()
                 .map(name -> pair(name, plugins.get(name)))
-                .collect(Collectors.toList());
+                .collect(toList());
     }
 
     @Override

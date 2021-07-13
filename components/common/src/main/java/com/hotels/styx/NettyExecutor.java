@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import static com.hotels.styx.EventLoopGroups.epollEventLoopGroup;
 import static com.hotels.styx.EventLoopGroups.nioEventLoopGroup;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * A netty based executor for styx.
@@ -41,19 +42,20 @@ public class NettyExecutor {
 
     /**
      * Constructs an netty/io event executor.
-     * @param name thread group name.
+     *
+     * @param name  thread group name.
      * @param count thread count.
      * @return
      */
     public static NettyExecutor create(String name, int count) {
         if (Epoll.isAvailable()) {
-            LOG.info("Epoll is available. Using the native socket transport.");
+            LOG.debug("Epoll is available. Using the native socket transport.");
             return new NettyExecutor(
                     epollEventLoopGroup(count, name + "-%d-Thread"),
                     EpollServerSocketChannel.class,
                     EpollSocketChannel.class);
         } else {
-            LOG.info("Epoll not available. Using nio socket transport.");
+            LOG.debug("Epoll not available. Using nio socket transport.");
             return new NettyExecutor(
                     nioEventLoopGroup(count, name + "-%d-Thread"),
                     NioServerSocketChannel.class,
@@ -62,15 +64,20 @@ public class NettyExecutor {
     }
 
     private NettyExecutor(EventLoopGroup eventLoopGroup,
-                         Class<? extends ServerChannel> serverEventLoopClass,
-                         Class<? extends SocketChannel> clientEventLoopClass) {
-            this.serverEventLoopClass = serverEventLoopClass;
-            this.clientEventLoopClass = clientEventLoopClass;
-            this.eventLoopGroup = eventLoopGroup;
+                          Class<? extends ServerChannel> serverEventLoopClass,
+                          Class<? extends SocketChannel> clientEventLoopClass) {
+        this.serverEventLoopClass = serverEventLoopClass;
+        this.clientEventLoopClass = clientEventLoopClass;
+        this.eventLoopGroup = eventLoopGroup;
     }
 
     public void shut() {
-        eventLoopGroup.shutdownGracefully();
+        try {
+            eventLoopGroup.shutdownGracefully(0, 0, SECONDS).await(5000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
     }
 
     public Class<? extends ServerChannel> serverEventLoopClass() {

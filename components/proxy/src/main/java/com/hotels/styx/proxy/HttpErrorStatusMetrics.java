@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,38 +15,47 @@
  */
 package com.hotels.styx.proxy;
 
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.Meter;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.plugins.spi.PluginException;
 import com.hotels.styx.server.HttpErrorStatusListener;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 
 import java.net.InetSocketAddress;
 
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.api.Metrics.formattedExceptionName;
+import static java.lang.String.valueOf;
 import static java.util.Objects.requireNonNull;
 
 /**
- * An error listener that reports error metrics to a {@link MetricRegistry}.
+ * An error listener that reports error metrics to a {@link MeterRegistry}.
  */
 public class HttpErrorStatusMetrics implements HttpErrorStatusListener {
-    private final MetricRegistry metricRegistry;
-    private final Meter styxErrors;
+
+    public static final String ERROR = "styx.error";
+    public static final String EXCEPTION = "styx.exception";
+    public static final String RESPONSE = "styx.response";
+
+    public static final String STATUS_CODE_TAG = "statusCode";
+    public static final String TYPE_TAG = "type";
+
+    private final MeterRegistry meterRegistry;
+    private final Counter styxErrors;
 
     /**
      * Construct a reporter with a given registry to report to.
      *
-     * @param metricRegistry registry to report to
+     * @param meterRegistry registry to report to
      */
-    public HttpErrorStatusMetrics(MetricRegistry metricRegistry) {
-        this.metricRegistry = requireNonNull(metricRegistry);
+    public HttpErrorStatusMetrics(MeterRegistry meterRegistry) {
+        this.meterRegistry = requireNonNull(meterRegistry);
 
         // This means we can find the expected metric names in the registry, even before the corresponding events have occurred
         preregisterMetrics();
-        styxErrors = metricRegistry.meter("styx.errors");
+        styxErrors = meterRegistry.counter(ERROR);
     }
 
     @Override
@@ -85,18 +94,18 @@ public class HttpErrorStatusMetrics implements HttpErrorStatusListener {
     private void incrementExceptionCounter(Throwable cause, HttpResponseStatus status) {
         if (!(cause instanceof PluginException)) {
             if (INTERNAL_SERVER_ERROR.equals(status)) {
-                styxErrors.mark();
+                styxErrors.increment();
             }
-            exceptionCounter(cause).inc();
+            exceptionCounter(cause.getClass()).increment();
         }
     }
 
-    private Counter exceptionCounter(Throwable exception) {
-        return metricRegistry.counter("styx.exception." + formattedExceptionName(exception.getClass()));
+    private Counter exceptionCounter(Class<? extends Throwable> exceptionClass) {
+        return meterRegistry.counter(EXCEPTION, TYPE_TAG, formattedExceptionName(exceptionClass));
     }
 
-    static String formattedExceptionName(Class<? extends Throwable> type) {
-        return type.getName().replace('.', '_');
+    private Counter statusCounter(int statusCode) {
+        return meterRegistry.counter(RESPONSE, STATUS_CODE_TAG, valueOf(statusCode));
     }
 
     private static boolean isError(HttpResponseStatus status) {
@@ -105,13 +114,13 @@ public class HttpErrorStatusMetrics implements HttpErrorStatusListener {
 
     private void record(HttpResponseStatus status) {
         if (isError(status)) {
-            metricRegistry.counter("styx.response.status." + status.code()).inc();
+            statusCounter(status.code()).increment();
         }
     }
 
     // we can't preregister every possible name in these categories, but getting the prefix there will make things easier
     private void preregisterMetrics() {
-        metricRegistry.counter("styx.response.status.200");
-        metricRegistry.counter("styx.exception." + formattedExceptionName(Exception.class));
+        statusCounter(200);
+        exceptionCounter(Exception.class);
     }
 }

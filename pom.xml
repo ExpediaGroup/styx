@@ -80,11 +80,12 @@
     <module>support</module>
     <module>system-tests</module>
     <module>plugin-examples</module>
+    <module>demo</module>
   </modules>
 
   <properties>
 
-    <!-- common build properties -->
+    <!-- common build properties  -->
     <wiki.url>${project.url}</wiki.url>
     <maven.build.timestamp.format>yyyy-MM-dd|HH\:mm\:ss</maven.build.timestamp.format>
     <timestamp>${maven.build.timestamp}</timestamp>
@@ -96,32 +97,32 @@
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <java.source>1.8</java.source>
-    <java.target>1.8</java.target>
-    <java.testSource>1.8</java.testSource>
-    <java.testTarget>1.8</java.testTarget>
+    <java.source>11</java.source>
+    <java.target>11</java.target>
+    <java.testSource>11</java.testSource>
+    <java.testTarget>11</java.testTarget>
 
     <!-- Build defaults to linux platform: -->
     <netty-tcnative.classifier>linux-x86_64</netty-tcnative.classifier>
 
     <!-- General Versions -->
-    <guava.version>18.0</guava.version>
-    <jackson.version>2.10.1</jackson.version>
-    <jackson.dataformat.version>2.10.2</jackson.dataformat.version>
-    <jackson.module.scala.version>2.10.1</jackson.module.scala.version>
-    <jackson-module-kotlin.version>2.10.1</jackson-module-kotlin.version>
+    <guava.version>24.1.1-jre</guava.version>
+    <jackson.version>2.12.1</jackson.version>
+    <jackson.dataformat.version>${jackson.version}</jackson.dataformat.version>
+    <jackson.module.scala.version>${jackson.version}</jackson.module.scala.version>
+    <jackson-module-kotlin.version>${jackson.version}</jackson-module-kotlin.version>
     <metrics.version>4.0.5</metrics.version>
+    <micrometer.version>1.5.1</micrometer.version>
     <antlr.version>4.5.1-1</antlr.version>
-    <netty.version>4.1.42.Final</netty.version>
+    <netty.version>4.1.49.Final</netty.version>
     <netty-tcnative.version>2.0.26.Final</netty-tcnative.version>
-    <rxjava.version>1.1.6</rxjava.version>
-    <reactive-streams.version>1.0.2</reactive-streams.version>
+    <reactive-streams.version>1.0.3</reactive-streams.version>
     <reactor.version>3.3.0.RELEASE</reactor.version>
     <pcollections.version>3.0.3</pcollections.version>
     <bytebuddy.version>1.10.6</bytebuddy.version>
 
     <!--Kotlin -->
-    <kotlin.version>1.3.61</kotlin.version>
+    <kotlin.version>1.4.32</kotlin.version>
     <kotlintest.version>3.4.2</kotlintest.version>
     <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
     <kotlinx.html.version>0.6.12</kotlinx.html.version>
@@ -129,8 +130,8 @@
     <java-uuid-generator.version>3.1.5</java-uuid-generator.version>
 
     <!-- Logging Versions -->
-    <logback.version>1.1.2</logback.version>
-    <slf4j.version>1.6.1</slf4j.version>
+    <logback.version>1.2.0</logback.version>
+    <slf4j.version>1.7.30</slf4j.version>
 
     <scala.version>2.12</scala.version>
     <scala-compiler.version>2.12.7</scala-compiler.version>
@@ -147,7 +148,7 @@
     <maven-antrun-plugin.version>1.7</maven-antrun-plugin.version>
     <maven-assembly-plugin.version>2.4</maven-assembly-plugin.version>
     <maven-checkstyle-plugin.version>3.1.0</maven-checkstyle-plugin.version>
-    <maven-compiler-plugin.version>3.0</maven-compiler-plugin.version>
+    <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
     <maven-dependency-plugin.version>2.8</maven-dependency-plugin.version>
     <maven-deploy-plugin.version>2.7</maven-deploy-plugin.version>
     <maven-enforcer-plugin.version>1.2</maven-enforcer-plugin.version>
@@ -155,7 +156,7 @@
     <maven-install-plugin.version>2.5.1</maven-install-plugin.version>
     <maven-jar-plugin.version>2.4</maven-jar-plugin.version>
     <maven-pmd-plugin.version>3.5</maven-pmd-plugin.version>
-    <maven-javadoc-plugin.version>3.1.1</maven-javadoc-plugin.version>
+    <maven-javadoc-plugin.version>3.2.0</maven-javadoc-plugin.version>
     <maven-project-info-reports-plugin.version>2.6</maven-project-info-reports-plugin.version>
     <maven-release-plugin.version>2.4</maven-release-plugin.version>
     <maven-resources-plugin.version>2.6</maven-resources-plugin.version>
@@ -164,7 +165,7 @@
     <maven-surefire-plugin.version>3.0.0-M3</maven-surefire-plugin.version>
 
     <!-- non apache plugin versions and configurations, please sort alphabetically -->
-    <build-helper-maven-plugin.version>1.9.1</build-helper-maven-plugin.version>
+    <build-helper-maven-plugin.version>3.0.0</build-helper-maven-plugin.version>
     <jacoco-maven-plugin.version>0.8.5</jacoco-maven-plugin.version>
     <nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
 
@@ -195,7 +196,6 @@
     <surefire.skip.tests>false</surefire.skip.tests>
 
     <netty-transport-native-epoll.classifier/>
-    <rxjava-reactive-streams.version>1.1.1</rxjava-reactive-streams.version>
     <mockk.version>1.9.3</mockk.version>
   </properties>
 
@@ -252,19 +252,6 @@
         <artifactId>netty-tcnative-boringssl-static</artifactId>
         <version>${netty-tcnative.version}</version>
         <classifier>${netty-tcnative.classifier}</classifier>
-      </dependency>
-
-      <!-- RxJava -->
-      <dependency>
-        <groupId>io.reactivex</groupId>
-        <artifactId>rxjava</artifactId>
-        <version>${rxjava.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>io.reactivex</groupId>
-        <artifactId>rxjava-reactive-streams</artifactId>
-        <version>${rxjava-reactive-streams.version}</version>
       </dependency>
 
       <dependency>
@@ -342,6 +329,12 @@
       
       <!-- Metrics -->
       <dependency>
+        <groupId>io.micrometer</groupId>
+        <artifactId>micrometer-core</artifactId>
+        <version>${micrometer.version}</version>
+      </dependency>
+
+      <dependency>
         <groupId>io.dropwizard.metrics</groupId>
         <artifactId>metrics-core</artifactId>
         <version>${metrics.version}</version>
@@ -399,6 +392,24 @@
         <groupId>org.hdrhistogram</groupId>
         <artifactId>HdrHistogram</artifactId>
         <version>2.1.4</version>
+      </dependency>
+
+      <dependency>
+        <groupId>io.micrometer</groupId>
+        <artifactId>micrometer-registry-prometheus</artifactId>
+        <version>${micrometer.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>io.micrometer</groupId>
+        <artifactId>micrometer-registry-graphite</artifactId>
+        <version>${micrometer.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>io.micrometer</groupId>
+        <artifactId>micrometer-registry-jmx</artifactId>
+        <version>${micrometer.version}</version>
       </dependency>
 
       <dependency>
@@ -622,7 +633,6 @@
                   <sourceDir>${project.basedir}/src/main/java</sourceDir>
                 </sourceDirs>
               </configuration>
-
             </execution>
             <execution>
               <id>test-compile</id>
@@ -644,7 +654,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.3</version>
+          <version>${maven-compiler-plugin.version}</version>
           <configuration>
             <source>${java.source}</source>
             <target>${java.target}</target>
@@ -841,12 +851,6 @@
         </plugin>
 
         <plugin>
-          <groupId>org.codehaus.mojo</groupId>
-          <artifactId>build-helper-maven-plugin</artifactId>
-          <version>${build-helper-maven-plugin.version}</version>
-        </plugin>
-
-        <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-source-plugin</artifactId>
           <version>${maven-source-plugin.version}</version>
@@ -1006,6 +1010,7 @@
             <exclude>**/GraphiteReporter.java</exclude>
             <exclude>**/ServerCookieEncoder.java</exclude>
             <exclude>**/ClientCookieDecoder.java</exclude>
+            <exclude>**/CookieHeaderNames.java</exclude>
             <exclude>**/MultithreadedStressTester.java</exclude>
             <exclude>**/RelationshipTester.java</exclude>
             <exclude>**/EqualsTester.java</exclude>
@@ -1029,7 +1034,6 @@
           </execution>
         </executions>
       </plugin>
-
     </plugins>
 
   </build>
@@ -1153,6 +1157,7 @@
         </plugins>
       </build>
     </profile>
+
     <profile>
       <id>sonatype-oss-release</id>
       <build>

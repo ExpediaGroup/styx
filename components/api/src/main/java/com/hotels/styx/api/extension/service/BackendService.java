@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -27,8 +27,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.google.common.base.Objects.toStringHelper;
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.extension.Origin.checkThatOriginsAreDistinct;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
@@ -99,7 +97,9 @@ public final class BackendService implements Identifiable {
         this.maxHeaderSize = builder.maxHeaderSize;
 
         checkThatOriginsAreDistinct(origins);
-        checkArgument(responseTimeoutMillis >= 0, "Request timeout must be greater than or equal to zero");
+        if (responseTimeoutMillis < 0) {
+            throw new IllegalArgumentException("Request timeout must be greater than or equal to zero");
+        }
     }
 
     private static HealthCheckConfig nullIfDisabled(HealthCheckConfig healthCheckConfig) {
@@ -195,15 +195,25 @@ public final class BackendService implements Identifiable {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("id", this.id)
-                .add("path", this.path)
-                .add("origins", this.origins)
-                .add("connectionPoolSettings", this.connectionPoolSettings)
-                .add("healthCheckConfig", this.healthCheckConfig)
-                .add("stickySessionConfig", this.stickySessionConfig)
-                .add("rewrites", this.rewrites)
-                .add("tlsSettings", this.tlsSettings)
+        return new StringBuilder(128)
+                .append(this.getClass().getSimpleName())
+                .append("{id=")
+                .append(id)
+                .append(", path=")
+                .append(path)
+                .append(", origins=")
+                .append(origins)
+                .append(", connectionPoolSettings=")
+                .append(connectionPoolSettings)
+                .append(", healthCheckConfig=")
+                .append(healthCheckConfig)
+                .append(", stickySessionConfig=")
+                .append(stickySessionConfig)
+                .append(", rewrites=")
+                .append(rewrites)
+                .append(", tlsSettings=")
+                .append(tlsSettings)
+                .append('}')
                 .toString();
     }
 

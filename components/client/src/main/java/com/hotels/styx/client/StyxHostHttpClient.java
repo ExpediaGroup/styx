@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.client;
 
+import com.hotels.styx.api.HttpInterceptor.Context;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.ResponseEventListener;
@@ -30,6 +31,8 @@ import static java.util.Objects.requireNonNull;
  * A Styx HTTP Client for proxying to an individual origin host.
  */
 public class StyxHostHttpClient implements LoadBalancingMetricSupplier {
+    public static final String ORIGINID_CONTEXT_KEY = "styx.originid";
+
     private final ConnectionPool pool;
 
     StyxHostHttpClient(ConnectionPool pool) {
@@ -40,7 +43,10 @@ public class StyxHostHttpClient implements LoadBalancingMetricSupplier {
         return new StyxHostHttpClient(pool);
     }
 
-    public Publisher<LiveHttpResponse> sendRequest(LiveHttpRequest request) {
+    public Publisher<LiveHttpResponse> sendRequest(LiveHttpRequest request, Context context) {
+        if (context != null) {
+            context.add(ORIGINID_CONTEXT_KEY, pool.getOrigin().id());
+        }
         return Flux.from(pool.borrowConnection())
                 .flatMap(connection -> {
 

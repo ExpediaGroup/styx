@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -99,6 +99,7 @@ public class RequestEnrichingInterceptorTest {
 
     private static class TestChain implements Chain {
         private final boolean secure;
+
         TestChain(boolean secure) {
             this.secure = secure;
         }

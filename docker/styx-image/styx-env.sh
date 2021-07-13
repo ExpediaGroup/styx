@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2013-2019 Expedia Inc.
+# Copyright (C) 2013-2021 Expedia Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
 JVM_DIRECT_MEMORY="${JVM_DIRECT_MEMORY:=-XX:MaxDirectMemorySize=512m}"
 JVM_HEAP_OPTS="${JVM_HEAP_OPTS:=-XX:+AlwaysPreTouch}"
 
-JVM_GC_LOG="${JVM_GC_LOG:=-XX:+PrintGCDetails -Xloggc:/styx/logs/gc.log.$(/bin/date +%Y-%m-%d-%H%M%S)}"
+JVM_GC_LOG="${JVM_GC_LOG:=-XX:+PrintGCDetails -Xloggc:${APP_HOME}/logs/gc.log.$(/bin/date +%Y-%m-%d-%H%M%S)}"
 JVM_HEAP_DUMP="${JVM_HEAP_DUMP:=-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/tmp}"
 
 # Set java VM type

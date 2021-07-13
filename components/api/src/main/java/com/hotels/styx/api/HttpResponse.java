@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,18 +15,17 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
 import reactor.core.publisher.Flux;
 
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.SET_COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
@@ -34,10 +33,11 @@ import static com.hotels.styx.api.HttpHeaderValues.CHUNKED;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.ResponseCookie.decode;
-import static com.hotels.styx.api.ResponseCookie.encode;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.lang.Long.parseLong;
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
+import static java.util.Objects.hash;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
@@ -216,7 +216,7 @@ public class HttpResponse implements HttpMessage {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(version, status, headers);
+        return hash(version, status, headers);
     }
 
     @Override
@@ -228,9 +228,9 @@ public class HttpResponse implements HttpMessage {
             return false;
         }
         HttpResponse other = (HttpResponse) obj;
-        return Objects.equal(this.version, other.version)
-                && Objects.equal(this.status, other.status)
-                && Objects.equal(this.headers, other.headers);
+        return Objects.equals(this.version, other.version)
+                && Objects.equals(this.status, other.status)
+                && Objects.equals(this.headers, other.headers);
     }
 
     /**
@@ -432,8 +432,7 @@ public class HttpResponse implements HttpMessage {
 
             removeCookies(cookies.stream().map(ResponseCookie::name).collect(toList()));
 
-            encode(cookies).forEach(cookie ->
-                    addHeader(SET_COOKIE, cookie));
+            cookies.forEach(cookie -> addHeader(SET_COOKIE, cookie.asSetCookieString()));
             return this;
         }
 
@@ -557,10 +556,12 @@ public class HttpResponse implements HttpMessage {
         Builder ensureContentLengthIsValid() {
             List<String> contentLengths = headers.build().getAll(CONTENT_LENGTH);
 
-            checkArgument(contentLengths.size() <= 1, "Duplicate Content-Length found. %s", contentLengths);
+            if (contentLengths.size() > 1) {
+                throw new IllegalArgumentException(format("Duplicate Content-Length found. %s", contentLengths));
+            }
 
-            if (contentLengths.size() == 1) {
-                checkArgument(isNonNegativeInteger(contentLengths.get(0)), "Invalid Content-Length found. %s", contentLengths.get(0));
+            if (contentLengths.size() == 1 && !isNonNegativeInteger(contentLengths.get(0))) {
+                throw new IllegalArgumentException(format("Invalid Content-Length found. %s", contentLengths.get(0)));
             }
             return this;
         }

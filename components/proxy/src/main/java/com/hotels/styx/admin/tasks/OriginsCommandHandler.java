@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.admin.tasks;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -34,13 +33,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.LOCATION;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.TEMPORARY_REDIRECT;
 import static com.hotels.styx.api.Id.id;
+import static com.hotels.styx.common.Strings.isNullOrEmpty;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -51,7 +50,7 @@ public class OriginsCommandHandler extends BaseHttpHandler implements OriginsCha
     private static final String INVALID_APP_ID_FORMAT = "application with id=%s is not found";
     private static final String INVALID_ORIGIN_ID_FORMAT = "origin with id=%s is not found for application=%s";
     private static final List<String> VALID_COMMANDS = ImmutableList.of("enable_origin", "disable_origin");
-    private static final String MISSING_ERROR_MESSAGE = format("cmd, appId and originId are all required parameters. cmd can be %s", Joiner.on('|').join(VALID_COMMANDS));
+    private static final String MISSING_ERROR_MESSAGE = format("cmd, appId and originId are all required parameters. cmd can be %s", String.join("|", VALID_COMMANDS));
 
     private final EventBus eventBus;
     private final Map<Id, OriginsSnapshot> originsInventorySnapshotMap = new ConcurrentHashMap<>();

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,9 +20,7 @@ import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ServiceFactory;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 
-import static com.hotels.styx.metrics.reporting.MetricRegistryConstraints.codaHaleMetricRegistry;
 import static java.lang.String.format;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * A factory that produces GraphiteReporterService.
@@ -31,17 +29,19 @@ public class GraphiteReporterServiceFactory implements ServiceFactory<StyxServic
 
     @Override
     public StyxService create(Environment environment, Configuration serviceConfiguration) {
-        GraphiteConfig graphiteConfig = serviceConfiguration.as(GraphiteConfig.class);
-
-        String host = graphiteConfig.host();
-        int port = graphiteConfig.port();
+        final GraphiteConfig graphiteConfig = serviceConfiguration.as(GraphiteConfig.class);
+        final String host = graphiteConfig.host();
+        final int port = graphiteConfig.port();
 
         return new GraphiteReporterService.Builder()
+                .meterRegistry(environment.meterRegistry())
                 .serviceName(format("Graphite-Reporter-%s:%d", host, port))
+                .host(host)
+                .port(port)
                 .prefix(graphiteConfig.prefix())
-                .graphiteSender(new NonSanitizingGraphiteSender(host, port))
-                .reportingInterval(graphiteConfig.intervalMillis(), MILLISECONDS)
-                .metricRegistry(codaHaleMetricRegistry(environment))
+                .reportingIntervalMillis(graphiteConfig.intervalMillis())
+                .enabled(graphiteConfig.enabled())
+                .tagsEnabled(graphiteConfig.tagsEnabled())
                 .build();
     }
 }

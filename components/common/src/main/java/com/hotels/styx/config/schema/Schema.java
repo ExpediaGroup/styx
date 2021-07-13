@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 package com.hotels.styx.config.schema;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
@@ -77,7 +76,7 @@ public class Schema {
         this.optionalFields = ImmutableSet.copyOf(builder.optionalFields);
         this.constraints = ImmutableList.copyOf(builder.constraints);
         this.ignore = builder.pass;
-        this.name = builder.name.length() > 0 ? builder.name : Joiner.on(", ").join(this.fieldNames);
+        this.name = builder.name.length() > 0 ? builder.name : String.join(", ", this.fieldNames);
     }
 
     private static String sanitise(String string) {
@@ -135,7 +134,7 @@ public class Schema {
     }
 
     private static String message(List<String> parents, String self, JsonNode value) {
-        String fullName = sanitise(Joiner.on(".").join(parents));
+        String fullName = sanitise(String.join(".", parents));
         return format("Unexpected field type. Field '%s' should be %s, but it is %s", fullName, self, value.getNodeType());
     }
 
@@ -421,7 +420,7 @@ public class Schema {
                 if (isMandatory(schema, field) && value.get(field.name()) == null) {
                     throw new SchemaValidationException(format(
                             "Missing a mandatory field '%s'",
-                            sanitise(Joiner.on(".").join(push(parents, field.name())))));
+                            sanitise(String.join(".", push(parents, field.name())))));
                 }
 
                 if (value.get(field.name()) != null) {
@@ -436,7 +435,7 @@ public class Schema {
                 }
             });
 
-            assertNoUnknownFields(Joiner.on(".").join(parents), schema, ImmutableList.copyOf(value.fieldNames()));
+            assertNoUnknownFields(String.join(".", parents), schema, ImmutableList.copyOf(value.fieldNames()));
         }
 
         @Override
@@ -479,14 +478,14 @@ public class Schema {
             try {
                 string().validate(push(parents, discriminatorField), parent, type, typeExtensions);
             } catch (SchemaValidationException e) {
-                String fullName = Joiner.on(".").join(push(parents, discriminatorField));
+                String fullName = String.join(".", push(parents, discriminatorField));
                 throw new SchemaValidationException(format("Union discriminator '%s': %s", fullName, e.getMessage()));
             }
 
             String typeValue = type.textValue();
             FieldType schema = typeExtensions.apply(typeValue);
             if (schema == null) {
-                String fullName = Joiner.on(".").join(parents);
+                String fullName = String.join(".", parents);
                 throw new SchemaValidationException(format("Unknown union discriminator type '%s' for union '%s'. Union type is %s", typeValue, fullName, describe()));
             }
 

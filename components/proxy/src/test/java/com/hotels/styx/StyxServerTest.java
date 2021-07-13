@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.startup.StyxServerComponents;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.netty.util.ResourceLeakDetector;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -160,6 +161,7 @@ public class StyxServerTest {
     @Test
     public void disablesResourceLeakDetectionByDefault() {
         StyxServerComponents config = new StyxServerComponents.Builder()
+                .registry(new CompositeMeterRegistry())
                 .configuration(EMPTY_CONFIGURATION)
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(new MemoryBackedRegistry<>())))
                 .build();
@@ -257,8 +259,9 @@ public class StyxServerTest {
         };
     }
 
-    private static StyxServer styxServerWithPlugins(Map<String, Plugin> plugins) {
+    private StyxServer styxServerWithPlugins(Map<String, Plugin> plugins) {
         StyxServerComponents config = new StyxServerComponents.Builder()
+                .registry(new CompositeMeterRegistry())
                 .configuration(styxConfig())
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(new MemoryBackedRegistry<>())))
                 .plugins(plugins)
@@ -267,8 +270,9 @@ public class StyxServerTest {
         return new StyxServer(config);
     }
 
-    private static StyxServer styxServerWithBackendServiceRegistry(StyxService backendServiceRegistry) {
+    private StyxServer styxServerWithBackendServiceRegistry(StyxService backendServiceRegistry) {
         StyxServerComponents config = new StyxServerComponents.Builder()
+                .registry(new CompositeMeterRegistry())
                 .configuration(styxConfig())
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", backendServiceRegistry))
                 .build();
@@ -323,7 +327,8 @@ public class StyxServerTest {
     private static void eventually(Runnable block) {
         long startTime = currentTimeMillis();
         Throwable lastError = null;
-        while (currentTimeMillis() - startTime < 3000) {
+        // Note: since this returns as soon as it completes the task without error, it will only hit the maximum time if the test fails.
+        while (currentTimeMillis() - startTime < 30000) {
             try {
                 block.run();
                 return;

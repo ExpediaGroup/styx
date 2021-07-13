@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -53,7 +53,9 @@ final class BuiltInInterceptors {
         builder.add(new TcpTunnelRequestRejector())
                 .add(new ConfigurationContextResolverInterceptor(EMPTY_CONFIGURATION_CONTEXT_RESOLVER))
                 .add(new UnexpectedRequestContentLengthRemover())
-                .add(new ViaHeaderAppendingInterceptor())
+                .add(config.proxyServerConfig().via()
+                        .map(ViaHeaderAppendingInterceptor::new)
+                        .orElseGet(ViaHeaderAppendingInterceptor::new))
                 .add(new HopByHopHeadersRemovingInterceptor())
                 .add(new RequestEnrichingInterceptor(config.styxHeaderConfig()));
 

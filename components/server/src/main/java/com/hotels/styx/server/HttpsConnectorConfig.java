@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,18 +18,18 @@ package com.hotels.styx.server;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
-import com.hotels.styx.common.Joiners;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
-import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.hotels.styx.common.Strings.isNotEmpty;
 import static com.hotels.styx.common.io.ResourceFactory.newResource;
+import static java.util.Objects.hash;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 
 /**
  * Https Connector configuration.
@@ -115,7 +115,7 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
 
     @Override
     public int hashCode() {
-        return 31 * super.hashCode() + Objects.hashCode(sslProvider, certificateFile, certificateKeyFile, sessionTimeoutMillis, sessionCacheSize, protocols);
+        return 31 * super.hashCode() + hash(sslProvider, certificateFile, certificateKeyFile, sessionTimeoutMillis, sessionCacheSize, protocols);
     }
 
     @Override
@@ -130,30 +130,42 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
             return false;
         }
         HttpsConnectorConfig other = (HttpsConnectorConfig) obj;
-        return Objects.equal(this.sslProvider, other.sslProvider)
-                && Objects.equal(this.certificateFile, other.certificateFile)
-                && Objects.equal(this.certificateKeyFile, other.certificateKeyFile)
-                && Objects.equal(this.sessionTimeoutMillis, other.sessionTimeoutMillis)
-                && Objects.equal(this.sessionCacheSize, other.sessionCacheSize)
-                && Objects.equal(this.protocols, other.protocols);
+        return Objects.equals(this.sslProvider, other.sslProvider)
+                && Objects.equals(this.certificateFile, other.certificateFile)
+                && Objects.equals(this.certificateKeyFile, other.certificateKeyFile)
+                && Objects.equals(this.sessionTimeoutMillis, other.sessionTimeoutMillis)
+                && Objects.equals(this.sessionCacheSize, other.sessionCacheSize)
+                && Objects.equals(this.protocols, other.protocols);
     }
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("port", port())
-                .add("sslProvider", sslProvider)
-                .add("certificateFile", certificateFile)
-                .add("certificateKeyFile", certificateKeyFile)
-                .add("sessionTimeoutMillis", sessionTimeoutMillis)
-                .add("sessionCacheSize", sessionCacheSize)
-                .add("cipherSuites", cipherSuites)
-                .add("protocols", protocols != null ? Joiners.JOINER_ON_COMMA.join(protocols) : "None")
+        return new StringBuilder(256)
+                .append(this.getClass().getSimpleName())
+                .append("{port=")
+                .append(port())
+                .append(", sslProvider=")
+                .append(sslProvider)
+                .append(", certificateFile=")
+                .append(certificateFile)
+                .append(", certificateKeyFile=")
+                .append(certificateKeyFile)
+                .append(", sessionTimeoutMillis=")
+                .append(sessionTimeoutMillis)
+                .append(", sessionCacheSize=")
+                .append(sessionCacheSize)
+                .append(", cipherSuites=")
+                .append(cipherSuites)
+                .append(", protocols=")
+                .append(protocols != null
+                        ? protocols.stream().filter(java.util.Objects::nonNull).collect(joining(","))
+                        : "None")
+                .append('}')
                 .toString();
     }
 
     public boolean isConfigured() {
-        return !isNullOrEmpty(certificateFile) && !isNullOrEmpty(certificateKeyFile);
+        return isNotEmpty(certificateFile) && isNotEmpty(certificateKeyFile);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,22 +23,22 @@ import com.hotels.styx.api.ContentOverflowException;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpResponseStatus;
+import com.hotels.styx.api.Id;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.api.exceptions.OriginUnreachableException;
 import com.hotels.styx.api.exceptions.ResponseTimeoutException;
+import com.hotels.styx.api.exceptions.StyxException;
 import com.hotels.styx.api.exceptions.TransportLostException;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.PluginException;
 import com.hotels.styx.client.BadHttpResponseException;
 import com.hotels.styx.client.StyxClientException;
 import com.hotels.styx.client.connectionpool.ResourceExhaustedException;
-import com.hotels.styx.client.netty.ConsumerDisconnectedException;
 import com.hotels.styx.common.FsmEventProcessor;
 import com.hotels.styx.common.QueueDrainingEventProcessor;
 import com.hotels.styx.common.StateMachine;
+import com.hotels.styx.common.content.ConsumerDisconnectedException;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.HttpErrorStatusListener;
 import com.hotels.styx.server.HttpInterceptorContext;
@@ -46,6 +46,8 @@ import com.hotels.styx.server.NoServiceConfiguredException;
 import com.hotels.styx.server.RequestProgressListener;
 import com.hotels.styx.server.RequestTimeoutException;
 import com.hotels.styx.server.track.RequestTracker;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -59,6 +61,7 @@ import reactor.core.publisher.Flux;
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
@@ -73,6 +76,7 @@ import static com.hotels.styx.api.HttpResponseStatus.REQUEST_TIMEOUT;
 import static com.hotels.styx.api.HttpResponseStatus.SERVICE_UNAVAILABLE;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.LiveHttpResponse.response;
+import static com.hotels.styx.api.Metrics.name;
 import static com.hotels.styx.server.HttpErrorStatusListener.IGNORE_ERROR_STATUS;
 import static com.hotels.styx.server.RequestProgressListener.IGNORE_REQUEST_PROGRESS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
@@ -115,11 +119,13 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
     private final HttpResponseWriterFactory responseWriterFactory;
 
     private final RequestProgressListener statsSink;
-    private final MetricRegistry metrics;
+    private final MeterRegistry meterRegistry;
+    private final String meterPrefix;
 
     private final StateMachine<State> stateMachine;
     private final ResponseEnhancer responseEnhancer;
     private final boolean secure;
+    private final CharSequence originsHeaderName;
 
     private volatile Subscription subscription;
     private volatile LiveHttpRequest ongoingRequest;
@@ -138,9 +144,11 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         this.responseWriterFactory = requireNonNull(builder.responseWriterFactory);
         this.statsSink = requireNonNull(builder.progressListener);
         this.stateMachine = createStateMachine();
-        this.metrics = builder.metricRegistry.get();
+        this.meterRegistry = builder.meterRegistrySupplier.get();
+        this.meterPrefix = builder.meterPrefix;
         this.secure = builder.secure;
         this.tracker = tracker;
+        this.originsHeaderName = builder.originsHeaderName;
     }
 
     private StateMachine<State> createStateMachine() {
@@ -230,7 +238,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
     private State onSpuriousRequest(LiveHttpRequest request, State state) {
         LOGGER.warn(warningMessage("message='Spurious request received while handling another request', spuriousRequest=" + request));
 
-        metrics.counter("requests.cancelled.spuriousRequest").inc();
+        meterRegistry.counter(name(meterPrefix, "request.cancelled.spuriousRequest")).increment();
         statsSink.onTerminate(ongoingRequest.id());
         tracker.endTrack(ongoingRequest);
         cancelSubscription();
@@ -241,7 +249,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         if (prematureRequest != null) {
             LOGGER.warn(warningMessage("message='Spurious request received while handling another request', spuriousRequest=%s" + request));
 
-            metrics.counter("requests.cancelled.spuriousRequest").inc();
+            meterRegistry.counter(name(meterPrefix, "request.cancelled.spuriousRequest")).increment();
             cancelSubscription();
             statsSink.onTerminate(ongoingRequest.id());
             tracker.endTrack(ongoingRequest);
@@ -276,23 +284,23 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
 
                 @Override
                 public void hookOnComplete() {
-                   eventProcessor.submit(new ResponseObservableCompletedEvent(ctx, request.id()));
+                    eventProcessor.submit(new ResponseObservableCompletedEvent(ctx, request.id()));
                 }
 
                 @Override
                 public void hookOnError(Throwable cause) {
-                   eventProcessor.submit(new ResponseObservableErrorEvent(ctx, cause, request.id()));
+                    eventProcessor.submit(new ResponseObservableErrorEvent(ctx, cause, request.id()));
                 }
 
                 @Override
                 public void hookOnNext(LiveHttpResponse response) {
-                   eventProcessor.submit(new ResponseReceivedEvent(response, ctx));
+                    eventProcessor.submit(new ResponseReceivedEvent(response, ctx));
                 }
             });
 
             return WAITING_FOR_RESPONSE;
         } catch (Throwable cause) {
-            LiveHttpResponse response = exceptionToResponse(cause, request);
+            LiveHttpResponse response = exceptionToResponse(cause, request, originsHeaderName);
             httpErrorStatusListener.proxyErrorOccurred(request, remoteAddress(ctx), response.status(), cause);
             statsSink.onTerminate(request.id());
             tracker.endTrack(ongoingRequest);
@@ -349,7 +357,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
     }
 
     private State onResponseWriteError(ChannelHandlerContext ctx, Throwable cause) {
-        metrics.counter("requests.cancelled.responseWriteError").inc();
+        meterRegistry.counter(name(meterPrefix, "request.cancelled.responseWriteError")).increment();
         cancelSubscription();
         statsSink.onTerminate(ongoingRequest.id());
         tracker.endTrack(ongoingRequest);
@@ -361,7 +369,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
     }
 
     private State onChannelInactive() {
-        metrics.counter("requests.cancelled.channelInactive").inc();
+        meterRegistry.counter(name(meterPrefix, "request.cancelled.channelInactive")).increment();
         if (future != null) {
             LOGGER.warn(warningMessage("message=onChannelInactive"));
             future.cancel(false);
@@ -373,7 +381,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
     }
 
     private State onChannelExceptionWhenSendingResponse(ChannelHandlerContext ctx, Throwable cause) {
-        metrics.counter("requests.cancelled.channelExceptionWhileSendingResponse").inc();
+        meterRegistry.counter(name(meterPrefix, "request.cancelled.channelExceptionWhileSendingResponse")).increment();
         cancelSubscription();
         statsSink.onTerminate(ongoingRequest.id());
         tracker.endTrack(ongoingRequest);
@@ -384,7 +392,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
     }
 
     private State onChannelExceptionWhenWaitingForResponse(ChannelHandlerContext ctx, Throwable cause) {
-        metrics.counter("requests.cancelled.channelExceptionWhileWaitingForResponse").inc();
+        meterRegistry.counter(name(meterPrefix, "request.cancelled.channelExceptionWhileWaitingForResponse")).increment();
         statsSink.onTerminate(ongoingRequest.id());
         tracker.endTrack(ongoingRequest);
         cancelSubscription();
@@ -416,7 +424,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         }
 
         if (!isIoException(cause)) {
-            LiveHttpResponse response = exceptionToResponse(cause, ongoingRequest);
+            LiveHttpResponse response = exceptionToResponse(cause, ongoingRequest, originsHeaderName);
             httpErrorStatusListener.proxyErrorOccurred(response.status(), cause);
             if (ctx.channel().isActive()) {
                 respondAndClose(ctx, response);
@@ -450,7 +458,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
             return this.state();
         }
 
-        metrics.counter("requests.cancelled.responseError").inc();
+        meterRegistry.counter(name(meterPrefix, "request.cancelled.responseError")).increment();
         cancelSubscription();
 
         LOGGER.error(warningMessage(format("message='Error proxying request', requestId=%s cause=%s", requestId, cause)));
@@ -459,7 +467,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
             return TERMINATED;
         }
 
-        LiveHttpResponse response = exceptionToResponse(cause, ongoingRequest);
+        LiveHttpResponse response = exceptionToResponse(cause, ongoingRequest, originsHeaderName);
         responseWriterFactory.create(ctx)
                 .write(response)
                 .handle((ignore, exception) -> {
@@ -487,7 +495,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
     }
 
     private State onResponseObservableCompletedTooSoon(ChannelHandlerContext ctx, Object requestId) {
-        metrics.counter("requests.cancelled.observableCompletedTooSoon").inc();
+        meterRegistry.counter(name(meterPrefix, "request.cancelled.observableCompletedTooSoon")).increment();
 
         if (!ongoingRequest.id().equals(requestId)) {
             return this.state();
@@ -505,21 +513,41 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         return throwable instanceof IOException;
     }
 
-    private LiveHttpResponse exceptionToResponse(Throwable exception, LiveHttpRequest request) {
-        HttpResponseStatus status = status(exception instanceof PluginException
-                ? exception.getCause()
-                : exception);
+    private LiveHttpResponse exceptionToResponse(Throwable cause, LiveHttpRequest request, CharSequence originsHeaderName) {
+        HttpResponseStatus status = status(cause instanceof PluginException
+                ? cause.getCause()
+                : cause);
 
         String message = status.code() >= 500 ? "Site temporarily unavailable." : status.description();
 
-        return responseEnhancer.enhance(
+        LiveHttpResponse.Transformer builder = responseEnhancer.enhance(
                 response(status)
                         .body(new ByteStream(Flux.just(new Buffer(message, UTF_8))))
                         .build()
                         .newBuilder(), request)
                 .header(CONTENT_LENGTH, message.getBytes(UTF_8).length)
-                .header(CONNECTION, "close")
-                .build();
+                .header(CONNECTION, "close");
+
+        if (originsHeaderName != null && originFromException(cause) != null) {
+            return builder.header(originsHeaderName, originFromException(cause))
+                    .build();
+        } else {
+            return builder.build();
+        }
+    }
+
+    private String originFromException(Throwable cause) {
+        if (cause instanceof StyxException) {
+            StyxException c = (StyxException) cause;
+            return c.origin()
+                    .map(Id::toString)
+                    .orElse(Optional.ofNullable(c.application())
+                            .map(Id::toString)
+                            .orElse(null));
+
+        } else {
+            return null;
+        }
     }
 
     private static HttpResponseStatus status(Throwable exception) {
@@ -642,9 +670,11 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         private HttpErrorStatusListener httpErrorStatusListener = IGNORE_ERROR_STATUS;
         private RequestProgressListener progressListener = IGNORE_REQUEST_PROGRESS;
         private HttpResponseWriterFactory responseWriterFactory = HttpResponseWriter::new;
-        private Supplier<MetricRegistry> metricRegistry = CodaHaleMetricRegistry::new;
+        private Supplier<MeterRegistry> meterRegistrySupplier = CompositeMeterRegistry::new;
+        private String meterPrefix;
         private RequestTracker tracker = RequestTracker.NO_OP;
         private boolean secure;
+        private CharSequence originsHeaderName;
 
         /**
          * Constructs a new builder.
@@ -700,14 +730,19 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         }
 
         /**
-         * Sets the metric registry. By default, the metrics will not be available.
+         * Sets the meter registry. By default, the metrics will not be available.
          *
-         * @param metricRegistry the metric registry
+         * @param meterRegistry the meter registry
          * @return this builder
          */
-        public Builder metricRegistry(MetricRegistry metricRegistry) {
-            requireNonNull(metricRegistry);
-            this.metricRegistry = () -> metricRegistry;
+        public Builder meterRegistry(MeterRegistry meterRegistry) {
+            requireNonNull(meterRegistry);
+            this.meterRegistrySupplier = () -> meterRegistry;
+            return this;
+        }
+
+        public Builder meterPrefix(String meterPrefix) {
+            this.meterPrefix = meterPrefix;
             return this;
         }
 
@@ -718,6 +753,11 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
 
         public Builder requestTracker(RequestTracker tracker) {
             this.tracker = requireNonNull(tracker);
+            return this;
+        }
+
+        public Builder xOriginsHeader(CharSequence originsHeaderName) {
+            this.originsHeaderName = originsHeaderName;
             return this;
         }
 

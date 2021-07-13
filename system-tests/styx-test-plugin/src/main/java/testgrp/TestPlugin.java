@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,12 +15,11 @@
  */
 package testgrp;
 
-import com.google.common.base.Charsets;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import io.netty.buffer.ByteBuf;
@@ -29,14 +28,14 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.function.Function;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class TestPlugin implements Plugin {
     private static final String X_HCOM_PLUGINS_HEADER = "X-Hcom-Plugins";
     private static final String X_HCOM_PLUGINS_CONFIGURATION_PATH = "X-Hcom-Plugin-Configuration-Path";
     private static final String X_HCOM_PLUGINS_LIST = "X-Hcom-Plugins-List";
     private final PluginFactory.Environment environment;
     private TestPluginConfig config;
-    private boolean styxStarted = false;
-    private boolean styxStopped = false;
 
     public TestPlugin(PluginFactory.Environment environment, TestPluginConfig config) {
         this.environment = environment;
@@ -46,6 +45,8 @@ public class TestPlugin implements Plugin {
 
     @Override
     public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
+        boolean styxStarted = false;
+        boolean styxStopped = false;
         String header = xHcomPluginsHeader(request);
 
         LiveHttpRequest newRequest = request.newBuilder()
@@ -54,7 +55,7 @@ public class TestPlugin implements Plugin {
                 .header("X-Hcom-Styx-Stopped", styxStopped)
                 .build();
 
-        Function<ByteBuf, String> byteBufStringFunction = byteBuf -> byteBuf.toString(Charsets.UTF_8);
+        Function<ByteBuf, String> byteBufStringFunction = byteBuf -> byteBuf.toString(UTF_8);
 
         return chain.proceed(newRequest)
                 .flatMap(response -> response.aggregate(1 * 1024 * 1024))

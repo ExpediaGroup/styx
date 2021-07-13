@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,20 +19,29 @@ import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
-
-import static rx.RxReactiveStreams.toObservable;
-import static rx.RxReactiveStreams.toPublisher;
+import io.micrometer.core.instrument.Metrics;
+import reactor.core.publisher.Flux;
 
 public class OnCompleteErrorPlugin implements Plugin {
+    private String token;
+
+    OnCompleteErrorPlugin() {
+        this.token = "";
+    }
+
+    OnCompleteErrorPlugin(String token) {
+        this.token = token;
+    }
 
     @Override
     public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
 
-        return new Eventual<>(toPublisher(toObservable(chain.proceed(request))
-                .doOnCompleted(() -> {
+        return new Eventual<>(Flux.from(chain.proceed(request))
+                .doOnComplete(() -> {
                     if (request.header("Fail_at_onCompleted").isPresent()) {
+                        Metrics.counter("plugins.failAtOnCompletedPlugin" + token + ".errors").increment();
                         throw new RuntimeException("foobar");
                     }
-                })));
+                }));
     }
 }

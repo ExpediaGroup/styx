@@ -17,6 +17,7 @@
     <module>server</module>
     <module>proxy</module>
     <module>common</module>
+    <module>test-api</module>
   </modules>
 
   <properties>

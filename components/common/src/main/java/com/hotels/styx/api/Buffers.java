@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ public final class Buffers {
      * @param byteBuf
      * @return
      */
-    public static Buffer fromByteBuf(ByteBuf byteBuf) {
+    public static Buffer toStyxBuffer(ByteBuf byteBuf) {
         return new Buffer(byteBuf);
     }
 

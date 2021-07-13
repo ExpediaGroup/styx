@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,7 +15,11 @@
  */
 package com.hotels.styx.client;
 
+import com.hotels.styx.api.Id;
+import com.hotels.styx.api.exceptions.StyxException;
 import com.hotels.styx.api.extension.Origin;
+
+import java.util.Optional;
 
 import static java.lang.String.format;
 
@@ -23,7 +27,7 @@ import static java.lang.String.format;
  * An exception to throw when a bad HTTP response was received. For
  * example, when the decoding of the message failed.
  */
-public class BadHttpResponseException extends RuntimeException {
+public class BadHttpResponseException extends RuntimeException implements StyxException {
     private static final String MESSAGE_FORMAT = "Bad HTTP Response received from origin. origin=%s.";
     private final Origin origin;
 
@@ -32,7 +36,13 @@ public class BadHttpResponseException extends RuntimeException {
         this.origin = origin;
     }
 
-    public Origin origin() {
-        return origin;
+    @Override
+    public Optional<Id> origin() {
+        return Optional.of(origin.id());
+    }
+
+    @Override
+    public Id application() {
+        return origin.applicationId();
     }
 }

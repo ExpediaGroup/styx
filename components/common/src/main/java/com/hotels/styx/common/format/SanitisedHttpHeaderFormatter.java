@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,11 +22,11 @@ import com.hotels.styx.api.RequestCookie;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 
 /**
  * Formats HttpHeaders so that the specified list of headers and cookies are obfuscated.
@@ -50,7 +50,7 @@ public class SanitisedHttpHeaderFormatter {
     public String format(HttpHeaders headers) {
         return StreamSupport.stream(headers.spliterator(), false)
                 .map(this::hideOrFormatHeader)
-                .collect(Collectors.joining(", "));
+                .collect(joining(", "));
     }
 
     private String hideOrFormatHeader(HttpHeader header) {
@@ -81,7 +81,7 @@ public class SanitisedHttpHeaderFormatter {
     String formatCookieHeaderValue(String value) {
         return RequestCookie.decode(value).stream()
                 .map(this::hideOrFormatCookie)
-                .collect(Collectors.joining(";"));
+                .collect(joining(";"));
     }
 
 

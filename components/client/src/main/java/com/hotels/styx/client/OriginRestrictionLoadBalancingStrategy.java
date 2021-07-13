@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,15 +16,16 @@
 package com.hotels.styx.client;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Splitter;
 import com.hotels.styx.api.extension.ActiveOrigins;
 import com.hotels.styx.api.extension.RemoteHost;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
 import org.slf4j.Logger;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.StringTokenizer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -38,8 +39,6 @@ import static org.slf4j.LoggerFactory.getLogger;
  * A load balancing strategy that restricts available origins according to a cookie value.
  */
 public class OriginRestrictionLoadBalancingStrategy implements LoadBalancer {
-    private static final Splitter COOKIE_SPLITTER = Splitter.on(',').trimResults();
-
     private static final Logger LOG = getLogger(OriginRestrictionLoadBalancingStrategy.class);
     private static final Pattern MATCH_ALL = Pattern.compile(".*");
 
@@ -87,9 +86,14 @@ public class OriginRestrictionLoadBalancingStrategy implements LoadBalancer {
                 .map(this::originIdMatches);
     }
 
+    // CHECKSTYLE:OFF
     private Stream<String> regularExpressionStream(String cookieValue) {
-        return stream(COOKIE_SPLITTER.split(cookieValue).spliterator(), false);
+        return Collections.list(new StringTokenizer(cookieValue, ","))
+                .stream()
+                .map(String.class::cast)
+                .map(String::trim);
     }
+    // CHECKSTYLE:ON
 
     private Pattern compileRegularExpression(String regex) {
         try {

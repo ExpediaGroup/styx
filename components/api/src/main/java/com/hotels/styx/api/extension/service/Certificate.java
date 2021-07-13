@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hotels.styx.api.extension.service;
 
 import java.util.Objects;
 
-import static com.google.common.base.Objects.toStringHelper;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -75,9 +74,13 @@ public class Certificate {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("alias", this.alias)
-                .add("certificatePath", this.certificatePath)
+        return new StringBuilder(64)
+                .append(this.getClass().getSimpleName())
+                .append("{alias=")
+                .append(alias)
+                .append(", certificatePath=")
+                .append(certificatePath)
+                .append('}')
                 .toString();
     }
 

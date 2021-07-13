@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,19 +15,29 @@
  */
 package com.hotels.styx.metrics.reporting.graphite;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.graphite.GraphiteSender;
-import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
+import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.core.instrument.config.NamingConvention;
+import io.micrometer.core.instrument.util.HierarchicalNameMapper;
+import io.micrometer.graphite.GraphiteConfig;
+import io.micrometer.graphite.GraphiteDimensionalNameMapper;
+import io.micrometer.graphite.GraphiteDimensionalNamingConvention;
+import io.micrometer.graphite.GraphiteHierarchicalNameMapper;
+import io.micrometer.graphite.GraphiteHierarchicalNamingConvention;
+import io.micrometer.graphite.GraphiteMeterRegistry;
+import io.micrometer.graphite.GraphiteProtocol;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
+import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
-import static com.codahale.metrics.MetricFilter.ALL;
+import static io.micrometer.core.instrument.config.NamingConvention.dot;
+import static io.micrometer.graphite.GraphiteProtocol.PLAINTEXT;
 import static java.util.Objects.requireNonNull;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -35,30 +45,38 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public final class GraphiteReporterService extends AbstractStyxService {
     private static final Logger LOGGER = getLogger(GraphiteReporterService.class);
-
-    private final GraphiteReporter reporter;
-    private final long reportingIntervalMillis;
+    private final MeterRegistry meterRegistry;
+    private final MicrometerGraphiteConfig graphiteConfig;
+    private GraphiteMeterRegistry graphiteMeterRegistry;
 
     private GraphiteReporterService(Builder builder) {
-        super(requireNonNull(builder.serviceName));
+        super(builder.serviceName);
 
-        MetricRegistry registry = requireNonNull(builder.registry);
-        GraphiteSender graphiteSender = requireNonNull(builder.graphiteSender);
-        String prefix = requireNonNull(builder.prefix);
-
-        this.reportingIntervalMillis = builder.reportingIntervalMillis;
-        this.reporter = GraphiteReporter.forRegistry(registry)
-                .prefixedWith(prefix)
-                .convertRatesTo(SECONDS)
-                .convertDurationsTo(MILLISECONDS)
-                .filter(ALL)
-                .build(graphiteSender);
+        meterRegistry = requireNonNull(builder.meterRegistry);
+        graphiteConfig = new MicrometerGraphiteConfig(builder);
     }
 
     @Override
     protected CompletableFuture<Void> startService() {
         return CompletableFuture.runAsync(() -> {
-            this.reporter.start(reportingIntervalMillis, MILLISECONDS);
+            String metricPrefix = Optional.ofNullable(graphiteConfig.metricNamePrefix())
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .map(s -> s + ".")
+                    .orElse("");
+            HierarchicalNameMapper nameMapper = graphiteConfig.graphiteTagsEnabled()
+                    ? new GraphiteDimensionalNameMapper()
+                    : new GraphiteHierarchicalNameMapper();
+            NamingConvention nameConvention = graphiteConfig.graphiteTagsEnabled()
+                    ? new GraphiteDimensionalNamingConvention(dot)
+                    : new GraphiteHierarchicalNamingConvention(dot);
+
+            graphiteMeterRegistry = new GraphiteMeterRegistry(
+                    graphiteConfig,
+                    Clock.SYSTEM,
+                    (id, convention) -> metricPrefix + nameMapper.toHierarchicalName(id, convention));
+            graphiteMeterRegistry.config().namingConvention(nameConvention);
+            ((CompositeMeterRegistry) meterRegistry).add(graphiteMeterRegistry);
             LOGGER.info("Graphite service started, service name=\"{}\"", serviceName());
         });
     }
@@ -66,38 +84,42 @@ public final class GraphiteReporterService extends AbstractStyxService {
     @Override
     protected CompletableFuture<Void> stopService() {
         return CompletableFuture.runAsync(() -> {
-            this.reporter.stop();
+            graphiteMeterRegistry.stop();
+            ((CompositeMeterRegistry) meterRegistry).remove(graphiteMeterRegistry);
             LOGGER.info("Graphite service stopped, service name=\"{}\"", serviceName());
         });
-    }
-
-    @VisibleForTesting
-    void report() {
-        this.reporter.report();
     }
 
     /**
      * Builder for reporter service.
      */
     public static final class Builder {
+        private MeterRegistry meterRegistry;
         private String serviceName;
+        private String host;
+        private int port;
         private String prefix;
         private long reportingIntervalMillis;
-        private MetricRegistry registry;
-        private GraphiteSender graphiteSender;
+        private boolean enabled;
+        private boolean tagsEnabled;
 
-        public Builder metricRegistry(MetricRegistry registry) {
-            this.registry = registry;
+        public Builder meterRegistry(@NotNull MeterRegistry meterRegistry) {
+            this.meterRegistry = meterRegistry;
             return this;
         }
 
-        public Builder serviceName(String name) {
+        public Builder serviceName(@NotNull String name) {
             this.serviceName = name;
             return this;
         }
 
-        public Builder graphiteSender(GraphiteSender graphiteSender) {
-            this.graphiteSender = graphiteSender;
+        public Builder host(@NotNull String host) {
+            this.host = host;
+            return this;
+        }
+
+        public Builder port(int port) {
+            this.port = port;
             return this;
         }
 
@@ -106,13 +128,73 @@ public final class GraphiteReporterService extends AbstractStyxService {
             return this;
         }
 
-        public Builder reportingInterval(long reportingInterval, TimeUnit timeUnit) {
-            this.reportingIntervalMillis = timeUnit.toMillis(reportingInterval);
+        public Builder reportingIntervalMillis(long reportingIntervalMillis) {
+            this.reportingIntervalMillis = reportingIntervalMillis;
+            return this;
+        }
+
+        public Builder enabled(boolean enabled) {
+            this.enabled = enabled;
+            return this;
+        }
+
+        public Builder tagsEnabled(boolean tagsEnabled) {
+            this.tagsEnabled = tagsEnabled;
             return this;
         }
 
         public GraphiteReporterService build() {
             return new GraphiteReporterService(this);
         }
+    }
+
+    private static final class MicrometerGraphiteConfig implements GraphiteConfig {
+        private final Builder builder;
+
+        public MicrometerGraphiteConfig(Builder builder) {
+            this.builder = builder;
+        }
+
+        @Override
+        public String get(@NotNull String s) {
+            return null;
+        }
+
+        @Override
+        public boolean graphiteTagsEnabled() {
+            return builder.tagsEnabled;
+        }
+
+        @NotNull
+        @Override
+        public String host() {
+            return builder.host;
+        }
+
+        @Override
+        public int port() {
+            return builder.port;
+        }
+
+        @Override
+        public boolean enabled() {
+            return builder.enabled;
+        }
+
+        @Override
+        public GraphiteProtocol protocol() {
+            return PLAINTEXT;
+        }
+
+        @NotNull
+        @Override
+        public Duration step() {
+            return Duration.ofMillis(builder.reportingIntervalMillis);
+        }
+
+        public String metricNamePrefix() {
+            return builder.prefix;
+        }
+
     }
 }

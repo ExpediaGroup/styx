@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -68,7 +68,6 @@ public final class StateMachine<S> {
 
         S oldState = currentState;
         currentState = transition == null ? inappropriateEventHandler.apply(oldState, event) : transition.apply(event);
-
         stateChangeListener.onStateChange(oldState, currentState, event);
     }
 
@@ -182,7 +181,7 @@ public final class StateMachine<S> {
 
         public Builder<S> debugTransitions(String messagePrefix) {
             return this.onStateChange((oldState, newState, event)-> {
-                LOGGER.info("{} {}: {} -> {}", new Object[] {messagePrefix, event, oldState, newState});
+                LOGGER.debug("{} {}: {} -> {}", new Object[] {messagePrefix, event, oldState, newState});
             });
         }
     }

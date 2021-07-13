@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,18 +15,17 @@
  */
 package com.hotels.styx.common.http.handler;
 
-import com.google.common.base.Charsets;
 import com.google.common.net.MediaType;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 
 import static com.google.common.net.HttpHeaders.CONTENT_LENGTH;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -44,7 +43,7 @@ public class StaticBodyHttpHandler extends BaseHttpHandler {
      * @param body        body to return
      */
     public StaticBodyHttpHandler(MediaType contentType, String body) {
-        this(contentType, body, Charsets.UTF_8);
+        this(contentType, body, UTF_8);
     }
 
     /**
@@ -65,7 +64,7 @@ public class StaticBodyHttpHandler extends BaseHttpHandler {
         return HttpResponse.response(OK)
                 .header(CONTENT_TYPE, this.contentType.toString())
                 .header(CONTENT_LENGTH, this.contentLength)
-                .body(this.body, StandardCharsets.UTF_8)
+                .body(this.body, UTF_8)
                 .build();
     }
 }

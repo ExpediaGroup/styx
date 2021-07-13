@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,22 +16,16 @@
 package com.hotels.styx
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.hotels.styx.api.Eventual
-import com.hotels.styx.api.HttpHandler
-import com.hotels.styx.api.HttpRequest
-import com.hotels.styx.api.HttpResponse
+import com.google.common.collect.ImmutableSet
+import com.hotels.styx.api.*
 import com.hotels.styx.api.HttpResponse.response
 import com.hotels.styx.api.HttpResponseStatus.OK
-import com.hotels.styx.api.LiveHttpRequest
-import com.hotels.styx.api.LiveHttpResponse
-import com.hotels.styx.api.WebServiceHandler
+import com.hotels.styx.executors.NettyExecutorConfig
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.proxy.plugin.NamedPlugin
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.routing.RoutingObjectRecord
-import com.hotels.styx.routing.config.Builtins.BUILTIN_HANDLER_FACTORIES
-import com.hotels.styx.routing.config.Builtins.DEFAULT_REFERENCE_LOOKUP
-import com.hotels.styx.routing.config.Builtins.INTERCEPTOR_FACTORIES
+import com.hotels.styx.routing.config.Builtins.*
 import com.hotels.styx.routing.config.HttpInterceptorFactory
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.config.StyxObjectDefinition
@@ -39,12 +33,13 @@ import com.hotels.styx.routing.config.StyxObjectReference
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.RouteRefLookup
 import com.hotels.styx.server.HttpInterceptorContext
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.CapturingSlot
 import io.mockk.every
 import io.mockk.mockk
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.toMono
-import java.lang.RuntimeException
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executor
@@ -54,16 +49,54 @@ fun routingObjectDef(text: String) = YamlConfig(text).`as`(StyxObjectDefinition:
 fun configBlock(text: String) = YamlConfig(text).`as`(JsonNode::class.java)
 
 internal data class RoutingObjectFactoryContext(
-        val routeRefLookup: RouteRefLookup = DEFAULT_REFERENCE_LOOKUP,
-        val environment: Environment = Environment.Builder().build(),
-        val objectStore: StyxObjectStore<RoutingObjectRecord> = StyxObjectStore(),
-        val objectFactories: Map<String, RoutingObjectFactory> = BUILTIN_HANDLER_FACTORIES,
-        val plugins: Iterable<NamedPlugin> = listOf(),
-        val interceptorFactories: Map<String, HttpInterceptorFactory> = INTERCEPTOR_FACTORIES,
-        val requestTracking: Boolean = false) {
-    fun get() = RoutingObjectFactory.Context(routeRefLookup, environment, objectStore, objectFactories, plugins, INTERCEPTOR_FACTORIES, requestTracking)
-
+    val routeRefLookup: RouteRefLookup = DEFAULT_REFERENCE_LOOKUP,
+    val environment: Environment = Environment.Builder().registry(SimpleMeterRegistry()).build(),
+    val objectStore: StyxObjectStore<RoutingObjectRecord> = StyxObjectStore(),
+    val objectFactories: Map<String, RoutingObjectFactory> = BUILTIN_HANDLER_FACTORIES,
+    val plugins: Iterable<NamedPlugin> = listOf(),
+    val interceptorFactories: Map<String, HttpInterceptorFactory> = INTERCEPTOR_FACTORIES,
+    val requestTracking: Boolean = false,
+    val executorObjectStore: StyxObjectStore<StyxObjectRecord<NettyExecutor>> = executorObjects()) {
+    fun get() = RoutingObjectFactory.Context(
+            routeRefLookup,
+            environment,
+            objectStore,
+            objectFactories,
+            plugins,
+            INTERCEPTOR_FACTORIES,
+            requestTracking,
+            executorObjectStore)
 }
+
+fun executorObjects(): StyxObjectStore<StyxObjectRecord<NettyExecutor>> = StyxObjectStore<StyxObjectRecord<NettyExecutor>>()
+        .let { objectStore ->
+
+            "Test-HttpServer-Global-Boss".let { name ->
+                objectStore.insert("StyxHttpServer-Global-Boss", StyxObjectRecord(
+                        "NettyExecutor",
+                        setOf("StyxInternal"),
+                        NettyExecutorConfig(0, name).asJsonNode(),
+                        NettyExecutor.create(name, 1)));
+            }
+
+            "Test-HttpServer-Global-Worker".let { name ->
+                objectStore.insert("StyxHttpServer-Global-Worker", StyxObjectRecord(
+                        "NettyExecutor",
+                        setOf("StyxInternal"),
+                        NettyExecutorConfig(0, name).asJsonNode(),
+                        NettyExecutor.create(name, 1)));
+            }
+
+            "Test-Client-Global-Worker".let { name ->
+                objectStore.insert("Styx-Client-Global-Worker", StyxObjectRecord(
+                        "NettyExecutor",
+                        ImmutableSet.of("StyxInternal"),
+                        NettyExecutorConfig(0, name).asJsonNode(),
+                        NettyExecutor.create(name, 0)))
+            }
+
+            objectStore
+        }
 
 fun WebServiceHandler.handle(request: HttpRequest) = this.handle(request, requestContext())
 
@@ -153,7 +186,7 @@ fun CompletableFuture<LiveHttpResponse>.wait(debug: Boolean = false) = this.toMo
         }
         .block()
 
-fun Eventual<LiveHttpResponse>.wait(maxBytes: Int = 100*1024, debug: Boolean = false) = this.toMono()
+fun Eventual<LiveHttpResponse>.wait(maxBytes: Int = 100 * 1024, debug: Boolean = false) = this.toMono()
         .flatMap { it.aggregate(maxBytes).toMono() }
         .doOnNext {
             if (debug) {

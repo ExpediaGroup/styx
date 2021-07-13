@@ -37,13 +37,14 @@
 
 - id: "toxiproxy"
   path: "/toxi"
-  healthCheck:
-    uri: /hello.txt
   connectionPool:
     maxConnectionsPerHost: 45
     maxPendingConnectionsPerHost: 15
     connectTimeoutMillis: 1000
     pendingConnectionTimeoutMillis: 8000
   responseTimeoutMillis: 60000
+  rewrites:
+    - urlPattern: "/toxi/(.*)"
+      replacement: "/$1"
   origins:
     - { id: "toxiproxy-01", host: "toxiproxy:8080" }

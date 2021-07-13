@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 package com.hotels.styx.server.netty;
 
 import com.google.common.collect.ImmutableMap;
-import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.InetServer;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
@@ -27,17 +27,14 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.group.ChannelGroup;
-import io.netty.util.concurrent.Future;
 import org.slf4j.Logger;
 
 import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 
-import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static io.netty.channel.ChannelOption.ALLOCATOR;
@@ -48,7 +45,6 @@ import static io.netty.channel.ChannelOption.TCP_NODELAY;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -64,8 +60,8 @@ final class NettyServer extends AbstractStyxService implements InetServer {
     private final String host;
     private final NettyExecutor bossExecutor;
     private final NettyExecutor workerExecutor;
+    private final Runnable shutdownAction;
 
-    private volatile Callable<?> stopper;
     private volatile InetSocketAddress address;
 
     NettyServer(NettyServerBuilder nettyServerBuilder) {
@@ -76,6 +72,7 @@ final class NettyServer extends AbstractStyxService implements InetServer {
         this.serverConnector = nettyServerBuilder.protocolConnector();
         this.bossExecutor = nettyServerBuilder.bossExecutor();
         this.workerExecutor = nettyServerBuilder.workerExecutor();
+        this.shutdownAction = nettyServerBuilder.shutdownAction();
     }
 
     @Override
@@ -105,7 +102,7 @@ final class NettyServer extends AbstractStyxService implements InetServer {
 
     @Override
     protected CompletableFuture<Void> startService() {
-        LOGGER.info("starting services");
+        LOGGER.debug("starting services");
 
         CompletableFuture<Void> serviceFuture = new CompletableFuture<>();
 
@@ -135,8 +132,7 @@ final class NettyServer extends AbstractStyxService implements InetServer {
                         Channel channel = future.channel();
                         channelGroup.add(channel);
                         address = (InetSocketAddress) channel.localAddress();
-                        LOGGER.info("server connector {} bound successfully on port {} socket port {}", new Object[]{serverConnector.getClass(), port, address});
-                        stopper = new Stopper(bossExecutor, workerExecutor);
+                        LOGGER.debug("server connector {} bound successfully on port {} socket port {}", new Object[]{serverConnector.getClass(), port, address});
                         serviceFuture.complete(null);
                     } else {
                         LOGGER.warn("Failed to start service={} cause={}", this, future.cause());
@@ -151,12 +147,15 @@ final class NettyServer extends AbstractStyxService implements InetServer {
     protected CompletableFuture<Void> stopService() {
         return CompletableFuture.runAsync(() -> {
             try {
-                if (stopper != null) {
-                    stopper.call();
-                    address = null;
+                channelGroup.close().awaitUninterruptibly();
+                if (this.shutdownAction != null) {
+                    shutdownAction.run();
                 }
+                address = null;
+            } catch (RuntimeException e) {
+                throw e;
             } catch (Exception e) {
-                throw propagate(e);
+                throw new RuntimeException(e);
             }
         });
     }
@@ -166,29 +165,5 @@ final class NettyServer extends AbstractStyxService implements InetServer {
             return new BindException(format("Address [%s] already is use.", port));
         }
         return cause;
-    }
-
-    private class Stopper implements Callable<Void> {
-        private final NettyExecutor bossGroup;
-        private final NettyExecutor workerGroup;
-
-        public Stopper(NettyExecutor bossGroup, NettyExecutor workerGroup) {
-            this.bossGroup = bossGroup;
-            this.workerGroup = workerGroup;
-        }
-
-        @Override
-        public Void call() {
-            channelGroup.close().awaitUninterruptibly();
-            // Note: The return values from the shutdown methods is ignored.
-            //       Not sure why.
-            shutdownEventExecutorGroup(bossGroup);
-            shutdownEventExecutorGroup(workerGroup);
-            return null;
-        }
-
-        private Future<?> shutdownEventExecutorGroup(NettyExecutor eventExecutorGroup) {
-            return eventExecutorGroup.eventLoopGroup().shutdownGracefully(10, 1000, MILLISECONDS);
-        }
     }
 }

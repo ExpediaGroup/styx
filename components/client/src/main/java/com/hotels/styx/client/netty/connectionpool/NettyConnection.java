@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import reactor.core.publisher.Flux;
 
 import java.util.Optional;
 
-import static com.google.common.base.Objects.toStringHelper;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -127,21 +126,34 @@ public class NettyConnection implements Connection {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("host", this.origin.hostAndPortString())
-                .add("channel", toString(channel))
+        return new StringBuilder(256)
+                .append(this.getClass().getSimpleName())
+                .append("{host=")
+                .append(this.origin.hostAndPortString())
+                .append(", channel=")
+                .append(toString(channel))
+                .append('}')
                 .toString();
     }
 
     private static String toString(Channel channel) {
-        return toStringHelper(channel)
-                .add("active", channel.isActive())
-                .add("open", channel.isOpen())
-                .add("registered", channel.isRegistered())
-                .add("writable", channel.isWritable())
-                .add("localAddress", channel.localAddress())
-                .add("clientAddress", channel.remoteAddress())
-                .add("hashCode", channel.hashCode())
+        return new StringBuilder(224)
+                .append(channel.getClass().getSimpleName())
+                .append("{active=")
+                .append(channel.isActive())
+                .append(", open=")
+                .append(channel.isOpen())
+                .append(", registered=")
+                .append(channel.isRegistered())
+                .append(", writable=")
+                .append(channel.isWritable())
+                .append(", localAddress=")
+                .append(channel.localAddress())
+                .append(", clientAddress=")
+                .append(channel.remoteAddress())
+                .append(", hashCode=")
+                .append(channel.hashCode())
+                .append('}')
                 .toString();
     }
 }

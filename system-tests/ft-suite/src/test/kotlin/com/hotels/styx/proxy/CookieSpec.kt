@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hotels.styx.support.wait
 import io.kotlintest.Spec
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
+import io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Strict
 
 class CookieSpec : StringSpec() {
 
@@ -36,7 +37,7 @@ class CookieSpec : StringSpec() {
                             .build())
                     .wait()!!
                     .let {
-                        it.cookies().iterator().next().sameSite().get() shouldBe "Strict"
+                        it.cookies().iterator().next().sameSite().get() shouldBe Strict
                     }
         }
     }

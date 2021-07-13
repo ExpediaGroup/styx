@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,14 +15,18 @@
  */
 package com.hotels.styx.client.connectionpool;
 
+import com.hotels.styx.api.Id;
+import com.hotels.styx.api.exceptions.StyxException;
 import com.hotels.styx.api.extension.Origin;
+
+import java.util.Optional;
 
 import static java.lang.String.format;
 
 /**
  * Launched when a connection pool is unable to establish new TCP connections.
  */
-public class MaxPendingConnectionsExceededException extends ResourceExhaustedException {
+public class MaxPendingConnectionsExceededException extends ResourceExhaustedException implements StyxException {
     private final Origin origin;
     private final int pendingConnectionsCount;
     private final int maxPendingConnectionsPerHost;
@@ -44,7 +48,13 @@ public class MaxPendingConnectionsExceededException extends ResourceExhaustedExc
         return maxPendingConnectionsPerHost;
     }
 
-    public Origin origin() {
-        return origin;
+    @Override
+    public Optional<Id> origin() {
+        return Optional.of(origin.id());
+    }
+
+    @Override
+    public Id application() {
+        return origin.applicationId();
     }
 }

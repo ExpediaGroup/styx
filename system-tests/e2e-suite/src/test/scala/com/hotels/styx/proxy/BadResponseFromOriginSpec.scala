@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hotels.styx.api.HttpHeaderNames.CONNECTION
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY
 import com.hotels.styx.client.StyxHeaderConfig.STYX_INFO_DEFAULT
+import com.hotels.styx.proxy.HttpErrorStatusMetrics.{STATUS_CODE_TAG, RESPONSE}
 import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins}
 import com.hotels.styx.support.matchers.IsOptional.matches
 import com.hotels.styx.support.matchers.RegExMatcher.matchesRegex
@@ -68,7 +69,7 @@ class BadResponseFromOriginSpec extends FunSpec
     originOneServer.stopAsync().awaitTerminated()
     // This test is failing intermittently. Print the metrics snapshot in case it fails,
     // to offer insight into what is going wrong:
-    LOGGER.info("Styx metrics after BadResponseFromOriginSpec: " + styxServer.metricsSnapshot)
+    // LOGGER.info("Styx metrics after BadResponseFromOriginSpec: " + styxServer.metricsSnapshot)
     super.afterAll()
   }
 
@@ -107,7 +108,7 @@ class BadResponseFromOriginSpec extends FunSpec
       response.header(CONNECTION) should be(Optional.of("close"))
 
       eventually(timeout(7.seconds)) {
-        styxServer.metricsSnapshot.count("styx.response.status.502").get should be(1)
+        styxServer.meterRegistry().counter(RESPONSE, STATUS_CODE_TAG, "502").count() should be(1.0)
       }
     }
 

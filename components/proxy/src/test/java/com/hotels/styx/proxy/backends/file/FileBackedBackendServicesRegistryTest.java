@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hotels.styx.api.extension.service.spi.ServiceFailureException;
 import com.hotels.styx.infrastructure.FileBackedRegistry;
 import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry.RejectDuplicatePaths;
 import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry.YAMLBackendServicesReader;
+import com.hotels.styx.support.JustATestException;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -209,17 +210,17 @@ public class FileBackedBackendServicesRegistryTest {
     }
 
     @Test
-    public void serviceStarts_failsToStartWhenReloadFails() throws Exception {
+    public void serviceStarts_failsToStartWhenReloadFails() {
         FileBackedRegistry<BackendService> delegate = mock(FileBackedRegistry.class);
         when(delegate.fileName()).thenReturn("/monitored/origins.yml");
         when(delegate.reload()).thenReturn(
                 completedFuture(failed(
                         "md5-hash: 9034890345289043, Failed to load file",
-                        new RuntimeException("something went wrong"))));
+                        new JustATestException())));
 
         registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         Exception e = assertThrows(ExecutionException.class, () -> registry.startService().get());
-        assertEquals("java.lang.RuntimeException: java.lang.RuntimeException: something went wrong", e.getMessage());
+        assertEquals("java.lang.RuntimeException: com.hotels.styx.support.JustATestException: This is not a real exception. We are just testing exception handling", e.getMessage());
     }
 
     @Test
@@ -229,21 +230,21 @@ public class FileBackedBackendServicesRegistryTest {
         when(delegate.reload()).thenReturn(
                 completedFuture(failed(
                         "md5-hash: 9034890345289043, Failed to load file",
-                        new RuntimeException("something went wrong"))));
+                        new JustATestException())));
 
         registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
 
         try {
             registry.startService().get();
         } catch (Throwable any) {
-              // pass
+            // pass
         } finally {
             assertThat(log.lastMessage(), is(
                     loggingEvent(
                             ERROR,
                             "Backend services reload failed. reason='Initial load', md5-hash: 9034890345289043, Failed to load file, file='/monitored/origins.yml'",
-                            RuntimeException.class,
-                            "something went wrong")
+                            JustATestException.class,
+                            JustATestException.DEFAULT_MESSAGE)
             ));
         }
     }
@@ -323,7 +324,7 @@ public class FileBackedBackendServicesRegistryTest {
         when(delegate.fileName()).thenReturn("/monitored/origins.yml");
         when(delegate.reload())
                 .thenReturn(completedFuture(reloaded("md5-hash: 9034890345289043, Successfully reloaded")))
-                .thenReturn(completedFuture(failed("md5-hash: 9034890345289043, Failed to reload", new RuntimeException("something went wrong"))));
+                .thenReturn(completedFuture(failed("md5-hash: 9034890345289043, Failed to reload", new JustATestException())));
 
         registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         registry.startService().get();
@@ -331,7 +332,7 @@ public class FileBackedBackendServicesRegistryTest {
         registry.fileChanged();
         assertThat(log.lastMessage(), is(
                 loggingEvent(ERROR, "Backend services reload failed. reason='File Monitor', md5-hash: 9034890345289043, Failed to reload, file='/monitored/origins.yml'",
-                        RuntimeException.class, "something went wrong")
+                        JustATestException.class, JustATestException.DEFAULT_MESSAGE)
         ));
     }
 

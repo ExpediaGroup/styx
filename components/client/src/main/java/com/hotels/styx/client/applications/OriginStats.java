@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,12 +15,18 @@
  */
 package com.hotels.styx.client.applications;
 
+import io.micrometer.core.instrument.Timer;
+
 /**
  * An object that receives origin statistics.
  */
 public interface OriginStats {
-    String REQUEST_SUCCESS = "requests.success-rate";
-    String REQUEST_FAILURE = "requests.error-rate";
+    /**
+     * Return a {@link Timer.Sample} based on the current registry's Clock.
+     *
+     * @return A {@link Timer.Sample}
+     */
+    Timer.Sample startTimer();
 
     /**
      * To be called when a request is successful.
@@ -35,12 +41,13 @@ public interface OriginStats {
     /**
      * Returns a request latency timer.
      */
-    AggregateTimer requestLatencyTimer();
+    Timer requestLatencyTimer();
 
     /**
      * Returns a time-to-first-byte timer.
+     * @return
      */
-    AggregateTimer timeToFirstByteTimer();
+    Timer timeToFirstByteTimer();
 
     /**
      * records a response with a status code.
@@ -48,11 +55,6 @@ public interface OriginStats {
      * @param statusCode status code
      */
     void responseWithStatusCode(int statusCode);
-
-    /**
-     * One minute rate for 5xx error messages.
-     */
-    double oneMinuteErrorRate();
 
     /**
      * Called when request is cancelled.

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,27 +15,27 @@
  */
 package com.hotels.styx.plugins
 
-import java.lang.Thread.sleep
-
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, urlMatching}
-import com.hotels.styx._
-import com.hotels.styx.{BackendServicesRegistrySupplier, StyxClientSupplier, StyxConfiguration, StyxServerSupport}
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.HttpRequest.get
-import com.hotels.styx.api.LiveHttpResponse.response
-import com.hotels.styx.api.{HttpResponseStatus, _}
 import com.hotels.styx.api.HttpResponseStatus.{BAD_GATEWAY, INTERNAL_SERVER_ERROR, OK}
+import com.hotels.styx.api.LiveHttpResponse.response
 import com.hotels.styx.api.extension.service.BackendService
+import com.hotels.styx.api.{HttpResponseStatus, _}
+import com.hotels.styx.client.applications.metrics.OriginMetrics
 import com.hotels.styx.infrastructure.{MemoryBackedRegistry, RegistryServiceAdapter}
-import com.hotels.styx.support.ImplicitStyxConversions
 import com.hotels.styx.support.backends.FakeHttpServer.HttpStartupConfig
-import com.hotels.styx.support.configuration
-import com.hotels.styx.support.configuration._
+import com.hotels.styx.support.configuration.{StyxConfig, _}
 import com.hotels.styx.support.server.FakeHttpServer
+import com.hotels.styx.support.{ImplicitStyxConversions, JustATestException, configuration}
+import com.hotels.styx.{BackendServicesRegistrySupplier, StyxClientSupplier, StyxConfiguration, StyxServerSupport, _}
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSpec, Matchers}
 
+import java.lang.Thread.sleep
 import scala.compat.java8.OptionConverters.RichOptionalGeneric
 import scala.concurrent.duration._
 
@@ -56,7 +56,7 @@ class ErrorMetricsSpec extends FunSpec
   var backendsRegistry: MemoryBackedRegistry[BackendService] = _
   var styxServer: StyxServer = _
 
-  override val styxConfig = configuration.StyxConfig(ProxyConfig(), plugins = Map(
+  override val styxConfig: StyxConfig = configuration.StyxConfig(ProxyConfig(), plugins = Map(
     "failAtOnCompletedPlugin" -> new OnCompleteErrorPlugin(),
     "generateErrorStatusPlugin" -> new Return500Interceptor(),
     "mapToErrorStatusPlugin" -> new MapTo500Interceptor(),
@@ -79,6 +79,7 @@ class ErrorMetricsSpec extends FunSpec
     super.beforeEach()
     backendsRegistry = new MemoryBackedRegistry[BackendService]
     styxServer = styxConfig.startServer(new RegistryServiceAdapter(backendsRegistry))
+    styxServer.meterRegistry().asInstanceOf[CompositeMeterRegistry].add(new SimpleMeterRegistry())
     setBackends(
       backendsRegistry,
       "/" -> HttpBackend(
@@ -101,7 +102,7 @@ class ErrorMetricsSpec extends FunSpec
 
   describe("Styx as a plugin container") {
     it("Ignores failures at the end of proxying") {
-      for (i <- 1 to 2) {
+      for (_ <- 1 to 2) {
         val request = get("/foo")
           .addHeader(HOST, styxServer.proxyHost)
           .header("Fail_at_onCompleted", "true")
@@ -271,15 +272,31 @@ class ErrorMetricsSpec extends FunSpec
   }
 
   private def styxExceptionMetric = {
-    styxServer.metricsSnapshot.count("styx.exception.com.hotels.styx.plugins.ErrorMetricsSpec$TestException").getOrElse(0)
+    styxServer.metricsSnapshot.count("styx.exception.com.hotels.styx.support.JustATestException").getOrElse(0)
   }
 
-  def pluginExceptionMetric(pluginName: String): Int = {
-    styxServer.metricsSnapshot.meter("plugins." + pluginName + ".exception.com_hotels_styx_plugins_ErrorMetricsSpec$TestException").map(meter => meter.count).getOrElse(0)
+  def pluginExceptionMetric(pluginName: String): Double = {
+    try {
+      styxServer.meterRegistry()
+        .get("plugin.exception")
+        .tag("plugin", pluginName)
+        .tag("type", "com_hotels_styx_plugins_ErrorMetricsSpec$TestException")
+        .counter().count()
+    } catch {
+      case _: io.micrometer.core.instrument.search.MeterNotFoundException => 0.0
+    }
   }
 
   private def originErrorMetric = {
-    styxServer.metricsSnapshot.meter("origins.appOne.01.requests.error-rate").map(meter => meter.count).getOrElse(0)
+    try {
+      styxServer.meterRegistry()
+        .get(OriginMetrics.FAILURE_COUNTER_NAME)
+        .tag(OriginMetrics.APP_TAG, "appOne")
+        .tag(OriginMetrics.ORIGIN_TAG, "01")
+        .counter().count()
+    } catch {
+      case _: io.micrometer.core.instrument.search.MeterNotFoundException => 0.0
+    }
   }
 
   def internalServerErrorMetric: Long = {
@@ -289,12 +306,23 @@ class ErrorMetricsSpec extends FunSpec
     metrics.count("styx.response.status.500").getOrElse(0)
   }
 
-  def pluginInternalServerErrorMetric(pluginName: String): Int = {
-    styxServer.metricsSnapshot.meter("plugins." + pluginName + ".response.status.500").map(meter => meter.count).getOrElse(0)
+  def pluginInternalServerErrorMetric(pluginName: String): Double = {
+    try {
+      styxServer.meterRegistry()
+        .get("plugin.response")
+        .tag("plugin", pluginName)
+        .tag("statusCode", "500")
+        .counter().count()
+    } catch {
+      case _: io.micrometer.core.instrument.search.MeterNotFoundException => 0.0
+    }
   }
 
-  def pluginUnexpectedErrorMetric(pluginName: String): Int = {
-    styxServer.metricsSnapshot.meter("plugins." + pluginName + ".errors").map(meter => meter.count).getOrElse(0)
+  def pluginUnexpectedErrorMetric(pluginName: String): Double = {
+    styxServer.meterRegistry()
+      .get("plugin.error")
+      .tag("plugin", pluginName)
+      .counter().count()
   }
 
   def styxUnexpectedErrorMetric(): Int = {
@@ -316,7 +344,7 @@ class ErrorMetricsSpec extends FunSpec
     override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
       if (request.header("Map_to_error_status").asScala.contains("true"))
         chain.proceed(request).flatMap(
-          asJavaFunction((t: LiveHttpResponse) => Eventual.of(response(HttpResponseStatus.INTERNAL_SERVER_ERROR).build())
+          asJavaFunction((_: LiveHttpResponse) => Eventual.of(response(HttpResponseStatus.INTERNAL_SERVER_ERROR).build())
           ))
       else
         chain.proceed(request)
@@ -336,7 +364,7 @@ class ErrorMetricsSpec extends FunSpec
     override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
       if (request.header("Map_to_bad_gateway_status").asScala.contains("true"))
         chain.proceed(request).flatMap(
-          asJavaFunction((t: LiveHttpResponse) => Eventual.of(response(HttpResponseStatus.BAD_GATEWAY).build())
+          asJavaFunction((_: LiveHttpResponse) => Eventual.of(response(HttpResponseStatus.BAD_GATEWAY).build())
           ))
       else
         chain.proceed(request)
@@ -346,7 +374,7 @@ class ErrorMetricsSpec extends FunSpec
   private class ThrowExceptionInterceptor extends PluginAdapter {
     override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
       if (request.header("Throw_an_exception").asScala.contains("true"))
-        throw new TestException()
+        throw new TestException()//JustATestException()
       else
         chain.proceed(request)
     }
@@ -356,14 +384,12 @@ class ErrorMetricsSpec extends FunSpec
 
     override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
       if (request.header("Map_to_exception").asScala.contains("true"))
-        chain.proceed(request).flatMap(asJavaFunction((t: LiveHttpResponse) => Eventual.error(new TestException())))
+//        chain.proceed(request).flatMap(asJavaFunction((t: LiveHttpResponse) => Eventual.error(new JustATestException())))
+        chain.proceed(request).flatMap(asJavaFunction((_: LiveHttpResponse) => Eventual.error(new TestException())))
       else
         chain.proceed(request)
     }
   }
 
-  private class TestException extends RuntimeException {
-
-  }
-
+  private class TestException extends RuntimeException {}
 }

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.RequestCookie;
 import com.hotels.styx.api.ResponseEventListener;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
@@ -31,10 +30,11 @@ import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.extension.service.RewriteRule;
 import com.hotels.styx.api.extension.service.StickySessionConfig;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.OriginStatsFactory.CachingOriginStatsFactory;
 import com.hotels.styx.client.retry.RetryNTimes;
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import reactor.core.publisher.Flux;
@@ -45,14 +45,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
+import static com.hotels.styx.api.HttpMethod.HEAD;
 import static com.hotels.styx.api.extension.service.StickySessionConfig.stickySessionDisabled;
 import static com.hotels.styx.client.StyxHeaderConfig.ORIGIN_ID_DEFAULT;
 import static com.hotels.styx.client.stickysession.StickySessionCookie.newStickySessionCookie;
-import static io.netty.handler.codec.http.HttpMethod.HEAD;
+import static java.lang.String.valueOf;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
@@ -72,7 +72,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
     private final LoadBalancer loadBalancer;
     private final RetryPolicy retryPolicy;
     private final OriginStatsFactory originStatsFactory;
-    private final MetricRegistry metricsRegistry;
+    private final MeterRegistry meterRegistry;
     private final String originsRestrictionCookieName;
     private final StickySessionConfig stickySessionConfig;
     private final CharSequence originIdHeader;
@@ -92,7 +92,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
 
         this.rewriteRuleset = new RewriteRuleset(builder.rewriteRules);
 
-        this.metricsRegistry = builder.metricsRegistry;
+        this.meterRegistry = builder.meterRegistry;
         this.originsRestrictionCookieName = builder.originsRestrictionCookieName;
         this.originIdHeader = builder.originIdHeader;
     }
@@ -243,12 +243,19 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
 
         @Override
         public String toString() {
-            return toStringHelper(this)
-                    .add("appId", appId)
-                    .add("retryCount", retryCount)
-                    .add("lastException", lastException)
-                    .add("request", request.url())
-                    .add("previouslyUsedOrigins", hosts(previouslyUsedOrigins))
+            return new StringBuilder(160)
+                    .append(this.getClass().getSimpleName())
+                    .append("{appId=")
+                    .append(appId)
+                    .append(", retryCount=")
+                    .append(retryCount)
+                    .append(", lastException=")
+                    .append(lastException)
+                    .append(", request=")
+                    .append(request.url())
+                    .append(", previouslyUsedOrigins=")
+                    .append(hosts(previouslyUsedOrigins))
+                    .append('}')
                     .toString();
         }
 
@@ -283,7 +290,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
 
     private void recordErrorStatusMetrics(LiveHttpResponse response) {
         if (isError(response.status())) {
-            metricsRegistry.counter("origins.response.status." + response.status().code()).inc();
+            meterRegistry.counter("origins.response.status.count", Tags.of("statusCode", valueOf(response.status().code()))).increment();
         }
     }
 
@@ -326,13 +333,19 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("id", id)
-                .add("stickySessionConfig", stickySessionConfig)
-                .add("retryPolicy", retryPolicy)
-                .add("rewriteRuleset", rewriteRuleset)
-                .add("loadBalancingStrategy", loadBalancer)
-                .toString();
+        StringBuilder sb = new StringBuilder(160);
+        sb.append(this.getClass().getSimpleName());
+        sb.append("{id=");
+        sb.append(id);
+        sb.append(", stickySessionConfig=");
+        sb.append(stickySessionConfig);
+        sb.append(", retryPolicy=");
+        sb.append(retryPolicy);
+        sb.append(", rewriteRuleset=");
+        sb.append(rewriteRuleset);
+        sb.append(", loadBalancer=");
+        sb.append(loadBalancer);
+        return sb.append('}').toString();
     }
 
     /**
@@ -341,7 +354,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
     public static class Builder {
 
         private final Id backendServiceId;
-        private MetricRegistry metricsRegistry = new CodaHaleMetricRegistry();
+        private MeterRegistry meterRegistry;
         private List<RewriteRule> rewriteRules = emptyList();
         private RetryPolicy retryPolicy = new RetryNTimes(3);
         private LoadBalancer loadBalancer;
@@ -359,8 +372,8 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
             return this;
         }
 
-        public Builder metricsRegistry(MetricRegistry metricsRegistry) {
-            this.metricsRegistry = requireNonNull(metricsRegistry);
+        public Builder meterRegistry(MeterRegistry meterRegistry) {
+            this.meterRegistry = requireNonNull(meterRegistry);
             return this;
         }
 
@@ -397,7 +410,10 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
 
         public StyxBackendServiceClient build() {
             if (originStatsFactory == null) {
-                originStatsFactory = new CachingOriginStatsFactory(metricsRegistry);
+                originStatsFactory = new CachingOriginStatsFactory(meterRegistry);
+            }
+            if (meterRegistry == null) {
+                throw new IllegalStateException("meterRegistry is required");
             }
             return new StyxBackendServiceClient(this);
         }

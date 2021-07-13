@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,9 +18,7 @@ package com.hotels.styx.metrics.reporting.graphite;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.Optional;
-
-import static com.google.common.base.MoreObjects.toStringHelper;
+import static java.util.Optional.ofNullable;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -31,16 +29,22 @@ public class GraphiteConfig {
     private final int port;
     private final long intervalMillis;
     private final String prefix;
+    private final boolean enabled;
+    private final boolean tagsEnabled;
 
     @JsonCreator
     GraphiteConfig(@JsonProperty("host") String host,
                    @JsonProperty("port") Integer port,
                    @JsonProperty("intervalMillis") Long intervalMillis,
-                   @JsonProperty("prefix") String prefix) {
+                   @JsonProperty("prefix") String prefix,
+                   @JsonProperty("enabled") Boolean enabled,
+                   @JsonProperty("tagsEnabled") Boolean tagsEnabled) {
         this.host = host;
-        this.port = Optional.ofNullable(port).orElse(9090);
-        this.intervalMillis = Optional.ofNullable(intervalMillis).orElse(SECONDS.toMillis(5));
-        this.prefix = Optional.ofNullable(prefix).orElse("");
+        this.port = ofNullable(port).orElse(9090);
+        this.intervalMillis = ofNullable(intervalMillis).orElse(SECONDS.toMillis(5));
+        this.prefix = ofNullable(prefix).orElse("");
+        this.enabled = ofNullable(enabled).orElse(true);
+        this.tagsEnabled = ofNullable(tagsEnabled).orElse(false);
     }
 
     @JsonProperty("prefix")
@@ -63,12 +67,25 @@ public class GraphiteConfig {
         return intervalMillis;
     }
 
+    @JsonProperty("enabled")
+    public boolean enabled() {
+        return enabled;
+    }
+
+    @JsonProperty("tagsEnabled")
+    public boolean tagsEnabled() {
+        return tagsEnabled;
+    }
+
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("host", host)
-                .add("port", port)
-                .add("intervalMillis", intervalMillis)
-                .toString();
+        return this.getClass().getSimpleName()
+                + "{"
+                + "host=" + host + ","
+                + "port=" + port + ","
+                + "intervalMillis=" + intervalMillis + ","
+                + "enabled=" + enabled + ","
+                + "tagsEnabled=" + tagsEnabled
+                + "}";
     }
 }

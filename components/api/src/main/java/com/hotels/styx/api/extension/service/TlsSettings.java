@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -26,8 +26,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.google.common.base.Objects.firstNonNull;
-import static com.google.common.base.Objects.toStringHelper;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.requireNonNull;
 
@@ -137,16 +135,27 @@ public class TlsSettings {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("trustAllCerts", this.trustAllCerts)
-                .add("sslProvider", this.sslProvider)
-                .add("additionalCerts", this.additionalCerts)
-                .add("trustStorePath", this.trustStorePath)
-                .add("trustStorePassword", this.trustStorePassword)
-                .add("protocols", this.protocols)
-                .add("cipherSuites", this.cipherSuites)
-                .add("sendSni", this.sendSni)
-                .add("sniHost", this.getSniHost())
+        return new StringBuilder(288)
+                .append(this.getClass().getSimpleName())
+                .append("{trustAllCerts=")
+                .append(trustAllCerts)
+                .append(", sslProvider=")
+                .append(sslProvider)
+                .append(", additionalCerts=")
+                .append(additionalCerts)
+                .append(", trustStorePath=")
+                .append(trustStorePath)
+                .append(", trustStorePassword=")
+                .append(trustStorePassword)
+                .append(", protocols=")
+                .append(protocols)
+                .append(", cipherSuites=")
+                .append(cipherSuites)
+                .append(", sendSni=")
+                .append(sendSni)
+                .append(", sniHost=")
+                .append(getSniHost())
+                .append('}')
                 .toString();
     }
 
@@ -164,7 +173,7 @@ public class TlsSettings {
         private boolean trustAllCerts = true;
         private String sslProvider = DEFAULT_SSL_PROVIDER;
         private Set<Certificate> additionalCerts = emptySet();
-        private String trustStorePath = firstNonNull(System.getProperty("javax.net.ssl.trustStore"),
+        private String trustStorePath = System.getProperty("javax.net.ssl.trustStore",
                 DEFAULT_TRUST_STORE_PATH);
         private String trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword");
         private List<String> protocols = Collections.emptyList();

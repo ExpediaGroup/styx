@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -33,6 +33,9 @@ import com.hotels.styx.server.ConnectorConfig;
 import com.hotels.styx.server.netty.NettyServerBuilder;
 import com.hotels.styx.server.netty.ServerConnector;
 import com.hotels.styx.startup.StyxServerComponents;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.netty.util.ResourceLeakDetector;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -47,6 +50,7 @@ import java.util.ArrayList;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static com.hotels.styx.StyxServers.toGuavaService;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.shutdownLogging;
@@ -84,6 +88,9 @@ public final class StyxServer extends AbstractService {
     private final ServiceManager phase2Services;
     private final Stopwatch stopwatch;
     private final StyxServerComponents components;
+    private NettyExecutor proxyBossExecutor;
+    private NettyExecutor proxyWorkerExecutor;
+    private boolean showBanner;
 
     public static void main(String[] args) {
         try {
@@ -110,9 +117,11 @@ public final class StyxServer extends AbstractService {
         LOG.info("Styx logConfigLocation={}", startupConfig.logConfigLocation());
 
         StyxServerComponents components = new StyxServerComponents.Builder()
+                .registry(Metrics.globalRegistry)
                 .styxConfig(parseConfiguration(startupConfig))
                 .startupConfig(startupConfig)
                 .loggingSetUp(environment -> activateLogbackConfigurer(startupConfig))
+                .showBanner(true)
                 .build();
 
         return new StyxServer(components, stopwatch);
@@ -168,7 +177,11 @@ public final class StyxServer extends AbstractService {
         this.stopwatch = stopwatch;
         this.components = components;
 
-        registerCoreMetrics(components.environment().buildInfo(), components.environment().metricRegistry());
+        if (!(components.environment().meterRegistry() instanceof CompositeMeterRegistry)) {
+            throw new IllegalStateException("The base meter registry should be a micrometer composite registry!");
+        }
+
+        registerCoreMetrics(components.environment().buildInfo(), components.environment().meterRegistry());
 
         // The plugins are loaded, but not initialised. And therefore not able to accept traffic.
         // This handler is for the "old" proxy servers, that are started from proxy.connectors configuration.
@@ -185,21 +198,25 @@ public final class StyxServer extends AbstractService {
         ArrayList<Service> services = new ArrayList<>();
         adminServer = createAdminServer(components);
         services.add(toGuavaService(adminServer));
-        services.add(toGuavaService(new PluginsManager("Sty§x-Plugins-Manager", components)));
+        services.add(toGuavaService(new PluginsManager("Styx-Plugins-Manager", components)));
         services.add(toGuavaService(new ServiceProviderMonitor<>("Styx-Service-Monitor", components.servicesDatabase())));
         components.services().values().forEach(it -> services.add(toGuavaService(it)));
         this.phase1Services = new ServiceManager(services);
 
         // Phase 2: start HTTP services;
         StyxConfig styxConfig = components.environment().configuration();
+
+        proxyBossExecutor = NettyExecutor.create("Proxy-Boss", styxConfig.proxyServerConfig().bossThreadsCount());
+        proxyWorkerExecutor = NettyExecutor.create("Proxy-Worker", styxConfig.proxyServerConfig().workerThreadsCount());
+
         httpServer = styxConfig.proxyServerConfig()
                 .httpConnectorConfig()
-                .map(it -> httpServer(components.environment(), it, handlerForOldProxyServer))
+                .map(it -> httpServer(components, it, handlerForOldProxyServer))
                 .orElse(null);
 
         httpsServer = styxConfig.proxyServerConfig()
                 .httpsConnectorConfig()
-                .map(it -> httpServer(components.environment(), it, handlerForOldProxyServer))
+                .map(it -> httpServer(components, it, handlerForOldProxyServer))
                 .orElse(null);
 
         ArrayList<Service> services2 = new ArrayList<>();
@@ -210,6 +227,7 @@ public final class StyxServer extends AbstractService {
         services2.add(toGuavaService(new ServiceProviderMonitor<>("Styx-Server-Monitor", components.serversDatabase())));
 
         this.phase2Services = new ServiceManager(services2);
+        this.showBanner = components.showBanner();
     }
 
     public InetSocketAddress serverAddress(String name) {
@@ -231,28 +249,34 @@ public final class StyxServer extends AbstractService {
                 .orElse(null);
     }
 
+    public MeterRegistry meterRegistry() {
+        return components.environment().meterRegistry();
+    }
+
     public InetSocketAddress adminHttpAddress() {
         return adminServer.inetAddress();
     }
 
-    private static InetServer httpServer(Environment environment, ConnectorConfig connectorConfig, HttpHandler styxDataPlane) {
+    private InetServer httpServer(StyxServerComponents components, ConnectorConfig connectorConfig, HttpHandler styxDataPlane) {
+        Environment environment = components.environment();
         CharSequence styxInfoHeaderName = environment.configuration().styxHeaderConfig().styxInfoHeaderName();
         ResponseInfoFormat responseInfoFormat = new ResponseInfoFormat(environment);
 
         ServerConnector proxyConnector = new ProxyConnectorFactory(
                 environment.configuration().proxyServerConfig(),
-                environment.metricRegistry(),
+                environment.meterRegistry(),
                 environment.errorListener(),
                 environment.configuration().get(ENCODE_UNWISECHARS).orElse(""),
                 (builder, request) -> builder.header(styxInfoHeaderName, responseInfoFormat.format(request)),
                 environment.configuration().get("requestTracking", Boolean.class).orElse(false),
-                environment.httpMessageFormatter())
+                environment.httpMessageFormatter(),
+                environment.configuration().styxHeaderConfig().originIdHeaderName())
                 .create(connectorConfig);
 
         return NettyServerBuilder.newBuilder()
                 .setMetricsRegistry(environment.metricRegistry())
-                .bossExecutor(NettyExecutor.create("Proxy-Boss", environment.configuration().proxyServerConfig().bossThreadsCount()))
-                .workerExecutor(NettyExecutor.create("Proxy-Worker", environment.configuration().proxyServerConfig().workerThreadsCount()))
+                .bossExecutor(proxyBossExecutor)
+                .workerExecutor(proxyWorkerExecutor)
                 .setProtocolConnector(proxyConnector)
                 .handler(styxDataPlane)
                 .build();
@@ -293,10 +317,10 @@ public final class StyxServer extends AbstractService {
         printBanner();
         CompletableFuture.runAsync(() -> {
             // doStart should return quicly. Therefore offload waiting on a separate thread:
-            this.phase1Services.addListener(new Phase1ServerStatusListener(this));
+            this.phase1Services.addListener(new Phase1ServerStatusListener(this), directExecutor());
             this.phase1Services.startAsync().awaitHealthy();
 
-            this.phase2Services.addListener(new Phase2ServerStatusListener(this));
+            this.phase2Services.addListener(new Phase2ServerStatusListener(this), directExecutor());
             this.phase2Services.startAsync();
         });
     }
@@ -304,11 +328,23 @@ public final class StyxServer extends AbstractService {
     @Override
     protected void doStop() {
         this.phase2Services.stopAsync().awaitStopped();
+
+        proxyBossExecutor.shut();
+        proxyWorkerExecutor.shut();
+
+        this.components.executors()
+                .entrySet()
+                .forEach(entry -> entry.getValue().component4().shut());
+
         this.phase1Services.stopAsync().awaitStopped();
         shutdownLogging(true);
     }
 
     private void printBanner() {
+        if (!showBanner) {
+            return;
+        }
+
         try {
             try (Reader reader = new InputStreamReader(getClass().getResourceAsStream("/banner.txt"))) {
                 LOG.info(format("Starting styx %n{}"), CharStreams.toString(reader));
@@ -380,7 +416,7 @@ public final class StyxServer extends AbstractService {
 
         @Override
         public void stopped() {
-            LOG.info("Stopped phase 2 services");
+            LOG.debug("Stopped phase 2 services");
         }
     }
 
@@ -393,7 +429,7 @@ public final class StyxServer extends AbstractService {
 
         @Override
         public void healthy() {
-            LOG.info("Started phase 1 services");
+            LOG.debug("Started phase 1 services");
         }
 
         @Override
@@ -404,7 +440,7 @@ public final class StyxServer extends AbstractService {
 
         @Override
         public void stopped() {
-            LOG.info("Stopped phase 1 services.");
+            LOG.debug("Stopped phase 1 services.");
             styxServer.notifyStopped();
         }
     }

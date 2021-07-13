@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,36 +15,18 @@
  */
 package com.hotels.styx.api.exceptions;
 
+import com.hotels.styx.api.Id;
 import com.hotels.styx.api.extension.Origin;
+
+import java.util.Optional;
 
 import static java.lang.String.format;
 
 /**
  * An exception due to a response timeout.
  */
-public class ResponseTimeoutException extends TransportException implements IsDeadConnectionException, IsTimeoutException {
+public class ResponseTimeoutException extends TransportException implements StyxException {
     private final Origin origin;
-
-    /**
-     * Construct an exception.
-     *
-     * @param origin origin that response was expected from
-     */
-    public ResponseTimeoutException(Origin origin) {
-        super(message(origin));
-        this.origin = origin;
-    }
-
-    /**
-     * Construct an exception.
-     *
-     * @param origin origin that response was expected from
-     * @param cause exception that caused this exception
-     */
-    public ResponseTimeoutException(Origin origin, Throwable cause) {
-        super(message(origin), cause);
-        this.origin = origin;
-    }
 
     public ResponseTimeoutException(Origin origin, String reason, long bytesReceived, long chunksReceived, long bytesEmitted, long chunksEmitted) {
         super(message(origin, reason, bytesReceived, chunksReceived, bytesEmitted, chunksEmitted));
@@ -56,12 +38,14 @@ public class ResponseTimeoutException extends TransportException implements IsDe
      *
      * @return origin
      */
-    public Origin origin() {
-        return origin;
+    @Override
+    public Optional<Id> origin() {
+        return Optional.of(origin.id());
     }
 
-    private static String message(Origin origin) {
-        return format("No response from origin. origin=%s.", origin);
+    @Override
+    public Id application() {
+        return origin.applicationId();
     }
 
     private static String message(Origin origin, String reason, long bytesReceived, long chunksReceived, long bytesEmitted, long chunksEmitted) {

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -40,11 +40,9 @@ import java.util.function.Predicate;
 
 import static com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
-import static com.google.common.base.Objects.toStringHelper;
-import static com.google.common.base.Throwables.propagate;
-import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static com.hotels.styx.api.extension.service.spi.Registry.Outcome.FAILED;
 import static com.hotels.styx.applications.BackendServices.newBackendServices;
+import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
@@ -200,8 +198,10 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
                 List<BackendService> services = MAPPER.readValue(rootNode.traverse(), TYPE);
 
                 return newBackendServices(services);
+            } catch (RuntimeException e) {
+                throw e;
             } catch (Exception e) {
-                throw propagate(e);
+                throw new RuntimeException(e);
             }
         }
     }
@@ -243,8 +243,11 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("originsFileName", fileBackedRegistry.fileName())
+        return new StringBuilder(32)
+                .append(this.getClass().getSimpleName())
+                .append("{originsFileName=")
+                .append(fileBackedRegistry.fileName())
+                .append('}')
                 .toString();
     }
 }

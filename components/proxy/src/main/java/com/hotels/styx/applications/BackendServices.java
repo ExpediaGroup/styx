@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package com.hotels.styx.applications;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.extension.Origin;
@@ -26,13 +25,13 @@ import com.hotels.styx.api.extension.service.BackendService;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 
-import static com.google.common.base.Objects.toStringHelper;
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Iterables.getFirst;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.service.BackendService.newBackendServiceBuilder;
+import static com.hotels.styx.common.Preconditions.checkArgument;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
@@ -143,8 +142,11 @@ public final class BackendServices implements Iterable<BackendService> {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("backendServices", backendServices)
+        return new StringBuilder(32)
+                .append(this.getClass().getSimpleName())
+                .append("{backendServices=")
+                .append(backendServices)
+                .append('}')
                 .toString();
     }
 
@@ -162,6 +164,6 @@ public final class BackendServices implements Iterable<BackendService> {
             return false;
         }
         BackendServices other = (BackendServices) obj;
-        return Objects.equal(this.backendServices, other.backendServices);
+        return Objects.equals(this.backendServices, other.backendServices);
     }
 }

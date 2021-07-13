@@ -8,7 +8,7 @@ ENV MVN_INSTALL_DIR=/opt/mvn
 
 WORKDIR ${APP_HOME}
 
-RUN yum install -y java-1.8.0-openjdk-devel \
+RUN yum install -y java-11-openjdk-devel \
     && yum install -y git \
     && yum install -y bash-completion \
     && yum install -y docker \

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,24 +17,31 @@ package com.hotels.styx.client;
 
 import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.ByteStream;
+import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpInterceptor.Context;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.Id;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
+import com.hotels.styx.server.HttpInterceptorContext;
+import com.hotels.styx.support.Support;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.reactivestreams.Subscription;
 import reactor.core.publisher.BaseSubscriber;
 import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import reactor.test.publisher.TestPublisher;
 
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.client.StyxHostHttpClient.ORIGINID_CONTEXT_KEY;
+import static com.hotels.styx.support.Support.requestContext;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -63,10 +70,11 @@ public class StyxHostHttpClientTest {
     public void returnsConnectionBackToPool() {
         Connection connection = mockConnection(just(response));
         ConnectionPool pool = mockPool(connection);
+        Context context = mockContext();
 
         StyxHostHttpClient hostClient = new StyxHostHttpClient(pool);
 
-        StepVerifier.create(hostClient.sendRequest(request))
+        StepVerifier.create(hostClient.sendRequest(request, context))
                 .consumeNextWith(response -> response.consume())
                 .expectComplete()
                 .verify();
@@ -74,6 +82,7 @@ public class StyxHostHttpClientTest {
         verify(pool).borrowConnection();
         verify(connection).write(any(LiveHttpRequest.class));
         verify(pool).returnConnection(any(Connection.class));
+        verify(context).add(ORIGINID_CONTEXT_KEY, Id.id("mockorigin"));
     }
 
     @Test
@@ -83,13 +92,14 @@ public class StyxHostHttpClientTest {
         // been published.
         Connection connection = mockConnection(just(response));
         ConnectionPool pool = mockPool(connection);
+        Context context = mockContext();
         AtomicReference<LiveHttpResponse> transformedResponse = new AtomicReference<>();
 
         StyxHostHttpClient hostClient = new StyxHostHttpClient(pool);
 
         // The StepVerifier consumes the response event and then unsubscribes
         // from the response observable.
-        StepVerifier.create(hostClient.sendRequest(request))
+        StepVerifier.create(hostClient.sendRequest(request, context))
                 .consumeNextWith(transformedResponse::set)
                 .verifyComplete();
 
@@ -102,17 +112,20 @@ public class StyxHostHttpClientTest {
 
         // Finally, the connection is returned after the response body is fully consumed:
         verify(pool).returnConnection(any(Connection.class));
+
+        verify(context).add(ORIGINID_CONTEXT_KEY, Id.id("mockorigin"));
     }
 
     @Test
     public void releasesIfRequestIsCancelledBeforeHeaders() {
         Connection connection = mockConnection(EmitterProcessor.create());
         ConnectionPool pool = mockPool(connection);
+        Context context = mockContext();
 
         StyxHostHttpClient hostClient = new StyxHostHttpClient(pool);
         AtomicReference<Subscription> subscription = new AtomicReference<>();
 
-        Flux.from(hostClient.sendRequest(request))
+        Flux.from(hostClient.sendRequest(request, context))
                 .subscribe(new BaseSubscriber<LiveHttpResponse>() {
                     @Override
                     protected void hookOnSubscribe(Subscription s) {
@@ -124,17 +137,19 @@ public class StyxHostHttpClientTest {
 
         subscription.get().cancel();
         verify(pool).closeConnection(any(Connection.class));
+        verify(context).add(ORIGINID_CONTEXT_KEY, Id.id("mockorigin"));
     }
 
     @Test
     public void ignoresResponseObservableErrorsAfterHeaders() {
         Connection connection = mockConnection(responseProvider);
         ConnectionPool pool = mockPool(connection);
+        Context context = mockContext();
         AtomicReference<LiveHttpResponse> newResponse = new AtomicReference<>();
 
         StyxHostHttpClient hostClient = new StyxHostHttpClient(pool);
 
-        StepVerifier.create(hostClient.sendRequest(request))
+        StepVerifier.create(hostClient.sendRequest(request, context))
                 .then(() -> {
                     responseProvider.onNext(response);
                     responseProvider.onError(new RuntimeException("oh dear ..."));
@@ -146,6 +161,7 @@ public class StyxHostHttpClientTest {
         newResponse.get().consume();
 
         verify(pool).returnConnection(any(Connection.class));
+        verify(context).add(ORIGINID_CONTEXT_KEY, Id.id("mockorigin"));
     }
 
     @Test
@@ -153,31 +169,35 @@ public class StyxHostHttpClientTest {
         // A connection that yields no response:
         Connection connection = mockConnection(Flux.empty());
         ConnectionPool pool = mockPool(connection);
+        Context context = mockContext();
 
         StyxHostHttpClient hostClient = new StyxHostHttpClient(pool);
 
-        StepVerifier.create(hostClient.sendRequest(request))
+        StepVerifier.create(hostClient.sendRequest(request, context))
                 .expectNextCount(0)
                 .expectComplete()
                 .log()
                 .verify();
 
         verify(pool).closeConnection(any(Connection.class));
+        verify(context).add(ORIGINID_CONTEXT_KEY, Id.id("mockorigin"));
     }
 
     @Test
     public void releasesConnectionWhenResponseFailsBeforeHeaders() {
         Connection connection = mockConnection(Flux.error(new RuntimeException()));
         ConnectionPool pool = mockPool(connection);
+        Context context = mockContext();
 
         StyxHostHttpClient hostClient = new StyxHostHttpClient(pool);
 
-        StepVerifier.create(hostClient.sendRequest(request))
+        StepVerifier.create(hostClient.sendRequest(request, context))
                 .expectNextCount(0)
                 .expectError()
                 .verify();
 
         verify(pool).closeConnection(any(Connection.class));
+        verify(context).add(ORIGINID_CONTEXT_KEY, Id.id("mockorigin"));
     }
 
     @Test
@@ -185,11 +205,12 @@ public class StyxHostHttpClientTest {
         TestPublisher<Buffer> testPublisher = TestPublisher.create();
         Connection connection = mockConnection(just(LiveHttpResponse.response(OK).body(new ByteStream(testPublisher)).build()));
         ConnectionPool pool = mockPool(connection);
+        Context context = mockContext();
         AtomicReference<LiveHttpResponse> receivedResponse = new AtomicReference<>();
 
         StyxHostHttpClient hostClient = new StyxHostHttpClient(pool);
 
-        StepVerifier.create(hostClient.sendRequest(request))
+        StepVerifier.create(hostClient.sendRequest(request, context))
                 .consumeNextWith(receivedResponse::set)
                 .expectComplete()
                 .verify();
@@ -199,6 +220,7 @@ public class StyxHostHttpClientTest {
                 .verify();
 
         verify(pool).closeConnection(any(Connection.class));
+        verify(context).add(ORIGINID_CONTEXT_KEY, Id.id("mockorigin"));
     }
 
     @Test
@@ -220,6 +242,18 @@ public class StyxHostHttpClientTest {
     ConnectionPool mockPool(Connection connection) {
         ConnectionPool pool = mock(ConnectionPool.class);
         when(pool.borrowConnection()).thenReturn(Flux.just(connection));
+        Origin origin = mockOrigin("mockorigin");
+        when(pool.getOrigin()).thenReturn(origin);
         return pool;
+    }
+
+    Origin mockOrigin(String id) {
+        Origin origin = mock(Origin.class);
+        when(origin.id()).thenReturn(Id.id(id));
+        return origin;
+    }
+
+    HttpInterceptor.Context mockContext() {
+        return mock(HttpInterceptor.Context.class);
     }
 }

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -52,7 +52,10 @@ public class InterceptorPipelineBuilder {
 
     private static List<InstrumentedPlugin> instrument(Iterable<NamedPlugin> namedPlugins, Environment environment) {
         return stream(namedPlugins.spliterator(), false)
-                .map(namedPlugin -> new InstrumentedPlugin(namedPlugin, environment))
+                .map(namedPlugin ->
+                        namedPlugin instanceof InstrumentedPlugin
+                                ? (InstrumentedPlugin) namedPlugin
+                                : new InstrumentedPlugin(namedPlugin, environment))
                 .collect(toList());
     }
 }

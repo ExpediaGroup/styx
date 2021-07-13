@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,10 +17,9 @@ package com.hotels.styx.support
 
 import com.hotels.styx.api.plugins.spi.Plugin
 import com.hotels.styx.proxy.plugin.NamedPlugin
-import com.hotels.styx.proxy.plugin.NamedPlugin._
 
 trait ImplicitStyxConversions {
-  implicit def toNamedPlugin(plugin: (String, Plugin)): NamedPlugin = namedPlugin(plugin._1, plugin._2)
+  implicit def toNamedPlugin(plugin: (String, Plugin)): NamedPlugin = NamedPlugin.namedPlugin(plugin._1, plugin._2)
 }
 
 class ImplicitStyxConversionsObject extends ImplicitStyxConversions{

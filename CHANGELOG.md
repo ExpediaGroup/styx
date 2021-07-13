@@ -1,4 +1,73 @@
 
+<a name="1.0.0-rc4"></a>
+## [1.0.0-rc4](https://github.com/HotelsDotCom/styx/compare/1.0.0-rc3...1.0.0-rc4) (2020-05-14)
+
+### Pull Requests
+
+* Store target origin in request context ([#659](https://github.com/HotelsDotCom/styx/issues/659))
+
+
+<a name="1.0.0-rc3"></a>
+## [1.0.0-rc3](https://github.com/HotelsDotCom/styx/compare/1.0.0-rc2...1.0.0-rc3) (2020-05-01)
+
+### Pull Requests
+
+* Reduce CI logging ([#654](https://github.com/HotelsDotCom/styx/issues/654))
+* Final RxJava removal ([#652](https://github.com/HotelsDotCom/styx/issues/652))
+* Remove RxJava - Part 4 ([#560](https://github.com/HotelsDotCom/styx/issues/560))
+* Throw exception when connection is not connected ([#647](https://github.com/HotelsDotCom/styx/issues/647))
+* Fix the broken build caused by PR [#648](https://github.com/HotelsDotCom/styx/issues/648). ([#651](https://github.com/HotelsDotCom/styx/issues/651))
+* Resolve rendering issues with YamlFileCofigurationService origin page ([#648](https://github.com/HotelsDotCom/styx/issues/648))
+* Add X-Styx-Origin-Id header to 5xx responses originated from styx. ([#645](https://github.com/HotelsDotCom/styx/issues/645))
+* Block server start until origins file is loaded. ([#643](https://github.com/HotelsDotCom/styx/issues/643))
+* Remove guava - part 1 ([#642](https://github.com/HotelsDotCom/styx/issues/642))
+* Expose styx provider object database in YAML via admin interface ([#637](https://github.com/HotelsDotCom/styx/issues/637))
+* Update docker-compose.yml to match with new styx image layout. ([#640](https://github.com/HotelsDotCom/styx/issues/640))
+* Update copyright headers. ([#639](https://github.com/HotelsDotCom/styx/issues/639))
+* Shareable executors ([#616](https://github.com/HotelsDotCom/styx/issues/616))
+* Fix issue [#636](https://github.com/HotelsDotCom/styx/issues/636): RewriteConfig ending with two consecutive placeholders ([#638](https://github.com/HotelsDotCom/styx/issues/638))
+* Upload binaries compiled with JDK8 to GitHub from the Travis release pipeline ([#632](https://github.com/HotelsDotCom/styx/issues/632))
+* Enable WARN logs in HttpRequestOperation. ([#633](https://github.com/HotelsDotCom/styx/issues/633))
+* Fix a race condition in ServerObjectSpec. ([#631](https://github.com/HotelsDotCom/styx/issues/631))
+
+
+<a name="1.0.0-rc2"></a>
+## [1.0.0-rc2](https://github.com/HotelsDotCom/styx/compare/1.0.0-rc1...1.0.0-rc2) (2020-02-19)
+
+### Pull Requests
+
+* Docker publish preparation ([#630](https://github.com/HotelsDotCom/styx/issues/630))
+* Enable TLS Modification Settings tests  ([#628](https://github.com/HotelsDotCom/styx/issues/628))
+* Add support for null computations inside StyxObjectStore.compute() ([#629](https://github.com/HotelsDotCom/styx/issues/629))
+* Deploy snapshot versions to sonatype ([#625](https://github.com/HotelsDotCom/styx/issues/625))
+* Bump slf4j to 1.7.30 ([#627](https://github.com/HotelsDotCom/styx/issues/627))
+* Add dependabot badge ([#621](https://github.com/HotelsDotCom/styx/issues/621))
+* Bump kotlin.version from 1.3.21 to 1.3.61 ([#623](https://github.com/HotelsDotCom/styx/issues/623))
+* Bump junit-platform-launcher from 1.5.2 to 1.6.0 ([#622](https://github.com/HotelsDotCom/styx/issues/622))
+* Bump ant-launcher from 1.8.0 to 1.10.7 ([#620](https://github.com/HotelsDotCom/styx/issues/620))
+* Bump jackson-dataformat-yaml from 2.10.1 to 2.10.2 ([#619](https://github.com/HotelsDotCom/styx/issues/619))
+* Bump annotations from 2.0.1 to 3.0.1u2 ([#618](https://github.com/HotelsDotCom/styx/issues/618))
+* YamlFileConfigurationService fails to start health check monitors ([#624](https://github.com/HotelsDotCom/styx/issues/624))
+* Remove "Upcoming releases" from README.md. ([#617](https://github.com/HotelsDotCom/styx/issues/617))
+
+
+<a name="1.0.0-rc1"></a>
+## [1.0.0-rc1](https://github.com/HotelsDotCom/styx/compare/styx-1.0.0.beta9...1.0.0-rc1) (2020-02-11)
+
+### Pull Requests
+
+* Update CHANGELOG with beta9 release information ([#615](https://github.com/HotelsDotCom/styx/issues/615))
+* Hardening of e2e tests ([#611](https://github.com/HotelsDotCom/styx/issues/611))
+* Fix Http Message Logging Spec tests that created invalid cookies using the Styx API (no longer allowed) ([#610](https://github.com/HotelsDotCom/styx/issues/610))
+* YamlFileConfigurationService: Fix a threading issue ([#608](https://github.com/HotelsDotCom/styx/issues/608))
+* Add support for the SameSite cookie attribute (closes [#604](https://github.com/HotelsDotCom/styx/issues/604))  ([#607](https://github.com/HotelsDotCom/styx/issues/607))
+* Fix for CVE-2020-6858: Improper Neutralization of CRLF Sequences in HTTP Headers ('HTTP Response Splitting')
+* Bump checkstyle from 8.18 to 8.29 ([#603](https://github.com/HotelsDotCom/styx/issues/603))
+* Improve Url API ([#597](https://github.com/HotelsDotCom/styx/issues/597))
+* Deploy the version of the artifacts compiled with Jdk8 ([#601](https://github.com/HotelsDotCom/styx/issues/601))
+* Release artifacts from Travis ([#594](https://github.com/HotelsDotCom/styx/issues/594))
+
+
 <a name="styx-1.0.0.beta9"></a>
 ## [styx-1.0.0.beta9](https://github.com/HotelsDotCom/styx/compare/testtag...styx-1.0.0.beta9) (2020-01-30)
 

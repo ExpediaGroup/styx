@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,16 +15,17 @@
  */
 package com.hotels.styx.client.connectionpool;
 
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.Connection;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Mockito.mock;
 
 public class SimpleConnectionPoolFactoryTest {
@@ -35,21 +36,19 @@ public class SimpleConnectionPoolFactoryTest {
 
     @Test
     public void registersMetricsUnderOriginsScope() {
-        MetricRegistry metricRegistry = new CodaHaleMetricRegistry()
-                .scope("origins");
+        MeterRegistry meterRegistry = new SimpleMeterRegistry();
 
         SimpleConnectionPoolFactory factory = new SimpleConnectionPoolFactory.Builder()
                 .connectionFactory(mock(Connection.Factory.class))
                 .connectionPoolSettings(defaultConnectionPoolSettings())
-                .metricRegistry(metricRegistry)
+                .meterRegistry(meterRegistry)
                 .build();
         factory.create(origin);
 
-        assertThat(metricRegistry.getGauges().keySet(), hasItems(
-                "origins.test-app.origin-X.connectionspool.pending-connections",
-                "origins.test-app.origin-X.connectionspool.available-connections",
-                "origins.test-app.origin-X.connectionspool.busy-connections",
-                "origins.test-app.origin-X.connectionspool.connections-in-establishment"
-        ));
+        Tags tags = Tags.of("appId", "test-app", "originId", "origin-X");
+        assertThat(meterRegistry.find("connectionpool.pendingConnections").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("connectionpool.availableConnections").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("connectionpool.busyConnections").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("connectionpool.connectionsInEstablishment").tags(tags).gauge(), notNullValue());
     }
 }

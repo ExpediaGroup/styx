@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import com.hotels.styx.admin.handlers.OriginsInventoryHandler;
 import com.hotels.styx.admin.handlers.PingHandler;
 import com.hotels.styx.admin.handlers.PluginListHandler;
 import com.hotels.styx.admin.handlers.PluginToggleHandler;
+import com.hotels.styx.admin.handlers.PrometheusHandler;
 import com.hotels.styx.admin.handlers.ProviderRoutingHandler;
 import com.hotels.styx.admin.handlers.RoutingObjectHandler;
 import com.hotels.styx.admin.handlers.ServiceProviderHandler;
@@ -118,16 +119,22 @@ public class AdminServerBuilder {
     }
 
     public InetServer build() {
-        LOG.info("event bus that will be used is {}", environment.eventBus());
+        LOG.debug("event bus that will be used is {}", environment.eventBus());
         StyxConfig styxConfig = environment.configuration();
         AdminServerConfig adminServerConfig = styxConfig.adminServerConfig();
 
-        NettyExecutor executor = NettyExecutor.create("Admin-Boss", adminServerConfig.bossThreadsCount());
+        NettyExecutor bossExecutor = NettyExecutor.create("Admin-Boss", adminServerConfig.bossThreadsCount());
+        NettyExecutor workerExecutor = NettyExecutor.create("Admin-Worker", adminServerConfig.workerThreadsCount());
+
         NettyServerBuilder builder = NettyServerBuilder.newBuilder()
                 .setMetricsRegistry(environment.metricRegistry())
-                .bossExecutor(executor)
-                .workerExecutor(NettyExecutor.create("Admin-Worker", adminServerConfig.workerThreadsCount()))
-                .handler(adminEndpoints(styxConfig, startupConfig));
+                .bossExecutor(bossExecutor)
+                .workerExecutor(workerExecutor)
+                .handler(adminEndpoints(styxConfig, startupConfig))
+                .shutdownAction(() -> {
+                    bossExecutor.shut();
+                    workerExecutor.shut();
+                });
 
         // Currently admin server cannot be started over TLS protocol.
         // This appears to be an existing issue that needs rectifying.
@@ -143,7 +150,7 @@ public class AdminServerBuilder {
         httpRouter.aggregate("/", new IndexHandler(indexLinkPaths(styxConfig)));
         httpRouter.aggregate("/version.txt", new VersionTextHandler(styxConfig.versionFiles(startupConfig)));
         httpRouter.aggregate("/admin", new IndexHandler(indexLinkPaths(styxConfig)));
-        httpRouter.aggregate("/admin/uptime", new UptimeHandler(environment.metricRegistry()));
+        httpRouter.aggregate("/admin/uptime", new UptimeHandler(environment.meterRegistry()));
         httpRouter.aggregate("/admin/ping", new PingHandler());
         httpRouter.aggregate("/admin/threads", new ThreadsHandler());
         httpRouter.aggregate("/admin/current_requests", new CurrentRequestsHandler(CurrentRequestTracker.INSTANCE));
@@ -194,6 +201,8 @@ public class AdminServerBuilder {
         httpRouter.aggregate("/admin/servers", serverHandler);
         httpRouter.aggregate("/admin/servers/", serverHandler);
 
+        httpRouter.aggregate("/metrics", new PrometheusHandler(environment.meterRegistry()));
+
         return httpRouter;
     }
 
@@ -217,6 +226,7 @@ public class AdminServerBuilder {
         builder.add(link("JVM", "/admin/jvm?pretty"));
         builder.add(link("Plugins", "/admin/plugins"));
         builder.add(link("Providers", "/admin/providers"));
+        builder.add(link("Prometheus", "/metrics"));
 
         if (configVersion(styxConfig) == ROUTING_CONFIG_V1) {
             builder.add(link("Dashboard", "/admin/dashboard/index.html"))

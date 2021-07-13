@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -175,7 +175,7 @@ public class UrlPatternRouter implements WebServiceHandler {
         private static Pattern compilePattern(String pattern) {
             Matcher matcher = PLACEHOLDER_PATTERN.matcher(pattern);
 
-            return Pattern.compile(matcher.replaceAll("(?<$1>[a-zA-Z0-9-_]+)"));
+            return Pattern.compile(matcher.replaceAll("(?<$1>[a-zA-Z0-9-_.]+)"));
         }
 
         private static List<String> placeholders(String pattern) {

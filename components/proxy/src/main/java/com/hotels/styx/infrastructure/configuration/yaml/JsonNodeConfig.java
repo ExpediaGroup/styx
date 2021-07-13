@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.module.kotlin.KotlinModule;
-import com.hotels.styx.api.configuration.ConversionException;
 import com.hotels.styx.api.configuration.Configuration;
+import com.hotels.styx.api.configuration.ConversionException;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -30,7 +30,6 @@ import java.util.Optional;
 
 import static com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
-import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static java.util.Objects.requireNonNull;
 
@@ -97,7 +96,7 @@ public class JsonNodeConfig implements Configuration {
         try {
             return mapper.readValue(parser, tClass);
         } catch (IOException e) {
-            throw propagate(e);
+            throw new RuntimeException(e);
         }
     }
 

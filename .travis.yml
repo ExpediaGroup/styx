@@ -1,7 +1,6 @@
 dist: trusty
 language: java
 jdk:
-  - openjdk8
   - openjdk11
 script: mvn verify -Pquality,linux
 cache:
@@ -12,14 +11,16 @@ deploy:
   script: chmod +x travis/deploy.sh && travis/deploy.sh
   skip_cleanup: true
   on:
-    branch: multiple-jdks
-    jdk: openjdk8
+    branch: master
+    jdk: openjdk11
+    repo: HotelsDotCom/styx
 - provider: script
   script: chmod +x travis/deploy.sh && travis/deploy.sh
   skip_cleanup: true
   on:
     tags: true
-    jdk: openjdk8
+    jdk: openjdk11
+    repo: HotelsDotCom/styx
 - provider: releases
   api_key: $GIT_TOKEN
   file_glob: true
@@ -27,3 +28,5 @@ deploy:
   skip_cleanup: true
   on:
     tags: true
+    jdk: openjdk11
+    repo: HotelsDotCom/styx

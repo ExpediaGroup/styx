@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.client.StyxHostHttpClient
 import com.hotels.styx.client.applications.metrics.OriginMetrics
 import com.hotels.styx.RoutingObjectFactoryContext
+import com.hotels.styx.api.HttpInterceptor.Context
 import com.hotels.styx.handle
 import com.hotels.styx.requestContext
 import com.hotels.styx.routingObjectDef
@@ -51,7 +52,7 @@ class HostProxyTest : FeatureSpec() {
                 HostProxy("localhost", 80, client, mockk()).handle(request.stream(), mockk())
 
                 verify {
-                    client!!.sendRequest(ofType(LiveHttpRequest::class))
+                    client!!.sendRequest(ofType(LiveHttpRequest::class), ofType(Context::class))
                 }
             }
 
@@ -69,7 +70,7 @@ class HostProxyTest : FeatureSpec() {
                 exception.message shouldBe ("HostProxy localhost:80 is stopped but received traffic.")
 
                 verify(exactly = 0) {
-                    client!!.sendRequest(any())
+                    client!!.sendRequest(any(), any())
                 }
             }
 
@@ -77,7 +78,7 @@ class HostProxyTest : FeatureSpec() {
                 val client = mockk<StyxHostHttpClient>()
                 val originMetrics = mockk<OriginMetrics>()
 
-                every { client.sendRequest(any()) } returns Eventual(Mono.never())
+                every { client.sendRequest(any(), any()) } returns Eventual(Mono.never())
 
                 val hostProxy = HostProxy("abc", 80, client, originMetrics)
 
@@ -93,7 +94,7 @@ class HostProxyTest : FeatureSpec() {
                 val client = mockk<StyxHostHttpClient>()
                 val originMetrics = mockk<OriginMetrics>()
 
-                every { client.sendRequest(any()) } returns Eventual.of(
+                every { client.sendRequest(any(), any()) } returns Eventual.of(
                         LiveHttpResponse
                                 .response()
                                 .body(ByteStream(Flux.never()))
@@ -164,7 +165,7 @@ class HostProxyTest : FeatureSpec() {
 
     override fun beforeTest(testCase: TestCase) {
         client = mockk(relaxed = true) {
-            every { sendRequest(any()) } returns Eventual.of(HttpResponse.response(OK).build().stream())
+            every { sendRequest(any(), any()) } returns Eventual.of(HttpResponse.response(OK).build().stream())
         }
     }
 

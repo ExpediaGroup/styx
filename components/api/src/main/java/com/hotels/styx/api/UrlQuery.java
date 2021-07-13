@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
@@ -108,9 +107,13 @@ final class UrlQuery {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("parameters", parameters)
-                .add("encodedQuery", encodedQuery)
+        return new StringBuilder(64)
+                .append(this.getClass().getSimpleName())
+                .append("{parameters=")
+                .append(parameters)
+                .append(", encodedQuery=")
+                .append(encodedQuery)
+                .append('}')
                 .toString();
     }
 

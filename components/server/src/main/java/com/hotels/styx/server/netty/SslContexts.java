@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,9 +15,8 @@
  */
 package com.hotels.styx.server.netty;
 
-import com.codahale.metrics.Gauge;
-import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.server.HttpsConnectorConfig;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.netty.handler.ssl.OpenSslSessionContext;
 import io.netty.handler.ssl.OpenSslSessionStats;
 import io.netty.handler.ssl.SslContext;
@@ -31,13 +30,16 @@ import java.io.File;
 import java.security.cert.CertificateException;
 import java.util.List;
 
-import static com.google.common.base.Throwables.propagate;
+import static com.hotels.styx.api.Metrics.name;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Methods for producing {@link SslContext} classes.
  */
 public final class SslContexts {
+
+    public static final String SSL_PREFIX = "connection.openssl.session";
+
     private SslContexts() {
     }
 
@@ -55,7 +57,7 @@ public final class SslContexts {
         try {
             return builder.build();
         } catch (SSLException e) {
-            throw propagate(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -63,29 +65,29 @@ public final class SslContexts {
      * Produce an SslContext that will record metrics, based on the provided configuration.
      *
      * @param httpsConnectorConfig configuration
-     * @param metricRegistry       metric registry
+     * @param meterRegistry       metric registry
+     * @param meterPrefix         prepended to all meter names
      * @return SslContext
      */
-    public static SslContext newSSLContext(HttpsConnectorConfig httpsConnectorConfig, MetricRegistry metricRegistry) {
+    public static SslContext newSSLContext(HttpsConnectorConfig httpsConnectorConfig, MeterRegistry meterRegistry, String meterPrefix) {
         SslContext sslContext = newSSLContext(httpsConnectorConfig);
-        registerOpenSslStats(sslContext, metricRegistry);
+        registerOpenSslStats(sslContext, meterRegistry, meterPrefix);
         return sslContext;
     }
 
-    private static void registerOpenSslStats(SslContext sslContext, MetricRegistry metricRegistry) {
+    private static void registerOpenSslStats(SslContext sslContext, MeterRegistry meterRegistry, String meterPrefix) {
         SSLSessionContext sslSessionContext = sslContext.sessionContext();
         if (sslSessionContext instanceof OpenSslSessionContext) {
             OpenSslSessionStats stats = ((OpenSslSessionContext) sslSessionContext).stats();
-            MetricRegistry sessionStatsRegistry = metricRegistry.scope("connections.openssl.session");
-            sessionStatsRegistry.register("number", (Gauge<Long>) stats::number);
-            sessionStatsRegistry.register("accept", (Gauge<Long>) stats::accept);
-            sessionStatsRegistry.register("acceptGood", (Gauge<Long>) stats::acceptGood);
-            sessionStatsRegistry.register("acceptRenegotiate", (Gauge<Long>) stats::acceptRenegotiate);
-            sessionStatsRegistry.register("hits", (Gauge<Long>) stats::hits);
-            sessionStatsRegistry.register("misses", (Gauge<Long>) stats::misses);
-            sessionStatsRegistry.register("cbHits", (Gauge<Long>) stats::cbHits);
-            sessionStatsRegistry.register("cacheFull", (Gauge<Long>) stats::cacheFull);
-            sessionStatsRegistry.register("timeouts", (Gauge<Long>) stats::timeouts);
+            meterRegistry.gauge(name(meterPrefix, SSL_PREFIX, "number"), stats, OpenSslSessionStats::number);
+            meterRegistry.gauge(name(meterPrefix, SSL_PREFIX, "accept"), stats, OpenSslSessionStats::accept);
+            meterRegistry.gauge(name(meterPrefix, SSL_PREFIX, "acceptGood"), stats, OpenSslSessionStats::acceptGood);
+            meterRegistry.gauge(name(meterPrefix, SSL_PREFIX, "acceptRenegotiate"), stats, OpenSslSessionStats::acceptRenegotiate);
+            meterRegistry.gauge(name(meterPrefix, SSL_PREFIX, "hits"), stats, OpenSslSessionStats::hits);
+            meterRegistry.gauge(name(meterPrefix, SSL_PREFIX, "misses"), stats, OpenSslSessionStats::misses);
+            meterRegistry.gauge(name(meterPrefix, SSL_PREFIX, "cbHits"), stats, OpenSslSessionStats::cbHits);
+            meterRegistry.gauge(name(meterPrefix, SSL_PREFIX, "cacheFull"), stats, OpenSslSessionStats::cacheFull);
+            meterRegistry.gauge(name(meterPrefix, SSL_PREFIX, "timeouts"), stats, OpenSslSessionStats::timeouts);
         }
     }
 
@@ -93,7 +95,7 @@ public final class SslContexts {
         try {
             return new SelfSignedCertificate();
         } catch (CertificateException e) {
-            throw propagate(e);
+            throw new RuntimeException(e);
         }
     }
 

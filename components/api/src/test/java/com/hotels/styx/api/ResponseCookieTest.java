@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 package com.hotels.styx.api;
 
 
-import com.hotels.styx.api.ResponseCookie.SameSite;
+import io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite;
 import org.junit.jupiter.api.Test;
 
 import static com.hotels.styx.api.ResponseCookie.responseCookie;
@@ -44,8 +44,8 @@ public class ResponseCookieTest {
     @Test
     public void acceptSameSiteCookie() {
         assertThat(
-                responseCookie("name", "value").sameSite(SameSite.Lax).build().sameSite().orElse(""),
-                equalTo(SameSite.Lax.name())
+                responseCookie("name", "value").sameSite(SameSite.Lax).build().sameSite().orElse(null),
+                equalTo(SameSite.Lax)
         );
     }
 

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.routing.handlers;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
@@ -38,6 +39,7 @@ class StandardHttpPipeline implements HttpHandler {
     private final HttpHandler handler;
     private final RequestTracker requestTracker;
 
+    @VisibleForTesting
     public StandardHttpPipeline(HttpHandler handler) {
         this(emptyList(), handler, RequestTracker.NO_OP);
     }
@@ -98,12 +100,17 @@ class StandardHttpPipeline implements HttpHandler {
 
             return new Eventual<>(new SingleSubscriptionPublisher(client.handle(request, this.context)));
         }
+
+        @Override
+        public String toString() {
+            return "HttpInterceptorChain[" + interceptors + ']';
+        }
     }
 
     private static final class SingleSubscriptionPublisher implements Publisher<LiveHttpResponse> {
 
-        private AtomicInteger subscriptionCounter = new AtomicInteger();
-        private Publisher<LiveHttpResponse> original;
+        private final AtomicInteger subscriptionCounter = new AtomicInteger();
+        private final Publisher<LiveHttpResponse> original;
 
         public SingleSubscriptionPublisher(Publisher<LiveHttpResponse> original) {
             this.original = original;
@@ -118,5 +125,4 @@ class StandardHttpPipeline implements HttpHandler {
             }
         }
     }
-
 }

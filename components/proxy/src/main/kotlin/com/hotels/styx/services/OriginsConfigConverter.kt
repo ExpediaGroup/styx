@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -56,7 +56,8 @@ import org.slf4j.LoggerFactory
 internal class OriginsConfigConverter(
         val serviceDb: StyxObjectStore<ProviderObjectRecord>,
         val context: RoutingObjectFactory.Context,
-        val originRestrictionCookie: String?) {
+        val originRestrictionCookie: String?,
+        val executor: String = "Styx-Client-Global-Worker") {
 
     internal fun routingObjects(apps: List<BackendService>) = routingObjectConfigs(apps)
 
@@ -120,6 +121,43 @@ internal class OriginsConfigConverter(
                 providerObject)
     }
 
+    private fun toBackendServiceObjects(app: BackendService, originRestrictionCookie: String? = null) = app
+            .origins()
+            .sortedBy { it.id().toString() }
+            .map { hostProxy(app, it) }
+            .plus(loadBalancingGroup(app, originRestrictionCookie))
+
+    internal fun hostProxy(app: BackendService, origin: Origin) : StyxObjectDefinition {
+        val healthCheckTag :String = if (isHealthCheckConfigured(app)) stateTag(STATE_UNREACHABLE) else stateTag(STATE_ACTIVE)
+
+        return StyxObjectDefinition(
+                "${app.id()}.${origin.id()}",
+                HOST_PROXY,
+                listOf(lbGroupTag(app.id().toString()), healthCheckTag),
+                hostProxyConfig(
+                        app.connectionPoolConfig(),
+                        app.tlsSettings().orElse(null),
+                        app.responseTimeoutMillis(),
+                        app.maxHeaderSize(),
+                        origin,
+                        "origins"));
+    }
+
+    private fun hostProxyConfig(poolSettings: ConnectionPoolSettings,
+                                tlsSettings: TlsSettings?,
+                                responseTimeout: Int,
+                                maxHeaderSize: Int,
+                                origin: Origin,
+                                metricsPrefix: String): JsonNode = MAPPER.valueToTree(
+            HostProxyConfiguration(
+                    "${origin.host()}:${origin.port()}",
+                    poolSettings,
+                    tlsSettings,
+                    responseTimeout,
+                    maxHeaderSize,
+                    metricsPrefix,
+                    executor))
+
     companion object {
         val LOGGER = LoggerFactory.getLogger(this::class.java)
         val ROOT_OBJECT_NAME = "pathPrefixRouter"
@@ -136,12 +174,6 @@ internal class OriginsConfigConverter(
         private val TYPE = object : TypeReference<List<BackendService>>() {
         }
 
-        private fun toBackendServiceObjects(app: BackendService, originRestrictionCookie: String? = null) = app
-                .origins()
-                .sortedBy { it.id().toString() }
-                .map { hostProxy(app, it) }
-                .plus(loadBalancingGroup(app, originRestrictionCookie))
-
         internal fun loadBalancingGroup(app: BackendService, originRestrictionCookie: String? = null) = if (app.rewrites().isEmpty()) {
             StyxObjectDefinition(
                     "${app.id()}",
@@ -149,22 +181,6 @@ internal class OriginsConfigConverter(
                     loadBalancingGroupConfig(app.id().toString(), originRestrictionCookie, app.stickySessionConfig()))
         } else {
             interceptorPipelineConfig(app, originRestrictionCookie)
-        }
-
-        internal fun hostProxy(app: BackendService, origin: Origin) : StyxObjectDefinition {
-            val healthCheckTag :String = if (isHealthCheckConfigured(app)) stateTag(STATE_UNREACHABLE) else stateTag(STATE_ACTIVE)
-
-            return StyxObjectDefinition(
-                "${app.id()}.${origin.id()}",
-                HOST_PROXY,
-                listOf(lbGroupTag(app.id().toString()), healthCheckTag),
-                hostProxyConfig(
-                        app.connectionPoolConfig(),
-                        app.tlsSettings().orElse(null),
-                        app.responseTimeoutMillis(),
-                        app.maxHeaderSize(),
-                        origin,
-                        "origins"));
         }
 
         private fun isHealthCheckConfigured(app: BackendService): Boolean {
@@ -221,19 +237,5 @@ internal class OriginsConfigConverter(
                     .build()
                     .parse(configSource(yamlConfig)).`as`(StyxObjectDefinition::class.java)
         }
-
-        private fun hostProxyConfig(poolSettings: ConnectionPoolSettings,
-                                    tlsSettings: TlsSettings?,
-                                    responseTimeout: Int,
-                                    maxHeaderSize: Int,
-                                    origin: Origin,
-                                    metricsPrefix: String): JsonNode = MAPPER.valueToTree(
-                HostProxyConfiguration(
-                        "${origin.host()}:${origin.port()}",
-                        poolSettings,
-                        tlsSettings,
-                        responseTimeout,
-                        maxHeaderSize,
-                        metricsPrefix))
     }
 }

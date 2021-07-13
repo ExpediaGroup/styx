@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import com.hotels.styx.*
 import com.hotels.styx.api.HttpInterceptor
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.routing.RoutingObject
+import com.hotels.styx.server.HttpInterceptorContext
 import org.reactivestreams.Publisher
 import reactor.core.publisher.Mono
 import reactor.core.publisher.toMono
@@ -52,10 +53,10 @@ data class ObjectOther(val state: String) : ObjectHealth() {
 typealias Probe = (RoutingObject) -> Publisher<Boolean>
 typealias CheckState = (currentState: ObjectHealth, reachable: Boolean) -> ObjectHealth
 
-fun urlProbe(probe: HttpRequest, timeout: Duration, context: HttpInterceptor.Context): Probe =
+fun urlProbe(probe: HttpRequest, timeout: Duration, requestContext: HttpInterceptor.Context): Probe =
         { routingObject ->
             routingObject
-                    .handle(probe.stream(), context)
+                    .handle(probe.stream(), requestContext)
                     .map {
                         it.consume()
                         it.status().code() < 400

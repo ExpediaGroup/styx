@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -27,9 +27,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
-import static com.google.common.base.Throwables.propagate;
-import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static com.hotels.styx.applications.BackendServices.newBackendServices;
+import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static java.lang.String.format;
 
@@ -55,7 +54,7 @@ public class YamlApplicationsProvider {
         try {
             return MAPPER.readValue(yamlText, TYPE);
         } catch (IOException e) {
-            throw propagate(e);
+            throw new RuntimeException(e);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,10 +17,11 @@ package com.hotels.styx.client
 
 import com.github.tomakehurst.wiremock.client.WireMock.{get => _, _}
 import com.hotels.styx.api.HttpResponseStatus.OK
-import com.hotels.styx.api.LiveHttpRequest._
+import com.hotels.styx.api.LiveHttpRequest.get
 import com.hotels.styx.api.extension.ActiveOrigins
 import com.hotels.styx.api.extension.Origin.newOriginBuilder
 import com.hotels.styx.api.extension.service.BackendService
+import com.hotels.styx.api.{HttpHeaderNames, HttpHeaderValues, HttpResponse}
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
@@ -29,6 +30,9 @@ import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins}
 import com.hotels.styx.support.server.UrlMatchingStrategies._
 import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
+import io.micrometer.core.instrument.Tags
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.hamcrest.MatcherAssert._
 import org.hamcrest.Matchers._
 import org.scalatest.FunSpec
@@ -63,6 +67,7 @@ class ExpiringConnectionSpec extends FunSpec
       .build()
 
     pooledClient = newHttpClientBuilder(backendService.id)
+      .meterRegistry(new SimpleMeterRegistry())
       .loadBalancer(roundRobinStrategy(activeOrigins(backendService)))
       .build
   }
@@ -73,34 +78,52 @@ class ExpiringConnectionSpec extends FunSpec
   }
 
   it("Should expire connection after 1 second") {
-    val request = get(styxServer.routerURL("/app1")).build()
 
-    val response1 = Mono.from(pooledClient.sendRequest(request, requestContext())).block()
+    // Prime a connection:
+    val response1: HttpResponse = Mono.from(pooledClient.sendRequest(
+      get(styxServer.routerURL("/app1/1"))
+        .header(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED)
+        .build(),
+      requestContext()))
+      .flatMap(r => Mono.from(r.aggregate(1024)))
+      .block()
 
     assertThat(response1.status(), is(OK))
 
+    // Ensure that a connection got created in pool:
+    val meterTags = Tags.of("appId", "appOne", "originId", "generic-app-01")
+
     eventually(timeout(1.seconds)) {
-      styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.available-connections").get should be(1)
-      styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.connections-closed").get should be(0)
+      meterRegistry.find("connectionpool.availableConnections").tags(meterTags).gauge().value() should be(1.0)
+      meterRegistry.find("connectionpool.connectionsClosed").tags(meterTags).gauge().value() should be(0.0)
     }
 
     Thread.sleep(1000)
 
-    val response2 = Mono.from(pooledClient.sendRequest(request, requestContext())).block()
+    // Send a second request. The connection would have been expired after two seconds
+    // Therefore, the pool creates a new connection.
+    val response2: HttpResponse = Mono.from(pooledClient.sendRequest(
+      get(styxServer.routerURL("/app1/2"))
+        .header(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED)
+        .build(),
+      requestContext()))
+      .flatMap(r => Mono.from(r.aggregate(1024)))
+      .block()
+
     assertThat(response2.status(), is(OK))
 
     eventually(timeout(2.seconds)) {
       withClue("A connection should be available in pool") {
-        styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.available-connections").get should be(1)
+        meterRegistry.find("connectionpool.availableConnections").tags(meterTags).gauge().value() should be(1.0)
       }
 
       withClue("A previous connection should have been terminated") {
-        styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.connections-terminated").get should be(1)
+        meterRegistry.find("connectionpool.connectionsTerminated").tags(meterTags).gauge().value() should be(1.0)
       }
     }
   }
 
-  def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(backendService).build()
+  def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(new CompositeMeterRegistry(), backendService).build()
 
   def roundRobinStrategy(activeOrigins: ActiveOrigins): RoundRobinStrategy = new RoundRobinStrategy(activeOrigins, activeOrigins.snapshot())
 }

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.StyxClientException;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.HttpErrorStatusListener;
@@ -31,7 +30,11 @@ import com.hotels.styx.server.RequestTimeoutException;
 import com.hotels.styx.server.netty.codec.NettyToStyxRequestDecoder;
 import com.hotels.styx.server.netty.connectors.HttpPipelineHandler.HttpResponseWriterFactory;
 import com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State;
+import com.hotels.styx.support.JustATestException;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
@@ -72,6 +75,8 @@ import static com.hotels.styx.api.HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE;
 import static com.hotels.styx.api.HttpResponseStatus.REQUEST_TIMEOUT;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
+import static com.hotels.styx.api.Metrics.name;
+import static com.hotels.styx.server.RequestStatsCollector.REQUEST_OUTSTANDING;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE_CLIENT_CLOSED;
@@ -107,7 +112,7 @@ public class HttpPipelineHandlerTest {
     private final HttpHandler doNotRespondHandler = (request, context) -> new Eventual<>(Mono.never());
 
     private HttpErrorStatusListener errorListener;
-    private CodaHaleMetricRegistry metrics;
+    private MeterRegistry metrics;
 
     // Cannot use lambda expression below, because spy() does not understand them.
     private final HttpHandler respondingPipeline = spy(new HttpHandler() {
@@ -226,16 +231,18 @@ public class HttpPipelineHandlerTest {
 
     @Test
     public void updatesRequestsOngoingCountOnChannelReadEvent() throws Exception {
+
+        MeterRegistry registry = new SimpleMeterRegistry();
         HttpPipelineHandler pipelineHandler = handlerWithMocks(doNotRespondHandler)
                 .responseEnhancer(DO_NOT_MODIFY_RESPONSE)
-                .progressListener(new RequestStatsCollector(metrics))
+                .progressListener(new RequestStatsCollector(registry, "test"))
                 .build();
 
         ChannelHandlerContext ctx = mockCtx();
         pipelineHandler.channelActive(ctx);
         pipelineHandler.channelRead0(ctx, get("/foo").build());
 
-        assertThat(metrics.counter("outstanding").getCount(), is(1L));
+        assertThat(requestOutstandingValue(registry), is(1.0));
     }
 
     @Test
@@ -256,18 +263,19 @@ public class HttpPipelineHandlerTest {
 
     @Test
     public void decrementsRequestsOngoingCountOnChannelInactiveWhenRequestIsOngoing() throws Exception {
+        MeterRegistry registry = new SimpleMeterRegistry();
         HttpPipelineHandler adapter = handlerWithMocks(doNotRespondHandler)
                 .responseEnhancer(DO_NOT_MODIFY_RESPONSE)
-                .progressListener(new RequestStatsCollector(metrics))
+                .progressListener(new RequestStatsCollector(registry, "test"))
                 .build();
         ChannelHandlerContext ctx = mockCtx();
 
         adapter.channelActive(ctx);
         adapter.channelRead0(ctx, get("/foo").build());
-        assertThat(metrics.counter("outstanding").getCount(), is(1L));
+        assertThat(requestOutstandingValue(registry), is(1.0));
 
         adapter.channelInactive(ctx);
-        assertThat(metrics.counter("outstanding").getCount(), is(0L));
+        assertThat(requestOutstandingValue(registry), is(0.0));
     }
 
     @Test
@@ -293,7 +301,7 @@ public class HttpPipelineHandlerTest {
 
     @Test
     public void responseFailureInSendingResponseClientConnectedState() throws Exception {
-        RuntimeException cause = new RuntimeException("Something went wrong");
+        RuntimeException cause = new JustATestException();
 
         handler.channelActive(ctx);
         handler.channelRead0(ctx, request);
@@ -309,15 +317,14 @@ public class HttpPipelineHandlerTest {
         writerFuture.completeExceptionally(cause);
         verify(statsCollector).onTerminate(eq(request.id()));
         verify(statsCollector, never()).onComplete(eq(request.id()), eq(200));
-        assertThat(metrics.counter("outstanding").getCount(), is(0L));
-        assertThat(metrics.counter("requests.cancelled.responseWriteError").getCount(), is(1L));
+        assertThat(metrics.counter("test.request.cancelled.responseWriteError").count(), is(1.0));
 
         assertThat(responseUnsubscribed.get(), is(true));
     }
 
     @Test
     public void channelExceptionAfterClientClosed() throws Exception {
-        RuntimeException cause = new RuntimeException("Something went wrong");
+        RuntimeException cause = new JustATestException();
 
         handler.channelActive(ctx);
         handler.channelRead0(ctx, request);
@@ -340,8 +347,9 @@ public class HttpPipelineHandlerTest {
 
     @Test
     public void decrementsRequestsOngoingOnExceptionCaught() throws Exception {
+        MeterRegistry registry = new SimpleMeterRegistry();
         HttpPipelineHandler adapter = handlerWithMocks(doNotRespondHandler)
-                .progressListener(new RequestStatsCollector(metrics))
+                .progressListener(new RequestStatsCollector(registry, "test"))
                 .build();
 
         ChannelHandlerContext ctx = mockCtx();
@@ -349,13 +357,13 @@ public class HttpPipelineHandlerTest {
 
         LiveHttpRequest request = get("/foo").build();
         adapter.channelRead0(ctx, request);
-        assertThat(metrics.counter("outstanding").getCount(), is(1L));
+        assertThat(requestOutstandingValue(registry), is(1.0));
 
         adapter.exceptionCaught(ctx, new Throwable("Exception"));
-        assertThat(metrics.counter("outstanding").getCount(), is(0L));
+        assertThat(requestOutstandingValue(registry), is(0.0));
 
         adapter.channelInactive(ctx);
-        assertThat(metrics.counter("outstanding").getCount(), is(0L));
+        assertThat(requestOutstandingValue(registry), is(0.0));
 
         verify(responseEnhancer).enhance(any(LiveHttpResponse.Transformer.class), eq(request));
     }
@@ -465,7 +473,7 @@ public class HttpPipelineHandlerTest {
         handler.channelRead0(ctx, request2);
 
         // Assert that the third request triggers an error.
-        assertThat(metrics.counter("requests.cancelled.spuriousRequest").getCount(), is(1L));
+        assertThat(metrics.counter("test.request.cancelled.spuriousRequest").count(), is(1.0));
         assertThat(writerFuture.isCancelled(), is(true));
         assertThat(responseUnsubscribed.get(), is(true));
         verify(statsCollector).onTerminate(request.id());
@@ -677,7 +685,7 @@ public class HttpPipelineHandlerTest {
         // Then, respond with INTERNAL_SERVER_ERROR and close the channel.
         setupHandlerTo(WAITING_FOR_RESPONSE);
 
-        responseObservable.onError(new StyxClientException("Client error occurred", new RuntimeException("Something went wrong")));
+        responseObservable.onError(new StyxClientException("Client error occurred", new JustATestException()));
 
         assertThat(responseUnsubscribed.get(), is(true));
 
@@ -731,7 +739,7 @@ public class HttpPipelineHandlerTest {
         // A non-IO exception bubbles up the Netty pipeline.
         setupHandlerTo(WAITING_FOR_RESPONSE);
 
-        RuntimeException cause = new RuntimeException("Someting went wrong in the netty pipeline");
+        RuntimeException cause = new JustATestException();
         handler.exceptionCaught(ctx, cause);
 
         assertThat(responseUnsubscribed.get(), is(true));
@@ -811,7 +819,7 @@ public class HttpPipelineHandlerTest {
         // An IO exception bubbles up the Netty pipeline
         setupHandlerTo(SENDING_RESPONSE);
 
-        handler.exceptionCaught(ctx, new IOException("something went wrong"));
+        handler.exceptionCaught(ctx, new IOException(JustATestException.DEFAULT_MESSAGE));
         assertThat(responseUnsubscribed.get(), is(true));
         verify(statsCollector).onTerminate(request.id());
         assertThat(handler.state(), is(TERMINATED));
@@ -823,7 +831,7 @@ public class HttpPipelineHandlerTest {
         // A non-IO exception bubbles up the Netty pipeline
         setupHandlerTo(SENDING_RESPONSE);
 
-        handler.exceptionCaught(ctx, new RuntimeException("something went wrong"));
+        handler.exceptionCaught(ctx, new JustATestException());
         assertThat(responseUnsubscribed.get(), is(true));
         verify(statsCollector).onTerminate(request.id());
         assertThat(handler.state(), is(TERMINATED));
@@ -888,7 +896,7 @@ public class HttpPipelineHandlerTest {
         handler.channelRead0(ctx, request2);
         assertThat(handler.state(), is(WAITING_FOR_RESPONSE));
 
-        responseObservable.onError(new RuntimeException("Simulated Exception - something went wrong!"));
+        responseObservable.onError(new JustATestException());
         assertThat(handler.state(), is(WAITING_FOR_RESPONSE));
     }
 
@@ -959,7 +967,7 @@ public class HttpPipelineHandlerTest {
     }
 
     private HttpPipelineHandler createHandler(HttpHandler pipeline) throws Exception {
-        metrics = new CodaHaleMetricRegistry();
+        metrics = new SimpleMeterRegistry();
         HttpPipelineHandler handler = handlerWithMocks(pipeline)
                 .responseWriterFactory(responseWriterFactory)
                 .build();
@@ -978,7 +986,8 @@ public class HttpPipelineHandlerTest {
                 .errorStatusListener(errorListener)
                 .responseEnhancer(responseEnhancer)
                 .progressListener(statsCollector)
-                .metricRegistry(metrics);
+                .meterRegistry(metrics)
+                .meterPrefix("test");
     }
 
     private static HttpResponseWriterFactory responseWriterFactory(CompletableFuture<Void> future) {
@@ -1031,4 +1040,9 @@ public class HttpPipelineHandlerTest {
 
         return new EmbeddedChannel(toArray(concat(commonHandlers, asList(lastHandlers)), ChannelHandler.class));
     }
+
+    private double requestOutstandingValue(MeterRegistry registry) {
+        return Optional.ofNullable(registry.find(name("test", REQUEST_OUTSTANDING)).gauge()).map(Gauge::value).orElse(0.0);
+    }
+
 }

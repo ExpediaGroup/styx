@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 package com.hotels.styx.proxy.interceptors;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpVersion;
@@ -22,6 +24,7 @@ import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
 import static ch.qos.logback.classic.Level.INFO;
@@ -57,11 +61,23 @@ public class HttpMessageLoggingInterceptorTest {
     @Mock
     private HttpMessageFormatter httpMessageFormatter;
 
+    private Runnable resetLevel;
+
     @BeforeAll
     public void setup() {
+        Logger logger = (Logger) LoggerFactory.getLogger("com.hotels.styx.http-messages.inbound");
+        Level previousLevel = logger.getLevel();
+        logger.setLevel(INFO);
+        resetLevel = () -> logger.setLevel(previousLevel);
+
         MockitoAnnotations.initMocks(this);
         when(httpMessageFormatter.formatRequest(any(LiveHttpRequest.class))).thenReturn(FORMATTED_REQUEST);
         when(httpMessageFormatter.formatResponse(any(LiveHttpResponse.class))).thenReturn(FORMATTED_RESPONSE);
+    }
+
+    @AfterAll
+    public void tearDown() {
+        resetLevel.run();
     }
 
     @BeforeEach

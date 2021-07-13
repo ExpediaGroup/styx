@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2020 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package com.hotels.styx.client
 
 import java.nio.charset.Charset
+import java.util.concurrent.TimeUnit.SECONDS
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -25,6 +26,7 @@ import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpRequest.get
+import com.hotels.styx.api.`extension`.service.ConnectionPoolSettings
 import com.hotels.styx.api.extension.Origin._
 import com.hotels.styx.api.extension.service.{BackendService, StickySessionConfig}
 import com.hotels.styx.api.extension.{ActiveOrigins, Origin}
@@ -37,6 +39,7 @@ import com.hotels.styx.common.FreePorts.freePort
 import com.hotels.styx.support.Support.requestContext
 import com.hotels.styx.support.server.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies._
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values._
@@ -50,6 +53,8 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
   val LOGGER = LoggerFactory.getLogger(classOf[RetryHandlingSpec])
 
   val response = "Response From localhost"
+
+  val meterRegistry = new CompositeMeterRegistry()
 
   val server1 = new FakeHttpServer(0, "app", "HEALTHY_ORIGIN_ONE")
   val server2 = new FakeHttpServer(0, "app", "HEALTHY_ORIGIN_TWO")
@@ -118,7 +123,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
     originServer4.stop()
   }
 
-  private def activeOrigins(backendService: BackendService) = newOriginsInventoryBuilder(backendService).build()
+  private def activeOrigins(backendService: BackendService) = newOriginsInventoryBuilder(meterRegistry, backendService).build()
 
   private def stickySessionStrategy(activeOrigins: ActiveOrigins) = new StickySessionLoadBalancingStrategy(
     activeOrigins,
@@ -127,9 +132,15 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
   test("retries the next available origin on failure") {
     val backendService = new BackendService.Builder()
       .origins(unhealthyOriginOne, unhealthyOriginTwo, unhealthyOriginThree, healthyOriginTwo)
+      .connectionPoolConfig(
+        new ConnectionPoolSettings.Builder()
+          .pendingConnectionTimeout(10, SECONDS)
+          .build()
+      )
       .build()
 
     val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id)
+      .meterRegistry(meterRegistry)
       .retryPolicy(new RetryNTimes(3))
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .build
@@ -143,6 +154,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
       .origins(unhealthyOriginOne, unhealthyOriginTwo, unhealthyOriginThree)
       .build()
     val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id)
+      .meterRegistry(meterRegistry)
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .retryPolicy(new RetryNTimes(2))
       .build
@@ -159,6 +171,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
       .build()
 
     val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id)
+      .meterRegistry(meterRegistry)
       .retryPolicy(new RetryNTimes(3))
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .build

@@ -2,15 +2,20 @@
 <configuration scan="true" scanPeriod="10000">
   <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n%ex{full,
+        org.junit,
+        org.apache.maven.surefire}
+      </pattern>
     </encoder>
   </appender>
 
   <logger name="org.apache" level="WARN"/>
   <logger name="io.netty" level="WARN"/>
   <logger name="com.hotels.styx.proxy.backends.file.FileChangeMonitor" level="INFO"/>
+  <logger name="com.google.common.util.concurrent.ServiceManager" level="ERROR" />
+  <logger name="com.hotels.styx.NettyExecutor" level="ERROR" />
 
-  <root level="INFO">
+  <root level="OFF">
     <appender-ref ref="CONSOLE"/>
   </root>
 </configuration>

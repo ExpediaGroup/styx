@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,25 +20,21 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.IThrowableProxy;
 import ch.qos.logback.classic.spi.StackTraceElementProxy;
 import ch.qos.logback.core.Context;
-import com.google.common.base.Function;
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
-import com.google.common.base.Splitter;
-import com.google.common.base.Strings;
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.Iterables;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 
-import javax.annotation.Nullable;
 import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Objects;
+import java.util.Optional;
 
 import static ch.qos.logback.core.CoreConstants.LINE_SEPARATOR;
 import static com.google.common.base.Charsets.UTF_8;
-import static com.google.common.base.Optional.fromNullable;
+import static com.hotels.styx.common.Strings.isNotEmpty;
 import static java.lang.Integer.toHexString;
 import static java.util.Arrays.asList;
-import static java.util.Collections.EMPTY_LIST;
+import static java.util.Arrays.stream;
 
 /**
  * Logback converter to log Splunk friendly exception data.
@@ -59,86 +55,58 @@ public class ExceptionConverter extends ClassicConverter {
     private static final HashFunction MD5_HASHING = Hashing.md5();
     private static final String NO_MSG = "";
 
+    private String[] styxClasses;
+
     @Override
-    public String convert(final ILoggingEvent loggingEvent) {
-        return fromNullable(loggingEvent.getThrowableProxy())
-                .transform(createExceptionData(loggingEvent))
-                .or(NO_MSG);
+    public void start() {
+        styxClasses = readStyxClassesFromProperty();
+        super.start();
     }
 
-    private Function<IThrowableProxy, String> createExceptionData(final ILoggingEvent loggingEvent) {
-        return new Function<IThrowableProxy, String>() {
-            @Nullable
-            @Override
-            public String apply(IThrowableProxy iThrowableProxy) {
-                return getExceptionData(loggingEvent);
-            }
-        };
+    @Override
+    public String convert(final ILoggingEvent loggingEvent) {
+        return Optional.ofNullable(loggingEvent)
+                .map(this::getExceptionData)
+                .orElse(NO_MSG);
     }
 
     private String getExceptionData(final ILoggingEvent loggingEvent) {
-        IThrowableProxy throwableProxy = loggingEvent.getThrowableProxy();
-        StackTraceElementProxy loggableStackTraceElement =
-                findFirstStackTraceElementForClasses(throwableProxy, readStyxClassesFromProperty())
-                        .or(fromNullable(getTopStackTraceElement(throwableProxy)))
-                        .orNull();
-
-        return fromNullable(loggableStackTraceElement)
-                .transform(CREATE_EXCEPTION_MESSAGE)
-                .or(NO_MSG);
+        return Optional.ofNullable(loggingEvent.getThrowableProxy())
+                .map(proxy -> findStyxStackTraceElement(proxy).orElse(getTopElement(proxy)))
+                .map(ExceptionConverter::createExceptionMessage)
+                .orElse(NO_MSG);
     }
 
-    private static final Function<StackTraceElementProxy, String> CREATE_EXCEPTION_MESSAGE = new Function<StackTraceElementProxy, String>() {
-        @Nullable
-        @Override
-        public String apply(@Nullable StackTraceElementProxy loggableStackTraceElement) {
-            String exceptionClass = loggableStackTraceElement.getStackTraceElement().getClassName();
-            String exceptionMethod = loggableStackTraceElement.getStackTraceElement().getMethodName();
-            String exceptionID = hashCodeForException(exceptionClass, exceptionMethod);
-            return MessageFormat.format(SPLUNK_FRIENDLY_LOG_MESSAGE_TEMPLATE, exceptionClass, exceptionMethod, exceptionID);
-        }
-    };
-
-
-    private Optional<StackTraceElementProxy> findFirstStackTraceElementForClasses(final IThrowableProxy throwableProxy, final String[] targetClasses) {
-        return FluentIterable.from(collectThrowableProxies(throwableProxy))
-                .transformAndConcat(collectStackTraceElements())
-                .firstMatch(stackTraceElementForClasses(targetClasses));
+    private static String createExceptionMessage(StackTraceElementProxy loggableStackTraceElement) {
+        String exceptionClass = loggableStackTraceElement.getStackTraceElement().getClassName();
+        String exceptionMethod = loggableStackTraceElement.getStackTraceElement().getMethodName();
+        String exceptionID = hashCodeForException(exceptionClass, exceptionMethod);
+        return MessageFormat.format(SPLUNK_FRIENDLY_LOG_MESSAGE_TEMPLATE, exceptionClass, exceptionMethod, exceptionID);
     }
 
-    private static Predicate<StackTraceElementProxy> stackTraceElementForClasses(final String[] targetClasses) {
-        return new Predicate<StackTraceElementProxy>() {
-            @Override
-            public boolean apply(@Nullable StackTraceElementProxy stackTraceElementProxy) {
-                return contains(stackTraceElementProxy.getSTEAsString(), targetClasses);
-            }
-        };
-    }
-
-    private static Function<IThrowableProxy, Iterable<StackTraceElementProxy>> collectStackTraceElements() {
-        return new Function<IThrowableProxy, Iterable<StackTraceElementProxy>>() {
-            @Nullable
-            @Override
-            public Iterable<StackTraceElementProxy> apply(@Nullable IThrowableProxy iThrowableProxy) {
-                return iThrowableProxy != null ? asList(iThrowableProxy.getStackTraceElementProxyArray()) : EMPTY_LIST;
-            }
-        };
+    private Optional<StackTraceElementProxy> findStyxStackTraceElement(final IThrowableProxy throwableProxy) {
+        return collectThrowableProxies(throwableProxy).stream()
+                .filter(Objects::nonNull)
+                .flatMap(proxy -> Arrays.stream(proxy.getStackTraceElementProxyArray()))
+                .filter(steProxy -> containsStyxClasses(steProxy.getSTEAsString()))
+                .findFirst();
     }
 
     private String[] readStyxClassesFromProperty() {
         String[] targetClasses = TARGET_CLASSES_DEFAULT;
         Context ctx = getContext();
         String property = ctx.getProperty(TARGET_CLASSES_PROPERTY_NAME);
-        if (!Strings.isNullOrEmpty(property)) {
-            targetClasses = Iterables.toArray(Splitter.on(",").trimResults().split(property), String.class);
+        if (isNotEmpty(property)) {
+            targetClasses = stream(property.split(","))
+                    .map(String::trim)
+                    .toArray(String[]::new);
         } else {
-            addError(MessageFormat.format("The '{0}' property should be present on logback configuration. Using default classname prefixes.",
-                    TARGET_CLASSES_PROPERTY_NAME));
+            addInfo("The '" + TARGET_CLASSES_PROPERTY_NAME + "' property should be present on logback configuration. Using default classname prefixes.");
         }
         return targetClasses;
     }
 
-    private Iterable<IThrowableProxy> collectThrowableProxies(final IThrowableProxy throwableProxy) {
+    private Collection<IThrowableProxy> collectThrowableProxies(final IThrowableProxy throwableProxy) {
         IThrowableProxy[] throwableProxyArray = new IThrowableProxy[MAXIMUM_ALLOWED_DEPTH];
         IThrowableProxy actualThrowableProxy = throwableProxy;
         for (int i = 0; i < throwableProxyArray.length; i++) {
@@ -152,7 +120,7 @@ public class ExceptionConverter extends ClassicConverter {
         return asList(throwableProxyArray);
     }
 
-    private StackTraceElementProxy getTopStackTraceElement(final IThrowableProxy throwableProxy) {
+    private StackTraceElementProxy getTopElement(final IThrowableProxy throwableProxy) {
         StackTraceElementProxy stackTraceLine = null;
         StackTraceElementProxy[] stackTraceElementProxyArray = throwableProxy.getStackTraceElementProxyArray();
         if (stackTraceElementProxyArray != null && stackTraceElementProxyArray.length > 0) {
@@ -161,9 +129,9 @@ public class ExceptionConverter extends ClassicConverter {
         return stackTraceLine;
     }
 
-    private static boolean contains(final String stackTraceLine, final String[] targetClasses) {
+    private boolean containsStyxClasses(final String stackTraceLine) {
         boolean retValue = false;
-        for (String targetClass : targetClasses) {
+        for (String targetClass : styxClasses) {
             if (stackTraceLine.contains(targetClass)) {
                 retValue = true;
                 break;
