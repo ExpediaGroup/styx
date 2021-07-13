@@ -96,7 +96,7 @@ Other open source projects called *Styx* on GitHub:
 
 This project is licensed under the Apache License v2.0 - see the [LICENSE.txt](LICENSE.txt) file for details.
 
-Copyright 2013-2017 Expedia Inc.
+Copyright 2013-2021 Expedia Inc.
 
 Licencing terms for any derived work and dependant libraries are documented in `NOTICE` files.
 
