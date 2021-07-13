@@ -32,4 +32,111 @@ import java.nio.file.Paths
 
 
 class PluginsPipelineSpec : FeatureSpec() {
+    private val LOGGER = LoggerFactory.getLogger(PluginsPipelineSpec::class.java)
+
+    init {
+        val tempPluginsDir = createTempDir(suffix = "-${this.javaClass.simpleName}")
+        tempPluginsDir.deleteOnExit()
+
+        val plugin = jarLocation("styx-test-plugin")
+        val dependency = jarLocation("styx-test-plugin-dependencies")
+
+        Files.copy(plugin, tempPluginsDir.resolve(plugin.fileName.toString()).toPath())
+        Files.copy(dependency, tempPluginsDir.resolve(dependency.fileName.toString()).toPath())
+
+        feature("Plugin selection") {
+            scenario("Loads plugins for interceptor pipeline object") {
+
+                styxServer.restart("""
+                    proxy:
+                      connectors:
+                        http:
+                          port: 0
+            
+                        https:
+                          port: 0
+                          sslProvider: JDK
+                          sessionTimeoutMillis: 300000
+                          sessionCacheSize: 20000
+            
+                    admin:
+                      connectors:
+                        http:
+                          port: 0
+
+                    plugins:
+                      all:
+                        plugin-a:
+                          factory:
+                            class: testgrp.TestPluginModule
+                            classPath: "$tempPluginsDir"
+                          config: 
+                            id: a
+                        plugin-b:
+                          factory:
+                            class: testgrp.TestPluginModule
+                            classPath: "$tempPluginsDir"
+                          config: 
+                            id: b
+                        plugin-c:
+                          factory:
+                            class: testgrp.TestPluginModule
+                            classPath: "$tempPluginsDir"
+                          config: 
+                            id: c
+                             
+                    httpPipeline:
+                      type: InterceptorPipeline
+                      config:
+                          pipeline: plugin-a, plugin-c
+                          handler:
+                            type: StaticResponseHandler
+                            config:
+                              status: 200
+                              content: "Hello, world!"
+                        """.trimIndent())
+
+                LOGGER.info("Proxy http address: ${styxServer().proxyHttpHostHeader()}")
+
+                val response = client.send(get("/")
+                    .header(HOST, styxServer().proxyHttpHostHeader())
+                    .build())
+                    .wait()!!
+
+                response.headers("X-Plugin-Identifier").shouldContainInOrder("c", "a")
+            }
+        }
+    }
+
+    val client: StyxHttpClient = StyxHttpClient.Builder().build()
+
+    val styxServer = StyxServerProvider()
+
+    fun jarLocation(module: String): Path {
+        val parent = modulesDirectory()
+            .resolve(module)
+            .resolve("target");
+
+        LOGGER.info("jarLocation($module): $parent")
+
+        return Files.list(parent)
+            .filter({ file -> file.toString().endsWith(".jar") })
+            .filter({ file -> !file.toString().contains("-sources") })
+            .findFirst()
+            .orElseThrow { IllegalStateException("Cannot find any JAR at the specified location") }
+
+    }
+
+    fun modulesDirectory(): Path {
+        return classPathRoot().getParent().getParent().getParent();
+    }
+
+    fun classPathRoot(): Path {
+        return Paths.get(getSystemClassLoader().getResource("")!!.getFile());
+    }
+
+    override fun afterSpec(spec: Spec) {
+        styxServer.stop()
+        super.afterSpec(spec)
+    }
 }
