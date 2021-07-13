@@ -51,4 +51,26 @@ public class HttpRequestOperationTest {
                         new DefaultCookie("has", "123456789")));
 
     }
+
+    @Test
+    public void shouldTransformUrlQueryParametersToNettyRequest() {
+        LiveHttpRequest request = new LiveHttpRequest.Builder()
+                .method(GET)
+                .header("X-Forwarded-Proto", "https")
+                .uri("https://www.example.com/foo?some=value&blah=blah")
+                .build();
+
+        LiveHttpRequest.Transformer builder = request.newBuilder();
+
+        LiveHttpRequest newRequest = builder.url(
+                request.url().newBuilder()
+                        .addQueryParam("format", "json")
+                        .build())
+                .build();
+
+        DefaultHttpRequest nettyRequest = HttpRequestOperation.toNettyRequest(newRequest);
+        assertThat(nettyRequest.method(), is(io.netty.handler.codec.http.HttpMethod.GET));
+        assertThat(nettyRequest.uri(), is("https://www.example.com/foo?some=value&blah=blah&format=json"));
+        assertThat(nettyRequest.headers().get("X-Forwarded-Proto"), is("https"));
+    }
 }

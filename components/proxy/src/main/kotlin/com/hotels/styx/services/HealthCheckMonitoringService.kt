@@ -229,3 +229,4 @@ internal fun reTag(tags: Set<String>, newStatus: ObjectHealth) =
 private val RELEVANT_STATES = setOf(STATE_ACTIVE, STATE_UNREACHABLE)
 private fun containsRelevantStateTag(entry: Map.Entry<String, RoutingObjectRecord>) =
         stateTag.find(entry.value.tags) in RELEVANT_STATES
+

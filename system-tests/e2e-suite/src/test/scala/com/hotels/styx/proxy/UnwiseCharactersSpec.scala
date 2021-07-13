@@ -58,7 +58,7 @@ class UnwiseCharactersSpec extends FunSpec with StyxProxySpec with Eventually {
   describe("Handling of unwise characters") {
     recordingBackend.stub(urlStartingWith("/url"), aResponse.withStatus(200))
 
-    ignore("Should escape all unwise characters in URL as per styx configuration") {
+    it("Should escape all unwise characters in URL as per styx configuration") {
       val logger = new LoggingTestSupport(classOf[ConfigurableUnwiseCharsEncoder])
 
       val req = get("/url/unwiseQQblah")

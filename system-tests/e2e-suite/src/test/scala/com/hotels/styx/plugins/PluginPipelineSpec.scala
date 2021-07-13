@@ -24,4 +24,61 @@ import com.hotels.styx.{ExamplePluginJarLocation, StyxProxySpec}
 import org.scalatest.FunSpec
 import scala.collection.JavaConverters._
 
-class PluginPipelineSpec {}
+class PluginPipelineSpec extends FunSpec with StyxProxySpec {
+  val normalBackend = FakeHttpServer.HttpStartupConfig().start()
+  val pluginsFolder = ExamplePluginJarLocation.createTemporarySharedDirectoryForJars()
+
+  override val styxConfig = StyxConfig(
+    yamlText = s"""
+        |plugins:
+        |  active: PluginA, PluginC
+        |  all:
+        |     PluginA:
+        |       factory:
+        |          class: testgrp.TestPluginModule
+        |          classPath: "$pluginsFolder"
+        |       config:
+        |         id: PluginA
+        |     PluginB:
+        |       factory:
+        |          class: testgrp.TestPluginModule
+        |          classPath: "$pluginsFolder"
+        |       config:
+        |         id: PluginB
+        |     PluginC:
+        |       factory:
+        |          class: testgrp.TestPluginModule
+        |          classPath: "$pluginsFolder"
+        |       config:
+        |         id: PluginC
+        """.stripMargin('|')
+  )
+
+  override protected def beforeAll(): Unit = {
+    super.beforeAll()
+    styxServer.setBackends("/" -> HttpBackend("app1", Origins(normalBackend)))
+  }
+
+  override protected def afterAll(): Unit = {
+    normalBackend.stop()
+    super.afterAll()
+  }
+
+  describe("Plugins from configuration") {
+    it("Activates active plugins only") {
+      val response = decodedRequest(anHttpRequest)
+
+      response.headers("X-Plugin-Identifier").asScala should contain allOf("PluginA", "PluginC")
+      response.headers("X-Plugin-Identifier").asScala should not contain "PluginB"
+    }
+  }
+
+  def styxHostAndPort: HostAndPort = {
+    fromParts("localhost", styxServer.httpPort)
+  }
+
+  def anHttpRequest: HttpRequest = {
+    HttpRequest.get(styxServer.routerURL("/pluginPipelineSpec/")).build()
+  }
+
+}

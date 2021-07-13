@@ -90,7 +90,7 @@ class ProviderAdminInterfaceSpec : FeatureSpec() {
                   config:
                     status: 200
                 """.trimIndent()
-    )
+        )
 
     private val mockServer = MockOriginServer.create("mock", "mock-01", 0, HttpConnectorConfig(0))
             .start()

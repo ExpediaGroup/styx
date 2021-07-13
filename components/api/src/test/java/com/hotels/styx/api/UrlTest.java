@@ -222,6 +222,12 @@ public class UrlTest {
     }
 
     @Test
+    public void unwiseCharsAreNotAccepted() throws Exception {
+        String urlWithUnwiseChars = "/search.do?foo={&srsReport=Landing|AutoS|HOTEL|Hotel%20Il%20Duca%20D%27Este|0|0|0|2|1|2|284128&srsr=Landing|AutoS|HOTEL|Hotel%20Il%20Duca%20D%27Este|0|0|0|2|1|2|284128";
+        assertThrows(IllegalArgumentException.class, () -> url(urlWithUnwiseChars).build());
+    }
+
+    @Test
     public void canModifyAComponentOfTheUrl() {
         Url url = url("/somerandompath?withsomequery=noquery").build();
         assertThat(url.newBuilder().path("/newpath").build(), is(url("/newpath?withsomequery=noquery").build()));

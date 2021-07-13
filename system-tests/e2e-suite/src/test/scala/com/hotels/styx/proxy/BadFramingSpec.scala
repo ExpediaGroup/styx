@@ -70,7 +70,7 @@ class BadFramingSpec extends FunSpec
 
   describe("Detects bad HTTP message framing.") {
 
-    ignore("Returns BAD_REQUEST Bad Request if client request contains illegal url.") {
+    it("Returns BAD_REQUEST Bad Request if client request contains illegal url.") {
       originRespondingWith(status200OkResponse)
 
       val client = aggregatingTestClient("localhost", styxServer.httpPort)
