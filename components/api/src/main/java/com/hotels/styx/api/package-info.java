@@ -14,7 +14,6 @@
   limitations under the License.
  */
 
-
 /**
  * A programming interface for implementing Styx extensions. This includes the
  * {@link com.hotels.styx.api.HttpInterceptor} interface for intercepting HTTP traffic, and classes

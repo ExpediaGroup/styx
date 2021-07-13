@@ -82,12 +82,14 @@ public class LiveHttpResponse implements LiveHttpMessage {
     private final HttpResponseStatus status;
     private final HttpHeaders headers;
     private final ByteStream body;
+    private final LiveHttpRequest request;
 
     LiveHttpResponse(Builder builder) {
         this.version = builder.version;
         this.status = builder.status;
         this.headers = builder.headers.build();
         this.body = builder.body;
+        this.request = builder.request;
     }
 
     /**
@@ -163,6 +165,10 @@ public class LiveHttpResponse implements LiveHttpMessage {
         return status;
     }
 
+    public LiveHttpRequest request() {
+        return request;
+    }
+
     /**
      * @return true if this response is a redirect
      */
@@ -212,7 +218,7 @@ public class LiveHttpResponse implements LiveHttpMessage {
      *
      * @return a set of {@link ResponseCookie} objects
      */
-    public Set<ResponseCookie> cookies() {
+    public List<ResponseCookie> cookies() {
         return decode(headers.getAll(SET_COOKIE));
     }
 
@@ -555,6 +561,7 @@ public class LiveHttpResponse implements LiveHttpMessage {
         private HttpVersion version = HTTP_1_1;
         private boolean validate = true;
         private ByteStream body;
+        private LiveHttpRequest request;
 
         /**
          * Creates a new {@link Builder} object with default attributes.
@@ -585,6 +592,7 @@ public class LiveHttpResponse implements LiveHttpMessage {
             this.version = response.version();
             this.headers = response.headers().newBuilder();
             this.body = response.body();
+            this.request = response.request();
         }
 
         /**
@@ -611,6 +619,11 @@ public class LiveHttpResponse implements LiveHttpMessage {
          */
         public Builder status(HttpResponseStatus status) {
             this.status = status;
+            return this;
+        }
+
+        public Builder request(LiveHttpRequest request) {
+            this.request = request;
             return this;
         }
 

@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import reactor.core.publisher.Signal;
 
 import static java.util.Objects.requireNonNull;
 
@@ -135,6 +136,11 @@ public class ByteStream implements Publisher<Buffer> {
                 .doOnError(cause -> action.accept(Optional.of(cause)))
                 .doOnComplete(() -> action.accept(Optional.empty()))
         );
+    }
+
+    public ByteStream doOnEach(Consumer<? super Signal<Buffer>> signalConsumer) {
+        return new ByteStream(Flux.from(this.stream)
+            .doOnEach(signalConsumer));
     }
 
     /**

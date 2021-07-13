@@ -981,7 +981,6 @@ public class LiveHttpRequest implements LiveHttpMessage {
         public LiveHttpRequest build() {
             if (validate) {
                 ensureContentLengthIsValid();
-                requireNotDuplicatedHeader(COOKIE);
                 ensureMethodIsValid();
                 setHostHeader();
             }

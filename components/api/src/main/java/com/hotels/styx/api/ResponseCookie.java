@@ -88,12 +88,12 @@ public final class ResponseCookie {
      * @param headerValues "Set-Cookie" header values
      * @return cookies
      */
-    public static Set<ResponseCookie> decode(List<String> headerValues) {
+    public static List<ResponseCookie> decode(List<String> headerValues) {
         return headerValues.stream()
                 .map(ClientCookieDecoder.LAX::decode)
                 .filter(Objects::nonNull)
                 .map(ResponseCookie::convert)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
     }
 
     /**
@@ -103,9 +103,9 @@ public final class ResponseCookie {
      * @return "Set-Cookie" header values
      */
     public static List<String> encode(Collection<ResponseCookie> cookies) {
-        Set<NettyCookie> nettyCookies = cookies.stream()
+        List<NettyCookie> nettyCookies = cookies.stream()
                 .map(ResponseCookie::convert)
-                .collect(toSet());
+                .collect(Collectors.toList());
 
         return ServerCookieEncoder.LAX.encode(nettyCookies);
     }

@@ -32,6 +32,7 @@ import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.config.StyxObjectDefinition
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.ProviderObjectRecord
+import com.hotels.styx.StyxObjectRecord
 import com.hotels.styx.server.handlers.ClassPathResourceHandler
 import com.hotels.styx.serviceproviders.ServiceProviderFactory
 import com.hotels.styx.services.OriginsConfigConverter.Companion.deserialiseOrigins
@@ -181,27 +182,33 @@ internal class YamlFileConfigurationService(
         val newObjectNames = objects.map { it.first }
         val removedObjects = oldObjectNames.minus(newObjectNames)
 
-        objects.forEach { (name, new) ->
-            objectDb.compute(name) { previous ->
-                if (previous == null || changed(new.config, previous.config)) {
-                    new.styxService.start()
-                    previous?.styxService?.stop()
-                            ?.whenComplete { _, throwable ->
-                                if (throwable != null) {
-                                    val stack = StringWriter().let {
-                                        throwable.printStackTrace(PrintWriter(it))
-                                        it.toString()
-                                    }
-                                    LOGGER.warn("Service failed to terminate cleanly. cause=$throwable stack=$stack")
-                                }
+        objects.map { Triple(it.first, it.second, AtomicReference<StyxObjectRecord<StyxService>>()) }
+                .forEach { (name, new, cache) ->
+                    objectDb.compute(name) { previous ->
+                        if (cache.get() == null) {
+                            val result = if (previous == null || changed(new.config, previous.config)) {
+                                new.styxService.start()
+                                previous?.styxService?.stop()
+                                        ?.whenComplete { _, throwable ->
+                                            if (throwable != null) {
+                                                val stack = StringWriter().let {
+                                                    throwable.printStackTrace(PrintWriter(it))
+                                                    it.toString()
+                                                }
+                                                LOGGER.warn("Service failed to terminate cleanly. cause=$throwable stack=$stack")
+                                            }
+                                        }
+                                new
+                            } else {
+                                // No need to shout down the new one. It has yet been started.
+                                previous
                             }
-                    new
-                } else {
-                    // No need to shout down the new one. It has yet been started.
-                    previous
+                            cache.set(result)
+                        }
+
+                        cache.get()
+                    }
                 }
-            }
-        }
 
         removedObjects.forEach {
             objectDb.remove(it).ifPresent {

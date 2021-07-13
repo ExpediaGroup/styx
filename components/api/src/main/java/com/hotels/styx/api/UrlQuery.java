@@ -36,8 +36,9 @@ import static java.util.stream.StreamSupport.stream;
 final class UrlQuery {
     private final List<Parameter> parameters;
     private final String encodedQuery;
+    private final String rawQuery;
 
-    private UrlQuery(List<Parameter> parameters) {
+    private UrlQuery(List<Parameter> parameters, String rawQuery) {
         this.parameters = unmodifiableList(new ArrayList<>(parameters));
 
         QueryStringEncoder encoder = new QueryStringEncoder("", UTF_8);
@@ -45,6 +46,7 @@ final class UrlQuery {
         parameters.forEach(parameter -> encoder.addParam(parameter.key, parameter.value));
 
         this.encodedQuery = removeInitialCharacter(encoder.toString()); // remove initial '?' character
+        this.rawQuery = rawQuery;
     }
 
     private String removeInitialCharacter(String encodedQuery) {
@@ -64,6 +66,10 @@ final class UrlQuery {
 
     List<Parameter> parameters() {
         return parameters;
+    }
+
+    public String getRawQuery() {
+        return this.rawQuery;
     }
 
     /**
@@ -149,8 +155,9 @@ final class UrlQuery {
         }
     }
 
-    static class Builder {
+    public static class Builder {
         private List<Parameter> parameters;
+        private String rawQuery;
 
         Builder() {
             this((String) null);
@@ -160,10 +167,12 @@ final class UrlQuery {
             if (rawQuery != null) {
                 populateParametersFrom(rawQuery);
             }
+            this.rawQuery = rawQuery;
         }
 
         Builder(UrlQuery query) {
             this.parameters = new ArrayList<>(query.parameters());
+            this.rawQuery = query.getRawQuery();
         }
 
         private void populateParametersFrom(String rawQuery) {
@@ -189,7 +198,7 @@ final class UrlQuery {
         }
 
         UrlQuery build() {
-            return new UrlQuery(parameters == null ? emptyList() : parameters);
+            return new UrlQuery(parameters == null ? emptyList() : parameters, rawQuery);
         }
     }
 }
