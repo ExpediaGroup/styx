@@ -99,9 +99,9 @@ class PluginsPipelineSpec : FeatureSpec() {
                 LOGGER.info("Proxy http address: ${styxServer().proxyHttpHostHeader()}")
 
                 val response = client.send(get("/")
-                    .header(HOST, styxServer().proxyHttpHostHeader())
-                    .build())
-                    .wait()!!
+                        .header(HOST, styxServer().proxyHttpHostHeader())
+                        .build())
+                        .wait()!!
 
                 response.headers("X-Plugin-Identifier").shouldContainInOrder("c", "a")
             }
@@ -114,16 +114,16 @@ class PluginsPipelineSpec : FeatureSpec() {
 
     fun jarLocation(module: String): Path {
         val parent = modulesDirectory()
-            .resolve(module)
-            .resolve("target");
+                .resolve(module)
+                .resolve("target");
 
         LOGGER.info("jarLocation($module): $parent")
 
         return Files.list(parent)
-            .filter({ file -> file.toString().endsWith(".jar") })
-            .filter({ file -> !file.toString().contains("-sources") })
-            .findFirst()
-            .orElseThrow { IllegalStateException("Cannot find any JAR at the specified location") }
+                .filter({ file -> file.toString().endsWith(".jar") })
+                .filter({ file -> !file.toString().contains("-sources") })
+                .findFirst()
+                .orElseThrow { IllegalStateException("Cannot find any JAR at the specified location") }
 
     }
 
