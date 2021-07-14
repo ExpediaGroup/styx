@@ -108,13 +108,6 @@ public class NettyToStyxRequestDecoderTest {
     }
 
     @Test
-    public void rejectsRequestsWithBadURL() throws Throwable {
-        String badUri = "/no5_such3_file7.pl?\"><script>alert(73541);</script>56519<script>alert(1)</script>0e134";
-        Exception e = assertThrows(DecoderException.class, () -> send(httpRequest(GET, badUri)));
-        assertEquals(BadRequestException.class, e.getCause().getClass());
-    }
-
-    @Test
     public void sanitisesHeadersInBadRequestException() throws Throwable {
         FullHttpRequest originalRequest = newHttpRequest("/uri");
         HttpHeaders originalRequestHeaders = originalRequest.headers();
