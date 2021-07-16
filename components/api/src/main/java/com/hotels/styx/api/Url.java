@@ -30,6 +30,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import okhttp3.HttpUrl;
 
 import static java.lang.Integer.parseInt;
 import static java.util.Collections.emptyList;
@@ -117,6 +118,15 @@ public final class Url implements Comparable<Url> {
     public boolean isFullyQualified() {
         Optional<String> host = host();
         return host.isPresent() && !host.get().isEmpty();
+    }
+
+    /**
+     * Gets the raw query, if present.
+     *
+     * @return raw query, if present
+     */
+    public Optional<String> getRawQuery() {
+        return this.query.map(UrlQuery::getRawQuery);
     }
 
     /**
@@ -239,7 +249,7 @@ public final class Url implements Comparable<Url> {
         }
         builder.append(path);
 
-        query.ifPresent(query -> builder.append("?").append(query.encodedQuery()));
+        query.ifPresent(query -> builder.append("?").append(query.getRawQuery()));
 
         if (fragment != null) {
             builder.append("#").append(fragment);
@@ -438,13 +448,33 @@ public final class Url implements Comparable<Url> {
          * @return a new builder
          */
         public static Builder url(String value) {
-            URI uri = URI.create(value);
-            return new Builder()
+            try {
+                URI uri = URI.create(value);
+                return new Builder()
                     .scheme(uri.getScheme())
                     .authority(uri.getAuthority())
                     .path(uri.getRawPath())
                     .rawQuery(uri.getRawQuery())
                     .fragment(uri.getFragment());
+            } catch (IllegalArgumentException e) {
+                boolean isFullyQualified = true;
+                String url = value;
+                if (!url.startsWith("http")) {
+                    url = "http://localhost" + value;
+                    isFullyQualified = false;
+                }
+
+                URI uri = HttpUrl.parse(url).uri();
+                Builder builder = new Builder()
+                    .path(uri.getRawPath())
+                    .rawQuery(uri.getRawQuery())
+                    .fragment(uri.getFragment());
+                if (isFullyQualified) {
+                    builder.scheme(uri.getScheme())
+                        .authority(uri.getAuthority());
+                }
+                return builder;
+            }
         }
 
         public Builder rawQuery(String rawQuery) {

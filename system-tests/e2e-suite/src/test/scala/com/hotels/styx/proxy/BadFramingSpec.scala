@@ -70,20 +70,6 @@ class BadFramingSpec extends FunSpec
 
   describe("Detects bad HTTP message framing.") {
 
-    it("Returns BAD_REQUEST Bad Request if client request contains illegal url.") {
-      originRespondingWith(status200OkResponse)
-
-      val client = aggregatingTestClient("localhost", styxServer.httpPort)
-      val request = new DefaultFullHttpRequest(HTTP_1_1, GET, "/no5_such3_file7.pl?\"><script>alert(73541);</script>56519<script>alert(1)</script>0e134")
-      request.headers().add(HOST, styxServer.proxyHost)
-
-      withTestClient(client) {
-        client.write(request)
-        val response = client.waitForResponse().asInstanceOf[FullHttpResponse]
-        assert(response.status == HttpResponseStatus.BAD_REQUEST, clueMessage("Must receive 400 Bad Request, but received: ", response))
-      }
-    }
-
     it("Returns BAD_REQUEST Bad Request if client request contains multiple differing content-length headers.") {
       originRespondingWith(status200OkResponse)
       val request = get(styxServer.routerURL("/badFramingSpec/one/foo/e"))

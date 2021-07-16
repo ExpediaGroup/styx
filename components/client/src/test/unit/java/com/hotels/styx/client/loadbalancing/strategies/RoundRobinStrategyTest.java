@@ -28,6 +28,7 @@ import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetric;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetricSupplier;
 import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -72,7 +73,22 @@ public class RoundRobinStrategyTest {
         strategy = new RoundRobinStrategy.Factory().create(
                 environment,
                 configuration,
-                () -> asList(HOST_1, HOST_2, HOST_3));
+            new ActiveOrigins() {
+                @Override
+                public Iterable<RemoteHost> snapshot() {
+                    return asList(HOST_1, HOST_2, HOST_3);
+                }
+
+                @Override
+                public String getApplicationId() {
+                    return null;
+                }
+
+                @Override
+                public List<Origin> origins() {
+                    return null;
+                }
+            });
     }
 
     @Test
@@ -86,7 +102,22 @@ public class RoundRobinStrategyTest {
 
     @Test
     public void returnsEmptyIfNoActiveOrigins() {
-        strategy = new RoundRobinStrategy.Factory().create(environment, configuration, ImmutableList::of);
+        strategy = new RoundRobinStrategy.Factory().create(environment, configuration, new ActiveOrigins() {
+            @Override
+            public Iterable<RemoteHost> snapshot() {
+                return ImmutableList.of();
+            }
+
+            @Override
+            public String getApplicationId() {
+                return null;
+            }
+
+            @Override
+            public List<Origin> origins() {
+                return null;
+            }
+        });
         assertThat(strategy.choose(null), is(Optional.empty()));
     }
 

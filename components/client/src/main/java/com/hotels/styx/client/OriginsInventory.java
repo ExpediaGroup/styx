@@ -130,6 +130,10 @@ public final class OriginsInventory
         eventQueue = new QueueDrainingEventProcessor(this, true);
     }
 
+    @Override
+    public String getApplicationId() {
+        return  appId.toString();
+    }
 
     @Override
     public void close() {

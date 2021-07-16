@@ -22,6 +22,7 @@ import com.hotels.styx.api.Id
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.configuration.ObjectStore
 import com.hotels.styx.api.extension.ActiveOrigins
+import com.hotels.styx.api.extension.Origin
 import com.hotels.styx.api.extension.Origin.newOriginBuilder
 import com.hotels.styx.api.extension.RemoteHost
 import com.hotels.styx.api.extension.RemoteHost.remoteHost
@@ -99,7 +100,20 @@ internal class LoadBalancingGroup(val client: StyxBackendServiceClient, val chan
 
 
             val client = StyxBackendServiceClient.Builder(Id.id(appId))
-                    .loadBalancer(loadBalancer(config, ActiveOrigins { remoteHosts.get() }))
+                    .loadBalancer(loadBalancer(config, object: ActiveOrigins {
+                        override fun  snapshot(): Iterable<RemoteHost> {
+                            return remoteHosts.get();
+                        }
+
+                        override fun getApplicationId(): String {
+                            return "";
+                        }
+
+                        override fun origins(): MutableList<Origin> {
+                            return arrayListOf();
+                        }
+                    }
+                    ))
                     .meterRegistry(context.environment().meterRegistry())
                     .originIdHeader(context.environment().configuration().styxHeaderConfig().originIdHeaderName())
                     .stickySessionConfig(config.stickySession ?: StickySessionConfig.stickySessionDisabled())

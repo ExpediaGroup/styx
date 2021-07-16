@@ -87,16 +87,6 @@ class ProxyResiliencySpec extends FunSpec
 
   describe("Styx resiliency") {
 
-    it("should reject requests with bad URIs") {
-      setRandomNumberGenerator("client request handling")
-      forAll(badRequests(styxHost())) { (request: HttpRequest) =>
-        sendRequest(request) match {
-          case Success(response) => assertResponseIsBadRequest(response)
-          case Failure(exception) => LOGGER.warn("Request: Failure", exception)
-        }
-      }
-    }
-
     it("should reject requests with bad header names") {
       setRandomNumberGenerator("client request handling")
       forAll(requestsWithBadHeaderNames(styxHost())) { (request: HttpRequest) =>

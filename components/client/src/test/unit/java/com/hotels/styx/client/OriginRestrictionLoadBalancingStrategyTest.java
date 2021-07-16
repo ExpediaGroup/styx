@@ -16,6 +16,7 @@
 package com.hotels.styx.client;
 
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.extension.ActiveOrigins;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.RemoteHost;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
@@ -63,7 +64,22 @@ public class OriginRestrictionLoadBalancingStrategyTest {
         delegate = mock(LoadBalancer.class);
         when(delegate.choose(any(LoadBalancer.Preferences.class))).thenReturn(Optional.of(origins.get(0)));
 
-        strategy = new OriginRestrictionLoadBalancingStrategy(() -> origins, delegate);
+        strategy = new OriginRestrictionLoadBalancingStrategy(new ActiveOrigins() {
+            @Override
+            public Iterable<RemoteHost> snapshot() {
+                return origins;
+            }
+
+            @Override
+            public String getApplicationId() {
+                return null;
+            }
+
+            @Override
+            public List<Origin> origins() {
+                return null;
+            }
+        }, delegate);
 
         log = new LoggingTestSupport(OriginRestrictionLoadBalancingStrategy.class);
     }
@@ -78,7 +94,22 @@ public class OriginRestrictionLoadBalancingStrategyTest {
         Random mockRandom = mock(Random.class);
         when(mockRandom.nextInt(5)).thenReturn(3);
 
-        strategy = new OriginRestrictionLoadBalancingStrategy(() -> origins, delegate, mockRandom);
+        strategy = new OriginRestrictionLoadBalancingStrategy(new ActiveOrigins() {
+            @Override
+            public Iterable<RemoteHost> snapshot() {
+                return origins;
+            }
+
+            @Override
+            public String getApplicationId() {
+                return null;
+            }
+
+            @Override
+            public List<Origin> origins() {
+                return null;
+            }
+        }, delegate, mockRandom);
 
         Optional<RemoteHost> chosenOne = strategy.choose(lbPreference(Optional.of("origin-[1-3], origin-(5|6)")));
 
@@ -92,7 +123,22 @@ public class OriginRestrictionLoadBalancingStrategyTest {
         Random mockRandom = mock(Random.class);
         when(mockRandom.nextInt(any(Integer.class))).thenReturn(3);
 
-        strategy = new OriginRestrictionLoadBalancingStrategy(() -> origins, delegate, mockRandom);
+        strategy = new OriginRestrictionLoadBalancingStrategy(new ActiveOrigins() {
+            @Override
+            public Iterable<RemoteHost> snapshot() {
+                return origins;
+            }
+
+            @Override
+            public String getApplicationId() {
+                return null;
+            }
+
+            @Override
+            public List<Origin> origins() {
+                return null;
+            }
+        }, delegate, mockRandom);
 
         Optional<RemoteHost> chosenOne = strategy.choose(lbPreference(Optional.of("*-01")));
 
@@ -107,7 +153,22 @@ public class OriginRestrictionLoadBalancingStrategyTest {
         Random mockRandom = mock(Random.class);
         when(mockRandom.nextInt(eq(1))).thenReturn(0);
 
-        strategy = new OriginRestrictionLoadBalancingStrategy(() -> origins, delegate, mockRandom);
+        strategy = new OriginRestrictionLoadBalancingStrategy(new ActiveOrigins() {
+            @Override
+            public Iterable<RemoteHost> snapshot() {
+                return origins;
+            }
+
+            @Override
+            public String getApplicationId() {
+                return null;
+            }
+
+            @Override
+            public List<Origin> origins() {
+                return null;
+            }
+        }, delegate, mockRandom);
 
         Optional<RemoteHost> chosenOne = strategy.choose(lbPreference(Optional.of("origin-1")));
         assertThat(chosenOne.get(), is(origins.get(1)));
@@ -118,7 +179,22 @@ public class OriginRestrictionLoadBalancingStrategyTest {
         Random mockRandom = mock(Random.class);
         when(mockRandom.nextInt(eq(1))).thenReturn(0);
 
-        strategy = new OriginRestrictionLoadBalancingStrategy(() -> origins, delegate, mockRandom);
+        strategy = new OriginRestrictionLoadBalancingStrategy(new ActiveOrigins() {
+            @Override
+            public Iterable<RemoteHost> snapshot() {
+                return origins;
+            }
+
+            @Override
+            public String getApplicationId() {
+                return null;
+            }
+
+            @Override
+            public List<Origin> origins() {
+                return null;
+            }
+        }, delegate, mockRandom);
 
         strategy.choose(lbPreference(Optional.of("origin-1")));
         strategy.choose(lbPreference(Optional.of("origin-1")));
@@ -135,7 +211,22 @@ public class OriginRestrictionLoadBalancingStrategyTest {
         Random mockRandom = mock(Random.class);
         when(mockRandom.nextInt(eq(3))).thenReturn(1);
 
-        strategy = new OriginRestrictionLoadBalancingStrategy(() -> origins, delegate, mockRandom);
+        strategy = new OriginRestrictionLoadBalancingStrategy(new ActiveOrigins() {
+            @Override
+            public Iterable<RemoteHost> snapshot() {
+                return origins;
+            }
+
+            @Override
+            public String getApplicationId() {
+                return null;
+            }
+
+            @Override
+            public List<Origin> origins() {
+                return null;
+            }
+        }, delegate, mockRandom);
 
         Optional<RemoteHost> chosenOne = strategy.choose(lbPreference(Optional.of("origin-[2-4]")));
         verify(mockRandom).nextInt(eq(3));
@@ -146,7 +237,22 @@ public class OriginRestrictionLoadBalancingStrategyTest {
     public void usesNoOriginsWhenRegularExpressionMatchesNone() {
         Random mockRandom = mock(Random.class);
 
-        strategy = new OriginRestrictionLoadBalancingStrategy(() -> origins, delegate, mockRandom);
+        strategy = new OriginRestrictionLoadBalancingStrategy(new ActiveOrigins() {
+            @Override
+            public Iterable<RemoteHost> snapshot() {
+                return origins;
+            }
+
+            @Override
+            public String getApplicationId() {
+                return null;
+            }
+
+            @Override
+            public List<Origin> origins() {
+                return null;
+            }
+        }, delegate, mockRandom);
 
         Optional<RemoteHost> chosenOne = strategy.choose(lbPreference(Optional.of("foo")));
         assertThat(chosenOne, is(empty()));
@@ -157,7 +263,22 @@ public class OriginRestrictionLoadBalancingStrategyTest {
     public void usesAllOriginsWhenCookieIsAbsent() {
         Random mockRandom = mock(Random.class);
 
-        strategy = new OriginRestrictionLoadBalancingStrategy(() -> origins, delegate, mockRandom);
+        strategy = new OriginRestrictionLoadBalancingStrategy(new ActiveOrigins() {
+            @Override
+            public Iterable<RemoteHost> snapshot() {
+                return origins;
+            }
+
+            @Override
+            public String getApplicationId() {
+                return null;
+            }
+
+            @Override
+            public List<Origin> origins() {
+                return null;
+            }
+        }, delegate, mockRandom);
 
         Optional<RemoteHost> chosenOne = strategy.choose(lbPreference(empty()));
         assertThat(chosenOne.get(), is(origins.get(0)));
@@ -171,7 +292,22 @@ public class OriginRestrictionLoadBalancingStrategyTest {
         Random mockRandom = mock(Random.class);
         when(mockRandom.nextInt(any(Integer.class))).thenReturn(3);
 
-        strategy = new OriginRestrictionLoadBalancingStrategy(() -> origins, delegate, mockRandom);
+        strategy = new OriginRestrictionLoadBalancingStrategy(new ActiveOrigins() {
+            @Override
+            public Iterable<RemoteHost> snapshot() {
+                return origins;
+            }
+
+            @Override
+            public String getApplicationId() {
+                return null;
+            }
+
+            @Override
+            public List<Origin> origins() {
+                return null;
+            }
+        }, delegate, mockRandom);
 
         Optional<RemoteHost> chosenOne = strategy.choose(lbPreference(Optional.of(".*")));
         assertThat(chosenOne.get(), isOneOf(origins.get(3)));
@@ -182,7 +318,22 @@ public class OriginRestrictionLoadBalancingStrategyTest {
     @Test
     public void logsInvalidPatterns() {
         Random mockRandom = mock(Random.class);
-        strategy = new OriginRestrictionLoadBalancingStrategy(() -> origins, delegate, mockRandom);
+        strategy = new OriginRestrictionLoadBalancingStrategy(new ActiveOrigins() {
+            @Override
+            public Iterable<RemoteHost> snapshot() {
+                return origins;
+            }
+
+            @Override
+            public String getApplicationId() {
+                return null;
+            }
+
+            @Override
+            public List<Origin> origins() {
+                return null;
+            }
+        }, delegate, mockRandom);
 
         strategy.choose(lbPreference(Optional.of("*-01")));
 

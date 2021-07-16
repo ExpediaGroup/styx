@@ -85,12 +85,12 @@ public final class ResponseCookie {
      * @param headerValues "Set-Cookie" header values
      * @return cookies
      */
-    public static Set<ResponseCookie> decode(List<String> headerValues) {
+    public static List<ResponseCookie> decode(List<String> headerValues) {
         return headerValues.stream()
                 .map(ClientCookieDecoder.LAX::decode)
                 .filter(Objects::nonNull)
                 .map(cookie -> new Builder(cookie).build())
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
     }
 
     /**

@@ -20,6 +20,8 @@ import io.netty.handler.codec.http.HttpRequest;
 
 import java.net.URI;
 
+import okhttp3.HttpUrl;
+
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.Url.Builder.url;
 
@@ -31,7 +33,13 @@ final class UrlDecoder {
         String host = request.headers().get(HOST);
 
         if (request.uri().startsWith("/") && host != null) {
-            URI uri = URI.create("http://" + host + unwiseCharEncoder.encode(request.uri()));
+            String encodedUrl = "http://" + host + unwiseCharEncoder.encode(request.uri());
+            URI uri;
+            try {
+                uri = URI.create(encodedUrl);
+            } catch (IllegalArgumentException e) {
+                uri = HttpUrl.parse(encodedUrl).uri();
+            }
             return new Url.Builder()
                     .path(uri.getRawPath())
                     .rawQuery(uri.getRawQuery())

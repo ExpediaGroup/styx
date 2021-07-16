@@ -16,6 +16,7 @@
 package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableList;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -140,7 +141,7 @@ public class LiveHttpResponseTest {
                         responseCookie("c", "d").build())
                 .build();
 
-        Set<ResponseCookie> cookies = response.cookies();
+        List<ResponseCookie> cookies = response.cookies();
 
         assertThat(cookies, containsInAnyOrder(
                 responseCookie("a", "b").build(),

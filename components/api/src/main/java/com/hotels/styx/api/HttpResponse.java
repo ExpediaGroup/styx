@@ -192,7 +192,7 @@ public class HttpResponse implements HttpMessage {
      *
      * @return a set of cookies
      */
-    public Set<ResponseCookie> cookies() {
+    public List<ResponseCookie> cookies() {
         return decode(headers.getAll(SET_COOKIE));
     }
 

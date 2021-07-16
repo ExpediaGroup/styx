@@ -24,7 +24,7 @@ import static java.util.Collections.emptyList;
 public final class HttpConfig {
 
     private static final int USE_DEFAULT_MAX_HEADER_SIZE = 0;
-    private static final int DEFAULT_MAX_HEADER_SIZE = 8192;
+    private static final int DEFAULT_MAX_HEADER_SIZE = 32678;
 
     private boolean compress;
     private final int maxInitialLength;
@@ -122,9 +122,9 @@ public final class HttpConfig {
      */
     public static final class Builder {
         private boolean compress;
-        private int maxInitialLength = 4096;
+        private int maxInitialLength = 16384;
         private int maxHeadersSize = DEFAULT_MAX_HEADER_SIZE;
-        private int maxChunkSize = 8192;
+        private int maxChunkSize = 32768;
         private int maxContentLength = 65536;
         private Iterable<ChannelOptionSetting> settings = emptyList();
 

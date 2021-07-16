@@ -205,20 +205,6 @@ public class HttpPipelineHandlerTest {
     }
 
     @Test
-    public void mapsWrappedBadRequestExceptionToBadRequest400ResponseCode() {
-        EmbeddedChannel channel = buildEmbeddedChannel(handlerWithMocks());
-
-        String badUri = "/no5_such3_file7.pl?\"><script>alert(73541);</script>56519<script>alert(1)</script>0e134";
-
-        channel.writeInbound(httpMessageToBytes(httpRequest(GET, badUri)));
-        DefaultHttpResponse response = (DefaultHttpResponse) channel.readOutbound();
-
-        assertThat(response.getStatus(), is(io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST));
-        verify(responseEnhancer).enhance(nullable(LiveHttpResponse.Transformer.class), eq(null));
-        verify(errorListener, only()).proxyErrorOccurred(eq(BAD_REQUEST), nullable(DecoderException.class));
-    }
-
-    @Test
     public void mapsUnrecoverableInternalErrorsToInternalServerError500ResponseCode() {
         HttpHandler handler = (request, context) -> {
             throw new RuntimeException("Forced exception for testing");

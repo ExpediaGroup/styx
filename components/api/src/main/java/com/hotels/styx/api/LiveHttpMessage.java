@@ -24,7 +24,7 @@ import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 /**
  * All behaviour common to both streaming requests and streaming responses.
  */
-interface LiveHttpMessage {
+public interface LiveHttpMessage {
     /**
      * Returns the protocol version of this.
      *

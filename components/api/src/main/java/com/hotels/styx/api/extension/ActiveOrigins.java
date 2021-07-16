@@ -16,6 +16,8 @@
 package com.hotels.styx.api.extension;
 
 
+import java.util.List;
+
 /**
  * Holds the origins that are considered ready to accept traffic.
  */
@@ -27,4 +29,8 @@ public interface ActiveOrigins {
      * @return a list of connection pools for each active origin
      */
     Iterable<RemoteHost> snapshot();
+
+    String getApplicationId();
+
+    List<Origin> origins();
 }
