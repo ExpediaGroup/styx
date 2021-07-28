@@ -143,7 +143,7 @@ public class InstrumentedPlugin implements NamedPlugin {
 
     @Override
     public Plugin originalPlugin() {
-        return plugin;
+        return plugin.originalPlugin();
     }
 
     @Override
