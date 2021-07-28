@@ -28,6 +28,8 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -45,6 +47,7 @@ import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -69,6 +72,13 @@ public class InstrumentedPluginTest {
 
         someRequest = get("/").build();
         chain = mock(Chain.class);
+    }
+
+    @Test
+    public void originalPluginShouldBePluginThatIsPassedIn() {
+        Plugin mockPlugin = Mockito.mock(Plugin.class);
+        InstrumentedPlugin plugin = instrumentedPlugin("pluginName", mockPlugin);
+        assertThat(plugin.originalPlugin(), is(mockPlugin));
     }
 
     @Test
