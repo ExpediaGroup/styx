@@ -145,8 +145,10 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
             List<RemoteHost> newPreviousOrigins = newArrayList(previousOrigins);
             newPreviousOrigins.add(remoteHost.get());
 
-            return ResponseEventListener.from(host.hostClient().handle(request, context)
-                            .map(response -> addStickySessionIdentifier(response, host.origin())))
+            return ResponseEventListener.from(
+                            host.hostClient().handle(request, context).map(response ->
+                                    addStickySessionIdentifier(response, host.origin()))
+                    )
                     .whenResponseError(cause -> logError(request, cause))
                     .whenCancelled(() -> originStatsFactory.originStats(host.origin()).requestCancelled())
                     .apply()
@@ -266,7 +268,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
 
     private static void logError(LiveHttpRequest request, Throwable throwable) {
         LOGGER.error("Error Handling request={} exceptionClass={} exceptionMessage=\"{}\"",
-                new Object[]{request, throwable.getClass().getName(), throwable.getMessage()});
+                request, throwable.getClass().getName(), throwable.getMessage());
     }
 
     private static LiveHttpResponse removeUnexpectedResponseBody(LiveHttpRequest request, LiveHttpResponse response) {
@@ -299,8 +301,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
                 if (nonNull(originsRestrictionCookieName)) {
                     return rewrittenRequest.cookie(originsRestrictionCookieName)
                             .map(RequestCookie::value)
-                            .map(Optional::of)
-                            .orElseGet(() -> rewrittenRequest.cookie("styx_origin_" + id).map(RequestCookie::value));
+                            .or(() -> rewrittenRequest.cookie("styx_origin_" + id).map(RequestCookie::value));
                 } else {
                     return rewrittenRequest.cookie("styx_origin_" + id).map(RequestCookie::value);
                 }
@@ -350,7 +351,6 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
      * A builder for {@link StyxBackendServiceClient}.
      */
     public static class Builder {
-
         private final Id backendServiceId;
         private CentralisedMetrics metrics;
         private List<RewriteRule> rewriteRules = emptyList();
@@ -384,7 +384,6 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
             this.rewriteRules = ImmutableList.copyOf(rewriteRules);
             return this;
         }
-
 
         public Builder loadBalancer(LoadBalancer loadBalancer) {
             this.loadBalancer = requireNonNull(loadBalancer);
