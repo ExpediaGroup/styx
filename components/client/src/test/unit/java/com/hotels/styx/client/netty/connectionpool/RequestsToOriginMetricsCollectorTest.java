@@ -17,7 +17,7 @@ package com.hotels.styx.client.netty.connectionpool;
 
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.client.applications.metrics.OriginMetrics;
+import com.hotels.styx.client.applications.OriginStats;
 import com.hotels.styx.metrics.TimerMetric;
 import com.hotels.styx.metrics.TimerMetric.Stopper;
 import io.netty.buffer.ByteBuf;
@@ -60,7 +60,7 @@ import static org.mockito.Mockito.when;
 public class RequestsToOriginMetricsCollectorTest {
     private final Origin origin;
 
-    private final OriginMetrics originMetrics = mock(OriginMetrics.class);
+    private final OriginStats originMetrics = mock(OriginStats.class);
     private final ChannelHandlerContext ctx;
 
     private static final String STOCK_BODY =
