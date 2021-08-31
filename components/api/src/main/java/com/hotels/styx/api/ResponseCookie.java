@@ -24,7 +24,6 @@ import io.netty.handler.codec.http.cookie.DefaultCookie;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static io.netty.handler.codec.http.cookie.Cookie.UNDEFINED_MAX_AGE;

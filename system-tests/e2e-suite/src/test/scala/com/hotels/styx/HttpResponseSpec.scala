@@ -16,7 +16,6 @@
 package com.hotels.styx
 
 import java.nio.charset.StandardCharsets.UTF_8
-
 import com.hotels.styx.api.HttpResponseStatus._
 import com.hotels.styx.api.Id.id
 import com.hotels.styx.api.LiveHttpRequest.get
@@ -27,6 +26,7 @@ import com.hotels.styx.client.StyxBackendServiceClient
 import com.hotels.styx.client.StyxBackendServiceClient._
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
+import com.hotels.styx.metrics.CentralisedMetrics
 import com.hotels.styx.support.NettyOrigins
 import com.hotels.styx.support.Support.requestContext
 import com.hotels.styx.support.configuration.{BackendService, ImplicitOriginConversions, Origins}
@@ -65,12 +65,12 @@ class HttpResponseSpec extends FunSuite
       responseTimeout = responseTimeout)
 
     client = newHttpClientBuilder(id(backendService.appId))
-      .meterRegistry(new SimpleMeterRegistry())
+      .metrics(new CentralisedMetrics(new SimpleMeterRegistry()))
       .loadBalancer(busyConnectionStrategy(activeOrigins(backendService.asJava)))
       .build
   }
 
-  def activeOrigins(backendService: service.BackendService): ActiveOrigins = newOriginsInventoryBuilder(new CompositeMeterRegistry(), backendService).build()
+  def activeOrigins(backendService: service.BackendService): ActiveOrigins = newOriginsInventoryBuilder(new CentralisedMetrics(new CompositeMeterRegistry()), backendService).build()
 
   def busyConnectionStrategy(activeOrigins: ActiveOrigins): LoadBalancer = new BusyConnectionsStrategy(activeOrigins)
 

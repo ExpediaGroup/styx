@@ -19,22 +19,10 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.OK
-import com.hotels.styx.client.applications.metrics.OriginMetrics.APP_TAG
-import com.hotels.styx.client.applications.metrics.OriginMetrics.ORIGIN_TAG
-import com.hotels.styx.client.applications.metrics.OriginMetrics.TTFB_TIMER_NAME
 import com.hotels.styx.server.HttpConnectorConfig
 import com.hotels.styx.servers.MockOriginServer
-import com.hotels.styx.support.ResourcePaths
-import com.hotels.styx.support.StyxServerProvider
-import com.hotels.styx.support.proxyHttpHostHeader
-import com.hotels.styx.support.testClient
-import com.hotels.styx.support.wait
-import io.kotlintest.Spec
-import io.kotlintest.eventually
-import io.kotlintest.matchers.numerics.shouldBeGreaterThan
-import io.kotlintest.seconds
-import io.kotlintest.shouldBe
-import io.kotlintest.shouldNotBe
+import com.hotels.styx.support.*
+import io.kotlintest.*
 import io.kotlintest.specs.FunSpec
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -96,18 +84,11 @@ class MetricsSpec : FunSpec() {
                 }
 
                 eventually(1.seconds, AssertionError::class.java) {
-                    styxServer.meterRegistry().get("connectionpool.availableConnections")
-                            .tag(APP_TAG, "origins")
-                            .tag(ORIGIN_TAG, "appA.appA-01")
+                    styxServer.meterRegistry().get("proxy.client.connectionpool.availableConnections")
+                            .tag("appId", "origins")
+                            .tag("originId", "appA.appA-01")
                             .gauge() shouldNotBe null
                 }
-            }
-
-            test("time-to-first-byte metrics are reported") {
-                styxServer.meterRegistry().get(TTFB_TIMER_NAME)
-                        .tag(APP_TAG, "origins")
-                        .tag(ORIGIN_TAG, "appA.appA-01")
-                        .timer().count() as Long shouldBeGreaterThan 0L
             }
         }
     }

@@ -23,12 +23,11 @@ import com.hotels.styx.api.HttpResponseStatus.{BAD_GATEWAY, INTERNAL_SERVER_ERRO
 import com.hotels.styx.api.LiveHttpResponse.response
 import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.api.{HttpResponseStatus, _}
-import com.hotels.styx.client.applications.metrics.OriginMetrics
 import com.hotels.styx.infrastructure.{MemoryBackedRegistry, RegistryServiceAdapter}
 import com.hotels.styx.support.backends.FakeHttpServer.HttpStartupConfig
 import com.hotels.styx.support.configuration.{StyxConfig, _}
 import com.hotels.styx.support.server.FakeHttpServer
-import com.hotels.styx.support.{ImplicitStyxConversions, JustATestException, configuration}
+import com.hotels.styx.support.{ImplicitStyxConversions, configuration}
 import com.hotels.styx.{BackendServicesRegistrySupplier, StyxClientSupplier, StyxConfiguration, StyxServerSupport, _}
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
@@ -135,7 +134,6 @@ class ErrorMetricsSpec extends FunSpec
 
       sleep(1000)
 
-      assert(originErrorMetric == 0)
       assert(internalServerErrorMetric == 0)
       assert(pluginInternalServerErrorMetric("failAtOnCompletedPlugin") == 0)
       assert(styxUnexpectedErrorMetric == 0)
@@ -158,7 +156,6 @@ class ErrorMetricsSpec extends FunSpec
 
       sleep(1000)
 
-      assert(originErrorMetric == 0)
       assert(internalServerErrorMetric == 0)
       assert(pluginInternalServerErrorMetric("failAtOnCompletedPlugin") == 0)
       assert(styxUnexpectedErrorMetric == 0)
@@ -172,10 +169,6 @@ class ErrorMetricsSpec extends FunSpec
       val response = decodedRequest(request)
 
       assert(response.status() == INTERNAL_SERVER_ERROR)
-
-      eventually(timeout(1.second)) {
-        assert(originErrorMetric == 1)
-      }
 
       sleep(1000)
 
@@ -199,7 +192,6 @@ class ErrorMetricsSpec extends FunSpec
 
       sleep(1000)
 
-      assert(originErrorMetric == 0)
       assert(pluginUnexpectedErrorMetric("generateBadGatewayStatusPlugin") == 0)
       assert(styxUnexpectedErrorMetric == 0)
     }
@@ -216,7 +208,6 @@ class ErrorMetricsSpec extends FunSpec
 
       sleep(1000)
 
-      assert(originErrorMetric == 0)
       assert(pluginUnexpectedErrorMetric("mapToBadGatewayStatusPlugin") == 0)
       assert(styxUnexpectedErrorMetric == 0)
     }
@@ -278,21 +269,9 @@ class ErrorMetricsSpec extends FunSpec
   def pluginExceptionMetric(pluginName: String): Double = {
     try {
       styxServer.meterRegistry()
-        .get("plugin.exception")
+        .get("proxy.plugins.exceptions")
         .tag("plugin", pluginName)
         .tag("type", "com_hotels_styx_plugins_ErrorMetricsSpec$TestException")
-        .counter().count()
-    } catch {
-      case _: io.micrometer.core.instrument.search.MeterNotFoundException => 0.0
-    }
-  }
-
-  private def originErrorMetric = {
-    try {
-      styxServer.meterRegistry()
-        .get(OriginMetrics.FAILURE_COUNTER_NAME)
-        .tag(OriginMetrics.APP_TAG, "appOne")
-        .tag(OriginMetrics.ORIGIN_TAG, "01")
         .counter().count()
     } catch {
       case _: io.micrometer.core.instrument.search.MeterNotFoundException => 0.0
@@ -309,7 +288,7 @@ class ErrorMetricsSpec extends FunSpec
   def pluginInternalServerErrorMetric(pluginName: String): Double = {
     try {
       styxServer.meterRegistry()
-        .get("plugin.response")
+        .get("proxy.plugins.errorResponses")
         .tag("plugin", pluginName)
         .tag("statusCode", "500")
         .counter().count()
@@ -320,13 +299,13 @@ class ErrorMetricsSpec extends FunSpec
 
   def pluginUnexpectedErrorMetric(pluginName: String): Double = {
     styxServer.meterRegistry()
-      .get("plugin.error")
+      .get("proxy.plugins.errors")
       .tag("plugin", pluginName)
       .counter().count()
   }
 
   def styxUnexpectedErrorMetric(): Int = {
-    styxServer.metricsSnapshot.meter("styx.errors").map(meter => meter.count).getOrElse(0)
+    styxServer.metricsSnapshot.meter("proxy.unexpectedErrors").map(meter => meter.count).getOrElse(0)
   }
 
   private class Return500Interceptor extends PluginAdapter {
@@ -384,7 +363,6 @@ class ErrorMetricsSpec extends FunSpec
 
     override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
       if (request.header("Map_to_exception").asScala.contains("true"))
-//        chain.proceed(request).flatMap(asJavaFunction((t: LiveHttpResponse) => Eventual.error(new JustATestException())))
         chain.proceed(request).flatMap(asJavaFunction((_: LiveHttpResponse) => Eventual.error(new TestException())))
       else
         chain.proceed(request)

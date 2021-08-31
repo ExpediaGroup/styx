@@ -25,6 +25,7 @@ import com.hotels.styx.api.{HttpHeaderNames, HttpHeaderValues, HttpResponse}
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
+import com.hotels.styx.metrics.CentralisedMetrics
 import com.hotels.styx.support.Support.requestContext
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins}
@@ -67,7 +68,7 @@ class ExpiringConnectionSpec extends FunSpec
       .build()
 
     pooledClient = newHttpClientBuilder(backendService.id)
-      .meterRegistry(new SimpleMeterRegistry())
+      .metrics(new CentralisedMetrics(new SimpleMeterRegistry()))
       .loadBalancer(roundRobinStrategy(activeOrigins(backendService)))
       .build
   }
@@ -94,8 +95,8 @@ class ExpiringConnectionSpec extends FunSpec
     val meterTags = Tags.of("appId", "appOne", "originId", "generic-app-01")
 
     eventually(timeout(1.seconds)) {
-      meterRegistry.find("connectionpool.availableConnections").tags(meterTags).gauge().value() should be(1.0)
-      meterRegistry.find("connectionpool.connectionsClosed").tags(meterTags).gauge().value() should be(0.0)
+      meterRegistry.find("proxy.client.connectionpool.availableConnections").tags(meterTags).gauge().value() should be(1.0)
+      meterRegistry.find("proxy.client.connectionpool.connectionsClosed").tags(meterTags).gauge().value() should be(0.0)
     }
 
     Thread.sleep(1000)
@@ -114,16 +115,16 @@ class ExpiringConnectionSpec extends FunSpec
 
     eventually(timeout(2.seconds)) {
       withClue("A connection should be available in pool") {
-        meterRegistry.find("connectionpool.availableConnections").tags(meterTags).gauge().value() should be(1.0)
+        meterRegistry.find("proxy.client.connectionpool.availableConnections").tags(meterTags).gauge().value() should be(1.0)
       }
 
       withClue("A previous connection should have been terminated") {
-        meterRegistry.find("connectionpool.connectionsTerminated").tags(meterTags).gauge().value() should be(1.0)
+        meterRegistry.find("proxy.client.connectionpool.connectionsTerminated").tags(meterTags).gauge().value() should be(1.0)
       }
     }
   }
 
-  def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(new CompositeMeterRegistry(), backendService).build()
+  def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(new CentralisedMetrics(new CompositeMeterRegistry()), backendService).build()
 
   def roundRobinStrategy(activeOrigins: ActiveOrigins): RoundRobinStrategy = new RoundRobinStrategy(activeOrigins, activeOrigins.snapshot())
 }

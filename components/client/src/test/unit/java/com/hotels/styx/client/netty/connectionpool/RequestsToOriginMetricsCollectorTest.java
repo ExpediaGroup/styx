@@ -17,8 +17,9 @@ package com.hotels.styx.client.netty.connectionpool;
 
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.client.applications.metrics.OriginMetrics;
-import io.micrometer.core.instrument.Timer;
+import com.hotels.styx.client.applications.OriginStats;
+import com.hotels.styx.metrics.TimerMetric;
+import com.hotels.styx.metrics.TimerMetric.Stopper;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
@@ -30,6 +31,7 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.LastHttpContent;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.FluxSink;
 
@@ -53,13 +55,12 @@ import static org.mockito.Mockito.atMostOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 public class RequestsToOriginMetricsCollectorTest {
     private final Origin origin;
 
-    private final OriginMetrics originMetrics = mock(OriginMetrics.class);
+    private final OriginStats originMetrics = mock(OriginStats.class);
     private final ChannelHandlerContext ctx;
 
     private static final String STOCK_BODY =
@@ -80,33 +81,10 @@ public class RequestsToOriginMetricsCollectorTest {
         ctx = mock(ChannelHandlerContext.class);
     }
 
-    private EmbeddedChannel buildEmbeddedChannel() {
-        return new EmbeddedChannel(
-                new HttpClientCodec(),
-                new RequestsToOriginMetricsCollector(originMetrics),
-                new NettyToStyxResponsePropagator(mock(FluxSink.class), this.origin)
-        );
-    }
-
-    /**
-     * Concatenates result of outbound Netty pipeline into an ByteBuf object.
-     * <p/>
-     * The optional byte buffer is returned only if a pipeline processing
-     * resulted in outgoing bytes. Otherwise optional return value is absent.
-     */
-    private static Optional<ByteBuf> grabSentBytes(EmbeddedChannel channel) {
-        CompositeByteBuf outboundBytes = Unpooled.compositeBuffer();
-
-        Object result = channel.readOutbound();
-        while (result != null) {
-            outboundBytes.addComponent((ByteBuf) result);
-            result = channel.readOutbound();
-        }
-
-        if (outboundBytes.numComponents() > 0) {
-            return Optional.of(outboundBytes);
-        }
-        return Optional.empty();
+    @BeforeEach
+    public void mockMetrics() {
+        when(originMetrics.requestLatencyTimer()).thenReturn(mock(TimerMetric.class));
+        when(originMetrics.timeToFirstByteTimer()).thenReturn(mock(TimerMetric.class));
     }
 
     @Test
@@ -175,6 +153,7 @@ public class RequestsToOriginMetricsCollectorTest {
         // Send out a HttpRequest in outbound direction, towards origins:
         //
         HttpRequest request = httpRequest(GET, "http://www.hotels.com/foo/bar/request");
+
         channel.writeOutbound(request);
         assertThat(grabSentBytes(channel).isPresent(), is(true));
 
@@ -225,10 +204,10 @@ public class RequestsToOriginMetricsCollectorTest {
 
     @Test
     public void latencyHistogramUpdatedOnlyByLastHttpContent() {
-        Timer.Sample sample = mock(Timer.Sample.class);
-        when(originMetrics.startTimer()).thenReturn(sample);
-        Timer timer = mock(Timer.class);
+        TimerMetric timer = mock(TimerMetric.class);
         when(originMetrics.requestLatencyTimer()).thenReturn(timer);
+        Stopper stopper = mock(Stopper.class);
+        when(timer.startTiming()).thenReturn(stopper);
 
         EmbeddedChannel channel = buildEmbeddedChannel();
 
@@ -238,7 +217,7 @@ public class RequestsToOriginMetricsCollectorTest {
         HttpRequest request = httpRequest(GET, "http://www.hotels.com/foo/bar/request");
         channel.writeOutbound(request);
         assertThat(grabSentBytes(channel).isPresent(), is(true));
-        verify(originMetrics, never()).requestLatencyTimer();
+        verify(stopper, never()).stop();
 
         ByteBuf response = httpResponseAsBuf(OK, STOCK_BODY).retain();
         int len = response.writerIndex() - response.readerIndex();
@@ -250,22 +229,22 @@ public class RequestsToOriginMetricsCollectorTest {
         // This is because the HTTP response is not yet fully received.
         //
         channel.writeInbound(response.slice(0, 100));
-        verify(originMetrics, never()).requestLatencyTimer();
+        verify(stopper, never()).stop();
 
         //
         // Send the next chunk. HTTP response is now fully received. Demonstrate
         // that timer is now correctly updated.
         //
         channel.writeInbound(response.slice(100, len - 100));
-        verify(sample).stop(timer);
+        verify(stopper).stop();
     }
 
     @Test
     public void timeToFirstByteHistogramUpdatedWhenFirstContentChunkReceived() {
-        Timer.Sample sample = mock(Timer.Sample.class);
-        when(originMetrics.startTimer()).thenReturn(sample);
-        Timer timer = mock(Timer.class);
+        TimerMetric timer = mock(TimerMetric.class);
         when(originMetrics.timeToFirstByteTimer()).thenReturn(timer);
+        Stopper stopper = mock(Stopper.class);
+        when(timer.startTiming()).thenReturn(stopper);
 
 //        Timer timer = this.metricRegistry.timer(name(ORIGIN_METRIC_PREFIX, "requests.time-to-first-byte"));
 //        assertThat(timer.getCount(), is(0L));
@@ -278,7 +257,7 @@ public class RequestsToOriginMetricsCollectorTest {
         HttpRequest request = httpRequest(GET, "http://www.hotels.com/foo/bar/request");
         channel.writeOutbound(request);
         assertThat(grabSentBytes(channel).isPresent(), is(true));
-        verify(originMetrics, never()).timeToFirstByteTimer();
+        verify(stopper, never()).stop();
 
         ByteBuf response = httpResponseAsBuf(OK, STOCK_BODY).retain();
         int len = response.writerIndex() - response.readerIndex();
@@ -288,14 +267,14 @@ public class RequestsToOriginMetricsCollectorTest {
         // the first chunk is received:
         //
         channel.writeInbound(response.slice(0, 100));
-        verify(sample).stop(timer);
+        verify(stopper).stop();
 
         //
         // Send the next chunk. Demonstrate that timer remains unchanged. This is to ensure
         // it doesn't get recorded twice:
         //
         channel.writeInbound(response.slice(100, len - 100));
-        verify(sample, atMostOnce()).stop(timer);
+        verify(stopper, atMostOnce()).stop();
     }
 
 
@@ -445,5 +424,34 @@ public class RequestsToOriginMetricsCollectorTest {
         when(status.code()).thenReturn(code);
         when(msg.status()).thenReturn(status);
         return msg;
+    }
+
+    private EmbeddedChannel buildEmbeddedChannel() {
+        return new EmbeddedChannel(
+                new HttpClientCodec(),
+                new RequestsToOriginMetricsCollector(originMetrics),
+                new NettyToStyxResponsePropagator(mock(FluxSink.class), this.origin)
+        );
+    }
+
+    /**
+     * Concatenates result of outbound Netty pipeline into an ByteBuf object.
+     * <p/>
+     * The optional byte buffer is returned only if a pipeline processing
+     * resulted in outgoing bytes. Otherwise optional return value is absent.
+     */
+    private static Optional<ByteBuf> grabSentBytes(EmbeddedChannel channel) {
+        CompositeByteBuf outboundBytes = Unpooled.compositeBuffer();
+
+        Object result = channel.readOutbound();
+        while (result != null) {
+            outboundBytes.addComponent((ByteBuf) result);
+            result = channel.readOutbound();
+        }
+
+        if (outboundBytes.numComponents() > 0) {
+            return Optional.of(outboundBytes);
+        }
+        return Optional.empty();
     }
 }

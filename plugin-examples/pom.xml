@@ -16,7 +16,6 @@
     <java.target>1.8</java.target>
 
     <maven.deploy.skip>true</maven.deploy.skip>
-
   </properties>
 
   <dependencyManagement>
@@ -101,8 +100,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.3</version>
         <configuration>
-          <source>${java.source}</source>
-          <target>${java.target}</target>
+          <source>11</source>
+          <target>11</target>
         </configuration>
         <executions>
           <!-- Replacing default-compile as it is treated specially by maven -->

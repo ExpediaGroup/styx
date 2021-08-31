@@ -75,7 +75,7 @@ public class StyxBackendServiceClientFactory implements BackendServiceClientFact
         return new StyxBackendServiceClient.Builder(backendService.id())
                 .loadBalancer(loadBalancingStrategy)
                 .stickySessionConfig(backendService.stickySessionConfig())
-                .meterRegistry(environment.meterRegistry())
+                .metrics(environment.centralisedMetrics())
                 .retryPolicy(retryPolicy)
                 .rewriteRules(backendService.rewrites())
                 .originStatsFactory(originStatsFactory)

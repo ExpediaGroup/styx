@@ -197,7 +197,7 @@ final class UrlQuery {
             }
 
             parameters.add(new Parameter(name, value));
-            if (rawQuery != null && !rawQuery.equals("")) {
+            if (rawQuery != null && !"".equals(rawQuery)) {
                 rawQuery += "&";
             }
             if (rawQuery == null) {

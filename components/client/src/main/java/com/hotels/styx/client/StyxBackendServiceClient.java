@@ -33,8 +33,7 @@ import com.hotels.styx.api.extension.service.StickySessionConfig;
 import com.hotels.styx.client.OriginStatsFactory.CachingOriginStatsFactory;
 import com.hotels.styx.client.retry.RetryNTimes;
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tags;
+import com.hotels.styx.metrics.CentralisedMetrics;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import reactor.core.publisher.Flux;
@@ -52,7 +51,6 @@ import static com.hotels.styx.api.HttpMethod.HEAD;
 import static com.hotels.styx.api.extension.service.StickySessionConfig.stickySessionDisabled;
 import static com.hotels.styx.client.StyxHeaderConfig.ORIGIN_ID_DEFAULT;
 import static com.hotels.styx.client.stickysession.StickySessionCookie.newStickySessionCookie;
-import static java.lang.String.valueOf;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
@@ -72,10 +70,10 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
     private final LoadBalancer loadBalancer;
     private final RetryPolicy retryPolicy;
     private final OriginStatsFactory originStatsFactory;
-    private final MeterRegistry meterRegistry;
     private final String originsRestrictionCookieName;
     private final StickySessionConfig stickySessionConfig;
     private final CharSequence originIdHeader;
+    private final CentralisedMetrics metrics;
 
     private StyxBackendServiceClient(Builder builder) {
         this.id = requireNonNull(builder.backendServiceId);
@@ -92,7 +90,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
 
         this.rewriteRuleset = new RewriteRuleset(builder.rewriteRules);
 
-        this.meterRegistry = builder.meterRegistry;
+        this.metrics = builder.metrics;
         this.originsRestrictionCookieName = builder.originsRestrictionCookieName;
         this.originIdHeader = builder.originIdHeader;
     }
@@ -147,8 +145,10 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
             List<RemoteHost> newPreviousOrigins = newArrayList(previousOrigins);
             newPreviousOrigins.add(remoteHost.get());
 
-            return ResponseEventListener.from(host.hostClient().handle(request, context)
-                    .map(response -> addStickySessionIdentifier(response, host.origin())))
+            return ResponseEventListener.from(
+                            host.hostClient().handle(request, context).map(response ->
+                                    addStickySessionIdentifier(response, host.origin()))
+                    )
                     .whenResponseError(cause -> logError(request, cause))
                     .whenCancelled(() -> originStatsFactory.originStats(host.origin()).requestCancelled())
                     .apply()
@@ -268,7 +268,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
 
     private static void logError(LiveHttpRequest request, Throwable throwable) {
         LOGGER.error("Error Handling request={} exceptionClass={} exceptionMessage=\"{}\"",
-                new Object[]{request, throwable.getClass().getName(), throwable.getMessage()});
+                request, throwable.getClass().getName(), throwable.getMessage());
     }
 
     private static LiveHttpResponse removeUnexpectedResponseBody(LiveHttpRequest request, LiveHttpResponse response) {
@@ -290,7 +290,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
 
     private void recordErrorStatusMetrics(LiveHttpResponse response) {
         if (isError(response.status())) {
-            meterRegistry.counter("origins.response.status.count", Tags.of("statusCode", valueOf(response.status().code()))).increment();
+            metrics.proxy().client().errorResponseFromOriginByStatus(response.status().code()).increment();
         }
     }
 
@@ -301,8 +301,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
                 if (nonNull(originsRestrictionCookieName)) {
                     return rewrittenRequest.cookie(originsRestrictionCookieName)
                             .map(RequestCookie::value)
-                            .map(Optional::of)
-                            .orElseGet(() -> rewrittenRequest.cookie("styx_origin_" + id).map(RequestCookie::value));
+                            .or(() -> rewrittenRequest.cookie("styx_origin_" + id).map(RequestCookie::value));
                 } else {
                     return rewrittenRequest.cookie("styx_origin_" + id).map(RequestCookie::value);
                 }
@@ -352,9 +351,8 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
      * A builder for {@link StyxBackendServiceClient}.
      */
     public static class Builder {
-
         private final Id backendServiceId;
-        private MeterRegistry meterRegistry;
+        private CentralisedMetrics metrics;
         private List<RewriteRule> rewriteRules = emptyList();
         private RetryPolicy retryPolicy = new RetryNTimes(3);
         private LoadBalancer loadBalancer;
@@ -372,8 +370,8 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
             return this;
         }
 
-        public Builder meterRegistry(MeterRegistry meterRegistry) {
-            this.meterRegistry = requireNonNull(meterRegistry);
+        public Builder metrics(CentralisedMetrics metrics) {
+            this.metrics = requireNonNull(metrics);
             return this;
         }
 
@@ -386,7 +384,6 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
             this.rewriteRules = ImmutableList.copyOf(rewriteRules);
             return this;
         }
-
 
         public Builder loadBalancer(LoadBalancer loadBalancer) {
             this.loadBalancer = requireNonNull(loadBalancer);
@@ -410,10 +407,10 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
 
         public StyxBackendServiceClient build() {
             if (originStatsFactory == null) {
-                originStatsFactory = new CachingOriginStatsFactory(meterRegistry);
+                originStatsFactory = new CachingOriginStatsFactory(metrics);
             }
-            if (meterRegistry == null) {
-                throw new IllegalStateException("meterRegistry is required");
+            if (metrics == null) {
+                throw new IllegalStateException("metrics property is required");
             }
             return new StyxBackendServiceClient(this);
         }

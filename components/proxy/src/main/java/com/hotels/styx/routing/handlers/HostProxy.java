@@ -37,10 +37,10 @@ import com.hotels.styx.client.connectionpool.SimpleConnectionPoolFactory;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
+import com.hotels.styx.metrics.CentralisedMetrics;
 import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
-import io.micrometer.core.instrument.MeterRegistry;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -261,7 +261,7 @@ public class HostProxy implements RoutingObject {
 
             return createHostProxyHandler(
                     executor,
-                    context.environment().meterRegistry(),
+                    context.environment().centralisedMetrics(),
                     hostAndPort,
                     poolSettings,
                     tlsSettings,
@@ -286,7 +286,7 @@ public class HostProxy implements RoutingObject {
         @NotNull
         public static HostProxy createHostProxyHandler(
                 NettyExecutor executor,
-                MeterRegistry meterRegistry,
+                CentralisedMetrics metrics,
                 HostAndPort hostAndPort,
                 ConnectionPoolSettings poolSettings,
                 TlsSettings tlsSettings,
@@ -303,7 +303,7 @@ public class HostProxy implements RoutingObject {
                     .id(originId)
                     .build();
 
-            OriginMetrics originMetrics = new OriginMetrics(meterRegistry, origin.id().toString(), origin.applicationId().toString());
+            OriginMetrics originMetrics = new OriginMetrics(metrics, origin);
 
             ConnectionPool.Factory connectionPoolFactory = new SimpleConnectionPoolFactory.Builder()
                     .connectionFactory(
@@ -315,7 +315,7 @@ public class HostProxy implements RoutingObject {
                                     theOrigin -> originMetrics,
                                     poolSettings.connectionExpirationSeconds()))
                     .connectionPoolSettings(poolSettings)
-                    .meterRegistry(meterRegistry)
+                    .metrics(metrics)
                     .build();
 
             return new HostProxy(host, port, StyxHostHttpClient.create(connectionPoolFactory.create(origin)), originMetrics);

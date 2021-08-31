@@ -17,6 +17,7 @@ package com.hotels.styx.client.connectionpool;
 
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.netty.connectionpool.StubConnectionPool;
+import com.hotels.styx.metrics.CentralisedMetrics;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -37,31 +38,31 @@ public class StatsReportingConnectionPoolTest {
     final MeterRegistry meterRegistry = new SimpleMeterRegistry();
 
     final ConnectionPool delegate = new StubConnectionPool(origin);
-    final StatsReportingConnectionPool pool = new StatsReportingConnectionPool(delegate, meterRegistry);
+    final StatsReportingConnectionPool pool = new StatsReportingConnectionPool(delegate, new CentralisedMetrics(meterRegistry));
 
     @Test
     public void removesRegisteredMetricsOnClose() {
         Tags tags = Tags.of(APPID_TAG, "generic-app", ORIGINID_TAG, "backend-01");
 
-        assertThat(meterRegistry.find("connectionpool.availableConnections").tags(tags).gauge(), notNullValue());
-        assertThat(meterRegistry.find("connectionpool.busyConnections").tags(tags).gauge(), notNullValue());
-        assertThat(meterRegistry.find("connectionpool.pendingConnections").tags(tags).gauge(), notNullValue());
-        assertThat(meterRegistry.find("connectionpool.connectionAttempts").tags(tags).gauge(), notNullValue());
-        assertThat(meterRegistry.find("connectionpool.connectionsInEstablishment").tags(tags).gauge(), notNullValue());
-        assertThat(meterRegistry.find("connectionpool.connectionFailures").tags(tags).gauge(), notNullValue());
-        assertThat(meterRegistry.find("connectionpool.connectionsClosed").tags(tags).gauge(), notNullValue());
-        assertThat(meterRegistry.find("connectionpool.connectionsTerminated").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("proxy.client.connectionpool.availableConnections").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("proxy.client.connectionpool.busyConnections").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("proxy.client.connectionpool.pendingConnections").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("proxy.client.connectionpool.connectionAttempts").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("proxy.client.connectionpool.connectionsInEstablishment").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("proxy.client.connectionpool.connectionFailures").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("proxy.client.connectionpool.connectionsClosed").tags(tags).gauge(), notNullValue());
+        assertThat(meterRegistry.find("proxy.client.connectionpool.connectionsTerminated").tags(tags).gauge(), notNullValue());
 
         pool.close();
 
-        assertThat(meterRegistry.find("connectionpool.availableConnections").tags(tags).gauge(), nullValue());
-        assertThat(meterRegistry.find("connectionpool.busyConnections").tags(tags).gauge(), nullValue());
-        assertThat(meterRegistry.find("connectionpool.pendingConnections").tags(tags).gauge(), nullValue());
-        assertThat(meterRegistry.find("connectionpool.connectionAttempts").tags(tags).gauge(), nullValue());
-        assertThat(meterRegistry.find("connectionpool.connectionsInEstablishment").tags(tags).gauge(), nullValue());
-        assertThat(meterRegistry.find("connectionpool.connectionFailures").tags(tags).gauge(), nullValue());
-        assertThat(meterRegistry.find("connectionpool.connectionsClosed").tags(tags).gauge(), nullValue());
-        assertThat(meterRegistry.find("connectionpool.connectionsTerminated").tags(tags).gauge(), nullValue());
+        assertThat(meterRegistry.find("proxy.client.connectionpool.availableConnections").tags(tags).gauge(), nullValue());
+        assertThat(meterRegistry.find("proxy.client.connectionpool.busyConnections").tags(tags).gauge(), nullValue());
+        assertThat(meterRegistry.find("proxy.client.connectionpool.pendingConnections").tags(tags).gauge(), nullValue());
+        assertThat(meterRegistry.find("proxy.client.connectionpool.connectionAttempts").tags(tags).gauge(), nullValue());
+        assertThat(meterRegistry.find("proxy.client.connectionpool.connectionsInEstablishment").tags(tags).gauge(), nullValue());
+        assertThat(meterRegistry.find("proxy.client.connectionpool.connectionFailures").tags(tags).gauge(), nullValue());
+        assertThat(meterRegistry.find("proxy.client.connectionpool.connectionsClosed").tags(tags).gauge(), nullValue());
+        assertThat(meterRegistry.find("proxy.client.connectionpool.connectionsTerminated").tags(tags).gauge(), nullValue());
 
     }
 }

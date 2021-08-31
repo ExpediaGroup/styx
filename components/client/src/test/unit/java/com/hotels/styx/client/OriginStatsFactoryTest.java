@@ -18,6 +18,7 @@ package com.hotels.styx.client;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.OriginStatsFactory.CachingOriginStatsFactory;
 import com.hotels.styx.client.applications.OriginStats;
+import com.hotels.styx.metrics.CentralisedMetrics;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 
@@ -28,7 +29,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class OriginStatsFactoryTest {
 
-    final OriginStatsFactory originStatsFactory = new CachingOriginStatsFactory(new SimpleMeterRegistry());
+    final OriginStatsFactory originStatsFactory = new CachingOriginStatsFactory(new CentralisedMetrics(new SimpleMeterRegistry()));
 
     @Test
     public void returnTheSameStatsForSameOrigin() {

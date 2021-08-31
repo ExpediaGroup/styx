@@ -107,21 +107,21 @@ class ChunkedDownloadSpec extends FunSpec
       eventually(timeout(5 seconds)) {
         assert(busyConnections(originTwo) == 0, "Connection remains busy.")
         assert(closedConnections(originTwo) == 1)
-        styxServer.meterRegistry().get("proxy.request.cancelled.responseWriteError").counter().count() should be(1.0)
+        styxServer.meterRegistry().counter("proxy.server.requests.cancelled", "cause", "responseWriteError").count() should be(1.0)
       }
     }
   }
 
   def busyConnections(origin: Origin) = {
-    meterRegistry.find("connectionpool.busyConnections").tags(meterTags(origin)).gauge().value()
+    meterRegistry.find("proxy.client.connectionpool.busyConnections").tags(meterTags(origin)).gauge().value()
   }
 
   def closedConnections(origin: Origin) = {
-    meterRegistry.find("connectionpool.connectionsClosed").tags(meterTags(origin)).gauge().value()
+    meterRegistry.find("proxy.client.connectionpool.connectionsClosed").tags(meterTags(origin)).gauge().value()
   }
 
   def noAvailableConnectionsInPool(origin: Origin) = {
-    meterRegistry.find("connectionpool.availableConnections").tags(meterTags(origin)).gauge().value() == 0.0
+    meterRegistry.find("proxy.client.connectionpool.availableConnections").tags(meterTags(origin)).gauge().value() == 0.0
   }
 
   def meterTags(origin: Origin): Tags = {

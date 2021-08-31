@@ -27,6 +27,7 @@ import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
+import com.hotels.styx.metrics.CentralisedMetrics
 import com.hotels.styx.server.netty.connectors.HttpPipelineHandler
 import com.hotels.styx.support.NettyOrigins
 import com.hotels.styx.support.Support.requestContext
@@ -90,7 +91,7 @@ class OriginClosesConnectionSpec extends FunSuite
     }
 
     eventually {
-      styxServer.meterRegistry().counter("proxy.request.received").count should be(10)
+      styxServer.meterRegistry().counter("proxy.server.requestsReceived").count should be(10)
     }
 
     val errorCount = loggingSupport.log().stream().toScala[Seq]
@@ -99,7 +100,7 @@ class OriginClosesConnectionSpec extends FunSuite
     errorCount should be(0)
   }
 
-  def activeOrigins(backendService: extension.service.BackendService): ActiveOrigins = newOriginsInventoryBuilder(new CompositeMeterRegistry(), backendService).build()
+  def activeOrigins(backendService: extension.service.BackendService): ActiveOrigins = newOriginsInventoryBuilder(new CentralisedMetrics(new CompositeMeterRegistry()), backendService).build()
 
   def busyConnectionStrategy(activeOrigins: ActiveOrigins): LoadBalancer = new BusyConnectionsStrategy(activeOrigins)
 
@@ -114,7 +115,7 @@ class OriginClosesConnectionSpec extends FunSuite
       responseTimeout = TWO_SECONDS.milliseconds).asJava
 
     val styxClient = newHttpClientBuilder(backendService.id)
-        .meterRegistry(new SimpleMeterRegistry())
+        .metrics(new CentralisedMetrics(new SimpleMeterRegistry()))
         .loadBalancer(busyConnectionStrategy(activeOrigins(backendService)))
       .build
 

@@ -15,10 +15,9 @@
  */
 package com.hotels.styx.server.netty.handlers;
 
+import com.hotels.styx.metrics.CentralisedMetrics;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tags;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.channel.ChannelDuplexHandler;
@@ -29,8 +28,9 @@ import org.slf4j.Logger;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hotels.styx.api.Metrics.name;
 import static java.lang.String.format;
+import static java.lang.Thread.currentThread;
+import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -40,29 +40,20 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class ChannelStatisticsHandler extends ChannelDuplexHandler {
     private static final Logger LOGGER = getLogger(ChannelStatisticsHandler.class);
 
-    public static final String EVENTLOOP_TAG = "eventloop";
-
-    public static final String BYTES_RECEIVED = "connection.bytesReceived";
-    public static final String BYTES_SENT = "connection.bytesSent";
-    public static final String TOTAL_CONNECTIONS = "connection.totalConnections";
-    public static final String REGISTERED_CHANNEL_COUNT = "connection.registeredChannelCount";
-    public static final String CHANNELS_SUMMARY = "connection.channels";
-
-
-    private final MeterRegistry meterRegistry;
-    private final String prefix;
-
+    private final CentralisedMetrics metrics;
     private final Counter receivedBytesCount;
     private final Counter sentBytesCount;
     private final AtomicLong totalConnections;
 
-    public ChannelStatisticsHandler(MeterRegistry meterRegistry, String meterPrefix) {
-        this.meterRegistry = meterRegistry;
-        this.prefix = meterPrefix;
+    public ChannelStatisticsHandler(CentralisedMetrics metrics) {
+        this.metrics = requireNonNull(metrics);
 
-        this.receivedBytesCount = this.meterRegistry.counter(name(meterPrefix, BYTES_RECEIVED));
-        this.sentBytesCount = this.meterRegistry.counter(name(meterPrefix, BYTES_SENT));
-        this.totalConnections = this.meterRegistry.gauge(name(meterPrefix, TOTAL_CONNECTIONS), new AtomicLong());
+        this.receivedBytesCount = metrics.proxy().server().bytesReceived();
+        this.sentBytesCount = metrics.proxy().server().bytesSent();
+
+        this.totalConnections = new AtomicLong();
+
+        metrics.proxy().server().totalConnections().register(totalConnections);
     }
 
     @Override
@@ -78,12 +69,11 @@ public class ChannelStatisticsHandler extends ChannelDuplexHandler {
     }
 
     private void updateChannelPerThreadCounters(int amount) {
-        Thread thread = Thread.currentThread();
-        Counter channelCount = this.meterRegistry
-                .counter(name(prefix, REGISTERED_CHANNEL_COUNT), counterTags(thread));
+        Thread thread = currentThread();
+        Counter channelCount = metrics.proxy().server().registeredChannelCount(thread);
         channelCount.increment(amount);
 
-        DistributionSummary channels = meterRegistry.summary(name(prefix, CHANNELS_SUMMARY), counterTags(thread));
+        DistributionSummary channels = metrics.proxy().server().channelCount(thread);
         channels.record(channelCount.count());
     }
 
@@ -121,9 +111,5 @@ public class ChannelStatisticsHandler extends ChannelDuplexHandler {
             sentBytesCount.increment(((ByteBufHolder) msg).content().readableBytes());
         }
         super.write(ctx, msg, promise);
-    }
-
-    private static Tags counterTags(Thread thread) {
-        return Tags.of(EVENTLOOP_TAG, thread.getName());
     }
 }

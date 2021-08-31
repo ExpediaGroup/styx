@@ -39,15 +39,15 @@ import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
-import static com.hotels.styx.api.Metrics.APPID_TAG;
-import static com.hotels.styx.api.Metrics.ORIGINID_TAG;
-import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
+import static com.hotels.styx.api.Metrics.APPID_TAG;
+import static com.hotels.styx.api.Metrics.ORIGINID_TAG;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.service.BackendService.newBackendServiceBuilder;
 import static com.hotels.styx.client.StyxHeaderConfig.ORIGIN_ID_DEFAULT;
+import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -295,15 +295,15 @@ public class BackendServicesRouterTest {
         Tags tags01 = Tags.of(APPID_TAG, APP_B, ORIGINID_TAG, "appB-01");
         Tags tags02 = Tags.of(APPID_TAG, APP_B, ORIGINID_TAG, "appB-02");
 
-        assertThat(meterRegistry.find("origin.status").tags(tags01).gauge().value(), is(1.0));
-        assertThat(meterRegistry.find("origin.status").tags(tags02).gauge().value(), is(1.0));
+        assertThat(meterRegistry.find("proxy.client.originHealthStatus").tags(tags01).gauge().value(), is(1.0));
+        assertThat(meterRegistry.find("proxy.client.originHealthStatus").tags(tags02).gauge().value(), is(1.0));
 
         BackendService appMinusOneOrigin = backendService(APP_B, "/appB/", 9094, "appB-01");
 
         router.onChange(updated(appMinusOneOrigin));
 
-        assertThat(meterRegistry.find("origin.status").tags(tags01).gauge().value(), is(1.0));
-        assertThat(meterRegistry.find("origin.status").tags(tags02).gauge(), is(nullValue()));
+        assertThat(meterRegistry.find("proxy.client.originHealthStatus").tags(tags01).gauge().value(), is(1.0));
+        assertThat(meterRegistry.find("proxy.client.originHealthStatus").tags(tags02).gauge(), is(nullValue()));
     }
 
     private static Registry.Changes<BackendService> added(BackendService... backendServices) {

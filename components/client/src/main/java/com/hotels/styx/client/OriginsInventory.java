@@ -39,9 +39,8 @@ import com.hotels.styx.client.origincommands.GetOriginsInventorySnapshot;
 import com.hotels.styx.common.EventProcessor;
 import com.hotels.styx.common.QueueDrainingEventProcessor;
 import com.hotels.styx.common.StateMachine;
-import io.micrometer.core.instrument.Gauge;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tags;
+import com.hotels.styx.metrics.CentralisedMetrics;
+import com.hotels.styx.metrics.Deleter;
 import org.slf4j.Logger;
 
 import javax.annotation.concurrent.ThreadSafe;
@@ -53,8 +52,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
-import static com.hotels.styx.api.Metrics.APPID_TAG;
-import static com.hotels.styx.api.Metrics.ORIGINID_TAG;
 import static com.hotels.styx.client.OriginsInventory.OriginState.ACTIVE;
 import static com.hotels.styx.client.OriginsInventory.OriginState.DISABLED;
 import static com.hotels.styx.client.OriginsInventory.OriginState.INACTIVE;
@@ -96,7 +93,7 @@ public final class OriginsInventory
     private final OriginHealthStatusMonitor originHealthStatusMonitor;
     private final ConnectionPool.Factory hostConnectionPoolFactory;
     private final StyxHostHttpClient.Factory hostClientFactory;
-    private final MeterRegistry meterRegistry;
+    private final CentralisedMetrics metrics;
     private final QueueDrainingEventProcessor eventQueue;
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
@@ -110,20 +107,20 @@ public final class OriginsInventory
      * @param appId                     the application that this inventory's origins are associated with
      * @param originHealthStatusMonitor origin health status monitor
      * @param hostConnectionPoolFactory factory to create connection pools for origins
-     * @param meterRegistry             metric registry
      */
     public OriginsInventory(EventBus eventBus,
                             Id appId,
                             OriginHealthStatusMonitor originHealthStatusMonitor,
                             ConnectionPool.Factory hostConnectionPoolFactory,
                             StyxHostHttpClient.Factory hostClientFactory,
-                            MeterRegistry meterRegistry) {
+                            CentralisedMetrics metrics
+    ) {
         this.eventBus = requireNonNull(eventBus);
         this.appId = requireNonNull(appId);
         this.originHealthStatusMonitor = requireNonNull(originHealthStatusMonitor);
         this.hostConnectionPoolFactory = requireNonNull(hostConnectionPoolFactory);
         this.hostClientFactory = requireNonNull(hostClientFactory);
-        this.meterRegistry = requireNonNull(meterRegistry);
+        this.metrics = requireNonNull(metrics);
 
         this.eventBus.register(this);
         this.originHealthStatusMonitor.addOriginStatusListener(this);
@@ -255,26 +252,26 @@ public final class OriginsInventory
         concat(this.origins.keySet().stream(), newOriginsMap.keySet().stream())
                 .collect(toSet())
                 .forEach(originId -> {
-                    Origin origin = newOriginsMap.get(originId);
+                            Origin origin = newOriginsMap.get(originId);
 
-                    if (isNewOrigin(originId, origin)) {
-                        MonitoredOrigin monitoredOrigin = addMonitoredEndpoint(origin);
-                        originChanges.addOrReplaceOrigin(originId, monitoredOrigin);
+                            if (isNewOrigin(originId, origin)) {
+                                MonitoredOrigin monitoredOrigin = addMonitoredEndpoint(origin);
+                                originChanges.addOrReplaceOrigin(originId, monitoredOrigin);
 
-                    } else if (isUpdatedOrigin(originId, origin)) {
-                        MonitoredOrigin monitoredOrigin = changeMonitoredEndpoint(origin);
-                        originChanges.addOrReplaceOrigin(originId, monitoredOrigin);
+                            } else if (isUpdatedOrigin(originId, origin)) {
+                                MonitoredOrigin monitoredOrigin = changeMonitoredEndpoint(origin);
+                                originChanges.addOrReplaceOrigin(originId, monitoredOrigin);
 
-                    } else if (isUnchangedOrigin(originId, origin)) {
-                        LOG.info("Existing origin has been left unchanged. Origin={}:{}", appId, origin);
-                        originChanges.keepExistingOrigin(originId, this.origins.get(originId));
+                            } else if (isUnchangedOrigin(originId, origin)) {
+                                LOG.info("Existing origin has been left unchanged. Origin={}:{}", appId, origin);
+                                originChanges.keepExistingOrigin(originId, this.origins.get(originId));
 
-                    } else if (isRemovedOrigin(originId, origin)) {
-                        removeMonitoredEndpoint(originId);
-                        originChanges.noteRemovedOrigin();
-                    }
-                }
-        );
+                            } else if (isRemovedOrigin(originId, origin)) {
+                                removeMonitoredEndpoint(originId);
+                                originChanges.noteRemovedOrigin();
+                            }
+                        }
+                );
 
         this.origins = originChanges.updatedOrigins();
 
@@ -422,15 +419,11 @@ public final class OriginsInventory
     }
 
     private final class MonitoredOrigin {
-
-        private static final String GAUGE_NAME = "origin.status";
-
         private final Origin origin;
         private final ConnectionPool connectionPool;
         private final StateMachine<OriginState> machine;
         private final StyxHostHttpClient hostClient;
-
-        private Gauge statusGauge;
+        private final Deleter statusGaugeDeleter;
 
         private MonitoredOrigin(Origin origin) {
             this.origin = origin;
@@ -450,7 +443,8 @@ public final class OriginsInventory
 
                     .build();
 
-            registerMeters();
+            statusGaugeDeleter = metrics.proxy().client().originHealthStatus(this.origin)
+                    .register(() -> state().gaugeValue);
         }
 
         private void close() {
@@ -461,7 +455,7 @@ public final class OriginsInventory
 
         private void onStateChange(OriginState oldState, OriginState newState, Object event) {
             if (oldState != newState) {
-                LOG.info("Origin state change: origin=\"{}={}\", change=\"{}->{}\"", new Object[]{appId, origin.id(), oldState, newState});
+                LOG.info("Origin state change: origin=\"{}={}\", change=\"{}->{}\"", appId, origin.id(), oldState, newState);
 
                 if (newState == DISABLED) {
                     stopMonitoring();
@@ -473,15 +467,8 @@ public final class OriginsInventory
             }
         }
 
-        private void registerMeters() {
-            Tags gaugeTags = Tags.of(APPID_TAG, appId.toString(), ORIGINID_TAG, origin.id().toString());
-            statusGauge = Gauge.builder(GAUGE_NAME, () -> state().gaugeValue)
-                    .tags(gaugeTags)
-                    .register(meterRegistry);
-        }
-
         private void deregisterMeters() {
-            meterRegistry.remove(statusGauge);
+            statusGaugeDeleter.delete();
         }
 
         void startMonitoring() {
@@ -505,10 +492,10 @@ public final class OriginsInventory
         return new Builder(appId);
     }
 
-    public static Builder newOriginsInventoryBuilder(MeterRegistry metricRegistry, BackendService backendService) {
+    public static Builder newOriginsInventoryBuilder(CentralisedMetrics metrics, BackendService backendService) {
         return new Builder(backendService.id())
-                .meterRegistry(metricRegistry)
-                .connectionPoolFactory(simplePoolFactory(backendService, metricRegistry))
+                .metrics(metrics)
+                .connectionPoolFactory(simplePoolFactory(backendService, metrics))
                 .initialOrigins(backendService.origins());
     }
 
@@ -518,14 +505,14 @@ public final class OriginsInventory
     public static class Builder {
         private final Id appId;
         private OriginHealthStatusMonitor originHealthMonitor = new NoOriginHealthStatusMonitor();
-        private MeterRegistry meterRegistry;
+        private CentralisedMetrics metrics;
         private EventBus eventBus = new EventBus();
         private ConnectionPool.Factory connectionPoolFactory = simplePoolFactory();
         private StyxHostHttpClient.Factory hostClientFactory;
         private Set<Origin> initialOrigins = emptySet();
 
-        public Builder meterRegistry(MeterRegistry meterRegistry) {
-            this.meterRegistry = meterRegistry;
+        public Builder metrics(CentralisedMetrics metrics) {
+            this.metrics = requireNonNull(metrics);
             return this;
         }
 
@@ -562,11 +549,11 @@ public final class OriginsInventory
             await(originHealthMonitor.start());
 
             if (hostClientFactory == null) {
-                hostClientFactory = (ConnectionPool connectionPool) -> StyxHostHttpClient.create(connectionPool);
+                hostClientFactory = StyxHostHttpClient::create;
             }
 
-            if (meterRegistry == null) {
-                throw new IllegalStateException("metricRegistry is required");
+            if (metrics == null) {
+                throw new IllegalStateException("metrics is required");
             }
 
             OriginsInventory originsInventory = new OriginsInventory(
@@ -575,7 +562,7 @@ public final class OriginsInventory
                     originHealthMonitor,
                     connectionPoolFactory,
                     hostClientFactory,
-                    meterRegistry);
+                    metrics);
 
             originsInventory.setOrigins(initialOrigins);
 

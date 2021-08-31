@@ -19,12 +19,15 @@ import com.google.common.eventbus.EventBus;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.common.format.DefaultHttpMessageFormatter;
 import com.hotels.styx.common.format.HttpMessageFormatter;
+import com.hotels.styx.metrics.CentralisedMetrics;
+import com.hotels.styx.metrics.CentralisedMetricsEnvironment;
 import com.hotels.styx.proxy.HttpErrorStatusCauseLogger;
 import com.hotels.styx.proxy.HttpErrorStatusMetrics;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpErrorStatusListener;
 import com.hotels.styx.server.ServerEnvironment;
 import io.micrometer.core.instrument.MeterRegistry;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +38,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * Environment: metrics, health check, build info, event bus.
  */
-public final class Environment implements com.hotels.styx.api.Environment {
+public final class Environment implements com.hotels.styx.api.Environment, CentralisedMetricsEnvironment {
     private final Version version;
     private final EventBus eventBus;
     private final List<NamedPlugin> plugins;
@@ -43,6 +46,7 @@ public final class Environment implements com.hotels.styx.api.Environment {
     private final HttpErrorStatusListener httpErrorStatusListener;
     private final ServerEnvironment serverEnvironment;
     private final HttpMessageFormatter httpMessageFormatter;
+    private final CentralisedMetrics metrics;
 
     private Environment(Builder builder) {
         this.eventBus = firstNonNull(builder.eventBus, () -> new EventBus("Styx"));
@@ -53,9 +57,10 @@ public final class Environment implements com.hotels.styx.api.Environment {
         this.serverEnvironment = new ServerEnvironment(builder.registry);
         this.httpMessageFormatter = builder.httpMessageFormatter;
 
+        this.metrics = new CentralisedMetrics(serverEnvironment.registry());
         this.httpErrorStatusListener = HttpErrorStatusListener.compose(
                 new HttpErrorStatusCauseLogger(httpMessageFormatter),
-                new HttpErrorStatusMetrics(serverEnvironment.registry()));
+                new HttpErrorStatusMetrics(metrics));
     }
 
     // prevent unnecessary construction of defaults
@@ -110,6 +115,12 @@ public final class Environment implements com.hotels.styx.api.Environment {
 
     public HttpMessageFormatter httpMessageFormatter() {
         return httpMessageFormatter;
+    }
+
+    @NotNull
+    @Override
+    public CentralisedMetrics centralisedMetrics() {
+        return metrics;
     }
 
     /**
