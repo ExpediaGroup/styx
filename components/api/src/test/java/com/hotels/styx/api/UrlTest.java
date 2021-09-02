@@ -321,4 +321,10 @@ public class UrlTest {
 
         assertThat(url.getRawQuery().isPresent(), is(false));
     }
+
+    @Test
+    public void shouldEncodeDoublePercentInQuery() {
+        Url url = url("/user/forgotitin?%%=WAT(%27OmnitureV5%27)=%%").build();
+        assertThat(url.getRawQuery().get(), is("%25%25=WAT(%27OmnitureV5%27)=%25%25"));
+    }
 }

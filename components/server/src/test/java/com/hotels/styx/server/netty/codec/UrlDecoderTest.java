@@ -30,6 +30,16 @@ import static org.hamcrest.Matchers.is;
 
 public class UrlDecoderTest {
     @Test
+    public void shouldEncodeSquareBrackets() {
+        DefaultFullHttpRequest request = new DefaultFullHttpRequest(HTTP_1_1, GET, "/foo?bob[]=a");
+        request.headers().add(HOST, "example.com");
+
+        Url url = UrlDecoder.decodeUrl(x -> x, request);
+
+        assertThat(url.toString(), is("/foo?bob%5B%5D=a"));
+    }
+
+    @Test
     public void decodesOriginForm() {
         DefaultFullHttpRequest request = new DefaultFullHttpRequest(HTTP_1_1, GET, "/foo");
         request.headers().add(HOST, "example.com");
