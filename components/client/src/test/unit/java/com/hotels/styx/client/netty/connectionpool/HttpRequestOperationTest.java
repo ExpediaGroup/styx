@@ -42,7 +42,7 @@ public class HttpRequestOperationTest {
 
         DefaultHttpRequest nettyRequest = HttpRequestOperation.toNettyRequest(request);
         assertThat(nettyRequest.method(), is(io.netty.handler.codec.http.HttpMethod.GET));
-        assertThat(nettyRequest.uri(), is("https://www.example.com/foo%2Cbar?foo,baf=2"));
+        assertThat(nettyRequest.uri(), is("https://www.example.com/foo%2Cbar?foo%2Cbaf=2"));
         assertThat(nettyRequest.headers().get("X-Forwarded-Proto"), is("https"));
 
         assertThat(ServerCookieDecoder.LAX.decode(nettyRequest.headers().get("Cookie")),

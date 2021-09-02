@@ -249,7 +249,7 @@ public final class Url implements Comparable<Url> {
         }
         builder.append(path);
 
-        query.ifPresent(query -> builder.append("?").append(query.getRawQuery()));
+        query.ifPresent(query -> builder.append("?").append(query.encodedQuery()));
 
         if (fragment != null) {
             builder.append("#").append(fragment);
