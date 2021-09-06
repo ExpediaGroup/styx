@@ -15,10 +15,11 @@
  */
 package com.hotels.styx.api.metrics.codahale;
 
+import com.hotels.styx.api.MicrometerRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 
 public class NoopMetricRegistry extends CodaHaleMetricRegistry {
     public NoopMetricRegistry() {
-        super(new CompositeMeterRegistry());
+        super(new MicrometerRegistry(new CompositeMeterRegistry()));
     }
 }

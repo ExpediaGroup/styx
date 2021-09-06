@@ -15,17 +15,14 @@
  */
 package com.hotels.styx.routing.handlers
 
-import com.hotels.styx.Environment
+import com.hotels.styx.*
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.Id.id
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse
+import com.hotels.styx.api.MicrometerRegistry
 import com.hotels.styx.client.BackendServiceClient
 import com.hotels.styx.proxy.BackendServiceClientFactory
-import com.hotels.styx.RoutingObjectFactoryContext
-import com.hotels.styx.requestContext
-import com.hotels.styx.routeLookup
-import com.hotels.styx.routingObjectDef
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import io.kotlintest.specs.StringSpec
@@ -34,7 +31,7 @@ import reactor.core.publisher.Mono
 import reactor.core.publisher.toMono
 
 class ProxyToBackendTest : StringSpec({
-    val environment = Environment.Builder().registry(CompositeMeterRegistry()).build()
+    val environment = Environment.Builder().registry(MicrometerRegistry(CompositeMeterRegistry())).build()
 
     val config = routingObjectDef("""
               name: ProxyToBackend

@@ -29,7 +29,7 @@ import com.codahale.metrics.MetricSet;
 import com.codahale.metrics.Timer;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.ScopedMetricRegistry;
-import io.micrometer.core.instrument.MeterRegistry;
+import com.hotels.styx.api.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -302,7 +302,7 @@ public class CodaHaleMetricRegistry implements MetricRegistry {
             meters.add(io.micrometer.core.instrument.Gauge
                     .builder(name, (T) metric, func)
                     .tags(Tags.of("metricSource", "dropwizard").and("attribute", attr))
-                    .register(registry));
+                    .register(registry.micrometerRegistry()));
         });
 
         return meters;

@@ -15,10 +15,11 @@
  */
 package com.hotels.styx.client.connectionpool;
 
+import com.hotels.styx.api.MeterRegistry;
+import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.netty.connectionpool.StubConnectionPool;
 import com.hotels.styx.metrics.CentralisedMetrics;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
@@ -35,7 +36,7 @@ public class StatsReportingConnectionPoolTest {
             .id("backend-01")
             .build();
 
-    final MeterRegistry meterRegistry = new SimpleMeterRegistry();
+    final MeterRegistry meterRegistry = new MicrometerRegistry(new SimpleMeterRegistry());
 
     final ConnectionPool delegate = new StubConnectionPool(origin);
     final StatsReportingConnectionPool pool = new StatsReportingConnectionPool(delegate, new CentralisedMetrics(meterRegistry));

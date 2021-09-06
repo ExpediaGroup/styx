@@ -21,12 +21,13 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.MeterRegistry;
+import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.AfterAll;
@@ -80,7 +81,7 @@ public class BackendServicesRouterTest {
 
     @BeforeEach
     public void before() {
-        environment = new Environment.Builder().registry(new SimpleMeterRegistry()).build();
+        environment = new Environment.Builder().registry(new MicrometerRegistry(new SimpleMeterRegistry())).build();
     }
 
     @Test
@@ -281,7 +282,7 @@ public class BackendServicesRouterTest {
     // This test exists due to a real bug we had when reloading in prod
     @Test
     public void deregistersAndReregistersMetricsAppropriately() {
-        MeterRegistry metrics = new SimpleMeterRegistry();
+        MeterRegistry metrics = new MicrometerRegistry(new SimpleMeterRegistry());
 
         Environment environment = new Environment.Builder()
                 .registry(metrics)

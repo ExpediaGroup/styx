@@ -15,10 +15,10 @@
  */
 package com.hotels.styx
 
-import java.nio.charset.StandardCharsets.UTF_8
 import com.hotels.styx.api.HttpResponseStatus._
 import com.hotels.styx.api.Id.id
 import com.hotels.styx.api.LiveHttpRequest.get
+import com.hotels.styx.api.MicrometerRegistry
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.extension.{ActiveOrigins, service}
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
@@ -40,6 +40,7 @@ import io.netty.handler.codec.http._
 import org.scalatest._
 import reactor.core.publisher.Mono
 
+import java.nio.charset.StandardCharsets.UTF_8
 import scala.concurrent.duration._
 
 class HttpResponseSpec extends FunSuite
@@ -65,12 +66,12 @@ class HttpResponseSpec extends FunSuite
       responseTimeout = responseTimeout)
 
     client = newHttpClientBuilder(id(backendService.appId))
-      .metrics(new CentralisedMetrics(new SimpleMeterRegistry()))
+      .metrics(new CentralisedMetrics(new MicrometerRegistry(new SimpleMeterRegistry())))
       .loadBalancer(busyConnectionStrategy(activeOrigins(backendService.asJava)))
       .build
   }
 
-  def activeOrigins(backendService: service.BackendService): ActiveOrigins = newOriginsInventoryBuilder(new CentralisedMetrics(new CompositeMeterRegistry()), backendService).build()
+  def activeOrigins(backendService: service.BackendService): ActiveOrigins = newOriginsInventoryBuilder(new CentralisedMetrics(new MicrometerRegistry(new CompositeMeterRegistry())), backendService).build()
 
   def busyConnectionStrategy(activeOrigins: ActiveOrigins): LoadBalancer = new BusyConnectionsStrategy(activeOrigins)
 

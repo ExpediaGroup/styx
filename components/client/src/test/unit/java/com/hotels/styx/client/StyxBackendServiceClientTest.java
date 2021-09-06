@@ -22,6 +22,8 @@ import com.hotels.styx.api.HttpInterceptor.Context;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.MeterRegistry;
+import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.api.exceptions.OriginUnreachableException;
 import com.hotels.styx.api.extension.Origin;
@@ -31,7 +33,6 @@ import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.StickySessionConfig;
 import com.hotels.styx.metrics.CentralisedMetrics;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
@@ -95,7 +96,7 @@ public class StyxBackendServiceClientTest {
 
     @BeforeEach
     public void setUp() {
-        meterRegistry = new SimpleMeterRegistry();
+        meterRegistry = new MicrometerRegistry(new SimpleMeterRegistry());
         metrics = new CentralisedMetrics(meterRegistry);
     }
 

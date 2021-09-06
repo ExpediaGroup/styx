@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import io.micrometer.core.instrument.MeterRegistry;
-
 public interface MeteredEnvironment {
     /**
      * Returns the application's {@link MetricRegistry}.

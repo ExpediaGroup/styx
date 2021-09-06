@@ -21,6 +21,7 @@ import com.hotels.styx.admin.AdminServerConfig;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.api.extension.service.BackendService;
@@ -161,7 +162,7 @@ public class StyxServerTest {
     @Test
     public void disablesResourceLeakDetectionByDefault() {
         StyxServerComponents config = new StyxServerComponents.Builder()
-                .registry(new CompositeMeterRegistry())
+                .registry(new MicrometerRegistry(new CompositeMeterRegistry()))
                 .configuration(EMPTY_CONFIGURATION)
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(new MemoryBackedRegistry<>())))
                 .build();
@@ -261,7 +262,7 @@ public class StyxServerTest {
 
     private StyxServer styxServerWithPlugins(Map<String, Plugin> plugins) {
         StyxServerComponents config = new StyxServerComponents.Builder()
-                .registry(new CompositeMeterRegistry())
+                .registry(new MicrometerRegistry(new CompositeMeterRegistry()))
                 .configuration(styxConfig())
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(new MemoryBackedRegistry<>())))
                 .plugins(plugins)
@@ -272,7 +273,7 @@ public class StyxServerTest {
 
     private StyxServer styxServerWithBackendServiceRegistry(StyxService backendServiceRegistry) {
         StyxServerComponents config = new StyxServerComponents.Builder()
-                .registry(new CompositeMeterRegistry())
+                .registry(new MicrometerRegistry(new CompositeMeterRegistry()))
                 .configuration(styxConfig())
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", backendServiceRegistry))
                 .build();

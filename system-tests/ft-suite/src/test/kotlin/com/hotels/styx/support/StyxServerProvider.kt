@@ -21,11 +21,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.collect.ImmutableSet
 import com.hotels.styx.StyxConfig
 import com.hotels.styx.StyxServer
-import com.hotels.styx.api.HttpHeaderNames
+import com.hotels.styx.api.*
 import com.hotels.styx.api.HttpHeaderNames.HOST
-import com.hotels.styx.api.HttpRequest
-import com.hotels.styx.api.HttpResponse
-import com.hotels.styx.api.HttpResponseStatus
 import com.hotels.styx.api.HttpResponseStatus.CREATED
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.plugins.spi.Plugin
@@ -33,7 +30,6 @@ import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.startup.StyxServerComponents
 import io.micrometer.core.instrument.Clock
-import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.slf4j.LoggerFactory
@@ -108,7 +104,7 @@ class StyxServerProvider(
             stop()
         }
 
-        val meterRegistry = CompositeMeterRegistry(Clock.SYSTEM, ImmutableSet.of(SimpleMeterRegistry()))
+        val meterRegistry = MicrometerRegistry(CompositeMeterRegistry(Clock.SYSTEM, ImmutableSet.of(SimpleMeterRegistry())))
         var components = StyxServerComponents.Builder()
                 .registry(meterRegistry)
                 .styxConfig(StyxConfig.fromYaml(configuration, validateConfig))

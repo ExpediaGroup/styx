@@ -17,6 +17,8 @@ package com.hotels.styx.client;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.EventBus;
+import com.hotels.styx.api.MeterRegistry;
+import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.OriginsChangeListener;
 import com.hotels.styx.api.extension.OriginsSnapshot;
@@ -29,7 +31,6 @@ import com.hotels.styx.client.origincommands.EnableOrigin;
 import com.hotels.styx.metrics.CentralisedMetrics;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import io.micrometer.core.instrument.Gauge;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.AfterEach;
@@ -76,7 +77,7 @@ public class OriginsInventoryTest {
 
     @BeforeEach
     public void setUp() {
-        meterRegistry = new SimpleMeterRegistry();
+        meterRegistry = new MicrometerRegistry(new SimpleMeterRegistry());
         logger = new LoggingTestSupport(OriginsInventory.class);
         monitor = mock(OriginHealthStatusMonitor.class);
         eventBus = mock(EventBus.class);
@@ -492,7 +493,7 @@ public class OriginsInventoryTest {
         return new SimpleConnectionPoolFactory.Builder()
                 .connectionFactory(new StubConnectionFactory())
                 .connectionPoolSettings(defaultConnectionPoolSettings())
-                .metrics(new CentralisedMetrics(new SimpleMeterRegistry()))
+                .metrics(new CentralisedMetrics(new MicrometerRegistry(new SimpleMeterRegistry())))
                 .build();
     }
 

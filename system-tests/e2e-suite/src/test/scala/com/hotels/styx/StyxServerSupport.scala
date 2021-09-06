@@ -15,18 +15,13 @@
  */
 package com.hotels.styx
 
-import java.net.InetSocketAddress
-import java.util
-import java.util.Collections._
-import java.util.concurrent.TimeUnit.MILLISECONDS
-
 import com.google.common.collect.ImmutableMap
 import com.hotels.styx.admin.AdminServerConfig
 import com.hotels.styx.api.HttpInterceptor.Chain
+import com.hotels.styx.api._
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration
 import com.hotels.styx.api.extension.service.spi.StyxService
 import com.hotels.styx.api.plugins.spi.{Plugin, PluginFactory}
-import com.hotels.styx.api._
 import com.hotels.styx.config.Config
 import com.hotels.styx.metrics.StyxMetrics
 import com.hotels.styx.proxy.ProxyServerConfig
@@ -36,6 +31,10 @@ import com.hotels.styx.startup.StyxServerComponents
 import com.hotels.styx.support.CodaHaleMetricsFacade
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 
+import java.net.InetSocketAddress
+import java.util
+import java.util.Collections._
+import java.util.concurrent.TimeUnit.MILLISECONDS
 import scala.collection.JavaConverters._
 
 object StyxServerSupport {
@@ -85,7 +84,7 @@ object StyxServerSupport {
     val plugins1 = plugins.asJava
 
     val builder = new StyxServerComponents.Builder()
-      .registry(new CompositeMeterRegistry())
+      .registry(new MicrometerRegistry(new CompositeMeterRegistry()))
       .styxConfig(styxConfig)
       .additionalServices(ImmutableMap.of("backendServiceRegistry", styxService))
 
@@ -100,7 +99,7 @@ object StyxServerSupport {
     val plugins1 = plugins.asJava
 
     val builder = new StyxServerComponents.Builder()
-      .registry(new CompositeMeterRegistry())
+      .registry(new MicrometerRegistry(new CompositeMeterRegistry()))
       .styxConfig(styxConfig)
 
     if (plugins.nonEmpty) {

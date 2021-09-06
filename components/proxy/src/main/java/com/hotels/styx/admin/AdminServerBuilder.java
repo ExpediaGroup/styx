@@ -65,6 +65,7 @@ import com.hotels.styx.server.netty.NettyServerBuilder;
 import com.hotels.styx.server.netty.WebServerConnectorFactory;
 import com.hotels.styx.server.track.CurrentRequestTracker;
 import com.hotels.styx.startup.StyxServerComponents;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.slf4j.Logger;
 
 import java.time.Duration;
@@ -201,7 +202,7 @@ public class AdminServerBuilder {
         httpRouter.aggregate("/admin/servers", serverHandler);
         httpRouter.aggregate("/admin/servers/", serverHandler);
 
-        httpRouter.aggregate("/metrics", new PrometheusHandler(environment.meterRegistry()));
+        httpRouter.aggregate("/metrics", new PrometheusHandler((CompositeMeterRegistry) environment.meterRegistry().micrometerRegistry()));
 
         return httpRouter;
     }

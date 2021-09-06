@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.api.metrics;
 
-import io.micrometer.core.instrument.MeterRegistry;
+import com.hotels.styx.api.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
@@ -57,6 +57,6 @@ public final class MeterFactory {
                 .publishPercentileHistogram()
                 .minimumExpectedValue(MIN_HISTOGRAM_BUCKET)
                 .maximumExpectedValue(MAX_HISTOGRAM_BUCKET)
-                .register(registry);
+                .register(registry.micrometerRegistry());
     }
 }

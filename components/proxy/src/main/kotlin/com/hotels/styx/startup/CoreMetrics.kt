@@ -50,4 +50,4 @@ private fun CentralisedMetrics.registerJvmMetrics() {
     }
 }
 
-private fun CentralisedMetrics.registerAll(binder: MeterBinder) = binder.bindTo(registry)
+private fun CentralisedMetrics.registerAll(binder: MeterBinder) = binder.bindTo(registry.micrometerRegistry())

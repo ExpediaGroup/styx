@@ -16,10 +16,10 @@
 package com.hotels.styx.proxy.plugin;
 
 import com.hotels.styx.api.Environment;
+import com.hotels.styx.api.MeterRegistry;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
-import com.hotels.styx.api.plugins.spi.PluginMeterRegistry;
 import com.hotels.styx.spi.config.SpiExtension;
 
 import static java.util.Objects.requireNonNull;
@@ -27,12 +27,12 @@ import static java.util.Objects.requireNonNull;
 class PluginEnvironment implements PluginFactory.Environment {
     private final Environment environment;
     private final SpiExtension spiExtension;
-    private final PluginMeterRegistry pluginMeterRegistry;
+    private final MeterRegistry pluginMeterRegistry;
 
     PluginEnvironment(String name, Environment environment, SpiExtension spiExtension) {
         this.spiExtension = requireNonNull(spiExtension);
         this.environment = requireNonNull(environment);
-        this.pluginMeterRegistry = new PluginMeterRegistry(requireNonNull(environment.meterRegistry()), name);
+        this.pluginMeterRegistry = environment.meterRegistry().scope(name);
     }
 
     @Override
@@ -46,7 +46,7 @@ class PluginEnvironment implements PluginFactory.Environment {
     }
 
     @Override
-    public PluginMeterRegistry pluginMeterRegistry() {
+    public MeterRegistry pluginMeterRegistry() {
         return pluginMeterRegistry;
     }
 

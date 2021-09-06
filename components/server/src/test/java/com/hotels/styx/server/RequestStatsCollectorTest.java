@@ -15,11 +15,12 @@
  */
 package com.hotels.styx.server;
 
+import com.hotels.styx.api.MeterRegistry;
+import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.metrics.CentralisedMetrics;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.simple.SimpleConfig;
@@ -46,7 +47,7 @@ public class RequestStatsCollectorTest {
 
     @BeforeEach
     public void setUp() {
-        metrics = new SimpleMeterRegistry(SimpleConfig.DEFAULT, clock);
+        metrics = new MicrometerRegistry(new SimpleMeterRegistry(SimpleConfig.DEFAULT, clock));
         clock.setNanoTime(0);
         CentralisedMetrics centralisedMetrics = new CentralisedMetrics(metrics);
         sink = new RequestStatsCollector(centralisedMetrics);
@@ -218,7 +219,7 @@ public class RequestStatsCollectorTest {
     }
 
     @Test
-    public void reportsUnrecognisedHttpSatusCodesLessThan100() {
+    public void reportsUnrecognisedHttpStatusCodesLessThan100() {
         sink.onRequest(requestId);
         sink.onComplete(requestId, 99);
         assertThat(counterValue("proxy.server.responses", Tags.of("statusClass", "unrecognised")), is(1.0));

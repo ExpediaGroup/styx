@@ -18,6 +18,7 @@ package com.hotels.styx.proxy.backends.file;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Environment;
+import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.extension.service.spi.Registry;
@@ -59,7 +60,7 @@ public class FileBackedBackendServicesRegistryFactoryTest {
         tempDir = createTempDir();
         monitoredFile = Paths.get(tempDir.toString(), "origins.yml");
         write(monitoredFile, "content-v1");
-        environment = new com.hotels.styx.Environment.Builder().registry(new SimpleMeterRegistry()).build();
+        environment = new com.hotels.styx.Environment.Builder().registry(new MicrometerRegistry(new SimpleMeterRegistry())).build();
     }
 
     @AfterEach
@@ -73,7 +74,7 @@ public class FileBackedBackendServicesRegistryFactoryTest {
     public void instantiatesFromYaml() {
 
         environment = new com.hotels.styx.Environment.Builder()
-                .registry(new SimpleMeterRegistry())
+                .registry(new MicrometerRegistry(new SimpleMeterRegistry()))
                 .configuration(StyxConfig.fromYaml("config: {originsFile: '${CONFIG_LOCATION:classpath:}/conf/origins/backend-factory-origins.yml'}", false))
                 .build();
 

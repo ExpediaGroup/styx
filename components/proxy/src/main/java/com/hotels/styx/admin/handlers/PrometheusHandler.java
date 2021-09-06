@@ -20,7 +20,6 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.WebServiceHandler;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
@@ -34,9 +33,9 @@ public class PrometheusHandler implements WebServiceHandler {
 
     private final PrometheusMeterRegistry prometheusRegistry;
 
-    public PrometheusHandler(MeterRegistry meterRegistry) {
+    public PrometheusHandler(CompositeMeterRegistry meterRegistry) {
         prometheusRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
-        ((CompositeMeterRegistry) meterRegistry).add(prometheusRegistry);
+        meterRegistry.add(prometheusRegistry);
     }
 
     @Override

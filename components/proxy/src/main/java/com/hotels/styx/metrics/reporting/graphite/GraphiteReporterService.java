@@ -17,7 +17,6 @@ package com.hotels.styx.metrics.reporting.graphite;
 
 import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
 import io.micrometer.core.instrument.Clock;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.core.instrument.config.NamingConvention;
 import io.micrometer.core.instrument.util.HierarchicalNameMapper;
@@ -45,7 +44,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public final class GraphiteReporterService extends AbstractStyxService {
     private static final Logger LOGGER = getLogger(GraphiteReporterService.class);
-    private final MeterRegistry meterRegistry;
+    private final CompositeMeterRegistry meterRegistry;
     private final MicrometerGraphiteConfig graphiteConfig;
     private GraphiteMeterRegistry graphiteMeterRegistry;
 
@@ -76,7 +75,7 @@ public final class GraphiteReporterService extends AbstractStyxService {
                     Clock.SYSTEM,
                     (id, convention) -> metricPrefix + nameMapper.toHierarchicalName(id, convention));
             graphiteMeterRegistry.config().namingConvention(nameConvention);
-            ((CompositeMeterRegistry) meterRegistry).add(graphiteMeterRegistry);
+            meterRegistry.add(graphiteMeterRegistry);
             LOGGER.info("Graphite service started, service name=\"{}\"", serviceName());
         });
     }
@@ -85,7 +84,7 @@ public final class GraphiteReporterService extends AbstractStyxService {
     protected CompletableFuture<Void> stopService() {
         return CompletableFuture.runAsync(() -> {
             graphiteMeterRegistry.stop();
-            ((CompositeMeterRegistry) meterRegistry).remove(graphiteMeterRegistry);
+            meterRegistry.remove(graphiteMeterRegistry);
             LOGGER.info("Graphite service stopped, service name=\"{}\"", serviceName());
         });
     }
@@ -94,7 +93,7 @@ public final class GraphiteReporterService extends AbstractStyxService {
      * Builder for reporter service.
      */
     public static final class Builder {
-        private MeterRegistry meterRegistry;
+        private CompositeMeterRegistry meterRegistry;
         private String serviceName;
         private String host;
         private int port;
@@ -103,7 +102,7 @@ public final class GraphiteReporterService extends AbstractStyxService {
         private boolean enabled;
         private boolean tagsEnabled;
 
-        public Builder meterRegistry(@NotNull MeterRegistry meterRegistry) {
+        public Builder meterRegistry(@NotNull CompositeMeterRegistry meterRegistry) {
             this.meterRegistry = meterRegistry;
             return this;
         }

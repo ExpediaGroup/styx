@@ -23,6 +23,7 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingObject;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -50,7 +51,7 @@ public class InterceptorPipelineBuilderTest {
     @BeforeEach
     public void setUp() {
         environment = new Environment.Builder()
-                .registry(new SimpleMeterRegistry())
+                .registry(new MicrometerRegistry(new SimpleMeterRegistry()))
                 .configuration(StyxConfig.defaultConfig())
                 .build();
         plugins = ImmutableList.of(

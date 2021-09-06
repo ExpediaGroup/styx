@@ -17,7 +17,7 @@ package com.hotels.styx.server;
 
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import io.micrometer.core.instrument.MeterRegistry;
+import com.hotels.styx.api.MeterRegistry;
 
 import static java.util.Objects.requireNonNull;
 

@@ -22,6 +22,8 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.MeterRegistry;
+import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.client.StyxClientException;
 import com.hotels.styx.metrics.CentralisedMetrics;
 import com.hotels.styx.server.BadRequestException;
@@ -34,7 +36,6 @@ import com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State;
 import com.hotels.styx.support.JustATestException;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import io.micrometer.core.instrument.Gauge;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -76,7 +77,6 @@ import static com.hotels.styx.api.HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE;
 import static com.hotels.styx.api.HttpResponseStatus.REQUEST_TIMEOUT;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
-import static com.hotels.styx.api.Metrics.name;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE_CLIENT_CLOSED;
@@ -84,8 +84,6 @@ import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.WAITING_FOR_RESPONSE;
 import static com.hotels.styx.server.netty.connectors.ResponseEnhancer.DO_NOT_MODIFY_RESPONSE;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
-import static com.hotels.styx.support.netty.HttpMessageSupport.httpMessageToBytes;
-import static com.hotels.styx.support.netty.HttpMessageSupport.httpRequest;
 import static com.hotels.styx.support.netty.HttpMessageSupport.httpRequestAsBuf;
 import static io.netty.handler.codec.http.HttpMethod.GET;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -233,7 +231,7 @@ public class HttpPipelineHandlerTest {
     @Test
     public void updatesRequestsOngoingCountOnChannelReadEvent() throws Exception {
 
-        MeterRegistry registry = new SimpleMeterRegistry();
+        MeterRegistry registry = new MicrometerRegistry(new SimpleMeterRegistry());
         HttpPipelineHandler pipelineHandler = handlerWithMocks(doNotRespondHandler)
                 .responseEnhancer(DO_NOT_MODIFY_RESPONSE)
                 .progressListener(new RequestStatsCollector(new CentralisedMetrics(registry)))
@@ -264,7 +262,7 @@ public class HttpPipelineHandlerTest {
 
     @Test
     public void decrementsRequestsOngoingCountOnChannelInactiveWhenRequestIsOngoing() throws Exception {
-        MeterRegistry registry = new SimpleMeterRegistry();
+        MeterRegistry registry = new MicrometerRegistry(new SimpleMeterRegistry());
         HttpPipelineHandler adapter = handlerWithMocks(doNotRespondHandler)
                 .responseEnhancer(DO_NOT_MODIFY_RESPONSE)
                 .progressListener(new RequestStatsCollector(new CentralisedMetrics(registry)))
@@ -348,7 +346,7 @@ public class HttpPipelineHandlerTest {
 
     @Test
     public void decrementsRequestsOngoingOnExceptionCaught() throws Exception {
-        MeterRegistry registry = new SimpleMeterRegistry();
+        MeterRegistry registry = new MicrometerRegistry(new SimpleMeterRegistry());
         HttpPipelineHandler adapter = handlerWithMocks(doNotRespondHandler)
                 .progressListener(new RequestStatsCollector(new CentralisedMetrics(registry)))
                 .build();
@@ -968,7 +966,7 @@ public class HttpPipelineHandlerTest {
     }
 
     private HttpPipelineHandler createHandler(HttpHandler pipeline) throws Exception {
-        metrics = new SimpleMeterRegistry();
+        metrics = new MicrometerRegistry(new SimpleMeterRegistry());
         HttpPipelineHandler handler = handlerWithMocks(pipeline)
                 .responseWriterFactory(responseWriterFactory)
                 .build();

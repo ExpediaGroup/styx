@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Eventual;
+import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.api.plugins.spi.Plugin;
@@ -51,7 +52,7 @@ public class StyxServerComponentsTest {
         LoggingSetUp loggingSetUp = mock(LoggingSetUp.class);
 
         new StyxServerComponents.Builder()
-                .registry(new CompositeMeterRegistry())
+                .registry(new MicrometerRegistry(new CompositeMeterRegistry()))
                 .styxConfig(new StyxConfig())
                 .loggingSetUp(loggingSetUp)
                 .build();
@@ -65,7 +66,7 @@ public class StyxServerComponentsTest {
         ConfiguredPluginFactory f2 = new ConfiguredPluginFactory("plugin2", any -> stubPlugin("MyResponse2"));
 
         StyxServerComponents components = new StyxServerComponents.Builder()
-                .registry(new CompositeMeterRegistry())
+                .registry(new MicrometerRegistry(new CompositeMeterRegistry()))
                 .styxConfig(new StyxConfig())
                 .pluginFactories(ImmutableList.of(f1, f2))
                 .build();
@@ -79,7 +80,7 @@ public class StyxServerComponentsTest {
     @Test
     public void loadsServices() {
         StyxServerComponents components = new StyxServerComponents.Builder()
-                .registry(new CompositeMeterRegistry())
+                .registry(new MicrometerRegistry(new CompositeMeterRegistry()))
                 .styxConfig(new StyxConfig())
                 .services((env, routeDb) -> ImmutableMap.of(
                         "service1", mock(StyxService.class),
@@ -94,7 +95,7 @@ public class StyxServerComponentsTest {
     @Test
     public void exposesAdditionalServices() {
         StyxServerComponents components = new StyxServerComponents.Builder()
-                .registry(new CompositeMeterRegistry())
+                .registry(new MicrometerRegistry((new CompositeMeterRegistry())))
                 .styxConfig(new StyxConfig())
                 .additionalServices(ImmutableMap.of(
                         "service1", mock(StyxService.class),
@@ -113,7 +114,7 @@ public class StyxServerComponentsTest {
                 .set("bar", "def");
 
         StyxServerComponents components = new StyxServerComponents.Builder()
-                .registry(new CompositeMeterRegistry())
+                .registry(new MicrometerRegistry(new CompositeMeterRegistry()))
                 .styxConfig(new StyxConfig(config))
                 .build();
 

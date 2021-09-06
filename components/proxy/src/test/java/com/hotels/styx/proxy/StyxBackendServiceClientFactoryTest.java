@@ -20,6 +20,7 @@ import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.HttpInterceptor.Context;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetric;
@@ -67,7 +68,7 @@ public class StyxBackendServiceClientFactoryTest {
     @BeforeEach
     public void setUp() {
         connectionFactory = mock(Connection.Factory.class);
-        environment = new Environment.Builder().registry(new SimpleMeterRegistry()).build();
+        environment = new Environment.Builder().registry(new MicrometerRegistry(new SimpleMeterRegistry())).build();
         backendService = newBackendServiceBuilder()
                 .origins(newOriginBuilder("localhost", 8081).build())
                 .build();
@@ -147,7 +148,7 @@ public class StyxBackendServiceClientFactoryTest {
         config.set("originRestrictionCookie", ORIGINS_RESTRICTION_COOKIE);
 
         environment = new Environment.Builder()
-                .registry(new SimpleMeterRegistry())
+                .registry(new MicrometerRegistry(new SimpleMeterRegistry()))
                 .configuration(new StyxConfig(config))
                 .build();
 

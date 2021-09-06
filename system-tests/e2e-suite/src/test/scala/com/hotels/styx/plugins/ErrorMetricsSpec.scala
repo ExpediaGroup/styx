@@ -78,7 +78,7 @@ class ErrorMetricsSpec extends FunSpec
     super.beforeEach()
     backendsRegistry = new MemoryBackedRegistry[BackendService]
     styxServer = styxConfig.startServer(new RegistryServiceAdapter(backendsRegistry))
-    styxServer.meterRegistry().asInstanceOf[CompositeMeterRegistry].add(new SimpleMeterRegistry())
+    styxServer.meterRegistry().micrometerRegistry().asInstanceOf[CompositeMeterRegistry].add(new SimpleMeterRegistry())
     setBackends(
       backendsRegistry,
       "/" -> HttpBackend(

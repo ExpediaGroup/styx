@@ -16,6 +16,7 @@
 package com.hotels.styx;
 
 import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.client.StyxHeaderConfig;
@@ -60,12 +61,12 @@ public class ResponseInfoFormatTest {
     }
 
     private static Environment defaultEnvironment() {
-        return new Environment.Builder().registry(new SimpleMeterRegistry()).build();
+        return new Environment.Builder().registry(new MicrometerRegistry(new SimpleMeterRegistry())).build();
     }
 
     private static Environment environment(Configuration configuration) {
         return new Environment.Builder()
-                .registry(new SimpleMeterRegistry())
+                .registry(new MicrometerRegistry(new SimpleMeterRegistry()))
                 .configuration(new StyxConfig(configuration))
                 .build();
     }

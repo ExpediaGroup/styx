@@ -21,14 +21,14 @@ import com.hotels.styx.api.HttpInterceptor.Chain;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.MeterRegistry;
+import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginException;
 import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -47,7 +47,6 @@ import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -63,7 +62,7 @@ public class InstrumentedPluginTest {
 
     @BeforeEach
     public void setUp() {
-        registry = new SimpleMeterRegistry();
+        registry = new MicrometerRegistry(new SimpleMeterRegistry());
 
         environment = new Environment.Builder()
                 .registry(registry)
@@ -237,24 +236,24 @@ public class InstrumentedPluginTest {
 
     private double getStatusCount(String pluginName, String status) {
         return Optional.ofNullable(registry.find("proxy.plugins.errorResponses")
-                .tags("plugin", pluginName, "statusCode", status)
-                .counter())
+                        .tags("plugin", pluginName, "statusCode", status)
+                        .counter())
                 .map(Counter::count)
                 .orElse(0.0);
     }
 
     private double getErrorCount(String pluginName) {
         return Optional.ofNullable(registry.find("proxy.plugins.errors")
-                .tags("plugin", pluginName)
-                .counter())
+                        .tags("plugin", pluginName)
+                        .counter())
                 .map(Counter::count)
                 .orElse(0.0);
     }
 
     private double getExceptionCount(String pluginName, String type) {
         return Optional.ofNullable(registry.find("proxy.plugins.exceptions")
-                .tags("plugin", pluginName, "type", type)
-                .counter())
+                        .tags("plugin", pluginName, "type", type)
+                        .counter())
                 .map(Counter::count)
                 .orElse(0.0);
     }

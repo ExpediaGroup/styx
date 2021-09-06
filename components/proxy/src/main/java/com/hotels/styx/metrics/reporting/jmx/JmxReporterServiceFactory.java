@@ -19,6 +19,7 @@ import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ServiceFactory;
 import com.hotels.styx.api.extension.service.spi.StyxService;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 
 /**
  * A factory that produces JmxReporterService.
@@ -28,6 +29,6 @@ public class JmxReporterServiceFactory implements ServiceFactory<StyxService> {
     public StyxService create(Environment environment, Configuration serviceConfiguration) {
         String domain = serviceConfiguration.get("domain").orElse("com.hotels.styx");
 
-        return new JmxReporterService(domain, environment.meterRegistry());
+        return new JmxReporterService(domain, (CompositeMeterRegistry) environment.meterRegistry().micrometerRegistry());
     }
 }

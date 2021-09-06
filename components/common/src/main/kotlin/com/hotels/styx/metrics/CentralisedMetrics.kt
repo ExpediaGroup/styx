@@ -20,6 +20,7 @@ import com.hotels.styx.api.extension.Origin
 import com.hotels.styx.api.metrics.MeterFactory
 import com.hotels.styx.common.SimpleCache
 import io.micrometer.core.instrument.*
+import com.hotels.styx.api.MeterRegistry
 
 /**
  * All the metrics used in Styx are defined here. Please note that there may be additional metrics defined by any plugins used.
@@ -496,11 +497,13 @@ class CentralisedMetrics(val registry: MeterRegistry) {
     private inner class InnerGaugeId(val name: String, val tags: Tags = Tags.empty()) : GaugeId {
         override fun <T> register(stateObject: T, function: (T) -> Number) {
             registry.gauge(name, tags, stateObject) {
-                function(it).toDouble()
+                function(it!!).toDouble()
             }
         }
 
-        override fun register(supplier: () -> Int): Deleter = InnerDeleter(Gauge.builder(name, supplier).tags(tags).register(registry))
+        override fun register(supplier: () -> Int): Deleter = InnerDeleter(
+            Gauge.builder(name, supplier).tags(tags).register(registry.micrometerRegistry()!!)
+        )
 
         override fun register(number: Number) {
             registry.gauge(name, number)
@@ -516,7 +519,7 @@ class CentralisedMetrics(val registry: MeterRegistry) {
     private inner class InnerTimer(name: String, tags: Tags = Tags.empty()) : TimerMetric {
         private val timer = MeterFactory.timer(registry, name, tags)
 
-        override fun startTiming() = InnerStopper(Timer.start(registry))
+        override fun startTiming() = InnerStopper(registry.startTimer())
 
         inner class InnerStopper(private val startTime: Timer.Sample) : TimerMetric.Stopper {
             override fun stop() {

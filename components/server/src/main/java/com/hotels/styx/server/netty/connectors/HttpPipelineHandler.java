@@ -26,6 +26,7 @@ import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.api.exceptions.OriginUnreachableException;
 import com.hotels.styx.api.exceptions.ResponseTimeoutException;
@@ -667,7 +668,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         private HttpErrorStatusListener httpErrorStatusListener = IGNORE_ERROR_STATUS;
         private RequestProgressListener progressListener = IGNORE_REQUEST_PROGRESS;
         private HttpResponseWriterFactory responseWriterFactory = HttpResponseWriter::new;
-        private Supplier<CentralisedMetrics> metricsSupplier = () -> new CentralisedMetrics(new CompositeMeterRegistry());
+        private Supplier<CentralisedMetrics> metricsSupplier = () -> new CentralisedMetrics(new MicrometerRegistry(new CompositeMeterRegistry()));
         private RequestTracker tracker = RequestTracker.NO_OP;
         private boolean secure;
         private CharSequence originsHeaderName;

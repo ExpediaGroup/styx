@@ -19,6 +19,7 @@ import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ServiceFactory;
 import com.hotels.styx.api.extension.service.spi.StyxService;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 
 import static java.lang.String.format;
 
@@ -34,7 +35,7 @@ public class GraphiteReporterServiceFactory implements ServiceFactory<StyxServic
         final int port = graphiteConfig.port();
 
         return new GraphiteReporterService.Builder()
-                .meterRegistry(environment.meterRegistry())
+                .meterRegistry((CompositeMeterRegistry) environment.meterRegistry().micrometerRegistry())
                 .serviceName(format("Graphite-Reporter-%s:%d", host, port))
                 .host(host)
                 .port(port)

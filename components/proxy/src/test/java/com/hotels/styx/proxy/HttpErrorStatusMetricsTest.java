@@ -18,6 +18,7 @@ package com.hotels.styx.proxy;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.api.exceptions.OriginUnreachableException;
 import com.hotels.styx.api.exceptions.ResponseTimeoutException;
@@ -66,7 +67,7 @@ public class HttpErrorStatusMetricsTest {
     @BeforeEach
     public void setUp() {
         registry = new SimpleMeterRegistry();
-        metrics = new CentralisedMetrics(registry);
+        metrics = new CentralisedMetrics(new MicrometerRegistry(registry));
         errorListener = new HttpErrorStatusMetrics(metrics);
     }
 
