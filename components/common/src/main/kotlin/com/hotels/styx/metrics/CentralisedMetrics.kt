@@ -16,11 +16,11 @@
 package com.hotels.styx.metrics
 
 import com.hotels.styx.api.HttpResponseStatus
+import com.hotels.styx.api.MeterRegistry
 import com.hotels.styx.api.extension.Origin
 import com.hotels.styx.api.metrics.MeterFactory
 import com.hotels.styx.common.SimpleCache
 import io.micrometer.core.instrument.*
-import com.hotels.styx.api.MeterRegistry
 
 /**
  * All the metrics used in Styx are defined here. Please note that there may be additional metrics defined by any plugins used.
@@ -418,6 +418,9 @@ class CentralisedMetrics(val registry: MeterRegistry) {
              */
             fun errorResponseFromOriginByStatus(statusCode: Int): Counter = clientOriginErrorResponseByStatus[statusCode]
 
+            private val backendFaults: SimpleCache<BackendFaultKey, Counter> = SimpleCache {
+                registry.counter("proxy.client.backends.fault", it.tags())
+            }
 
             /**
              * Counts proxying failures caused by an external problem when trying to communicating with an application.
@@ -431,13 +434,8 @@ class CentralisedMetrics(val registry: MeterRegistry) {
              *
              * Tagged by origin.
              */
-            fun backendFaults(applicationId: String, originId: String?, faultType: String): Counter {
-                val originTag = originId?.let { Tags.of("origin", originId) } ?: Tags.empty()
-
-                val tags = Tags.of("application", applicationId).and("faultType", faultType).and(originTag)
-
-                return registry.counter("proxy.client.backends.fault", tags)
-            }
+            fun backendFaults(applicationId: String, originId: String?, faultType: String): Counter =
+                backendFaults[BackendFaultKey(applicationId, originId, faultType)]
 
             /**
              * Counts the number of requests to an origin that were responded to with non-server-error status (not code 5xx).
@@ -526,6 +524,14 @@ class CentralisedMetrics(val registry: MeterRegistry) {
                 startTime.stop(timer)
             }
         }
+    }
+}
+
+private data class BackendFaultKey(val applicationId: String, val originId: String?, val faultType: String) {
+    fun tags(): Tags {
+        val originTag = originId?.let { Tags.of("origin", originId) } ?: Tags.empty()
+
+        return Tags.of("application", applicationId).and("faultType", faultType).and(originTag)
     }
 }
 

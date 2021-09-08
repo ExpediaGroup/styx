@@ -50,7 +50,6 @@ interface MeterRegistry {
     fun close()
     fun isClosed(): Boolean
 
-
     interface More {
         fun longTaskTimer(name: String, vararg tags: String): LongTaskTimer
         fun longTaskTimer(name: String, tags: Iterable<Tag>): LongTaskTimer
@@ -68,7 +67,8 @@ interface MeterRegistry {
         fun <T> timeGauge(name: String, tags: Iterable<Tag>, obj: T, timeFunctionUnit: TimeUnit, timeFunction: ToDoubleFunction<T>): TimeGauge
     }
 
-    ///
+    // Functions below here are not for general metric handling, but needed by Styx internally.
+
     fun scope(scope: String): ScopedMeterRegistry = ScopedMeterRegistry(this, scope)
     fun startTimer(): Timer.Sample
     fun micrometerRegistry(): io.micrometer.core.instrument.MeterRegistry?
@@ -138,8 +138,8 @@ class ScopedMeterRegistry(private val registry: MeterRegistry, private val scope
     override fun close() = registry.close()
     override fun isClosed() = registry.isClosed()
 
+    // Functions below here are not for general metric handling, but needed by Styx internally.
 
-    ////
     override fun startTimer(): Timer.Sample = registry.startTimer()
     override fun micrometerRegistry(): io.micrometer.core.instrument.MeterRegistry? = registry.micrometerRegistry()
 
@@ -209,9 +209,8 @@ class MicrometerRegistry(private val registry: io.micrometer.core.instrument.Met
     override fun close() = registry.close()
     override fun isClosed() = registry.isClosed
 
-    ////
+    // Functions below here are not for general metric handling, but needed by Styx internally.
 
     override fun startTimer(): Timer.Sample = Timer.start(registry)
-
     override fun micrometerRegistry(): io.micrometer.core.instrument.MeterRegistry = registry
 }
