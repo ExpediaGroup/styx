@@ -64,7 +64,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Supplier;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
@@ -146,7 +145,11 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         this.secure = builder.secure;
         this.tracker = tracker;
         this.originsHeaderName = builder.originsHeaderName;
-        this.metrics = builder.metricsSupplier.get();
+        if (builder.metrics == null) {
+            this.metrics = new CentralisedMetrics(new MicrometerRegistry(new CompositeMeterRegistry()));
+        } else {
+            this.metrics = builder.metrics;
+        }
     }
 
     private StateMachine<State> createStateMachine() {
@@ -519,10 +522,10 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         String message = status.code() >= 500 ? "Site temporarily unavailable." : status.description();
 
         LiveHttpResponse.Transformer builder = responseEnhancer.enhance(
-                response(status)
-                        .body(new ByteStream(Flux.just(new Buffer(message, UTF_8))))
-                        .build()
-                        .newBuilder(), request)
+                        response(status)
+                                .body(new ByteStream(Flux.just(new Buffer(message, UTF_8))))
+                                .build()
+                                .newBuilder(), request)
                 .header(CONTENT_LENGTH, message.getBytes(UTF_8).length)
                 .header(CONNECTION, "close");
 
@@ -668,7 +671,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         private HttpErrorStatusListener httpErrorStatusListener = IGNORE_ERROR_STATUS;
         private RequestProgressListener progressListener = IGNORE_REQUEST_PROGRESS;
         private HttpResponseWriterFactory responseWriterFactory = HttpResponseWriter::new;
-        private Supplier<CentralisedMetrics> metricsSupplier = () -> new CentralisedMetrics(new MicrometerRegistry(new CompositeMeterRegistry()));
+        private CentralisedMetrics metrics;
         private RequestTracker tracker = RequestTracker.NO_OP;
         private boolean secure;
         private CharSequence originsHeaderName;
@@ -733,13 +736,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
          * @return this builder
          */
         public Builder metrics(CentralisedMetrics metrics) {
-            requireNonNull(metrics);
-            this.metricsSupplier = () -> metrics;
-            return this;
-        }
-
-        public Builder metricsSupplier(Supplier<CentralisedMetrics> metricsSupplier) {
-            this.metricsSupplier = metricsSupplier;
+            this.metrics = requireNonNull(metrics);
             return this;
         }
 

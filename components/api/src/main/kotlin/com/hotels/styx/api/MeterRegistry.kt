@@ -24,6 +24,9 @@ import java.util.function.Consumer
 import java.util.function.ToDoubleFunction
 import java.util.function.ToLongFunction
 
+/**
+ * An interface to represent any implementation of a meter registry.
+ */
 interface MeterRegistry {
     val meters: List<Meter>
 
@@ -69,11 +72,21 @@ interface MeterRegistry {
 
     // Functions below here are not for general metric handling, but needed by Styx internally.
 
+    /**
+     * Creates a new scoped registry based on this registry. If this registry is already scoped, the new scope will be prefixed to the existing scope.
+     *
+     * So, if `fooRegistry` has scope "foo", and we call `val barRegistry = fooRegistry.scope("bar")`, then `barRegistry` will have the scope "bar.foo".
+     */
     fun scope(scope: String): ScopedMeterRegistry = ScopedMeterRegistry(this, scope)
     fun startTimer(): Timer.Sample
     fun micrometerRegistry(): io.micrometer.core.instrument.MeterRegistry?
 }
 
+/**
+ * An implementation of MeterRegistry that prefixes all metric names with the given "scope" when they are passed as parameters.
+ *
+ * This affects both the creation of metrics with methods like counter(..) and timer(..) as well as retrieval through find(...) and get(..).
+ */
 class ScopedMeterRegistry(private val registry: MeterRegistry, private val scope: String) : MeterRegistry {
     override val meters: List<Meter> get() = registry.meters
 

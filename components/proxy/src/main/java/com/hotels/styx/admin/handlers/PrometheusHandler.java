@@ -20,22 +20,19 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.WebServiceHandler;
-import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 
 public class PrometheusHandler implements WebServiceHandler {
-
     private final PrometheusMeterRegistry prometheusRegistry;
 
-    public PrometheusHandler(CompositeMeterRegistry meterRegistry) {
-        prometheusRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
-        meterRegistry.add(prometheusRegistry);
+    public PrometheusHandler(PrometheusMeterRegistry prometheusRegistry) {
+        this.prometheusRegistry = requireNonNull(prometheusRegistry);
     }
 
     @Override

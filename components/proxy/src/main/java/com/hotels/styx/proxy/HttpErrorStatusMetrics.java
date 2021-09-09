@@ -26,7 +26,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import java.net.InetSocketAddress;
 
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
-import static com.hotels.styx.proxy.plugin.ExceptionMetricsKt.countBackendFault;
+import static com.hotels.styx.proxy.ExceptionMetricsKt.countBackendFault;
 import static java.util.Objects.requireNonNull;
 
 /**

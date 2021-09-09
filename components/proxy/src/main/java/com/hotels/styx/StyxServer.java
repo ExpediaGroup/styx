@@ -36,6 +36,8 @@ import com.hotels.styx.server.netty.NettyServerBuilder;
 import com.hotels.styx.server.netty.ServerConnector;
 import com.hotels.styx.startup.StyxServerComponents;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.prometheus.PrometheusConfig;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.netty.util.ResourceLeakDetector;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -92,7 +94,7 @@ public final class StyxServer extends AbstractService {
     private NettyExecutor proxyWorkerExecutor;
     private boolean showBanner;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         try {
             StyxServer styxServer = createStyxServer(args);
             getRuntime().addShutdownHook(new Thread(() -> styxServer.stopAsync().awaitTerminated()));
@@ -103,6 +105,8 @@ public final class StyxServer extends AbstractService {
             System.exit(2);
         } catch (Throwable cause) {
             LOG.error("Error in Styx server startup.", cause);
+            cause.printStackTrace();
+            Thread.sleep(1000L);
             System.exit(1);
         }
     }
@@ -116,8 +120,13 @@ public final class StyxServer extends AbstractService {
         LOG.info("Styx configFileLocation={}", startupConfig.configFileLocation());
         LOG.info("Styx logConfigLocation={}", startupConfig.logConfigLocation());
 
+
+        PrometheusMeterRegistry prometheusRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+        CompositeMeterRegistry compositeMeterRegistry = new CompositeMeterRegistry();
+        compositeMeterRegistry.add(prometheusRegistry);
+
         StyxServerComponents components = new StyxServerComponents.Builder()
-                .registry(new MicrometerRegistry(new CompositeMeterRegistry()))
+                .registry(new MicrometerRegistry(compositeMeterRegistry))
                 .styxConfig(parseConfiguration(startupConfig))
                 .startupConfig(startupConfig)
                 .loggingSetUp(environment -> activateLogbackConfigurer(startupConfig))

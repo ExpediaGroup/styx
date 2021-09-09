@@ -18,10 +18,11 @@ package com.hotels.styx.admin;
 import com.codahale.metrics.json.MetricsModule;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.Environment;
-import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.InetServer;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.StartupConfig;
 import com.hotels.styx.StyxConfig;
+import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.admin.dashboard.DashboardData;
 import com.hotels.styx.admin.dashboard.DashboardDataSupplier;
 import com.hotels.styx.admin.handlers.CurrentRequestsHandler;
@@ -58,7 +59,6 @@ import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.db.StyxObjectStore;
-import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.server.AdminHttpRouter;
 import com.hotels.styx.server.handlers.ClassPathResourceHandler;
 import com.hotels.styx.server.netty.NettyServerBuilder;
@@ -66,6 +66,7 @@ import com.hotels.styx.server.netty.WebServerConnectorFactory;
 import com.hotels.styx.server.track.CurrentRequestTracker;
 import com.hotels.styx.startup.StyxServerComponents;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.slf4j.Logger;
 
 import java.time.Duration;
@@ -202,9 +203,31 @@ public class AdminServerBuilder {
         httpRouter.aggregate("/admin/servers", serverHandler);
         httpRouter.aggregate("/admin/servers/", serverHandler);
 
-        httpRouter.aggregate("/metrics", new PrometheusHandler((CompositeMeterRegistry) environment.meterRegistry().micrometerRegistry()));
+        Optional<PrometheusMeterRegistry> optPrometheus = prometheusRegistry(environment.meterRegistry().micrometerRegistry());
+
+        if (optPrometheus.isPresent()) {
+            httpRouter.aggregate("/metrics", new PrometheusHandler(optPrometheus.get()));
+        } else {
+            LOG.warn("No PrometheusMeterRegistry present, so we cannot publish to prometheus.");
+        }
 
         return httpRouter;
+    }
+
+    private static Optional<PrometheusMeterRegistry> prometheusRegistry(io.micrometer.core.instrument.MeterRegistry registry) {
+        if (registry instanceof PrometheusMeterRegistry) {
+            return Optional.of((PrometheusMeterRegistry) registry);
+        }
+
+        if (registry instanceof CompositeMeterRegistry) {
+            return ((CompositeMeterRegistry) registry).getRegistries().stream()
+                    .map(AdminServerBuilder::prometheusRegistry)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .findFirst();
+        }
+
+        return Optional.empty();
     }
 
     private JsonHandler<DashboardData> dashboardDataHandler(StyxConfig styxConfig) {
