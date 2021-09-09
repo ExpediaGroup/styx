@@ -18,7 +18,6 @@ package com.hotels.styx.metrics
 import com.hotels.styx.api.HttpResponseStatus
 import com.hotels.styx.api.MeterRegistry
 import com.hotels.styx.api.extension.Origin
-import com.hotels.styx.api.metrics.MeterFactory
 import com.hotels.styx.common.SimpleCache
 import io.micrometer.core.instrument.*
 
