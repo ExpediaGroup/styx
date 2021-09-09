@@ -515,7 +515,7 @@ class CentralisedMetrics(val registry: MeterRegistry) {
     }
 
     private inner class InnerTimer(name: String, tags: Tags = Tags.empty()) : TimerMetric {
-        private val timer = MeterFactory.timer(registry, name, tags)
+        private val timer = registry.timerWithStyxDefaults(name, tags)
 
         override fun startTiming() = InnerStopper(registry.startTimer())
 

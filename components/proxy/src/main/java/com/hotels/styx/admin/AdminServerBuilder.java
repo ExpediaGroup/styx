@@ -65,7 +65,6 @@ import com.hotels.styx.server.netty.NettyServerBuilder;
 import com.hotels.styx.server.netty.WebServerConnectorFactory;
 import com.hotels.styx.server.track.CurrentRequestTracker;
 import com.hotels.styx.startup.StyxServerComponents;
-import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.slf4j.Logger;
 
@@ -79,6 +78,7 @@ import java.util.function.BiFunction;
 import static com.google.common.net.MediaType.HTML_UTF_8;
 import static com.hotels.styx.admin.handlers.IndexHandler.Link.link;
 import static com.hotels.styx.api.HttpMethod.POST;
+import static com.hotels.styx.metrics.MetricsExtensionsKt.findRegistry;
 import static com.hotels.styx.routing.config.ConfigVersionResolver.Version.ROUTING_CONFIG_V1;
 import static com.hotels.styx.routing.config.ConfigVersionResolver.configVersion;
 import static java.lang.String.format;
@@ -203,7 +203,8 @@ public class AdminServerBuilder {
         httpRouter.aggregate("/admin/servers", serverHandler);
         httpRouter.aggregate("/admin/servers/", serverHandler);
 
-        Optional<PrometheusMeterRegistry> optPrometheus = prometheusRegistry(environment.meterRegistry().micrometerRegistry());
+        Optional<PrometheusMeterRegistry> optPrometheus = Optional.ofNullable(environment.meterRegistry().micrometerRegistry())
+                .map(registry -> findRegistry(registry, PrometheusMeterRegistry.class));
 
         if (optPrometheus.isPresent()) {
             httpRouter.aggregate("/metrics", new PrometheusHandler(optPrometheus.get()));
@@ -212,22 +213,6 @@ public class AdminServerBuilder {
         }
 
         return httpRouter;
-    }
-
-    private static Optional<PrometheusMeterRegistry> prometheusRegistry(io.micrometer.core.instrument.MeterRegistry registry) {
-        if (registry instanceof PrometheusMeterRegistry) {
-            return Optional.of((PrometheusMeterRegistry) registry);
-        }
-
-        if (registry instanceof CompositeMeterRegistry) {
-            return ((CompositeMeterRegistry) registry).getRegistries().stream()
-                    .map(AdminServerBuilder::prometheusRegistry)
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .findFirst();
-        }
-
-        return Optional.empty();
     }
 
     private JsonHandler<DashboardData> dashboardDataHandler(StyxConfig styxConfig) {

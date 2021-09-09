@@ -15,11 +15,6 @@
  */
 package com.hotels.styx.api.metrics;
 
-import com.hotels.styx.api.MeterRegistry;
-import io.micrometer.core.instrument.Tag;
-import io.micrometer.core.instrument.Tags;
-import io.micrometer.core.instrument.Timer;
-
 import java.time.Duration;
 
 import static java.time.temporal.ChronoUnit.MILLIS;
@@ -47,16 +42,16 @@ public final class MeterFactory {
     private MeterFactory() {
     }
 
-    public static Timer timer(MeterRegistry registry, String name) {
-        return timer(registry, name, Tags.empty());
-    }
-
-    public static Timer timer(MeterRegistry registry, String name, Iterable<Tag> tags) {
-        return Timer.builder(name)
-                .tags(tags)
-                .publishPercentileHistogram()
-                .minimumExpectedValue(MIN_HISTOGRAM_BUCKET)
-                .maximumExpectedValue(MAX_HISTOGRAM_BUCKET)
-                .register(registry.micrometerRegistry());
-    }
+//    public static Timer timer(MeterRegistry registry, String name) {
+//        return timer(registry, name, Tags.empty());
+//    }
+//
+//    public static Timer timer(MeterRegistry registry, String name, Iterable<Tag> tags) {
+//        return Timer.builder(name)
+//                .tags(tags)
+//                .publishPercentileHistogram()
+//                .minimumExpectedValue(MIN_HISTOGRAM_BUCKET)
+//                .maximumExpectedValue(MAX_HISTOGRAM_BUCKET)
+//                .register(registry);
+//    }
 }
