@@ -94,7 +94,7 @@ public final class StyxServer extends AbstractService {
     private NettyExecutor proxyWorkerExecutor;
     private boolean showBanner;
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
         try {
             StyxServer styxServer = createStyxServer(args);
             getRuntime().addShutdownHook(new Thread(() -> styxServer.stopAsync().awaitTerminated()));
@@ -105,8 +105,6 @@ public final class StyxServer extends AbstractService {
             System.exit(2);
         } catch (Throwable cause) {
             LOG.error("Error in Styx server startup.", cause);
-            cause.printStackTrace();
-            Thread.sleep(1000L);
             System.exit(1);
         }
     }

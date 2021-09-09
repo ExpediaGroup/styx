@@ -235,7 +235,7 @@ public class StyxServerTest {
     }
 
     @Test
-    public void startsFromMain() throws InterruptedException {
+    public void startsFromMain() {
         try {
             setProperty("STYX_HOME", fixturesHome());
             StyxServer.main(new String[0]);

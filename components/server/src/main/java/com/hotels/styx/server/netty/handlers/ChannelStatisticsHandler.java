@@ -116,9 +116,7 @@ public class ChannelStatisticsHandler extends ChannelDuplexHandler {
 
         ThreadSpecificMetrics(CentralisedMetrics metrics) {
             Thread thread = currentThread();
-
             channelCount = metrics.proxy().server().registeredChannelCount(thread);
-
             channels = metrics.proxy().server().channelCount(thread);
         }
     }

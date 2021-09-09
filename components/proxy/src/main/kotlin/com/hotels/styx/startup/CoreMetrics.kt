@@ -50,4 +50,6 @@ private fun CentralisedMetrics.registerJvmMetrics() {
     }
 }
 
-private fun CentralisedMetrics.registerAll(binder: MeterBinder) = binder.bindTo(registry.micrometerRegistry())
+private fun CentralisedMetrics.registerAll(binder: MeterBinder) = registry.micrometerRegistry()?.let {
+    binder.bindTo(it)
+} ?: throw IllegalStateException("Cannot use micrometer binder as no micrometer registry is present")
