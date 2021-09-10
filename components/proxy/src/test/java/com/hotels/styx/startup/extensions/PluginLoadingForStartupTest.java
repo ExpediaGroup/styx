@@ -21,16 +21,16 @@ import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.MeterRegistry;
 import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
-import com.hotels.styx.api.plugins.spi.PluginMeterRegistry;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,7 +41,6 @@ import java.util.List;
 import java.util.Objects;
 
 import static ch.qos.logback.classic.Level.ERROR;
-import static com.hotels.styx.api.plugins.spi.PluginMeterRegistry.DEFAULT_TAG_KEY;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static java.util.stream.Collectors.toList;
@@ -60,7 +59,7 @@ public class PluginLoadingForStartupTest {
 
     @BeforeEach
     public void setUp() {
-        registry = new SimpleMeterRegistry();
+        registry = new MicrometerRegistry(new SimpleMeterRegistry());
     }
 
     @Test
@@ -264,7 +263,7 @@ public class PluginLoadingForStartupTest {
                 "        classPath: " + FIXTURES_CLASS_PATH + "\n";
 
         Exception e = assertThrows(RuntimeException.class, () -> PluginLoadingForStartup.loadPlugins(environment(yaml)));
-        assertThat(e.getMessage(), matchesPattern( "3 plugin\\(s\\) could not be loaded: failedPlugins=\\[myPlugin1, myPlugin2, myPlugin3\\]; failureCauses=\\[" +
+        assertThat(e.getMessage(), matchesPattern("3 plugin\\(s\\) could not be loaded: failedPlugins=\\[myPlugin1, myPlugin2, myPlugin3\\]; failureCauses=\\[" +
                 "myPlugin1: java.lang.RuntimeException: plugin factory error, " +
                 "myPlugin2: java.lang.RuntimeException: plugin factory error, " +
                 "myPlugin3: java.lang.RuntimeException: plugin factory error\\]"));
@@ -295,8 +294,8 @@ public class PluginLoadingForStartupTest {
         Environment environment = environment(yaml);
         PluginLoadingForStartup.loadPlugins(environment);
 
-        assertThat(environment.meterRegistry().get("initialised").tags(Tags.of(DEFAULT_TAG_KEY, "myPlugin")).counter().count(), is(1D));
-        assertThat(environment.meterRegistry().get("initialised").tags(Tags.of(DEFAULT_TAG_KEY, "myAnotherPlugin")).counter().count(), is(1D));
+        assertThat(environment.meterRegistry().get("plugin.internal.myplugin.initialised").counter().count(), is(1D));
+        assertThat(environment.meterRegistry().get("plugin.internal.myanotherplugin.initialised").counter().count(), is(1D));
 
         assertThat(environment.meterRegistry().get("styx.plugins.myPlugin.legacy").tags(Tags.of("attribute", "count", "metricSource", "dropwizard")).gauge().value(), is(1D));
         assertThat(environment.meterRegistry().get("styx.plugins.myAnotherPlugin.legacy").tags(Tags.of("attribute", "count", "metricSource", "dropwizard")).gauge().value(), is(1D));
@@ -324,7 +323,7 @@ public class PluginLoadingForStartupTest {
         @Override
         public Plugin create(Environment environment) {
             MyPluginConfig myPluginConfig = environment.pluginConfig(MyPluginConfig.class);
-            PluginMeterRegistry registry = environment.pluginMeterRegistry();
+            MeterRegistry registry = environment.pluginMeterRegistry();
             MetricRegistry legacyMetrics = environment.metricRegistry();
 
             return new MyPlugin(myPluginConfig, registry, legacyMetrics);
@@ -359,7 +358,7 @@ public class PluginLoadingForStartupTest {
     static class MyPlugin implements Plugin {
         private final MyPluginConfig myPluginConfig;
 
-        public MyPlugin(MyPluginConfig myPluginConfig, PluginMeterRegistry registry, MetricRegistry legacyMetrics) {
+        public MyPlugin(MyPluginConfig myPluginConfig, MeterRegistry registry, MetricRegistry legacyMetrics) {
             this.myPluginConfig = myPluginConfig;
             Counter counter = registry.counter("initialised");
             counter.increment();

@@ -20,9 +20,9 @@ import com.google.common.base.Charsets._
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.exceptions.TransportException
-import com.hotels.styx.api.extension
 import com.hotels.styx.api.extension.ActiveOrigins
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
+import com.hotels.styx.api.{MicrometerRegistry, extension}
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy
@@ -100,7 +100,7 @@ class OriginClosesConnectionSpec extends FunSuite
     errorCount should be(0)
   }
 
-  def activeOrigins(backendService: extension.service.BackendService): ActiveOrigins = newOriginsInventoryBuilder(new CentralisedMetrics(new CompositeMeterRegistry()), backendService).build()
+  def activeOrigins(backendService: extension.service.BackendService): ActiveOrigins = newOriginsInventoryBuilder(new CentralisedMetrics(new MicrometerRegistry(new CompositeMeterRegistry())), backendService).build()
 
   def busyConnectionStrategy(activeOrigins: ActiveOrigins): LoadBalancer = new BusyConnectionsStrategy(activeOrigins)
 
@@ -115,8 +115,8 @@ class OriginClosesConnectionSpec extends FunSuite
       responseTimeout = TWO_SECONDS.milliseconds).asJava
 
     val styxClient = newHttpClientBuilder(backendService.id)
-        .metrics(new CentralisedMetrics(new SimpleMeterRegistry()))
-        .loadBalancer(busyConnectionStrategy(activeOrigins(backendService)))
+      .metrics(new CentralisedMetrics(new MicrometerRegistry(new SimpleMeterRegistry())))
+      .loadBalancer(busyConnectionStrategy(activeOrigins(backendService)))
       .build
 
     val clientResponse = styxClient.sendRequest(

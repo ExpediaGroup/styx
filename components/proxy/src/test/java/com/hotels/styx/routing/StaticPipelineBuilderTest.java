@@ -20,6 +20,7 @@ import com.hotels.styx.Environment;
 import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.AbstractRegistry;
 import com.hotels.styx.api.extension.service.spi.Registry;
@@ -66,7 +67,7 @@ public class StaticPipelineBuilderTest {
 
     @BeforeEach
     public void staticPipelineBuilderTest() {
-        environment = new Environment.Builder().registry(new SimpleMeterRegistry()).build();
+        environment = new Environment.Builder().registry(new MicrometerRegistry(new SimpleMeterRegistry())).build();
         clientFactory = (backendService, originsInventory, originStatsFactory) -> (request, context) -> Mono.just(response(OK).build());
         registry = backendRegistry(newBackendServiceBuilder().origins(newOriginBuilder("localhost", 0).build())
                 .path("/foo").build());

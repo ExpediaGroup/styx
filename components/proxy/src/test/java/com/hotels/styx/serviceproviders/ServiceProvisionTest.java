@@ -18,6 +18,7 @@ package com.hotels.styx.serviceproviders;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Environment;
+import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.configuration.ServiceFactory;
@@ -329,7 +330,7 @@ public class ServiceProvisionTest {
 
     private static Environment environmentWithConfig(String yaml) {
         return new com.hotels.styx.Environment.Builder()
-                .registry(new SimpleMeterRegistry())
+                .registry(new MicrometerRegistry(new SimpleMeterRegistry()))
                 .configuration(StyxConfig.fromYaml(yaml, false))
                 .build();
     }

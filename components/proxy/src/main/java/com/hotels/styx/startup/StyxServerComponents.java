@@ -28,6 +28,7 @@ import com.hotels.styx.StartupConfig;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.Version;
+import com.hotels.styx.api.MeterRegistry;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.api.plugins.spi.Plugin;
@@ -44,7 +45,6 @@ import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.RouteRefLookup.RouteDbRefLookup;
 import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
-import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 
 import java.util.HashMap;
@@ -148,7 +148,7 @@ public class StyxServerComponents {
         this.plugins = (builder.configuredPluginFactories.isEmpty()
                 ? loadPlugins(environment)
                 : loadPlugins(environment, builder.configuredPluginFactories)).stream().map(
-                        it -> new InstrumentedPlugin(it, environment)
+                it -> new InstrumentedPlugin(it, environment)
         ).collect(toList());
 
         this.plugins.forEach(plugin -> this.environment.plugins().add(plugin));

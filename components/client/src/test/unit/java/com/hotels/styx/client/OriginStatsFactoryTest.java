@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.client;
 
+import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.OriginStatsFactory.CachingOriginStatsFactory;
 import com.hotels.styx.client.applications.OriginStats;
@@ -29,7 +30,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class OriginStatsFactoryTest {
 
-    final OriginStatsFactory originStatsFactory = new CachingOriginStatsFactory(new CentralisedMetrics(new SimpleMeterRegistry()));
+    final OriginStatsFactory originStatsFactory = new CachingOriginStatsFactory(new CentralisedMetrics(new MicrometerRegistry(new SimpleMeterRegistry())));
 
     @Test
     public void returnTheSameStatsForSameOrigin() {

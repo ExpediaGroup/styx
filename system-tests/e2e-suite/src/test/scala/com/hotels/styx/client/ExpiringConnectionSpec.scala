@@ -21,7 +21,7 @@ import com.hotels.styx.api.LiveHttpRequest.get
 import com.hotels.styx.api.extension.ActiveOrigins
 import com.hotels.styx.api.extension.Origin.newOriginBuilder
 import com.hotels.styx.api.extension.service.BackendService
-import com.hotels.styx.api.{HttpHeaderNames, HttpHeaderValues, HttpResponse}
+import com.hotels.styx.api.{HttpHeaderNames, HttpHeaderValues, HttpResponse, MicrometerRegistry}
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
@@ -68,7 +68,7 @@ class ExpiringConnectionSpec extends FunSpec
       .build()
 
     pooledClient = newHttpClientBuilder(backendService.id)
-      .metrics(new CentralisedMetrics(new SimpleMeterRegistry()))
+      .metrics(new CentralisedMetrics(new MicrometerRegistry(new SimpleMeterRegistry())))
       .loadBalancer(roundRobinStrategy(activeOrigins(backendService)))
       .build
   }
@@ -124,7 +124,7 @@ class ExpiringConnectionSpec extends FunSpec
     }
   }
 
-  def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(new CentralisedMetrics(new CompositeMeterRegistry()), backendService).build()
+  def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(new CentralisedMetrics(new MicrometerRegistry(new CompositeMeterRegistry())), backendService).build()
 
   def roundRobinStrategy(activeOrigins: ActiveOrigins): RoundRobinStrategy = new RoundRobinStrategy(activeOrigins, activeOrigins.snapshot())
 }

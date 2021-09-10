@@ -18,10 +18,11 @@ package com.hotels.styx.admin;
 import com.codahale.metrics.json.MetricsModule;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.Environment;
-import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.InetServer;
+import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.StartupConfig;
 import com.hotels.styx.StyxConfig;
+import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.admin.dashboard.DashboardData;
 import com.hotels.styx.admin.dashboard.DashboardDataSupplier;
 import com.hotels.styx.admin.handlers.CurrentRequestsHandler;
@@ -58,13 +59,13 @@ import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.db.StyxObjectStore;
-import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.server.AdminHttpRouter;
 import com.hotels.styx.server.handlers.ClassPathResourceHandler;
 import com.hotels.styx.server.netty.NettyServerBuilder;
 import com.hotels.styx.server.netty.WebServerConnectorFactory;
 import com.hotels.styx.server.track.CurrentRequestTracker;
 import com.hotels.styx.startup.StyxServerComponents;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.slf4j.Logger;
 
 import java.time.Duration;
@@ -77,6 +78,7 @@ import java.util.function.BiFunction;
 import static com.google.common.net.MediaType.HTML_UTF_8;
 import static com.hotels.styx.admin.handlers.IndexHandler.Link.link;
 import static com.hotels.styx.api.HttpMethod.POST;
+import static com.hotels.styx.metrics.MetricsExtensionsKt.findRegistry;
 import static com.hotels.styx.routing.config.ConfigVersionResolver.Version.ROUTING_CONFIG_V1;
 import static com.hotels.styx.routing.config.ConfigVersionResolver.configVersion;
 import static java.lang.String.format;
@@ -201,7 +203,14 @@ public class AdminServerBuilder {
         httpRouter.aggregate("/admin/servers", serverHandler);
         httpRouter.aggregate("/admin/servers/", serverHandler);
 
-        httpRouter.aggregate("/metrics", new PrometheusHandler(environment.meterRegistry()));
+        Optional<PrometheusMeterRegistry> optPrometheus = Optional.ofNullable(
+                findRegistry(environment.meterRegistry().micrometerRegistry(), PrometheusMeterRegistry.class));
+
+        if (optPrometheus.isPresent()) {
+            httpRouter.aggregate("/metrics", new PrometheusHandler(optPrometheus.get()));
+        } else {
+            LOG.warn("No PrometheusMeterRegistry present, so we cannot publish to prometheus.");
+        }
 
         return httpRouter;
     }

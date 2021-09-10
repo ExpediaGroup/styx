@@ -45,7 +45,6 @@ import io.kotlintest.TestStatus
 import io.kotlintest.eventually
 import io.kotlintest.matchers.beGreaterThan
 import io.kotlintest.matchers.beLessThan
-import io.kotlintest.matchers.shouldBeInRange
 import io.kotlintest.matchers.types.shouldBeNull
 import io.kotlintest.matchers.withClue
 import io.kotlintest.seconds

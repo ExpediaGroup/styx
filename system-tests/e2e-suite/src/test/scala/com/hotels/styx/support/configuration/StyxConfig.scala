@@ -15,11 +15,8 @@
  */
 package com.hotels.styx.support.configuration
 
-import java.nio.file.Path
-import java.util
-
-import com.hotels.styx.{NettyExecutor, StyxServer}
 import com.hotels.styx.StyxServerSupport._
+import com.hotels.styx.api.MicrometerRegistry
 import com.hotels.styx.api.extension.service.spi.StyxService
 import com.hotels.styx.api.plugins.spi.Plugin
 import com.hotels.styx.config.Config
@@ -27,9 +24,12 @@ import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration
 import com.hotels.styx.proxy.ProxyServerConfig
 import com.hotels.styx.startup.StyxServerComponents
 import com.hotels.styx.support.ResourcePaths
+import com.hotels.styx.{NettyExecutor, StyxServer}
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 
+import java.nio.file.Path
+import java.util
 import scala.collection.JavaConverters._
 
 case class Connectors(httpConnectorConfig: HttpConnectorConfig,
@@ -102,7 +102,7 @@ case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),
 
     val styxServer = new StyxServer(
       serverComponents(styxConfig, backendsRegistry, this.plugins)
-        .registry(meterRegistry)
+        .registry(new MicrometerRegistry(meterRegistry))
         .additionalServices(java)
         .loggingSetUp(this.logbackXmlLocation.toString).build())
     styxServer.startAsync().awaitRunning()
@@ -159,7 +159,7 @@ case class StyxYamlConfig(yamlConfig: String,
     val styxConfig = com.hotels.styx.StyxConfig.fromYaml(yamlConfig)
 
     val styxServer = new StyxServer(new StyxServerComponents.Builder()
-      .registry(meterRegistry)
+      .registry(new MicrometerRegistry(meterRegistry))
       .styxConfig(styxConfig)
       .additionalServices(services(backendsRegistry).asJava)
       .loggingSetUp(logbackXmlLocation.toString)

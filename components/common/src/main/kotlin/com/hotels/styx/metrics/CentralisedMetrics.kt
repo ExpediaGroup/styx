@@ -16,8 +16,8 @@
 package com.hotels.styx.metrics
 
 import com.hotels.styx.api.HttpResponseStatus
+import com.hotels.styx.api.MeterRegistry
 import com.hotels.styx.api.extension.Origin
-import com.hotels.styx.api.metrics.MeterFactory
 import com.hotels.styx.common.SimpleCache
 import io.micrometer.core.instrument.*
 
@@ -417,6 +417,9 @@ class CentralisedMetrics(val registry: MeterRegistry) {
              */
             fun errorResponseFromOriginByStatus(statusCode: Int): Counter = clientOriginErrorResponseByStatus[statusCode]
 
+            private val backendFaults: SimpleCache<BackendFaultKey, Counter> = SimpleCache {
+                registry.counter("proxy.client.backends.fault", it.tags())
+            }
 
             /**
              * Counts proxying failures caused by an external problem when trying to communicating with an application.
@@ -430,13 +433,8 @@ class CentralisedMetrics(val registry: MeterRegistry) {
              *
              * Tagged by origin.
              */
-            fun backendFaults(applicationId: String, originId: String?, faultType: String): Counter {
-                val originTag = originId?.let { Tags.of("origin", originId) } ?: Tags.empty()
-
-                val tags = Tags.of("application", applicationId).and("faultType", faultType).and(originTag)
-
-                return registry.counter("proxy.client.backends.fault", tags)
-            }
+            fun backendFaults(applicationId: String, originId: String?, faultType: String): Counter =
+                backendFaults[BackendFaultKey(applicationId, originId, faultType)]
 
             /**
              * Counts the number of requests to an origin that were responded to with non-server-error status (not code 5xx).
@@ -496,11 +494,13 @@ class CentralisedMetrics(val registry: MeterRegistry) {
     private inner class InnerGaugeId(val name: String, val tags: Tags = Tags.empty()) : GaugeId {
         override fun <T> register(stateObject: T, function: (T) -> Number) {
             registry.gauge(name, tags, stateObject) {
-                function(it).toDouble()
+                function(it!!).toDouble()
             }
         }
 
-        override fun register(supplier: () -> Int): Deleter = InnerDeleter(Gauge.builder(name, supplier).tags(tags).register(registry))
+        override fun register(supplier: () -> Int): Deleter = InnerDeleter(
+            Gauge.builder(name, supplier).tags(tags).register(registry.micrometerRegistry())
+        )
 
         override fun register(number: Number) {
             registry.gauge(name, number)
@@ -514,15 +514,23 @@ class CentralisedMetrics(val registry: MeterRegistry) {
     }
 
     private inner class InnerTimer(name: String, tags: Tags = Tags.empty()) : TimerMetric {
-        private val timer = MeterFactory.timer(registry, name, tags)
+        private val timer = registry.timerWithStyxDefaults(name, tags)
 
-        override fun startTiming() = InnerStopper(Timer.start(registry))
+        override fun startTiming() = InnerStopper(registry.startTimer())
 
         inner class InnerStopper(private val startTime: Timer.Sample) : TimerMetric.Stopper {
             override fun stop() {
                 startTime.stop(timer)
             }
         }
+    }
+}
+
+private data class BackendFaultKey(val applicationId: String, val originId: String?, val faultType: String) {
+    fun tags(): Tags {
+        val originTag = originId?.let { Tags.of("origin", originId) } ?: Tags.empty()
+
+        return Tags.of("application", applicationId).and("faultType", faultType).and(originTag)
     }
 }
 

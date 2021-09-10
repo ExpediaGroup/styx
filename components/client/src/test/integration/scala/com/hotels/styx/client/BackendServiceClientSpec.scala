@@ -21,7 +21,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.google.common.base.Charsets._
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest.get
-import com.hotels.styx.api.LiveHttpResponse
+import com.hotels.styx.api.{LiveHttpResponse, MicrometerRegistry}
 import com.hotels.styx.api.exceptions.ResponseTimeoutException
 import com.hotels.styx.api.extension.Origin._
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
@@ -67,7 +67,7 @@ class BackendServiceClientSpec extends FunSuite with BeforeAndAfterAll with Matc
     originOneServer.stop()
   }
 
-  def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(new CentralisedMetrics(new CompositeMeterRegistry()),backendService).build()
+  def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(new CentralisedMetrics(new MicrometerRegistry(new CompositeMeterRegistry())),backendService).build()
 
   def busyConnectionStrategy(activeOrigins: ActiveOrigins): LoadBalancer = new BusyConnectionsStrategy(activeOrigins)
 
@@ -80,7 +80,7 @@ class BackendServiceClientSpec extends FunSuite with BeforeAndAfterAll with Matc
       .build()
 
     client = newHttpClientBuilder(backendService.id())
-      .metrics(new CentralisedMetrics(new SimpleMeterRegistry()))
+      .metrics(new CentralisedMetrics(new MicrometerRegistry(new SimpleMeterRegistry())))
       .loadBalancer(busyConnectionStrategy(activeOrigins(backendService)))
       .build
   }

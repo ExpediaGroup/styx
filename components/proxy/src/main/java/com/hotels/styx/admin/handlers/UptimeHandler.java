@@ -19,9 +19,9 @@ import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.MeterRegistry;
 import com.hotels.styx.api.WebServiceHandler;
 import io.micrometer.core.instrument.Gauge;
-import io.micrometer.core.instrument.MeterRegistry;
 
 import java.time.Duration;
 

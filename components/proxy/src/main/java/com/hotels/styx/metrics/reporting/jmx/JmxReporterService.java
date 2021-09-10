@@ -17,7 +17,6 @@ package com.hotels.styx.metrics.reporting.jmx;
 
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import io.micrometer.core.instrument.Clock;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.core.instrument.util.HierarchicalNameMapper;
 import io.micrometer.jmx.JmxMeterRegistry;
@@ -31,12 +30,11 @@ import static java.util.Objects.requireNonNull;
  * Builds JMX reporter from configuration and wraps it in service interface.
  */
 public class JmxReporterService implements StyxService {
-
     private final HierarchicalNameMapper nameMapper;
-    private final MeterRegistry meterRegistry;
+    private final CompositeMeterRegistry meterRegistry;
     private JmxMeterRegistry jmxMeterRegistry;
 
-    public JmxReporterService(String domain, MeterRegistry registry) {
+    public JmxReporterService(String domain, CompositeMeterRegistry registry) {
         this.nameMapper = (id, convention) ->
                 join(".", requireNonNull(domain), HierarchicalNameMapper.DEFAULT.toHierarchicalName(id, convention));
         this.meterRegistry = requireNonNull(registry);
@@ -46,7 +44,7 @@ public class JmxReporterService implements StyxService {
     public CompletableFuture<Void> start() {
         return CompletableFuture.runAsync(() -> {
             jmxMeterRegistry = new JmxMeterRegistry(key -> null, Clock.SYSTEM, nameMapper);
-            ((CompositeMeterRegistry) meterRegistry).add(jmxMeterRegistry);
+            meterRegistry.add(jmxMeterRegistry);
         });
     }
 
@@ -54,7 +52,7 @@ public class JmxReporterService implements StyxService {
     public CompletableFuture<Void> stop() {
         return CompletableFuture.runAsync(() -> {
             jmxMeterRegistry.stop();
-            ((CompositeMeterRegistry) meterRegistry).remove(jmxMeterRegistry);
+            meterRegistry.remove(jmxMeterRegistry);
         });
     }
 }

@@ -30,7 +30,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
-import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -40,20 +39,20 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class ChannelStatisticsHandler extends ChannelDuplexHandler {
     private static final Logger LOGGER = getLogger(ChannelStatisticsHandler.class);
 
-    private final CentralisedMetrics metrics;
     private final Counter receivedBytesCount;
     private final Counter sentBytesCount;
     private final AtomicLong totalConnections;
+    private final ThreadLocal<ThreadSpecificMetrics> metricsLocal;
 
     public ChannelStatisticsHandler(CentralisedMetrics metrics) {
-        this.metrics = requireNonNull(metrics);
-
         this.receivedBytesCount = metrics.proxy().server().bytesReceived();
         this.sentBytesCount = metrics.proxy().server().bytesSent();
 
         this.totalConnections = new AtomicLong();
 
         metrics.proxy().server().totalConnections().register(totalConnections);
+
+        this.metricsLocal = ThreadLocal.withInitial(() -> new ThreadSpecificMetrics(metrics));
     }
 
     @Override
@@ -69,12 +68,10 @@ public class ChannelStatisticsHandler extends ChannelDuplexHandler {
     }
 
     private void updateChannelPerThreadCounters(int amount) {
-        Thread thread = currentThread();
-        Counter channelCount = metrics.proxy().server().registeredChannelCount(thread);
-        channelCount.increment(amount);
+        ThreadSpecificMetrics metrics = metricsLocal.get();
 
-        DistributionSummary channels = metrics.proxy().server().channelCount(thread);
-        channels.record(channelCount.count());
+        metrics.channelCount.increment(amount);
+        metrics.channels.record(metrics.channelCount.count());
     }
 
     @Override
@@ -111,5 +108,16 @@ public class ChannelStatisticsHandler extends ChannelDuplexHandler {
             sentBytesCount.increment(((ByteBufHolder) msg).content().readableBytes());
         }
         super.write(ctx, msg, promise);
+    }
+
+    private static class ThreadSpecificMetrics {
+        Counter channelCount;
+        DistributionSummary channels;
+
+        ThreadSpecificMetrics(CentralisedMetrics metrics) {
+            Thread thread = currentThread();
+            channelCount = metrics.proxy().server().registeredChannelCount(thread);
+            channels = metrics.proxy().server().channelCount(thread);
+        }
     }
 }

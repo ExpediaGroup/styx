@@ -23,7 +23,7 @@ import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.HttpResponseStatus.OK
-import com.hotels.styx.api.LiveHttpRequest
+import com.hotels.styx.api.{LiveHttpRequest, MicrometerRegistry}
 import com.hotels.styx.api.LiveHttpRequest.get
 import com.hotels.styx.api.`extension`.service.ConnectionPoolSettings
 import com.hotels.styx.api.extension.Origin._
@@ -55,7 +55,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
   val response = "Response From localhost"
 
   val meterRegistry = new CompositeMeterRegistry()
-  val metrics = new CentralisedMetrics(meterRegistry)
+  val metrics = new CentralisedMetrics(new MicrometerRegistry(meterRegistry))
 
   val server1 = new FakeHttpServer(0, "app", "HEALTHY_ORIGIN_ONE")
   val server2 = new FakeHttpServer(0, "app", "HEALTHY_ORIGIN_TWO")
@@ -124,7 +124,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
     originServer4.stop()
   }
 
-  private def activeOrigins(backendService: BackendService) = newOriginsInventoryBuilder(new CentralisedMetrics(meterRegistry), backendService).build()
+  private def activeOrigins(backendService: BackendService) = newOriginsInventoryBuilder(new CentralisedMetrics(new MicrometerRegistry(meterRegistry)), backendService).build()
 
   private def stickySessionStrategy(activeOrigins: ActiveOrigins) = new StickySessionLoadBalancingStrategy(
     activeOrigins,

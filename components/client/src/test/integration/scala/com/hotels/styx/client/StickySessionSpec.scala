@@ -21,7 +21,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.Id.id
-import com.hotels.styx.api.LiveHttpRequest
+import com.hotels.styx.api.{LiveHttpRequest, MicrometerRegistry}
 import com.hotels.styx.api.LiveHttpRequest.get
 import com.hotels.styx.api.RequestCookie.requestCookie
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
@@ -45,7 +45,7 @@ import scala.collection.JavaConverters._
 class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with OriginSupport with MockitoSugar {
 
   val meterRegistry = new CompositeMeterRegistry()
-  val metrics = new CentralisedMetrics(meterRegistry)
+  val metrics = new CentralisedMetrics(new MicrometerRegistry(meterRegistry))
 
   val server1 = new FakeHttpServer(0, "app", "app-01")
   val server2 = new FakeHttpServer(0, "app", "app-02")
@@ -96,7 +96,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
     server2.stop
   }
 
-  def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(new CentralisedMetrics(meterRegistry), backendService).build()
+  def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(new CentralisedMetrics(new MicrometerRegistry(meterRegistry)), backendService).build()
 
   def roundRobinStrategy(activeOrigins: ActiveOrigins): LoadBalancer = new RoundRobinStrategy(activeOrigins, activeOrigins.snapshot())
 

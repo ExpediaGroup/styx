@@ -26,7 +26,7 @@ import com.hotels.styx.proxy.HttpErrorStatusMetrics;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpErrorStatusListener;
 import com.hotels.styx.server.ServerEnvironment;
-import io.micrometer.core.instrument.MeterRegistry;
+import com.hotels.styx.api.MeterRegistry;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;

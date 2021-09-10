@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.api.plugins.spi;
 
+import com.hotels.styx.api.MeterRegistry;
 import com.hotels.styx.api.MetricRegistry;
 
 /**
@@ -36,8 +37,9 @@ public interface PluginFactory {
 
         /**
          * Get a meter registry that injects a default {"plugin":"plugin_name"} tag to all meter types.
+         * @return
          */
-        PluginMeterRegistry pluginMeterRegistry();
+        MeterRegistry pluginMeterRegistry();
 
         /**
          * Returns the application's {@link MetricRegistry}.

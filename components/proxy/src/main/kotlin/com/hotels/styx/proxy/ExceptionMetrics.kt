@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.proxy.plugin
+package com.hotels.styx.proxy
 
 import com.hotels.styx.api.exceptions.NoAvailableHostsException
 import com.hotels.styx.api.exceptions.OriginUnreachableException
@@ -25,6 +25,10 @@ import com.hotels.styx.client.connectionpool.MaxPendingConnectionsExceededExcept
 import com.hotels.styx.metrics.CentralisedMetrics
 import io.micrometer.core.instrument.Counter
 
+/**
+ * Records metrics for back-end faults.
+ * These are errors that describe an ability to send traffic to a bank-end origin, not problems with Styx itself.
+ */
 fun countBackendFault(metrics: CentralisedMetrics, error: Throwable) {
     val counter : Counter? = metrics.proxy.client.run {
         when (error) {

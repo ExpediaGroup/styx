@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.admin.AdminServerConfig;
 import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.plugins.spi.Plugin;
@@ -63,7 +64,7 @@ public final class StyxServer {
         MemoryBackedRegistry<com.hotels.styx.api.extension.service.BackendService> backendServicesRegistry = new MemoryBackedRegistry<>();
 
         StyxServerComponents config = new StyxServerComponents.Builder()
-                .registry(new CompositeMeterRegistry())
+                .registry(new MicrometerRegistry(new CompositeMeterRegistry()))
                 .styxConfig(styxConfig(builder))
                 .pluginFactories(builder.pluginFactories)
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(backendServicesRegistry)))

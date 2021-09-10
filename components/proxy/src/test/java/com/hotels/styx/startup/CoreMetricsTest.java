@@ -16,8 +16,9 @@
 package com.hotels.styx.startup;
 
 import com.hotels.styx.Version;
+import com.hotels.styx.api.MeterRegistry;
+import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.metrics.CentralisedMetrics;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 
@@ -33,7 +34,7 @@ public class CoreMetricsTest {
 
     @Test
     public void registersJvmMetrics() {
-        MeterRegistry registry = new SimpleMeterRegistry();
+        MeterRegistry registry = new MicrometerRegistry(new SimpleMeterRegistry());
         CoreMetricsKt.registerCoreMetrics(new CentralisedMetrics(registry));
 
         assertThat(registry.find("jvm.uptime").gauges(),
@@ -62,7 +63,7 @@ public class CoreMetricsTest {
 
     @Test
     public void registersOperatingSystemMetrics() {
-        MeterRegistry registry = new SimpleMeterRegistry();
+        MeterRegistry registry = new MicrometerRegistry(new SimpleMeterRegistry());
         CoreMetricsKt.registerCoreMetrics(new CentralisedMetrics(registry));
 
         List<String> gauges = registry.getMeters()

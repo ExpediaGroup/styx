@@ -15,10 +15,11 @@
  */
 package com.hotels.styx.client.connectionpool;
 
+import com.hotels.styx.api.MeterRegistry;
+import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.metrics.CentralisedMetrics;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
@@ -37,7 +38,7 @@ public class SimpleConnectionPoolFactoryTest {
 
     @Test
     public void registersMetricsUnderOriginsScope() {
-        MeterRegistry meterRegistry = new SimpleMeterRegistry();
+        MeterRegistry meterRegistry = new MicrometerRegistry(new SimpleMeterRegistry());
 
         SimpleConnectionPoolFactory factory = new SimpleConnectionPoolFactory.Builder()
                 .connectionFactory(mock(Connection.Factory.class))

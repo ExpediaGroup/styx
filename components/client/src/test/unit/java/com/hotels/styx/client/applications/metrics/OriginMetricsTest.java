@@ -15,6 +15,8 @@
  */
 package com.hotels.styx.client.applications.metrics;
 
+import com.hotels.styx.api.MeterRegistry;
+import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.metrics.CentralisedMetrics;
 import com.hotels.styx.metrics.TimerMetric.Stopper;
@@ -43,11 +45,11 @@ public class OriginMetricsTest {
 
     private final MockClock clock;
     private final CentralisedMetrics metrics;
-    private final SimpleMeterRegistry registry;
+    private final MeterRegistry registry;
 
     public OriginMetricsTest() {
         clock = new MockClock();
-        registry = new SimpleMeterRegistry(SimpleConfig.DEFAULT, clock);
+        registry = new MicrometerRegistry(new SimpleMeterRegistry(SimpleConfig.DEFAULT, clock));
         metrics = new CentralisedMetrics(registry);
     }
 

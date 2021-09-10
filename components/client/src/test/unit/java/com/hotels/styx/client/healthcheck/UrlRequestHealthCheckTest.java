@@ -17,6 +17,7 @@ package com.hotels.styx.client.healthcheck;
 
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
+import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState;
@@ -50,7 +51,7 @@ public class UrlRequestHealthCheckTest {
 
     @BeforeEach
     public void setUp() {
-        metrics = new CentralisedMetrics(new SimpleMeterRegistry());
+        metrics = new CentralisedMetrics(new MicrometerRegistry(new SimpleMeterRegistry()));
         originState = null;
         requestedUrl = null;
     }

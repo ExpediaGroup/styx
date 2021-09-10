@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.OriginsSnapshot;
 import com.hotels.styx.api.extension.RemoteHost;
@@ -47,7 +48,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class DashboardDataSupplierTest {
-    Environment environment = new Environment.Builder().registry(new SimpleMeterRegistry()).build();
+    Environment environment = new Environment.Builder().registry(new MicrometerRegistry(new SimpleMeterRegistry())).build();
     StyxConfig styxConfig = StyxConfig.fromYaml("jvmRouteName: STYXPRES", false);
     AtomicInteger nextPort = new AtomicInteger(9090);
 

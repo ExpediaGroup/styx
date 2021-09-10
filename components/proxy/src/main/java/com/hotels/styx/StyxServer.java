@@ -22,6 +22,8 @@ import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
 import com.hotels.styx.admin.AdminServerBuilder;
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.MeterRegistry;
+import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
@@ -33,9 +35,9 @@ import com.hotels.styx.server.ConnectorConfig;
 import com.hotels.styx.server.netty.NettyServerBuilder;
 import com.hotels.styx.server.netty.ServerConnector;
 import com.hotels.styx.startup.StyxServerComponents;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.prometheus.PrometheusConfig;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.netty.util.ResourceLeakDetector;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -116,8 +118,13 @@ public final class StyxServer extends AbstractService {
         LOG.info("Styx configFileLocation={}", startupConfig.configFileLocation());
         LOG.info("Styx logConfigLocation={}", startupConfig.logConfigLocation());
 
+
+        PrometheusMeterRegistry prometheusRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+        CompositeMeterRegistry compositeMeterRegistry = new CompositeMeterRegistry();
+        compositeMeterRegistry.add(prometheusRegistry);
+
         StyxServerComponents components = new StyxServerComponents.Builder()
-                .registry(Metrics.globalRegistry)
+                .registry(new MicrometerRegistry(compositeMeterRegistry))
                 .styxConfig(parseConfiguration(startupConfig))
                 .startupConfig(startupConfig)
                 .loggingSetUp(environment -> activateLogbackConfigurer(startupConfig))
@@ -177,7 +184,7 @@ public final class StyxServer extends AbstractService {
         this.stopwatch = stopwatch;
         this.components = components;
 
-        if (!(components.environment().meterRegistry() instanceof CompositeMeterRegistry)) {
+        if (!(components.environment().meterRegistry().micrometerRegistry() instanceof CompositeMeterRegistry)) {
             throw new IllegalStateException("The base meter registry should be a micrometer composite registry!");
         }
 

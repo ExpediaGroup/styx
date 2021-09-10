@@ -13,22 +13,21 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api;
+package com.hotels.styx.metrics
 
-public interface MeteredEnvironment {
-    /**
-     * Returns the application's {@link MetricRegistry}.
-     *
-     * @return metric registry
-     * @deprecated deprecated in favor of MicroMeter via {@link #meterRegistry()}
-     */
-    @Deprecated
-    MetricRegistry metricRegistry();
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 
-    /**
-     * Returns the application's {@link MeterRegistry}.
-     *
-     * @return meter registry
-     */
-    MeterRegistry meterRegistry();
+fun <T : MeterRegistry> MeterRegistry.findRegistry(type: Class<T>): T? {
+    if (type.isInstance(this)) {
+        return this as T
+    }
+
+    if (this is CompositeMeterRegistry) {
+        return registries.asSequence().map {
+            it.findRegistry(type)
+        }.filterNotNull().firstOrNull()
+    }
+
+    return null
 }

@@ -15,8 +15,9 @@
  */
 package com.hotels.styx.server.netty.handlers;
 
+import com.hotels.styx.api.MeterRegistry;
+import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.metrics.CentralisedMetrics;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -38,7 +39,7 @@ public class ChannelStatisticsHandlerTest {
 
     @BeforeEach
     public void createHandler() {
-        this.meterRegistry = new SimpleMeterRegistry();
+        this.meterRegistry = new MicrometerRegistry(new SimpleMeterRegistry());
         this.handler = new ChannelStatisticsHandler(new CentralisedMetrics(this.meterRegistry));
     }
 
