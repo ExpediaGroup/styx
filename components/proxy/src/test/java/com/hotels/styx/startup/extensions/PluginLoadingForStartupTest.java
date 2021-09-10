@@ -297,11 +297,11 @@ public class PluginLoadingForStartupTest {
         assertThat(environment.meterRegistry().get("plugin.internal.myplugin.initialised").counter().count(), is(1D));
         assertThat(environment.meterRegistry().get("plugin.internal.myanotherplugin.initialised").counter().count(), is(1D));
 
-        assertThat(environment.meterRegistry().get("styx.plugins.myPlugin.legacy").tags(Tags.of("attribute", "count", "metricSource", "dropwizard")).gauge().value(), is(1D));
-        assertThat(environment.meterRegistry().get("styx.plugins.myAnotherPlugin.legacy").tags(Tags.of("attribute", "count", "metricSource", "dropwizard")).gauge().value(), is(1D));
+        assertThat(environment.meterRegistry().get("plugin.internal.myPlugin.legacy").tags(Tags.of("attribute", "count", "metricSource", "dropwizard")).gauge().value(), is(1D));
+        assertThat(environment.meterRegistry().get("plugin.internal.myAnotherPlugin.legacy").tags(Tags.of("attribute", "count", "metricSource", "dropwizard")).gauge().value(), is(1D));
 
-        assertThat(environment.metricRegistry().counter("styx.plugins.myPlugin.legacy").getCount(), is(1L));
-        assertThat(environment.metricRegistry().counter("styx.plugins.myAnotherPlugin.legacy").getCount(), is(1L));
+        assertThat(environment.metricRegistry().counter("plugin.internal.myPlugin.legacy").getCount(), is(1L));
+        assertThat(environment.metricRegistry().counter("plugin.internal.myAnotherPlugin.legacy").getCount(), is(1L));
     }
 
     private com.hotels.styx.Environment environment(String yaml) {
