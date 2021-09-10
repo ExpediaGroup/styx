@@ -499,7 +499,7 @@ class CentralisedMetrics(val registry: MeterRegistry) {
         }
 
         override fun register(supplier: () -> Int): Deleter = InnerDeleter(
-            Gauge.builder(name, supplier).tags(tags).register(registry.micrometerRegistry()!!)
+            Gauge.builder(name, supplier).tags(tags).register(registry.micrometerRegistry())
         )
 
         override fun register(number: Number) {

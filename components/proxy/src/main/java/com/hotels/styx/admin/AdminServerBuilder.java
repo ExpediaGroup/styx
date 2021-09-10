@@ -203,8 +203,8 @@ public class AdminServerBuilder {
         httpRouter.aggregate("/admin/servers", serverHandler);
         httpRouter.aggregate("/admin/servers/", serverHandler);
 
-        Optional<PrometheusMeterRegistry> optPrometheus = Optional.ofNullable(environment.meterRegistry().micrometerRegistry())
-                .map(registry -> findRegistry(registry, PrometheusMeterRegistry.class));
+        Optional<PrometheusMeterRegistry> optPrometheus = Optional.ofNullable(
+                findRegistry(environment.meterRegistry().micrometerRegistry(), PrometheusMeterRegistry.class));
 
         if (optPrometheus.isPresent()) {
             httpRouter.aggregate("/metrics", new PrometheusHandler(optPrometheus.get()));

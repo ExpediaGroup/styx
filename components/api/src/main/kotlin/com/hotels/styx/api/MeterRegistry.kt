@@ -22,7 +22,6 @@ import io.micrometer.core.instrument.search.RequiredSearch
 import io.micrometer.core.instrument.search.Search
 import java.time.Duration
 import java.time.temporal.ChronoUnit
-import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 import java.util.function.ToDoubleFunction
@@ -83,7 +82,7 @@ interface MeterRegistry {
      */
     fun scope(scope: String): ScopedMeterRegistry = ScopedMeterRegistry(this, scope)
     fun startTimer(): Timer.Sample
-    fun micrometerRegistry(): io.micrometer.core.instrument.MeterRegistry?
+    fun micrometerRegistry(): io.micrometer.core.instrument.MeterRegistry
 
     fun timerWithStyxDefaults(name : String, tags : Iterable<Tag>) : Timer
 }
@@ -160,7 +159,7 @@ class ScopedMeterRegistry(private val parent: MeterRegistry, private val scope: 
     // Functions below here are not for general metric handling, but needed by Styx internally.
 
     override fun startTimer(): Timer.Sample = parent.startTimer()
-    override fun micrometerRegistry(): io.micrometer.core.instrument.MeterRegistry? = parent.micrometerRegistry()
+    override fun micrometerRegistry(): io.micrometer.core.instrument.MeterRegistry = parent.micrometerRegistry()
     override fun timerWithStyxDefaults(name: String, tags: Iterable<Tag>): Timer = parent.timerWithStyxDefaults(name.scoped, tags)
 
     private val String.scoped: String get() = "$scope.$this"
