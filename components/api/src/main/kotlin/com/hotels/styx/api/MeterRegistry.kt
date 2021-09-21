@@ -17,7 +17,6 @@ package com.hotels.styx.api
 
 import io.micrometer.core.instrument.*
 import io.micrometer.core.instrument.MeterRegistry.Config
-import io.micrometer.core.instrument.Timer
 import io.micrometer.core.instrument.search.RequiredSearch
 import io.micrometer.core.instrument.search.Search
 import java.time.Duration
@@ -26,6 +25,7 @@ import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 import java.util.function.ToDoubleFunction
 import java.util.function.ToLongFunction
+import java.util.function.UnaryOperator
 
 /**
  * An interface to represent any implementation of a meter registry.
@@ -37,12 +37,14 @@ interface MeterRegistry {
     fun counter(name: String, tags: Iterable<Tag>): Counter
     fun summary(name: String, vararg tags: String): DistributionSummary
     fun summary(name: String, tags: Iterable<Tag>): DistributionSummary
+    fun summary(name: String, build: UnaryOperator<DistributionSummary.Builder>): DistributionSummary
     fun get(name: String): RequiredSearch
     fun find(name: String): Search
     fun forEachMeter(consumer: Consumer<Meter>)
     fun config(): Config
     fun timer(name: String, tags: Iterable<Tag>): Timer
     fun timer(name: String, vararg tags: String): Timer
+    fun timer(name: String, build: UnaryOperator<Timer.Builder>): Timer
     fun more(): More
     fun <T> gauge(name: String, tags: Iterable<Tag>, stateObject: T, valueFunction: ToDoubleFunction<T>): T
     fun <T : Number> gauge(name: String, tags: Iterable<Tag>, number: T): T
@@ -84,7 +86,7 @@ interface MeterRegistry {
     fun startTimer(): Timer.Sample
     fun micrometerRegistry(): io.micrometer.core.instrument.MeterRegistry
 
-    fun timerWithStyxDefaults(name : String, tags : Iterable<Tag>) : Timer
+    fun timerWithStyxDefaults(name: String, tags: Iterable<Tag>): Timer
 }
 
 /**
@@ -99,12 +101,15 @@ class ScopedMeterRegistry(private val parent: MeterRegistry, private val scope: 
     override fun counter(name: String, tags: Iterable<Tag>): Counter = parent.counter(name.scoped, tags)
     override fun summary(name: String, vararg tags: String): DistributionSummary = parent.summary(name.scoped, *tags)
     override fun summary(name: String, tags: Iterable<Tag>): DistributionSummary = parent.summary(name.scoped, tags)
+    override fun summary(name: String, build: UnaryOperator<DistributionSummary.Builder>) = parent.summary(name.scoped, build)
+
     override fun get(name: String): RequiredSearch = parent.get(name.scoped)
     override fun find(name: String): Search = parent.find(name.scoped)
     override fun forEachMeter(consumer: Consumer<Meter>) = parent.forEachMeter(consumer)
     override fun config(): Config = parent.config()
     override fun timer(name: String, tags: Iterable<Tag>): Timer = parent.timer(name.scoped, tags)
     override fun timer(name: String, vararg tags: String): Timer = parent.timer(name.scoped, *tags)
+    override fun timer(name: String, build: UnaryOperator<Timer.Builder>): Timer = parent.timer(name.scoped, build)
 
     override fun more(): MeterRegistry.More = object : MeterRegistry.More {
         val more = parent.more()
@@ -173,12 +178,17 @@ class MicrometerRegistry(private val registry: io.micrometer.core.instrument.Met
     override fun counter(name: String, tags: Iterable<Tag>): Counter = registry.counter(name, tags)
     override fun summary(name: String, vararg tags: String): DistributionSummary = registry.summary(name, *tags)
     override fun summary(name: String, tags: Iterable<Tag>): DistributionSummary = registry.summary(name, tags)
+    override fun summary(name: String, build: UnaryOperator<DistributionSummary.Builder>): DistributionSummary =
+        build.apply(DistributionSummary.builder(name)).register(registry)
+
     override fun get(name: String): RequiredSearch = registry.get(name)
     override fun find(name: String): Search = registry.find(name)
     override fun forEachMeter(consumer: Consumer<Meter>) = registry.forEachMeter(consumer)
     override fun config(): Config = registry.config()
     override fun timer(name: String, tags: Iterable<Tag>): Timer = registry.timer(name, tags)
     override fun timer(name: String, vararg tags: String): Timer = registry.timer(name, *tags)
+    override fun timer(name: String, build: UnaryOperator<Timer.Builder>): Timer = build.apply(Timer.builder(name)).register(registry)
+
     override fun more(): MeterRegistry.More = object : MeterRegistry.More {
         val more = registry.more()
 
@@ -250,17 +260,11 @@ private object MeterFactory {
     } ?: DEFAULT_MAX_HISTOGRAM_BUCKET
 
     @JvmOverloads
-    fun timer(registry: io.micrometer.core.instrument.MeterRegistry, name: String, tags: Iterable<Tag> = Tags.empty()): Timer {
-        return Timer.builder(name)
+    fun timer(registry: io.micrometer.core.instrument.MeterRegistry, name: String, tags: Iterable<Tag> = Tags.empty()): Timer =
+        Timer.builder(name)
             .tags(tags)
             .publishPercentileHistogram()
             .minimumExpectedValue(MIN_HISTOGRAM_BUCKET)
             .maximumExpectedValue(MAX_HISTOGRAM_BUCKET)
             .register(registry)
-    }
 }
-
-
-
-
-
