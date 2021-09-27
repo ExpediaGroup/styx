@@ -46,6 +46,8 @@ interface MeterRegistry {
     fun timer(name: String, vararg tags: String): Timer
     fun timer(name: String, build: UnaryOperator<Timer.Builder>): Timer
     fun more(): More
+    fun guageWithStrongReference(name: String, number: Number): Gauge
+    fun guageWithStrongReference(name: String, tags: Iterable<Tag>, number: Number): Gauge
     fun <T> gauge(name: String, tags: Iterable<Tag>, stateObject: T, valueFunction: ToDoubleFunction<T>): T
     fun <T : Number> gauge(name: String, tags: Iterable<Tag>, number: T): T
     fun <T : Number> gauge(name: String, number: T): T
@@ -141,6 +143,10 @@ class ScopedMeterRegistry(private val parent: MeterRegistry, private val scope: 
         ): TimeGauge = more.timeGauge(name.scoped, tags, obj, timeFunctionUnit, timeFunction)
     }
 
+    override fun guageWithStrongReference(name: String, number: Number): Gauge =
+        parent.guageWithStrongReference(name.scoped, number)
+    override fun guageWithStrongReference(name: String, tags: Iterable<Tag>, number: Number): Gauge =
+        parent.guageWithStrongReference(name.scoped, tags, number)
     override fun <T : Number> gauge(name: String, number: T): T = parent.gauge(name.scoped, number)
     override fun <T> gauge(name: String, stateObject: T, valueFunction: ToDoubleFunction<T>): T =
         parent.gauge(name.scoped, stateObject, valueFunction)
@@ -217,6 +223,19 @@ class MicrometerRegistry(private val registry: io.micrometer.core.instrument.Met
             timeFunctionUnit: TimeUnit,
             timeFunction: ToDoubleFunction<T>
         ): TimeGauge = more.timeGauge(name, tags, obj, timeFunctionUnit, timeFunction)
+    }
+
+    override fun guageWithStrongReference(name: String, number: Number): Gauge {
+        return Gauge.builder(name, number, ToDoubleFunction(Number::toDouble))
+            .strongReference(true)
+            .register(registry)
+    }
+
+    override fun guageWithStrongReference(name: String, tags: Iterable<Tag>, number: Number): Gauge {
+        return Gauge.builder(name, number, ToDoubleFunction(Number::toDouble))
+            .tags(tags)
+            .strongReference(true)
+            .register(registry)
     }
 
     override fun <T> gauge(name: String, tags: Iterable<Tag>, stateObject: T, valueFunction: ToDoubleFunction<T>): T =
