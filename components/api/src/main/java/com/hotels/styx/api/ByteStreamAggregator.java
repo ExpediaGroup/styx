@@ -79,7 +79,9 @@ class ByteStreamAggregator implements Subscriber<Buffer> {
     @Override
     public void onError(Throwable cause) {
         aggregated.release();
-        subscription.cancel();
+        if(subscription != null) {
+            subscription.cancel();
+        }
         future.completeExceptionally(cause);
     }
 
