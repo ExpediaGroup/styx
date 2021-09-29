@@ -19,6 +19,7 @@ import io.netty.buffer.CompositeByteBuf;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
+import org.slf4j.Logger;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -26,8 +27,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static io.netty.buffer.Unpooled.compositeBuffer;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
+import static org.slf4j.LoggerFactory.getLogger;
 
 class ByteStreamAggregator implements Subscriber<Buffer> {
+    private static final Logger LOGGER = getLogger(ByteStreamAggregator.class);
+
     private final Publisher<Buffer> upstream;
     private final int maxSize;
     private final CompletableFuture<Buffer> future = new CompletableFuture<>();
@@ -79,7 +83,11 @@ class ByteStreamAggregator implements Subscriber<Buffer> {
     @Override
     public void onError(Throwable cause) {
         aggregated.release();
-        subscription.cancel();
+        if(subscription != null) {
+            subscription.cancel();
+        } else {
+            LOGGER.error("onError received before subscription", cause);
+        }
         future.completeExceptionally(cause);
     }
 
