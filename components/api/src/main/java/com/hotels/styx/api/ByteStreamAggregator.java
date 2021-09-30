@@ -85,8 +85,6 @@ class ByteStreamAggregator implements Subscriber<Buffer> {
         aggregated.release();
         if(subscription != null) {
             subscription.cancel();
-        } else {
-            LOGGER.error("onError received before subscription", cause);
         }
         future.completeExceptionally(cause);
     }
