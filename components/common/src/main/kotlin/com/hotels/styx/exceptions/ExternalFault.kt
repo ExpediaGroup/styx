@@ -13,9 +13,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.exceptions
+package com.hotels.styx.exceptions
 
 /**
- * An exception that represents a problem external to Styx.
+ * A marker interface to represent a fault that occurred beyond Styx's control, such as backend origins being inaccessible.
  */
-class ExternalException(message: String, cause : Throwable) : RuntimeException(message, cause)
+interface ExternalFault

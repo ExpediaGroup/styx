@@ -18,6 +18,7 @@ package com.hotels.styx.client;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.exceptions.StyxException;
 import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.exceptions.ExternalFault;
 
 import java.util.Optional;
 
@@ -27,7 +28,7 @@ import static java.lang.String.format;
  * An exception to throw when a bad HTTP response was received. For
  * example, when the decoding of the message failed.
  */
-public class BadHttpResponseException extends RuntimeException implements StyxException {
+public class BadHttpResponseException extends RuntimeException implements StyxException, ExternalFault {
     private static final String MESSAGE_FORMAT = "Bad HTTP Response received from origin. origin=%s.";
     private final Origin origin;
 

@@ -15,10 +15,12 @@
  */
 package com.hotels.styx.server;
 
+import com.hotels.styx.exceptions.ExternalFault;
+
 /**
  * Exception thrown when requests time out.
  */
-public class RequestTimeoutException extends RuntimeException {
+public class RequestTimeoutException extends RuntimeException implements ExternalFault {
 
     public RequestTimeoutException(String message) {
         super(message);

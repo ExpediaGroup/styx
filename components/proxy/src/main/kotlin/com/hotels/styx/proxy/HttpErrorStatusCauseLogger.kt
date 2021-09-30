@@ -19,6 +19,7 @@ import com.hotels.styx.api.HttpResponseStatus
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.common.format.HttpMessageFormatter
+import com.hotels.styx.exceptions.ExternalFault
 import com.hotels.styx.server.HttpErrorStatusListener
 import org.slf4j.LoggerFactory.getLogger
 import java.net.InetSocketAddress
@@ -30,44 +31,61 @@ private val LOG = getLogger(HttpErrorStatusCauseLogger::class.java)
  */
 class HttpErrorStatusCauseLogger(private val formatter: HttpMessageFormatter) : HttpErrorStatusListener {
     override fun proxyErrorOccurred(status: HttpResponseStatus, cause: Throwable) {
-        if (status.code() > 500) {
-            // we remove the stack trace so that logs are not flooded with high volumes of data when origins are unreachable/timing out.
-            LOG.error("Failure status=\"{}\", exception=\"{}\"", status, withoutStackTrace(cause))
-        } else {
-            LOG.error("Failure status=\"{}\"", status, cause)
+        cause.ifInternal {
+            if (status.code() > 500) {
+                // we remove the stack trace so that logs are not flooded with high volumes of data when origins are unreachable/timing out.
+                LOG.error("Failure status=\"{}\", exception=\"{}\"", status, withoutStackTrace(cause))
+            } else {
+                LOG.error("Failure status=\"{}\"", status, cause)
+            }
         }
     }
 
     override fun proxyErrorOccurred(request: LiveHttpRequest, clientAddress: InetSocketAddress, status: HttpResponseStatus, cause: Throwable) {
-        if (status.code() == 500) {
-            LOG.error("Failure status=\"{}\" during request={}, clientAddress={}", status, formatter.formatRequest(request), clientAddress, cause)
-        } else {
-            proxyErrorOccurred(status, cause)
+        cause.ifInternal {
+            if (status.code() == 500) {
+                LOG.error("Failure status=\"{}\" during request={}, clientAddress={}", status, formatter.formatRequest(request), clientAddress, cause)
+            } else {
+                proxyErrorOccurred(status, cause)
+            }
         }
     }
 
     override fun proxyErrorOccurred(cause: Throwable) {
-        LOG.error("Error occurred during proxying", cause)
+        cause.ifInternal {
+            LOG.error("Error occurred during proxying", cause)
+        }
     }
 
     override fun proxyWriteFailure(request: LiveHttpRequest, response: LiveHttpResponse, cause: Throwable) {
-        LOG.error(
-            "Error writing response. request={}, response={}, cause={}",
-            formatter.formatRequest(request),
-            formatter.formatResponse(response),
-            cause
-        )
+        cause.ifInternal {
+            LOG.error(
+                "Error writing response. request={}, response={}, cause={}",
+                formatter.formatRequest(request),
+                formatter.formatResponse(response),
+                cause
+            )
+        }
     }
 
     override fun proxyingFailure(request: LiveHttpRequest, response: LiveHttpResponse, cause: Throwable) {
-        LOG.error(
-            "Error proxying request. request={} response={} cause={}",
-            formatter.formatRequest(request),
-            formatter.formatResponse(response),
-            cause
-        )
+        cause.ifInternal {
+            LOG.error(
+                "Error proxying request. request={} response={} cause={}",
+                formatter.formatRequest(request),
+                formatter.formatResponse(response),
+                cause
+            )
+        }
     }
 }
+
+private fun <T> Throwable.ifInternal(block: (Throwable) -> T) {
+    if (this !is ExternalFault) {
+        block(this)
+    }
+}
+
 
 private fun withoutStackTrace(cause: Throwable): String {
     val builder = StringBuilder(cause.toString())
