@@ -92,7 +92,6 @@ class BadRequestsSpec extends FunSpec
           assertThat(response.headers().get(STYX_INFO_DEFAULT), matchesRegex("noJvmRouteSet;"))
           assertThat(response.headers().get(CONNECTION), is("close"))
 
-          assertThat(loggingSupport.log(), hasItem(loggingEvent(ERROR, "Failure status=\"400 Bad Request\"", "io.netty.handler.codec.DecoderException", "com.hotels.styx.server.BadRequestException.*")))
           eventually(timeout(5 seconds)) {
             assertThat(client.isOpen, is(false))
           }
@@ -176,7 +175,6 @@ class BadRequestsSpec extends FunSpec
           assert(response.status == REQUEST_TIMEOUT, s"\nExpecting 408 Request Timeout in message: \n$response \n\n$content\n\n")
           assertThat(response.headers().get(STYX_INFO_DEFAULT), matchesRegex("noJvmRouteSet;[0-9a-f-]+"))
           assertThat(response.headers().get(CONNECTION), is("close"))
-          assertThat(loggingSupport.log(), hasItem(loggingEvent(ERROR, "Failure status=\"408 Request Timeout\"", "com.hotels.styx.server.RequestTimeoutException", "message=DefaultHttpRequest.decodeResult: success.*")))
         }
       }
     }

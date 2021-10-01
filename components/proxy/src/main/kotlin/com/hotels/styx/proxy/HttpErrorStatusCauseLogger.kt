@@ -18,8 +18,8 @@ package com.hotels.styx.proxy
 import com.hotels.styx.api.HttpResponseStatus
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse
+import com.hotels.styx.api.exceptions.ExternalFault
 import com.hotels.styx.common.format.HttpMessageFormatter
-import com.hotels.styx.exceptions.ExternalFault
 import com.hotels.styx.server.HttpErrorStatusListener
 import org.slf4j.LoggerFactory.getLogger
 import java.net.InetSocketAddress
@@ -27,7 +27,7 @@ import java.net.InetSocketAddress
 private val LOG = getLogger(HttpErrorStatusCauseLogger::class.java)
 
 /**
- * Wrapper for [HttpErrorStatusListener] that also logs [Throwable]s.
+ * Implementation of [HttpErrorStatusListener] that logs [Throwable]s, if they are not recognised as external faults (like an origin being down).
  */
 class HttpErrorStatusCauseLogger(private val formatter: HttpMessageFormatter) : HttpErrorStatusListener {
     override fun proxyErrorOccurred(status: HttpResponseStatus, cause: Throwable) {
@@ -80,21 +80,17 @@ class HttpErrorStatusCauseLogger(private val formatter: HttpMessageFormatter) : 
     }
 }
 
-private fun <T> Throwable.ifInternal(block: (Throwable) -> T) {
+private fun Throwable.ifInternal(action: (Throwable) -> Unit) {
     if (this !is ExternalFault) {
-        block(this)
+        action(this)
     }
 }
 
-
-private fun withoutStackTrace(cause: Throwable): String {
-    val builder = StringBuilder(cause.toString())
-    var head: Throwable? = cause
-
-    while (head != null) {
-        builder.append(", cause=").append('"').append(head).append('"')
-        head = head.cause
+private fun withoutStackTrace(cause: Throwable) = buildString {
+    append(cause)
+    cause.fullChain().forEach {
+        append(", cause=\"$it\"")
     }
-
-    return builder.toString()
 }
+
+private fun Throwable.fullChain() = generateSequence(this) { it.cause }

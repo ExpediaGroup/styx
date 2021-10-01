@@ -18,7 +18,6 @@ package com.hotels.styx.api.exceptions;
 
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.exceptions.ExternalFault;
 
 import java.util.Optional;
 

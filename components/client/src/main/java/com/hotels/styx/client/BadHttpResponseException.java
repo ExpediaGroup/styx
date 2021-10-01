@@ -16,9 +16,9 @@
 package com.hotels.styx.client;
 
 import com.hotels.styx.api.Id;
+import com.hotels.styx.api.exceptions.ExternalFault;
 import com.hotels.styx.api.exceptions.StyxException;
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.exceptions.ExternalFault;
 
 import java.util.Optional;
 

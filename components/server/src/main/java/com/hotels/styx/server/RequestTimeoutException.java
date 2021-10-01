@@ -15,7 +15,8 @@
  */
 package com.hotels.styx.server;
 
-import com.hotels.styx.exceptions.ExternalFault;
+
+import com.hotels.styx.api.exceptions.ExternalFault;
 
 /**
  * Exception thrown when requests time out.
