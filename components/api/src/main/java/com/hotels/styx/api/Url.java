@@ -220,26 +220,24 @@ public final class Url implements Comparable<Url> {
         return map;
     }
 
-    /**
-     * Get the names of all query parameters.
-     *
-     * @return the names of all query parameters.
-     */
     public Iterable<String> queryParamNames() {
         return query.map(UrlQuery::parameterNames).orElse(emptySet());
     }
 
-    /**
-     * Return the encoded url string.
-     *
-     * @return the encoded url string
-     */
-    public String encodedUri() {
-        return toString();
+    public String unencodedUrl() {
+        return formattedUrl(false);
+    }
+
+    public String encodedUrl() {
+        return formattedUrl(true);
     }
 
     @Override
     public String toString() {
+        return encodedUrl();
+    }
+
+    private String formattedUrl(boolean encoded) {
         StringBuilder builder = new StringBuilder();
         if (authority.isPresent()) {
             if (scheme != null) {
@@ -249,7 +247,11 @@ public final class Url implements Comparable<Url> {
         }
         builder.append(path);
 
-        query.ifPresent(query -> builder.append("?").append(query.encodedQuery()));
+        if (encoded) {
+            query.ifPresent(query -> builder.append("?").append(query.encodedQuery()));
+        } else {
+            query.ifPresent(query -> builder.append("?").append(query.getRawQuery()));
+        }
 
         if (fragment != null) {
             builder.append("#").append(fragment);

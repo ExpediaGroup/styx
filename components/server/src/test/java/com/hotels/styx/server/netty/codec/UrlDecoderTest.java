@@ -48,7 +48,7 @@ public class UrlDecoderTest {
 
         assertThat(url.authority(), is(Optional.empty()));
         assertThat(url.path(), is("/foo"));
-        assertThat(url.encodedUri(), is("/foo"));
+        assertThat(url.encodedUrl(), is("/foo"));
         assertThat(url.isAbsolute(), is(false));
         assertThat(url.isRelative(), is(true));
         assertThat(url.host(), is(Optional.empty()));
@@ -66,7 +66,7 @@ public class UrlDecoderTest {
 
         assertThat(url.authority(), is(Optional.empty()));
         assertThat(url.path(), is("//www.abc.com//abc123Z"));
-        assertThat(url.encodedUri(), is("//www.abc.com//abc123Z"));
+        assertThat(url.encodedUrl(), is("//www.abc.com//abc123Z"));
         assertThat(url.isAbsolute(), is(false));
         assertThat(url.isRelative(), is(true));
         assertThat(url.host(), is(Optional.empty()));
@@ -84,7 +84,7 @@ public class UrlDecoderTest {
 
         assertThat(url.authority(), is(Optional.empty()));
         assertThat(url.path(), is("/foo"));
-        assertThat(url.encodedUri(), is("/foo"));
+        assertThat(url.encodedUrl(), is("/foo"));
         assertThat(url.isAbsolute(), is(false));
         assertThat(url.isRelative(), is(true));
         assertThat(url.host(), is(Optional.empty()));
@@ -101,7 +101,7 @@ public class UrlDecoderTest {
 
         assertThat(url.authority().isPresent(), is(true));
         assertThat(url.path(), is("/foo"));
-        assertThat(url.encodedUri(), is("http://example.com/foo"));
+        assertThat(url.encodedUrl(), is("http://example.com/foo"));
         assertThat(url.isAbsolute(), is(true));
         assertThat(url.isRelative(), is(false));
         assertThat(url.host(), is(Optional.of("example.com")));
