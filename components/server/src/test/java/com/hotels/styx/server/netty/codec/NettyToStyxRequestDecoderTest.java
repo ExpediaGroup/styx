@@ -139,7 +139,7 @@ public class NettyToStyxRequestDecoderTest {
         LiveHttpRequest styxRequest = decode(originalRequest);
 
         assertThat(styxRequest.id().toString(), is("1"));
-        assertThat(styxRequest.url().encodedUri(), is(originalRequest.getUri()));
+        assertThat(styxRequest.url().encodedUrl(), is(originalRequest.getUri()));
         assertThat(styxRequest.method(), is(HttpMethod.GET));
         assertThatHttpHeadersAreSame(styxRequest.headers(), originalRequestHeaders);
     }

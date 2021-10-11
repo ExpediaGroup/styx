@@ -151,7 +151,7 @@ public class UrlTest {
     public void handlesPathSegmentEncodedInUTF8() {
         Url url = url("http://example.com/foo/\u2603")
                 .build();
-        assertThat(url.encodedUri(), is("http://example.com/foo/\u2603"));
+        assertThat(url.encodedUrl(), is("http://example.com/foo/\u2603"));
     }
 
     @Test
@@ -210,14 +210,14 @@ public class UrlTest {
 
     @Test
     public void shouldReturnTheRawURIPassedIn() throws Exception {
-        assertThat(url("http://example.com/?foo=a%2Bb%3Dc").build().encodedUri(), is("http://example.com/?foo=a%2Bb%3Dc"));
+        assertThat(url("http://example.com/?foo=a%2Bb%3Dc").build().encodedUrl(), is("http://example.com/?foo=a%2Bb%3Dc"));
     }
 
     @Test
     public void canEncodeTheModifiedUrl() throws Exception {
         Url url = url("/search.do?foo=a%2Bb%3Dc").build();
         Url newUrl = url.newBuilder().path("/v1/search").build();
-        assertThat(newUrl.encodedUri(), is("/v1/search?foo=a%2Bb%3Dc"));
+        assertThat(newUrl.encodedUrl(), is("/v1/search?foo=a%2Bb%3Dc"));
 
     }
 
@@ -230,29 +230,29 @@ public class UrlTest {
     @Test
     public void canDecodeAndEncodeThePath() {
         assertThat(url("/landing/de408991/%D7%9E%D7%9C%D7%95%D7%A0%D7%95%D7%AA-%D7%A7%D7%95%D7%A4%D7%A0%D7%94%D7%92%D7%9F-%D7%93%D7%A0%D7%9E%D7%A8%D7%A7/")
-                .build().encodedUri(), is("/landing/de408991/%D7%9E%D7%9C%D7%95%D7%A0%D7%95%D7%AA-%D7%A7%D7%95%D7%A4%D7%A0%D7%94%D7%92%D7%9F-%D7%93%D7%A0%D7%9E%D7%A8%D7%A7/"));
+                .build().encodedUrl(), is("/landing/de408991/%D7%9E%D7%9C%D7%95%D7%A0%D7%95%D7%AA-%D7%A7%D7%95%D7%A4%D7%A0%D7%94%D7%92%D7%9F-%D7%93%D7%A0%D7%9E%D7%A8%D7%A7/"));
     }
 
     @Test
     public void shouldPreserveLastTrailingPathSeparator() {
-        assertThat(url("/landing/foo/bar").build().encodedUri(), is("/landing/foo/bar"));
-        assertThat(url("/landing/foo/bar/").build().encodedUri(), is("/landing/foo/bar/"));
+        assertThat(url("/landing/foo/bar").build().encodedUrl(), is("/landing/foo/bar"));
+        assertThat(url("/landing/foo/bar/").build().encodedUrl(), is("/landing/foo/bar/"));
     }
 
     @ParameterizedTest
     @MethodSource("pathSegmentAllowedChars")
     public void shouldNotEncodeAllowedCharactersInPath(String character) {
         String path = "/customercare/subscribe.html" + character + "sessid=nXF5jQ8rTW3bAbh6djb2hYJE3D.web-app-02";
-        assertThat(url(path).build().encodedUri(), is(path));
+        assertThat(url(path).build().encodedUrl(), is(path));
     }
     @Test
     public void spaceIsAlsoPlusIsAlsoHex20() {
         String ENCODED_SPACE = "/customercare/subscribe.html%20sessid=nXF5jQ8rTW3bAbh6djb2hYJE3D.web-app-02";
 
         String path = "/customercare/subscribe.html+sessid=nXF5jQ8rTW3bAbh6djb2hYJE3D.web-app-02";
-        assertThat(url(path).build().encodedUri(), is(path));
+        assertThat(url(path).build().encodedUrl(), is(path));
 
-        assertThat(url(ENCODED_SPACE).build().encodedUri(), is(ENCODED_SPACE));
+        assertThat(url(ENCODED_SPACE).build().encodedUrl(), is(ENCODED_SPACE));
     }
 
     @Test
@@ -269,7 +269,7 @@ public class UrlTest {
     public void acceptsEmptyQueryString() {
         Url url = url("/webapp/assets/images/icons.eot?").build();
 
-        assertThat(url.encodedUri(), is("/webapp/assets/images/icons.eot?"));
+        assertThat(url.encodedUrl(), is("/webapp/assets/images/icons.eot?"));
         assertThat(url.queryParams().isEmpty(), is(true));
     }
 
