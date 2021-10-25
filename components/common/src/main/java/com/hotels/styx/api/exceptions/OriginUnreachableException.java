@@ -26,7 +26,7 @@ import static java.lang.String.format;
 /**
  * Exception for when a host is down.
  */
-public class OriginUnreachableException extends TransportException implements StyxException, IsRetryableException {
+public class OriginUnreachableException extends TransportException implements StyxException, IsRetryableException, ExternalFault {
     private static final String MESSAGE_FORMAT = "Origin server is unreachable. Could not connect to origin=%s";
     private final Origin origin;
 

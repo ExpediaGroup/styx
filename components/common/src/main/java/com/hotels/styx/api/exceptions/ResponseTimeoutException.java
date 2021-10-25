@@ -25,7 +25,7 @@ import static java.lang.String.format;
 /**
  * An exception due to a response timeout.
  */
-public class ResponseTimeoutException extends TransportException implements StyxException {
+public class ResponseTimeoutException extends TransportException implements StyxException, ExternalFault {
     private final Origin origin;
 
     public ResponseTimeoutException(Origin origin, String reason, long bytesReceived, long chunksReceived, long bytesEmitted, long chunksEmitted) {

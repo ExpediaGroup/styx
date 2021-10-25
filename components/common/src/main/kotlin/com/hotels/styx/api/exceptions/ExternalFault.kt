@@ -13,25 +13,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.server;
-
-
-import com.hotels.styx.api.exceptions.ExternalFault;
+package com.hotels.styx.api.exceptions
 
 /**
- * Exception thrown when requests time out.
+ * A marker interface to represent a fault that occurred beyond Styx's control, such as backend origins being inaccessible.
  */
-public class RequestTimeoutException extends RuntimeException implements ExternalFault {
-
-    public RequestTimeoutException(String message) {
-        super(message);
-    }
-
-    public RequestTimeoutException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public RequestTimeoutException(Throwable cause) {
-        super(cause);
-    }
-}
+interface ExternalFault

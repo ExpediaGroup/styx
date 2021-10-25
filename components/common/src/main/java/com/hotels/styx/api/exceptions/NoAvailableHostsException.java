@@ -24,7 +24,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * An exception to be thrown when there are no hosts available.
  */
-public class NoAvailableHostsException extends RuntimeException implements StyxException {
+public class NoAvailableHostsException extends RuntimeException implements StyxException, ExternalFault {
     private final Id applicationId;
 
     /**
