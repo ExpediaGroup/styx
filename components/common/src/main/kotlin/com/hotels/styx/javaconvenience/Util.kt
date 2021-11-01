@@ -20,15 +20,10 @@ import kotlin.streams.asStream
 
 /*
  * Note: although written in Kotlin, these convenience methods are intended to be used by Java code.
-<<<<<<< HEAD
  *
  * This has the following effects:
  * - Some functions seem redundant as they wrap a single kotlin function (the kotlin function doesn't exist in Java)
  * - Some language features that make Kotlin development easier are not used. For example: extension methods, this-receivers.
-=======
- * As such, certain language features that make Kotlin development easier will have no benefit in Java (or possibly make things more complicated),
- * for example, extension methods, this-receivers.
->>>>>>> WIP
  */
 
 fun <T> iteratorToList(iterator: Iterator<T>): List<T> = Iterable {
