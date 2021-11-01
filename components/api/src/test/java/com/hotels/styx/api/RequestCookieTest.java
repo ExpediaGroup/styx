@@ -15,8 +15,9 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.collect.ImmutableList;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static com.hotels.styx.api.RequestCookie.encode;
 import static com.hotels.styx.api.RequestCookie.requestCookie;
@@ -43,7 +44,7 @@ public class RequestCookieTest {
 
     @Test
     public void doesNotEncodeDuplicateCookies() {
-        String encoded = encode(ImmutableList.of(
+        String encoded = encode(List.of(
                 requestCookie("foo", "bar"),
                 requestCookie("bar", "foo"),
                 requestCookie("foo", "asjdfksdajf")

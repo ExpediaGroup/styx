@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.routing.config;
 
-import com.google.common.collect.ImmutableList;
+import com.hotels.styx.javaconvenience.UtilKt;
 
 import java.util.List;
 
@@ -30,12 +30,7 @@ public final class RoutingSupport {
     }
 
     public static <T> List<T> append(List<T> list, T elem) {
-        ImmutableList.Builder<T> builder = ImmutableList.builder();
-
-        builder.addAll(list);
-        builder.add(elem);
-
-        return builder.build();
+        return UtilKt.append(list, elem);
     }
 
     public static RuntimeException missingAttributeError(StyxObjectDefinition routingDef, String parent, String expected) {

@@ -23,7 +23,6 @@ import org.hamcrest.core.IsCollectionContaining;
 
 import java.util.List;
 
-import static com.google.common.collect.Iterables.all;
 import static com.hotels.styx.api.matchers.HeaderMatcher.header;
 import static java.lang.String.format;
 import static java.lang.System.getProperty;
@@ -41,7 +40,7 @@ public class HttpHeadersMatcher extends TypeSafeMatcher<Iterable<HttpHeader>> {
                 header("Cache-Control", "no-cache,must-revalidate,no-store")));
     }
 
-    @SuppressWarnings ("unchecked")
+    @SuppressWarnings("unchecked")
     public static Matcher<Iterable<HttpHeader>> hasHeaders(Matcher<HttpHeader>... matchers) {
         return new HttpHeadersMatcher(asList(matchers));
     }
@@ -52,7 +51,8 @@ public class HttpHeadersMatcher extends TypeSafeMatcher<Iterable<HttpHeader>> {
 
     @Override
     public boolean matchesSafely(Iterable<HttpHeader> actual) {
-        return all(matchers, elementMatcher -> new IsCollectionContaining<>(elementMatcher).matches(actual));
+        return matchers.stream().allMatch(elementMatcher ->
+                new IsCollectionContaining<>(elementMatcher).matches(actual));
     }
 
     @Override

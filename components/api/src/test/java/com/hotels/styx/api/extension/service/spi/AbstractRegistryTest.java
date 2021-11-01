@@ -15,13 +15,13 @@
  */
 package com.hotels.styx.api.extension.service.spi;
 
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.Identifiable;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.BackendService;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
@@ -49,7 +49,7 @@ public class AbstractRegistryTest {
         registry.addListener(listener1);
         registry.addListener(listener2);
 
-        registry.set(ImmutableList.of(idObject("a", "1"), idObject("b", "2")));
+        registry.set(List.of(idObject("a", "1"), idObject("b", "2")));
 
         Registry.Changes<IdObject> changes = changeSet()
                 .added(idObject("a", "1"), idObject("b", "2"))
@@ -62,7 +62,7 @@ public class AbstractRegistryTest {
     @Test
     public void notifiesNewListenersImmediately() {
         TestRegistry registry = new TestRegistry();
-        registry.set(ImmutableList.of(idObject("a", "1"), idObject("b", "2")));
+        registry.set(List.of(idObject("a", "1"), idObject("b", "2")));
 
         AbstractRegistry.ChangeListener<IdObject> listener1 = mock(AbstractRegistry.ChangeListener.class);
         registry.addListener(listener1);
@@ -81,9 +81,9 @@ public class AbstractRegistryTest {
         AbstractRegistry.ChangeListener<IdObject> listener1 = mock(AbstractRegistry.ChangeListener.class);
         registry.addListener(listener1);
 
-        registry.set(ImmutableList.of(idObject("a", "1")));
+        registry.set(List.of(idObject("a", "1")));
 
-        registry.set(ImmutableList.of(idObject("a", "2"), idObject("b", "2")));
+        registry.set(List.of(idObject("a", "2"), idObject("b", "2")));
         verify(listener1).onChange(eq(changeSet()
                 .added(idObject("b", "2"))
                 .updated(idObject("a", "2"))
@@ -98,11 +98,11 @@ public class AbstractRegistryTest {
         registry.addListener(listener1);
         verify(listener1).onChange(any(Registry.Changes.class));
 
-        registry.set(ImmutableList.of(idObject("a", "1"), idObject("b", "2")));
+        registry.set(List.of(idObject("a", "1"), idObject("b", "2")));
         verify(listener1, times(2)).onChange(any(Registry.Changes.class));
 
         // Does not change:
-        registry.set(ImmutableList.of(idObject("a", "1"), idObject("b", "2")));
+        registry.set(List.of(idObject("a", "1"), idObject("b", "2")));
         verifyNoMoreInteractions(listener1);
     }
 
@@ -115,9 +115,9 @@ public class AbstractRegistryTest {
         registry.addListener(listener1);
         registry.addListener(listener2);
 
-        registry.set(ImmutableList.of(idObject("a", "1"), idObject("b", "2")));
+        registry.set(List.of(idObject("a", "1"), idObject("b", "2")));
 
-        registry.set(ImmutableList.of(idObject("a", "1")));
+        registry.set(List.of(idObject("a", "1")));
 
         verify(listener1).onChange(changeSet().removed(idObject("b", "2")).build());
         verify(listener2).onChange(changeSet().removed(idObject("b", "2")).build());
@@ -133,14 +133,14 @@ public class AbstractRegistryTest {
         registry.addListener(listener1);
         registry.addListener(listener2);
 
-        registry.set(ImmutableList.of(idObject("a", "1"), idObject("b", "2")));
+        registry.set(List.of(idObject("a", "1"), idObject("b", "2")));
 
         verify(listener1).onChange(changeSet().added(idObject("a", "1"), idObject("b", "2")).build());
         verify(listener2).onChange(changeSet().added(idObject("a", "1"), idObject("b", "2")).build());
 
         registry.removeListener(listener2);
 
-        registry.set(ImmutableList.of(idObject("a", "1")));
+        registry.set(List.of(idObject("a", "1")));
         verify(listener1).onChange(changeSet().removed(idObject("b", "2")).build());
         verify(listener2, never()).onChange(changeSet().removed(idObject("b", "2")).build());
 

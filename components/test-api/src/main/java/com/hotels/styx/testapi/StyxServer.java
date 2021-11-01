@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.testapi;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.admin.AdminServerConfig;
 import com.hotels.styx.api.MetricRegistry;
@@ -67,7 +65,7 @@ public final class StyxServer {
                 .registry(new MicrometerRegistry(new CompositeMeterRegistry()))
                 .styxConfig(styxConfig(builder))
                 .pluginFactories(builder.pluginFactories)
-                .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(backendServicesRegistry)))
+                .additionalServices(Map.of("backendServiceRegistry", new RegistryServiceAdapter(backendServicesRegistry)))
                 .build();
 
         metricRegistry = config.environment().metricRegistry();
@@ -157,7 +155,7 @@ public final class StyxServer {
 
         /**
          * Specifies the HTTP port for proxy server.
-         *
+         * <p>
          * By default, Styx will automatically allocate a free port number. This happens when a port is
          * not set a value on the builder, or it is set a value of 0 (zero).
          *
@@ -171,7 +169,7 @@ public final class StyxServer {
 
         /**
          * Specifies the HTTPS port for proxy server.
-         *
+         * <p>
          * By default, Styx will automatically allocate a free port number. This happens when a port is
          * not set a value on the builder, or it is set a value of 0 (zero).
          *
@@ -185,7 +183,7 @@ public final class StyxServer {
 
         /**
          * Specifies the HTTP port for admin server
-         *
+         * <p>
          * By default, Styx will automatically allocate a free port number. This happens when a port is
          * not set a value on the builder, or it is set a value of 0 (zero).
          *
@@ -234,7 +232,7 @@ public final class StyxServer {
          * @return this builder
          */
         public Builder addRoute(String pathPrefix, Origin... origins) {
-            return addRoute(pathPrefix, ImmutableSet.copyOf(origins));
+            return addRoute(pathPrefix, Set.of(origins));
         }
 
         /**

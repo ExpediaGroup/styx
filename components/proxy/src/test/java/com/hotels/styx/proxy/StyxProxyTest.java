@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.proxy;
 
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.NettyExecutor;
 import com.google.common.util.concurrent.Service;
 import com.hotels.styx.InetServer;
@@ -40,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.List;
 
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.common.StyxFutures.await;
@@ -78,7 +78,7 @@ public class StyxProxyTest extends SSLSetup {
                 .bossExecutor(NettyExecutor.create("Test-Server-Boss", 1))
                 .workerExecutor(NettyExecutor.create("Test-Server-Worker", 0))
                 .handler(new HttpInterceptorPipeline(
-                        ImmutableList.of(echoInterceptor),
+                        List.of(echoInterceptor),
                         (request, context) -> new HttpAggregator(new StandardHttpRouter()).handle(request, context),
                         false))
                 .build();

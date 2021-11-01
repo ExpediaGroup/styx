@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.spi;
 
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.common.io.FileResource;
 import com.hotels.styx.common.io.FileResourceIndex;
@@ -23,6 +22,7 @@ import com.hotels.styx.common.io.FileResourceIndex;
 import java.nio.file.Path;
 import java.util.Collection;
 
+import static com.hotels.styx.javaconvenience.UtilKt.iterableToList;
 import static java.util.Collections.singleton;
 
 /**
@@ -54,6 +54,6 @@ final class JarResources {
 
     private static Collection<Resource> multipleResources(Path path) {
         FileResourceIndex resourceIndex = new FileResourceIndex();
-        return ImmutableList.copyOf(resourceIndex.list(path.toString(), ".jar"));
+        return iterableToList(resourceIndex.list(path.toString(), ".jar"));
     }
 }

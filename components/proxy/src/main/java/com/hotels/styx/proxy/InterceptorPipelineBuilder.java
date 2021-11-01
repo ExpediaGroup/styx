@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.proxy;
 
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.proxy.plugin.InstrumentedPlugin;
@@ -46,7 +45,7 @@ public class InterceptorPipelineBuilder {
     }
 
     public RoutingObject build() {
-        List<HttpInterceptor> interceptors = ImmutableList.copyOf(instrument(plugins, environment));
+        List<HttpInterceptor> interceptors = List.copyOf(instrument(plugins, environment));
         return new HttpInterceptorPipeline(interceptors, handler, trackRequests);
     }
 

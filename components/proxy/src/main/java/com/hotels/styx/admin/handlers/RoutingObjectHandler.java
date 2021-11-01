@@ -21,8 +21,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
@@ -38,6 +36,7 @@ import com.hotels.styx.routing.db.StyxObjectStore;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE;
@@ -93,9 +92,9 @@ public class RoutingObjectHandler implements WebServiceHandler {
 
                     try {
                         StyxObjectDefinition payload = YAML_MAPPER.readValue(body, StyxObjectDefinition.class);
-                        RoutingMetadataDecorator decorator = new RoutingMetadataDecorator(Builtins.build(ImmutableList.of(name), routingObjectFactoryContext, payload));
+                        RoutingMetadataDecorator decorator = new RoutingMetadataDecorator(Builtins.build(List.of(name), routingObjectFactoryContext, payload));
 
-                        routeDatabase.insert(name, new RoutingObjectRecord(payload.type(), ImmutableSet.copyOf(payload.tags()), payload.config(), decorator))
+                        routeDatabase.insert(name, new RoutingObjectRecord(payload.type(), Set.copyOf(payload.tags()), payload.config(), decorator))
                                 .ifPresent(previous -> previous.getRoutingObject().stop());
 
                         return Eventual.of(response(CREATED).build());

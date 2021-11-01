@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.collect.ImmutableMap;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -23,12 +22,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
-import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpMethod.DELETE;
 import static com.hotels.styx.api.HttpMethod.GET;
@@ -305,7 +304,7 @@ public class HttpRequestTest {
 
         assertThat(req.queryParamNames(), containsInAnyOrder("foo", "abc"));
 
-        assertThat(req.queryParams(), isMap(ImmutableMap.of(
+        assertThat(req.queryParams(), isMap(Map.of(
                 "foo", asList("bar", "hello"),
                 "abc", singletonList("def")
         )));

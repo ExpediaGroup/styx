@@ -16,7 +16,6 @@
 package com.hotels.styx
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.google.common.collect.ImmutableSet
 import com.hotels.styx.api.*
 import com.hotels.styx.api.HttpResponse.response
 import com.hotels.styx.api.HttpResponseStatus.OK
@@ -33,7 +32,6 @@ import com.hotels.styx.routing.config.StyxObjectReference
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.RouteRefLookup
 import com.hotels.styx.server.HttpInterceptorContext
-import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.CapturingSlot
 import io.mockk.every
@@ -90,7 +88,7 @@ fun executorObjects(): StyxObjectStore<StyxObjectRecord<NettyExecutor>> = StyxOb
             "Test-Client-Global-Worker".let { name ->
                 objectStore.insert("Styx-Client-Global-Worker", StyxObjectRecord(
                         "NettyExecutor",
-                        ImmutableSet.of("StyxInternal"),
+                        setOf("StyxInternal"),
                         NettyExecutorConfig(0, name).asJsonNode(),
                         NettyExecutor.create(name, 0)))
             }

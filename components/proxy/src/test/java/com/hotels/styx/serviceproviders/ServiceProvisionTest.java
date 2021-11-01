@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.serviceproviders;
 
-import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.MicrometerRegistry;
@@ -171,7 +170,7 @@ public class ServiceProvisionTest {
     public void servicesReturnCorrectlyFromCall() {
         Map<String, String> services = loadServices(environment.configuration(), environment, "multi", String.class);
 
-        assertThat(services, isMap(ImmutableMap.of(
+        assertThat(services, isMap(Map.of(
                 "one", "valueNumber1",
                 "two", "valueNumber2",
                 "three", "valueNumber3"

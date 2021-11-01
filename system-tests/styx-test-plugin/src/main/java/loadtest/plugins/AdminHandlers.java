@@ -15,9 +15,10 @@
  */
 package loadtest.plugins;
 
-import com.google.common.collect.ImmutableMap;
-import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.Eventual;
+import com.hotels.styx.api.HttpHandler;
+
+import java.util.Map;
 
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
@@ -28,8 +29,8 @@ final class AdminHandlers {
     private AdminHandlers() {
     }
 
-    static ImmutableMap<String, HttpHandler> adminHandlers(String endpoint, String responseContent) {
-        return ImmutableMap.of(endpoint, (request, context) -> Eventual.of(response(OK)
+    static Map<String, HttpHandler> adminHandlers(String endpoint, String responseContent) {
+        return Map.of(endpoint, (request, context) -> Eventual.of(response(OK)
                 .body(responseContent, UTF_8)
                 .build()
                 .stream()

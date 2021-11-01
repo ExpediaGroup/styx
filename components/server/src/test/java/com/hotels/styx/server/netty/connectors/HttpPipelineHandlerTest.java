@@ -58,14 +58,13 @@ import reactor.core.publisher.Mono;
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static ch.qos.logback.classic.Level.INFO;
 import static ch.qos.logback.classic.Level.WARN;
-import static com.google.common.collect.Iterables.concat;
-import static com.google.common.collect.Iterables.toArray;
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderValues.CLOSE;
@@ -77,6 +76,7 @@ import static com.hotels.styx.api.HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE;
 import static com.hotels.styx.api.HttpResponseStatus.REQUEST_TIMEOUT;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
+import static com.hotels.styx.javaconvenience.UtilKt.append;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE_CLIENT_CLOSED;
@@ -1031,12 +1031,14 @@ public class HttpPipelineHandlerTest {
     }
 
     private static EmbeddedChannel buildEmbeddedChannel(ChannelHandler... lastHandlers) {
-        Iterable<ChannelHandler> commonHandlers = asList(
+        List<ChannelHandler> commonHandlers = asList(
                 new HttpRequestDecoder(),
                 new HttpObjectAggregator(6000),
                 new NettyToStyxRequestDecoder.Builder().build());
 
-        return new EmbeddedChannel(toArray(concat(commonHandlers, asList(lastHandlers)), ChannelHandler.class));
+        ChannelHandler[] handlers = append(commonHandlers, lastHandlers).toArray(new ChannelHandler[0]);
+
+        return new EmbeddedChannel(handlers);
     }
 
     private double requestOutstandingValue(MeterRegistry registry) {

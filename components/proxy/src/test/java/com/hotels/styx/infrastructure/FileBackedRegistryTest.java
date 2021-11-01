@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.infrastructure;
 
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
@@ -26,6 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.List;
 
 import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded;
 import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.unchanged;
@@ -60,7 +60,7 @@ public class FileBackedRegistryTest {
     public void announcesInitialStateWhenStarts() throws IOException {
         Resource configurationFile = mockResource("/styx/config", new ByteArrayInputStream(originalContent));
 
-        registry = new FileBackedRegistry<>(configurationFile, bytes -> ImmutableList.of(backendService), any -> true);
+        registry = new FileBackedRegistry<>(configurationFile, bytes -> List.of(backendService), any -> true);
         registry.addListener(listener);
 
         await(registry.reload());
@@ -75,7 +75,7 @@ public class FileBackedRegistryTest {
                 new ByteArrayInputStream(originalContent)
         );
 
-        registry = new FileBackedRegistry<>(configurationFile, bytes -> ImmutableList.of(backendService), any -> true);
+        registry = new FileBackedRegistry<>(configurationFile, bytes -> List.of(backendService), any -> true);
         registry.addListener(listener);
         await(registry.reload());
         verify(listener).onChange(eq(changeSet().added(backendService).build()));
@@ -91,7 +91,7 @@ public class FileBackedRegistryTest {
     public void announcesNoMeaningfulChangesWhenNoSemanticChanges() throws Exception {
         Resource configurationFile = mockResource("/styx/config", new ByteArrayInputStream(originalContent));
 
-        registry = new FileBackedRegistry<>(configurationFile, bytes -> ImmutableList.of(backendService), any -> true);
+        registry = new FileBackedRegistry<>(configurationFile, bytes -> List.of(backendService), any -> true);
         registry.addListener(listener);
 
         await(registry.reload());
@@ -118,9 +118,9 @@ public class FileBackedRegistryTest {
                 configurationFile,
                 bytes -> {
                     if (new String(bytes).equals(new String(originalContent))) {
-                        return ImmutableList.of(backendService1);
+                        return List.of(backendService1);
                     } else {
-                        return ImmutableList.of(backendService2);
+                        return List.of(backendService2);
                     }
                 },
                 any -> true);
@@ -149,7 +149,7 @@ public class FileBackedRegistryTest {
                 configurationFile,
                 bytes -> {
                     if (new String(bytes).equals(new String(originalContent))) {
-                        return ImmutableList.of(backendService);
+                        return List.of(backendService);
                     } else {
                         throw new JustATestException();
                     }
@@ -173,7 +173,7 @@ public class FileBackedRegistryTest {
     public void modifyTimeProviderHandlesExceptions() throws Exception {
         registry = new FileBackedRegistry<>(
                 mockResource("/styx/config", new ByteArrayInputStream(originalContent)),
-                bytes -> ImmutableList.of(new BackendService.Builder().id("x").path("/x").build()),
+                bytes -> List.of(new BackendService.Builder().id("x").path("/x").build()),
                 any -> true
         );
 

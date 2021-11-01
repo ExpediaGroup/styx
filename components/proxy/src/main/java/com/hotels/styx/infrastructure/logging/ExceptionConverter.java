@@ -30,9 +30,9 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static ch.qos.logback.core.CoreConstants.LINE_SEPARATOR;
-import static com.google.common.base.Charsets.UTF_8;
 import static com.hotels.styx.common.Strings.isNotEmpty;
 import static java.lang.Integer.toHexString;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 

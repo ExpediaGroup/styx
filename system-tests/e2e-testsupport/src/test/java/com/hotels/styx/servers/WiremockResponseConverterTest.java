@@ -19,7 +19,6 @@ import com.github.tomakehurst.wiremock.http.BasicResponseRenderer;
 import com.github.tomakehurst.wiremock.http.HttpHeaders;
 import com.github.tomakehurst.wiremock.http.Response;
 import com.github.tomakehurst.wiremock.http.ResponseDefinition;
-import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpHeader;
 import com.hotels.styx.api.HttpResponse;
 import org.junit.jupiter.api.Test;
@@ -65,7 +64,7 @@ public class WiremockResponseConverterTest {
         assertThat(styxResponse.status(), is(OK));
         Map<String, String> actual = headersAsMap(styxResponse);
 
-        assertThat(actual, is(ImmutableMap.of(
+        assertThat(actual, is(Map.of(
                 "Transfer-Encoding", "chunked",
                 "Content-Type", "application/json")));
         assertThat(styxResponse.bodyAs(UTF_8), is("{ \"count\" : 0, \"requestJournalDisabled\" : false}"));

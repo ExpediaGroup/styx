@@ -50,14 +50,13 @@ import reactor.test.StepVerifier;
 
 import java.net.URI;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.concurrent.CountDownLatch;
 
-import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Sets.newHashSet;
 import static com.hotels.styx.api.RequestCookie.requestCookie;
+import static com.hotels.styx.javaconvenience.UtilKt.iterableToList;
 import static com.hotels.styx.server.UniqueIdSuppliers.fixedUniqueIdSupplier;
 import static com.hotels.styx.support.netty.HttpMessageSupport.httpMessageToBytes;
-import static com.hotels.styx.support.netty.HttpMessageSupport.httpRequest;
 import static com.hotels.styx.support.netty.HttpMessageSupport.httpRequestAsBuf;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static io.netty.handler.codec.http.HttpHeaders.Names.EXPECT;
@@ -275,7 +274,7 @@ public class NettyToStyxRequestDecoderTest {
                         requestCookie("guid", "xxxxx-xxx-xxx-xxx-xxxxxxx")
                 )
                 .build();
-        assertThat(newHashSet(styxRequest.cookies()), is(newHashSet(expected.cookies())));
+        assertThat(new HashSet<>(styxRequest.cookies()), is(new HashSet<>(expected.cookies())));
     }
 
     @Test
@@ -299,7 +298,7 @@ public class NettyToStyxRequestDecoderTest {
                         requestCookie("guid", "a,b")
                 )
                 .build();
-        assertThat(newHashSet(styxRequest.cookies()), is(newHashSet(expected.cookies())));
+        assertThat(new HashSet<>(styxRequest.cookies()), is(new HashSet<>(expected.cookies())));
     }
 
     @Test
@@ -333,7 +332,7 @@ public class NettyToStyxRequestDecoderTest {
     }
 
     private void assertThatHttpHeadersAreSame(Iterable<HttpHeader> headers, HttpHeaders headers1) {
-        assertThat(newArrayList(headers).size(), is(headers1.size()));
+        assertThat(iterableToList(headers).size(), is(headers1.size()));
         for (HttpHeader header : headers) {
             assertThat(header.value(), is(headers1.get(header.name())));
         }

@@ -16,28 +16,20 @@
 package com.hotels.styx.routing.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.routing.RoutingObject;
-import com.hotels.styx.routing.config.Builtins;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
-import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.routing.config.StyxObjectReference;
 import com.hotels.styx.server.NoServiceConfiguredException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -95,14 +87,13 @@ public class PathPrefixRouterTest {
         routingObjects.put(new StyxObjectReference("fooBarPathHandler"), fooBarPathHandler);
         routingObjects.put(new StyxObjectReference("fooBazFileHandler"), fooBazFileHandler);
 
-        PathPrefixRouter router = buildRouter(ImmutableMap.<String, String>builder()
-                .put("/", "rootHandler")
-                .put("/foo", "fooFileHandler")
-                .put("/foo/", "fooPathHandler")
-                .put("/foo/bar", "fooBarFileHandler")
-                .put("/foo/bar/", "fooBarPathHandler")
-                .put("/foo/baz", "fooBazFileHandler")
-                .build());
+        PathPrefixRouter router = buildRouter(Map.of(
+                "/", "rootHandler",
+                "/foo", "fooFileHandler",
+                "/foo/", "fooPathHandler",
+                "/foo/bar", "fooBarFileHandler",
+                "/foo/bar/", "fooBarPathHandler",
+                "/foo/baz", "fooBazFileHandler"));
 
         testRequestRoute(router, "/", rootHandler);
         testRequestRoute(router, "/foo", fooFileHandler);
