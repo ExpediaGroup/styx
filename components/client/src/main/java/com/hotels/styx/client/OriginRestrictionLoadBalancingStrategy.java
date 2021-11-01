@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.client;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.extension.ActiveOrigins;
 import com.hotels.styx.api.extension.RemoteHost;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
@@ -50,7 +49,7 @@ public class OriginRestrictionLoadBalancingStrategy implements LoadBalancer {
         this(activeOrigins, delegate, new Random());
     }
 
-    @VisibleForTesting
+    // Visible for testing
     OriginRestrictionLoadBalancingStrategy(ActiveOrigins activeOrigins, LoadBalancer delegate, Random rng) {
         this.activeOrigins = activeOrigins;
         this.delegate = requireNonNull(delegate);

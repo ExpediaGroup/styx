@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.routing;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.Environment;
 import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.extension.service.BackendService;
@@ -41,7 +40,7 @@ public class StaticPipelineFactory {
     private final NettyExecutor executor;
     private final boolean trackRequests;
 
-    @VisibleForTesting
+    // Visible for testing
     StaticPipelineFactory(BackendServiceClientFactory clientFactory,
                           Environment environment,
                           Registry<BackendService> registry,

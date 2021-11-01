@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.routing.handlers;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.Environment;
 import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.Eventual;
@@ -79,7 +78,7 @@ public class BackendServiceProxy implements RoutingObject {
             return new StyxBackendServiceClientFactory(environment);
         }
 
-        @VisibleForTesting
+        // Visible for testing
         Factory(Environment environment, BackendServiceClientFactory serviceClientFactory, Map<String, Registry<BackendService>> backendRegistries) {
             this.serviceClientFactory = serviceClientFactory;
             this.backendRegistries = backendRegistries;

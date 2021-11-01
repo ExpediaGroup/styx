@@ -16,7 +16,6 @@
 package com.hotels.styx.routing.handlers;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.net.HostAndPort;
 import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.Eventual;
@@ -116,9 +115,9 @@ public class HostProxy implements RoutingObject {
     private final OriginMetrics originMetrics;
     private volatile boolean active = true;
 
-    @VisibleForTesting
+    // Visible for testing
     final String host;
-    @VisibleForTesting
+    // Visible for testing
     final int port;
 
     public HostProxy(String host, int port, StyxHostHttpClient client, OriginMetrics originMetrics) {

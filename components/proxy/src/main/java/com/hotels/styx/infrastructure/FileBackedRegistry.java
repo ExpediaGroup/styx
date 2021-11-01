@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.infrastructure;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.hash.HashCode;
 import com.hotels.styx.api.Identifiable;
 import com.hotels.styx.api.Resource;
@@ -64,7 +63,7 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
         this.modifyTimeSupplier = modifyTimeSupplier;
     }
 
-    @VisibleForTesting
+    // Visible for testing
     FileBackedRegistry(Resource configurationFile, Reader<T> reader, Supplier<FileTime> modifyTimeSupplier) {
         this(configurationFile, reader, modifyTimeSupplier, any -> true);
     }

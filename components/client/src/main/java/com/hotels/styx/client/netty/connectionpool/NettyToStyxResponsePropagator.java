@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.client.netty.connectionpool;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.LiveHttpRequest;
@@ -208,7 +207,7 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
         }
     }
 
-    @VisibleForTesting
+    // Visible for testing
     static LiveHttpResponse.Builder toStyxResponse(io.netty.handler.codec.http.HttpResponse nettyResponse) {
         LiveHttpResponse.Builder responseBuilder = response(statusWithCode(nettyResponse.getStatus().code()));
 

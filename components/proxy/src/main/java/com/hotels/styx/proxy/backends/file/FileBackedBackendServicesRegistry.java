@@ -19,7 +19,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.configuration.Configuration;
@@ -58,14 +57,14 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
     private final FileBackedRegistry<BackendService> fileBackedRegistry;
     private final FileMonitor fileChangeMonitor;
 
-    @VisibleForTesting
+    // Visible for testing
     FileBackedBackendServicesRegistry(FileBackedRegistry<BackendService> fileBackedRegistry, FileMonitor fileChangeMonitor) {
         super(format("FileBackedBackendServiceRegistry(%s)", fileBackedRegistry.fileName()));
         this.fileBackedRegistry = requireNonNull(fileBackedRegistry);
         this.fileChangeMonitor = requireNonNull(fileChangeMonitor);
     }
 
-    @VisibleForTesting
+    // Visible for testing
     FileBackedBackendServicesRegistry(Resource originsFile, FileMonitor fileChangeMonitor) {
         this(new FileBackedRegistry<>(
                         originsFile,
@@ -123,7 +122,7 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
         return super.stop();
     }
 
-    @VisibleForTesting
+    // Visible for testing
     FileMonitor monitor() {
         return fileChangeMonitor;
     }
@@ -181,7 +180,7 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
         }
     }
 
-    @VisibleForTesting
+    // Visible for testing
     static class YAMLBackendServicesReader implements FileBackedRegistry.Reader<BackendService> {
         private static final ObjectMapper MAPPER = addStyxMixins(new ObjectMapper(new YAMLFactory()))
                 .disable(FAIL_ON_UNKNOWN_PROPERTIES)
@@ -206,7 +205,7 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
         }
     }
 
-    @VisibleForTesting
+    // Visible for testing
     static class RejectDuplicatePaths implements Predicate<Collection<BackendService>> {
         @Override
         public boolean test(Collection<BackendService> backendServices) {

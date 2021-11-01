@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.client.healthcheck.monitors;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.extension.Announcer;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
@@ -73,7 +72,7 @@ public class ScheduledOriginHealthStatusMonitor extends AbstractStyxService impl
         this.origins = new ConcurrentSkipListSet<>();
     }
 
-    @VisibleForTesting
+    // Visible for testing
     OriginHealthStatusMonitor monitor(Origin... origins) {
         return monitor(Set.of(origins));
     }

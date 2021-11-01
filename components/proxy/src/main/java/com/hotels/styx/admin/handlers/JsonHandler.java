@@ -16,7 +16,6 @@
 package com.hotels.styx.admin.handlers;
 
 import com.fasterxml.jackson.databind.Module;
-import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.admin.CachingSupplier;
 import com.hotels.styx.admin.dashboard.JsonSupplier;
 import com.hotels.styx.admin.handlers.json.JsonReformatter;
@@ -75,7 +74,7 @@ public class JsonHandler<E> extends BaseHttpHandler {
         this(dataSupplier, cacheExpiration, systemClock(), modules);
     }
 
-    @VisibleForTesting
+    // Visible for testing
     JsonHandler(Supplier<E> dataSupplier, Optional<Duration> cacheExpiration, Clock clock, Module... modules) {
         if (cacheExpiration.isPresent()) {
             LOG.debug("{} instantiated with cache expiration of {}", getClass().getSimpleName(), cacheExpiration.get());

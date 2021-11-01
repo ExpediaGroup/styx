@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.admin;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Clock;
 import org.slf4j.Logger;
 
@@ -59,7 +58,7 @@ public class CachingSupplier<E> implements Supplier<E> {
      * @param updateInterval interval between calls to sourceSupplier
      * @param clock allows you to specify a different clock (for testing).
      */
-    @VisibleForTesting
+    // Visible for testing
     public CachingSupplier(Supplier<? extends E> sourceSupplier, Duration updateInterval, Clock clock) {
         this.sourceSupplier = requireNonNull(sourceSupplier);
         this.updateIntervalMillis = updateInterval.toMillis();

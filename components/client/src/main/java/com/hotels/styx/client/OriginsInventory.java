@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.client;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.hotels.styx.api.Eventual;
@@ -147,7 +146,7 @@ public final class OriginsInventory
         eventQueue.submit(new SetOriginsEvent(newOrigins));
     }
 
-    @VisibleForTesting
+    // Visible for testing
     public void setOrigins(Origin... origins) {
         setOrigins(Set.of(origins));
     }

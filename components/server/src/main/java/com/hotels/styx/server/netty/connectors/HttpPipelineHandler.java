@@ -16,7 +16,6 @@
 package com.hotels.styx.server.netty.connectors;
 
 
-import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.ContentOverflowException;
@@ -197,7 +196,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         return state;
     }
 
-    @VisibleForTesting
+    // Visible for testing
     State state() {
         return this.stateMachine.currentState();
     }

@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.common.content;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.common.StateMachine;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.EventLoop;
@@ -489,7 +488,7 @@ public class FlowControllingHttpContentProducer {
         }
     }
 
-    @VisibleForTesting
+    // Visible for testing
     ProducerState state() {
         return stateMachine.currentState();
     }

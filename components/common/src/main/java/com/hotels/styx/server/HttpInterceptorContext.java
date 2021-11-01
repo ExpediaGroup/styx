@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.server;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.HttpInterceptor;
 
 import java.net.InetSocketAddress;
@@ -50,7 +49,7 @@ public final class HttpInterceptorContext implements HttpInterceptor.Context {
      * @deprecated use the constructor instead.
      * @return
      */
-    @VisibleForTesting
+    // Visible for testing
     @Deprecated
     public static HttpInterceptor.Context create() {
         return new HttpInterceptorContext(false, null, Runnable::run);

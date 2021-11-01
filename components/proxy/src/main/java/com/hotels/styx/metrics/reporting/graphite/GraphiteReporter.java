@@ -13,7 +13,6 @@ import com.codahale.metrics.ScheduledReporter;
 import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
 import com.codahale.metrics.graphite.GraphiteSender;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -154,7 +153,7 @@ public class GraphiteReporter extends ScheduledReporter {
 
     private static final Logger LOGGER = getLogger(GraphiteReporter.class);
 
-    @VisibleForTesting
+    // Visible for testing
     static final int MAX_RETRIES = 5;
 
     private final GraphiteSender graphite;
@@ -257,7 +256,7 @@ public class GraphiteReporter extends ScheduledReporter {
         }
     }
 
-    @VisibleForTesting
+    // Visible for testing
     void initConnection() {
         tryTimes(
                 MAX_RETRIES,

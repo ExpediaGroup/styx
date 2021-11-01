@@ -16,7 +16,6 @@
 package com.hotels.styx.client.loadbalancing.strategies;
 
 
-import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.extension.ActiveOrigins;
 import com.hotels.styx.api.extension.RemoteHost;
@@ -39,7 +38,7 @@ public class PowerOfTwoStrategy implements LoadBalancer {
     private final ActiveOrigins activeOrigins;
     private final Random rng;
 
-    @VisibleForTesting
+    // Visible for testing
     PowerOfTwoStrategy(ActiveOrigins activeOrigins, Random rng) {
         this.activeOrigins = requireNonNull(activeOrigins);
         this.rng = requireNonNull(rng);

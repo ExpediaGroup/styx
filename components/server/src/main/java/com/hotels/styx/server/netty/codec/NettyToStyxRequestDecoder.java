@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.server.netty.codec;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.HttpVersion;
@@ -176,7 +175,7 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
         return true;
     }
 
-    @VisibleForTesting
+    // Visible for testing
     LiveHttpRequest.Builder makeAStyxRequestFrom(HttpRequest request, Publisher<Buffer> content) {
         Url url = UrlDecoder.decodeUrl(unwiseCharEncoder, request);
         LiveHttpRequest.Builder requestBuilder = new LiveHttpRequest.Builder()

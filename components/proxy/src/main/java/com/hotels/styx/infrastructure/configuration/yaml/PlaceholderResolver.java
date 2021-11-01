@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.node.ContainerNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.databind.node.ValueNode;
-import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.infrastructure.configuration.UnresolvedPlaceholder;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonTreeTraversal.JsonTreeVisitor;
 import org.slf4j.Logger;
@@ -189,12 +188,12 @@ public class PlaceholderResolver {
         return list.get(list.size() - 1);
     }
 
-    @VisibleForTesting
+    // Visible for testing
     public static String replacePlaceholder(String originalString, String placeholderName, String placeholderValue) {
         return originalString.replaceAll("\\$\\{" + quote(placeholderName) + "(?:\\:[^\\}]*?)?\\}", placeholderValue);
     }
 
-    @VisibleForTesting
+    // Visible for testing
     static List<String> extractPlaceholderStrings(String value) {
         Matcher matcher = PLACEHOLDER_REGEX_CAPTURE_ALL.matcher(value);
 
@@ -207,7 +206,7 @@ public class PlaceholderResolver {
         return placeholders;
     }
 
-    @VisibleForTesting
+    // Visible for testing
     public static List<Placeholder> extractPlaceholders(String value) {
         List<Placeholder> namesAndDefaults = new ArrayList<>();
 

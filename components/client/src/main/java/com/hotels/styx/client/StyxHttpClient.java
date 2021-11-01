@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.client;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.net.HostAndPort;
 import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.HttpRequest;
@@ -111,7 +110,7 @@ public final class StyxHttpClient implements HttpClient {
                 .toFuture();
     }
 
-    @VisibleForTesting
+    // Visible for testing
     static Mono<LiveHttpResponse> sendRequestInternal(NettyConnectionFactory connectionFactory, LiveHttpRequest request, Builder params) {
         LiveHttpRequest networkRequest = addUserAgent(params.userAgent(), request);
         Origin origin = originFromRequest(networkRequest, params.https());
