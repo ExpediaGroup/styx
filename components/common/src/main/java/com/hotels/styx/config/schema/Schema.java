@@ -16,8 +16,6 @@
 package com.hotels.styx.config.schema;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -32,11 +30,13 @@ import static com.hotels.styx.config.schema.SchemaDsl.object;
 import static com.hotels.styx.config.schema.SchemaDsl.optional;
 import static com.hotels.styx.config.schema.SchemaDsl.string;
 import static com.hotels.styx.config.schema.SchemaDsl.union;
+import static com.hotels.styx.javaconvenience.UtilKt.iteratorToList;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
+import static java.util.stream.StreamSupport.stream;
 
 /**
  * Declares a layout and constraints for configuration objects.
@@ -63,7 +63,7 @@ import static java.util.stream.Collectors.toSet;
  * attribute type.
  */
 public class Schema {
-    private final ImmutableList<Constraint> constraints;
+    private final List<Constraint> constraints;
     private final String name;
     private final List<String> fieldNames;
     private final List<Field> fields;
@@ -72,9 +72,9 @@ public class Schema {
 
     private Schema(Builder builder) {
         this.fieldNames = builder.fields.stream().map(Field::name).collect(toList());
-        this.fields = ImmutableList.copyOf(builder.fields);
-        this.optionalFields = ImmutableSet.copyOf(builder.optionalFields);
-        this.constraints = ImmutableList.copyOf(builder.constraints);
+        this.fields = List.copyOf(builder.fields);
+        this.optionalFields = Set.copyOf(builder.optionalFields);
+        this.constraints = List.copyOf(builder.constraints);
         this.ignore = builder.pass;
         this.name = builder.name.length() > 0 ? builder.name : String.join(", ", this.fieldNames);
     }
@@ -139,7 +139,7 @@ public class Schema {
     }
 
     private static void assertNoUnknownFields(String prefix, Schema schema, List<String> fieldsPresent) {
-        Set<String> knownFields = ImmutableSet.copyOf(schema.fieldNames());
+        Set<String> knownFields = Set.copyOf(schema.fieldNames());
 
         fieldsPresent.forEach(name -> {
             if (!knownFields.contains(name)) {
@@ -147,7 +147,6 @@ public class Schema {
             }
         });
     }
-
 
     /**
      * Represents a schema field type.
@@ -435,7 +434,7 @@ public class Schema {
                 }
             });
 
-            assertNoUnknownFields(String.join(".", parents), schema, ImmutableList.copyOf(value.fieldNames()));
+            assertNoUnknownFields(String.join(".", parents), schema, iteratorToList(value.fieldNames()));
         }
 
         @Override

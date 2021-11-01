@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.startup;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Eventual;
@@ -68,7 +66,7 @@ public class StyxServerComponentsTest {
         StyxServerComponents components = new StyxServerComponents.Builder()
                 .registry(new MicrometerRegistry(new CompositeMeterRegistry()))
                 .styxConfig(new StyxConfig())
-                .pluginFactories(ImmutableList.of(f1, f2))
+                .pluginFactories(List.of(f1, f2))
                 .build();
 
         List<NamedPlugin> plugins = components.plugins();
@@ -82,7 +80,7 @@ public class StyxServerComponentsTest {
         StyxServerComponents components = new StyxServerComponents.Builder()
                 .registry(new MicrometerRegistry(new CompositeMeterRegistry()))
                 .styxConfig(new StyxConfig())
-                .services((env, routeDb) -> ImmutableMap.of(
+                .services((env, routeDb) -> Map.of(
                         "service1", mock(StyxService.class),
                         "service2", mock(StyxService.class)))
                 .build();
@@ -97,7 +95,7 @@ public class StyxServerComponentsTest {
         StyxServerComponents components = new StyxServerComponents.Builder()
                 .registry(new MicrometerRegistry((new CompositeMeterRegistry())))
                 .styxConfig(new StyxConfig())
-                .additionalServices(ImmutableMap.of(
+                .additionalServices(Map.of(
                         "service1", mock(StyxService.class),
                         "service2", mock(StyxService.class)))
                 .build();

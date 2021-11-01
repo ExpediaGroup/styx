@@ -16,7 +16,6 @@
 package com.hotels.styx;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
@@ -75,7 +74,7 @@ public class StyxPipelineFactory {
         Optional<JsonNode> rootHandlerNode = environment.configuration().get("httpPipeline", JsonNode.class);
 
         if (rootHandlerNode.isPresent()) {
-            return Builtins.build(ImmutableList.of("httpPipeline"), routingObjectFactoryContext, toRoutingConfigNode(rootHandlerNode.get()));
+            return Builtins.build(List.of("httpPipeline"), routingObjectFactoryContext, toRoutingConfigNode(rootHandlerNode.get()));
         }
 
         Registry<BackendService> registry = (Registry<BackendService>) services.get("backendServiceRegistry");

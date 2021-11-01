@@ -27,9 +27,9 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Optional;
 
-import static com.google.common.collect.Iterables.getFirst;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
+import static com.hotels.styx.javaconvenience.UtilKt.first;
 import static java.util.Arrays.asList;
 import static java.util.Collections.EMPTY_LIST;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -52,10 +52,9 @@ public class StickySessionLoadBalancingStrategyTest {
 
     final ActiveOrigins activeOrigins = mock(ActiveOrigins.class);
 
-    final LoadBalancer FALL_BACK_STRATEGY = (context) -> Optional.ofNullable(getFirst(activeOrigins.snapshot(), null));
+    final LoadBalancer FALL_BACK_STRATEGY = (context) -> Optional.ofNullable(first(activeOrigins.snapshot()));
 
     final LoadBalancer strategy = new StickySessionLoadBalancingStrategy(activeOrigins, FALL_BACK_STRATEGY);
-
 
     @Test
     public void selectsThePreferredOrigin() {
@@ -94,7 +93,6 @@ public class StickySessionLoadBalancingStrategyTest {
         Optional<RemoteHost> chosenOne = strategy.choose(lbPreferences(Optional.of(ORIGIN_1.id())));
 
         assertThat(chosenOne, is(Optional.empty()));
-
     }
 
     @Test
@@ -105,7 +103,6 @@ public class StickySessionLoadBalancingStrategyTest {
 
         assertThat(chosenOne, is(Optional.of(ORIGIN_2)));
     }
-
 
     private LoadBalancer.Preferences lbPreferences(Optional<Id> id) {
         return new LoadBalancer.Preferences() {
@@ -120,5 +117,4 @@ public class StickySessionLoadBalancingStrategyTest {
             }
         };
     }
-
 }

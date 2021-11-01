@@ -16,7 +16,6 @@
 package com.hotels.styx.admin;
 
 import com.codahale.metrics.json.MetricsModule;
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.Environment;
 import com.hotels.styx.InetServer;
 import com.hotels.styx.NettyExecutor;
@@ -82,6 +81,7 @@ import static com.hotels.styx.metrics.MetricsExtensionsKt.findRegistry;
 import static com.hotels.styx.routing.config.ConfigVersionResolver.Version.ROUTING_CONFIG_V1;
 import static com.hotels.styx.routing.config.ConfigVersionResolver.configVersion;
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -222,27 +222,27 @@ public class AdminServerBuilder {
     }
 
     private static Iterable<IndexHandler.Link> indexLinkPaths(StyxConfig styxConfig) {
-        ImmutableList.Builder<IndexHandler.Link> builder = ImmutableList.builder();
-        builder.add(link("version.txt", "/version.txt"));
-        builder.add(link("uptime", "/admin/uptime"));
-        builder.add(link("Ping", "/admin/ping"));
-        builder.add(link("Threads", "/admin/threads"));
-        builder.add(link("Current Requests", "/admin/current_requests?withStackTrace=true"));
-        builder.add(link("Metrics", "/admin/metrics?pretty"));
-        builder.add(link("Configuration", "/admin/configuration?pretty"));
-        builder.add(link("Log Configuration", "/admin/configuration/logging"));
-        builder.add(link("Startup Configuration", "/admin/configuration/startup"));
-        builder.add(link("JVM", "/admin/jvm?pretty"));
-        builder.add(link("Plugins", "/admin/plugins"));
-        builder.add(link("Providers", "/admin/providers"));
-        builder.add(link("Prometheus", "/metrics"));
+        List<IndexHandler.Link> builder = new ArrayList<>(asList(
+                link("version.txt", "/version.txt"),
+                link("uptime", "/admin/uptime"),
+                link("Ping", "/admin/ping"),
+                link("Threads", "/admin/threads"),
+                link("Current Requests", "/admin/current_requests?withStackTrace=true"),
+                link("Metrics", "/admin/metrics?pretty"),
+                link("Configuration", "/admin/configuration?pretty"),
+                link("Log Configuration", "/admin/configuration/logging"),
+                link("Startup Configuration", "/admin/configuration/startup"),
+                link("JVM", "/admin/jvm?pretty"),
+                link("Plugins", "/admin/plugins"),
+                link("Providers", "/admin/providers"),
+                link("Prometheus", "/metrics")));
 
         if (configVersion(styxConfig) == ROUTING_CONFIG_V1) {
-            builder.add(link("Dashboard", "/admin/dashboard/index.html"))
-                    .add(link("Origins Status", "/admin/origins/status?pretty"))
-                    .add(link("Origins Configuration", "/admin/configuration/origins?pretty"));
+            builder.add(link("Dashboard", "/admin/dashboard/index.html"));
+            builder.add(link("Origins Status", "/admin/origins/status?pretty"));
+            builder.add(link("Origins Configuration", "/admin/configuration/origins?pretty"));
         }
-        return builder.build()
+        return builder
                 .stream()
                 .sorted()
                 .collect(toList());

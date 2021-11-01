@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 
@@ -57,7 +55,7 @@ public final class HttpHeaders implements Iterable<HttpHeader> {
      * @return header names
      */
     public Set<String> names() {
-        return ImmutableSet.copyOf(nettyHeaders.names());
+        return nettyHeaders.names();
     }
 
     /**
@@ -80,7 +78,7 @@ public final class HttpHeaders implements Iterable<HttpHeader> {
      * are found
      */
     public List<String> getAll(CharSequence name) {
-        return ImmutableList.copyOf(nettyHeaders.getAll(name));
+        return nettyHeaders.getAll(name);
     }
 
     /**

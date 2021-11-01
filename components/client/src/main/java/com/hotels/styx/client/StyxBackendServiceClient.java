@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.client;
 
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.Id;
@@ -44,7 +43,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.HttpMethod.HEAD;
@@ -142,7 +140,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
         Optional<RemoteHost> remoteHost = selectOrigin(request);
         if (remoteHost.isPresent()) {
             RemoteHost host = remoteHost.get();
-            List<RemoteHost> newPreviousOrigins = newArrayList(previousOrigins);
+            List<RemoteHost> newPreviousOrigins = new ArrayList<>(previousOrigins);
             newPreviousOrigins.add(remoteHost.get());
 
             return ResponseEventListener.from(
@@ -381,7 +379,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
         }
 
         public Builder rewriteRules(List<? extends RewriteRule> rewriteRules) {
-            this.rewriteRules = ImmutableList.copyOf(rewriteRules);
+            this.rewriteRules = List.copyOf(rewriteRules);
             return this;
         }
 

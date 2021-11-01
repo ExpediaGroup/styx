@@ -16,8 +16,6 @@
 package com.hotels.styx.client;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.hotels.styx.api.Eventual;
@@ -46,6 +44,7 @@ import org.slf4j.Logger;
 import javax.annotation.concurrent.ThreadSafe;
 import java.io.Closeable;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -129,7 +128,7 @@ public final class OriginsInventory
 
     @Override
     public String getApplicationId() {
-        return  appId.toString();
+        return appId.toString();
     }
 
     @Override
@@ -150,7 +149,7 @@ public final class OriginsInventory
 
     @VisibleForTesting
     public void setOrigins(Origin... origins) {
-        setOrigins(ImmutableSet.copyOf(origins));
+        setOrigins(Set.of(origins));
     }
 
     @Override
@@ -283,7 +282,7 @@ public final class OriginsInventory
     private void handleCloseEvent() {
         if (closed.compareAndSet(false, true)) {
             origins.values().forEach(host -> removeMonitoredEndpoint(host.origin.id()));
-            this.origins = ImmutableMap.of();
+            this.origins = Map.of();
             notifyStateChange();
             eventBus.unregister(this);
         }
@@ -537,7 +536,7 @@ public final class OriginsInventory
         }
 
         public Builder initialOrigins(Set<Origin> origins) {
-            this.initialOrigins = ImmutableSet.copyOf(origins);
+            this.initialOrigins = Set.copyOf(origins);
             return this;
         }
 
@@ -581,7 +580,7 @@ public final class OriginsInventory
     }
 
     private class OriginChanges {
-        ImmutableMap.Builder<Id, MonitoredOrigin> monitoredOrigins = ImmutableMap.builder();
+        Map<Id, MonitoredOrigin> monitoredOrigins = new HashMap<>();
         AtomicBoolean changed = new AtomicBoolean(false);
 
         void addOrReplaceOrigin(Id originId, MonitoredOrigin origin) {
@@ -602,7 +601,7 @@ public final class OriginsInventory
         }
 
         Map<Id, MonitoredOrigin> updatedOrigins() {
-            return monitoredOrigins.build();
+            return Map.copyOf(monitoredOrigins);
         }
     }
 }

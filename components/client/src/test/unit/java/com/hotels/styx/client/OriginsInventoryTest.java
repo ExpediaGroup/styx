@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.client;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.EventBus;
 import com.hotels.styx.api.MeterRegistry;
 import com.hotels.styx.api.MicrometerRegistry;
@@ -38,6 +37,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
+import java.util.Set;
 
 import static ch.qos.logback.classic.Level.INFO;
 import static com.hotels.styx.api.Id.GENERIC_APP;
@@ -466,8 +466,8 @@ public class OriginsInventoryTest {
         inventory.setOrigins(ORIGIN_1, ORIGIN_2);
         inventory.close();
 
-        verify(monitor).stopMonitoring(eq(ImmutableSet.of(ORIGIN_1)));
-        verify(monitor).stopMonitoring(eq(ImmutableSet.of(ORIGIN_2)));
+        verify(monitor).stopMonitoring(eq(Set.of(ORIGIN_1)));
+        verify(monitor).stopMonitoring(eq(Set.of(ORIGIN_2)));
         assertThat(gaugeValue("generic-app", "app-01"), isAbsent());
         assertThat(gaugeValue("generic-app", "app-02"), isAbsent());
 
