@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.routing.interceptors;
 
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
@@ -27,6 +26,9 @@ import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.routing.config.HttpInterceptorFactory;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.hotels.styx.config.schema.SchemaDsl.field;
 import static com.hotels.styx.config.schema.SchemaDsl.list;
@@ -60,7 +62,7 @@ public class RewriteInterceptor implements HttpInterceptor {
     public static class Factory implements HttpInterceptorFactory {
         @Override
         public HttpInterceptor build(StyxObjectDefinition configBlock) {
-            ImmutableList.Builder<RewriteRule> rules = ImmutableList.builder();
+            List<RewriteRule> rules = new ArrayList<>();
             configBlock.config().iterator().forEachRemaining(
                     node -> {
                         RewriteConfig rewriteConfig = new JsonNodeConfig(node).as(RewriteConfig.class);
@@ -68,7 +70,7 @@ public class RewriteInterceptor implements HttpInterceptor {
                     }
             );
 
-            return new RewriteInterceptor(new RewriteRuleset(rules.build()));
+            return new RewriteInterceptor(new RewriteRuleset(List.copyOf(rules)));
         }
 
     }

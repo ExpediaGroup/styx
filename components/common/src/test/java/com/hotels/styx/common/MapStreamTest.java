@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.common;
 
-import com.google.common.collect.ImmutableMap;
 import org.junit.jupiter.api.Test;
 
 import java.util.AbstractMap.SimpleEntry;
@@ -29,7 +28,7 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 
 public class MapStreamTest {
-    private final Map<String, String> map = ImmutableMap.of(
+    private final Map<String, String> map = Map.of(
             "firstName", "John",
             "lastName", "Smith",
             "dateOfBirth", "1970-01-01"

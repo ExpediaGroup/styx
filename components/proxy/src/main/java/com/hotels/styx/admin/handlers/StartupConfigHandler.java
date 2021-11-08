@@ -15,9 +15,10 @@
  */
 package com.hotels.styx.admin.handlers;
 
-import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.StartupConfig;
 import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
+
+import java.util.stream.Stream;
 
 import static com.google.common.net.MediaType.HTML_UTF_8;
 import static java.util.stream.Collectors.joining;
@@ -36,12 +37,10 @@ public class StartupConfigHandler extends StaticBodyHttpHandler {
     }
 
     private static String render(StartupConfig startupConfig) {
-        return ImmutableMap.of(
-                "Styx Home", startupConfig.styxHome(),
-                "Config File Location", startupConfig.configFileLocation(),
-                "Log Config Location", startupConfig.logConfigLocation())
-                .entrySet().stream()
-                .map(entry -> entry.getKey() + "='" + entry.getValue() + "'")
-                .collect(joining("<br />", "<html><body>", "</body></html>"));
+        return Stream.of(
+                "Styx Home='" + startupConfig.styxHome() + "'",
+                "Config File Location='" + startupConfig.configFileLocation() + "'",
+                "Log Config Location='" + startupConfig.logConfigLocation() + "'"
+        ).collect(joining("<br />", "<html><body>", "</body></html>"));
     }
 }

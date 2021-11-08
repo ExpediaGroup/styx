@@ -18,7 +18,6 @@ package com.hotels.styx.support
 import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.google.common.collect.ImmutableSet
 import com.hotels.styx.StyxConfig
 import com.hotels.styx.StyxServer
 import com.hotels.styx.api.*
@@ -104,7 +103,7 @@ class StyxServerProvider(
             stop()
         }
 
-        val meterRegistry = MicrometerRegistry(CompositeMeterRegistry(Clock.SYSTEM, ImmutableSet.of(SimpleMeterRegistry())))
+        val meterRegistry = MicrometerRegistry(CompositeMeterRegistry(Clock.SYSTEM, setOf(SimpleMeterRegistry())))
         var components = StyxServerComponents.Builder()
                 .registry(meterRegistry)
                 .styxConfig(StyxConfig.fromYaml(configuration, validateConfig))

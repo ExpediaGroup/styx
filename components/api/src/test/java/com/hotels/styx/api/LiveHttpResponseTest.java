@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.collect.ImmutableList;
-import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -24,8 +22,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
@@ -381,7 +379,7 @@ public class LiveHttpResponseTest {
     public void transformsWithCookieList() {
         LiveHttpResponse response = response().build()
                 .newBuilder()
-                .cookies(ImmutableList.of(responseCookie("x", "y").build()))
+                .cookies(List.of(responseCookie("x", "y").build()))
                 .build();
 
         assertEquals(response.cookie("x"), Optional.of(responseCookie("x", "y").build()));
@@ -401,7 +399,7 @@ public class LiveHttpResponseTest {
     public void transformerAddsCookiesList() {
         LiveHttpResponse response = response().build()
                 .newBuilder()
-                .addCookies(ImmutableList.of(responseCookie("x", "y").build()))
+                .addCookies(List.of(responseCookie("x", "y").build()))
                 .build();
 
         assertEquals(response.cookie("x"), Optional.of(responseCookie("x", "y").build()));
@@ -410,7 +408,7 @@ public class LiveHttpResponseTest {
     @Test
     public void transformerRemovesCookies() {
         LiveHttpResponse response = response()
-                .addCookies(ImmutableList.of(responseCookie("x", "y").build()))
+                .addCookies(List.of(responseCookie("x", "y").build()))
                 .build()
                 .newBuilder()
                 .removeCookies("x")
@@ -422,10 +420,10 @@ public class LiveHttpResponseTest {
     @Test
     public void transformerRemovesCookiesWithList() {
         LiveHttpResponse response = response()
-                .addCookies(ImmutableList.of(responseCookie("x", "y").build()))
+                .addCookies(List.of(responseCookie("x", "y").build()))
                 .build()
                 .newBuilder()
-                .removeCookies(ImmutableList.of("x"))
+                .removeCookies(List.of("x"))
                 .build();
 
         assertEquals(response.cookie("x"), Optional.empty());

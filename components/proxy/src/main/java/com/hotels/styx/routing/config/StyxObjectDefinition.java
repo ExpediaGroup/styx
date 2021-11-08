@@ -18,7 +18,6 @@ package com.hotels.styx.routing.config;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 
 import java.util.List;
@@ -38,12 +37,12 @@ public class StyxObjectDefinition implements StyxObjectConfiguration {
     public StyxObjectDefinition(String name, String type, List<String> tags, JsonNode config) {
         this.name = requireNonNull(name);
         this.type = requireNonNull(type);
-        this.tags = ImmutableList.copyOf(tags);
+        this.tags = List.copyOf(tags);
         this.config = requireNonNull(config);
     }
 
     public StyxObjectDefinition(String name, String type, JsonNode config) {
-        this(name, type, ImmutableList.of(), config);
+        this(name, type, List.of(), config);
     }
 
     public String name() {
@@ -67,7 +66,7 @@ public class StyxObjectDefinition implements StyxObjectConfiguration {
     }
 
     static class Builder {
-        private List<String> tags = ImmutableList.of();
+        private List<String> tags = List.of();
         private String name = "";
 
         private JsonNode config;

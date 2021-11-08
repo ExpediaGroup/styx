@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
-import static com.google.common.collect.Sets.newHashSet;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.service.BackendService.DEFAULT_RESPONSE_TIMEOUT_MILLIS;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -30,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class BackendServiceTest {
-    Set<Origin> originSet = newHashSet(newOriginBuilder("localhost", 123).build());
+    Set<Origin> originSet = Set.of(newOriginBuilder("localhost", 123).build());
 
     @Test
     public void usesResponseTimeoutOfZeroToIndicateDefaultValue() {

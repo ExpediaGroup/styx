@@ -15,7 +15,6 @@
  */
 package com.hotels.styx;
 
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.proxy.interceptors.ConfigurationContextResolverInterceptor;
@@ -26,9 +25,11 @@ import com.hotels.styx.proxy.interceptors.TcpTunnelRequestRejector;
 import com.hotels.styx.proxy.interceptors.UnexpectedRequestContentLengthRemover;
 import com.hotels.styx.proxy.interceptors.ViaHeaderAppendingInterceptor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.hotels.styx.api.configuration.ConfigurationContextResolver.EMPTY_CONFIGURATION_CONTEXT_RESOLVER;
+import static java.util.Arrays.asList;
 
 /**
  * Provides a list of interceptors that are required by the Styx HTTP pipeline for core functionality.
@@ -38,7 +39,7 @@ final class BuiltInInterceptors {
     }
 
     static List<HttpInterceptor> internalStyxInterceptors(StyxConfig config, HttpMessageFormatter httpMessageFormatter) {
-        ImmutableList.Builder<HttpInterceptor> builder = ImmutableList.builder();
+        List<HttpInterceptor> builder = new ArrayList<>();
 
         boolean loggingEnabled = config.get("request-logging.inbound.enabled", Boolean.class)
                 .orElse(false);
@@ -50,15 +51,15 @@ final class BuiltInInterceptors {
             builder.add(new HttpMessageLoggingInterceptor(longFormatEnabled, httpMessageFormatter));
         }
 
-        builder.add(new TcpTunnelRequestRejector())
-                .add(new ConfigurationContextResolverInterceptor(EMPTY_CONFIGURATION_CONTEXT_RESOLVER))
-                .add(new UnexpectedRequestContentLengthRemover())
-                .add(config.proxyServerConfig().via()
+        builder.addAll(asList(new TcpTunnelRequestRejector(),
+                new ConfigurationContextResolverInterceptor(EMPTY_CONFIGURATION_CONTEXT_RESOLVER),
+                new UnexpectedRequestContentLengthRemover(),
+                config.proxyServerConfig().via()
                         .map(ViaHeaderAppendingInterceptor::new)
-                        .orElseGet(ViaHeaderAppendingInterceptor::new))
-                .add(new HopByHopHeadersRemovingInterceptor())
-                .add(new RequestEnrichingInterceptor(config.styxHeaderConfig()));
+                        .orElseGet(ViaHeaderAppendingInterceptor::new),
+                new HopByHopHeadersRemovingInterceptor(),
+                new RequestEnrichingInterceptor(config.styxHeaderConfig())));
 
-        return builder.build();
+        return List.copyOf(builder);
     }
 }

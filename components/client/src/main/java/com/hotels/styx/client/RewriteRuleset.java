@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.client;
 
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.Url;
 import com.hotels.styx.api.extension.service.RewriteRule;
@@ -37,7 +36,7 @@ public class RewriteRuleset {
      * @param rewriteRules rewrite rules
      */
     public RewriteRuleset(List<RewriteRule> rewriteRules) {
-        this.rewriteRules = ImmutableList.copyOf(rewriteRules);
+        this.rewriteRules = List.copyOf(rewriteRules);
     }
 
     /**

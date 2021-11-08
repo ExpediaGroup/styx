@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.client.loadbalancing.strategies;
 
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.Id;
@@ -28,10 +27,10 @@ import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetric;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetricSupplier;
 import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Optional;
 
 import static com.hotels.styx.api.Id.id;
@@ -105,7 +104,7 @@ public class RoundRobinStrategyTest {
         strategy = new RoundRobinStrategy.Factory().create(environment, configuration, new ActiveOrigins() {
             @Override
             public Iterable<RemoteHost> snapshot() {
-                return ImmutableList.of();
+                return List.of();
             }
 
             @Override

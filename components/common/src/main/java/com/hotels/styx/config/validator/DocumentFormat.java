@@ -16,7 +16,6 @@
 package com.hotels.styx.config.validator;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.config.schema.InvalidSchemaException;
 import com.hotels.styx.config.schema.Schema;
 import org.slf4j.Logger;
@@ -42,7 +41,7 @@ public class DocumentFormat {
     private static final Logger LOGGER = LoggerFactory.getLogger(DocumentFormat.class);
 
     private final Schema.FieldType root;
-    private final ImmutableMap<String, Schema.FieldType> additionalSchemas;
+    private final Map<String, Schema.FieldType> additionalSchemas;
 
     public void validateObject(JsonNode tree) {
         root.validate(new ArrayList<>(), tree, tree, this.additionalSchemas::get);
@@ -54,7 +53,7 @@ public class DocumentFormat {
 
     private DocumentFormat(Builder builder) {
         this.root = requireNonNull(builder.root);
-        this.additionalSchemas = ImmutableMap.copyOf(builder.schemas);
+        this.additionalSchemas = Map.copyOf(builder.schemas);
     }
 
     /**

@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.admin.handlers;
 
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpMethod;
@@ -50,7 +49,7 @@ public class UrlPatternRouter implements WebServiceHandler {
     private final List<RouteDescriptor> alternatives;
 
     private UrlPatternRouter(List<RouteDescriptor> alternatives) {
-        this.alternatives = ImmutableList.copyOf(alternatives);
+        this.alternatives = List.copyOf(alternatives);
     }
 
     public static Map<String, String> placeholders(HttpInterceptor.Context context) {

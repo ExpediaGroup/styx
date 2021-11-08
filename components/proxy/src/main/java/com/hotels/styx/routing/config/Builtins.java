@@ -15,11 +15,10 @@
  */
 package com.hotels.styx.routing.config;
 
-import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.ExecutorFactory;
 import com.hotels.styx.InetServer;
-import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.NettyExecutor;
+import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.extension.service.spi.StyxService;
@@ -71,37 +70,37 @@ public final class Builtins {
 
     public static final String REWRITE = "Rewrite";
 
-    public static final ImmutableMap<String, Schema.FieldType> BUILTIN_HANDLER_SCHEMAS;
-    public static final ImmutableMap<String, RoutingObjectFactory> BUILTIN_HANDLER_FACTORIES;
+    public static final Map<String, Schema.FieldType> BUILTIN_HANDLER_SCHEMAS;
+    public static final Map<String, RoutingObjectFactory> BUILTIN_HANDLER_FACTORIES;
 
-    public static final ImmutableMap<String, HttpInterceptorFactory> INTERCEPTOR_FACTORIES =
-            ImmutableMap.of(REWRITE, new RewriteInterceptor.Factory());
+    public static final Map<String, HttpInterceptorFactory> INTERCEPTOR_FACTORIES =
+            Map.of(REWRITE, new RewriteInterceptor.Factory());
 
-    public static final ImmutableMap<String, Schema.FieldType> INTERCEPTOR_SCHEMAS =
-            ImmutableMap.of(REWRITE, RewriteInterceptor.SCHEMA);
+    public static final Map<String, Schema.FieldType> INTERCEPTOR_SCHEMAS =
+            Map.of(REWRITE, RewriteInterceptor.SCHEMA);
 
-    public static final ImmutableMap<String, ServiceProviderFactory> BUILTIN_SERVICE_PROVIDER_FACTORIES =
-            ImmutableMap.of(HEALTH_CHECK_MONITOR, new HealthCheckMonitoringServiceFactory(),
+    public static final Map<String, ServiceProviderFactory> BUILTIN_SERVICE_PROVIDER_FACTORIES =
+            Map.of(HEALTH_CHECK_MONITOR, new HealthCheckMonitoringServiceFactory(),
                     YAML_FILE_CONFIGURATION_SERVICE, new YamlFileConfigurationServiceFactory()
             );
 
-    public static final ImmutableMap<String, Schema.FieldType> BUILTIN_SERVICE_PROVIDER_SCHEMAS =
-            ImmutableMap.of(HEALTH_CHECK_MONITOR, HealthCheckMonitoringService.SCHEMA,
+    public static final Map<String, Schema.FieldType> BUILTIN_SERVICE_PROVIDER_SCHEMAS =
+            Map.of(HEALTH_CHECK_MONITOR, HealthCheckMonitoringService.SCHEMA,
                     YAML_FILE_CONFIGURATION_SERVICE, YamlFileConfigurationService.SCHEMA);
 
-    public static final ImmutableMap<String, StyxServerFactory> BUILTIN_SERVER_FACTORIES = ImmutableMap.of(
+    public static final Map<String, StyxServerFactory> BUILTIN_SERVER_FACTORIES = Map.of(
             "HttpServer", new StyxHttpServerFactory()
     );
 
-    public static final ImmutableMap<String, Schema.FieldType> BUILTIN_SERVER_SCHEMAS = ImmutableMap.of(
+    public static final Map<String, Schema.FieldType> BUILTIN_SERVER_SCHEMAS = Map.of(
             "HttpServer", StyxHttpServer.SCHEMA
     );
 
-    public static final ImmutableMap<String, ExecutorFactory> BUILTIN_EXECUTOR_FACTORIES = ImmutableMap.of(
+    public static final Map<String, ExecutorFactory> BUILTIN_EXECUTOR_FACTORIES = Map.of(
             "NettyExecutor", new NettyExecutorFactory()
     );
 
-    public static final ImmutableMap<String, Schema.FieldType> BUILTIN_EXECUTOR_SCHEMAS = ImmutableMap.of(
+    public static final Map<String, Schema.FieldType> BUILTIN_EXECUTOR_SCHEMAS = Map.of(
             "NettyExecutor", NettyExecutorFactory.SCHEMA
     );
 
@@ -113,25 +112,23 @@ public final class Builtins {
 
 
     static {
-        BUILTIN_HANDLER_FACTORIES = ImmutableMap.<String, RoutingObjectFactory>builder()
-                .put(STATIC_RESPONSE, new StaticResponseHandler.Factory())
-                .put(CONDITION_ROUTER, new ConditionRouter.Factory())
-                .put(INTERCEPTOR_PIPELINE, new HttpInterceptorPipeline.Factory())
-                .put(PROXY_TO_BACKEND, new ProxyToBackend.Factory())
-                .put(PATH_PREFIX_ROUTER, new PathPrefixRouter.Factory())
-                .put(HOST_PROXY, new HostProxy.Factory())
-                .put(LOAD_BALANCING_GROUP, new LoadBalancingGroup.Factory())
-                .build();
+        BUILTIN_HANDLER_FACTORIES = Map.of(
+                STATIC_RESPONSE, new StaticResponseHandler.Factory(),
+                CONDITION_ROUTER, new ConditionRouter.Factory(),
+                INTERCEPTOR_PIPELINE, new HttpInterceptorPipeline.Factory(),
+                PROXY_TO_BACKEND, new ProxyToBackend.Factory(),
+                PATH_PREFIX_ROUTER, new PathPrefixRouter.Factory(),
+                HOST_PROXY, new HostProxy.Factory(),
+                LOAD_BALANCING_GROUP, new LoadBalancingGroup.Factory());
 
-        BUILTIN_HANDLER_SCHEMAS = ImmutableMap.<String, Schema.FieldType>builder()
-                .put(STATIC_RESPONSE, StaticResponseHandler.SCHEMA)
-                .put(CONDITION_ROUTER, ConditionRouter.SCHEMA)
-                .put(INTERCEPTOR_PIPELINE, HttpInterceptorPipeline.SCHEMA)
-                .put(PROXY_TO_BACKEND, ProxyToBackend.SCHEMA)
-                .put(PATH_PREFIX_ROUTER, PathPrefixRouter.SCHEMA)
-                .put(HOST_PROXY, HostProxy.SCHEMA)
-                .put(LOAD_BALANCING_GROUP,  LoadBalancingGroup.Companion.getSCHEMA())
-                .build();
+        BUILTIN_HANDLER_SCHEMAS = Map.of(
+                STATIC_RESPONSE, StaticResponseHandler.SCHEMA,
+                CONDITION_ROUTER, ConditionRouter.SCHEMA,
+                INTERCEPTOR_PIPELINE, HttpInterceptorPipeline.SCHEMA,
+                PROXY_TO_BACKEND, ProxyToBackend.SCHEMA,
+                PATH_PREFIX_ROUTER, PathPrefixRouter.SCHEMA,
+                HOST_PROXY, HostProxy.SCHEMA,
+                LOAD_BALANCING_GROUP,  LoadBalancingGroup.Companion.getSCHEMA());
     }
 
     private Builtins() {

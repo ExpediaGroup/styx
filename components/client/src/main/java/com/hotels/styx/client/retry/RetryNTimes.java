@@ -22,7 +22,7 @@ import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy;
 
 import java.util.Optional;
 
-import static com.google.common.collect.Sets.newHashSet;
+import static com.hotels.styx.javaconvenience.UtilKt.iterableToSet;
 
 /**
  * A {@link RetryPolicy} that tries a configurable <code>maxAttempts</code>.
@@ -43,7 +43,7 @@ public class RetryNTimes extends AbstractRetryPolicy {
             @Override
             public Optional<RemoteHost> nextOrigin() {
                 return loadBalancingStrategy.choose(lbContext)
-                        .filter(nextHost -> !newHashSet(context.previousOrigins()).contains(nextHost));
+                        .filter(nextHost -> !iterableToSet(context.previousOrigins()).contains(nextHost));
             }
 
             @Override

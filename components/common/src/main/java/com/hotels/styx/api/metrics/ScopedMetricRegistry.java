@@ -25,11 +25,11 @@ import com.codahale.metrics.MetricRegistryListener;
 import com.codahale.metrics.Timer;
 import com.hotels.styx.api.MetricRegistry;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.SortedSet;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -72,7 +72,7 @@ public class ScopedMetricRegistry implements MetricRegistry {
      * @return the list of scopes this registry is part of
      */
     public List<String> scopes() {
-        List<String> scopes = newArrayList();
+        List<String> scopes = new ArrayList<>();
         if (parent instanceof ScopedMetricRegistry) {
             scopes.addAll(((ScopedMetricRegistry) parent).scopes());
         }

@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.api.extension.service.spi;
 
-import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import org.slf4j.Logger;
@@ -112,7 +111,7 @@ public abstract class AbstractStyxService implements StyxService {
 
     @Override
     public Map<String, HttpHandler> adminInterfaceHandlers() {
-        return ImmutableMap.of("status", (request, context) -> Eventual.of(
+        return Map.of("status", (request, context) -> Eventual.of(
                 response(OK)
                         .addHeader(CONTENT_TYPE, APPLICATION_JSON)
                         .body(format("{ name: \"%s\" status: \"%s\" }", name, status), UTF_8)

@@ -16,19 +16,19 @@
 package com.hotels.styx.client.loadbalancing.strategies;
 
 import com.hotels.styx.api.Environment;
+import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.extension.ActiveOrigins;
 import com.hotels.styx.api.extension.OriginsSnapshot;
 import com.hotels.styx.api.extension.RemoteHost;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancerFactory;
-import com.hotels.styx.api.configuration.Configuration;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.google.common.collect.Lists.newArrayList;
+import static com.hotels.styx.javaconvenience.UtilKt.iterableToList;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -48,12 +48,12 @@ import static java.util.Objects.requireNonNull;
 public class RoundRobinStrategy implements LoadBalancer {
 
     private ActiveOrigins activeOrigins;
-    private final AtomicReference<ArrayList<RemoteHost>> origins;
+    private final AtomicReference<List<RemoteHost>> origins;
     private final AtomicInteger index = new AtomicInteger(0);
 
     public RoundRobinStrategy(ActiveOrigins activeOrigins, Iterable<RemoteHost> initialOrigins) {
         this.activeOrigins = requireNonNull(activeOrigins);
-        this.origins = new AtomicReference<>(new ArrayList<>(newArrayList(initialOrigins)));
+        this.origins = new AtomicReference<>(iterableToList(initialOrigins));
     }
 
     /**
@@ -68,7 +68,7 @@ public class RoundRobinStrategy implements LoadBalancer {
 
     @Override
     public Optional<RemoteHost> choose(Preferences preferences) {
-        ArrayList<RemoteHost> remoteHosts = origins.get();
+        List<RemoteHost> remoteHosts = origins.get();
         if (remoteHosts == null || remoteHosts.isEmpty()) {
             return Optional.empty();
         } else {
@@ -78,7 +78,7 @@ public class RoundRobinStrategy implements LoadBalancer {
 
     @Override
     public void originsChanged(OriginsSnapshot snapshot) {
-        origins.set(newArrayList(activeOrigins.snapshot()));
+        origins.set(iterableToList(activeOrigins.snapshot()));
     }
 
     @Override

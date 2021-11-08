@@ -16,7 +16,6 @@
 package com.hotels.styx.routing.handlers;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
@@ -111,7 +110,7 @@ public class HttpInterceptorPipeline implements RoutingObject {
                 Map<String, HttpInterceptorFactory> interceptorFactories,
                 JsonNode pipeline) {
             if (pipeline == null || pipeline.isNull()) {
-                return ImmutableList.of();
+                return List.of();
             }
             List<StyxObjectConfiguration> interceptorConfigs = styxHttpPipeline(pipeline);
             ensureValidPluginReferences(parents, plugins, interceptorConfigs);

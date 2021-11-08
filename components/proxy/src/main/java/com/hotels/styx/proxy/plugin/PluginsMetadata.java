@@ -16,7 +16,6 @@
 package com.hotels.styx.proxy.plugin;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.common.Pair;
 import com.hotels.styx.common.Strings;
 import com.hotels.styx.spi.config.SpiExtension;
@@ -48,7 +47,7 @@ public class PluginsMetadata implements Iterable<SpiExtension> {
                 .filter(Strings::isNotEmpty)
                 .collect(toList());
 
-        this.allPluginNames = ImmutableList.copyOf(plugins.keySet());
+        this.allPluginNames = List.copyOf(plugins.keySet());
         this.plugins = plugins;
 
         plugins.forEach((name, metadata) -> {

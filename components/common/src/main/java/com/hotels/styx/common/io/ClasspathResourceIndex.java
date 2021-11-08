@@ -15,19 +15,15 @@
  */
 package com.hotels.styx.common.io;
 
-import com.google.common.collect.Iterators;
 import com.hotels.styx.api.Resource;
+import com.hotels.styx.javaconvenience.UtilKt;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.stream.Stream;
 
-import static java.util.Spliterator.ORDERED;
-import static java.util.Spliterators.spliteratorUnknownSize;
+import static com.hotels.styx.javaconvenience.UtilKt.iteratorToStream;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.StreamSupport.stream;
 
 /**
  * A resource index that scans the class path for the resources.
@@ -47,21 +43,13 @@ public class ClasspathResourceIndex implements ResourceIndex {
         try {
             Enumeration<URL> resources = classLoader.getResources(classpath);
 
-            return enumerationStream(resources)
+            return iteratorToStream(resources.asIterator())
                     .map(url -> resourceIteratorFactory.createIterator(url, classpath, suffix))
-                    .flatMap(ClasspathResourceIndex::iteratorStream)
+                    .flatMap(UtilKt::iteratorToStream)
                     .collect(toList());
 
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private static <T> Stream<T> enumerationStream(Enumeration<T> enumeration) {
-        return iteratorStream(Iterators.forEnumeration(enumeration));
-    }
-
-    private static <T> Stream<T> iteratorStream(Iterator<T> iterator) {
-        return stream(spliteratorUnknownSize(iterator, ORDERED), false);
     }
 }

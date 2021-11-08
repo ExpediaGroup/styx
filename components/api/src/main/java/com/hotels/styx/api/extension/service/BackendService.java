@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.api.extension.service;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.Identifiable;
 import com.hotels.styx.api.extension.Origin;
@@ -86,7 +84,7 @@ public final class BackendService implements Identifiable {
         this.id = requireNonNull(builder.id, "id");
         this.path = requireNonNull(builder.path, "path");
         this.connectionPoolSettings = requireNonNull(builder.connectionPoolSettings);
-        this.origins = ImmutableSet.copyOf(builder.origins);
+        this.origins = Set.copyOf(builder.origins);
         this.healthCheckConfig = nullIfDisabled(builder.healthCheckConfig);
         this.stickySessionConfig = requireNonNull(builder.stickySessionConfig);
         this.rewrites = requireNonNull(builder.rewrites);
@@ -362,7 +360,7 @@ public final class BackendService implements Identifiable {
          * @return this builder
          */
         public Builder origins(Origin... origins) {
-            return origins(ImmutableSet.copyOf(origins));
+            return origins(Set.of(origins));
         }
 
         /**
@@ -382,7 +380,7 @@ public final class BackendService implements Identifiable {
          * @return this builder
          */
         public Builder rewrites(List<RewriteConfig> rewriteConfigs) {
-            this.rewrites = ImmutableList.copyOf(rewriteConfigs);
+            this.rewrites = List.copyOf(rewriteConfigs);
             return this;
         }
 

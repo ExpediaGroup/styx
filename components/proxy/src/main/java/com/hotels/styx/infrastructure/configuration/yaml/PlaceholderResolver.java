@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.databind.node.ValueNode;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.infrastructure.configuration.UnresolvedPlaceholder;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonTreeTraversal.JsonTreeVisitor;
 import org.slf4j.Logger;
@@ -58,7 +57,7 @@ public class PlaceholderResolver {
 
     public PlaceholderResolver(ObjectNode rootNode, Map<String, String> externalProperties) {
         this.rootNode = requireNonNull(rootNode);
-        this.externalProperties = ImmutableMap.copyOf(externalProperties);
+        this.externalProperties = Map.copyOf(externalProperties);
     }
 
     /**

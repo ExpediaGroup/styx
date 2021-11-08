@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.server;
 
-import com.google.common.collect.ImmutableList;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -72,8 +71,8 @@ public class HttpsConnectorConfigTest {
         protocols[0] = "TLSv1.1";
         cipherSuites.add("A2");
 
-        assertThat(connector1.protocols(), equalTo(ImmutableList.of("TLSv1.2")));
-        assertThat(connector1.ciphers(), equalTo(ImmutableList.of("A1")));
+        assertThat(connector1.protocols(), equalTo(List.of("TLSv1.2")));
+        assertThat(connector1.ciphers(), equalTo(List.of("A1")));
     }
 
 

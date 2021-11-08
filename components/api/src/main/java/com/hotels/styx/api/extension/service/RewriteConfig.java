@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.api.extension.service;
 
-import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +24,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static java.lang.Integer.parseInt;
-import static java.util.Arrays.asList;
 import static java.util.regex.Pattern.compile;
 
 /**
@@ -141,7 +139,7 @@ public class RewriteConfig implements RewriteRule {
         }
 
         private static List<String> literals(String replacement) {
-            return ImmutableList.copyOf(asList(replacement.split(REGEX)));
+            return List.of(replacement.split(REGEX));
         }
 
         private static List<Integer> placeholderNumbers(String replacement) {
@@ -154,7 +152,7 @@ public class RewriteConfig implements RewriteRule {
                 placeholderNumbers.add(placeholderNumber(nextGroup));
             }
 
-            return ImmutableList.copyOf(placeholderNumbers);
+            return List.copyOf(placeholderNumbers);
         }
 
         private static int placeholderNumber(String nextGroup) {

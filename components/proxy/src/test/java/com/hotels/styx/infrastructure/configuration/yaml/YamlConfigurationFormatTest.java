@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.infrastructure.configuration.yaml;
 
-import com.google.common.collect.ImmutableMap;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -30,7 +29,7 @@ import static org.hamcrest.Matchers.is;
 public class YamlConfigurationFormatTest {
     @Test
     public void canResolvePlaceholdersInInclude() throws IOException {
-        Map<String, String> overrides = ImmutableMap.of("CONFIG_LOCATION", "some_location");
+        Map<String, String> overrides = Map.of("CONFIG_LOCATION", "some_location");
 
         String yaml = "${CONFIG_LOCATION:classpath:}/conf/environment/default.yaml";
 

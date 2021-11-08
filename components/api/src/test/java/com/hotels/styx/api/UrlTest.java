@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.collect.ImmutableMap;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -23,6 +22,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.net.URL;
 import java.nio.charset.CharacterCodingException;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -36,7 +36,6 @@ import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class UrlTest {
     @Test
@@ -118,7 +117,7 @@ public class UrlTest {
 
         assertThat(url.queryParamNames(), containsInAnyOrder("foo", "abc"));
 
-        assertThat(url.queryParams(), isMap(ImmutableMap.of(
+        assertThat(url.queryParams(), isMap(Map.of(
                 "foo", asList("bar", "hello"),
                 "abc", singletonList("def")
         )));

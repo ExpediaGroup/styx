@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -24,6 +22,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
@@ -208,7 +208,7 @@ public class LiveHttpRequestTest {
 
         assertThat(req.queryParamNames(), containsInAnyOrder("foo", "abc"));
 
-        assertThat(req.queryParams(), isMap(ImmutableMap.of(
+        assertThat(req.queryParams(), isMap(Map.of(
                 "foo", asList("bar", "hello"),
                 "abc", singletonList("def")
         )));
@@ -516,7 +516,7 @@ public class LiveHttpRequestTest {
     public void transformsCookiesViaList() {
         LiveHttpRequest request = LiveHttpRequest.get("/").addCookies(requestCookie("cookie", "xyz010")).build()
                 .newBuilder()
-                .cookies(ImmutableList.of(requestCookie("cookie", "xyz202")))
+                .cookies(List.of(requestCookie("cookie", "xyz202")))
                 .build();
 
         assertEquals(request.cookie("cookie"), Optional.of(requestCookie("cookie", "xyz202")));
@@ -536,7 +536,7 @@ public class LiveHttpRequestTest {
     public void transformsByAddingCookiesList() {
         LiveHttpRequest request = LiveHttpRequest.get("/").build()
                 .newBuilder()
-                .addCookies(ImmutableList.of(requestCookie("cookie", "xyz202")))
+                .addCookies(List.of(requestCookie("cookie", "xyz202")))
                 .build();
 
         assertEquals(request.cookie("cookie"), Optional.of(requestCookie("cookie", "xyz202")));
@@ -556,7 +556,7 @@ public class LiveHttpRequestTest {
     public void transformsByRemovingCookieList() {
         LiveHttpRequest request = LiveHttpRequest.get("/").addCookies(requestCookie("cookie", "xyz202")).build()
                 .newBuilder()
-                .removeCookies(ImmutableList.of("cookie"))
+                .removeCookies(List.of("cookie"))
                 .build();
 
         assertEquals(request.cookie("cookie"), Optional.empty());

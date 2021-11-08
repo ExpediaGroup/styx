@@ -27,7 +27,6 @@ import com.codahale.metrics.SlidingWindowReservoir;
 import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
 import com.codahale.metrics.graphite.Graphite;
-import com.google.common.collect.ImmutableSortedMap;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,7 +41,9 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.Function;
@@ -52,6 +53,7 @@ import static ch.qos.logback.classic.Level.ERROR;
 import static com.hotels.styx.metrics.reporting.graphite.GraphiteReporter.MAX_RETRIES;
 import static com.hotels.styx.metrics.reporting.graphite.GraphiteReporter.forRegistry;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
+import static java.util.Collections.emptySortedMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -429,11 +431,11 @@ public class GraphiteReporterTest {
 
 
     private static <T> SortedMap<String, T> emptyMap() {
-        return ImmutableSortedMap.of();
+        return emptySortedMap();
     }
 
     private static <T> SortedMap<String, T> map(String name, T metric) {
-        return ImmutableSortedMap.of(name, metric);
+        return Collections.unmodifiableSortedMap(new TreeMap<>(Map.of(name, metric)));
     }
 
     private static <T> Gauge<T> gauge(T value) {
