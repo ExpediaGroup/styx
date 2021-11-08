@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.client.netty.connectionpool;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Buffers;
 import com.hotels.styx.api.HttpMethod;
 import com.hotels.styx.api.HttpVersion;
@@ -86,7 +85,7 @@ public class HttpRequestOperation {
         this.httpRequestMessageLogger = new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", longFormat, httpMessageFormatter);
     }
 
-    @VisibleForTesting
+    // Visible for testing
     static DefaultHttpRequest toNettyRequest(LiveHttpRequest request) {
         HttpVersion version = request.version();
         HttpMethod method = request.method();

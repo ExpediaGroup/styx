@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.startup.extensions;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 
 import java.util.function.Function;
@@ -41,7 +40,7 @@ public class ConfiguredPluginFactory {
         this(name, pluginFactory, any -> null);
     }
 
-    @VisibleForTesting
+    // Visible for testing
     public ConfiguredPluginFactory(String name, PluginFactory pluginFactory, Object pluginConfig) {
         this(name, pluginFactory, type -> type.cast(pluginConfig));
     }

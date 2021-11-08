@@ -16,7 +16,6 @@
 package com.hotels.styx.routing.handlers;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
@@ -78,7 +77,7 @@ public class ProxyToBackend implements RoutingObject {
      * ProxyToBackend factory that instantiates an object from the Yaml configuration.
      */
     public static class Factory implements RoutingObjectFactory {
-        @VisibleForTesting
+        // Visible for testing
         static RoutingObject build(List<String> parents, Context context, StyxObjectDefinition configBlock, BackendServiceClientFactory clientFactory) {
             JsonNodeConfig jsConfig = new JsonNodeConfig(configBlock.config());
 

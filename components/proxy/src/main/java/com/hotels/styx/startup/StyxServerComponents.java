@@ -16,7 +16,6 @@
 package com.hotels.styx.startup;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.AsyncEventBus;
 import com.hotels.styx.Environment;
 import com.hotels.styx.InetServer;
@@ -318,13 +317,13 @@ public class StyxServerComponents {
             return this;
         }
 
-        @VisibleForTesting
+        // Visible for testing
         public Builder loggingSetUp(String logConfigLocation) {
             this.loggingSetUp = env -> initLogging(logConfigLocation, true);
             return this;
         }
 
-        @VisibleForTesting
+        // Visible for testing
         public Builder plugins(Map<String, Plugin> plugins) {
             return pluginFactories(stubFactories(plugins));
         }
@@ -344,13 +343,13 @@ public class StyxServerComponents {
             return this;
         }
 
-        @VisibleForTesting
+        // Visible for testing
         Builder services(ServicesLoader servicesLoader) {
             this.servicesLoader = requireNonNull(servicesLoader);
             return this;
         }
 
-        @VisibleForTesting
+        // Visible for testing
         public Builder additionalServices(Map<String, StyxService> services) {
             this.additionalServices.putAll(services);
             return this;
@@ -361,7 +360,7 @@ public class StyxServerComponents {
             return this;
         }
 
-        @VisibleForTesting
+        // Visible for testing
         public Builder additionalRoutingObjects(Map<String, RoutingObjectFactory> additionalRoutingObjectFactories) {
             this.additionalRoutingObjectFactories.putAll(additionalRoutingObjectFactories);
             return this;

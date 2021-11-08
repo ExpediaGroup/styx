@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.routing.handlers;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
@@ -39,7 +38,7 @@ class StandardHttpPipeline implements HttpHandler {
     private final HttpHandler handler;
     private final RequestTracker requestTracker;
 
-    @VisibleForTesting
+    // Visible for testing
     public StandardHttpPipeline(HttpHandler handler) {
         this(emptyList(), handler, RequestTracker.NO_OP);
     }

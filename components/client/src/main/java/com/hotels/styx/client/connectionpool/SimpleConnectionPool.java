@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.client.connectionpool;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.client.Connection;
@@ -132,7 +131,7 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
         }
     }
 
-    @VisibleForTesting
+    // Visible for testing
     Connection dequeue() {
         Connection connection = availableConnections.poll();
 
@@ -220,7 +219,7 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
         return this.stats;
     }
 
-    @VisibleForTesting
+    // Visible for testing
     private class ConnectionPoolStats implements Stats {
 
         @Override

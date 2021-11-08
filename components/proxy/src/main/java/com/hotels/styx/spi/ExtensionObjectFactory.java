@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.spi;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.spi.config.SpiExtensionFactory;
 
 import java.nio.file.Paths;
@@ -38,7 +37,7 @@ public class ExtensionObjectFactory {
         this(ExtensionObjectFactory::locateExtension);
     }
 
-    @VisibleForTesting
+    // Visible for testing
     ExtensionObjectFactory(Function<SpiExtensionFactory, ClassSource> extensionLocator) {
         this.extensionLocator = requireNonNull(extensionLocator);
     }

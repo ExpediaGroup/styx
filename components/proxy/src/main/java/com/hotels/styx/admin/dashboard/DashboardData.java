@@ -20,7 +20,6 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -151,17 +150,17 @@ public class DashboardData {
             return backends;
         }
 
-        @VisibleForTesting
+        // Visible for testing
         Backend firstBackend() {
             return backends().stream().findFirst().get();
         }
 
-        @VisibleForTesting
+        // Visible for testing
         List<String> backendIds() {
             return backends().stream().map(Backend::id).collect(toList());
         }
 
-        @VisibleForTesting
+        // Visible for testing
         Backend backend(String backendId) {
             return backends().stream()
                     .filter(backend -> backend.id().equals(backendId))
@@ -267,7 +266,7 @@ public class DashboardData {
             return connectionsPoolsAggregate;
         }
 
-        @VisibleForTesting
+        // Visible for testing
         List<String> originsStatuses() {
             return origins()
                     .stream()
@@ -275,19 +274,19 @@ public class DashboardData {
                     .collect(toList());
         }
 
-        @VisibleForTesting
+        // Visible for testing
         Map<String, String> statusesByOriginId() {
             return origins().stream().collect(toMap(Origin::id, Origin::status));
         }
 
-        @VisibleForTesting
+        // Visible for testing
         Origin origin(String originId) {
             return origins().stream()
                     .filter(origin -> origin.id().equals(originId))
                     .findFirst().get();
         }
 
-        @VisibleForTesting
+        // Visible for testing
         Origin firstOrigin() {
             return origins().stream()
                     .findFirst().get();

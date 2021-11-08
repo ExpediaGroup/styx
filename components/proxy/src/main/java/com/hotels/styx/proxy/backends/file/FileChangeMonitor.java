@@ -17,7 +17,6 @@ package com.hotels.styx.proxy.backends.file;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.hash.HashCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -142,7 +141,7 @@ public class FileChangeMonitor implements FileMonitor {
         }
     }
 
-    @VisibleForTesting
+    // Visible for testing
     static class FileMonitorSettings {
         private final boolean enabled;
 
