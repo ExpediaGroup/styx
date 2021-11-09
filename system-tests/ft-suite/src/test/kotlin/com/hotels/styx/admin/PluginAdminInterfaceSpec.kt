@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.admin
 
-import com.google.common.net.MediaType.PLAIN_TEXT_UTF_8
 import com.hotels.styx.api.HttpHandler
+import com.hotels.styx.api.HttpHeaderValues.PLAIN_TEXT
 import com.hotels.styx.api.HttpInterceptor
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.plugins.spi.Plugin
@@ -121,8 +121,8 @@ private class PluginX : Plugin {
     override fun intercept(request: LiveHttpRequest, chain: HttpInterceptor.Chain) = chain.proceed(request)
 
     override fun adminInterfaceHandlers() = mapOf<String, HttpHandler>(
-            "/path/one" to HttpAggregator(StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "X: Response from first admin interface")),
-            "/path/two" to HttpAggregator(StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "X: Response from second admin interface"))
+            "/path/one" to HttpAggregator(StaticBodyHttpHandler(PLAIN_TEXT, "X: Response from first admin interface")),
+            "/path/two" to HttpAggregator(StaticBodyHttpHandler(PLAIN_TEXT, "X: Response from second admin interface"))
     )
 }
 
@@ -130,8 +130,8 @@ private class PluginY : Plugin {
     override fun intercept(request: LiveHttpRequest, chain: HttpInterceptor.Chain) = chain.proceed(request)
 
     override fun adminInterfaceHandlers() = mapOf<String, HttpHandler>(
-            "/path/one" to HttpAggregator(StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "Y: Response from first admin interface")),
-            "/path/two" to HttpAggregator(StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "Y: Response from second admin interface"))
+            "/path/one" to HttpAggregator(StaticBodyHttpHandler(PLAIN_TEXT, "Y: Response from first admin interface")),
+            "/path/two" to HttpAggregator(StaticBodyHttpHandler(PLAIN_TEXT, "Y: Response from second admin interface"))
     )
 }
 
@@ -139,8 +139,8 @@ private class PluginZ : Plugin {
     override fun intercept(request: LiveHttpRequest, chain: HttpInterceptor.Chain) = chain.proceed(request)
 
     override fun adminInterfaceHandlers() = mapOf<String, HttpHandler>(
-            "path/one" to HttpAggregator(StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "Z: Response from first admin interface")),
-            "path/two" to HttpAggregator(StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "Z: Response from second admin interface"))
+            "path/one" to HttpAggregator(StaticBodyHttpHandler(PLAIN_TEXT, "Z: Response from first admin interface")),
+            "path/two" to HttpAggregator(StaticBodyHttpHandler(PLAIN_TEXT, "Z: Response from second admin interface"))
     )
 }
 

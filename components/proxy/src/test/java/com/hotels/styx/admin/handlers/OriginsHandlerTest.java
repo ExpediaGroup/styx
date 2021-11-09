@@ -28,7 +28,6 @@ import reactor.core.publisher.Mono;
 import java.io.IOException;
 
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
-import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
@@ -38,6 +37,7 @@ import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
+import static io.netty.handler.codec.http.HttpHeaders.Values.APPLICATION_JSON;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -57,7 +57,7 @@ public class OriginsHandlerTest {
             HttpResponse response = Mono.from(handler.handle(get("/admin/configuration/origins").build(), requestContext())).block();
 
             assertThat(response.status(), is(OK));
-            assertThat(response.contentType(), isValue(JSON_UTF_8.toString()));
+            assertThat(response.contentType(), isValue(APPLICATION_JSON));
 
             Iterable<BackendService> result = newBackendServices(unmarshalApplications(response.bodyAs(UTF_8)));
 
@@ -73,7 +73,7 @@ public class OriginsHandlerTest {
         HttpResponse response = Mono.from(handler.handle(get("/admin/configuration/origins").build(), requestContext())).block();
 
         assertThat(response.status(), is(OK));
-        assertThat(response.contentType(), isValue(JSON_UTF_8.toString()));
+        assertThat(response.contentType(), isValue(APPLICATION_JSON));
 
         assertThat(response.bodyAs(UTF_8), is("[]"));
     }
@@ -88,7 +88,7 @@ public class OriginsHandlerTest {
             HttpResponse response = Mono.from(handler.handle(get("/admin/configuration/origins").build(), requestContext())).block();
 
             assertThat(response.status(), is(OK));
-            assertThat(response.contentType(), isValue(JSON_UTF_8.toString()));
+            assertThat(response.contentType(), isValue(APPLICATION_JSON));
 
             String body = response.bodyAs(UTF_8);
 

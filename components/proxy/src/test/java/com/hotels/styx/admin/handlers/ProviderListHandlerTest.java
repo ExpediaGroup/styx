@@ -32,10 +32,10 @@ import reactor.core.publisher.Mono;
 import java.util.HashSet;
 import java.util.Map;
 
-import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
-import static com.hotels.styx.support.Support.requestContext;
+import static com.hotels.styx.api.HttpHeaderValues.PLAIN_TEXT;
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.support.Support.requestContext;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -84,9 +84,9 @@ public class ProviderListHandlerTest {
         @Override
         public Map<String, HttpHandler> adminInterfaceHandlers(String namespace) {
             return ImmutableMap.of(
-                    "withslash/", new HttpContentHandler(PLAIN_TEXT_UTF_8.toString(), UTF_8, () -> "with slash"),
-                    "noslash", new HttpContentHandler(PLAIN_TEXT_UTF_8.toString(), UTF_8, () -> "no slash"),
-                    "/", new HttpContentHandler(PLAIN_TEXT_UTF_8.toString(), UTF_8, () -> "just a slash"));
+                    "withslash/", new HttpContentHandler(PLAIN_TEXT, UTF_8, () -> "with slash"),
+                    "noslash", new HttpContentHandler(PLAIN_TEXT, UTF_8, () -> "no slash"),
+                    "/", new HttpContentHandler(PLAIN_TEXT, UTF_8, () -> "just a slash"));
         }
     }
 }

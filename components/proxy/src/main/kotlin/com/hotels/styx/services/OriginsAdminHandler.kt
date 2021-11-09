@@ -16,7 +16,6 @@
 package com.hotels.styx.services
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.google.common.net.MediaType.JSON_UTF_8
 import com.hotels.styx.*
 import com.hotels.styx.ErrorResponse
 import com.hotels.styx.admin.handlers.UrlPatternRouter
@@ -31,6 +30,7 @@ import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.Builtins.HEALTH_CHECK_MONITOR
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.ProviderObjectRecord
+import com.hotels.styx.api.HttpHeaderValues.APPLICATION_JSON
 import java.nio.charset.StandardCharsets.UTF_8
 
 /**
@@ -148,14 +148,14 @@ internal class OriginsAdminHandler(
     private fun errorResponse(status: HttpResponseStatus, message: String) =
             response(status)
                     .disableCaching()
-                    .addHeader(CONTENT_TYPE, JSON_UTF_8.toString())
+                    .addHeader(CONTENT_TYPE, APPLICATION_JSON)
                     .body(MAPPER.writeValueAsString(ErrorResponse(message)), UTF_8)
                     .build()
 
     private fun textValueResponse(message: String) =
             response(OK)
                     .disableCaching()
-                    .addHeader(CONTENT_TYPE, JSON_UTF_8.toString())
+                    .addHeader(CONTENT_TYPE, APPLICATION_JSON)
                     .body(MAPPER.writeValueAsString(message), UTF_8)
                     .build()
 

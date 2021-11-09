@@ -22,8 +22,8 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.WebServiceHandler;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 
-import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+import static com.hotels.styx.api.HttpHeaderValues.PLAIN_TEXT;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
@@ -40,7 +40,7 @@ public class PrometheusHandler implements WebServiceHandler {
         return Eventual.of(HttpResponse
                 .response(OK)
                 .disableCaching()
-                .header(CONTENT_TYPE, PLAIN_TEXT_UTF_8)
+                .header(CONTENT_TYPE, PLAIN_TEXT)
                 .body(prometheusRegistry.scrape(), UTF_8, true)
                 .build());
     }

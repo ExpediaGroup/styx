@@ -30,9 +30,9 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.hotels.styx.api.Clocks.systemClock;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+import static com.hotels.styx.api.HttpHeaderValues.APPLICATION_JSON;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
@@ -94,7 +94,7 @@ public class JsonHandler<E> extends BaseHttpHandler {
 
             return response(OK)
                     .disableCaching()
-                    .addHeader(CONTENT_TYPE, JSON_UTF_8.toString())
+                    .addHeader(CONTENT_TYPE, APPLICATION_JSON)
                     .body(jsonContent, UTF_8)
                     .build();
 

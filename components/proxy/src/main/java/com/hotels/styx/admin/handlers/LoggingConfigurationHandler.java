@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.admin.handlers;
 
-import com.google.common.net.MediaType;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
@@ -30,8 +29,7 @@ import java.util.function.Supplier;
 import static com.google.common.base.Suppliers.memoizeWithExpiration;
 import static com.google.common.net.HttpHeaders.CONTENT_LENGTH;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
-import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
-import static com.google.common.net.MediaType.XML_UTF_8;
+import static com.hotels.styx.api.HttpHeaderValues.PLAIN_TEXT;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -72,11 +70,11 @@ public class LoggingConfigurationHandler implements WebServiceHandler {
         try {
             String fileContents = Resources.load(logConfigLocation);
 
-            return new Content(XML_UTF_8, fileContents);
+            return new Content("text/xml; charset=utf-8", fileContents);
         } catch (IOException e) {
             logException(e);
 
-            return new Content(PLAIN_TEXT_UTF_8, "Could not load resource='" + logConfigLocation + "'");
+            return new Content(PLAIN_TEXT, "Could not load resource='" + logConfigLocation + "'");
         }
     }
 
@@ -89,10 +87,10 @@ public class LoggingConfigurationHandler implements WebServiceHandler {
         private final String type;
         private final int length;
 
-        Content(MediaType type, String content) {
+        Content(CharSequence type, String content) {
             this.content = content;
             this.type = type.toString();
-            this.length = content.getBytes(type.charset().get()).length;
+            this.length = content.getBytes(UTF_8).length;
         }
     }
 }

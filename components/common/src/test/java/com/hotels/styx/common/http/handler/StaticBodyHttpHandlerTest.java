@@ -20,7 +20,7 @@ import com.hotels.styx.api.HttpResponse;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
-import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
+import static com.hotels.styx.api.HttpHeaderValues.PLAIN_TEXT;
 import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
@@ -32,12 +32,12 @@ import static org.hamcrest.Matchers.is;
 public class StaticBodyHttpHandlerTest {
     @Test
     public void respondsWithStaticBody() {
-        StaticBodyHttpHandler handler = new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "foo", UTF_8);
+        StaticBodyHttpHandler handler = new StaticBodyHttpHandler(PLAIN_TEXT.toString(), "foo", UTF_8);
 
         HttpResponse response = Mono.from(handler.handle(get("/").build(), requestContext())).block();
 
         assertThat(response.status(), is(OK));
-        assertThat(response.contentType(), isValue(PLAIN_TEXT_UTF_8.toString()));
+        assertThat(response.contentType(), isValue(PLAIN_TEXT.toString()));
         assertThat(response.contentLength(), isValue(length("foo")));
         assertThat(response.bodyAs(UTF_8), is("foo"));
     }

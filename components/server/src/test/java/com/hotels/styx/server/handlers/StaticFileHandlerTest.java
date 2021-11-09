@@ -16,7 +16,6 @@
 package com.hotels.styx.server.handlers;
 
 import com.google.common.io.Files;
-import com.google.common.net.MediaType;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import org.junit.jupiter.api.AfterEach;
@@ -32,26 +31,18 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.stream.Stream;
 
-import static com.google.common.net.MediaType.CSS_UTF_8;
-import static com.google.common.net.MediaType.GIF;
-import static com.google.common.net.MediaType.HTML_UTF_8;
-import static com.google.common.net.MediaType.JAVASCRIPT_UTF_8;
-import static com.google.common.net.MediaType.JPEG;
-import static com.google.common.net.MediaType.MICROSOFT_EXCEL;
-import static com.google.common.net.MediaType.MPEG_AUDIO;
-import static com.google.common.net.MediaType.MPEG_VIDEO;
-import static com.google.common.net.MediaType.OCTET_STREAM;
-import static com.google.common.net.MediaType.PDF;
-import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
-import static com.google.common.net.MediaType.PNG;
+import static com.hotels.styx.api.HttpHeaderValues.APPLICATION_JSON;
+import static com.hotels.styx.api.HttpHeaderValues.HTML;
+import static com.hotels.styx.api.HttpHeaderValues.PLAIN_TEXT;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
-import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.server.handlers.MediaTypes.ICON;
 import static com.hotels.styx.server.handlers.MediaTypes.MICROSOFT_ASF_VIDEO;
 import static com.hotels.styx.server.handlers.MediaTypes.MICROSOFT_MS_VIDEO;
+import static com.hotels.styx.server.handlers.MediaTypes.OCTET_STREAM;
 import static com.hotels.styx.server.handlers.MediaTypes.WAV_AUDIO;
+import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.support.api.matchers.HttpStatusMatcher.hasStatus;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -137,7 +128,7 @@ public class StaticFileHandlerTest {
 
     @ParameterizedTest
     @MethodSource("fileTypesProvider")
-    public void setsTheContentTypeBasedOnFileExtension(String path, MediaType mediaType) throws Exception {
+    public void setsTheContentTypeBasedOnFileExtension(String path, CharSequence mediaType) throws Exception {
         writeFile(path, mediaType.toString());
 
         handler = new StaticFileHandler(dir);
@@ -149,24 +140,24 @@ public class StaticFileHandlerTest {
 
     private static Stream<Arguments> fileTypesProvider() {
         return Stream.of(
-                Arguments.of("foo.html", HTML_UTF_8),
-                Arguments.of("foo.gif", GIF),
-                Arguments.of("foo.jpg", JPEG),
-                Arguments.of("foo.png", PNG),
-                Arguments.of("foo.css", CSS_UTF_8),
+                Arguments.of("foo.html", HTML),
+                Arguments.of("foo.gif", "image/gif"),
+                Arguments.of("foo.jpg", "image/jpeg"),
+                Arguments.of("foo.png", "image/png"),
+                Arguments.of("foo.css", "text/css;charset=UTF-8"),
                 Arguments.of("foo.ico", ICON),
-                Arguments.of("foo.js", JAVASCRIPT_UTF_8),
-                Arguments.of("foo.xls", MICROSOFT_EXCEL),
-                Arguments.of("foo.txt", PLAIN_TEXT_UTF_8),
+                Arguments.of("foo.js", APPLICATION_JSON),
+                Arguments.of("foo.xls", "application/vnd.ms-excel"),
+                Arguments.of("foo.txt", PLAIN_TEXT),
                 Arguments.of("foo.pgp", OCTET_STREAM),
-                Arguments.of("foo.pdf", PDF),
+                Arguments.of("foo.pdf", "application/pdf"),
 
-                Arguments.of("foo.mp3", MPEG_AUDIO),
+                Arguments.of("foo.mp3", "audio/mpeg"),
                 Arguments.of("foo.wav", WAV_AUDIO),
 
                 Arguments.of("foo.asf", MICROSOFT_ASF_VIDEO),
                 Arguments.of("foo.avi", MICROSOFT_MS_VIDEO),
-                Arguments.of("foo.mpg", MPEG_VIDEO)
+                Arguments.of("foo.mpg", "video/mpeg")
         );
     }
 

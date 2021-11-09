@@ -29,8 +29,8 @@ import org.slf4j.Logger;
 
 import java.util.Map;
 
-import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+import static com.hotels.styx.api.HttpHeaderValues.PLAIN_TEXT;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -77,7 +77,7 @@ public class DemoPlugin implements Plugin {
             LOGGER.info("Demo plugin serving admin page");
 
             return Eventual.of(
-                    HttpResponse.response().header(CONTENT_TYPE, PLAIN_TEXT_UTF_8)
+                    HttpResponse.response().header(CONTENT_TYPE, PLAIN_TEXT)
                             .body("This is an admin page provided by a demo plugin used to test Styx's plugin functionality. Text from config=" + config.adminText, UTF_8)
                             .build()
                             .stream());

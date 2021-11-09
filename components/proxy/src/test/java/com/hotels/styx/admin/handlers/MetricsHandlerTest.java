@@ -25,7 +25,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
-import static com.google.common.net.MediaType.JSON_UTF_8;
+import static com.hotels.styx.api.HttpHeaderValues.APPLICATION_JSON;
 import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
@@ -50,7 +50,7 @@ public class MetricsHandlerTest {
     public void respondsToRequestWithJsonResponse() {
         HttpResponse response = Mono.from(handler.handle(get("/admin/metrics").build(), requestContext())).block();
         assertThat(response.status(), is(OK));
-        assertThat(response.contentType().get(), is(JSON_UTF_8.toString()));
+        assertThat(response.contentType().get(), is(APPLICATION_JSON.toString()));
     }
 
     @Disabled

@@ -20,7 +20,7 @@ import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
 
 import java.util.stream.Stream;
 
-import static com.google.common.net.MediaType.HTML_UTF_8;
+import static com.hotels.styx.api.HttpHeaderValues.HTML;
 import static java.util.stream.Collectors.joining;
 
 /**
@@ -33,7 +33,7 @@ public class StartupConfigHandler extends StaticBodyHttpHandler {
      * @param startupConfig Styx Configuration
      */
     public StartupConfigHandler(StartupConfig startupConfig) {
-        super(HTML_UTF_8, render(startupConfig));
+        super(HTML, render(startupConfig));
     }
 
     private static String render(StartupConfig startupConfig) {

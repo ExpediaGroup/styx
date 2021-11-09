@@ -26,8 +26,8 @@ import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
 
 import java.util.Map;
 
-import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.hotels.styx.admin.support.Json.PRETTY_PRINTER;
+import static com.hotels.styx.api.HttpHeaderValues.PLAIN_TEXT;
 
 /**
  * Returns a response consisting of the configuration variables.
@@ -44,8 +44,8 @@ public class StyxConfigurationHandler implements WebServiceHandler {
      * @param configuration configuration
      */
     public StyxConfigurationHandler(Configuration configuration) {
-            styxConfigHandler = new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, body(configuration));
-            prettyStyxConfigHandler = new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, prettify(configuration));
+            styxConfigHandler = new StaticBodyHttpHandler(PLAIN_TEXT, body(configuration));
+            prettyStyxConfigHandler = new StaticBodyHttpHandler(PLAIN_TEXT, prettify(configuration));
     }
 
     @Override

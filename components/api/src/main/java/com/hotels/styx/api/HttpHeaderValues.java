@@ -15,20 +15,18 @@
  */
 package com.hotels.styx.api;
 
-import io.netty.handler.codec.http.HttpHeaders.Values;
-
-import static io.netty.handler.codec.http.HttpHeaders.newEntity;
+import io.netty.util.AsciiString;
 
 /**
  * Provides optimized constants for the standard HTTP header values.
  */
 public final class HttpHeaderValues {
-    public static final CharSequence PLAIN_TEXT = newEntity("text/plain; charset=utf-8");
-    public static final CharSequence HTML = newEntity("text/html; charset=UTF-8");
-    public static final CharSequence APPLICATION_JSON = newEntity("application/json; charset=utf-8");
-    public static final CharSequence CLOSE = newEntity(Values.CLOSE);
-    public static final CharSequence KEEP_ALIVE = newEntity(Values.KEEP_ALIVE);
-    public static final CharSequence CHUNKED = newEntity(Values.CHUNKED);
+    public static final CharSequence PLAIN_TEXT = new AsciiString("text/plain; charset=utf-8");
+    public static final CharSequence HTML = new AsciiString("text/html; charset=UTF-8");
+    public static final CharSequence APPLICATION_JSON = new AsciiString("application/json; charset=utf-8");
+    public static final CharSequence CLOSE = io.netty.handler.codec.http.HttpHeaderValues.CLOSE;
+    public static final CharSequence KEEP_ALIVE = io.netty.handler.codec.http.HttpHeaderValues.KEEP_ALIVE;
+    public static final CharSequence CHUNKED = io.netty.handler.codec.http.HttpHeaderValues.CHUNKED;
 
     private HttpHeaderValues() {
     }

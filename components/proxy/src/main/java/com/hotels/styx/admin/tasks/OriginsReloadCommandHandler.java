@@ -31,8 +31,8 @@ import reactor.core.scheduler.Schedulers;
 
 import java.util.concurrent.ExecutorService;
 
-import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+import static com.hotels.styx.api.HttpHeaderValues.PLAIN_TEXT;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
@@ -96,7 +96,7 @@ public class OriginsReloadCommandHandler implements WebServiceHandler {
 
     private HttpResponse okResponse(String content) {
         return HttpResponse.response(OK)
-                .header(CONTENT_TYPE, PLAIN_TEXT_UTF_8)
+                .header(CONTENT_TYPE, PLAIN_TEXT)
                 .body(content, UTF_8)
                 .build();
     }
@@ -128,7 +128,7 @@ public class OriginsReloadCommandHandler implements WebServiceHandler {
 
     private HttpResponse errorResponse(HttpResponseStatus code, String content) {
         return HttpResponse.response(code)
-                .header(CONTENT_TYPE, PLAIN_TEXT_UTF_8)
+                .header(CONTENT_TYPE, PLAIN_TEXT)
                 .body(content, UTF_8)
                 .build();
     }

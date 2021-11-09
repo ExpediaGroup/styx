@@ -25,8 +25,8 @@ import com.hotels.styx.proxy.plugin.NamedPlugin;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static com.google.common.net.MediaType.HTML_UTF_8;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+import static com.hotels.styx.api.HttpHeaderValues.HTML;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.lang.String.format;
@@ -55,7 +55,7 @@ public class PluginListHandler implements WebServiceHandler {
 
         return Eventual.of(response(OK)
                 .body(output, UTF_8)
-                .addHeader(CONTENT_TYPE, HTML_UTF_8.toString())
+                .addHeader(CONTENT_TYPE, HTML)
                 .build());
     }
 

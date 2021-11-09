@@ -26,8 +26,8 @@ import java.lang.management.MonitorInfo;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 
-import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+import static com.hotels.styx.api.HttpHeaderValues.PLAIN_TEXT;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
@@ -56,7 +56,7 @@ public class CurrentRequestsHandler extends BaseHttpHandler {
         return HttpResponse
                 .response(OK)
                 .disableCaching()
-                .header(CONTENT_TYPE, PLAIN_TEXT_UTF_8)
+                .header(CONTENT_TYPE, PLAIN_TEXT)
                 .body(getCurrentRequestContent(withStackTrace), UTF_8, true)
                 .build();
     }
