@@ -15,10 +15,6 @@
  */
 package com.hotels.styx.admin
 
-import java.nio.file.StandardCopyOption.REPLACE_EXISTING
-import java.nio.file.{Files, Paths}
-
-import com.google.common.io.Files.createTempDir
 import com.hotels.styx.api.HttpRequest.post
 import com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR
 import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry
@@ -28,6 +24,9 @@ import com.hotels.styx.{StyxClientSupplier, StyxServer, StyxServerSupport}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, FunSpec, Matchers}
 
+import java.nio.file.Files.createTempDirectory
+import java.nio.file.StandardCopyOption.REPLACE_EXISTING
+import java.nio.file.{Files, Paths}
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 
@@ -38,7 +37,7 @@ class OriginsPathDuplicationOnReloadSpec extends FunSpec
   with BeforeAndAfterAll
   with Eventually {
 
-  val tempDir = createTempDir()
+  val tempDir = createTempDirectory("").toFile
   val originsOk = fixturesHome(classOf[OriginsPathDuplicationOnReloadSpec], "/conf/origins/origins-correct.yml")
   val originsDuplicatePath = fixturesHome(classOf[OriginsPathDuplicationOnReloadSpec], "/conf/origins/origins-duplicate-path.yml")
   val styxOriginsFile = Paths.get(tempDir.toString, "origins.yml")

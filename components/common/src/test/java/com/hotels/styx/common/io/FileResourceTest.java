@@ -29,11 +29,11 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.stream.Stream;
 
-import static com.google.common.io.Files.createTempDir;
-import static com.google.common.io.Files.write;
 import static com.hotels.styx.common.io.ResourceContentMatcher.contains;
 import static io.netty.util.CharsetUtil.UTF_8;
 import static java.io.File.createTempFile;
+import static java.nio.file.Files.createTempDirectory;
+import static java.nio.file.Files.writeString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.matchesPattern;
@@ -50,11 +50,11 @@ public class FileResourceTest {
 
     @BeforeAll
     public void setUp() throws IOException {
-        tempDir = createTempDir();
+        tempDir = createTempDirectory("").toFile();
         tempFile = createTempFile("foo", "bar");
         namedTempFile = new File(tempDir, "test.txt");
-        write(TEMP_FILE_CONTENT, tempFile, UTF_8);
-        write(NAMED_TEMP_FILE_CONTENT, namedTempFile, UTF_8);
+        writeString(tempFile.toPath(), TEMP_FILE_CONTENT, UTF_8);
+        writeString(namedTempFile.toPath(), NAMED_TEMP_FILE_CONTENT, UTF_8);
     }
 
     @AfterAll

@@ -27,10 +27,10 @@ import java.nio.file.Paths;
 import java.time.Duration;
 
 import static ch.qos.logback.classic.Level.INFO;
-import static com.google.common.io.Files.createTempDir;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.copy;
+import static java.nio.file.Files.createTempDirectory;
 import static java.nio.file.Files.delete;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -45,14 +45,14 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class FileChangeMonitorTest {
     private static final Logger LOGGER = getLogger(FileChangeMonitorTest.class);
 
-    private File tempDir;
+    private Path tempDir;
     private Path monitoredFile;
     private FileMonitor.Listener listener;
     private FileChangeMonitor monitor;
 
     @BeforeEach
     public void setUp() throws Exception {
-        tempDir = createTempDir();
+        tempDir = createTempDirectory("");
         monitoredFile = Paths.get(tempDir.toString(), "origins.yml");
         write(monitoredFile, "content-v0");
         listener = mock(FileChangeMonitor.Listener.class);
@@ -69,7 +69,7 @@ public class FileChangeMonitorTest {
             // Pass ...
         }
 
-        delete(tempDir.toPath());
+        delete(tempDir);
     }
 
     @Test

@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.server.handlers;
 
-import com.google.common.io.Files;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import org.junit.jupiter.api.AfterEach;
@@ -45,6 +44,7 @@ import static com.hotels.styx.server.handlers.MediaTypes.WAV_AUDIO;
 import static com.hotels.styx.support.Support.requestContext;
 import static com.hotels.styx.support.api.matchers.HttpStatusMatcher.hasStatus;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
+import static java.nio.file.Files.createTempDirectory;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class StaticFileHandlerTest {
@@ -52,8 +52,8 @@ public class StaticFileHandlerTest {
     private StaticFileHandler handler;
 
     @BeforeEach
-    public void createWorkingDir() {
-        dir = Files.createTempDir();
+    public void createWorkingDir() throws IOException {
+        dir = createTempDirectory("").toFile();
         handler = new StaticFileHandler(dir);
     }
 

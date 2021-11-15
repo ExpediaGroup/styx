@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.server.handlers;
 
-import com.google.common.io.Files;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
@@ -27,6 +26,7 @@ import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Optional;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
@@ -81,7 +81,7 @@ public class StaticFileHandler implements HttpHandler {
 
     private static String readLines(File file) {
         try {
-            return Files.toString(file, UTF_8);
+            return Files.readString(file.toPath(), UTF_8);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -18,7 +18,6 @@ package com.hotels.styx.proxy.resiliency
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.pattern.ask
 import akka.util.Timeout
-import com.google.common.io.Files
 import com.hotels.styx.MockServer.responseSupplier
 import com.hotels.styx._
 import com.hotels.styx.api.HttpResponse
@@ -37,6 +36,8 @@ import org.slf4j.LoggerFactory
 import java.io.{File, IOException, RandomAccessFile}
 import java.net.URL
 import java.nio.charset.StandardCharsets._
+import java.nio.file.Files
+import java.nio.file.Files.readString
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -152,11 +153,11 @@ class LongDownloadsSpec extends org.scalatest.fixture.WordSpec
 object SharedOrigins extends NettyOrigins {
   val FIFTY_MB: Long = 50L * 1024L * 1024L
   val bigFile: File = newBigFile("big_file.dat")
-  val bigFileContent: String = Files.toString(bigFile, UTF_8)
+  val bigFileContent: String = readString(bigFile.toPath, UTF_8)
 
   @throws(classOf[IOException])
   private def newBigFile(filename: String): File = {
-    val tmpDir: File = Files.createTempDir
+    val tmpDir: File = Files.createTempDirectory("").toFile
     val tmpFile: String = tmpDir.toPath.resolve(filename).toString
     val logger = LoggerFactory.getLogger("com.hotels.styx.proxy.resiliency.SharedOrigins")
 
