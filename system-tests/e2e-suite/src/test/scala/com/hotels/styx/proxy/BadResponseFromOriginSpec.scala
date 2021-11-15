@@ -15,9 +15,6 @@
  */
 package com.hotels.styx.proxy
 
-import java.util.Optional
-
-import com.google.common.base.Charsets.UTF_8
 import com.hotels.styx.api.HttpHeaderNames.CONNECTION
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY
@@ -41,6 +38,8 @@ import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
 import org.slf4j.LoggerFactory
 
+import java.nio.charset.StandardCharsets.UTF_8
+import java.util.Optional
 import scala.concurrent.duration._
 import scala.util.Random
 

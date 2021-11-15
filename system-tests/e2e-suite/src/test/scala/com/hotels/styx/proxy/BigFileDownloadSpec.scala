@@ -15,10 +15,6 @@
  */
 package com.hotels.styx.proxy
 
-import java.io.{File, IOException, RandomAccessFile}
-import java.util.concurrent.TimeUnit.MILLISECONDS
-
-import com.google.common.base.Charsets.UTF_8
 import com.google.common.io.Files
 import com.google.common.io.Files._
 import com.hotels.styx.MockServer.responseSupplier
@@ -33,6 +29,9 @@ import org.scalatest.FunSpec
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
 
+import java.io.{File, IOException, RandomAccessFile}
+import java.nio.charset.StandardCharsets.UTF_8
+import java.util.concurrent.TimeUnit.MILLISECONDS
 import scala.concurrent.duration._
 
 class BigFileDownloadSpec extends FunSpec

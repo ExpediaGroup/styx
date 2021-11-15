@@ -16,7 +16,6 @@
 package com.hotels.styx.client
 
 import ch.qos.logback.classic.Level
-import com.google.common.base.Charsets._
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.exceptions.TransportException
@@ -47,6 +46,7 @@ import org.scalatest.concurrent.Eventually
 import reactor.core.publisher.Mono
 import reactor.test.StepVerifier
 
+import java.nio.charset.StandardCharsets._
 import scala.compat.java8.StreamConverters._
 import scala.concurrent.duration._
 

@@ -15,21 +15,13 @@
  */
 package com.hotels.styx.proxy
 
-import java.util.concurrent.TimeUnit.SECONDS
-
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.google.common.base.Charsets
-import com.google.common.base.Charsets._
 import com.google.common.net.HostAndPort
-import com.hotels.styx.api.extension.Origin.newOriginBuilder
-import com.hotels.styx.common.FreePorts._
-import com.hotels.styx.common.http.handler.HttpAggregator
-import com.hotels.styx.server.HttpServers.createHttpServer
 import com.hotels.styx.support.TestClientSupport
-import com.hotels.styx.support.configuration.{HttpBackend, Origins, ProxyConfig, StyxConfig}
 import com.hotels.styx.support.backends.FakeHttpServer
-import com.hotels.styx.utils.handlers.ContentDigestHandler
+import com.hotels.styx.support.configuration.{HttpBackend, Origins, ProxyConfig, StyxConfig}
+import com.hotels.styx.utils.HttpTestClient
 import com.hotels.styx.{StyxClientSupplier, StyxProxySpec}
 import io.netty.buffer.Unpooled
 import io.netty.buffer.Unpooled._
@@ -46,8 +38,9 @@ import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory._
-import com.hotels.styx.utils.HttpTestClient
 
+import java.nio.charset.StandardCharsets._
+import java.util.concurrent.TimeUnit.SECONDS
 import scala.concurrent.duration._
 
 class ChunkedUploadSpec extends FunSpec
@@ -300,12 +293,12 @@ class ChunkedUploadSpec extends FunSpec
     request
   }
 
-  def contentOf(response: FullHttpResponse) = response.content().toString(Charsets.UTF_8)
+  def contentOf(response: FullHttpResponse) = response.content().toString(UTF_8)
 
   def sendContentInChunks(client: HttpTestClient, data: String, delay: Duration): Unit = {
     val chunkData = data.take(100)
     if (chunkData.length > 0) {
-      client.write(new DefaultHttpContent(Unpooled.copiedBuffer(chunkData, Charsets.UTF_8)))
+      client.write(new DefaultHttpContent(Unpooled.copiedBuffer(chunkData, UTF_8)))
       Thread.sleep(delay.toMillis)
       sendContentInChunks(client, data.drop(100), delay)
     }

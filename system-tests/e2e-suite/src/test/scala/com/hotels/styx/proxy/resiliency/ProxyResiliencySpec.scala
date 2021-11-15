@@ -15,9 +15,6 @@
  */
 package com.hotels.styx.proxy.resiliency
 
-import java.util.concurrent.TimeUnit._
-
-import com.google.common.base.Charsets._
 import com.hotels.styx.StyxProxySpec
 import com.hotels.styx.generators.HttpRequestGenerator
 import com.hotels.styx.support.ResourcePaths.fixturesHome
@@ -32,6 +29,8 @@ import org.scalatest.prop.{Checkers, Configuration, PropertyChecks}
 import org.scalatest.{BeforeAndAfter, FunSpec}
 import org.slf4j.LoggerFactory
 
+import java.nio.charset.StandardCharsets._
+import java.util.concurrent.TimeUnit._
 import scala.util.{Failure, Success, Try}
 
 class ProxyResiliencySpec extends FunSpec

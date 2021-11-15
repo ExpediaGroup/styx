@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.proxy
 
-import com.google.common.base.Charsets
-import com.google.common.base.Charsets._
 import com.hotels.styx._
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus._
@@ -37,6 +35,7 @@ import io.netty.handler.codec.http._
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
 
+import java.nio.charset.StandardCharsets._
 import scala.concurrent.duration.{Duration, _}
 
 
@@ -175,7 +174,7 @@ class ChunkedDownloadSpec extends FunSpec
       ctx.writeAndFlush(EMPTY_LAST_CONTENT)
       return
     }
-    ctx.writeAndFlush(new DefaultHttpContent(Unpooled.copiedBuffer(chunkData, Charsets.UTF_8)))
+    ctx.writeAndFlush(new DefaultHttpContent(Unpooled.copiedBuffer(chunkData, UTF_8)))
     Thread.sleep(delay.toMillis)
     sendContentInChunks(ctx, data.drop(100), delay)
   }

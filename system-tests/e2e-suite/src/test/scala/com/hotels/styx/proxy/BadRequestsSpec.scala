@@ -15,10 +15,7 @@
  */
 package com.hotels.styx.proxy
 
-import java.util.concurrent.TimeUnit
-
 import ch.qos.logback.classic.Level.ERROR
-import com.google.common.base.Charsets.{US_ASCII, UTF_8}
 import com.google.common.net.HostAndPort
 import com.hotels.styx.StyxProxySpec
 import com.hotels.styx.api.HttpHeaderNames.{CONTENT_TYPE, HOST}
@@ -42,6 +39,8 @@ import org.hamcrest.Matchers.{hasItem, is}
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
 
+import java.nio.charset.StandardCharsets.{US_ASCII, UTF_8}
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
 class BadRequestsSpec extends FunSpec
   with StyxProxySpec

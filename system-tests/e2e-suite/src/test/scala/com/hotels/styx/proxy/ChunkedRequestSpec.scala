@@ -15,22 +15,22 @@
  */
 package com.hotels.styx.proxy
 
-import java.io.{ByteArrayInputStream, IOException, InputStream}
-import java.net.{HttpURLConnection, URL}
-
 import com.github.tomakehurst.wiremock.client.{RequestPatternBuilder, UrlMatchingStrategy, ValueMatchingStrategy}
 import com.github.tomakehurst.wiremock.http.RequestMethod
-import com.google.common.base.Charsets._
-import com.google.common.base.Strings._
 import com.google.common.base.Optional
+import com.google.common.base.Strings._
 import com.google.common.io.ByteStreams
 import com.google.common.io.ByteStreams._
-import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
 import com.hotels.styx.api.{HttpResponse, HttpResponseStatus, LiveHttpResponse}
 import com.hotels.styx.support.TestClientSupport
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
+import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
 import org.scalatest.FunSpec
+
+import java.io.{ByteArrayInputStream, IOException, InputStream}
+import java.net.{HttpURLConnection, URL}
+import java.nio.charset.StandardCharsets._
 
 class ChunkedRequestSpec extends FunSpec
   with StyxProxySpec

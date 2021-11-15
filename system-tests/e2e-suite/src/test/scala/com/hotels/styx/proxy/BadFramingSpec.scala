@@ -15,13 +15,8 @@
  */
 package com.hotels.styx.proxy
 
-import java.util.Optional
-import java.util.concurrent.TimeUnit.SECONDS
-
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.google.common.base.Charsets.UTF_8
 import com.google.common.net.HostAndPort._
-import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec, api}
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.{BAD_REQUEST, OK}
 import com.hotels.styx.support.backends.FakeHttpServer
@@ -29,6 +24,7 @@ import com.hotels.styx.support.configuration.{HttpBackend, Origins}
 import com.hotels.styx.support.{NettyOrigins, TestClientSupport}
 import com.hotels.styx.utils.HttpTestClient
 import com.hotels.styx.utils.StubOriginHeader.STUB_ORIGIN_INFO
+import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec, api}
 import io.netty.buffer.Unpooled.copiedBuffer
 import io.netty.channel._
 import io.netty.handler.codec.http.HttpHeaders.Names.{CONTENT_LENGTH, HOST, TRANSFER_ENCODING}
@@ -37,6 +33,10 @@ import io.netty.handler.codec.http.HttpMethod._
 import io.netty.handler.codec.http.HttpVersion.HTTP_1_1
 import io.netty.handler.codec.http._
 import org.scalatest.FunSpec
+
+import java.nio.charset.StandardCharsets.UTF_8
+import java.util.Optional
+import java.util.concurrent.TimeUnit.SECONDS
 
 class BadFramingSpec extends FunSpec
   with StyxProxySpec
