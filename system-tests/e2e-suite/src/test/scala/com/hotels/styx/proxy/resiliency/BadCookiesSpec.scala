@@ -15,16 +15,12 @@
  */
 package com.hotels.styx.proxy.resiliency
 
-import java.util.concurrent.TimeUnit._
-
-import com.google.common.base.Charsets._
-import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
 import com.hotels.styx.generators.HttpRequestGenerator
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
 import com.hotels.styx.support.generators.{CookieHeaderGenerator, CookieHeaderString}
 import com.hotels.styx.support.{NettyOrigins, TestClientSupport}
 import com.hotels.styx.utils.HttpTestClient
-import io.netty.channel.ChannelHandlerContext
+import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpMethod._
 import io.netty.handler.codec.http.HttpResponseStatus._
@@ -36,6 +32,7 @@ import org.scalacheck.Test
 import org.scalatest.prop.{Checkers, Configuration}
 import org.scalatest.{BeforeAndAfter, FunSpec}
 
+import java.util.concurrent.TimeUnit._
 import scala.util.Try
 
 class BadCookiesSpec extends FunSpec

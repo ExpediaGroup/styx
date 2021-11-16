@@ -15,18 +15,16 @@
  */
 package com.hotels.styx.client
 
-import java.util.concurrent.atomic.AtomicLong
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.google.common.base.Charsets._
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest.get
-import com.hotels.styx.api.{LiveHttpResponse, MicrometerRegistry}
 import com.hotels.styx.api.exceptions.ResponseTimeoutException
 import com.hotels.styx.api.extension.Origin._
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.api.extension.{ActiveOrigins, Origin}
+import com.hotels.styx.api.{LiveHttpResponse, MicrometerRegistry}
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient._
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy
@@ -47,6 +45,8 @@ import org.scalatest._
 import org.scalatest.mock.MockitoSugar
 import reactor.core.publisher.Mono
 
+import java.nio.charset.StandardCharsets._
+import java.util.concurrent.atomic.AtomicLong
 import scala.util.Try
 
 class BackendServiceClientSpec extends FunSuite with BeforeAndAfterAll with Matchers with BeforeAndAfter with MockitoSugar {

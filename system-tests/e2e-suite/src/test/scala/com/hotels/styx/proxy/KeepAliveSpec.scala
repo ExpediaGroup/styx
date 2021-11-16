@@ -15,10 +15,7 @@
  */
 package com.hotels.styx.proxy
 
-import java.lang.Thread.sleep
-
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.google.common.base.Charsets.UTF_8
 import com.hotels.styx.StyxProxySpec
 import com.hotels.styx.support.TestClientSupport
 import com.hotels.styx.support.backends.FakeHttpServer
@@ -33,6 +30,8 @@ import io.netty.handler.codec.http._
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
 
+import java.lang.Thread.sleep
+import java.nio.charset.StandardCharsets.UTF_8
 import scala.concurrent.duration._
 
 class KeepAliveSpec extends FunSpec

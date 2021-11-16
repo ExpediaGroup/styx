@@ -15,13 +15,9 @@
  */
 package com.hotels.styx.proxy.resiliency
 
-import java.io.{File, IOException, RandomAccessFile}
-import java.net.URL
-
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.pattern.ask
 import akka.util.Timeout
-import com.google.common.base.Charsets._
 import com.google.common.io.Files
 import com.hotels.styx.MockServer.responseSupplier
 import com.hotels.styx._
@@ -38,6 +34,9 @@ import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, Matchers, SequentialNestedSuiteExecution}
 import org.slf4j.LoggerFactory
 
+import java.io.{File, IOException, RandomAccessFile}
+import java.net.URL
+import java.nio.charset.StandardCharsets._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
