@@ -18,7 +18,6 @@ package com.hotels.styx.admin.handlers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.StyxObjectRecord;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpResponse;
@@ -30,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static com.hotels.styx.api.HttpHeaderValues.PLAIN_TEXT;
@@ -83,10 +83,13 @@ public class ProviderListHandlerTest {
 
         @Override
         public Map<String, HttpHandler> adminInterfaceHandlers(String namespace) {
-            return ImmutableMap.of(
-                    "withslash/", new HttpContentHandler(PLAIN_TEXT, UTF_8, () -> "with slash"),
-                    "noslash", new HttpContentHandler(PLAIN_TEXT, UTF_8, () -> "no slash"),
-                    "/", new HttpContentHandler(PLAIN_TEXT, UTF_8, () -> "just a slash"));
+            Map<String, HttpHandler> insertionOrderMap = new LinkedHashMap<>();
+
+            insertionOrderMap.put("withslash/", new HttpContentHandler(PLAIN_TEXT.toString(), UTF_8, () -> "with slash"));
+            insertionOrderMap.put("noslash", new HttpContentHandler(PLAIN_TEXT.toString(), UTF_8, () -> "no slash"));
+            insertionOrderMap.put("/", new HttpContentHandler(PLAIN_TEXT.toString(), UTF_8, () -> "just a slash"));
+
+            return insertionOrderMap;
         }
     }
 }

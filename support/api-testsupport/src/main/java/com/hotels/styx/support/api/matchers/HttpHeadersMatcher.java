@@ -19,15 +19,14 @@ import com.hotels.styx.api.HttpHeader;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
-import org.hamcrest.core.IsCollectionContaining;
 
 import java.util.List;
 
-import static com.google.common.collect.Iterables.all;
 import static com.hotels.styx.support.api.matchers.HeaderMatcher.header;
 import static java.lang.String.format;
 import static java.lang.System.getProperty;
 import static java.util.Arrays.asList;
+import static org.hamcrest.Matchers.hasItem;
 
 public class HttpHeadersMatcher extends TypeSafeMatcher<Iterable<HttpHeader>> {
     private static final String START = lineSeparator();
@@ -52,7 +51,7 @@ public class HttpHeadersMatcher extends TypeSafeMatcher<Iterable<HttpHeader>> {
 
     @Override
     public boolean matchesSafely(Iterable<HttpHeader> actual) {
-        return all(matchers, elementMatcher -> new IsCollectionContaining<>(elementMatcher).matches(actual));
+        return matchers.stream().allMatch(elementMatcher -> hasItem(elementMatcher).matches(actual));
     }
 
     @Override

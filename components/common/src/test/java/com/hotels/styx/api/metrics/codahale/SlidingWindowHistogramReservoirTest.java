@@ -16,10 +16,6 @@
 package com.hotels.styx.api.metrics.codahale;
 
 import com.codahale.metrics.Snapshot;
-import com.google.common.collect.ContiguousSet;
-import com.google.common.collect.DiscreteDomain;
-import com.google.common.collect.Range;
-import com.google.common.primitives.Longs;
 import com.hotels.styx.api.Clock;
 import com.hotels.styx.api.metrics.SlidingWindowHistogram;
 import org.junit.jupiter.api.Test;
@@ -43,7 +39,7 @@ public class SlidingWindowHistogramReservoirTest {
     }
 
     @Test
-    public void cachesTheSnapshotUnitlFurtherUpdates() {
+    public void cachesTheSnapshotUntilFurtherUpdates() {
         SlidingWindowHistogramReservoir reservoir = new SlidingWindowHistogramReservoir();
         reservoir.update(5);
         reservoir.update(6);
@@ -99,11 +95,17 @@ public class SlidingWindowHistogramReservoirTest {
     public void snapshotExposesSamplesAsArray() {
         SlidingWindowHistogramReservoir reservoir = reservoirWithSamples(1, 100);
 
-        assertThat(reservoir.getSnapshot().getValues(), is(toArray(Range.closed(1L, 100L))));
+        assertThat(reservoir.getSnapshot().getValues(), is(arrayRange(1L, 100L)));
     }
 
-    private long[] toArray(Range<Long> range) {
-        return Longs.toArray(ContiguousSet.create(range, DiscreteDomain.longs()));
+    private static long[] arrayRange(long startInclusive, long endInclusive) {
+        long[] array = new long[(int) (endInclusive - startInclusive + 1)];
+
+        for (int i = 0; i < array.length; i++) {
+            array[i] = i + startInclusive;
+        }
+
+        return array;
     }
 
     private SlidingWindowHistogramReservoir reservoirWithSamples(int from, int to) {

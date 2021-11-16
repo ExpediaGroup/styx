@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ContainerNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.ValueNode;
-import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +37,7 @@ class JsonTreeTraversal {
 
     private static void traverseJsonTree(JsonNode node, ContainerNode<?> parent, List<PathElement> path, JsonTreeVisitor visitor) {
         if (node.isValueNode()) {
-            visitor.onValueNode((ValueNode) node, Optional.of(parent), ImmutableList.copyOf(path));
+            visitor.onValueNode((ValueNode) node, Optional.of(parent), List.copyOf(path));
         } else if (node.isArray()) {
             Iterable<JsonNode> elements = node::elements;
             int index = 0;

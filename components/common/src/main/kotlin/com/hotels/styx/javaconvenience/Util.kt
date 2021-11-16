@@ -15,14 +15,17 @@
  */
 package com.hotels.styx.javaconvenience
 
-import java.nio.file.Files
-import java.nio.file.Path
-import java.util.concurrent.Callable
-import java.util.function.Supplier
 import java.io.InputStream
 import java.io.OutputStream
+import java.util.*
+import java.util.concurrent.Callable
+import java.util.function.Consumer
+import java.util.function.Function
+import java.util.function.Predicate
 import java.util.stream.Stream
+import kotlin.collections.AbstractList
 import kotlin.streams.asStream
+import java.lang.reflect.Array.newInstance as arrayNewInstance
 
 /*
  * Note: although written in Kotlin, these convenience methods are intended to be used by Java code.
@@ -93,6 +96,31 @@ fun bytes(from: InputStream, closeWhenDone : Boolean = false): ByteArray =
     } else {
         from.readAllBytes()
     }
+
+fun <T> array(iterable: Iterable<T>, type: Class<T>): Array<T> = iterable.toList().run {
+    val array: Array<T> = arrayNewInstance(type, size) as Array<T>
+    forEachIndexed { index, element -> array[index] = element }
+    array
+}
+
+fun <T, R> listTransform(list: List<T>, transformation: Function<T, R>): List<R> = object : AbstractList<R>() {
+    override val size: Int get() = list.size
+
+    override fun get(index: Int): R = transformation.apply(list[index])
+}
+
+fun <T> filterSortedSet(original: SortedSet<T>, predicate: Predicate<T>): SortedSet<T> =
+    original.filterTo(TreeSet(original.comparator()), predicate::test)
+
+fun <K, V> filterSortedMap(original: SortedMap<K, V>, predicate: Predicate<K>): SortedMap<K, V> =
+    original.filterTo(TreeMap(original.comparator())) { (key, _) ->
+        predicate.test(key)
+    }
+
+fun <T> concatenatedForEach(first: Iterable<T>, second: Iterable<T>, action: Consumer<T>) {
+    first.forEach(action)
+    second.forEach(action)
+}
 
 // Private functions can use whatever Kotlin features as Java code will not see them.
 

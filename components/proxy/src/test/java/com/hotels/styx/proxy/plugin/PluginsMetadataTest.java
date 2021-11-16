@@ -18,7 +18,6 @@ package com.hotels.styx.proxy.plugin;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.common.Pair;
 import com.hotels.styx.spi.config.SpiExtension;
 import com.hotels.styx.spi.config.SpiExtensionFactory;
@@ -57,8 +56,8 @@ public class PluginsMetadataTest {
     }
 
     @Test
-    public void throwsExceptionIfActivePluginDoesNotExist() throws IOException {
-        Map<String, SpiExtension> plugins = ImmutableMap.of(
+    public void throwsExceptionIfActivePluginDoesNotExist() {
+        Map<String, SpiExtension> plugins = Map.of(
                 "one", pluginMetadata(),
                 "two", pluginMetadata()
         );

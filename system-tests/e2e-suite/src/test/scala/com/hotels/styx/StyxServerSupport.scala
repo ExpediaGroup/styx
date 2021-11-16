@@ -15,7 +15,6 @@
  */
 package com.hotels.styx
 
-import com.google.common.collect.ImmutableMap
 import com.hotels.styx.admin.AdminServerConfig
 import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api._
@@ -86,7 +85,7 @@ object StyxServerSupport {
     val builder = new StyxServerComponents.Builder()
       .registry(new MicrometerRegistry(new CompositeMeterRegistry()))
       .styxConfig(styxConfig)
-      .additionalServices(ImmutableMap.of("backendServiceRegistry", styxService))
+      .additionalServices(singletonMap("backendServiceRegistry", styxService))
 
     if (plugins.nonEmpty) {
       builder.plugins(plugins1)

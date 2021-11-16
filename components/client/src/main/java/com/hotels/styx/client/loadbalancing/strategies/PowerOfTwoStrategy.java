@@ -17,16 +17,16 @@ package com.hotels.styx.client.loadbalancing.strategies;
 
 
 import com.hotels.styx.api.Environment;
+import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.extension.ActiveOrigins;
 import com.hotels.styx.api.extension.RemoteHost;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancerFactory;
-import com.hotels.styx.api.configuration.Configuration;
 
 import java.util.Optional;
 import java.util.Random;
 
-import static com.google.common.collect.Iterables.toArray;
+import static com.hotels.styx.javaconvenience.UtilKt.array;
 import static java.util.Objects.requireNonNull;
 
 
@@ -60,7 +60,7 @@ public class PowerOfTwoStrategy implements LoadBalancer {
 
     @Override
     public Optional<RemoteHost> choose(LoadBalancer.Preferences preferences) {
-        RemoteHost[] hosts = toArray(activeOrigins.snapshot(), RemoteHost.class);
+        RemoteHost[] hosts = array(activeOrigins.snapshot(), RemoteHost.class);
 
         if (hosts.length == 0) {
             return Optional.empty();

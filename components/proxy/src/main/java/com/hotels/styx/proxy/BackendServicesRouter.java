@@ -51,7 +51,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
-import static com.google.common.collect.Iterables.concat;
+import static com.hotels.styx.javaconvenience.UtilKt.concatenatedForEach;
 import static com.hotels.styx.client.HttpConfig.newHttpConfigBuilder;
 import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
 import static java.util.Comparator.comparingInt;
@@ -101,7 +101,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
     public void onChange(Registry.Changes<BackendService> changes) {
         changes.removed().forEach(backendService -> routes.remove(backendService.path()).close());
 
-        concat(changes.added(), changes.updated()).forEach(backendService -> {
+        concatenatedForEach(changes.added(), changes.updated(), backendService -> {
 
             ProxyToClientPipeline pipeline = routes.get(backendService.path());
             if (pipeline != null) {

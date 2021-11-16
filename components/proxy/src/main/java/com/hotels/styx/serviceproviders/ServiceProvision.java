@@ -17,7 +17,6 @@ package com.hotels.styx.serviceproviders;
 
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationException;
@@ -34,12 +33,13 @@ import com.hotels.styx.spi.config.SpiExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static com.hotels.styx.common.Pair.pair;
+import static com.hotels.styx.javaconvenience.UtilKt.iteratorToList;
 import static com.hotels.styx.proxy.ClassFactories.newInstance;
 import static com.hotels.styx.spi.ExtensionObjectFactory.EXTENSION_OBJECT_FACTORY;
 import static java.lang.String.format;
@@ -128,7 +128,7 @@ public final class ServiceProvision {
         JsonNode factories = jsonNode.get("factories");
         JsonNodeConfig jsonNodeConfig = new JsonNodeConfig(factories);
 
-        return newArrayList(factories.fieldNames())
+        return iteratorToList(factories.fieldNames())
                 .stream()
                 .flatMap(name -> {
                     if (isType(name, jsonNodeConfig, SpiExtension.class)) {
@@ -159,8 +159,8 @@ public final class ServiceProvision {
         return jsonNodeConfig.get(name, SpiExtension.class)
                 .filter(SpiExtension::enabled)
                 .map(extension -> loadSpiExtension(extension, environment, serviceClass))
-                .map(service -> ImmutableList.<Pair<String, ? extends U>>of(pair(name, service)))
-                .orElse(ImmutableList.of())
+                .map(service -> List.<Pair<String, ? extends U>>of(pair(name, service)))
+                .orElse(List.of())
                 .stream();
     }
 
@@ -185,8 +185,8 @@ public final class ServiceProvision {
         return jsonNodeConfig.get(name, ServiceFactoryConfig.class)
                 .filter(ServiceFactoryConfig::enabled)
                 .map(serviceFactoryConfig -> loadServiceFactory(serviceFactoryConfig, environment, serviceClass))
-                .map(service -> ImmutableList.<Pair<String, ? extends U>>of(pair(name, service)))
-                .orElse(ImmutableList.of()).stream();
+                .map(service -> List.<Pair<String, ? extends U>>of(pair(name, service)))
+                .orElse(List.of()).stream();
     }
 
     private static <T> T loadServiceFactory(ServiceFactoryConfig serviceFactoryConfig, Environment environment, Class<T> serviceSuperclass) {

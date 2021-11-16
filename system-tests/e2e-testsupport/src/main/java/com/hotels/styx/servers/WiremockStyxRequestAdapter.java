@@ -21,7 +21,6 @@ import com.github.tomakehurst.wiremock.http.HttpHeaders;
 import com.github.tomakehurst.wiremock.http.QueryParameter;
 import com.github.tomakehurst.wiremock.http.Request;
 import com.github.tomakehurst.wiremock.http.RequestMethod;
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.HttpRequest;
 
 import java.util.HashSet;
@@ -101,7 +100,7 @@ public class WiremockStyxRequestAdapter implements Request {
     @Override
     public QueryParameter queryParameter(String key) {
         return styxRequest.queryParam(key)
-                .map(value -> new QueryParameter(key, ImmutableList.of(value)))
+                .map(value -> new QueryParameter(key, List.of(value)))
                 .orElseGet(() -> QueryParameter.absent(key));
     }
 

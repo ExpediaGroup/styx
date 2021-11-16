@@ -30,7 +30,6 @@ import com.github.tomakehurst.wiremock.http.Request;
 import com.github.tomakehurst.wiremock.http.RequestHandler;
 import com.github.tomakehurst.wiremock.http.StubRequestHandler;
 import com.github.tomakehurst.wiremock.http.StubResponseRenderer;
-import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ServiceManager;
 import com.hotels.styx.InetServer;
 import com.hotels.styx.StyxServers;
@@ -43,6 +42,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 import static com.github.tomakehurst.wiremock.WireMockServer.FILES_ROOT;
 import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
@@ -139,7 +140,7 @@ public final class MockOriginServer {
     }
 
     public MockOriginServer start() {
-        services = new ServiceManager(ImmutableList.of(StyxServers.toGuavaService(adminServer), StyxServers.toGuavaService(mockServer)));
+        services = new ServiceManager(List.of(StyxServers.toGuavaService(adminServer), StyxServers.toGuavaService(mockServer)));
         services.startAsync().awaitHealthy();
         return this;
     }

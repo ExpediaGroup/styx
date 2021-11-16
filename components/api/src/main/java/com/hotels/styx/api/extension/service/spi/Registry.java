@@ -15,12 +15,12 @@
  */
 package com.hotels.styx.api.extension.service.spi;
 
-import com.google.common.collect.Iterables;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.Identifiable;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ServiceFactory;
 
+import java.util.Collection;
 import java.util.EventListener;
 import java.util.Objects;
 import java.util.Optional;
@@ -33,6 +33,8 @@ import static com.hotels.styx.api.extension.service.spi.Registry.Outcome.UNCHANG
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.StreamSupport.stream;
 
 /**
  * Registry for resources of type {@code T}.
@@ -81,9 +83,9 @@ public interface Registry<T extends Identifiable> extends Supplier<Iterable<T>> 
      * @param <T>
      */
     final class Changes<T extends Identifiable> {
-        private final Iterable<T> added;
-        private final Iterable<T> removed;
-        private final Iterable<T> updated;
+        private final Collection<T> added;
+        private final Collection<T> removed;
+        private final Collection<T> updated;
 
         private Changes(Builder builder) {
             this.added = nullToEmpty(builder.added);
@@ -91,7 +93,7 @@ public interface Registry<T extends Identifiable> extends Supplier<Iterable<T>> 
             this.updated = nullToEmpty(builder.updated);
         }
 
-        private static <T> Iterable<T> nullToEmpty(Iterable iterable) {
+        private static <T> Collection<T> nullToEmpty(Collection iterable) {
             return iterable != null ? iterable : emptyList();
         }
 
@@ -121,24 +123,13 @@ public interface Registry<T extends Identifiable> extends Supplier<Iterable<T>> 
                 return false;
             }
             Changes<T> other = (Changes<T>) obj;
-
             return equal(this.added, other.added)
                     && equal(this.removed, other.removed)
                     && equal(this.updated, other.updated);
         }
 
-        private boolean equal(Iterable<T> iterable1, Iterable<T> iterable2) {
-            return Iterables.size(iterable1) == Iterables.size(iterable2) && containsAll(iterable1, iterable2);
-        }
-
-        private boolean containsAll(Iterable<T> iterable1, Iterable<T> iterable2) {
-            for (T item : iterable2) {
-                if (!Iterables.contains(iterable1, item)) {
-                    return false;
-                }
-            }
-
-            return true;
+        private boolean equal(Collection<T> iterable1, Collection<T> iterable2) {
+            return iterable1.size() == iterable2.size() && iterable1.containsAll(iterable2);
         }
 
         @Override
@@ -153,25 +144,21 @@ public interface Registry<T extends Identifiable> extends Supplier<Iterable<T>> 
                     + '}';
         }
 
-        public Iterable<T> addedAndUpdated() {
-            return Iterables.concat(added, updated);
-        }
-
         public boolean isEmpty() {
-            return Iterables.isEmpty(added) && Iterables.isEmpty(removed) && Iterables.isEmpty(updated);
+            return added.isEmpty() && removed.isEmpty() && updated.isEmpty();
         }
 
         public static class Builder<T extends Identifiable> {
-            private Iterable<T> added;
-            private Iterable<T> removed;
-            private Iterable<T> updated;
+            private Collection<T> added;
+            private Collection<T> removed;
+            private Collection<T> updated;
 
             public Builder<T> added(T... added) {
                 return added(asList(added));
             }
 
             public Builder<T> added(Iterable<T> added) {
-                this.added = requireNonNull(added);
+                this.added = collection(requireNonNull(added));
                 return this;
             }
 
@@ -180,7 +167,7 @@ public interface Registry<T extends Identifiable> extends Supplier<Iterable<T>> 
             }
 
             public Builder<T> removed(Iterable<T> removed) {
-                this.removed = requireNonNull(removed);
+                this.removed = collection(requireNonNull(removed));
                 return this;
             }
 
@@ -189,8 +176,17 @@ public interface Registry<T extends Identifiable> extends Supplier<Iterable<T>> 
             }
 
             public Builder<T> updated(Iterable<T> updated) {
-                this.updated = requireNonNull(updated);
+                this.updated = collection(requireNonNull(updated));
                 return this;
+            }
+
+            private Collection<T> collection(Iterable<T> iterable) {
+                // probably always true
+                if (iterable instanceof Collection<?>) {
+                    return (Collection<T>) iterable;
+                }
+
+                return stream(iterable.spliterator(), false).collect(toList());
             }
 
             public Changes<T> build() {

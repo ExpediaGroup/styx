@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.collect.Iterables;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 
 import java.time.Instant;
@@ -113,7 +112,7 @@ public final class HttpHeaders implements Iterable<HttpHeader> {
 
     @Override
     public String toString() {
-        return Iterables.toString(nettyHeaders);
+        return stream(nettyHeaders.spliterator(), false).collect(toList()).toString();
     }
 
     @Override

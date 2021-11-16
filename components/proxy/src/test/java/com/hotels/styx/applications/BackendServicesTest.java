@@ -19,9 +19,9 @@ import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.BackendService;
 import org.junit.jupiter.api.Test;
 
-import static com.google.common.collect.Iterables.getFirst;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
+import static com.hotels.styx.javaconvenience.UtilKt.first;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -35,7 +35,7 @@ public class BackendServicesTest {
                 .build();
 
         BackendServices backendServices = new BackendServices(singletonList(before));
-        Origin origin = getFirst(backendServices.first().origins(), null);
+        Origin origin = first(backendServices.first().origins());
 
         assertThat(origin.applicationId(), is(id("generic_app")));
     }

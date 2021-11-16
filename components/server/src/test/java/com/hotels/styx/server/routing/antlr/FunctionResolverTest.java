@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.server.routing.antlr;
 
-import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.RequestCookie;
@@ -34,11 +33,11 @@ import static org.hamcrest.Matchers.matchesPattern;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class FunctionResolverTest {
-    private final Map<String, Function0> zeroArgumentFunctions = ImmutableMap.of(
+    private final Map<String, Function0> zeroArgumentFunctions = Map.of(
             "path", (request, context) -> request.path(),
             "method", (request, context) -> request.method().name());
 
-    private final Map<String, Function1> oneArgumentFunctions = ImmutableMap.of(
+    private final Map<String, Function1> oneArgumentFunctions = Map.of(
             "header", (request, context, name) -> request.header(name).orElse(""),
             "cookie", (request, context, name) -> request.cookie(name).map(RequestCookie::value).orElse(""));
 

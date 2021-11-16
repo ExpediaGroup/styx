@@ -19,10 +19,12 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 
+import java.util.HashMap;
 import java.util.Map;
 
-import static com.google.common.collect.Maps.difference;
+import static java.lang.System.lineSeparator;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 import static org.hamcrest.Matchers.is;
 
 /**
@@ -56,6 +58,40 @@ public class MapMatcher<K, V> extends TypeSafeMatcher<Map<K, V>> {
 
     @Override
     protected void describeMismatchSafely(Map<K, V> actual, Description mismatchDescription) {
-        mismatchDescription.appendText(String.valueOf(difference(actual, expected)));
+        Map<K, ValueComparison<V>> diff = differences(actual, expected);
+
+        String description = diff.entrySet().stream().map(entry ->
+                "" + entry.getKey() + ":[" + entry.getValue().first + "," + entry.getValue().second + "]"
+        ).collect(joining(lineSeparator()));
+
+        mismatchDescription.appendText(description);
+    }
+
+    private Map<K, ValueComparison<V>> differences(Map<K, V> first, Map<K, V> second) {
+        Map<K, ValueComparison<V>> hash = new HashMap<>();
+
+        first.forEach((key, value) -> {
+            if (value.equals(second.get(key))) {
+                hash.put(key, new ValueComparison<>(value, second.get(key)));
+            }
+        });
+
+        second.forEach((key, value) -> {
+            if (!first.containsKey(key)) {
+                hash.put(key, new ValueComparison<>(null, value));
+            }
+        });
+
+        return hash;
+    }
+
+    private static class ValueComparison<V> {
+        private final V first;
+        private final V second;
+
+        ValueComparison(V first, V second) {
+            this.first = first;
+            this.second = second;
+        }
     }
 }

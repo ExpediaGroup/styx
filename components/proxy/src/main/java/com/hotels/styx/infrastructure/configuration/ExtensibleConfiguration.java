@@ -15,10 +15,10 @@
  */
 package com.hotels.styx.infrastructure.configuration;
 
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.configuration.Configuration;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import static java.util.Objects.requireNonNull;
@@ -66,7 +66,7 @@ public interface ExtensibleConfiguration<C extends ExtensibleConfiguration<C>> e
 
         public PlaceholderResolutionResult(C resolvedConfiguration, Collection<UnresolvedPlaceholder> unresolvedPlaceholders) {
             this.resolvedConfiguration = requireNonNull(resolvedConfiguration);
-            this.unresolvedPlaceholders = ImmutableList.copyOf(unresolvedPlaceholders);
+            this.unresolvedPlaceholders = List.copyOf(unresolvedPlaceholders);
         }
 
         /**

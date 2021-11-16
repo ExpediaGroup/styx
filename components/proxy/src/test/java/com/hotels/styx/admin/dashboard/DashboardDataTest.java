@@ -26,7 +26,6 @@ import com.hotels.styx.api.extension.RemoteHost;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetricSupplier;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.metrics.codahale.NoopMetricRegistry;
 import com.hotels.styx.applications.BackendServices;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
@@ -35,8 +34,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
+import java.util.Set;
 
-import static com.google.common.collect.Sets.newHashSet;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
@@ -338,7 +337,7 @@ public class DashboardDataTest {
     private static BackendService application(String id, Origin... origins) {
         return newBackendServiceBuilder()
                 .id(id)
-                .origins(newHashSet(origins))
+                .origins(Set.of(origins))
                 .build();
     }
 

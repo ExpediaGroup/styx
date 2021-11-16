@@ -16,7 +16,6 @@
 package com.hotels.styx.infrastructure.configuration.yaml;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
 import com.hotels.styx.support.matchers.IsOptional;
 import com.hotels.styx.support.matchers.MapMatcher;
@@ -161,7 +160,7 @@ public class YamlConfigurationTest {
 
     @Test
     public void getsAsMap() {
-        Map expected = ImmutableMap.of(
+        Map expected = Map.of(
                 "type", "http",
                 "port", 8080);
 
@@ -170,7 +169,7 @@ public class YamlConfigurationTest {
 
     @Test
     public void getsLists() {
-        Map expected = ImmutableMap.of(
+        Map expected = Map.of(
                 "type", "http",
                 "port", 8080);
 
@@ -229,7 +228,7 @@ public class YamlConfigurationTest {
     public void systemPropertiesCannotAddStructuresNotPresentInOriginalYaml() {
         String yaml = "foo: bar\n";
 
-        YamlConfiguration yamlConfig = config(yaml, ImmutableMap.of(
+        YamlConfiguration yamlConfig = config(yaml, Map.of(
                 "metrics.graphite.host", "data.internal.com",
                 "metrics.graphite.port", "2003"));
 
@@ -251,7 +250,7 @@ public class YamlConfigurationTest {
         String yaml = "" +
                 "foo: 1\n";
 
-        YamlConfiguration yamlConfig = config(yaml, ImmutableMap.of(
+        YamlConfiguration yamlConfig = config(yaml, Map.of(
                 "list[0][0]", "nested1",
                 "list[0][1]", "nested2"));
 
@@ -268,7 +267,7 @@ public class YamlConfigurationTest {
 
     @Test
     public void nonOverridingSystemPropertiesDoNotHaveToFollowNamingRules() {
-        config(yaml, ImmutableMap.of(
+        config(yaml, Map.of(
                 "java.vendor.url", "http://java.oracle.com/",
                 "java.vendor.url.bug", "http://bugreport.sun.com/bugreport/"
         ));
@@ -335,7 +334,7 @@ public class YamlConfigurationTest {
                 "- ${element3:gamma}\n" +
                 "- ${element4}\n";
 
-        YamlConfiguration yamlConfig = config(yaml, ImmutableMap.of("element1", "alpha", "element2", "beta", "element4", "delta"));
+        YamlConfiguration yamlConfig = config(yaml, Map.of("element1", "alpha", "element2", "beta", "element4", "delta"));
 
         assertThat(yamlConfig.get("array[0]"), isValue("alpha"));
         assertThat(yamlConfig.get("array[1]"), isValue("beta"));
@@ -382,7 +381,7 @@ public class YamlConfigurationTest {
 
     @Test
     public void overridesPropertiesWithReplacedPlaceholders() throws Exception {
-        Map<String, String> systemProperties = ImmutableMap.of("FOO", "production1");
+        Map<String, String> systemProperties = Map.of("FOO", "production1");
 
         String yaml = "" +
                 "include: %s\n" +
@@ -410,7 +409,7 @@ public class YamlConfigurationTest {
 
     @Test
     public void includePlaceholdersAreResolved() throws Exception {
-        Map<String, String> systemProperties = ImmutableMap.of(
+        Map<String, String> systemProperties = Map.of(
                 "FOO", "production1",
                 "LOCATION", "");
 

@@ -17,7 +17,6 @@ package com.hotels.styx.testapi;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
-import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpResponse;
@@ -291,7 +290,7 @@ public class StyxServerTest {
 
     @Test
     public void addsEndpointLinksToPluginPage() {
-        setUpStyxAndPluginWithAdminPages(ImmutableMap.of(
+        setUpStyxAndPluginWithAdminPages(Map.of(
                 "adminPage1", (request, ctx) -> Eventual.of(LiveHttpResponse.response().build()),
                 "adminPage2", (request, ctx) -> Eventual.of(LiveHttpResponse.response().build())
         ));
@@ -305,7 +304,7 @@ public class StyxServerTest {
 
     @Test
     public void exposesAdminEndpoints() {
-        setUpStyxAndPluginWithAdminPages(ImmutableMap.of(
+        setUpStyxAndPluginWithAdminPages(Map.of(
                 "adminPage1", (request, ctx) -> Eventual.of(LiveHttpResponse.response().header("AdminPage1", "yes").build()),
                 "adminPage2", (request, ctx) -> Eventual.of(LiveHttpResponse.response().header("AdminPage2", "yes").build())
         ));
