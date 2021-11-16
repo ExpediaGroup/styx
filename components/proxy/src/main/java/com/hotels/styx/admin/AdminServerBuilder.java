@@ -74,8 +74,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
 
-import static com.google.common.net.MediaType.HTML_UTF_8;
 import static com.hotels.styx.admin.handlers.IndexHandler.Link.link;
+import static com.hotels.styx.api.HttpHeaderValues.HTML;
 import static com.hotels.styx.api.HttpMethod.POST;
 import static com.hotels.styx.metrics.MetricsExtensionsKt.findRegistry;
 import static com.hotels.styx.routing.config.ConfigVersionResolver.Version.ROUTING_CONFIG_V1;
@@ -256,7 +256,7 @@ public class AdminServerBuilder {
                 .collect(toList());
 
         WebServiceHandler handler = endpointLinks.isEmpty()
-                ? new StaticBodyHttpHandler(HTML_UTF_8, format("This plugin (%s) does not expose any admin interfaces", name))
+                ? new StaticBodyHttpHandler(HTML, format("This plugin (%s) does not expose any admin interfaces", name))
                 : new IndexHandler(endpointLinks);
 
         Route indexRoute = new Route(adminPath(root, name), new HttpAggregator(MEGABYTE, handler));

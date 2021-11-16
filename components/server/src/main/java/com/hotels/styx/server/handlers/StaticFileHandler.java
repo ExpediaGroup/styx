@@ -16,7 +16,6 @@
 package com.hotels.styx.server.handlers;
 
 import com.google.common.io.Files;
-import com.google.common.net.MediaType;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
@@ -72,7 +71,7 @@ public class StaticFileHandler implements HttpHandler {
 
     private static class ResolvedFile {
         private final String content;
-        private final MediaType mediaType;
+        private final CharSequence mediaType;
 
         private ResolvedFile(File file) {
             this.content = readLines(file);

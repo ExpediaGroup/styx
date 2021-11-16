@@ -35,10 +35,10 @@ import static java.util.Objects.requireNonNull;
 public class HttpContentHandler implements HttpHandler {
 
     private final Supplier<String> content;
-    private final String contentType;
+    private final CharSequence contentType;
     private final Charset encoding;
 
-    public HttpContentHandler(String contentType, Charset encoding, Supplier<String> content) {
+    public HttpContentHandler(CharSequence contentType, Charset encoding, Supplier<String> content) {
         this.content = requireNonNull(content, "content supplier cannot be null");
         this.contentType = requireNonNull(contentType, "contentType cannot be null");
         this.encoding = requireNonNull(encoding, "encoding cannot be null");

@@ -35,7 +35,7 @@ public class IndexHandlerTest {
     public void printsTheRegisteredPaths() {
         HttpResponse response = Mono.from(handler.handle(get("/admin").build(), requestContext())).block();
         assertThat(response.status(), is(OK));
-        assertThat(response.contentType().get(), is("text/html; charset=utf-8"));
+        assertThat(response.contentType().map(String::toLowerCase).get(), is("text/html; charset=utf-8"));
         assertThat(response.bodyAs(UTF_8), is(
                 "<html><body><ol style='list-style-type: none; padding-left: 0px; margin-left: 0px;'>" +
                         "<li><a href='/admin/foo'>Abc</a></li>" +

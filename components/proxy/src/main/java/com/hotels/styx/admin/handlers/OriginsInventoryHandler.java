@@ -34,9 +34,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_BEANS;
-import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.hotels.styx.admin.support.Json.PRETTY_PRINTER;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+import static com.hotels.styx.api.HttpHeaderValues.APPLICATION_JSON;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
@@ -67,7 +67,7 @@ public class OriginsInventoryHandler extends BaseHttpHandler implements OriginsC
     @Override
     protected HttpResponse doHandle(HttpRequest request, HttpInterceptor.Context context) {
         return response(OK)
-                .addHeader(CONTENT_TYPE, JSON_UTF_8.toString())
+                .addHeader(CONTENT_TYPE, APPLICATION_JSON)
                 .disableCaching()
                 .body(content(isPrettyPrint(request)), UTF_8)
                 .build();

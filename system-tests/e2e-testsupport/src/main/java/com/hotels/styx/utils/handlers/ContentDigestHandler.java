@@ -23,7 +23,7 @@ import com.hotels.styx.common.http.handler.BaseHttpHandler;
 
 import static com.google.common.net.HttpHeaders.CONTENT_LENGTH;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
-import static com.google.common.net.MediaType.HTML_UTF_8;
+import static com.hotels.styx.api.HttpHeaderValues.HTML;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -45,7 +45,7 @@ public class ContentDigestHandler extends BaseHttpHandler {
                 request.bodyAs(UTF_8).hashCode());
 
         return HttpResponse.response(OK)
-                .header(CONTENT_TYPE, HTML_UTF_8.toString())
+                .header(CONTENT_TYPE, HTML)
                 .header(CONTENT_LENGTH, responseBody.getBytes(UTF_8).length)
                 .body(responseBody, UTF_8)
                 .build();

@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.common.http.handler;
 
-import com.google.common.net.MediaType;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
@@ -32,7 +31,7 @@ import static java.util.Objects.requireNonNull;
  * HTTP handler that responds with a static body.
  */
 public class StaticBodyHttpHandler extends BaseHttpHandler {
-    private final MediaType contentType;
+    private final CharSequence contentType;
     private final String body;
     private final int contentLength;
 
@@ -42,7 +41,7 @@ public class StaticBodyHttpHandler extends BaseHttpHandler {
      * @param contentType Content-Type header value
      * @param body        body to return
      */
-    public StaticBodyHttpHandler(MediaType contentType, String body) {
+    public StaticBodyHttpHandler(CharSequence contentType, String body) {
         this(contentType, body, UTF_8);
     }
 
@@ -53,7 +52,7 @@ public class StaticBodyHttpHandler extends BaseHttpHandler {
      * @param body        body to return
      * @param charset     character set
      */
-    public StaticBodyHttpHandler(MediaType contentType, String body, Charset charset) {
+    public StaticBodyHttpHandler(CharSequence contentType, String body, Charset charset) {
         this.contentType = requireNonNull(contentType);
         this.body = requireNonNull(body);
         this.contentLength = body.getBytes(charset).length;

@@ -15,67 +15,55 @@
  */
 package com.hotels.styx.server.handlers;
 
-import com.google.common.net.MediaType;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.google.common.net.MediaType.CSS_UTF_8;
-import static com.google.common.net.MediaType.GIF;
-import static com.google.common.net.MediaType.HTML_UTF_8;
-import static com.google.common.net.MediaType.JAVASCRIPT_UTF_8;
-import static com.google.common.net.MediaType.JPEG;
-import static com.google.common.net.MediaType.MICROSOFT_EXCEL;
-import static com.google.common.net.MediaType.MPEG_AUDIO;
-import static com.google.common.net.MediaType.MPEG_VIDEO;
-import static com.google.common.net.MediaType.OCTET_STREAM;
-import static com.google.common.net.MediaType.PDF;
-import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
-import static com.google.common.net.MediaType.PNG;
-import static com.google.common.net.MediaType.create;
+import static com.hotels.styx.api.HttpHeaderValues.APPLICATION_JSON;
+import static com.hotels.styx.api.HttpHeaderValues.HTML;
+import static com.hotels.styx.api.HttpHeaderValues.PLAIN_TEXT;
 
 /**
- * A collection of {@link MediaType}s associated with file extensions.
+ * A collection of media types associated with file extensions.
  */
 final class MediaTypes {
     private MediaTypes() {
     }
 
-    public static final MediaType MICROSOFT_MS_VIDEO = create("video", "x-msvideo");
-    public static final MediaType MICROSOFT_ASF_VIDEO = create("video", "x-ms-asf");
+    public static final CharSequence MICROSOFT_MS_VIDEO = "video/x-msvideo";
+    public static final CharSequence MICROSOFT_ASF_VIDEO = "video/x-ms-asf";
 
-    public static final MediaType WAV_AUDIO = create("audio", "x-wav");
-    public static final MediaType ICON = create("image", "x-icon");
-    public static final MediaType EVENT_STREAM = create("text", "event-stream");
+    public static final CharSequence WAV_AUDIO = "audio/x-wav";
+    public static final CharSequence ICON = "image/x-icon";
 
-    private static final Map<String, MediaType> MEDIA_TYPES_BY_EXTENSION = new HashMap<>();
+    public static final CharSequence OCTET_STREAM = "application/octet-stream";
+    private static final Map<String, CharSequence> MEDIA_TYPES_BY_EXTENSION = new HashMap<>();
 
-    private static void addMediaType(MediaType mediaType, String... extensions) {
+    private static void addMediaType(CharSequence mediaType, String... extensions) {
         for (String extension : extensions) {
             MEDIA_TYPES_BY_EXTENSION.put(extension, mediaType);
         }
     }
 
     static {
-        addMediaType(PLAIN_TEXT_UTF_8, "txt");
-        addMediaType(HTML_UTF_8, "html", "htm");
-        addMediaType(CSS_UTF_8, "css");
-        addMediaType(JAVASCRIPT_UTF_8, "js");
+        addMediaType(PLAIN_TEXT, "txt");
+        addMediaType(HTML, "html", "htm");
+        addMediaType("text/css;charset=UTF-8", "css");
+        addMediaType(APPLICATION_JSON, "js");
 
         addMediaType(ICON, "ico");
-        addMediaType(GIF, "gif");
-        addMediaType(JPEG, "jpg", "jpeg");
-        addMediaType(PNG, "png");
-        addMediaType(MICROSOFT_EXCEL, "xls");
-        addMediaType(PDF, "pdf");
+        addMediaType("image/gif", "gif");
+        addMediaType("image/jpeg", "jpg", "jpeg");
+        addMediaType("image/png", "png");
+        addMediaType("application/vnd.ms-excel", "xls");
+        addMediaType("application/pdf", "pdf");
 
-        addMediaType(MPEG_AUDIO, "mp3");
+        addMediaType("audio/mpeg", "mp3");
         addMediaType(WAV_AUDIO, "wav");
 
         addMediaType(MICROSOFT_ASF_VIDEO, "asf");
         addMediaType(MICROSOFT_MS_VIDEO, "avi");
-        addMediaType(MPEG_VIDEO, "mpg");
+        addMediaType("video/mpeg", "mpg");
     }
 
     /**
@@ -85,7 +73,7 @@ final class MediaTypes {
      * @param extension the file extension
      * @return the mime type of the given file extension
      */
-    public static MediaType mediaTypeForExtension(String extension) {
+    public static CharSequence mediaTypeForExtension(String extension) {
         return Optional.ofNullable(MEDIA_TYPES_BY_EXTENSION.get(extension))
                 .orElse(OCTET_STREAM);
     }
@@ -96,7 +84,7 @@ final class MediaTypes {
      *
      * @return the mime type of the given filename based on the file extension
      */
-    public static MediaType mediaTypeOf(String filename) {
+    public static CharSequence mediaTypeOf(String filename) {
         int dotPosition = filename.lastIndexOf('.');
         if (dotPosition > 0) {
             return mediaTypeForExtension(filename.substring(dotPosition + 1));

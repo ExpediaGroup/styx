@@ -26,8 +26,8 @@ import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.common.http.handler.BaseHttpHandler;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
-import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+import static com.hotels.styx.api.HttpHeaderValues.APPLICATION_JSON;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
@@ -59,7 +59,7 @@ public class OriginsHandler extends BaseHttpHandler {
             String jsonContent = marshal(object, prettyPrint);
             return response(OK)
                     .disableCaching()
-                    .addHeader(CONTENT_TYPE, JSON_UTF_8.toString())
+                    .addHeader(CONTENT_TYPE, "application/json")
                     .body(jsonContent, UTF_8)
                     .build();
 

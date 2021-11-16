@@ -15,9 +15,9 @@
  */
 package com.hotels.styx.server
 
-import com.google.common.net.MediaType
 import com.hotels.styx.api.HttpHandler
 import com.hotels.styx.api.HttpHeaderNames.HOST
+import com.hotels.styx.api.HttpHeaderValues.PLAIN_TEXT
 import com.hotels.styx.api.HttpInterceptor
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.OK
@@ -101,7 +101,7 @@ private class SlowlyStartingPlugin(val barrier: CyclicBarrier, val latch2: Count
     }
 
     override fun adminInterfaceHandlers() = mapOf<String, HttpHandler>(
-            "/path/one" to HttpAggregator(StaticBodyHttpHandler(MediaType.PLAIN_TEXT_UTF_8, "X: Response from first admin interface")),
-            "/path/two" to HttpAggregator(StaticBodyHttpHandler(MediaType.PLAIN_TEXT_UTF_8, "X: Response from second admin interface"))
+            "/path/one" to HttpAggregator(StaticBodyHttpHandler(PLAIN_TEXT, "X: Response from first admin interface")),
+            "/path/two" to HttpAggregator(StaticBodyHttpHandler(PLAIN_TEXT, "X: Response from second admin interface"))
     )
 }

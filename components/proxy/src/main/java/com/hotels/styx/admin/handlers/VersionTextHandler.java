@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Optional;
 
-import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
+import static com.hotels.styx.api.HttpHeaderValues.PLAIN_TEXT;
 import static com.hotels.styx.common.Preconditions.checkArgument;
 import static com.hotels.styx.javaconvenience.UtilKt.isEmpty;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -42,7 +42,7 @@ public class VersionTextHandler extends StaticBodyHttpHandler {
      * @param files content resources
      */
     public VersionTextHandler(Iterable<Resource> files) {
-        super(PLAIN_TEXT_UTF_8, body(files));
+        super(PLAIN_TEXT, body(files));
     }
 
     private static String body(Iterable<Resource> files) {

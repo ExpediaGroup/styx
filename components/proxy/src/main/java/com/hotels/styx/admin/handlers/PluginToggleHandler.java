@@ -32,8 +32,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+import static com.hotels.styx.api.HttpHeaderValues.PLAIN_TEXT;
 import static com.hotels.styx.api.HttpMethod.GET;
 import static com.hotels.styx.api.HttpMethod.PUT;
 import static com.hotels.styx.api.HttpResponse.response;
@@ -152,7 +152,7 @@ public class PluginToggleHandler implements WebServiceHandler {
     private static HttpResponse responseWith(HttpResponseStatus status, String message) {
         return HttpResponse.response(status)
                 .body(message + "\n", UTF_8)
-                .addHeader(CONTENT_TYPE, PLAIN_TEXT_UTF_8.toString())
+                .addHeader(CONTENT_TYPE, PLAIN_TEXT)
                 .disableCaching()
                 .build();
     }

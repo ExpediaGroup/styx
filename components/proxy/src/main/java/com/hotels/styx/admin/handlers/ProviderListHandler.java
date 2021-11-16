@@ -25,10 +25,10 @@ import com.hotels.styx.api.WebServiceHandler;
 import com.hotels.styx.api.configuration.ObjectStore;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 
-import static com.google.common.net.MediaType.HTML_UTF_8;
 import static com.hotels.styx.admin.AdminServerBuilder.adminEndpointPath;
 import static com.hotels.styx.admin.AdminServerBuilder.adminPath;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+import static com.hotels.styx.api.HttpHeaderValues.HTML;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -72,7 +72,7 @@ public class ProviderListHandler implements WebServiceHandler {
         String html = String.format(HTML_TEMPLATE, TITLE, h2(TITLE) + providerList);
         return Eventual.of(response(OK)
                 .body(html, UTF_8)
-                .addHeader(CONTENT_TYPE, HTML_UTF_8.toString())
+                .addHeader(CONTENT_TYPE, HTML)
                 .build());
     }
 
