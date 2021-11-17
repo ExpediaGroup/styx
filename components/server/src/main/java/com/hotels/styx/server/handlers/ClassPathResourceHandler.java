@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.server.handlers;
 
-import com.google.common.io.ByteStreams;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
@@ -32,6 +31,7 @@ import static com.hotels.styx.api.HttpResponseStatus.FORBIDDEN;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.javaconvenience.UtilKt.bytes;
 import static com.hotels.styx.server.handlers.MediaTypes.mediaTypeOf;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
@@ -77,7 +77,7 @@ public class ClassPathResourceHandler extends BaseHttpHandler {
                 return error(FORBIDDEN);
             }
 
-            String resourcePath = DOUBLE_SEPARATOR.matcher(resourceRoot + ensureHasPreceedingSlash(request.path().replace(requestPrefix, "")))
+            String resourcePath = DOUBLE_SEPARATOR.matcher(resourceRoot + ensureHasPrecedingSlash(request.path().replace(requestPrefix, "")))
                     .replaceAll(quoteReplacement("/"));
 
             return new HttpResponse.Builder(OK)
@@ -95,14 +95,12 @@ public class ClassPathResourceHandler extends BaseHttpHandler {
         return path.endsWith("/") ? path : path + "/";
     }
 
-    private static String ensureHasPreceedingSlash(String path) {
+    private static String ensureHasPrecedingSlash(String path) {
         return path.startsWith("/") ? path : "/" + path;
     }
 
     private static byte[] resourceBody(String path) throws IOException {
-        try (InputStream stream = classPathResourceAsStream(path)) {
-            return readStream(stream);
-        }
+        return bytes(classPathResourceAsStream(path), true);
     }
 
     private static HttpResponse error(HttpResponseStatus status) {
@@ -119,9 +117,5 @@ public class ClassPathResourceHandler extends BaseHttpHandler {
         }
 
         return stream;
-    }
-
-    private static byte[] readStream(InputStream stream) throws IOException {
-        return ByteStreams.toByteArray(stream);
     }
 }

@@ -19,6 +19,8 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.Callable
 import java.util.function.Supplier
+import java.io.InputStream
+import java.io.OutputStream
 import java.util.stream.Stream
 import kotlin.streams.asStream
 
@@ -81,6 +83,16 @@ fun <K, V> orderedMap(vararg entries: com.hotels.styx.common.Pair<K, V>): Map<K,
  * (Kotlin does not have concept of checked exceptions, so any Java exception is treated as unchecked).
  */
 fun <T> uncheck(code : Callable<T>) : T = code.call()
+
+fun copy(from: InputStream, to: OutputStream): Long = from.copyTo(to)
+
+@JvmOverloads
+fun bytes(from: InputStream, closeWhenDone : Boolean = false): ByteArray =
+    if(closeWhenDone) {
+        from.use { it.readAllBytes() }
+    } else {
+        from.readAllBytes()
+    }
 
 // Private functions can use whatever Kotlin features as Java code will not see them.
 

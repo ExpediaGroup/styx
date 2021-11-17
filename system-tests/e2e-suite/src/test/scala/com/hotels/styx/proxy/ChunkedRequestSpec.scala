@@ -17,11 +17,8 @@ package com.hotels.styx.proxy
 
 import com.github.tomakehurst.wiremock.client.{RequestPatternBuilder, UrlMatchingStrategy, ValueMatchingStrategy}
 import com.github.tomakehurst.wiremock.http.RequestMethod
-import com.google.common.base.Optional
-import com.google.common.base.Strings._
-import com.google.common.io.ByteStreams
-import com.google.common.io.ByteStreams._
 import com.hotels.styx.api.{HttpResponse, HttpResponseStatus, LiveHttpResponse}
+import com.hotels.styx.javaconvenience.UtilKt
 import com.hotels.styx.support.TestClientSupport
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
@@ -31,6 +28,7 @@ import org.scalatest.FunSpec
 import java.io.{ByteArrayInputStream, IOException, InputStream}
 import java.net.{HttpURLConnection, URL}
 import java.nio.charset.StandardCharsets._
+import java.util.Optional
 
 class ChunkedRequestSpec extends FunSpec
   with StyxProxySpec
@@ -63,7 +61,7 @@ class ChunkedRequestSpec extends FunSpec
       connection.setRequestMethod("POST")
       connection.setDoOutput(true)
       connection.setChunkedStreamingMode(chunks.length)
-      ByteStreams.copy(new ByteArrayInputStream(chunks), connection.getOutputStream)
+      UtilKt.copy(new ByteArrayInputStream(chunks), connection.getOutputStream)
       readResponse(connection)
 
       normalBackend.verify(new RequestPatternBuilder(RequestMethod.POST, urlMatchingStrategy("/chunked/1"))
@@ -93,10 +91,10 @@ class ChunkedRequestSpec extends FunSpec
 
     val stream: InputStream = getInputStream(connection, status)
     try {
-      responseBuilder = HttpResponse.response(HttpResponseStatus.statusWithCode(status)).body(toByteArray(stream), true)
+      responseBuilder = HttpResponse.response(HttpResponseStatus.statusWithCode(status)).body(UtilKt.bytes(stream), true)
       import scala.collection.JavaConversions._
       for (entry <- connection.getHeaderFields.entrySet) {
-        if (!isNullOrEmpty(entry.getKey)) {
+        if (entry.getKey != null && entry.getKey.nonEmpty) {
           responseBuilder.header(entry.getKey, String.join(",", entry.getValue))
         }
       }
@@ -110,7 +108,7 @@ class ChunkedRequestSpec extends FunSpec
   @throws(classOf[IOException])
   private def getInputStream(connection: HttpURLConnection, status: Int): InputStream = {
     if (status >= 400) {
-      Optional.fromNullable(connection.getErrorStream).or(emptyStream)
+      Optional.ofNullable(connection.getErrorStream).orElse(emptyStream)
     }
     else {
       connection.getInputStream

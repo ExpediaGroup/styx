@@ -43,13 +43,13 @@ import java.util.concurrent.TimeoutException;
 import static ch.qos.logback.classic.Level.ERROR;
 import static ch.qos.logback.classic.Level.INFO;
 import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.io.ByteStreams.toByteArray;
 import static com.hotels.styx.api.extension.service.spi.Registry.Outcome.FAILED;
 import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.failed;
 import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded;
 import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.unchanged;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.common.io.ResourceFactory.newResource;
+import static com.hotels.styx.javaconvenience.UtilKt.bytes;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -161,17 +161,17 @@ public class FileBackedBackendServicesRegistryTest {
     public void yamlBackendReaderReadsBackendServicesFromByteStream() throws IOException {
         Resource resource = newResource("classpath:/backends/origins.yml");
 
-        Iterable<BackendService> backendServices = new YAMLBackendServicesReader().read(toByteArray(resource.inputStream()));
+        Iterable<BackendService> backendServices = new YAMLBackendServicesReader().read(bytes(resource.inputStream(), true));
 
         assertThat(newArrayList(backendServices).size(), is(3));
     }
 
     @Test
-    public void yamlBackendReaderPropagatesExceptionWhenFailsToReadFromByteStream() throws IOException {
+    public void yamlBackendReaderPropagatesExceptionWhenFailsToReadFromByteStream() {
         Resource resource = newResource("classpath:/backends/origins-with-invalid-path.yml");
 
         assertThrows(RuntimeException.class,
-                () -> new YAMLBackendServicesReader().read(toByteArray(resource.inputStream())));
+                () -> new YAMLBackendServicesReader().read(bytes(resource.inputStream(), true)));
     }
 
     @Test
