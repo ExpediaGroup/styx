@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.proxy
 
-import com.google.common.io.Files
-import com.google.common.io.Files._
 import com.hotels.styx.MockServer.responseSupplier
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest.get
@@ -31,6 +29,7 @@ import reactor.core.publisher.Mono
 
 import java.io.{File, IOException, RandomAccessFile}
 import java.nio.charset.StandardCharsets.UTF_8
+import java.nio.file.Files.{createTempDirectory, readString}
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import scala.concurrent.duration._
 
@@ -59,7 +58,8 @@ class BigFileDownloadSpec extends FunSpec
     )
 
     val bigFile: File = newBigFile("big_file.dat")
-    fileServer.stub("/download", responseSupplier(() => response(OK).body(Files.toString(bigFile, UTF_8), UTF_8).build().stream))
+
+    fileServer.stub("/download", responseSupplier(() => response(OK).body(readString(bigFile.toPath, UTF_8), UTF_8).build().stream))
   }
 
   override protected def afterAll(): Unit = {
@@ -101,7 +101,7 @@ class BigFileDownloadSpec extends FunSpec
 
   @throws(classOf[IOException])
   private def newBigFile(filename: String): File = {
-    val tmpDir: File = createTempDir
+    val tmpDir: File = createTempDirectory("").toFile
     val tmpFile: String = tmpDir.toPath.resolve(filename).toString
 
     val file: RandomAccessFile = new RandomAccessFile(tmpFile, "rwd")

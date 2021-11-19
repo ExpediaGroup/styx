@@ -35,9 +35,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 
-import static com.google.common.io.Files.createTempDir;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.copy;
+import static java.nio.file.Files.createTempDirectory;
 import static java.nio.file.Files.delete;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -51,13 +51,13 @@ import static org.mockito.Mockito.when;
 
 public class FileBackedBackendServicesRegistryFactoryTest {
 
-    private File tempDir;
+    private Path tempDir;
     private Path monitoredFile;
     private Environment environment;
 
     @BeforeEach
     public void setUp() throws Exception {
-        tempDir = createTempDir();
+        tempDir = createTempDirectory("");
         monitoredFile = Paths.get(tempDir.toString(), "origins.yml");
         write(monitoredFile, "content-v1");
         environment = new com.hotels.styx.Environment.Builder().registry(new MicrometerRegistry(new SimpleMeterRegistry())).build();
@@ -66,13 +66,11 @@ public class FileBackedBackendServicesRegistryFactoryTest {
     @AfterEach
     public void tearDown() throws Exception {
         delete(monitoredFile);
-        delete(tempDir.toPath());
+        delete(tempDir);
     }
-
 
     @Test
     public void instantiatesFromYaml() {
-
         environment = new com.hotels.styx.Environment.Builder()
                 .registry(new MicrometerRegistry(new SimpleMeterRegistry()))
                 .configuration(StyxConfig.fromYaml("config: {originsFile: '${CONFIG_LOCATION:classpath:}/conf/origins/backend-factory-origins.yml'}", false))

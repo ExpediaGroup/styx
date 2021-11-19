@@ -15,6 +15,10 @@
  */
 package com.hotels.styx.javaconvenience
 
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.concurrent.Callable
+import java.util.function.Supplier
 import java.util.stream.Stream
 import kotlin.streams.asStream
 
@@ -71,6 +75,12 @@ fun <K, V> orderedMap(vararg entries: com.hotels.styx.common.Pair<K, V>): Map<K,
 
     return map
 }
+
+/**
+ * Allows Java checked exception to be thrown without checking or wrapping in RuntimeException.
+ * (Kotlin does not have concept of checked exceptions, so any Java exception is treated as unchecked).
+ */
+fun <T> uncheck(code : Callable<T>) : T = code.call()
 
 // Private functions can use whatever Kotlin features as Java code will not see them.
 

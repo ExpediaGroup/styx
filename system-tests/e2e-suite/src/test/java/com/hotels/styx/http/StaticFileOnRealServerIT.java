@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.http;
 
-import com.google.common.io.Files;
 import com.google.common.util.concurrent.Service;
 import com.hotels.styx.InetServer;
 import com.hotels.styx.StyxServers;
@@ -38,6 +37,7 @@ import static com.hotels.styx.api.HttpMethod.GET;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.server.HttpServers.createHttpServer;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.Files.createTempDirectory;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
@@ -56,14 +56,13 @@ public class StaticFileOnRealServerIT {
     }
 
     @BeforeAll
-    public void startServer() {
-        dir = Files.createTempDir();
+    public void startServer() throws IOException {
+        dir = createTempDirectory("").toFile();
         webServer = createHttpServer(0, new StaticFileHandler(dir));
         guavaService = StyxServers.toGuavaService(webServer);
         guavaService.startAsync().awaitRunning();
         serverEndpoint = toHostAndPort(webServer.inetAddress());
     }
-
 
     @AfterAll
     public void stopServer() {
