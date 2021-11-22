@@ -33,10 +33,10 @@ import java.util.function.Supplier;
 
 import static com.google.common.hash.HashCode.fromLong;
 import static com.google.common.hash.Hashing.md5;
-import static com.google.common.io.ByteStreams.toByteArray;
 import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.failed;
 import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded;
 import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.unchanged;
+import static com.hotels.styx.javaconvenience.UtilKt.bytes;
 import static java.lang.String.format;
 import static java.nio.file.Files.getLastModifiedTime;
 import static java.util.Objects.requireNonNull;
@@ -143,7 +143,7 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
 
     private byte[] readFile() {
         try (InputStream configurationContent = configurationFile.inputStream()) {
-            return toByteArray(configurationContent);
+            return bytes(configurationContent);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -23,7 +23,7 @@ import java.io.InputStream;
 import java.nio.file.Path;
 
 import static com.google.common.hash.Hashing.md5;
-import static com.google.common.io.ByteStreams.toByteArray;
+import static com.hotels.styx.javaconvenience.UtilKt.bytes;
 
 /**
  * Reads in a file and performs and Md5 hash on it.
@@ -34,7 +34,7 @@ public final class Files {
 
     public static HashCode fileContentMd5(Path path) {
         try (InputStream stream = new FileInputStream(path.toFile())) {
-           return md5().hashBytes(toByteArray(stream));
+           return md5().hashBytes(bytes(stream));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
