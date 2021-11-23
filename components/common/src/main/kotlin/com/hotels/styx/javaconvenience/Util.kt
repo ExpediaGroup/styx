@@ -22,6 +22,8 @@ import java.util.SortedSet
 import java.util.TreeMap
 import java.util.TreeSet
 import java.util.concurrent.Callable
+import java.util.concurrent.Executors.defaultThreadFactory
+import java.util.concurrent.ThreadFactory
 import java.util.function.Consumer
 import java.util.function.Function
 import java.util.function.Predicate
@@ -122,6 +124,21 @@ fun <K, V> filterSortedMap(original: SortedMap<K, V>, predicate: Predicate<K>): 
 fun <T> concatenatedForEach(first: Iterable<T>, second: Iterable<T>, action: Consumer<T>) {
     first.forEach(action)
     second.forEach(action)
+}
+
+/**
+ * Name format must contain a placeholder for a number.
+ * This number will be 0 for the first thread created an increment by 1 on each new thread.
+ */
+fun threadFactoryWithIncrementingName(nameFormat: String): ThreadFactory {
+    val defaultThreadFactory = defaultThreadFactory()
+    var threadCount = 0
+
+    return ThreadFactory {
+        defaultThreadFactory.newThread(it).apply {
+            name = nameFormat.format(threadCount++)
+        }
+    }
 }
 
 // Private functions can use whatever Kotlin features as Java code will not see them.

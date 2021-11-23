@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.client.healthcheck;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.extension.service.HealthCheckConfig;
 import com.hotels.styx.client.HttpClient;
@@ -24,10 +23,12 @@ import com.hotels.styx.client.healthcheck.monitors.NoOriginHealthStatusMonitor;
 import com.hotels.styx.client.healthcheck.monitors.ScheduledOriginHealthStatusMonitor;
 
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.function.Supplier;
 
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.Executors.defaultThreadFactory;
 import static java.util.concurrent.Executors.newScheduledThreadPool;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -41,10 +42,8 @@ public final class OriginHealthStatusMonitorFactory {
             return new NoOriginHealthStatusMonitor();
         }
 
-        ScheduledExecutorService executorService = newScheduledThreadPool(1, new ThreadFactoryBuilder()
-                .setNameFormat(format("STYX-ORIGINS-MONITOR-%s", requireNonNull(id)))
-                .setDaemon(true)
-                .build());
+        ScheduledExecutorService executorService = newScheduledThreadPool(1,
+                threadFactory(format("STYX-ORIGINS-MONITOR-%s", requireNonNull(id))));
 
         ScheduledOriginHealthStatusMonitor healthStatusMonitor = new ScheduledOriginHealthStatusMonitor(
                 executorService,
@@ -53,5 +52,18 @@ public final class OriginHealthStatusMonitorFactory {
                 client);
 
         return new AnomalyExcludingOriginHealthStatusMonitor(healthStatusMonitor, healthCheckConfig.healthyThreshold(), healthCheckConfig.unhealthyThreshold());
+    }
+
+    private static ThreadFactory threadFactory(String name) {
+        requireNonNull(name);
+
+        ThreadFactory defaultThreadFactory = defaultThreadFactory();
+
+        return runnable -> {
+            Thread thread = defaultThreadFactory.newThread(runnable);
+            thread.setName(name);
+            thread.setDaemon(true);
+            return thread;
+        };
     }
 }

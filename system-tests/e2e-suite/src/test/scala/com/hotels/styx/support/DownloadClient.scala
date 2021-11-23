@@ -15,12 +15,9 @@
  */
 package com.hotels.styx.support
 
-import java.net.URL
-
-import akka.actor.FSM.{Failure, Normal}
 import akka.actor.{ActorRef, LoggingFSM}
-import com.google.common.util.concurrent.ThreadFactoryBuilder
 import com.hotels.styx.api.HttpHeaderNames.{CONTENT_LENGTH, HOST, USER_AGENT}
+import com.hotels.styx.javaconvenience.UtilKt
 import com.hotels.styx.support.DownloadClient._
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.ByteBuf
@@ -33,6 +30,7 @@ import io.netty.handler.codec.http.HttpVersion.HTTP_1_1
 import io.netty.handler.codec.http._
 import org.slf4j.LoggerFactory
 
+import java.net.URL
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -111,7 +109,7 @@ class DownloadClient extends LoggingFSM[State, Data] {
     }
   }
 
-  val eventLoopGroup = new NioEventLoopGroup(1, new ThreadFactoryBuilder().setNameFormat("Download-Client-%d").build())
+  val eventLoopGroup = new NioEventLoopGroup(1, UtilKt.threadFactoryWithIncrementingName("Download-Client-%d"))
   val bootstrap = new Bootstrap()
     .group(eventLoopGroup)
     .channel(classOf[NioSocketChannel])
