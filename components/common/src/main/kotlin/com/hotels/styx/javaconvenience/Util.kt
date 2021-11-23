@@ -17,13 +17,15 @@ package com.hotels.styx.javaconvenience
 
 import java.io.InputStream
 import java.io.OutputStream
-import java.util.*
+import java.util.SortedMap
+import java.util.SortedSet
+import java.util.TreeMap
+import java.util.TreeSet
 import java.util.concurrent.Callable
 import java.util.function.Consumer
 import java.util.function.Function
 import java.util.function.Predicate
 import java.util.stream.Stream
-import kotlin.collections.AbstractList
 import kotlin.streams.asStream
 import java.lang.reflect.Array.newInstance as arrayNewInstance
 
@@ -85,13 +87,13 @@ fun <K, V> orderedMap(vararg entries: com.hotels.styx.common.Pair<K, V>): Map<K,
  * Allows Java checked exception to be thrown without checking or wrapping in RuntimeException.
  * (Kotlin does not have concept of checked exceptions, so any Java exception is treated as unchecked).
  */
-fun <T> uncheck(code : Callable<T>) : T = code.call()
+fun <T> uncheck(code: Callable<T>): T = code.call()
 
 fun copy(from: InputStream, to: OutputStream): Long = from.copyTo(to)
 
 @JvmOverloads
-fun bytes(from: InputStream, closeWhenDone : Boolean = false): ByteArray =
-    if(closeWhenDone) {
+fun bytes(from: InputStream, closeWhenDone: Boolean = false): ByteArray =
+    if (closeWhenDone) {
         from.use { it.readAllBytes() }
     } else {
         from.readAllBytes()

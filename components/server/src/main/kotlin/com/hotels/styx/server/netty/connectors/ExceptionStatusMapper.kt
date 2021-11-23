@@ -17,7 +17,7 @@ package com.hotels.styx.server.netty.connectors
 
 import com.hotels.styx.api.HttpResponseStatus
 import org.slf4j.LoggerFactory.getLogger
-import java.util.*
+import java.util.Optional
 import java.util.function.Consumer
 
 private val LOG = getLogger(ExceptionStatusMapper::class.java)
