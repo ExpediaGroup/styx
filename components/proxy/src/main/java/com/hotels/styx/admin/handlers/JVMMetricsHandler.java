@@ -32,8 +32,8 @@ import java.util.Optional;
 import java.util.SortedMap;
 import java.util.SortedSet;
 
-import static com.google.common.collect.Maps.filterKeys;
-import static com.google.common.collect.Sets.filter;
+import static com.hotels.styx.javaconvenience.UtilKt.filterSortedMap;
+import static com.hotels.styx.javaconvenience.UtilKt.filterSortedSet;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -163,5 +163,13 @@ public class JVMMetricsHandler extends JsonHandler<MetricRegistry> {
         public SortedMap<String, Metric> getMetrics() {
             return filterKeys(original.getMetrics(), STARTS_WITH_JVM);
         }
+    }
+
+    private static <T> SortedSet<T> filter(SortedSet<T> original, Predicate<T> predicate) {
+        return filterSortedSet(original, predicate);
+    }
+
+    private static <K, V> SortedMap<K, V> filterKeys(SortedMap<K, V> original, Predicate<K> predicate) {
+        return filterSortedMap(original, predicate);
     }
 }

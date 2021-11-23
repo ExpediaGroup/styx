@@ -77,6 +77,7 @@ import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.server.HttpErrorStatusListener.IGNORE_ERROR_STATUS;
 import static com.hotels.styx.server.RequestProgressListener.IGNORE_REQUEST_PROGRESS;
+import static com.hotels.styx.server.netty.connectors.ExceptionStatusMapperKt.buildExceptionStatusMapper;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE_CLIENT_CLOSED;
@@ -98,19 +99,19 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpRequest> {
     private static final Logger LOGGER = getLogger(HttpPipelineHandler.class);
 
-    private static final ExceptionStatusMapper EXCEPTION_STATUSES = new ExceptionStatusMapper.Builder()
-            .add(REQUEST_TIMEOUT, RequestTimeoutException.class)
-            .add(BAD_GATEWAY,
-                    OriginUnreachableException.class,
-                    NoAvailableHostsException.class,
-                    NoServiceConfiguredException.class,
-                    BadHttpResponseException.class,
-                    ContentOverflowException.class
-            )
-            .add(SERVICE_UNAVAILABLE, ResourceExhaustedException.class)
-            .add(GATEWAY_TIMEOUT, ResponseTimeoutException.class)
-            .add(INTERNAL_SERVER_ERROR, StyxClientException.class)
-            .build();
+    private static final ExceptionStatusMapper EXCEPTION_STATUSES = buildExceptionStatusMapper(it -> {
+        it.add(REQUEST_TIMEOUT, RequestTimeoutException.class)
+                .add(BAD_GATEWAY,
+                        OriginUnreachableException.class,
+                        NoAvailableHostsException.class,
+                        NoServiceConfiguredException.class,
+                        BadHttpResponseException.class,
+                        ContentOverflowException.class
+                )
+                .add(SERVICE_UNAVAILABLE, ResourceExhaustedException.class)
+                .add(GATEWAY_TIMEOUT, ResponseTimeoutException.class)
+                .add(INTERNAL_SERVER_ERROR, StyxClientException.class);
+    });
 
     private final HttpHandler httpPipeline;
     private final HttpErrorStatusListener httpErrorStatusListener;

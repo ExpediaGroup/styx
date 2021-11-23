@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.javaconvenience.UtilKt;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -27,7 +28,6 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 
-import static com.google.common.collect.Iterables.getFirst;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.service.BackendService.newBackendServiceBuilder;
 import static com.hotels.styx.common.Preconditions.checkArgument;
@@ -134,7 +134,7 @@ public final class BackendServices implements Iterable<BackendService> {
      * @return the first application
      */
     public BackendService first() {
-        BackendService first = getFirst(this, null);
+        BackendService first = UtilKt.first(this);
         if (first == null) {
             throw new NoSuchElementException();
         }

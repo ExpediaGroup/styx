@@ -16,7 +16,6 @@
 package com.hotels.styx.admin.dashboard;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.HttpHandler;
@@ -32,6 +31,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hotels.styx.api.Id.id;
@@ -82,7 +82,7 @@ public class DashboardDataSupplierTest {
         DashboardData.Backend fooBackend = downstream.backend("STYXPRES-foo");
 
         assertThat(downstream.backendIds(), containsInAnyOrder("STYXPRES-foo", "STYXPRES-bar"));
-        assertThat(fooBackend.statusesByOriginId(), is(equalTo(ImmutableMap.of("foo1", "active", "foo2", "inactive"))));
+        assertThat(fooBackend.statusesByOriginId(), is(equalTo(Map.of("foo1", "active", "foo2", "inactive"))));
         assertThat(fooBackend.origin("foo1").status(), is("active"));
 
 
@@ -91,7 +91,7 @@ public class DashboardDataSupplierTest {
 
         fooBackend = supplier.get().downstream().backend("STYXPRES-foo");
 
-        assertThat(fooBackend.statusesByOriginId(), is(equalTo(ImmutableMap.of("foo1", "inactive", "foo2", "disabled"))));
+        assertThat(fooBackend.statusesByOriginId(), is(equalTo(Map.of("foo1", "inactive", "foo2", "disabled"))));
         assertThat(fooBackend.origin("foo1").status(), is("inactive"));
     }
 

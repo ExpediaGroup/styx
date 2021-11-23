@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -35,7 +36,6 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.google.common.collect.Maps.newHashMap;
 import static com.hotels.styx.infrastructure.configuration.yaml.JsonTreeTraversal.traverseJsonTree;
 import static java.util.Objects.requireNonNull;
 import static java.util.regex.Pattern.compile;
@@ -85,7 +85,7 @@ public class PlaceholderResolver {
     }
 
     public Collection<UnresolvedPlaceholder> resolve() {
-        Map<String, String> resolved = newHashMap(externalProperties);
+        Map<String, String> resolved = new HashMap<>(externalProperties);
 
         ResolutionVisitor visitor = new ResolutionVisitor(resolved);
 

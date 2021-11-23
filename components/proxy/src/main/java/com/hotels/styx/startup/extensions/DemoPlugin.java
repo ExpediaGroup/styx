@@ -17,7 +17,6 @@ package com.hotels.styx.startup.extensions;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpResponse;
@@ -67,9 +66,7 @@ public class DemoPlugin implements Plugin {
 
     @Override
     public Map<String, HttpHandler> adminInterfaceHandlers() {
-        return ImmutableMap.of(
-                "example", adminHandler()
-        );
+        return Map.of("example", adminHandler());
     }
 
     private HttpHandler adminHandler() {

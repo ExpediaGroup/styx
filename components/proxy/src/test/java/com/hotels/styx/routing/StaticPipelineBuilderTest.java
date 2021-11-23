@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.routing;
 
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.Environment;
 import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.HttpHandler;
@@ -34,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hotels.styx.api.HttpResponseStatus.OK;
@@ -75,14 +75,14 @@ public class StaticPipelineBuilderTest {
 
     @Test
     public void buildsInterceptorPipelineForBackendServices() throws Exception {
-        HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, ImmutableList.of(), executor, false).build();
+        HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, List.of(), executor, false).build();
         LiveHttpResponse response = Mono.from(handler.handle(get("/foo").build(), requestContext())).block();
         assertThat(response.status(), is(OK));
     }
 
     @Test
     public void appliesPluginsInOrderTheyAreConfigured() throws Exception {
-        Iterable<NamedPlugin> plugins = ImmutableList.of(
+        Iterable<NamedPlugin> plugins = List.of(
                 interceptor("Test-A", appendResponseHeader("X-From-Plugin", "A")),
                 interceptor("Test-B", appendResponseHeader("X-From-Plugin", "B"))
         );

@@ -20,7 +20,6 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.hotels.styx.Version;
@@ -37,9 +36,9 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.function.Supplier;
 
-import static com.google.common.collect.Iterables.transform;
 import static com.hotels.styx.admin.dashboard.ResponseCodeSupplier.StatusMetricType.COUNTER;
 import static com.hotels.styx.admin.dashboard.ResponseCodeSupplier.StatusMetricType.METER;
+import static com.hotels.styx.javaconvenience.UtilKt.listTransform;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -215,10 +214,10 @@ public class DashboardData {
                 registeredOrigins.add(origin);
             });
 
-            /* IMPORTANT NOTE: We are using guava transforms here instead of java 8 stream-map-collect because
-              the guava transforms are backed by the original objects and reflect changes in them. */
-            this.status = Lists.transform(origin, Origin::status);
-            this.connectionsPoolsAggregate = new ConnectionsPoolsAggregate(transform(origin, Origin::connectionsPool));
+            /* IMPORTANT NOTE: We are using transforms here instead of java 8 stream-map-collect because
+              the transforms are backed by the original objects and reflect changes in them. */
+            this.status = listTransform(origin, Origin::status);
+            this.connectionsPoolsAggregate = new ConnectionsPoolsAggregate(listTransform(origin, Origin::connectionsPool));
 
             String prefix = format("origins.%s.requests.response.status", name);
             this.responsesSupplier = new ResponseCodeSupplier(metrics, METER, prefix, true);

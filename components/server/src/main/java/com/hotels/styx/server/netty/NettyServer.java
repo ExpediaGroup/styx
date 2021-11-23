@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.server.netty;
 
-import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.InetServer;
 import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.Eventual;
@@ -77,7 +76,7 @@ final class NettyServer extends AbstractStyxService implements InetServer {
 
     @Override
     public Map<String, HttpHandler> adminInterfaceHandlers(String namespace) {
-        return ImmutableMap.of(
+        return Map.of(
                 "port", (request, response) -> Eventual.of(
                         response(OK)
                                 .disableCaching()

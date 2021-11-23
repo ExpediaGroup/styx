@@ -18,7 +18,8 @@ package com.hotels.styx.client.applications;
 import com.hotels.styx.api.extension.Origin;
 import org.junit.jupiter.api.Test;
 
-import static com.google.common.collect.Lists.newArrayList;
+import java.util.List;
+
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.checkThatOriginsAreDistinct;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
@@ -39,7 +40,7 @@ public class OriginTest {
         Origin origin1 = newOriginBuilder("localhost", 8080).applicationId("webapp").id("origin-01").build();
         Origin origin2 = newOriginBuilder("localhost", 8081).applicationId("webapp").id("origin-02").build();
 
-        checkThatOriginsAreDistinct(newArrayList(origin1, origin2));
+        checkThatOriginsAreDistinct(List.of(origin1, origin2));
     }
 
     @Test
@@ -49,7 +50,7 @@ public class OriginTest {
         Origin origin3 = newOriginBuilder("localhost", 8082).applicationId("webapp").id("origin-03").build();
 
         assertThrows(IllegalArgumentException.class,
-                () -> checkThatOriginsAreDistinct(newArrayList(origin1, origin2, origin3)));
+                () -> checkThatOriginsAreDistinct(List.of(origin1, origin2, origin3)));
     }
 
     @Test
@@ -57,7 +58,7 @@ public class OriginTest {
         Origin origin1 = newOriginBuilder("localhost", 8080).applicationId("webapp").id("origin-01").build();
         Origin origin2 = newOriginBuilder("localhost", 8081).applicationId("webapp").id("origin-02").build();
 
-        checkThatOriginsAreDistinct(newArrayList(origin1, origin2));
+        checkThatOriginsAreDistinct(List.of(origin1, origin2));
     }
 
     @Test
@@ -67,6 +68,6 @@ public class OriginTest {
         Origin origin3 = newOriginBuilder("localhost", 8081).applicationId("webapp").id("origin-03").build();
 
         assertThrows(IllegalArgumentException.class,
-                () -> checkThatOriginsAreDistinct(newArrayList(origin1, origin2, origin3)));
+                () -> checkThatOriginsAreDistinct(List.of(origin1, origin2, origin3)));
     }
 }

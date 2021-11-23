@@ -15,13 +15,11 @@
  */
 package com.hotels.styx.support;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
-import com.hotels.styx.api.extension.service.RewriteConfig;
 import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.api.extension.service.HealthCheckConfig;
+import com.hotels.styx.api.extension.service.RewriteConfig;
 import com.hotels.styx.api.extension.service.StickySessionConfig;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
@@ -63,12 +61,12 @@ public class ApplicationConfigurationMatcher extends TypeSafeMatcher<BackendServ
     }
 
     public ApplicationConfigurationMatcher withOrigins(Origin... origins) {
-        this.origins = ImmutableSet.copyOf(origins);
+        this.origins = Set.of(origins);
         return this;
     }
 
     public ApplicationConfigurationMatcher withRewrites(RewriteConfig... urlRewrites) {
-        this.rewrites = ImmutableList.copyOf(urlRewrites);
+        this.rewrites = List.of(urlRewrites);
         return this;
     }
 

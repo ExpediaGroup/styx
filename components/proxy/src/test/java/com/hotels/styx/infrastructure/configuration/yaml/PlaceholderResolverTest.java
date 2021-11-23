@@ -17,7 +17,6 @@ package com.hotels.styx.infrastructure.configuration.yaml;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.infrastructure.configuration.UnresolvedPlaceholder;
 import com.hotels.styx.infrastructure.configuration.yaml.PlaceholderResolver.Placeholder;
 import org.junit.jupiter.api.Test;
@@ -148,7 +147,7 @@ public class PlaceholderResolverTest {
 
         List<Placeholder> placeholders = PlaceholderResolver.extractPlaceholders(valueWithPlaceholders);
 
-        List<Placeholder> expected = ImmutableList.of(
+        List<Placeholder> expected = List.of(
                 new Placeholder("with.default", "defaultValue"),
                 new Placeholder("without.default"),
                 new Placeholder("configLocation", "classpath:"));

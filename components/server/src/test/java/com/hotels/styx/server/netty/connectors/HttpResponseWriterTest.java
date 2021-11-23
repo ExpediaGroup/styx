@@ -17,7 +17,6 @@ package com.hotels.styx.server.netty.connectors;
 
 
 import ch.qos.logback.classic.Level;
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.LiveHttpResponse;
@@ -475,7 +474,7 @@ public class HttpResponseWriterTest {
         }
 
         public List<Object> writeEvents() {
-            return ImmutableList.copyOf(writeEvents);
+            return List.copyOf(writeEvents);
         }
 
     }

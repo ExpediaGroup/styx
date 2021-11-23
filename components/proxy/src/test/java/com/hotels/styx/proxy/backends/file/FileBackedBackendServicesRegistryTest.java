@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.proxy.backends.file;
 
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
@@ -34,6 +33,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -42,7 +42,6 @@ import java.util.concurrent.TimeoutException;
 
 import static ch.qos.logback.classic.Level.ERROR;
 import static ch.qos.logback.classic.Level.INFO;
-import static com.google.common.collect.Lists.newArrayList;
 import static com.hotels.styx.api.extension.service.spi.Registry.Outcome.FAILED;
 import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.failed;
 import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded;
@@ -50,6 +49,7 @@ import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.un
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static com.hotels.styx.javaconvenience.UtilKt.bytes;
+import static com.hotels.styx.javaconvenience.UtilKt.iterableToList;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -163,7 +163,7 @@ public class FileBackedBackendServicesRegistryTest {
 
         Iterable<BackendService> backendServices = new YAMLBackendServicesReader().read(bytes(resource.inputStream(), true));
 
-        assertThat(newArrayList(backendServices).size(), is(3));
+        assertThat(iterableToList(backendServices).size(), is(3));
     }
 
     @Test
@@ -407,7 +407,7 @@ public class FileBackedBackendServicesRegistryTest {
 
     @Test
     public void constraintAcceptsDistinctPaths() {
-        Collection<BackendService> backendServices = ImmutableList.of(
+        Collection<BackendService> backendServices = List.of(
                 new BackendService.Builder()
                         .path("/foo")
                         .build(),
@@ -421,7 +421,7 @@ public class FileBackedBackendServicesRegistryTest {
 
     @Test
     public void constraintRejectsDuplicatePaths() {
-        Collection<BackendService> backendServices = ImmutableList.of(
+        Collection<BackendService> backendServices = List.of(
                 new BackendService.Builder()
                         .id("app-a")
                         .path("/foo")
@@ -442,7 +442,7 @@ public class FileBackedBackendServicesRegistryTest {
 
     @Test
     public void constraintRejectsAndLogsMultipleDuplicatePaths() {
-        Collection<BackendService> backendServices = ImmutableList.of(
+        Collection<BackendService> backendServices = List.of(
                 new BackendService.Builder()
                         .id("app-a")
                         .path("/foo")

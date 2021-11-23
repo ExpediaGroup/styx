@@ -18,7 +18,6 @@ package com.hotels.styx.infrastructure.configuration.yaml;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.collect.ImmutableList;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
 import org.junit.jupiter.api.Test;
@@ -28,6 +27,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import static com.hotels.styx.javaconvenience.UtilKt.iterableToList;
 import static com.hotels.styx.support.matchers.IsOptional.isPresent;
 import static com.hotels.styx.support.matchers.IsOptional.matches;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -86,7 +86,7 @@ public class NodePathTest {
     }
 
     private static List<JsonNode> elements(JsonNode node) {
-        return ImmutableList.copyOf(node::elements);
+        return iterableToList(node::elements);
     }
 
     private static JsonNode parseYaml(String yaml) {

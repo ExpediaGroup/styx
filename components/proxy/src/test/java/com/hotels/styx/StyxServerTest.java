@@ -15,7 +15,6 @@
  */
 package com.hotels.styx;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.Service;
 import com.hotels.styx.admin.AdminServerConfig;
 import com.hotels.styx.api.Eventual;
@@ -106,7 +105,7 @@ public class StyxServerTest {
         Plugin pluginMock1 = mock(Plugin.class);
         Plugin pluginMock2 = mock(Plugin.class);
 
-        StyxServer styxServer = styxServerWithPlugins(ImmutableMap.of(
+        StyxServer styxServer = styxServerWithPlugins(Map.of(
                 "mockplugin1", pluginMock1,
                 "mockplugin2", pluginMock2
         ));
@@ -127,7 +126,7 @@ public class StyxServerTest {
     public void serverDoesNotStartUntilPluginsAreStarted() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
 
-        StyxServer styxServer = styxServerWithPlugins(ImmutableMap.of(
+        StyxServer styxServer = styxServerWithPlugins(Map.of(
                 "slowlyStartingPlugin", new Plugin() {
                     @Override
                     public void styxStarting() {
@@ -164,7 +163,7 @@ public class StyxServerTest {
         StyxServerComponents config = new StyxServerComponents.Builder()
                 .registry(new MicrometerRegistry(new CompositeMeterRegistry()))
                 .configuration(EMPTY_CONFIGURATION)
-                .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(new MemoryBackedRegistry<>())))
+                .additionalServices(Map.of("backendServiceRegistry", new RegistryServiceAdapter(new MemoryBackedRegistry<>())))
                 .build();
 
         new StyxServer(config);
@@ -176,7 +175,7 @@ public class StyxServerTest {
     public void stopsTheServerWhenPluginFailsToStart() {
         StyxServer styxServer = null;
         try {
-            styxServer = styxServerWithPlugins(ImmutableMap.of(
+            styxServer = styxServerWithPlugins(Map.of(
                     "foo", new NonStarterPlugin("foo"),
                     "mockplugin3", mock(Plugin.class)));
 
@@ -199,7 +198,7 @@ public class StyxServerTest {
             Plugin pluginMock2 = mock(Plugin.class);
             Plugin pluginMock4 = mock(Plugin.class);
 
-            styxServer = styxServerWithPlugins(ImmutableMap.of(
+            styxServer = styxServerWithPlugins(Map.of(
                     "plug1", new NonStarterPlugin("plug1"),
                     "plug2", pluginMock2,
                     "plug3", new NonStarterPlugin("plug3"),
@@ -264,7 +263,7 @@ public class StyxServerTest {
         StyxServerComponents config = new StyxServerComponents.Builder()
                 .registry(new MicrometerRegistry(new CompositeMeterRegistry()))
                 .configuration(styxConfig())
-                .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(new MemoryBackedRegistry<>())))
+                .additionalServices(Map.of("backendServiceRegistry", new RegistryServiceAdapter(new MemoryBackedRegistry<>())))
                 .plugins(plugins)
                 .build();
 
@@ -275,7 +274,7 @@ public class StyxServerTest {
         StyxServerComponents config = new StyxServerComponents.Builder()
                 .registry(new MicrometerRegistry(new CompositeMeterRegistry()))
                 .configuration(styxConfig())
-                .additionalServices(ImmutableMap.of("backendServiceRegistry", backendServiceRegistry))
+                .additionalServices(Map.of("backendServiceRegistry", backendServiceRegistry))
                 .build();
 
         return new StyxServer(config);

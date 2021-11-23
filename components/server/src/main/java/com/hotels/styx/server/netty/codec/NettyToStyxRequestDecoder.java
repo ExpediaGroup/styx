@@ -46,8 +46,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 
-import static com.google.common.collect.Iterables.getOnlyElement;
-import static com.google.common.collect.Iterables.size;
 import static com.hotels.styx.api.HttpHeaderNames.EXPECT;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.server.UniqueIdSuppliers.UUID_VERSION_ONE_SUPPLIER;
@@ -160,8 +158,8 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
     }
 
     private static void validateHostHeader(HttpRequest request) {
-        Iterable<String> hosts = request.headers().getAll(HOST);
-        if (size(hosts) != 1 || !isValidHostName(getOnlyElement(hosts))) {
+        List<String> hosts = request.headers().getAll(HOST);
+        if (hosts.size() != 1 || !isValidHostName(hosts.get(0))) {
             throw new BadRequestException("Bad Host header. Missing/Mismatch of Host header: " + request);
         }
     }
