@@ -21,7 +21,7 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 
-import static com.google.common.net.HttpHeaders.CACHE_CONTROL;
+import static com.hotels.styx.api.HttpHeaderNames.CACHE_CONTROL;
 import static org.hamcrest.Matchers.is;
 
 public class HeaderMatcher extends TypeSafeMatcher<HttpHeader> {

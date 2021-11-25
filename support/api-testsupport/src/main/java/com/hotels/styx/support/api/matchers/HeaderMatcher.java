@@ -20,7 +20,6 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 
-import static com.google.common.net.HttpHeaders.CACHE_CONTROL;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static org.hamcrest.Matchers.is;
 
@@ -38,10 +37,6 @@ public class HeaderMatcher extends TypeSafeMatcher<HttpHeader> {
 
     public static Matcher<HttpHeader> contentType(String value) {
         return new HeaderMatcher(CONTENT_TYPE, is(value));
-    }
-
-    public static Matcher<HttpHeader> cacheControl(String value) {
-        return new HeaderMatcher(CACHE_CONTROL, is(value));
     }
 
     public static Matcher<HttpHeader> header(HttpHeader header) {
