@@ -15,15 +15,13 @@
  */
 package com.hotels.styx.client.connectionpool;
 
-import com.google.common.base.Stopwatch;
-import com.google.common.base.Ticker;
+import com.hotels.styx.api.Clock;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.Connection;
+import com.hotels.styx.javaconvenience.Stopwatch;
 import reactor.core.publisher.Flux;
-
-import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -37,10 +35,10 @@ class ExpiringConnection implements Connection {
     private final long connectionExpirationSeconds;
     private final Stopwatch stopwatch;
 
-    ExpiringConnection(Connection nettyConnection, long connectionExpirationSeconds, Supplier<Ticker> tickerSupplier) {
+    ExpiringConnection(Connection nettyConnection, long connectionExpirationSeconds, Clock clock) {
         this.connectionExpirationSeconds = connectionExpirationSeconds;
         this.nettyConnection = requireNonNull(nettyConnection);
-        this.stopwatch = Stopwatch.createStarted(tickerSupplier.get());
+        this.stopwatch = new Stopwatch(clock);
     }
 
     @Override
@@ -73,6 +71,6 @@ class ExpiringConnection implements Connection {
     }
 
     private boolean isExpired() {
-        return stopwatch.elapsed(SECONDS) >= connectionExpirationSeconds;
+        return stopwatch.timeElapsedSoFar(SECONDS) >= connectionExpirationSeconds;
     }
 }
