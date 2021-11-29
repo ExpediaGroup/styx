@@ -22,8 +22,11 @@ import java.util.SortedSet
 import java.util.TreeMap
 import java.util.TreeSet
 import java.util.concurrent.Callable
+<<<<<<< HEAD
 import java.util.concurrent.Executors.defaultThreadFactory
 import java.util.concurrent.ThreadFactory
+=======
+>>>>>>> Remove accidentally committed stuff
 import java.util.function.Consumer
 import java.util.function.Function
 import java.util.function.Predicate
