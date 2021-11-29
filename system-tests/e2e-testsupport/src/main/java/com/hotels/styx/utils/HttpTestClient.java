@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.utils;
 
-import com.google.common.base.Suppliers;
 import com.google.common.net.HostAndPort;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -34,7 +33,11 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+<<<<<<< HEAD
 import static com.hotels.styx.javaconvenience.UtilKt.threadFactoryWithIncrementingName;
+=======
+import static com.hotels.styx.javaconvenience.UtilKt.lazySupplier;
+>>>>>>> Remove Guava Suppliers
 import static io.netty.channel.ChannelOption.ALLOCATOR;
 import static io.netty.channel.ChannelOption.AUTO_READ;
 import static io.netty.channel.ChannelOption.CONNECT_TIMEOUT_MILLIS;
@@ -55,7 +58,7 @@ public class HttpTestClient {
     public HttpTestClient(HostAndPort destination, ChannelInitializer<Channel> initializer) {
         this.destination = destination;
 
-        this.bootstrap = lazy(() -> new Bootstrap()
+        this.bootstrap = lazySupplier(() -> new Bootstrap()
                 .group(EVENT_LOOP_GROUP)
                 .channel(NioSocketChannel.class)
                 .handler(initializer)
@@ -128,9 +131,5 @@ public class HttpTestClient {
             releaseLater(msg);
             receivedResponses.offer(msg);
         }
-    }
-
-    private static <T> Supplier<T> lazy(Supplier<T> supplier) {
-        return Suppliers.memoize(supplier::get)::get;
     }
 }

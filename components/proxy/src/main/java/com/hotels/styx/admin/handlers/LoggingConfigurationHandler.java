@@ -24,17 +24,21 @@ import com.hotels.styx.api.WebServiceHandler;
 import org.slf4j.Logger;
 
 import java.io.IOException;
-import java.util.function.Supplier;
 
+<<<<<<< HEAD
 import static com.google.common.base.Suppliers.memoizeWithExpiration;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+=======
+import static com.google.common.net.HttpHeaders.CONTENT_LENGTH;
+import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+>>>>>>> Remove Guava Suppliers
 import static com.hotels.styx.api.HttpHeaderValues.PLAIN_TEXT;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static java.lang.System.currentTimeMillis;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -44,11 +48,11 @@ public class LoggingConfigurationHandler implements WebServiceHandler {
     private static final Logger LOG = getLogger(LoggingConfigurationHandler.class);
 
     private final Resource logConfigLocation;
-    private final Supplier<Content> contentSupplier;
+    private volatile long lastLoad = 0L;
+    private volatile Content content;
 
     public LoggingConfigurationHandler(Resource logConfigLocation) {
         this.logConfigLocation = requireNonNull(logConfigLocation);
-        this.contentSupplier = memoizeWithExpiration(this::loadContent, 1, SECONDS)::get;
     }
 
     @Override
@@ -57,7 +61,13 @@ public class LoggingConfigurationHandler implements WebServiceHandler {
     }
 
     private HttpResponse generateResponse() {
-        Content content = contentSupplier.get();
+        synchronized (this) {
+            long time = currentTimeMillis();
+            if (content == null || time - lastLoad > 1000) {
+                lastLoad = time;
+                content = loadContent();
+            }
+        }
 
         return response(OK)
                 .header(CONTENT_TYPE, content.type)
