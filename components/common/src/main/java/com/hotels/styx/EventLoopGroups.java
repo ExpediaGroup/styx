@@ -15,24 +15,21 @@
  */
 package com.hotels.styx;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+
+import static com.hotels.styx.javaconvenience.UtilKt.threadFactoryWithIncrementingName;
 
 final class EventLoopGroups {
     private EventLoopGroups() {
     }
 
     public static EventLoopGroup nioEventLoopGroup(int threadsCount, String threadsNameFormat) {
-        return new NioEventLoopGroup(threadsCount, new ThreadFactoryBuilder()
-                .setNameFormat(threadsNameFormat)
-                .build());
+        return new NioEventLoopGroup(threadsCount, threadFactoryWithIncrementingName(threadsNameFormat));
     }
 
     public static EventLoopGroup epollEventLoopGroup(int threadsCount, String threadsNameFormat) {
-        return new EpollEventLoopGroup(threadsCount, new ThreadFactoryBuilder()
-                .setNameFormat(threadsNameFormat)
-                .build());
+        return new EpollEventLoopGroup(threadsCount, threadFactoryWithIncrementingName(threadsNameFormat));
     }
 }
