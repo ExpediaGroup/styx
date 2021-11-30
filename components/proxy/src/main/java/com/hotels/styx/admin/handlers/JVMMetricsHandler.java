@@ -24,13 +24,13 @@ import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistryListener;
 import com.codahale.metrics.Timer;
 import com.codahale.metrics.json.MetricsModule;
-import com.google.common.base.Predicate;
 import com.hotels.styx.api.MetricRegistry;
 
 import java.time.Duration;
 import java.util.Optional;
 import java.util.SortedMap;
 import java.util.SortedSet;
+import java.util.function.Predicate;
 
 import static com.hotels.styx.javaconvenience.UtilKt.filterSortedMap;
 import static com.hotels.styx.javaconvenience.UtilKt.filterSortedSet;
