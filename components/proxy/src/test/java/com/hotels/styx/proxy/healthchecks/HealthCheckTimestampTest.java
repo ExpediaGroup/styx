@@ -28,8 +28,8 @@ public class HealthCheckTimestampTest {
     final HealthCheckTimestamp healthCheckTimestamp = new HealthCheckTimestamp(stoppedClock(now));
 
     @Test
-    public void printsTheCurrentTime() throws Exception {
+    public void printsTheCurrentTime() {
         assertThat(healthCheckTimestamp.check().toString(), matchesRegex(
-                "Result\\{isHealthy=true, message=1970-01-01T00:00:00.001\\+0000, timestamp=.*\\}"));
+                "Result\\{isHealthy=true, message=1970-01-01T00:00:00.001\\+0000, duration=0, timestamp=.*\\}"));
     }
 }
