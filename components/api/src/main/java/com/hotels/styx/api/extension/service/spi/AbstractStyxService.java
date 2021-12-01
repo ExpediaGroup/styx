@@ -41,7 +41,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
  * A helper class for implementing StyxService interface.
- *
+ * <p>
  * AbstractStyxService provides service state management facilities
  * for implementing a StyxSerive interface.
  */
@@ -104,6 +104,7 @@ public abstract class AbstractStyxService implements StyxService {
 
     private Function<Throwable, Void> failWithMessage(String message) {
         return cause -> {
+            LOGGER.error(name + ": " + message, cause);
             status.set(FAILED);
             throw new ServiceFailureException(message, cause);
         };

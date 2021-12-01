@@ -111,8 +111,8 @@
     <jackson.dataformat.version>${jackson.version}</jackson.dataformat.version>
     <jackson.module.scala.version>${jackson.version}</jackson.module.scala.version>
     <jackson-module-kotlin.version>${jackson.version}</jackson-module-kotlin.version>
-    <metrics.version>4.0.5</metrics.version>
-    <micrometer.version>1.5.1</micrometer.version>
+    <dropwizard.version>4.2.4</dropwizard.version>
+    <micrometer.version>1.8.0</micrometer.version>
     <antlr.version>4.5.1-1</antlr.version>
     <netty.version>4.1.49.Final</netty.version>
     <netty-tcnative.version>2.0.26.Final</netty-tcnative.version>
@@ -337,7 +337,7 @@
       <dependency>
         <groupId>io.dropwizard.metrics</groupId>
         <artifactId>metrics-core</artifactId>
-        <version>${metrics.version}</version>
+        <version>${dropwizard.version}</version>
         <exclusions>
           <exclusion>
             <groupId>org.slf4j</groupId>
@@ -349,7 +349,7 @@
       <dependency>
         <groupId>io.dropwizard.metrics</groupId>
         <artifactId>metrics-jvm</artifactId>
-        <version>${metrics.version}</version>
+        <version>${dropwizard.version}</version>
         <exclusions>
           <exclusion>
             <groupId>org.slf4j</groupId>
@@ -361,7 +361,7 @@
       <dependency>
         <groupId>io.dropwizard.metrics</groupId>
         <artifactId>metrics-json</artifactId>
-        <version>${metrics.version}</version>
+        <version>${dropwizard.version}</version>
         <exclusions>
           <exclusion>
             <groupId>org.slf4j</groupId>
@@ -373,19 +373,19 @@
       <dependency>
         <groupId>io.dropwizard.metrics</groupId>
         <artifactId>metrics-graphite</artifactId>
-        <version>${metrics.version}</version>
+        <version>${dropwizard.version}</version>
       </dependency>
 
       <dependency>
         <groupId>io.dropwizard.metrics</groupId>
         <artifactId>metrics-healthchecks</artifactId>
-        <version>${metrics.version}</version>
+        <version>${dropwizard.version}</version>
       </dependency>
 
       <dependency>
         <groupId>io.dropwizard.metrics</groupId>
         <artifactId>metrics-jmx</artifactId>
-        <version>${metrics.version}</version>
+        <version>${dropwizard.version}</version>
       </dependency>
 
       <dependency>

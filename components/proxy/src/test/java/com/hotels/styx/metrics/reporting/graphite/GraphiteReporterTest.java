@@ -62,6 +62,7 @@ import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
@@ -424,11 +425,8 @@ public class GraphiteReporterTest {
     public void closesConnectionOnReporterStop() throws Exception {
         reporter.stop();
 
-        verify(graphite).close();
-
-        verifyNoMoreInteractions(graphite);
+        verify(graphite, atLeast(1)).close();
     }
-
 
     private static <T> SortedMap<String, T> emptyMap() {
         return emptySortedMap();
