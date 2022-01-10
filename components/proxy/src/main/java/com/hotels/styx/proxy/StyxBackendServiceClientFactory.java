@@ -81,6 +81,7 @@ public class StyxBackendServiceClientFactory implements BackendServiceClientFact
                 .originStatsFactory(originStatsFactory)
                 .originsRestrictionCookieName(originRestrictionCookie)
                 .originIdHeader(environment.styxConfig().styxHeaderConfig().originIdHeaderName())
+                .overrideHostHeader(backendService.isOverrideHostHeader())
                 .build();
     }
 
