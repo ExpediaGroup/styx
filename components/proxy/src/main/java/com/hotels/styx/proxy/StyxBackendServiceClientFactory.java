@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -78,6 +78,7 @@ public class StyxBackendServiceClientFactory implements BackendServiceClientFact
                 .metrics(environment.centralisedMetrics())
                 .retryPolicy(retryPolicy)
                 .rewriteRules(backendService.rewrites())
+                .overrideHostHeader(backendService.overrideHostHeader())
                 .originStatsFactory(originStatsFactory)
                 .originsRestrictionCookieName(originRestrictionCookie)
                 .originIdHeader(environment.styxConfig().styxHeaderConfig().originIdHeaderName())

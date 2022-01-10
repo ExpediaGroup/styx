@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -60,6 +60,7 @@ public final class BackendService implements Identifiable {
     private final int responseTimeoutMillis;
     private final int maxHeaderSize;
     private final TlsSettings tlsSettings;
+    private final boolean overrideHostHeader;
 
     /**
      * Creates an Application builder.
@@ -93,6 +94,7 @@ public final class BackendService implements Identifiable {
                 : builder.responseTimeoutMillis;
         this.tlsSettings = builder.tlsSettings;
         this.maxHeaderSize = builder.maxHeaderSize;
+        this.overrideHostHeader = builder.overrideHostHeader;
 
         checkThatOriginsAreDistinct(origins);
         if (responseTimeoutMillis < 0) {
@@ -149,6 +151,10 @@ public final class BackendService implements Identifiable {
 
     public Optional<TlsSettings> tlsSettings() {
         return Optional.ofNullable(this.tlsSettings);
+    }
+
+    public boolean overrideHostHeader() {
+        return this.overrideHostHeader;
     }
 
     private TlsSettings getTlsSettings() {
@@ -211,6 +217,8 @@ public final class BackendService implements Identifiable {
                 .append(rewrites)
                 .append(", tlsSettings=")
                 .append(tlsSettings)
+                .append(", overrideHostHeader=")
+                .append(overrideHostHeader)
                 .append('}')
                 .toString();
     }
@@ -233,6 +241,7 @@ public final class BackendService implements Identifiable {
         private int responseTimeoutMillis = DEFAULT_RESPONSE_TIMEOUT_MILLIS;
         private int maxHeaderSize = USE_DEFAULT_MAX_HEADER_SIZE;
         private TlsSettings tlsSettings;
+        private boolean overrideHostHeader;
 
         public Builder() {
         }
@@ -248,6 +257,7 @@ public final class BackendService implements Identifiable {
             this.responseTimeoutMillis = backendService.responseTimeoutMillis;
             this.maxHeaderSize = backendService.maxHeaderSize;
             this.tlsSettings = backendService.tlsSettings().orElse(null);
+            this.overrideHostHeader = backendService.overrideHostHeader;
         }
 
         /**
@@ -414,6 +424,17 @@ public final class BackendService implements Identifiable {
          */
         public Builder healthCheckConfig(HealthCheckConfig healthCheckConfig) {
             this.healthCheckConfig = healthCheckConfig;
+            return this;
+        }
+
+        /**
+         * Sets override host header configuration.
+         *
+         * @param overrideHostHeader override host header configuration
+         * @return this builder
+         */
+        public Builder healthCheckConfig(boolean overrideHostHeader) {
+            this.overrideHostHeader = overrideHostHeader;
             return this;
         }
 
