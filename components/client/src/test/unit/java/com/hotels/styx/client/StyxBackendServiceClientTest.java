@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,12 +18,15 @@ package com.hotels.styx.client;
 import com.google.common.net.HostAndPort;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpInterceptor.Context;
+import com.hotels.styx.api.HttpHeaderNames;
+import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.MeterRegistry;
 import com.hotels.styx.api.MicrometerRegistry;
+import com.hotels.styx.api.HttpInterceptor.Context;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.api.exceptions.OriginUnreachableException;
 import com.hotels.styx.api.extension.Origin;
@@ -32,6 +35,7 @@ import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.StickySessionConfig;
+import com.hotels.styx.client.retry.RetryNTimes;
 import com.hotels.styx.metrics.CentralisedMetrics;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.hamcrest.Matchers;
@@ -86,6 +90,11 @@ public class StyxBackendServiceClientTest {
     private static final Origin ORIGIN_2 = newOriginBuilder("localhost", 9092).applicationId("app").id("app-02").build();
     private static final Origin ORIGIN_3 = newOriginBuilder("localhost", 9093).applicationId("app").id("app-03").build();
     private static final Origin ORIGIN_4 = newOriginBuilder("localhost", 9094).applicationId("app").id("app-04").build();
+
+    private static final LiveHttpRequest testRequest = LiveHttpRequest.get("/test").header(HttpHeaderNames.HOST, "www.expedia.com").build();
+    private static final LiveHttpResponse testResponse = LiveHttpResponse.response(HttpResponseStatus.OK).build();
+    private static final String incomingHostname = "www.expedia.com";
+    private static final String updatedHostName = "host.domain.com";
 
     private final StickySessionConfig stickySessionConfig = stickySessionDisabled();
     private MeterRegistry meterRegistry;
@@ -447,6 +456,115 @@ public class StyxBackendServiceClientTest {
         ArgumentCaptor<LoadBalancer.Preferences> argPreferences = ArgumentCaptor.forClass(LoadBalancer.Preferences.class);
         verify(loadBalancer).choose(argPreferences.capture());
         assertThat(argPreferences.getValue().preferredOrigins(), is(Optional.of("Origin-Y")));
+    }
+
+    @Test
+    public void hostHeaderIsNotOverwrittenWhenOverrideHostHeaderIsFalse() {
+        HttpInterceptor.Context requestContext = requestContext();
+        StyxHostHttpClient hostClient = mock(StyxHostHttpClient.class);
+        HttpHandler httpHandler = mock(HttpHandler.class);
+        Origin origin = newOriginBuilder(incomingHostname, 9090).applicationId(GENERIC_APP).build();
+        RemoteHost remoteHost = remoteHost(origin, httpHandler, hostClient);
+        LoadBalancer loadBalancer = mockLoadBalancer(Optional.of(remoteHost));
+
+        when(httpHandler.handle(any(), any())).thenReturn(Eventual.of(testResponse));
+
+        StyxBackendServiceClient styxHttpClient = new StyxBackendServiceClient.Builder(backendService.id())
+                .originStatsFactory(mock(OriginStatsFactory.class))
+                .originsRestrictionCookieName("someCookie")
+                .originIdHeader("origin-id")
+                .loadBalancer(loadBalancer)
+                .retryPolicy(new RetryNTimes(0))
+                .metrics(metrics)
+                .overrideHostHeader(false)
+                .build();
+
+        styxHttpClient.sendRequest(testRequest, requestContext);
+        verify(httpHandler).handle(testRequest, requestContext);
+    }
+
+    @Test
+    public void hostHeaderIsOverwrittenWhenOverrideHostHeaderIsTrue() {
+        HttpInterceptor.Context requestContext = requestContext();
+        StyxHostHttpClient hostClient = mock(StyxHostHttpClient.class);
+        HttpHandler httpHandler = mock(HttpHandler.class);
+        Origin origin = newOriginBuilder(updatedHostName, 9090).applicationId(GENERIC_APP).build();
+        RemoteHost remoteHost = remoteHost(origin, httpHandler, hostClient);
+        LoadBalancer loadBalancer = mockLoadBalancer(Optional.of(remoteHost));
+
+        when(httpHandler.handle(any(), any())).thenReturn(Eventual.of(testResponse));
+
+        StyxBackendServiceClient styxHttpClient = new StyxBackendServiceClient.Builder(backendService.id())
+                .originStatsFactory(mock(OriginStatsFactory.class))
+                .originsRestrictionCookieName("someCookie")
+                .originIdHeader("origin-id")
+                .loadBalancer(loadBalancer)
+                .retryPolicy(new RetryNTimes(0))
+                .metrics(metrics)
+                .overrideHostHeader(true)
+                .build();
+
+        styxHttpClient.sendRequest(testRequest, requestContext);
+        ArgumentCaptor<LiveHttpRequest> updatedRequest = ArgumentCaptor.forClass(LiveHttpRequest.class);
+        verify(httpHandler).handle(updatedRequest.capture(), eq(requestContext));
+
+        assertThat(updatedRequest.getValue().header(HttpHeaderNames.HOST).get(), is(updatedHostName));
+    }
+
+    @Test
+    public void originalRequestIsPresentInResponseWhenOverrideHostHeaderIsFalse() {
+        HttpInterceptor.Context requestContext = requestContext();
+        StyxHostHttpClient hostClient = mock(StyxHostHttpClient.class);
+        HttpHandler httpHandler = mock(HttpHandler.class);
+        Origin origin = newOriginBuilder(incomingHostname, 9090).applicationId(GENERIC_APP).build();
+        RemoteHost remoteHost = remoteHost(origin, httpHandler, hostClient);
+        LoadBalancer loadBalancer = mockLoadBalancer(Optional.of(remoteHost));
+
+        when(httpHandler.handle(any(), any())).thenReturn(Eventual.of(testResponse));
+
+        StyxBackendServiceClient styxHttpClient = new StyxBackendServiceClient.Builder(backendService.id())
+                .originStatsFactory(mock(OriginStatsFactory.class))
+                .originsRestrictionCookieName("someCookie")
+                .originIdHeader("origin-id")
+                .loadBalancer(loadBalancer)
+                .retryPolicy(new RetryNTimes(0))
+                .metrics(metrics)
+                .overrideHostHeader(false)
+                .build();
+
+        Publisher<LiveHttpResponse> responsePublisher = styxHttpClient.sendRequest(testRequest, requestContext);
+        StepVerifier.create(responsePublisher)
+                .expectNextMatches(it ->
+                        it.request().header(HttpHeaderNames.HOST).isPresent() && it.request().header(HttpHeaderNames.HOST).get().equals(incomingHostname)
+                ).verifyComplete();
+    }
+
+    @Test
+    public void updatedRequestWithUpdatedHostHeaderIsPresentInResponseWhenOverrideHostHeaderIsTrue() {
+        HttpInterceptor.Context requestContext = requestContext();
+        StyxHostHttpClient hostClient = mock(StyxHostHttpClient.class);
+        HttpHandler httpHandler = mock(HttpHandler.class);
+        Origin origin = newOriginBuilder(updatedHostName, 9090).applicationId(GENERIC_APP).build();
+        RemoteHost remoteHost = remoteHost(origin, httpHandler, hostClient);
+        LoadBalancer loadBalancer = mockLoadBalancer(Optional.of(remoteHost));
+
+        when(httpHandler.handle(any(), any())).thenReturn(Eventual.of(testResponse));
+
+        StyxBackendServiceClient styxHttpClient = new StyxBackendServiceClient.Builder(backendService.id())
+                .originStatsFactory(mock(OriginStatsFactory.class))
+                .originsRestrictionCookieName("someCookie")
+                .originIdHeader("origin-id")
+                .loadBalancer(loadBalancer)
+                .retryPolicy(new RetryNTimes(0))
+                .metrics(metrics)
+                .overrideHostHeader(true)
+                .build();
+
+        Publisher<LiveHttpResponse> responsePublisher = styxHttpClient.sendRequest(testRequest, requestContext);
+        StepVerifier.create(responsePublisher)
+                .expectNextMatches(it ->
+                        it.request().header(HttpHeaderNames.HOST).isPresent() && it.request().header(HttpHeaderNames.HOST).get().equals(updatedHostName)
+                ).verifyComplete();
     }
 
     private HttpHandler toHandler(StyxHostHttpClient hostClient) {

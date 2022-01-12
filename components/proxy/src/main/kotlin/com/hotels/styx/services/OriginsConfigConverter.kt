@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -89,14 +89,18 @@ internal class OriginsConfigConverter(
     }
 
     internal fun healthCheckServices(apps: List<BackendService>) = apps
-            .filter(::isHealthCheckConfigured)
-            .map {
-                val appId = it.id().toString()
-                val serviceName = "$appId-monitor"
-                val healthCheckConfig = it.healthCheckConfig()
-
-                Pair(serviceName, healthCheckService(serviceName, appId, healthCheckConfig))
+        .filter(::isHealthCheckConfigured)
+        .mapNotNull {
+            it.healthCheckConfig()?.let { hc ->
+                it.id() to hc
             }
+        }
+        .map { (id, healthCheckConfig) ->
+            val appId = id.toString()
+            val serviceName = "$appId-monitor"
+
+            Pair(serviceName, healthCheckService(serviceName, appId, healthCheckConfig))
+        }
 
     internal fun healthCheckService(serviceName: String, appId: String, healthCheckConfig: HealthCheckConfig): ProviderObjectRecord {
         assert(healthCheckConfig.isEnabled)
@@ -140,7 +144,7 @@ internal class OriginsConfigConverter(
                         app.responseTimeoutMillis(),
                         app.maxHeaderSize(),
                         origin,
-                        "origins"));
+                        "origins"))
     }
 
     private fun hostProxyConfig(poolSettings: ConnectionPoolSettings,
@@ -183,11 +187,8 @@ internal class OriginsConfigConverter(
             interceptorPipelineConfig(app, originRestrictionCookie)
         }
 
-        private fun isHealthCheckConfigured(app: BackendService): Boolean {
-            return (app.healthCheckConfig() != null
-                    && app.healthCheckConfig().uri().isPresent
-                    && app.healthCheckConfig().isEnabled)
-        }
+        private fun isHealthCheckConfigured(app: BackendService): Boolean =
+            app.healthCheckConfig()?.let { it.uri().isPresent && it.isEnabled } ?: false
 
         private fun loadBalancingGroupConfig(origins: String,
                                              originRestrictionCookie: String?,
