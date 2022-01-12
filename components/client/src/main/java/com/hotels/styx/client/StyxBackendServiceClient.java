@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.client;
 
+import com.hotels.styx.api.HttpHeaderNames;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.Id;
@@ -72,6 +73,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
     private final StickySessionConfig stickySessionConfig;
     private final CharSequence originIdHeader;
     private final CentralisedMetrics metrics;
+    private final boolean overrideHostHeader;
 
     private StyxBackendServiceClient(Builder builder) {
         this.id = requireNonNull(builder.backendServiceId);
@@ -91,6 +93,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
         this.metrics = builder.metrics;
         this.originsRestrictionCookieName = builder.originsRestrictionCookieName;
         this.originIdHeader = builder.originIdHeader;
+        this.overrideHostHeader = builder.overrideHostHeader;
     }
 
     @Override
@@ -140,22 +143,33 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
         Optional<RemoteHost> remoteHost = selectOrigin(request);
         if (remoteHost.isPresent()) {
             RemoteHost host = remoteHost.get();
+
+            LiveHttpRequest withHostHeaderUpdated = request;
+
+            if (host.origin() != null && !host.origin().host().isBlank() && overrideHostHeader) {
+                withHostHeaderUpdated = request.newBuilder()
+                        .header(HttpHeaderNames.HOST, host.origin().host())
+                        .build();
+            }
+
+            final LiveHttpRequest updatedRequest = withHostHeaderUpdated;
+
             List<RemoteHost> newPreviousOrigins = new ArrayList<>(previousOrigins);
-            newPreviousOrigins.add(remoteHost.get());
+            newPreviousOrigins.add(host);
 
             return ResponseEventListener.from(
-                            host.hostClient().handle(request, context).map(response ->
+                            host.hostClient().handle(updatedRequest, context).map(response ->
                                     addStickySessionIdentifier(response, host.origin()))
                     )
-                    .whenResponseError(cause -> logError(request, cause))
+                    .whenResponseError(cause -> logError(updatedRequest, cause))
                     .whenCancelled(() -> originStatsFactory.originStats(host.origin()).requestCancelled())
                     .apply()
                     .doOnNext(this::recordErrorStatusMetrics)
-                    .map(response -> removeUnexpectedResponseBody(request, response))
+                    .map(response -> removeUnexpectedResponseBody(updatedRequest, response))
                     .map(StyxBackendServiceClient::removeRedundantContentLengthHeader)
                     .onErrorResume(cause -> {
-                        RetryPolicyContext retryContext = new RetryPolicyContext(this.id, attempt + 1, cause, request, previousOrigins);
-                        return retry(request, retryContext, newPreviousOrigins, attempt + 1, cause, context);
+                        RetryPolicyContext retryContext = new RetryPolicyContext(this.id, attempt + 1, cause, updatedRequest, previousOrigins);
+                        return retry(updatedRequest, retryContext, newPreviousOrigins, attempt + 1, cause, context);
                     })
                     .map(response -> addOriginId(host.id(), response));
         } else {
@@ -340,6 +354,8 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
         sb.append(retryPolicy);
         sb.append(", rewriteRuleset=");
         sb.append(rewriteRuleset);
+        sb.append(", overrideHostHeader=");
+        sb.append(overrideHostHeader);
         sb.append(", loadBalancer=");
         sb.append(loadBalancer);
         return sb.append('}').toString();
@@ -358,6 +374,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
         private String originsRestrictionCookieName;
         private StickySessionConfig stickySessionConfig = stickySessionDisabled();
         private CharSequence originIdHeader = ORIGIN_ID_DEFAULT;
+        private boolean overrideHostHeader = false;
 
         public Builder(Id backendServiceId) {
             this.backendServiceId = requireNonNull(backendServiceId);
@@ -400,6 +417,11 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
 
         public Builder originIdHeader(CharSequence originIdHeader) {
             this.originIdHeader = requireNonNull(originIdHeader);
+            return this;
+        }
+
+        public Builder overrideHostHeader(boolean overrideHostHeader) {
+            this.overrideHostHeader = overrideHostHeader;
             return this;
         }
 

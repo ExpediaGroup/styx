@@ -57,6 +57,7 @@ public final class BackendService implements Identifiable {
     private final HealthCheckConfig healthCheckConfig;
     private final StickySessionConfig stickySessionConfig;
     private final List<RewriteConfig> rewrites;
+    private final boolean overrideHostHeader;
     private final int responseTimeoutMillis;
     private final int maxHeaderSize;
     private final TlsSettings tlsSettings;
@@ -93,6 +94,7 @@ public final class BackendService implements Identifiable {
                 : builder.responseTimeoutMillis;
         this.tlsSettings = builder.tlsSettings;
         this.maxHeaderSize = builder.maxHeaderSize;
+        this.overrideHostHeader = builder.overrideHostHeader;
 
         checkThatOriginsAreDistinct(origins);
         if (responseTimeoutMillis < 0) {
@@ -145,6 +147,10 @@ public final class BackendService implements Identifiable {
 
     public int maxHeaderSize() {
         return this.maxHeaderSize;
+    }
+
+    public boolean isOverrideHostHeader() {
+        return this.overrideHostHeader;
     }
 
     public Optional<TlsSettings> tlsSettings() {
@@ -230,6 +236,7 @@ public final class BackendService implements Identifiable {
         private StickySessionConfig stickySessionConfig = stickySessionDisabled();
         private HealthCheckConfig healthCheckConfig;
         private List<RewriteConfig> rewrites = emptyList();
+        private boolean overrideHostHeader = false;
         private int responseTimeoutMillis = DEFAULT_RESPONSE_TIMEOUT_MILLIS;
         private int maxHeaderSize = USE_DEFAULT_MAX_HEADER_SIZE;
         private TlsSettings tlsSettings;
@@ -248,6 +255,7 @@ public final class BackendService implements Identifiable {
             this.responseTimeoutMillis = backendService.responseTimeoutMillis;
             this.maxHeaderSize = backendService.maxHeaderSize;
             this.tlsSettings = backendService.tlsSettings().orElse(null);
+            this.overrideHostHeader = backendService.overrideHostHeader;
         }
 
         /**
@@ -371,6 +379,14 @@ public final class BackendService implements Identifiable {
          */
         public Builder rewrites(RewriteConfig... rewriteConfigs) {
             return rewrites(asList(rewriteConfigs));
+        }
+
+        /**
+         * Sets whether incoming host header value should be replaced with origin host
+         */
+        public Builder overrideHostHeader(boolean overrideHostHeader) {
+            this.overrideHostHeader = overrideHostHeader;
+            return this;
         }
 
         /**

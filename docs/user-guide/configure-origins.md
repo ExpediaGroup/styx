@@ -31,23 +31,25 @@ services:
 
 Each service has the following properties:
 
-*   **id**: a unique name used to identify backend services
+* **id**: a unique name used to identify backend services
 
-*   **path**: the beginning of a (relative) URI used by Styx to determine which backend service to route a request to.
+* **path**: the beginning of a (relative) URI used by Styx to determine which backend service to route a request to.
 
-*   **healthCheck**: a group of parameters a relative URI for Styx to contact to determine whether an origin is "alive".
+* **healthCheck**: a group of parameters a relative URI for Styx to contact to determine whether an origin is "alive".
 
-*   **origins**: a list of origins (instances of the backend service)
+* **origins**: a list of origins (instances of the backend service)
 
-*   **stickySession**: a group of parameters enabling Styx to pin down an HTTP session to a specific origin.
+* **stickySession**: a group of parameters enabling Styx to pin down an HTTP session to a specific origin.
  Styx achieves this by inserting a session cookie in HTTP responses.
 
-*   **connectionPool**: configuration for the connection pools used to communicate with this backend service.
+* **connectionPool**: configuration for the connection pools used to communicate with this backend service.
 
-*   **responseTimeoutMillis**: amount of time, in milliseconds, Styx waits for a response from origin.
+* **responseTimeoutMillis**: amount of time, in milliseconds, Styx waits for a response from origin.
 Defaults to 60000 milliseconds.
 
-*   **sslSettings**: Enables HTTPS for backend.
+* **sslSettings**: Enables HTTPS for backend.
+
+* **overrideHostHeader**: send the origin host as the Host header instead of the incoming Host header, defaults to false.
 
 ## Health check
 See [Health Checks](configure-health-checks.md) for details.
@@ -173,4 +175,5 @@ Here is the configuration for an example backend service:
       origins:
       - id: "hwa1"
         host: "chhlapputle2e63.karmalab.net:7401"
+      overrideHostHeader: true
 ```
