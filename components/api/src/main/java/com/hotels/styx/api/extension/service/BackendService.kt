@@ -27,7 +27,7 @@ import java.util.*
 /**
  * Represents the configuration of an application (i.e. a backend service) that Styx can proxy to.
  */
-class BackendService private constructor(builder: Builder) : Identifiable {
+class BackendService(builder: Builder) : Identifiable {
     /**
      * A protocol used for the backend service. This can be either HTTP or HTTPS.
      */
@@ -43,7 +43,7 @@ class BackendService private constructor(builder: Builder) : Identifiable {
     private val stickySessionConfig: StickySessionConfig = Objects.requireNonNull(builder.stickySessionConfig)
     private val rewrites: List<RewriteConfig> = Objects.requireNonNull(builder.rewrites)
     private val responseTimeoutMillis: Int = if (builder.responseTimeoutMillis == 0) DEFAULT_RESPONSE_TIMEOUT_MILLIS else builder.responseTimeoutMillis
-    private val isOverrideHostHeader: Boolean = builder.overrideHostHeader
+    private val overrideHostHeader: Boolean = builder.overrideHostHeader
     private val maxHeaderSize: Int = builder.maxHeaderSize
     private val tlsSettings: TlsSettings? = builder.tlsSettings
 
@@ -54,6 +54,9 @@ class BackendService private constructor(builder: Builder) : Identifiable {
         }
     }
 
+    private fun nullIfDisabled(healthCheckConfig: HealthCheckConfig?): HealthCheckConfig? {
+        return if (healthCheckConfig != null && healthCheckConfig.isEnabled) healthCheckConfig else null
+    }
 
     override fun id(): Id {
         return id
@@ -99,11 +102,11 @@ class BackendService private constructor(builder: Builder) : Identifiable {
         return Optional.ofNullable(tlsSettings)
     }
 
-    private fun overrideHostHeader(): Boolean {
-        return overrideHostHeader()
+    fun isOverrideHostHeader(): Boolean {
+        return overrideHostHeader
     }
 
-    private fun getTlsSettings(): TlsSettings? {
+    fun getTlsSettings(): TlsSettings? {
         return tlsSettings().orElse(null)
     }
 
@@ -197,7 +200,7 @@ class BackendService private constructor(builder: Builder) : Identifiable {
             responseTimeoutMillis = backendService.responseTimeoutMillis
             maxHeaderSize = backendService.maxHeaderSize
             tlsSettings = backendService.tlsSettings().orElse(null)
-            overrideHostHeader = backendService.isOverrideHostHeader
+            overrideHostHeader = backendService.overrideHostHeader
         }
 
         /**
@@ -406,10 +409,6 @@ class BackendService private constructor(builder: Builder) : Identifiable {
          */
         fun newBackendServiceBuilder(backendService: BackendService): Builder {
             return Builder(backendService)
-        }
-
-        private fun nullIfDisabled(healthCheckConfig: HealthCheckConfig?): HealthCheckConfig? {
-            return if (healthCheckConfig != null && healthCheckConfig.isEnabled) healthCheckConfig else null
         }
     }
 }

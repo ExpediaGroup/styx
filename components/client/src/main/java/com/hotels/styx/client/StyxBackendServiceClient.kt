@@ -73,6 +73,27 @@ class StyxBackendServiceClient(builder: Builder) : BackendServiceClient {
         return sendRequest(rewriteUrl(request), emptyList(), 0, context)
     }
 
+    private fun isError(status: HttpResponseStatus): Boolean = status.code() >= 400
+
+
+    private fun bodyNeedsToBeRemoved(request: LiveHttpRequest, response: LiveHttpResponse): Boolean =
+        isHeadRequest(request) || isBodilessResponse(response)
+
+
+    private fun responseWithoutBody(response: LiveHttpResponse): LiveHttpResponse = response.newBuilder()
+        .header(HttpHeaderNames.CONTENT_LENGTH, 0)
+        .removeHeader(HttpHeaderNames.TRANSFER_ENCODING)
+        .removeBody()
+        .build()
+
+
+    private fun isBodilessResponse(response: LiveHttpResponse): Boolean {
+        val status = response.status().code()
+        return status == 204 || status == 304 || status / 100 == 1
+    }
+
+    private fun isHeadRequest(request: LiveHttpRequest): Boolean = request.method() == HttpMethod.HEAD
+
     private fun sendRequest(
         request: LiveHttpRequest,
         previousOrigins: List<RemoteHost>,
@@ -194,6 +215,32 @@ class StyxBackendServiceClient(builder: Builder) : BackendServiceClient {
         }
     }
 
+    private fun logError(request: LiveHttpRequest, throwable: Throwable) {
+        LOGGER.error(
+            "Error Handling request={} exceptionClass={} exceptionMessage=\"{}\"",
+            request, throwable.javaClass.name, throwable.message
+        )
+    }
+
+    private fun removeUnexpectedResponseBody(
+        request: LiveHttpRequest,
+        response: LiveHttpResponse
+    ): LiveHttpResponse {
+        return if (bodyNeedsToBeRemoved(request, response)) {
+            responseWithoutBody(response)
+        } else {
+            response
+        }
+    }
+
+    private fun removeRedundantContentLengthHeader(response: LiveHttpResponse): LiveHttpResponse {
+        return if (response.contentLength().isPresent && response.chunked()) {
+            response.newBuilder()
+                .removeHeader(HttpHeaderNames.CONTENT_LENGTH)
+                .build()
+        } else response
+    }
+
     private fun recordErrorStatusMetrics(response: LiveHttpResponse) {
         if (isError(response.status())) {
             metrics!!.proxy.client.errorResponseFromOriginByStatus(response.status().code()).increment()
@@ -235,21 +282,22 @@ class StyxBackendServiceClient(builder: Builder) : BackendServiceClient {
     }
 
     override fun toString(): String {
-        val sb = StringBuilder(160)
-        sb.append(this.javaClass.simpleName)
-        sb.append("{id=")
-        sb.append(id)
-        sb.append(", stickySessionConfig=")
-        sb.append(stickySessionConfig)
-        sb.append(", retryPolicy=")
-        sb.append(retryPolicy)
-        sb.append(", rewriteRuleset=")
-        sb.append(", overrideHostHeader=")
-        sb.append(overrideHostHeader)
-        sb.append(rewriteRuleset)
-        sb.append(", loadBalancer=")
-        sb.append(loadBalancer)
-        return sb.append('}').toString()
+        return StringBuilder(160)
+            .append(this.javaClass.simpleName)
+            .append("{id=")
+            .append(id)
+            .append(", stickySessionConfig=")
+            .append(stickySessionConfig)
+            .append(", retryPolicy=")
+            .append(retryPolicy)
+            .append(", rewriteRuleset=")
+            .append(rewriteRuleset)
+            .append(", overrideHostHeader=")
+            .append(overrideHostHeader)
+            .append(", loadBalancer=")
+            .append(loadBalancer)
+            .append('}')
+            .toString()
     }
 
     /**
@@ -326,62 +374,5 @@ class StyxBackendServiceClient(builder: Builder) : BackendServiceClient {
     companion object {
         private val LOGGER = LoggerFactory.getLogger(StyxBackendServiceClient::class.java)
         private const val MAX_RETRY_ATTEMPTS = 3
-
-        /**
-         * Create a new builder.
-         *
-         * @return a new builder
-         */
-        fun newHttpClientBuilder(backendServiceId: Id): Builder {
-            return Builder(backendServiceId)
-        }
-
-        private fun isError(status: HttpResponseStatus): Boolean = status.code() >= 400
-
-
-        private fun bodyNeedsToBeRemoved(request: LiveHttpRequest, response: LiveHttpResponse): Boolean =
-            isHeadRequest(request) || isBodilessResponse(response)
-
-
-        private fun responseWithoutBody(response: LiveHttpResponse): LiveHttpResponse = response.newBuilder()
-                .header(HttpHeaderNames.CONTENT_LENGTH, 0)
-                .removeHeader(HttpHeaderNames.TRANSFER_ENCODING)
-                .removeBody()
-                .build()
-
-
-        private fun isBodilessResponse(response: LiveHttpResponse): Boolean {
-            val status = response.status().code()
-            return status == 204 || status == 304 || status / 100 == 1
-        }
-
-        private fun isHeadRequest(request: LiveHttpRequest): Boolean = request.method() == HttpMethod.HEAD
-
-
-        private fun logError(request: LiveHttpRequest, throwable: Throwable) {
-            LOGGER.error(
-                "Error Handling request={} exceptionClass={} exceptionMessage=\"{}\"",
-                request, throwable.javaClass.name, throwable.message
-            )
-        }
-
-        private fun removeUnexpectedResponseBody(
-            request: LiveHttpRequest,
-            response: LiveHttpResponse
-        ): LiveHttpResponse {
-            return if (bodyNeedsToBeRemoved(request, response)) {
-                responseWithoutBody(response)
-            } else {
-                response
-            }
-        }
-
-        private fun removeRedundantContentLengthHeader(response: LiveHttpResponse): LiveHttpResponse {
-            return if (response.contentLength().isPresent && response.chunked()) {
-                response.newBuilder()
-                    .removeHeader(HttpHeaderNames.CONTENT_LENGTH)
-                    .build()
-            } else response
-        }
     }
 }

@@ -80,7 +80,7 @@ class StyxBackendServiceClientFactory(    // Todo: This can be package private i
             .originStatsFactory(originStatsFactory)
             .originsRestrictionCookieName(originRestrictionCookie)
             .originIdHeader(environment.styxConfig().styxHeaderConfig().originIdHeaderName())
-            .overrideHostHeader(backendService.isOverrideHostHeader)
+            .overrideHostHeader(backendService.isOverrideHostHeader())
             .build()
     }
 
