@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ fun countBackendFault(metrics: CentralisedMetrics, error: Throwable) {
     val counter : Counter? = metrics.proxy.client.run {
         when (error) {
             is NoAvailableHostsException ->
-                backendFaults(error.appId(), "noHostsLiveForApplication")
+                backendFaults(error.appId(), " ", "noHostsLiveForApplication")
             is OriginUnreachableException ->
                 backendFaults(error.appId(), error.originId(), "cannotConnect")
             is BadHttpResponseException ->
