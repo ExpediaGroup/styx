@@ -20,7 +20,6 @@ import com.hotels.styx.metrics.CentralisedMetrics
 import com.hotels.styx.support.server.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith
 import io.kotlintest.Spec
-import io.kotlintest.TestCase
 import io.kotlintest.specs.StringSpec
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 import org.slf4j.LoggerFactory.getLogger
@@ -61,9 +60,6 @@ class RetryHandlingKSpec : StringSpec() {
     val unhealthyOriginTwo: Origin = newOriginBuilder("localhost", freePort()).id("UNHEALTHY_ORIGIN_TWO").build()
     val unhealthyOriginThree: Origin = newOriginBuilder("localhost", freePort()).id("UNHEALTHY_ORIGIN_THREE").build()
 
-//    var servers: List<FakeHttpServer> = _
-
-
     override fun beforeSpec(spec: Spec) {
         server1.start()
         healthyOriginOne = originFrom(server1)
@@ -101,7 +97,6 @@ class RetryHandlingKSpec : StringSpec() {
         originServer2.start()
         originServer3.start()
         originServer4.start()
-        println("before spec")
     }
 
     override fun afterSpec(spec: Spec) {
@@ -111,10 +106,6 @@ class RetryHandlingKSpec : StringSpec() {
         originServer2.stop()
         originServer3.stop()
         originServer4.stop()
-    }
-
-    override fun beforeTest(testCase: TestCase) {
-        println("before test")
     }
 
     init {
