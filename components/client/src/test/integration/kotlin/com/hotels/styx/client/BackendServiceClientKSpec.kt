@@ -4,7 +4,7 @@ import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.HttpResponseStatus.OK
-import com.hotels.styx.api.LiveHttpRequest.get
+import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.MicrometerRegistry
 import com.hotels.styx.api.exceptions.ResponseTimeoutException
 import com.hotels.styx.api.extension.ActiveOrigins
@@ -32,13 +32,10 @@ import java.nio.charset.StandardCharsets.UTF_8
 import java.util.concurrent.atomic.AtomicLong
 
 class BackendServiceClientKSpec : StringSpec() {
-    lateinit var webappOrigin: Origin
-
-    val originOneServer = FakeHttpServer(0)
-
-    lateinit var client: StyxBackendServiceClient
-
-    val responseTimeout = 1000
+    private lateinit var webappOrigin: Origin
+    private val originOneServer = FakeHttpServer(0)
+    private lateinit var client: StyxBackendServiceClient
+    private val responseTimeout = 1000
 
     override fun beforeSpec(spec: Spec) {
         originOneServer.start()
@@ -66,17 +63,15 @@ class BackendServiceClientKSpec : StringSpec() {
     init {
         "Emits an HTTP response even when content observable remains un-subscribed." {
             originOneServer.stub(urlStartingWith("/"), response200OkWithContentLengthHeader("Test message body."))
-            val response = Mono.from(client.sendRequest(get("/foo/1").build(), requestContext())).block()!!
+            val response = Mono.from(client.sendRequest(LiveHttpRequest.get("/foo/1").build(), requestContext())).block()!!
             assert(response.status() == OK) { "\nDid not get response with 200 OK status.\n$response\n" }
         }
 
         "Emits an HTTP response containing Content-Length from persistent connection that stays open." {
             originOneServer.stub(urlStartingWith("/"), response200OkWithContentLengthHeader("Test message body."))
 
-            val response = Mono.from(client.sendRequest(get("/foo/2").build(), requestContext()))
-                .flatMap { liveHttpResponse ->
-                    Mono.from(liveHttpResponse.aggregate(10000))
-                }
+            val response = Mono.from(client.sendRequest(LiveHttpRequest.get("/foo/2").build(), requestContext()))
+                .flatMap { Mono.from(it.aggregate(10000)) }
                 .block()!!
 
             assert(response.status() == OK) { "\nDid not get response with 200 OK status.\n$response\n" }
@@ -92,7 +87,7 @@ class BackendServiceClientKSpec : StringSpec() {
             )
 
             assertThrows<ResponseTimeoutException>("- Client emitted an incorrect exception!") {
-                Mono.from(client.sendRequest(get("/foo/4").build(), requestContext()))
+                Mono.from(client.sendRequest(LiveHttpRequest.get("/foo/4").build(), requestContext()))
                     .doOnSubscribe { start.set(currentTimeMillis()) }
                     .block()
             }
@@ -103,7 +98,7 @@ class BackendServiceClientKSpec : StringSpec() {
         }
     }
 
-    fun activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(
+    private fun activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(
         CentralisedMetrics(
             MicrometerRegistry(
                 CompositeMeterRegistry()

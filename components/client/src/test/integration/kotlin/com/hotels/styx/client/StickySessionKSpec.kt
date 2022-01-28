@@ -11,7 +11,7 @@ import com.hotels.styx.api.extension.ActiveOrigins
 import com.hotels.styx.api.extension.Origin
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.extension.service.BackendService
-import com.hotels.styx.api.extension.service.StickySessionConfig
+import com.hotels.styx.api.extension.service.StickySessionConfig.newStickySessionConfigBuilder
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
@@ -27,19 +27,19 @@ import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 import reactor.core.publisher.Mono
-import java.nio.charset.Charset
-import java.util.concurrent.TimeUnit
+import java.nio.charset.Charset.defaultCharset
+import java.util.concurrent.TimeUnit.SECONDS
 
 class StickySessionKSpec : StringSpec() {
-    val meterRegistry = CompositeMeterRegistry()
-    val metrics = CentralisedMetrics(MicrometerRegistry(meterRegistry))
+    private val meterRegistry = CompositeMeterRegistry()
+    private val metrics = CentralisedMetrics(MicrometerRegistry(meterRegistry))
 
     private val server1 = FakeHttpServer(0, "app", "app-01")
     private val server2 = FakeHttpServer(0, "app", "app-02")
 
-    lateinit var appOriginOne: Origin
-    lateinit var appOriginTwo: Origin
-    lateinit var backendService: BackendService
+    private lateinit var appOriginOne: Origin
+    private lateinit var appOriginTwo: Origin
+    private lateinit var backendService: BackendService
 
     override fun beforeTest(testCase: TestCase) {
         server1.start()
@@ -53,7 +53,7 @@ class StickySessionKSpec : StringSpec() {
         server1.stub(
             urlStartingWith("/"), aResponse()
                 .withStatus(200)
-                .withHeader(CONTENT_LENGTH.toString(), response.toByteArray(Charset.defaultCharset()).size.toString())
+                .withHeader(CONTENT_LENGTH.toString(), response.toByteArray(defaultCharset()).size.toString())
                 .withHeader("Stub-Origin-Info", appOriginOne.applicationInfo())
                 .withBody(response)
         )
@@ -61,7 +61,7 @@ class StickySessionKSpec : StringSpec() {
         server2.stub(
             urlStartingWith("/"), aResponse()
                 .withStatus(200)
-                .withHeader(CONTENT_LENGTH.toString(), response.toByteArray(Charset.defaultCharset()).size.toString())
+                .withHeader(CONTENT_LENGTH.toString(), response.toByteArray(defaultCharset()).size.toString())
                 .withHeader("Stub-Origin-Info", appOriginTwo.applicationInfo())
                 .withBody(response)
         )
@@ -79,7 +79,7 @@ class StickySessionKSpec : StringSpec() {
 
     init {
         "Responds with sticky session cookie when STICKY_SESSION_ENABLED=true" {
-            val stickySessionConfig = StickySessionConfig.newStickySessionConfigBuilder().timeout(100, TimeUnit.SECONDS).build()
+            val stickySessionConfig = newStickySessionConfigBuilder().timeout(100, SECONDS).build()
 
             val client = newHttpClientBuilder(backendService.id())
                 .metrics(metrics)
@@ -87,8 +87,7 @@ class StickySessionKSpec : StringSpec() {
                 .stickySessionConfig(stickySessionConfig)
                 .build()
 
-            val request: LiveHttpRequest = LiveHttpRequest.get("/")
-                .build()
+            val request = LiveHttpRequest.get("/").build()
 
             val response = Mono.from(client.sendRequest(request, requestContext())).block()!!
             response.status() shouldBe OK
@@ -103,13 +102,12 @@ class StickySessionKSpec : StringSpec() {
         }
 
         "Responds without sticky session cookie when sticky session is not enabled" {
-            val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id())
+            val client = newHttpClientBuilder(backendService.id())
                 .metrics(metrics)
                 .loadBalancer(roundRobinStrategy(activeOrigins(backendService)))
                 .build()
 
-            val request: LiveHttpRequest = LiveHttpRequest.get("/")
-                .build()
+            val request = LiveHttpRequest.get("/").build()
 
             val response = Mono.from(client.sendRequest(request, requestContext())).block()!!
             response.status() shouldBe OK
@@ -117,12 +115,12 @@ class StickySessionKSpec : StringSpec() {
         }
 
         "Routes to origins indicated by sticky session cookie." {
-            val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id())
+            val client = newHttpClientBuilder(backendService.id())
                 .metrics(metrics)
                 .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
                 .build()
 
-            val request: LiveHttpRequest = LiveHttpRequest.get("/")
+            val request = LiveHttpRequest.get("/")
                 .cookies(requestCookie("styx_origin_app", "app-02"))
                 .build()
 
@@ -136,19 +134,18 @@ class StickySessionKSpec : StringSpec() {
         }
 
         "Routes to origins indicated by sticky session cookie when other cookies are provided." {
-            val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id())
+            val client = newHttpClientBuilder(backendService.id())
                 .metrics(metrics)
                 .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
                 .build()
 
-            val request: LiveHttpRequest = LiveHttpRequest.get("/")
+            val request = LiveHttpRequest.get("/")
                 .cookies(
                     requestCookie("other_cookie1", "foo"),
                     requestCookie("styx_origin_app", "app-02"),
                     requestCookie("other_cookie2", "bar")
                 )
                 .build()
-
 
             val response1 = Mono.from(client.sendRequest(request, requestContext())).block()!!
             val response2 = Mono.from(client.sendRequest(request, requestContext())).block()!!
@@ -160,12 +157,12 @@ class StickySessionKSpec : StringSpec() {
         }
 
         "Routes to new origin when the origin indicated by sticky session cookie does not exist." {
-            val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id())
+            val client = newHttpClientBuilder(backendService.id())
                 .metrics(metrics)
                 .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
                 .build()
 
-            val request: LiveHttpRequest = LiveHttpRequest.get("/")
+            val request = LiveHttpRequest.get("/")
                 .cookies(requestCookie("styx_origin_app", "h3"))
                 .build()
 

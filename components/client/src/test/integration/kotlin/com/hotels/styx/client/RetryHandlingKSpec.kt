@@ -4,7 +4,6 @@ import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
-import com.hotels.styx.api.LiveHttpRequest.get
 import com.hotels.styx.api.MicrometerRegistry
 import com.hotels.styx.api.extension.ActiveOrigins
 import com.hotels.styx.api.extension.Origin
@@ -27,31 +26,31 @@ import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 import reactor.core.publisher.Mono
-import java.nio.charset.Charset
-import java.util.concurrent.TimeUnit
+import java.nio.charset.Charset.defaultCharset
+import java.util.concurrent.TimeUnit.SECONDS
 
 // todo remove K from name after scala test deleted
 class RetryHandlingKSpec : StringSpec() {
-    val response = "Response From localhost"
+    private val response = "Response From localhost"
 
-    val meterRegistry = CompositeMeterRegistry()
-    val metrics = CentralisedMetrics(MicrometerRegistry(meterRegistry))
+    private val meterRegistry = CompositeMeterRegistry()
+    private val metrics = CentralisedMetrics(MicrometerRegistry(meterRegistry))
 
     private val server1 = FakeHttpServer(0, "app", "HEALTHY_ORIGIN_ONE")
     private val server2 = FakeHttpServer(0, "app", "HEALTHY_ORIGIN_TWO")
 
-    lateinit var healthyOriginOne: Origin
-    lateinit var healthyOriginTwo: Origin
+    private lateinit var healthyOriginOne: Origin
+    private lateinit var healthyOriginTwo: Origin
 
     private val originServer1 = FakeHttpServer(0, "app", "ORIGIN_ONE")
     private val originServer2 = FakeHttpServer(0, "app", "ORIGIN_TWO")
     private val originServer3 = FakeHttpServer(0, "app", "ORIGIN_THREE")
     private val originServer4 = FakeHttpServer(0, "app", "ORIGIN_FOUR")
 
-    lateinit var originOne: Origin
-    lateinit var originTwo: Origin
-    lateinit var originThree: Origin
-    lateinit var originFour: Origin
+    private lateinit var originOne: Origin
+    private lateinit var originTwo: Origin
+    private lateinit var originThree: Origin
+    private lateinit var originFour: Origin
 
     private val unhealthyOriginOne: Origin = newOriginBuilder("localhost", freePort()).id("UNHEALTHY_ORIGIN_ONE").build()
     private val unhealthyOriginTwo: Origin = newOriginBuilder("localhost", freePort()).id("UNHEALTHY_ORIGIN_TWO").build()
@@ -64,7 +63,7 @@ class RetryHandlingKSpec : StringSpec() {
         server1.stub(
             urlStartingWith("/"), aResponse()
                 .withStatus(200)
-                .withHeader(CONTENT_LENGTH.toString(), response.toByteArray(Charset.defaultCharset()).size.toString())
+                .withHeader(CONTENT_LENGTH.toString(), response.toByteArray(defaultCharset()).size.toString())
                 .withHeader("Stub-Origin-Info", healthyOriginOne.applicationInfo())
                 .withBody(response)
         )
@@ -74,7 +73,7 @@ class RetryHandlingKSpec : StringSpec() {
         server2.stub(
             urlStartingWith("/"), aResponse()
                 .withStatus(200)
-                .withHeader(CONTENT_LENGTH.toString(), response.toByteArray(Charset.defaultCharset()).size.toString())
+                .withHeader(CONTENT_LENGTH.toString(), response.toByteArray(defaultCharset()).size.toString())
                 .withHeader("Stub-Origin-Info", healthyOriginOne.applicationInfo())
                 .withBody(response)
         )
@@ -111,18 +110,18 @@ class RetryHandlingKSpec : StringSpec() {
                 .origins(unhealthyOriginOne, unhealthyOriginTwo, unhealthyOriginThree, healthyOriginTwo)
                 .connectionPoolConfig(
                     ConnectionPoolSettings.Builder()
-                        .pendingConnectionTimeout(10, TimeUnit.SECONDS)
+                        .pendingConnectionTimeout(10, SECONDS)
                         .build()
                 )
                 .build()
 
-            val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id())
+            val client = newHttpClientBuilder(backendService.id())
                 .metrics(metrics)
                 .retryPolicy(RetryNTimes(3))
                 .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
                 .build()
 
-            val response = Mono.from(client.sendRequest(get("/version.txt").build(), requestContext())).block()
+            val response = Mono.from(client.sendRequest(LiveHttpRequest.get("/version.txt").build(), requestContext())).block()
             response!!
             response.status() shouldBe OK
         }
@@ -149,13 +148,13 @@ class RetryHandlingKSpec : StringSpec() {
                 .stickySessionConfig(stickySessionEnabled)
                 .build()
 
-            val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id())
+            val client = newHttpClientBuilder(backendService.id())
                 .metrics(metrics)
                 .retryPolicy(RetryNTimes(3))
                 .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
                 .build()
 
-            val request: LiveHttpRequest = get("/version.txt").build()
+            val request = LiveHttpRequest.get("/version.txt").build()
 
             val response = Mono.from(client.sendRequest(request, requestContext())).block()
             response!!
