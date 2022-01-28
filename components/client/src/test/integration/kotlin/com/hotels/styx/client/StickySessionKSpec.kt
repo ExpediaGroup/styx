@@ -26,7 +26,6 @@ import io.kotlintest.matchers.string.shouldMatch
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry
-import reactor.core.publisher.Mono
 import java.nio.charset.Charset.defaultCharset
 import java.util.concurrent.TimeUnit.SECONDS
 
@@ -53,7 +52,7 @@ class StickySessionKSpec : StringSpec() {
         server1.stub(
             urlStartingWith("/"), aResponse()
                 .withStatus(200)
-                .withHeader(CONTENT_LENGTH.toString(), response.toByteArray(defaultCharset()).size.toString())
+                .withHeader(CONTENT_LENGTH, response.toByteArray(defaultCharset()).size)
                 .withHeader("Stub-Origin-Info", appOriginOne.applicationInfo())
                 .withBody(response)
         )
@@ -61,7 +60,7 @@ class StickySessionKSpec : StringSpec() {
         server2.stub(
             urlStartingWith("/"), aResponse()
                 .withStatus(200)
-                .withHeader(CONTENT_LENGTH.toString(), response.toByteArray(defaultCharset()).size.toString())
+                .withHeader(CONTENT_LENGTH, response.toByteArray(defaultCharset()).size)
                 .withHeader("Stub-Origin-Info", appOriginTwo.applicationInfo())
                 .withBody(response)
         )
@@ -89,15 +88,15 @@ class StickySessionKSpec : StringSpec() {
 
             val request = LiveHttpRequest.get("/").build()
 
-            val response = Mono.from(client.sendRequest(request, requestContext())).block()!!
+            val response = client.sendRequest(request, requestContext()).await()
             response.status() shouldBe OK
             val cookie = response.cookie("styx_origin_app").get()
             cookie.value() shouldMatch Regex("app-0[12]")
 
             cookie.path().get() shouldBe "/"
             cookie.httpOnly() shouldBe true
-            cookie.maxAge().isPresent shouldBe true
 
+            cookie.maxAge().isPresent shouldBe true
             cookie.maxAge().get() shouldBe 100L
         }
 
@@ -109,7 +108,7 @@ class StickySessionKSpec : StringSpec() {
 
             val request = LiveHttpRequest.get("/").build()
 
-            val response = Mono.from(client.sendRequest(request, requestContext())).block()!!
+            val response = client.sendRequest(request, requestContext()).await()
             response.status() shouldBe OK
             response.cookies().size shouldBe 0
         }
@@ -124,9 +123,9 @@ class StickySessionKSpec : StringSpec() {
                 .cookies(requestCookie("styx_origin_app", "app-02"))
                 .build()
 
-            val response1 = Mono.from(client.sendRequest(request, requestContext())).block()!!
-            val response2 = Mono.from(client.sendRequest(request, requestContext())).block()!!
-            val response3 = Mono.from(client.sendRequest(request, requestContext())).block()!!
+            val response1 = client.sendRequest(request, requestContext()).await()
+            val response2 = client.sendRequest(request, requestContext()).await()
+            val response3 = client.sendRequest(request, requestContext()).await()
 
             response1.header("Stub-Origin-Info").get() shouldBe "APP-localhost:${server2.port()}"
             response2.header("Stub-Origin-Info").get() shouldBe "APP-localhost:${server2.port()}"
@@ -147,9 +146,9 @@ class StickySessionKSpec : StringSpec() {
                 )
                 .build()
 
-            val response1 = Mono.from(client.sendRequest(request, requestContext())).block()!!
-            val response2 = Mono.from(client.sendRequest(request, requestContext())).block()!!
-            val response3 = Mono.from(client.sendRequest(request, requestContext())).block()!!
+            val response1 = client.sendRequest(request, requestContext()).await()
+            val response2 = client.sendRequest(request, requestContext()).await()
+            val response3 = client.sendRequest(request, requestContext()).await()
 
             response1.header("Stub-Origin-Info").get() shouldBe ("APP-localhost:${server2.port()}")
             response2.header("Stub-Origin-Info").get() shouldBe ("APP-localhost:${server2.port()}")
@@ -166,7 +165,7 @@ class StickySessionKSpec : StringSpec() {
                 .cookies(requestCookie("styx_origin_app", "h3"))
                 .build()
 
-            val response = Mono.from(client.sendRequest(request, requestContext())).block()!!
+            val response = client.sendRequest(request, requestContext()).await()
 
             response.status() shouldBe OK
             response.cookies().size shouldBe 1

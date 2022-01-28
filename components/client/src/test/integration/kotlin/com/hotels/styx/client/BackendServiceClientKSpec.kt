@@ -32,10 +32,11 @@ import java.nio.charset.StandardCharsets.UTF_8
 import java.util.concurrent.atomic.AtomicLong
 
 class BackendServiceClientKSpec : StringSpec() {
-    private lateinit var webappOrigin: Origin
     private val originOneServer = FakeHttpServer(0)
-    private lateinit var client: StyxBackendServiceClient
     private val responseTimeout = 1000
+
+    private lateinit var webappOrigin: Origin
+    private lateinit var client: StyxBackendServiceClient
 
     override fun beforeSpec(spec: Spec) {
         originOneServer.start()
@@ -63,7 +64,7 @@ class BackendServiceClientKSpec : StringSpec() {
     init {
         "Emits an HTTP response even when content observable remains un-subscribed." {
             originOneServer.stub(urlStartingWith("/"), response200OkWithContentLengthHeader("Test message body."))
-            val response = Mono.from(client.sendRequest(LiveHttpRequest.get("/foo/1").build(), requestContext())).block()!!
+            val response = client.sendRequest(LiveHttpRequest.get("/foo/1").build(), requestContext()).await()
             assert(response.status() == OK) { "\nDid not get response with 200 OK status.\n$response\n" }
         }
 
@@ -82,7 +83,7 @@ class BackendServiceClientKSpec : StringSpec() {
             val start = AtomicLong()
             originOneServer.stub(
                 urlStartingWith("/"), aResponse()
-                    .withStatus(OK.code())
+                    .withStatus(OK)
                     .withFixedDelay(3000)
             )
 
@@ -109,7 +110,7 @@ class BackendServiceClientKSpec : StringSpec() {
     private fun busyConnectionStrategy(activeOrigins: ActiveOrigins): LoadBalancer = BusyConnectionsStrategy(activeOrigins)
 
     private fun response200OkWithContentLengthHeader(content: String): ResponseDefinitionBuilder = aResponse()
-        .withStatus(OK.code())
-        .withHeader(CONTENT_LENGTH.toString(), content.length.toString())
+        .withStatus(OK)
+        .withHeader(CONTENT_LENGTH, content.length)
         .withBody(content)
 }

@@ -39,22 +39,22 @@ class RetryHandlingKSpec : StringSpec() {
     private val server1 = FakeHttpServer(0, "app", "HEALTHY_ORIGIN_ONE")
     private val server2 = FakeHttpServer(0, "app", "HEALTHY_ORIGIN_TWO")
 
-    private lateinit var healthyOriginOne: Origin
-    private lateinit var healthyOriginTwo: Origin
-
     private val originServer1 = FakeHttpServer(0, "app", "ORIGIN_ONE")
     private val originServer2 = FakeHttpServer(0, "app", "ORIGIN_TWO")
     private val originServer3 = FakeHttpServer(0, "app", "ORIGIN_THREE")
     private val originServer4 = FakeHttpServer(0, "app", "ORIGIN_FOUR")
 
+    private val unhealthyOriginOne: Origin = newOriginBuilder("localhost", freePort()).id("UNHEALTHY_ORIGIN_ONE").build()
+    private val unhealthyOriginTwo: Origin = newOriginBuilder("localhost", freePort()).id("UNHEALTHY_ORIGIN_TWO").build()
+    private val unhealthyOriginThree: Origin = newOriginBuilder("localhost", freePort()).id("UNHEALTHY_ORIGIN_THREE").build()
+
+    private lateinit var healthyOriginOne: Origin
+    private lateinit var healthyOriginTwo: Origin
+
     private lateinit var originOne: Origin
     private lateinit var originTwo: Origin
     private lateinit var originThree: Origin
     private lateinit var originFour: Origin
-
-    private val unhealthyOriginOne: Origin = newOriginBuilder("localhost", freePort()).id("UNHEALTHY_ORIGIN_ONE").build()
-    private val unhealthyOriginTwo: Origin = newOriginBuilder("localhost", freePort()).id("UNHEALTHY_ORIGIN_TWO").build()
-    private val unhealthyOriginThree: Origin = newOriginBuilder("localhost", freePort()).id("UNHEALTHY_ORIGIN_THREE").build()
 
     override fun beforeSpec(spec: Spec) {
         server1.start()
@@ -63,7 +63,7 @@ class RetryHandlingKSpec : StringSpec() {
         server1.stub(
             urlStartingWith("/"), aResponse()
                 .withStatus(200)
-                .withHeader(CONTENT_LENGTH.toString(), response.toByteArray(defaultCharset()).size.toString())
+                .withHeader(CONTENT_LENGTH, response.toByteArray(defaultCharset()).size)
                 .withHeader("Stub-Origin-Info", healthyOriginOne.applicationInfo())
                 .withBody(response)
         )
@@ -73,7 +73,7 @@ class RetryHandlingKSpec : StringSpec() {
         server2.stub(
             urlStartingWith("/"), aResponse()
                 .withStatus(200)
-                .withHeader(CONTENT_LENGTH.toString(), response.toByteArray(defaultCharset()).size.toString())
+                .withHeader(CONTENT_LENGTH, response.toByteArray(defaultCharset()).size)
                 .withHeader("Stub-Origin-Info", healthyOriginOne.applicationInfo())
                 .withBody(response)
         )
@@ -121,8 +121,7 @@ class RetryHandlingKSpec : StringSpec() {
                 .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
                 .build()
 
-            val response = Mono.from(client.sendRequest(LiveHttpRequest.get("/version.txt").build(), requestContext())).block()
-            response!!
+            val response = client.sendRequest(LiveHttpRequest.get("/version.txt").build(), requestContext()).await()
             response.status() shouldBe OK
         }
 
@@ -156,8 +155,7 @@ class RetryHandlingKSpec : StringSpec() {
 
             val request = LiveHttpRequest.get("/version.txt").build()
 
-            val response = Mono.from(client.sendRequest(request, requestContext())).block()
-            response!!
+            val response = client.sendRequest(request, requestContext()).await()
             val cookie = response.cookie("styx_origin_generic-app").get()
 
             cookie.value() shouldBe "HEALTHY_ORIGIN_TWO"
