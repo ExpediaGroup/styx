@@ -44,7 +44,7 @@ import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 import java.nio.charset.Charset.defaultCharset
 import java.util.concurrent.TimeUnit.SECONDS
 
-class StickySessionKSpec : StringSpec() {
+class StickySessionSpec : StringSpec() {
     private val meterRegistry = CompositeMeterRegistry()
     private val metrics = CentralisedMetrics(MicrometerRegistry(meterRegistry))
 

@@ -40,12 +40,10 @@ import io.kotlintest.Spec
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry
-import reactor.core.publisher.Mono
 import java.nio.charset.Charset.defaultCharset
 import java.util.concurrent.TimeUnit.SECONDS
 
-// todo remove K from name after scala test deleted
-class RetryHandlingKSpec : StringSpec() {
+class RetryHandlingSpec : StringSpec() {
     private val response = "Response From localhost"
 
     private val meterRegistry = CompositeMeterRegistry()

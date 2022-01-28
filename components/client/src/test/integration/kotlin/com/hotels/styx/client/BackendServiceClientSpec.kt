@@ -46,7 +46,7 @@ import java.lang.System.currentTimeMillis
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.concurrent.atomic.AtomicLong
 
-class BackendServiceClientKSpec : StringSpec() {
+class BackendServiceClientSpec : StringSpec() {
     private val originOneServer = FakeHttpServer(0)
     private val responseTimeout = 1000
 
