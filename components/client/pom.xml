@@ -74,11 +74,6 @@
     </dependency>
 
     <dependency>
-      <groupId>org.scalatest</groupId>
-      <artifactId>scalatest_${scala.version}</artifactId>
-    </dependency>
-
-    <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
     </dependency>
@@ -115,7 +110,7 @@
         <artifactId>build-helper-maven-plugin</artifactId>
         <executions>
           <execution>
-            <id>add-scala-and-kotlin-test-sources</id>
+            <id>add-kotlin-test-sources</id>
             <phase>generate-test-sources</phase>
             <goals>
               <goal>add-test-source</goal>
@@ -123,35 +118,9 @@
             <configuration>
               <sources>
                 <source>src/test/unit/java</source>
-                <source>src/test/integration/scala</source>
                 <source>src/test/integration/kotlin</source>
               </sources>
             </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
-        <groupId>net.alchim31.maven</groupId>
-        <artifactId>scala-maven-plugin</artifactId>
-      </plugin>
-
-      <!-- enable scalatest -->
-      <plugin>
-        <groupId>org.scalatest</groupId>
-        <artifactId>scalatest-maven-plugin</artifactId>
-        <configuration>
-          <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
-          <junitxml>.</junitxml>
-          <filereports>WDF TestSuite.txt</filereports>
-        </configuration>
-        <executions>
-          <execution>
-            <id>test</id>
-            <phase>integration-test</phase>
-            <goals>
-              <goal>test</goal>
-            </goals>
           </execution>
         </executions>
       </plugin>
