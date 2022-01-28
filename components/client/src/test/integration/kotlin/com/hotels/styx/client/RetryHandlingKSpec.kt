@@ -4,12 +4,14 @@ import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
+import com.hotels.styx.api.LiveHttpRequest.get
 import com.hotels.styx.api.MicrometerRegistry
 import com.hotels.styx.api.extension.ActiveOrigins
 import com.hotels.styx.api.extension.Origin
 import com.hotels.styx.api.extension.Origin.newOriginBuilder
 import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings
+import com.hotels.styx.api.extension.service.StickySessionConfig
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
@@ -17,48 +19,43 @@ import com.hotels.styx.client.retry.RetryNTimes
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
 import com.hotels.styx.common.FreePorts.freePort
 import com.hotels.styx.metrics.CentralisedMetrics
+import com.hotels.styx.support.Support.requestContext
 import com.hotels.styx.support.server.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith
 import io.kotlintest.Spec
+import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry
-import org.slf4j.LoggerFactory.getLogger
 import reactor.core.publisher.Mono
 import java.nio.charset.Charset
 import java.util.concurrent.TimeUnit
-import com.hotels.styx.api.LiveHttpRequest.get
-import com.hotels.styx.api.extension.service.StickySessionConfig
-import com.hotels.styx.support.Support.requestContext
-import io.kotlintest.shouldBe
 
 // todo remove K from name after scala test deleted
 class RetryHandlingKSpec : StringSpec() {
-    val LOGGER = getLogger(RetryHandlingKSpec::class.java)
-
     val response = "Response From localhost"
 
     val meterRegistry = CompositeMeterRegistry()
     val metrics = CentralisedMetrics(MicrometerRegistry(meterRegistry))
 
-    val server1 = FakeHttpServer(0, "app", "HEALTHY_ORIGIN_ONE")
-    val server2 = FakeHttpServer(0, "app", "HEALTHY_ORIGIN_TWO")
+    private val server1 = FakeHttpServer(0, "app", "HEALTHY_ORIGIN_ONE")
+    private val server2 = FakeHttpServer(0, "app", "HEALTHY_ORIGIN_TWO")
 
     lateinit var healthyOriginOne: Origin
     lateinit var healthyOriginTwo: Origin
 
-    val originServer1 = FakeHttpServer(0, "app", "ORIGIN_ONE")
-    val originServer2 = FakeHttpServer(0, "app", "ORIGIN_TWO")
-    val originServer3 = FakeHttpServer(0, "app", "ORIGIN_THREE")
-    val originServer4 = FakeHttpServer(0, "app", "ORIGIN_FOUR")
+    private val originServer1 = FakeHttpServer(0, "app", "ORIGIN_ONE")
+    private val originServer2 = FakeHttpServer(0, "app", "ORIGIN_TWO")
+    private val originServer3 = FakeHttpServer(0, "app", "ORIGIN_THREE")
+    private val originServer4 = FakeHttpServer(0, "app", "ORIGIN_FOUR")
 
     lateinit var originOne: Origin
     lateinit var originTwo: Origin
     lateinit var originThree: Origin
     lateinit var originFour: Origin
 
-    val unhealthyOriginOne: Origin = newOriginBuilder("localhost", freePort()).id("UNHEALTHY_ORIGIN_ONE").build()
-    val unhealthyOriginTwo: Origin = newOriginBuilder("localhost", freePort()).id("UNHEALTHY_ORIGIN_TWO").build()
-    val unhealthyOriginThree: Origin = newOriginBuilder("localhost", freePort()).id("UNHEALTHY_ORIGIN_THREE").build()
+    private val unhealthyOriginOne: Origin = newOriginBuilder("localhost", freePort()).id("UNHEALTHY_ORIGIN_ONE").build()
+    private val unhealthyOriginTwo: Origin = newOriginBuilder("localhost", freePort()).id("UNHEALTHY_ORIGIN_TWO").build()
+    private val unhealthyOriginThree: Origin = newOriginBuilder("localhost", freePort()).id("UNHEALTHY_ORIGIN_THREE").build()
 
     override fun beforeSpec(spec: Spec) {
         server1.start()
@@ -134,7 +131,8 @@ class RetryHandlingKSpec : StringSpec() {
             val backendService = BackendService.Builder()
                 .origins(unhealthyOriginOne, unhealthyOriginTwo, unhealthyOriginThree)
                 .build()
-            val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id())
+
+            newHttpClientBuilder(backendService.id())
                 .metrics(metrics)
                 .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
                 .retryPolicy(RetryNTimes(2))

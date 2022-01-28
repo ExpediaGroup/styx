@@ -34,20 +34,12 @@ class StickySessionKSpec : StringSpec() {
     val meterRegistry = CompositeMeterRegistry()
     val metrics = CentralisedMetrics(MicrometerRegistry(meterRegistry))
 
-    val server1 = FakeHttpServer(0, "app", "app-01")
-    val server2 = FakeHttpServer(0, "app", "app-02")
+    private val server1 = FakeHttpServer(0, "app", "app-01")
+    private val server2 = FakeHttpServer(0, "app", "app-02")
 
     lateinit var appOriginOne: Origin
     lateinit var appOriginTwo: Origin
     lateinit var backendService: BackendService
-
-    val StickySessionEnabled = StickySessionConfig.Builder()
-        .enabled(true)
-        .build()
-
-    val StickySessionDisabled = StickySessionConfig.Builder()
-        .enabled(false)
-        .build()
 
     override fun beforeTest(testCase: TestCase) {
         server1.start()
@@ -195,9 +187,7 @@ class StickySessionKSpec : StringSpec() {
     fun activeOrigins(backendService: BackendService): ActiveOrigins =
         newOriginsInventoryBuilder(CentralisedMetrics(MicrometerRegistry(meterRegistry)), backendService).build()
 
-    fun roundRobinStrategy(activeOrigins: ActiveOrigins): LoadBalancer = RoundRobinStrategy(activeOrigins, activeOrigins.snapshot())
+    private fun roundRobinStrategy(activeOrigins: ActiveOrigins): LoadBalancer = RoundRobinStrategy(activeOrigins, activeOrigins.snapshot())
 
-    fun stickySessionStrategy(activeOrigins: ActiveOrigins) = StickySessionLoadBalancingStrategy(activeOrigins, roundRobinStrategy(activeOrigins))
-
-
+    private fun stickySessionStrategy(activeOrigins: ActiveOrigins) = StickySessionLoadBalancingStrategy(activeOrigins, roundRobinStrategy(activeOrigins))
 }

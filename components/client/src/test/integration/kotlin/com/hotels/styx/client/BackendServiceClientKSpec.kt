@@ -25,18 +25,11 @@ import io.kotlintest.matchers.shouldBeInRange
 import io.kotlintest.specs.StringSpec
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
-import io.netty.buffer.Unpooled.copiedBuffer
-import io.netty.channel.ChannelFutureListener.CLOSE
-import io.netty.channel.ChannelHandlerContext
-import io.netty.handler.codec.http.DefaultFullHttpResponse
-import io.netty.handler.codec.http.HttpVersion.HTTP_1_1
-import io.netty.handler.codec.http.LastHttpContent
 import org.junit.jupiter.api.assertThrows
 import reactor.core.publisher.Mono
 import java.lang.System.currentTimeMillis
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.concurrent.atomic.AtomicLong
-import io.netty.handler.codec.http.HttpResponseStatus.OK as NETTY_OK
 
 class BackendServiceClientKSpec : StringSpec() {
     lateinit var webappOrigin: Origin
@@ -118,20 +111,10 @@ class BackendServiceClientKSpec : StringSpec() {
         ), backendService
     ).build()
 
-    fun busyConnectionStrategy(activeOrigins: ActiveOrigins): LoadBalancer = BusyConnectionsStrategy(activeOrigins)
+    private fun busyConnectionStrategy(activeOrigins: ActiveOrigins): LoadBalancer = BusyConnectionsStrategy(activeOrigins)
 
     private fun response200OkWithContentLengthHeader(content: String): ResponseDefinitionBuilder = aResponse()
         .withStatus(OK.code())
         .withHeader(CONTENT_LENGTH.toString(), content.length.toString())
         .withBody(content)
-
-
-    fun response200OkFollowedFollowedByServerConnectionClose(content: String): (Pair<ChannelHandlerContext, Any>) -> Any {
-        return { (ctx: ChannelHandlerContext, msg: Any) ->
-            if (msg is LastHttpContent) {
-                val response = DefaultFullHttpResponse(HTTP_1_1, NETTY_OK, copiedBuffer(content, UTF_8))
-                ctx.writeAndFlush(response).addListener(CLOSE)
-            }
-        }
-    }
 }
