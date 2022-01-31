@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ trait StyxClientSupplier extends BeforeAndAfterAll {
 
   def decodedRequest(request: HttpRequest,
                      debug: Boolean = false,
-                     maxSize: Int = 1024 * 1024, timeout: Duration = 30.seconds,
+                     maxSize: Int = 1024 * 1024, timeout: Duration = 45.seconds,
                      secure: Boolean = false
                     ): HttpResponse = {
     val future = doRequest(request, secure = secure)

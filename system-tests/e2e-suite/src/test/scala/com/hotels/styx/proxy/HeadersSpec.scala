@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -32,7 +32,9 @@ import org.scalatest.FunSpec
 
 import scala.collection.JavaConversions._
 
-
+/* NOTE: this test seems to fail a lot when run from maven, even though it passes when run directly in IDEA.
+      If you get a build failure, but it runs locally, temporarily replace "describe" with ignore
+ */
 class HeadersSpec extends FunSpec
   with StyxProxySpec
   with DefaultStyxConfiguration
