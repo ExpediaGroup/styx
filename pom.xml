@@ -130,7 +130,7 @@
     <java-uuid-generator.version>3.1.5</java-uuid-generator.version>
 
     <!-- Logging Versions -->
-    <logback.version>1.2.0</logback.version>
+    <logback.version>1.2.10</logback.version>
     <slf4j.version>1.7.30</slf4j.version>
 
     <scala.version>2.12</scala.version>
