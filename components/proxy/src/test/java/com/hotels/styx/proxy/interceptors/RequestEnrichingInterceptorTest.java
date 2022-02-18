@@ -23,8 +23,8 @@ import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.client.StyxHeaderConfig;
 import org.junit.jupiter.api.Test;
 
-import static com.google.common.net.HttpHeaders.X_FORWARDED_FOR;
-import static com.google.common.net.HttpHeaders.X_FORWARDED_PROTO;
+import static com.hotels.styx.api.HttpHeaderNames.X_FORWARDED_FOR;
+import static com.hotels.styx.api.HttpHeaderNames.X_FORWARDED_PROTO;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.client.StyxHeaderConfig.REQUEST_ID_DEFAULT;

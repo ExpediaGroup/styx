@@ -20,7 +20,7 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.common.http.handler.BaseHttpHandler;
 
-import static com.google.common.net.HttpHeaders.CONTENT_LANGUAGE;
+import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LANGUAGE;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpHeaderValues.HTML;
 import static com.hotels.styx.api.HttpResponse.response;

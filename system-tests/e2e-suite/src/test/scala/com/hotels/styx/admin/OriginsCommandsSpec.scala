@@ -15,13 +15,10 @@
  */
 package com.hotels.styx.admin
 
-import java.nio.charset.Charset
-import java.nio.charset.StandardCharsets.UTF_8
-
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
-import com.google.common.net.HttpHeaders.CONTENT_LENGTH
+import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
+import com.hotels.styx.api.HttpResponseStatus.{BAD_GATEWAY, METHOD_NOT_ALLOWED}
 import com.hotels.styx.api._
-import HttpResponseStatus.{BAD_GATEWAY, METHOD_NOT_ALLOWED}
 import com.hotels.styx.support.backends.FakeHttpServer.HttpStartupConfig
 import com.hotels.styx.support.configuration.{HealthCheckConfig, HttpBackend, Origins}
 import com.hotels.styx.support.server.FakeHttpServer
@@ -33,6 +30,8 @@ import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.slf4j.LoggerFactory
 
+import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets.UTF_8
 import scala.concurrent.duration._
 
 class OriginsCommandsSpec extends FeatureSpec
@@ -188,7 +187,7 @@ class OriginsCommandsSpec extends FeatureSpec
       .reset()
       .stub(urlStartingWith(path), aResponse
         .withStatus(200)
-        .withHeader(CONTENT_LENGTH, response.getBytes(Charset.defaultCharset()).size.toString)
+        .withHeader(CONTENT_LENGTH.toString, response.getBytes(Charset.defaultCharset()).size.toString)
         .withHeader(STUB_ORIGIN_INFO.toString, s"$originId-localhost")
         .withBody(response))
   }
