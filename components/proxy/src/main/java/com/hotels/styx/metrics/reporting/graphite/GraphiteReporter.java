@@ -13,9 +13,7 @@ import com.codahale.metrics.ScheduledReporter;
 import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
 import com.codahale.metrics.graphite.GraphiteSender;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import com.hotels.styx.common.SimpleCache;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -160,40 +158,11 @@ public class GraphiteReporter extends ScheduledReporter {
     private final Clock clock;
     private final String prefix;
 
-    private final LoadingCache<String, String> counterPrefixes = CacheBuilder.newBuilder().build(new CacheLoader<String, String>() {
-        @Override
-        public String load(String name) {
-            return prefix(name, "count");
-        }
-    });
-
-    private final LoadingCache<String, String> gaugePrefixes = CacheBuilder.newBuilder().build(new CacheLoader<String, String>() {
-        @Override
-        public String load(String name) {
-            return prefix(name);
-        }
-    });
-
-    private final LoadingCache<String, HistogramPrefixes> histogramPrefixes = CacheBuilder.newBuilder().build(new CacheLoader<String, HistogramPrefixes>() {
-        @Override
-        public HistogramPrefixes load(String name) {
-            return new HistogramPrefixes(name);
-        }
-    });
-
-    private final LoadingCache<String, MeteredPrefixes> meteredPrefixes = CacheBuilder.newBuilder().build(new CacheLoader<String, MeteredPrefixes>() {
-        @Override
-        public MeteredPrefixes load(String name) {
-            return new MeteredPrefixes(name);
-        }
-    });
-
-    private final LoadingCache<String, TimerPrefixes> timerPrefixes = CacheBuilder.newBuilder().build(new CacheLoader<String, TimerPrefixes>() {
-        @Override
-        public TimerPrefixes load(String name) {
-            return new TimerPrefixes(name);
-        }
-    });
+    private final SimpleCache<String, String> counterPrefixes = new SimpleCache<>(name -> prefix(name, "count"));
+    private final SimpleCache<String, String>  gaugePrefixes = new SimpleCache<>(this::prefix);
+    private final SimpleCache<String, HistogramPrefixes>  histogramPrefixes = new SimpleCache<>(HistogramPrefixes::new);
+    private final SimpleCache<String, MeteredPrefixes>  meteredPrefixes = new SimpleCache<>(MeteredPrefixes::new);
+    private final SimpleCache<String, TimerPrefixes>  timerPrefixes = new SimpleCache<>(TimerPrefixes::new);
 
     private GraphiteReporter(MetricRegistry registry,
                              GraphiteSender graphite,
@@ -299,7 +268,7 @@ public class GraphiteReporter extends ScheduledReporter {
     private void reportTimer(String name, Timer timer, long timestamp) {
         final Snapshot snapshot = timer.getSnapshot();
 
-        TimerPrefixes timerPrefixes = this.timerPrefixes.getUnchecked(name);
+        TimerPrefixes timerPrefixes = this.timerPrefixes.get(name);
 
         doSend(timerPrefixes.max, convertDuration(snapshot.getMax()), timestamp);
         doSend(timerPrefixes.mean, convertDuration(snapshot.getMean()), timestamp);
@@ -316,7 +285,7 @@ public class GraphiteReporter extends ScheduledReporter {
     }
 
     private void reportMetered(String name, Metered meter, long timestamp) {
-        MeteredPrefixes meteredPrefixes = this.meteredPrefixes.getUnchecked(name);
+        MeteredPrefixes meteredPrefixes = this.meteredPrefixes.get(name);
 
         doSend(meteredPrefixes.count, meter.getCount(), timestamp);
         doSend(meteredPrefixes.m1_rate, convertRate(meter.getOneMinuteRate()), timestamp);
@@ -328,7 +297,7 @@ public class GraphiteReporter extends ScheduledReporter {
     private void reportHistogram(String name, Histogram histogram, long timestamp) {
         final Snapshot snapshot = histogram.getSnapshot();
 
-        HistogramPrefixes histogramPrefixes = this.histogramPrefixes.getUnchecked(name);
+        HistogramPrefixes histogramPrefixes = this.histogramPrefixes.get(name);
 
         doSend(histogramPrefixes.count, histogram.getCount(), timestamp);
         doSend(histogramPrefixes.max, snapshot.getMax(), timestamp);
@@ -344,7 +313,7 @@ public class GraphiteReporter extends ScheduledReporter {
     }
 
     private void reportCounter(String name, Counter counter, long timestamp) {
-        String counterPrefix = counterPrefixes.getUnchecked(name);
+        String counterPrefix = counterPrefixes.get(name);
 
         doSend(counterPrefix, counter.getCount(), timestamp);
     }
@@ -352,7 +321,7 @@ public class GraphiteReporter extends ScheduledReporter {
     private void reportGauge(String name, Gauge gauge, long timestamp) {
         final String value = format(gauge.getValue());
         if (value != null) {
-            String gaugePrefix = gaugePrefixes.getUnchecked(name);
+            String gaugePrefix = gaugePrefixes.get(name);
 
             doSend(gaugePrefix, value, timestamp);
         }
