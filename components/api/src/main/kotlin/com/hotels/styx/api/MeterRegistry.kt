@@ -15,8 +15,18 @@
  */
 package com.hotels.styx.api
 
-import io.micrometer.core.instrument.*
+import io.micrometer.core.instrument.Counter
+import io.micrometer.core.instrument.DistributionSummary
+import io.micrometer.core.instrument.FunctionCounter
+import io.micrometer.core.instrument.FunctionTimer
+import io.micrometer.core.instrument.Gauge
+import io.micrometer.core.instrument.LongTaskTimer
+import io.micrometer.core.instrument.Meter
 import io.micrometer.core.instrument.MeterRegistry.Config
+import io.micrometer.core.instrument.Tag
+import io.micrometer.core.instrument.Tags
+import io.micrometer.core.instrument.TimeGauge
+import io.micrometer.core.instrument.Timer
 import io.micrometer.core.instrument.search.RequiredSearch
 import io.micrometer.core.instrument.search.Search
 import java.time.Duration
@@ -45,6 +55,10 @@ interface MeterRegistry {
     fun timer(name: String, tags: Iterable<Tag>): Timer
     fun timer(name: String, vararg tags: String): Timer
     fun timer(name: String, build: UnaryOperator<Timer.Builder>): Timer
+    fun timerWithPercentiles(name: String): Timer = timer(name) {
+        it.publishPercentiles(0.5, 0.95, 0.99)
+    }
+
     fun more(): More
     fun gaugeWithStrongReference(name: String, number: Number): Gauge
     fun gaugeWithStrongReference(name: String, tags: Iterable<Tag>, number: Number): Gauge
@@ -145,8 +159,10 @@ class ScopedMeterRegistry(private val parent: MeterRegistry, private val scope: 
 
     override fun gaugeWithStrongReference(name: String, number: Number): Gauge =
         parent.gaugeWithStrongReference(name.scoped, number)
+
     override fun gaugeWithStrongReference(name: String, tags: Iterable<Tag>, number: Number): Gauge =
         parent.gaugeWithStrongReference(name.scoped, tags, number)
+
     override fun <T : Number> gauge(name: String, number: T): T = parent.gauge(name.scoped, number)
     override fun <T> gauge(name: String, stateObject: T, valueFunction: ToDoubleFunction<T>): T =
         parent.gauge(name.scoped, stateObject, valueFunction)
