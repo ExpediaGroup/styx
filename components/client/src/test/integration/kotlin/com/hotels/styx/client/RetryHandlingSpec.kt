@@ -123,7 +123,7 @@ class RetryHandlingSpec : StringSpec() {
                 .origins(unhealthyOriginOne, unhealthyOriginTwo, unhealthyOriginThree, healthyOriginTwo)
                 .connectionPoolConfig(
                     ConnectionPoolSettings.Builder()
-                        .pendingConnectionTimeout(10, SECONDS)
+                        .pendingConnectionTimeout(15, SECONDS)
                         .build()
                 )
                 .build()
