@@ -56,6 +56,8 @@ class HttpMessageLoggingSpec : FeatureSpec() {
                 val expectedResponse = Regex("requestId=[-a-z0-9]+, secure=false, "
                         + "response=\\{version=HTTP/1.1, status=200 OK, headers=\\[header1=\\*\\*\\*\\*, header2=h2, cookie=cookie1=\\*\\*\\*\\*;cookie2=c2, Via=1.1 styx\\]\\}")
 
+                Thread.sleep(100)
+                logger.log().isEmpty() shouldBe false
                 logger.log().shouldContain(INFO, expectedRequest)
                 logger.log().shouldContain(INFO, expectedResponse)
             }

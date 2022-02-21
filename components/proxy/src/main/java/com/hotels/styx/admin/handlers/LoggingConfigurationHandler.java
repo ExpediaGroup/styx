@@ -25,14 +25,8 @@ import org.slf4j.Logger;
 
 import java.io.IOException;
 
-<<<<<<< HEAD
-import static com.google.common.base.Suppliers.memoizeWithExpiration;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
-=======
-import static com.google.common.net.HttpHeaders.CONTENT_LENGTH;
-import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
->>>>>>> Remove Guava Suppliers
 import static com.hotels.styx.api.HttpHeaderValues.PLAIN_TEXT;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;

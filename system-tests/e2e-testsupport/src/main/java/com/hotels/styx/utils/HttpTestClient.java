@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -33,11 +33,8 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-<<<<<<< HEAD
-import static com.hotels.styx.javaconvenience.UtilKt.threadFactoryWithIncrementingName;
-=======
 import static com.hotels.styx.javaconvenience.UtilKt.lazySupplier;
->>>>>>> Remove Guava Suppliers
+import static com.hotels.styx.javaconvenience.UtilKt.threadFactoryWithIncrementingName;
 import static io.netty.channel.ChannelOption.ALLOCATOR;
 import static io.netty.channel.ChannelOption.AUTO_READ;
 import static io.netty.channel.ChannelOption.CONNECT_TIMEOUT_MILLIS;
