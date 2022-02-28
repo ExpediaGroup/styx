@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -73,9 +73,9 @@ public class HttpRequestTest {
         assertThat(streaming.url(), is(url("/foo/bar").build()));
         assertThat(streaming.version(), is(HTTP_1_1));
         assertThat(streaming.headers(), containsInAnyOrder(
-                header("Content-Length", "6"),
+                header("content-length", "6"),
                 header("HeaderName", "HeaderValue"),
-                header("Cookie", "CookieName=CookieValue")));
+                header("cookie", "CookieName=CookieValue")));
         assertThat(streaming.cookies(), contains(requestCookie("CookieName", "CookieValue")));
 
         StepVerifier.create(streaming.aggregate(0x10000).map(it -> it.bodyAs(UTF_8)))
@@ -136,7 +136,7 @@ public class HttpRequestTest {
                 .build();
 
         assertThat(request.toString(), is("{version=HTTP/1.1, method=PATCH, uri=https://hotels.com, id=id}"));
-        assertThat(request.headers().toString(), is("[headerName=a, Cookie=cfoo=bar, Host=hotels.com]"));
+        assertThat(request.headers().toString(), is("[headerName=a, cookie=cfoo=bar, host=hotels.com]"));
     }
 
     @Test

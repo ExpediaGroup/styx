@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -74,9 +74,9 @@ public class HttpResponseTest {
         assertThat(streaming.version(), is(HTTP_1_1));
         assertThat(streaming.status(), is(CREATED));
         assertThat(streaming.headers(), containsInAnyOrder(
-                header("Content-Length", "15"),
+                header("content-length", "15"),
                 header("HeaderName", "HeaderValue"),
-                header("Set-Cookie", "CookieName=CookieValue")
+                header("set-cookie", "CookieName=CookieValue")
         ));
         assertThat(streaming.cookies(), contains(responseCookie("CookieName", "CookieValue").build()));
 

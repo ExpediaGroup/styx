@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -73,7 +73,9 @@ public class LiveHttpResponseTest {
 
         assertThat(full.status(), is(CREATED));
         assertThat(full.version(), is(HTTP_1_0));
-        assertThat(full.headers(), containsInAnyOrder(header("HeaderName", "HeaderValue"), header("Set-Cookie", "CookieName=CookieValue")));
+        assertThat(full.headers(), containsInAnyOrder(
+                header("HeaderName", "HeaderValue"),
+                header("set-cookie", "CookieName=CookieValue")));
         assertThat(full.cookies(), contains(responseCookie("CookieName", "CookieValue").build()));
 
         assertThat(full.body(), is(bytes("foobar")));

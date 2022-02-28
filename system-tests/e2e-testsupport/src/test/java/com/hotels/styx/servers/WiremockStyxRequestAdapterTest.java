@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -109,13 +109,13 @@ public class WiremockStyxRequestAdapterTest {
 
     @Test
     public void adaptsGetHeaders() {
-        assertThat(adapter.getHeaders().keys(), containsInAnyOrder("Content-Type", "host", "Connection", "user-agent", "Content-Length"));
+        assertThat(adapter.getHeaders().keys(), containsInAnyOrder("content-type", "host", "connection", "user-agent", "content-length"));
 
-        assertThat(adapter.getHeader("Content-Type"), is("application/json; charset=UTF-8"));
+        assertThat(adapter.getHeader("content-type"), is("application/json; charset=UTF-8"));
         assertThat(adapter.getHeader("host"), is("localhost"));
-        assertThat(adapter.getHeader("Connection"), is("Keep-Alive"));
+        assertThat(adapter.getHeader("connection"), is("Keep-Alive"));
         assertThat(adapter.getHeader("user-agent"), is("Apache-HttpClient/4.3.5 (java 1.5)"));
-        assertThat(adapter.getHeader("Content-Length"), is("246"));
+        assertThat(adapter.getHeader("content-length"), is("246"));
     }
 
     @Test
