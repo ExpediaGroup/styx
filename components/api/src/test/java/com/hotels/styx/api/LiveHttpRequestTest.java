@@ -28,7 +28,6 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
-import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpMethod.GET;
@@ -41,6 +40,7 @@ import static com.hotels.styx.api.LiveHttpRequest.post;
 import static com.hotels.styx.api.LiveHttpRequest.put;
 import static com.hotels.styx.api.RequestCookie.requestCookie;
 import static com.hotels.styx.api.Url.Builder.url;
+import static com.hotels.styx.api.matchers.HeaderMatcher.header;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.MapMatcher.isMap;
@@ -52,6 +52,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.emptyIterable;
+import static org.hamcrest.Matchers.equalToIgnoringCase;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -141,7 +142,7 @@ public class LiveHttpRequestTest {
                 .build();
 
         assertThat(request.toString(), is("{version=HTTP/1.0, method=PATCH, uri=https://hotels.com, id=id}"));
-        assertThat(request.headers().toString(), is("[headerName=a, cookie=cfoo=bar, host=hotels.com]"));
+        assertThat(request.headers().toString(), equalToIgnoringCase("[headerName=a, Cookie=cfoo=bar, Host=hotels.com]"));
     }
 
     @Test
