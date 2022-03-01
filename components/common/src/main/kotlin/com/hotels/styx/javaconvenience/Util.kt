@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.concurrent.ThreadFactory
 import java.util.function.Consumer
 import java.util.function.Function
 import java.util.function.Predicate
+import java.util.function.Supplier
 import java.util.stream.Stream
 import kotlin.streams.asStream
 import java.lang.reflect.Array.newInstance as arrayNewInstance
@@ -140,7 +141,14 @@ fun threadFactoryWithIncrementingName(nameFormat: String): ThreadFactory {
         }
     }
 }
+fun <T : Any> lazySupplier(supplier: Supplier<T>): Supplier<T> = LazySupplier(supplier)
 
 // Private functions can use whatever Kotlin features as Java code will not see them.
 
 private val <T> Iterator<T>.nonEmpty: Iterator<T>? get() = takeIf { it.hasNext() }
+
+private class LazySupplier<T : Any>(supplier: Supplier<T>) : Supplier<T> {
+    private val value: T by lazy { supplier.get() }
+
+    override fun get(): T = value
+}
