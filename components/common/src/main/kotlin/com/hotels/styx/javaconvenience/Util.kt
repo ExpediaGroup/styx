@@ -15,6 +15,8 @@
  */
 package com.hotels.styx.javaconvenience
 
+import com.hotels.styx.api.Clock
+import com.hotels.styx.api.Clocks.systemClock
 import java.io.InputStream
 import java.io.OutputStream
 import java.util.SortedMap
@@ -24,6 +26,8 @@ import java.util.TreeSet
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors.defaultThreadFactory
 import java.util.concurrent.ThreadFactory
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.function.Consumer
 import java.util.function.Function
 import java.util.function.Predicate
@@ -31,6 +35,7 @@ import java.util.function.Supplier
 import java.util.stream.Stream
 import kotlin.streams.asStream
 import java.lang.reflect.Array.newInstance as arrayNewInstance
+
 
 /*
  * Note: although written in Kotlin, these convenience methods are intended to be used by Java code.
@@ -141,6 +146,14 @@ fun threadFactoryWithIncrementingName(nameFormat: String): ThreadFactory {
         }
     }
 }
+
+class Stopwatch @JvmOverloads constructor(private val clock: Clock = systemClock()) {
+    private val startTime: Long = clock.tickMillis()
+
+    fun timeElapsedSoFar(unit: TimeUnit): Long =
+        unit.convert(clock.tickMillis() - startTime, MILLISECONDS)
+}
+
 fun <T : Any> lazySupplier(supplier: Supplier<T>): Supplier<T> = LazySupplier(supplier)
 
 // Private functions can use whatever Kotlin features as Java code will not see them.
@@ -152,3 +165,4 @@ private class LazySupplier<T : Any>(supplier: Supplier<T>) : Supplier<T> {
 
     override fun get(): T = value
 }
+

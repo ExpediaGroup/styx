@@ -16,6 +16,7 @@
 package com.hotels.styx.client.connectionpool;
 
 import com.google.common.base.Ticker;
+import com.hotels.styx.api.Clocks;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
@@ -23,6 +24,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.function.Supplier;
 
+import static com.hotels.styx.api.Clocks.systemClock;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -30,8 +32,6 @@ import static java.util.Objects.requireNonNull;
  * on expiration time.
  */
 public class ExpiringConnectionFactory implements Connection.Factory {
-
-    private static final Supplier<Ticker> SYSTEM_TICKER = Ticker::systemTicker;
     private final long connectionExpirationSeconds;
     private final Connection.Factory connectionFactory;
 
@@ -48,6 +48,6 @@ public class ExpiringConnectionFactory implements Connection.Factory {
     }
 
     private Connection decorate(Connection conn) {
-        return new ExpiringConnection(conn, connectionExpirationSeconds, SYSTEM_TICKER);
+        return new ExpiringConnection(conn, connectionExpirationSeconds, systemClock());
     }
 }

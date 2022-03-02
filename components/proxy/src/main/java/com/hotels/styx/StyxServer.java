@@ -15,7 +15,6 @@
  */
 package com.hotels.styx;
 
-import com.google.common.base.Stopwatch;
 import com.google.common.io.CharStreams;
 import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.Service;
@@ -30,6 +29,7 @@ import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.config.schema.SchemaValidationException;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
+import com.hotels.styx.javaconvenience.Stopwatch;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.ConnectorConfig;
 import com.hotels.styx.server.netty.NettyServerBuilder;
@@ -110,7 +110,7 @@ public final class StyxServer extends AbstractService {
     }
 
     private static StyxServer createStyxServer(String[] args) {
-        Stopwatch stopwatch = Stopwatch.createStarted();
+        Stopwatch stopwatch = new Stopwatch();
 
         StartupConfig startupConfig = parseStartupConfig(args);
 
@@ -411,7 +411,7 @@ public final class StyxServer extends AbstractService {
             if (stopwatch == null) {
                 LOG.info("Started Styx server");
             } else {
-                LOG.info("Started Styx server in {} ms", stopwatch.elapsed(MILLISECONDS));
+                LOG.info("Started Styx server in {} ms", stopwatch.timeElapsedSoFar(MILLISECONDS));
             }
         }
 

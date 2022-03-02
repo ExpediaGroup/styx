@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.client.connectionpool;
 
-import com.google.common.base.Ticker;
+import com.hotels.styx.api.Clock;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory;
 import org.junit.jupiter.api.Test;
@@ -25,12 +25,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class ExpiringConnectionTest {
     @Test
-    public void shouldExpireConnection() throws Exception {
+    public void shouldExpireConnection() {
         Connection trackedConnection = new StubConnectionFactory.StubConnection(null);
 
-        ExpiringConnection connectionTracker = new ExpiringConnection(trackedConnection,
-                2,
-                DummyTicker::new);
+        ExpiringConnection connectionTracker = new ExpiringConnection(trackedConnection, 2, new OneSecondPerTickClock());
 
         assertThat(connectionTracker.isConnected(), is(true));
         assertThat(connectionTracker.isConnected(), is(false));
@@ -39,13 +37,12 @@ public class ExpiringConnectionTest {
     /**
      * Dummy ticker that ticks one second every time a owner stop watch is checked.
      */
-    private static class DummyTicker extends Ticker {
-        private static final int ONE_SECOND = 1000000000;
+    private static class OneSecondPerTickClock implements Clock {
         private long counter = 0;
 
         @Override
-        public long read() {
-            counter += ONE_SECOND;
+        public long tickMillis() {
+            counter += 1000;
             return counter;
         }
     }
