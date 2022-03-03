@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,13 +18,12 @@ package com.hotels.styx.common.io;
 import com.hotels.styx.api.Resource;
 
 import java.io.File;
-import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import static com.hotels.styx.javaconvenience.UtilKt.uncheck;
-import static java.nio.file.Files.walk;
+import static com.google.common.io.Files.fileTraverser;
+import static java.util.stream.StreamSupport.stream;
 
 /**
  * Iterates over resources in a file system location.
@@ -33,9 +32,9 @@ public class FileResourceIterator implements Iterator<Resource> {
     private final Iterator<Resource> resourceIterator;
 
     public FileResourceIterator(File root, File file, String suffix) {
-        Path absolutePath = root.toPath().resolve(file.toPath());
-        this.resourceIterator = uncheck(() -> walk(absolutePath))
-                .map(Path::toFile)
+        File absolutePath = root.toPath().resolve(file.toPath()).toFile();
+        Iterable<File> children = fileTraverser().depthFirstPostOrder(absolutePath);
+        this.resourceIterator = stream(children.spliterator(), false)
                 .filter(hasSuffix(suffix).or(sameFile(file)))
                 .map(fileToResource(file))
                 .iterator();
