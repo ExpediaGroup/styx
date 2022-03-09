@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -41,6 +41,8 @@ import static org.slf4j.LoggerFactory.getLogger;
  * Utility to start-up plugins with Styx.
  */
 public final class PluginLoadingForStartup {
+    private static final String DEFAULT_PLUGINS_METRICS_SCOPE = "styx.plugins";
+
     private static final Logger LOGGER = getLogger(PluginLoadingForStartup.class);
 
     private PluginLoadingForStartup() {

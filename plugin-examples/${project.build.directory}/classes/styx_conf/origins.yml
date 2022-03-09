@@ -1,0 +1,11 @@
+---
+- id: "example"
+  path: "/"
+  connectionPool:
+    maxConnectionsPerHost: 45
+    maxPendingConnectionsPerHost: 15
+    connectTimeoutMillis: 1000
+    pendingConnectionTimeoutMillis: 8000
+  responseTimeoutMillis: 60000
+  origins:
+  - { id: "example1", host: "${localIP}:9090" }

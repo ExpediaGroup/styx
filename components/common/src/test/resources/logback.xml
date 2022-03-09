@@ -16,6 +16,5 @@
 
   <logger name="Styx-Tests" level="INFO"/>
   <logger name="com.hotels.styx.common.FsmEventProcessor" level="INFO"/>
-  <logger name="com.hotels.styx.common.content.FlowControllingHttpContentProducer" level="INFO"/>
 
 </configuration>

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -191,10 +191,10 @@ public class DeterministicScheduler implements ScheduledExecutorService {
     private final class ScheduledTask<T> implements ScheduledFuture<T>, Runnable {
         public final long repeatDelay;
         public final Callable<T> command;
-        private boolean isCancelled;
-        private boolean isDone;
+        private boolean isCancelled = false;
+        private boolean isDone = false;
         private T futureResult;
-        private Exception failure;
+        private Exception failure = null;
 
         public ScheduledTask(Callable<T> command) {
             this.repeatDelay = -1;

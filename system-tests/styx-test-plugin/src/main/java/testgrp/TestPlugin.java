@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -36,6 +36,8 @@ public class TestPlugin implements Plugin {
     private static final String X_HCOM_PLUGINS_LIST = "X-Hcom-Plugins-List";
     private final PluginFactory.Environment environment;
     private TestPluginConfig config;
+    private boolean styxStarted = false;
+    private boolean styxStopped = false;
 
     public TestPlugin(PluginFactory.Environment environment, TestPluginConfig config) {
         this.environment = environment;
@@ -45,8 +47,6 @@ public class TestPlugin implements Plugin {
 
     @Override
     public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
-        boolean styxStarted = false;
-        boolean styxStopped = false;
         String header = xHcomPluginsHeader(request);
 
         LiveHttpRequest newRequest = request.newBuilder()

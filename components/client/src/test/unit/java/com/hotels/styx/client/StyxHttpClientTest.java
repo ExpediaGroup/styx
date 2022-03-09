@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -91,6 +91,7 @@ public class StyxHttpClientTest {
     @Test
     public void cannotBeModifiedAfterCreated() throws ExecutionException, InterruptedException {
         StyxHttpClient.Builder builder = new StyxHttpClient.Builder().userAgent("v1");
+
         StyxHttpClient client = builder.build();
 
         builder.userAgent("v2");
@@ -106,7 +107,7 @@ public class StyxHttpClientTest {
      * StyxHttpClient.Builder
      */
     @Test
-    public void requiresValidTlsSettings() {
+    public void requiresValidTlsSettins() {
         assertThrows(NullPointerException.class,
             () -> new StyxHttpClient.Builder()
                 .tlsSettings(null)

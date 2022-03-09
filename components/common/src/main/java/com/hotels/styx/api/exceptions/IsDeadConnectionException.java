@@ -13,11 +13,10 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.client
+package com.hotels.styx.api.exceptions;
 
-import com.hotels.styx.api.extension.Origin
-import com.hotels.styx.api.extension.Origin.newOriginBuilder
-import com.hotels.styx.support.server.FakeHttpServer
-
-fun originFrom(server: FakeHttpServer): Origin =
-    newOriginBuilder("localhost", server.port()).applicationId(server.appId()).id(server.originId()).build()
+/**
+ * A marker interface for exceptions that indicate that a connection is dead.
+ */
+public interface IsDeadConnectionException {
+}

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,19 +13,10 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.common.content;
-
-import static java.lang.String.format;
+package com.hotels.styx.api.exceptions;
 
 /**
- * Indicates that consumer is no longer observing the HTTP content observable.
- *
- * Typically this occurs due to Styx server-side cancelling due to some
- * reason.
+ * A marker interface for exceptions that indicates that an exception was caused by a timeout.
  */
-public class ConsumerDisconnectedException extends RuntimeException {
-
-    public ConsumerDisconnectedException(String message, String state) {
-        super(format("%s producerState=%s", message, state));
-    }
+public interface IsTimeoutException {
 }

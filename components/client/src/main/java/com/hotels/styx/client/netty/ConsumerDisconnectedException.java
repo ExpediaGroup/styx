@@ -13,34 +13,19 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api;
+package com.hotels.styx.client.netty;
 
-import io.netty.buffer.ByteBuf;
+import static java.lang.String.format;
 
 /**
- * Conversions between Styx Buffer and Netty ByteBuf objects.
+ * Indicates that consumer is no longer observing the HTTP content observable.
+ *
+ * Typically this occurs due to Styx server-side cancelling due to some
+ * reason.
  */
-public final class Buffers {
-    private Buffers() {
-    }
+public class ConsumerDisconnectedException extends RuntimeException {
 
-    /**
-     * Builds a Styx Buffer from Netty ByteBuf.
-     *
-     * @param byteBuf
-     * @return
-     */
-    public static Buffer fromByteBuf(ByteBuf byteBuf) {
-        return new Buffer(byteBuf);
-    }
-
-    /**
-     * Returns a Netty ByteBuf corresponding to a Styx Buffer.
-     *
-     * @param buffer
-     * @return
-     */
-    public static ByteBuf toByteBuf(Buffer buffer) {
-        return buffer.delegate();
+    public ConsumerDisconnectedException(String message, String state) {
+        super(format("%s producerState=%s", message, state));
     }
 }
