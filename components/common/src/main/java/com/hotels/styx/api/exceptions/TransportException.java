@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hotels.styx.api.exceptions;
 /**
  * An exception that causes a connection to fail.
  */
-public class TransportException extends RuntimeException {
+public abstract class TransportException extends RuntimeException {
     /**
      * Constructor.
      *

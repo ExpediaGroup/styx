@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.client.StyxHttpClient;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -58,7 +59,7 @@ public class MetricsSnapshot {
     private static Map<String, Object> decodeToMap(String body) throws IOException {
         JsonFactory factory = new JsonFactory();
         ObjectMapper mapper = new ObjectMapper(factory);
-        TypeReference<Map<String, Object>> typeRef = new TypeReference<Map<String, Object>>() {
+        TypeReference<HashMap<String, Object>> typeRef = new TypeReference<HashMap<String, Object>>() {
         };
         return mapper.readValue(body, typeRef);
     }

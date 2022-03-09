@@ -15,7 +15,7 @@
   <logger name="com.google.common.util.concurrent.ServiceManager" level="ERROR" />
   <logger name="com.hotels.styx.NettyExecutor" level="ERROR" />
 
-  <root level="OFF">
+  <root level="INFO">
     <appender-ref ref="CONSOLE"/>
   </root>
 </configuration>

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -142,11 +142,11 @@ public class HttpRequestOperation {
                         Requests.doFinally(response, cause -> {
                             if (nettyConnection.isConnected()) {
                                 removeProxyBridgeHandlers(nettyConnection);
+
                                 if (requestIsOngoing(requestRequestBodyChunkSubscriber.get())) {
                                     LOGGER.warn("Origin responded too quickly to an ongoing request, or it was cancelled. Connection={}, Request={}.",
                                             new Object[]{nettyConnection.channel(), this.request});
                                     nettyConnection.close();
-                                    requestRequestBodyChunkSubscriber.get().dispose();
                                 }
                             }
                         }));
@@ -226,10 +226,10 @@ public class HttpRequestOperation {
         public void write() {
             Channel originChannel = this.nettyConnection.channel();
             if (originChannel.isActive()) {
-                io.netty.handler.codec.http.HttpRequest httpRequest = makeRequest(request);
+                io.netty.handler.codec.http.HttpRequest messageHeaders = makeRequest(request);
 
-                originChannel.writeAndFlush(httpRequest)
-                    .addListener(subscribeToRequestBody());
+                originChannel.writeAndFlush(messageHeaders)
+                        .addListener(subscribeToRequestBody());
             } else {
                 responseFromOriginFlux.error(new TransportLostException(originChannel.remoteAddress(), nettyConnection.getOrigin()));
             }

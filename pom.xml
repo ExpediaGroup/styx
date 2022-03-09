@@ -85,7 +85,7 @@
 
   <properties>
 
-    <!-- common build properties  -->
+    <!-- common build properties -->
     <wiki.url>${project.url}</wiki.url>
     <maven.build.timestamp.format>yyyy-MM-dd|HH\:mm\:ss</maven.build.timestamp.format>
     <timestamp>${maven.build.timestamp}</timestamp>
@@ -116,6 +116,7 @@
     <antlr.version>4.5.1-1</antlr.version>
     <netty.version>4.1.49.Final</netty.version>
     <netty-tcnative.version>2.0.26.Final</netty-tcnative.version>
+    <rxjava.version>1.1.6</rxjava.version>
     <reactive-streams.version>1.0.3</reactive-streams.version>
     <reactor.version>3.3.0.RELEASE</reactor.version>
     <pcollections.version>3.0.3</pcollections.version>
@@ -130,7 +131,7 @@
     <java-uuid-generator.version>3.1.5</java-uuid-generator.version>
 
     <!-- Logging Versions -->
-    <logback.version>1.2.10</logback.version>
+    <logback.version>1.2.0</logback.version>
     <slf4j.version>1.7.30</slf4j.version>
 
     <scala.version>2.12</scala.version>
@@ -196,6 +197,7 @@
     <surefire.skip.tests>false</surefire.skip.tests>
 
     <netty-transport-native-epoll.classifier/>
+    <rxjava-reactive-streams.version>1.1.1</rxjava-reactive-streams.version>
     <mockk.version>1.9.3</mockk.version>
   </properties>
 
@@ -252,6 +254,19 @@
         <artifactId>netty-tcnative-boringssl-static</artifactId>
         <version>${netty-tcnative.version}</version>
         <classifier>${netty-tcnative.classifier}</classifier>
+      </dependency>
+
+      <!-- RxJava -->
+      <dependency>
+        <groupId>io.reactivex</groupId>
+        <artifactId>rxjava</artifactId>
+        <version>${rxjava.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>io.reactivex</groupId>
+        <artifactId>rxjava-reactive-streams</artifactId>
+        <version>${rxjava-reactive-streams.version}</version>
       </dependency>
 
       <dependency>
@@ -633,6 +648,7 @@
                   <sourceDir>${project.basedir}/src/main/java</sourceDir>
                 </sourceDirs>
               </configuration>
+
             </execution>
             <execution>
               <id>test-compile</id>
@@ -851,6 +867,12 @@
         </plugin>
 
         <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>build-helper-maven-plugin</artifactId>
+          <version>${build-helper-maven-plugin.version}</version>
+        </plugin>
+
+        <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-source-plugin</artifactId>
           <version>${maven-source-plugin.version}</version>
@@ -1034,6 +1056,7 @@
           </execution>
         </executions>
       </plugin>
+
     </plugins>
 
   </build>

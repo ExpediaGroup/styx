@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Url;
-import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
@@ -238,7 +237,7 @@ public final class StyxHttpClient implements HttpClient {
          * Maximum time in milliseconds this client is willing to wait for the origin server to respond.
          * <p>
          * Sets a maximum tolerated length of inactivity on TCP connection before remote origin is considered
-         * unresponsive. After this time a {@link ResponseTimeoutException} is
+         * unresponsive. After this time a {@link com.hotels.styx.api.exceptions.ResponseTimeoutException} is
          * thrown is emitted on the response future.
          * <p>
          * Note that an actual response can take considerably longer time to arrive than @{code responseTimeoutMillis}.

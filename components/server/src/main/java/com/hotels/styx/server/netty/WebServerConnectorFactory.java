@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 
-import static com.hotels.styx.server.netty.SslContextsKt.newSSLContext;
+import static com.hotels.styx.server.netty.SslContexts.newSSLContext;
 import static java.util.Objects.requireNonNull;
 
 /**

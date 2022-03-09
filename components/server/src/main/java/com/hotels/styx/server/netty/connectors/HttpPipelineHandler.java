@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -35,10 +35,10 @@ import com.hotels.styx.api.plugins.spi.PluginException;
 import com.hotels.styx.client.BadHttpResponseException;
 import com.hotels.styx.client.StyxClientException;
 import com.hotels.styx.client.connectionpool.ResourceExhaustedException;
+import com.hotels.styx.client.netty.ConsumerDisconnectedException;
 import com.hotels.styx.common.FsmEventProcessor;
 import com.hotels.styx.common.QueueDrainingEventProcessor;
 import com.hotels.styx.common.StateMachine;
-import com.hotels.styx.common.content.ConsumerDisconnectedException;
 import com.hotels.styx.metrics.CentralisedMetrics;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.HttpErrorStatusListener;

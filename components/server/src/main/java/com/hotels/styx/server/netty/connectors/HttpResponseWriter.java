@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.BaseSubscriber;
-import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -37,6 +36,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static io.netty.handler.codec.http.HttpHeaders.setTransferEncodingChunked;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static java.util.Objects.requireNonNull;
+import static rx.RxReactiveStreams.toObservable;
 
 /**
  * Netty HTTP response writer.
@@ -157,7 +157,7 @@ class HttpResponseWriter {
             return future;
         } catch (Throwable cause) {
             LOGGER.warn("Failed to convert response headers. response={}, Cause={}", new Object[]{response, cause});
-            Flux.from(response.body().drop()).subscribe();
+            toObservable(response.body()).forEach(it -> Buffers.toByteBuf(it).release());
             future.completeExceptionally(cause);
             return future;
         }
