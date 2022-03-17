@@ -40,13 +40,15 @@ routingObjects:
   h2Handler:
     type: StaticResponseHandler
     config:
+      status: 200
+      content: "h2-handler"
 
 servers:
   h1Server:
     type: HttpServer
     config:
-      port: 8080
-      listener: h1Handler
+      port: 8081
+      handler: h1Handler
 
       tlsSettings:
         sslProvider: OPENSSL # Also supports JDK
@@ -63,14 +65,11 @@ servers:
       keepAliveTimeoutMillis: 12000
       maxConnectionsCount: 4096
 
-      bossThreadsCount: 1
-      workerThreadsCount: 0
-
   h2Server:
-    type: Http2Server
+    type: HttpServer
     config:
-      port: 8443
-      listener: h2Handler
+      port: 8444
+      handler: h2Handler
 
       maxInitialLength: 4096
       maxHeaderSize: 8192
@@ -80,11 +79,8 @@ servers:
       keepAliveTimeoutMillis: 12000
       maxConnectionsCount: 4096
 
-      bossThreadsCount: 1
-      workerThreadsCount: 0
-
   admin:
     type: HttpServer
     config:
-      port: 9000
-      listener: adminHandler
+      port: 9001
+      handler: adminHandler

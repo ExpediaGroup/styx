@@ -38,3 +38,5 @@ wrk2/
 docs/_site
 
 **/.kotlintest/
+
+styx-test/
