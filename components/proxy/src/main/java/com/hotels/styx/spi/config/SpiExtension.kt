@@ -17,13 +17,13 @@ package com.hotels.styx.spi.config
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.NullNode
+import com.fasterxml.jackson.databind.node.NullNode.getInstance
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
-import java.io.IOException
 import java.util.Objects
+import java.util.Objects.requireNonNull
 
 /**
  * Factory/configuration block.
@@ -38,8 +38,8 @@ class SpiExtension @JsonCreator constructor(
     private val enabled: Boolean
 
     init {
-        this.factory = Objects.requireNonNull(factory, "Factory attribute missing")
-        this.config = config ?: NullNode.getInstance()
+        this.factory = requireNonNull(factory, "Factory attribute missing")
+        this.config = config ?: getInstance()
         this.enabled = enabled == null
     }
 
@@ -49,27 +49,19 @@ class SpiExtension @JsonCreator constructor(
 
     fun enabled(): Boolean = enabled
 
-    fun <T> config(configClass: Class<T>?): T {
-        val parser = config.traverse()
-        return try {
-            MAPPER.readValue(parser, configClass)
-        } catch (e: IOException) {
-            throw RuntimeException(e)
-        }
-    }
+    fun <T> config(configClass: Class<T>?): T = MAPPER.readValue(config.traverse(), configClass)
 
     override fun hashCode(): Int = Objects.hashCode(factory)
 
-    override fun equals(obj: Any?): Boolean {
+    override fun equals(obj: Any?): Boolean =
         if (this === obj) {
-            return true
+            true
+        } else if (obj == null || javaClass != obj.javaClass) {
+            false
+        } else {
+            val other = obj as SpiExtension
+            factory == other.factory
         }
-        if (obj == null || javaClass != obj.javaClass) {
-            return false
-        }
-        val other = obj as SpiExtension
-        return factory == other.factory
-    }
 
     override fun toString(): String =
         StringBuilder(32)
@@ -81,6 +73,6 @@ class SpiExtension @JsonCreator constructor(
 
     companion object {
         private val MAPPER =
-            ObjectMapper(YAMLFactory()).configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            ObjectMapper(YAMLFactory()).configure(FAIL_ON_UNKNOWN_PROPERTIES, false)
     }
 }

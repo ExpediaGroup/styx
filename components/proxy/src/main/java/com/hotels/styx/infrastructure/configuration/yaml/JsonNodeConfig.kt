@@ -15,20 +15,19 @@
  */
 package com.hotels.styx.infrastructure.configuration.yaml
 
-import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE
+import com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.NullNode
+import com.fasterxml.jackson.databind.node.NullNode.getInstance
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.hotels.styx.api.configuration.Configuration
 import com.hotels.styx.api.configuration.ConversionException
-import com.hotels.styx.infrastructure.configuration.json.ObjectMappers
-import java.io.IOException
+import com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.util.Objects
+import java.util.Objects.requireNonNull
 import java.util.Optional
 
 /**
@@ -53,31 +52,25 @@ class JsonNodeConfig private constructor(rootNode: JsonNode?, mapper: ObjectMapp
      * @param mapper   mapper to convert JSON into objects
      */
     init {
-        this.rootNode = rootNode ?: NullNode.getInstance()
-        this.mapper = ObjectMappers.addStyxMixins(Objects.requireNonNull(mapper))
+        this.rootNode = rootNode ?: getInstance()
+        this.mapper = addStyxMixins(requireNonNull(mapper))
     }
 
     override fun get(key: String): Optional<String> = get(key, String::class.java)
 
     override fun <T> get(property: String, tClass: Class<T>): Optional<T> =
         nodeAt(property)
-            .map { node: JsonNode ->
+            .map { node ->
                 if (tClass == Path::class.java) {
-                    return@map Paths.get(node.textValue()) as T
+                    Paths.get(node.textValue()) as T
+                } else {
+                    parseNodeToClass(node, tClass)
                 }
-                parseNodeToClass(node, tClass)
             }
 
     private fun nodeAt(property: String): Optional<JsonNode> = NodePath(property).findMatchingDescendant(rootNode)
 
-    private fun <T> parseNodeToClass(node: JsonNode, tClass: Class<T>): T {
-        val parser = node.traverse()
-        return try {
-            mapper.readValue(parser, tClass)
-        } catch (e: IOException) {
-            throw RuntimeException(e)
-        }
-    }
+    private fun <T> parseNodeToClass(node: JsonNode, tClass: Class<T>): T = mapper.readValue(node.traverse(), tClass)
 
     @Throws(ConversionException::class)
     override fun <X> `as`(type: Class<X>): X = parseNodeToClass(rootNode, type)
@@ -85,9 +78,9 @@ class JsonNodeConfig private constructor(rootNode: JsonNode?, mapper: ObjectMapp
     override fun toString(): String = rootNode.toString()
 
     companion object {
-        private val YAML_MAPPER = ObjectMappers.addStyxMixins(
+        private val YAML_MAPPER = addStyxMixins(
             ObjectMapper(YAMLFactory()).registerKotlinModule())
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-            .configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, true)
+            .configure(FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .configure(AUTO_CLOSE_SOURCE, true)
     }
 }
