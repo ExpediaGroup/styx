@@ -20,16 +20,15 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.NullNode.getInstance
+import com.fasterxml.jackson.databind.node.NullNode
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import java.util.Objects
-import java.util.Objects.requireNonNull
 
 /**
  * Factory/configuration block.
  */
 class SpiExtension @JsonCreator constructor(
-    @JsonProperty("factory") factory: SpiExtensionFactory,
+    @JsonProperty("factory") factory: SpiExtensionFactory?,
     @JsonProperty("config") config: JsonNode?,
     @JsonProperty("enabled") enabled: Boolean?
 ) {
@@ -38,8 +37,8 @@ class SpiExtension @JsonCreator constructor(
     private val enabled: Boolean
 
     init {
-        this.factory = requireNonNull(factory, "Factory attribute missing")
-        this.config = config ?: getInstance()
+        this.factory = requireNotNull(factory) { "Factory attribute missing" }
+        this.config = config ?: NullNode.getInstance()
         this.enabled = enabled == null
     }
 

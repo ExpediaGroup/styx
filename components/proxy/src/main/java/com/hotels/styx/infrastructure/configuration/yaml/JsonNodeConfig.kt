@@ -19,7 +19,7 @@ import com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE
 import com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.NullNode.getInstance
+import com.fasterxml.jackson.databind.node.NullNode
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.hotels.styx.api.configuration.Configuration
@@ -27,7 +27,6 @@ import com.hotels.styx.api.configuration.ConversionException
 import com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.util.Objects.requireNonNull
 import java.util.Optional
 
 /**
@@ -52,8 +51,8 @@ class JsonNodeConfig private constructor(rootNode: JsonNode?, mapper: ObjectMapp
      * @param mapper   mapper to convert JSON into objects
      */
     init {
-        this.rootNode = rootNode ?: getInstance()
-        this.mapper = addStyxMixins(requireNonNull(mapper))
+        this.rootNode = rootNode ?: NullNode.getInstance()
+        this.mapper = addStyxMixins(mapper)
     }
 
     override fun get(key: String): Optional<String> = get(key, String::class.java)
