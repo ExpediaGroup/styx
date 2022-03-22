@@ -9,15 +9,15 @@
 [![Dependabot Status](https://api.dependabot.com/badges/status?host=github&repo=HotelsDotCom/styx)](https://dependabot.com)
 
 Styx is a programmable reverse proxy for JVM (Java Virtual Machine). It can be used
-as a stand-alone application, or as a platform to build custom networking applications. 
+as a stand-alone application, or as a platform to build custom networking applications.
 It is non-blocking, fully asynchronous and event driven therefore very scalable.
 
 ### Features
 
-Styx Proxies HTTP requests to a configurable set of *Backend Services* typically a cluster 
+Styx Proxies HTTP requests to a configurable set of *Backend Services* typically a cluster
 of web servers (multiple origins) or load balancers (e.g. AWS ELB).
 
-Requests are subjected to an *interceptor chain* (conceptualy a HTTP filter chain), which can 
+Requests are subjected to an *interceptor chain* (conceptualy a HTTP filter chain), which can
 respond or modify and pass through the request to the backend services. The interceptor
 chain can be easily extended by *Plugins* written in Java.
 
@@ -51,7 +51,7 @@ info here](https://conferences.oreilly.com/software-architecture/sa-eu/public/sc
 
 ### Quick Start
 
-A [quick-start guide](https://github.com/HotelsDotCom/styx/wiki/Quick-Start-Guide) can be found on our [wiki](https://github.com/HotelsDotCom/styx/wiki). 
+A [quick-start guide](https://github.com/HotelsDotCom/styx/wiki/Quick-Start-Guide) can be found on our [wiki](https://github.com/HotelsDotCom/styx/wiki).
 
 ### User Manual
 
@@ -79,11 +79,10 @@ Contact us via [styx-user](https://groups.google.com/forum/#!forum/styx-user) gr
 
 ## Dependencies
 
-* [Oracle JDK 8](http://www.oracle.com/technetwork/java/javase/downloads/index.html) - It can be built with 1.8.0_45. 
-  Earlier maintenance releases may, but are not guaranteed to work.
+* [Oracle JDK 11](https://www.oracle.com/java/technologies/downloads/#java11)
 * [Apache Maven v3](http://maven.apache.org)
-* Makefile (Optional)- There are fairly many ways of running Styx tests with different Maven profiles. Therefore, the 
-  shortcuts for most common usages are compiled into a separate (GNU) Makefile for developer's convenience. To 
+* Makefile (Optional)- There are fairly many ways of running Styx tests with different Maven profiles. Therefore, the
+  shortcuts for most common usages are compiled into a separate (GNU) Makefile for developer's convenience. To
   take advantage of these shortcuts, a GNU Make build tool must be installed.
 
 ## Notice

@@ -35,7 +35,7 @@ If `styx-test/` already exists, remove it first to avoid conflicts on dependenci
 
 Let's unzip this file:
 
-    $ unzip distribution/target/styx.zip -d styx-test
+    $ unzip distribution/target/styx-<VERSION>-<OS>-<PLATFORM>.zip -d styx-test
 
 
 ## 1.4 Running Styx
