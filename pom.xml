@@ -115,10 +115,10 @@
     <micrometer.version>1.8.0</micrometer.version>
     <antlr.version>4.5.1-1</antlr.version>
     <netty.version>4.1.74.Final</netty.version>
-    <netty-tcnative.version>2.0.26.Final</netty-tcnative.version>
+    <netty-tcnative.version>2.0.48.Final</netty-tcnative.version>
     <rxjava.version>1.1.6</rxjava.version>
     <reactive-streams.version>1.0.3</reactive-streams.version>
-    <reactor.version>3.3.0.RELEASE</reactor.version>
+    <reactor.version>3.4.16</reactor.version>
     <pcollections.version>3.0.3</pcollections.version>
     <bytebuddy.version>1.10.6</bytebuddy.version>
 
