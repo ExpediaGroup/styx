@@ -17,10 +17,10 @@ package com.hotels.styx.admin
 
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.adminRequest
-import io.kotlintest.Spec
-import io.kotlintest.matchers.string.shouldContain
-import io.kotlintest.matchers.string.shouldMatch
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.core.spec.Spec
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldMatch
+import io.kotest.core.spec.style.FeatureSpec
 import java.nio.charset.StandardCharsets.UTF_8
 
 class AdminInterfaceSpec : FeatureSpec() {

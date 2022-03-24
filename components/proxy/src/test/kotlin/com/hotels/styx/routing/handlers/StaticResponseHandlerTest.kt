@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import com.hotels.styx.RoutingObjectFactoryContext
 import com.hotels.styx.requestContext
 import com.hotels.styx.routingObjectDef
 import com.hotels.styx.wait
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.StringSpec
+import io.kotest.matchers.shouldBe
+import io.kotest.core.spec.style.StringSpec
 import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
 

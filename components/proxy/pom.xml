@@ -165,11 +165,6 @@
       <artifactId>mockk</artifactId>
     </dependency>
 
-    <dependency>
-      <groupId>io.kotlintest</groupId>
-      <artifactId>kotlintest-runner-junit5</artifactId>
-    </dependency>
-
     <!-- https://mvnrepository.com/artifact/com.natpryce/hamkrest -->
     <dependency>
       <groupId>com.natpryce</groupId>

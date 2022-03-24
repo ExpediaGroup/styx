@@ -24,10 +24,10 @@ import com.hotels.styx.common.http.handler.HttpAggregator
 import com.hotels.styx.common.http.handler.StaticBodyHttpHandler
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.adminRequest
-import io.kotlintest.Spec
-import io.kotlintest.matchers.string.shouldInclude
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.core.spec.Spec
+import io.kotest.matchers.shouldBe
+import io.kotest.core.spec.style.FeatureSpec
+import io.kotest.matchers.string.shouldInclude
 import java.nio.charset.StandardCharsets.UTF_8
 
 class PluginAdminInterfaceSpec : FeatureSpec() {

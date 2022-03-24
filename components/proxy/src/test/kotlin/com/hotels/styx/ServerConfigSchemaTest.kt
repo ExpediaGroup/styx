@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import com.hotels.styx.infrastructure.configuration.ConfigurationParser
 import com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSource
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.DescribeSpec
+import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.matchers.shouldBe
 import java.util.Optional
 
 class ServerConfigSchemaTest : DescribeSpec({

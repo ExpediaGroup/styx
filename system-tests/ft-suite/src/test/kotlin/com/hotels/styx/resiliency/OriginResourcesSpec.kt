@@ -26,20 +26,20 @@ import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.proxyHttpHostHeader
 import com.hotels.styx.support.threadCount
 import com.hotels.styx.support.wait
-import io.kotlintest.Spec
-import io.kotlintest.eventually
-import io.kotlintest.matchers.boolean.shouldBeTrue
-import io.kotlintest.matchers.numerics.shouldBeGreaterThan
-import io.kotlintest.matchers.withClue
-import io.kotlintest.seconds
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.StringSpec
+import io.kotest.core.spec.Spec
+import io.kotest.framework.concurrency.eventually
+import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.comparables.shouldBeGreaterThan
+import io.kotest.assertions.withClue
+import io.kotest.matchers.shouldBe
+import io.kotest.core.spec.style.StringSpec
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Files.copy
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption.REPLACE_EXISTING
+import kotlin.time.Duration.Companion.seconds
 
 class OriginResourcesSpec : StringSpec() {
     val count = 20
@@ -59,7 +59,7 @@ class OriginResourcesSpec : StringSpec() {
                                 .map { appDeclaration("aaa-$it") }
                                 .joinToString("\n"))
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     (1..count).all { configurationApplied("/aaa-$it") }.shouldBeTrue()
                 }
 
@@ -78,7 +78,7 @@ class OriginResourcesSpec : StringSpec() {
                                 .map { appDeclaration("aaa-$it") }
                                 .joinToString("\n"))
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     (1..count).all { configurationApplied("/aaa-$it") }.shouldBeTrue()
                 }
 
@@ -95,7 +95,7 @@ class OriginResourcesSpec : StringSpec() {
                                 .map { appDeclaration("bbb-$it") }
                                 .joinToString("\n"))
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     (1..count).all { configurationApplied("/bbb-$it") }.shouldBeTrue()
                 }
 

@@ -26,11 +26,10 @@ import com.hotels.styx.servers.MockOriginServer
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.proxyHttpHostHeader
 import com.hotels.styx.support.wait
-import io.kotlintest.Spec
-import io.kotlintest.eventually
-import io.kotlintest.seconds
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.StringSpec
+import io.kotest.core.spec.Spec
+import io.kotest.framework.concurrency.eventually
+import io.kotest.matchers.shouldBe
+import io.kotest.core.spec.style.StringSpec
 import org.slf4j.LoggerFactory
 import java.io.ByteArrayInputStream
 import java.io.File
@@ -38,6 +37,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Files.copy
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption.REPLACE_EXISTING
+import kotlin.time.Duration.Companion.seconds
 
 private val LOGGER = LoggerFactory.getLogger(FileBasedOriginsFileChangeMonitorSpec::class.java)
 
@@ -53,14 +53,14 @@ class FileBasedOriginsFileChangeMonitorSpec: StringSpec() {
                     .header(HOST, styxServer().proxyHttpHostHeader())
                     .build()
 
-            eventually(3.seconds, AssertionError::class.java) {
+            eventually(3.seconds) {
                 client.send(reqToApp01).wait().status() shouldBe OK
                 client.send(reqToApp02).wait().status() shouldBe BAD_GATEWAY
             }
 
             writeConfig(styxOriginsFile, configTemplate.format("appv2", "/app02/", mockServer.port()))
 
-            eventually(3.seconds, AssertionError::class.java) {
+            eventually(3.seconds) {
                 client.send(reqToApp01).wait().status() shouldBe BAD_GATEWAY
                 client.send(reqToApp02).wait().status() shouldBe OK
             }

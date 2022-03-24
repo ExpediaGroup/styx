@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.demo
 
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.matchers.shouldBe
+import io.kotest.core.spec.style.FeatureSpec
 import java.net.HttpURLConnection
 import java.net.URL
 

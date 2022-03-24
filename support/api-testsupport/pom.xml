@@ -34,8 +34,8 @@
     </dependency>
 
     <dependency>
-      <groupId>io.kotlintest</groupId>
-      <artifactId>kotlintest-runner-junit5</artifactId>
+      <groupId>io.kotest</groupId>
+      <artifactId>kotest-runner-junit5-jvm</artifactId>
       <scope>compile</scope>
     </dependency>
 

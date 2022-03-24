@@ -336,26 +336,26 @@ public class StyxHttpClientTest {
         assertEquals(ResponseTimeoutException.class, e.getCause().getClass());
     }
 
-    @Disabled
-    @Test
-    /*
-     * Wiremock (or Jetty server) origin converts an absolute URL to an origin
-     * form. Therefore we are unable to use an origin to verify that client used
-     * an absolute URL. However I (Mikko) have verified with WireShark that the
-     * request is indeed sent in absolute form.
-     */
-    public void sendsMessagesInAbsoluteUrlFormat() throws ExecutionException, InterruptedException {
-        HttpResponse response = new StyxHttpClient.Builder()
-                .build()
-                .send(get(format("http://%s/index.html", hostString(server.port()))).build())
-                .get();
-
-        assertThat(response.status(), is(OK));
-        server.verify(
-                getRequestedFor(urlEqualTo(format("http://%s/index.html", hostString(server.port()))))
-                        .withHeader("Host", equalTo(hostString(server.port())))
-        );
-    }
+    //@Disabled
+    //@Test
+    ///*
+    // * Wiremock (or Jetty server) origin converts an absolute URL to an origin
+    // * form. Therefore we are unable to use an origin to verify that client used
+    // * an absolute URL. However I (Mikko) have verified with WireShark that the
+    // * request is indeed sent in absolute form.
+    // */
+    //public void sendsMessagesInAbsoluteUrlFormat() throws ExecutionException, InterruptedException {
+    //    HttpResponse response = new StyxHttpClient.Builder()
+    //            .build()
+    //            .send(get(format("http://%s/index.html", hostString(server.port()))).build())
+    //            .get();
+    //
+    //    assertThat(response.status(), is(OK));
+    //    server.verify(
+    //            getRequestedFor(urlEqualTo(format("http://%s/index.html", hostString(server.port()))))
+    //                    .withHeader("Host", equalTo(hostString(server.port())))
+    //    );
+    //}
 
     private String hostString(int port) {
         return "localhost:" + port;

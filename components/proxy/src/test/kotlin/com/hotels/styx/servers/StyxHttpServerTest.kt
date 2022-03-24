@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -42,17 +42,17 @@ import com.hotels.styx.ref
 import com.hotels.styx.routeLookup
 import com.hotels.styx.wait
 import com.hotels.styx.support.ResourcePaths.fixturesHome
-import io.kotlintest.eventually
-import io.kotlintest.matchers.boolean.shouldBeTrue
-import io.kotlintest.milliseconds
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.framework.concurrency.eventually
+import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.shouldBe
+import io.kotest.core.spec.style.FeatureSpec
 import reactor.core.publisher.Flux
 import reactor.core.publisher.toFlux
 import reactor.core.publisher.toMono
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.zip.GZIPInputStream
+import kotlin.time.Duration.Companion.milliseconds
 
 class StyxHttpServerTest : FeatureSpec({
     feature("HTTP request handling") {
@@ -324,7 +324,7 @@ class StyxHttpServerTest : FeatureSpec({
             val connection2 = createConnection(server.inetAddress().port)
             val connection3 = createConnection(server.inetAddress().port)
 
-            eventually(500.milliseconds, AssertionError::class.java) {
+            eventually(500.milliseconds) {
                 connection1.isConnected shouldBe (true)
                 connection2.isConnected shouldBe (true)
                 connection3.isConnected shouldBe (false)

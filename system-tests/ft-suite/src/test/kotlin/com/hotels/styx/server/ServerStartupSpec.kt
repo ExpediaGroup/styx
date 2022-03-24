@@ -29,14 +29,14 @@ import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.adminHostHeader
 import com.hotels.styx.support.testClient
 import com.hotels.styx.support.wait
-import io.kotlintest.Spec
-import io.kotlintest.eventually
-import io.kotlintest.matchers.types.shouldBeNull
-import io.kotlintest.seconds
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.core.spec.Spec
+import io.kotest.framework.concurrency.eventually
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.shouldBe
+import io.kotest.core.spec.style.FeatureSpec
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.CyclicBarrier
+import kotlin.time.Duration.Companion.seconds
 
 
 class ServerStartupSpec : FeatureSpec() {
@@ -80,7 +80,7 @@ class ServerStartupSpec : FeatureSpec() {
 
                 latch2.countDown()
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     testClient.send(get("/")
                             .addHeader(HOST, styxServer().adminHostHeader())
                             .build())

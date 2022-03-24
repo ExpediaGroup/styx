@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -29,21 +29,22 @@ import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.PathPrefixRouter
 import com.hotels.styx.ProviderObjectRecord
-import io.kotlintest.Matcher
-import io.kotlintest.MatcherResult
-import io.kotlintest.Spec
-import io.kotlintest.eventually
-import io.kotlintest.matchers.boolean.shouldBeTrue
-import io.kotlintest.seconds
-import io.kotlintest.should
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FunSpec
+import io.kotest.assertions.timing.eventually
+import io.kotest.core.spec.Spec
+import io.kotest.matchers.shouldBe
+import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.Matcher
+import io.kotest.matchers.MatcherResult
+import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.should
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.time.Duration
 import java.util.Optional
 import java.util.concurrent.TimeUnit.SECONDS
+import kotlin.time.Duration.Companion.seconds
 
 private val LOGGER = LoggerFactory.getLogger(YamlFileConfigurationServiceTest::class.java)
 
@@ -92,9 +93,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                         YamlFileConfigurationServiceConfig(originsConfig.absolutePath, pollInterval = pollInterval),
                         serviceDb)) {
                     it.start().get(2, SECONDS)
-                    eventually(2.seconds, AssertionError::class.java) {
-                        routeDb.entrySet().size shouldBe 4
-                    }
+                        .also { routeDb.entrySet().size shouldBe 4 }
                 }
             }
 
@@ -120,8 +119,10 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                           - { id: "app-02", host: "localhost:9091" }
                          """.trimIndent())
 
-                    eventually(2.seconds, AssertionError::class.java) {
-                        routeDb.entrySet().size shouldBe 4
+                    runBlocking {
+                        eventually(2.seconds) {
+                            routeDb.entrySet().size shouldBe 4
+                        }
                     }
                 }
             }
@@ -145,7 +146,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                           - { id: "app-02", host: "localhost:9091" }
                          """.trimIndent())
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     val objects = objectStore.toMap()
                     objects.size shouldBe 4
 
@@ -165,7 +166,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                           - { id: "app-01", host: "localhost:9090" }
                          """.trimIndent())
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     val objects = objectStore.toMap()
 
                     objects.size shouldBe 3
@@ -185,7 +186,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                           - { id: "app-01", host: "localhost:9999" }
                          """.trimIndent())
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     val objects = objectStore.toMap()
 
                     objects.size shouldBe 3
@@ -211,7 +212,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                           - { id: "appB-01", host: "localhost:8081" }
                          """.trimIndent())
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     val objects = objectStore.toMap()
 
                     objects.size shouldBe 5
@@ -233,7 +234,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                           - { id: "appB-01", host: "localhost:8081" }
                          """.trimIndent())
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     val objects = objectStore.toMap()
 
                     objects.size shouldBe 3
@@ -254,7 +255,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                           - { id: "appB-01", host: "localhost:8081" }
                          """.trimIndent())
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     val objects = objectStore.toMap()
 
                     objects.size shouldBe 3
@@ -278,7 +279,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                           - { id: "appB-02", host: "localhost:8082" }
                          """.trimIndent())
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     objectStore.entrySet().size shouldBe 4
                 }
 
@@ -318,7 +319,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                           - { id: "app-01", host: "localhost:9090" }
                          """.trimIndent())
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     objectStore.get("app").isPresent shouldBe true
                     objectStore.get("app").get().let {
                         it.config.get("stickySession", StickySessionConfig::class.java)
@@ -341,7 +342,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                           - { id: "app-01", host: "localhost:9090" }
                          """.trimIndent(), debug = true)
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     serviceDb.get("app-monitor").isPresent shouldBe true
                     serviceDb.get("app-monitor").get().let {
                         it.config.get("objects", String::class.java) shouldBe "app"
@@ -365,7 +366,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                           - { id: "app-01", host: "localhost:9090" }
                          """.trimIndent(), debug = true)
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     serviceDb.get("app-monitor").isPresent shouldBe true
                     serviceDb.get("app-monitor").get().let {
                         it.config.get("objects", String::class.java) shouldBe "app"
@@ -374,7 +375,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                     }
                 }
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     oldMonitor.status() shouldBe STOPPED
                 }
             }
@@ -392,7 +393,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                           - { id: "app-01", host: "localhost:9090" }
                          """.trimIndent(), debug = true)
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     serviceDb.get("app-monitor").isPresent shouldBe false
                     oldMonitor.status() shouldBe STOPPED
                 }
@@ -420,7 +421,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                       - { id: "app2", host: "localhost:9091" }
                     """.trimIndent())
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     objectStore.get("app.app2").isPresent shouldBe true
                     objectStore.get("app.app2").get().let {
                         it.config.get("connectionPool", ConnectionPoolSettings::class.java)
@@ -441,7 +442,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                       - { id: "app2", host: "localhost:9091" }
                     """.trimIndent())
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     objectStore.get("app.app2").isPresent shouldBe true
                     objectStore.get("app.app2").get().let {
                         it.config.get("responseTimeoutMillis", Int::class.java)
@@ -461,7 +462,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                       - { id: "app2", host: "abc:9091" }
                     """.trimIndent())
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     objectStore.get("app.app2").isPresent shouldBe true
                     objectStore.get("app.app2").get().let {
                         it.config.get("host", String::class.java) shouldBe "abc:9091"
@@ -478,7 +479,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                       - { id: "app2", host: "abc:8080" }
                     """.trimIndent())
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     objectStore.get("app.app2").isPresent shouldBe true
                     objectStore.get("app.app2").get().let {
                         it.config.get("host", String::class.java) shouldBe "abc:8080"
@@ -522,7 +523,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                       - { id: "appB-01", host: "localhost:9190" }
                     """.trimIndent())
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     objectStore.get("cloud-router").get().let {
                         it.config.get("routes", object : TypeReference<List<PathPrefixRouter.PathPrefixConfig>>() {})
                                 .let {
@@ -615,7 +616,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                     - something's wrong
                     """.trimIndent())
 
-                delay(2.seconds.toMillis())
+                delay(2.seconds.inWholeMilliseconds)
 
                 val objects = objectStore.toMap()
 
@@ -629,7 +630,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                 originsConfig.delete()
                 originsConfig.exists() shouldBe false
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     val objects = objectStore.toMap()
 
                     objects.size shouldBe 3
@@ -651,7 +652,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                         - { id: "appC-02", host: "localhost:9002" }
                     """.trimIndent())
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     val objects = objectStore.toMap()
 
                     objects.size shouldBe 4
@@ -792,8 +793,8 @@ internal data class CreatedService(val config: YamlFileConfigurationServiceTest.
         return this
     }
 
-    internal fun waitForObjects(count: Int): CreatedService {
-        eventually(2.seconds, AssertionError::class.java) {
+    internal suspend fun waitForObjects(count: Int): CreatedService { //todo - check: not sure if "suspend" is correct
+        eventually(2.seconds) {
             this.config.routeDb.entrySet().size shouldBe count
         }
 

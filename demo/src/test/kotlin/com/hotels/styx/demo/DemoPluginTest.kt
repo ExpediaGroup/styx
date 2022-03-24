@@ -17,8 +17,8 @@ package com.hotels.styx.demo
 
 import com.hotels.styx.api.*
 import com.hotels.styx.api.HttpResponseStatus.OK
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.matchers.shouldBe
+import io.kotest.core.spec.style.FeatureSpec
 import io.mockk.mockk
 import reactor.core.publisher.Mono
 import java.nio.charset.StandardCharsets.UTF_8

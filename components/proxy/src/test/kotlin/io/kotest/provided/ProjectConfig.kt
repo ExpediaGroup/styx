@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,11 +13,11 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package io.kotlintest.provided
+package io.kotest.provided
 
 import com.hotels.styx.support.TestResultReporter
-import io.kotlintest.AbstractProjectConfig
-import io.kotlintest.extensions.TestListener
+import io.kotest.core.config.AbstractProjectConfig
+import io.kotest.core.listeners.TestListener
 
 class ProjectConfig: AbstractProjectConfig() {
     override fun listeners(): List<TestListener> = listOf(TestResultReporter)

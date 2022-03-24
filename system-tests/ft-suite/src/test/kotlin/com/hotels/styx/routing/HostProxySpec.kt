@@ -37,22 +37,23 @@ import com.hotels.styx.support.proxyHttpsHostHeader
 import com.hotels.styx.support.removeRoutingObject
 import com.hotels.styx.support.threadCount
 import com.hotels.styx.support.wait
-import io.kotlintest.IsolationMode
-import io.kotlintest.Spec
-import io.kotlintest.TestCase
-import io.kotlintest.TestResult
-import io.kotlintest.TestStatus
-import io.kotlintest.eventually
-import io.kotlintest.matchers.beGreaterThan
-import io.kotlintest.matchers.beLessThan
-import io.kotlintest.matchers.types.shouldBeNull
-import io.kotlintest.matchers.withClue
-import io.kotlintest.seconds
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.core.spec.Spec
+import io.kotest.core.test.TestCase
+import io.kotest.framework.concurrency.eventually
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.assertions.withClue
+import io.kotest.core.spec.IsolationMode
+import io.kotest.matchers.shouldBe
+import io.kotest.core.spec.style.FeatureSpec
+import io.kotest.core.test.TestResult
+import io.kotest.core.test.TestStatus
+import io.kotest.matchers.and
+import io.kotest.matchers.comparables.beGreaterThan
+import io.kotest.matchers.comparables.beLessThan
 import org.slf4j.LoggerFactory
 import java.nio.charset.StandardCharsets.UTF_8
 import kotlin.system.measureTimeMillis
+import kotlin.time.Duration.Companion.seconds
 
 class HostProxySpec : FeatureSpec() {
     val LOGGER = LoggerFactory.getLogger("Styx-Tests")
@@ -132,7 +133,7 @@ class HostProxySpec : FeatureSpec() {
                             .wait()!!
                             .status() shouldBe GATEWAY_TIMEOUT
                 }.let { delay ->
-                    delay shouldBe (beGreaterThan(600) and beLessThan(1000))
+                    delay.toInt() shouldBe (beGreaterThan(600) and beLessThan(1000))
                 }
             }
 
@@ -231,7 +232,7 @@ class HostProxySpec : FeatureSpec() {
                         .wait()!!
                         .status() shouldBe OK
 
-                eventually(1.seconds, AssertionError::class.java) {
+                eventually(1.seconds) {
                     styxServer.meterRegistry().get("proxy.client.connectionpool.availableConnections")
                             .tags("appId", "routing.objects", "originId", "hostProxy")
                             .gauge().value().toInt() shouldBe 1
@@ -249,7 +250,7 @@ class HostProxySpec : FeatureSpec() {
                         .wait()!!
                         .status() shouldBe OK
 
-                eventually(1.seconds, AssertionError::class.java) {
+                eventually(1.seconds) {
                     styxServer.meterRegistry().get("proxy.client.connectionpool.availableConnections")
                             .tags("appId", "routing.objects", "originId", "hostProxy")
                             .gauge().value().toInt() shouldBe 1
@@ -312,7 +313,7 @@ class HostProxySpec : FeatureSpec() {
             scenario("!Unregisters origin/application metrics") {
                 // TODO: Not supported yet. An existing issue within styx.
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     styxServer().metrics().let {
                         it["routing.objects.hostProxy.requests.response.status.200"].shouldBeNull()
                         it["routing.objects.hostProxy.localhost:${mockServer.port()}.requests.response.status.200"].shouldBeNull()
@@ -366,7 +367,7 @@ class HostProxySpec : FeatureSpec() {
             // Continues from previous test
             scenario("!Unregisters prefixed origin/application metrics") {
                 // TODO: Not supported yet. An existing issue within styx.
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     styxServer().metrics().let {
                         it["origins.myApp.localhost:${mockServer.port()}.requests.response.status.200"].shouldBeNull()
                         it["origins.myApp.requests.response.status.200"].shouldBeNull()

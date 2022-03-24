@@ -26,11 +26,11 @@ import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.proxy.HttpErrorStatusCauseLogger
 import com.hotels.styx.support.*
 import com.hotels.styx.support.matchers.LoggingTestSupport
-import io.kotlintest.Spec
-import io.kotlintest.matchers.string.shouldContain
-import io.kotlintest.matchers.string.shouldNotContain
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.core.spec.Spec
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
+import io.kotest.matchers.shouldBe
+import io.kotest.core.spec.style.FeatureSpec
 import kotlin.test.assertFailsWith
 
 class HttpMessageLoggingSpec : FeatureSpec() {

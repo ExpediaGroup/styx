@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,17 +24,17 @@ import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.failingMockObject
 import com.hotels.styx.mockObject
-import io.kotlintest.matchers.collections.shouldContainAll
-import io.kotlintest.matchers.collections.shouldContainExactly
-import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder
-import io.kotlintest.matchers.withClue
-import io.kotlintest.milliseconds
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.matchers.collections.shouldContainAll
+import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.assertions.withClue
+import io.kotest.matchers.shouldBe
+import io.kotest.core.spec.style.FeatureSpec
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.slf4j.LoggerFactory
+import java.time.Duration
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit.MILLISECONDS
@@ -69,7 +69,7 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
                 objectStore = objectStore,
                 application = "aaa",
                 urlPath = "/",
-                period = 100.milliseconds,
+                period = Duration.ofMillis(100),
                 activeThreshold = 2,
                 inactiveThreshold = 2,
                 executor = executor,
@@ -142,7 +142,9 @@ class HealthCheckMonitoringServiceTest : FeatureSpec({
                     record("aaa-02", "x", setOf(lbGroupTag("aaa")), mockk(), handler02)
                 }
 
-        val monitor = HealthCheckMonitoringService(objectStore, "aaa", "/healthCheck.txt", 100.milliseconds, 3, 3, executor, workerExecutor)
+        val monitor =
+            HealthCheckMonitoringService(objectStore, "aaa", "/healthCheck.txt",
+                Duration.ofMillis(100), 3, 3, executor, workerExecutor)
 
         scenario("Probes discovered objects at specified URL") {
             monitor.runChecks("aaa", objectStore)

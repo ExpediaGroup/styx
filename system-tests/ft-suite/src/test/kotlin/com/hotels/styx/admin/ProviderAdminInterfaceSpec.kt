@@ -29,15 +29,15 @@ import com.hotels.styx.servers.MockOriginServer
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.adminHostHeader
 import com.hotels.styx.support.wait
-import io.kotlintest.Spec
-import io.kotlintest.eventually
-import io.kotlintest.matchers.string.shouldContain
-import io.kotlintest.matchers.string.shouldNotContain
-import io.kotlintest.seconds
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.core.spec.Spec
+import io.kotest.framework.concurrency.eventually
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
+import io.kotest.matchers.shouldBe
+import io.kotest.core.spec.style.FeatureSpec
 import java.io.File
 import java.nio.charset.StandardCharsets.UTF_8
+import kotlin.time.Duration.Companion.seconds
 
 class ProviderAdminInterfaceSpec : FeatureSpec() {
     private val tempDir = createTempDir(suffix = "-${this.javaClass.simpleName}")
@@ -185,7 +185,7 @@ class ProviderAdminInterfaceSpec : FeatureSpec() {
 
                 writeOriginsFile(Pair("appA", false), Pair("appB", true))
 
-                eventually(1.seconds, AssertionError::class.java) {
+                eventually(1.seconds) {
                     val body = styxServer.adminRequest("/admin/providers")
                             .bodyAs(UTF_8)
                     body shouldContain "/admin/providers/myMonitor/status"
@@ -213,7 +213,7 @@ class ProviderAdminInterfaceSpec : FeatureSpec() {
 
                 writeOriginsFile(Pair("appA", false))
 
-                eventually(1.seconds, AssertionError::class.java) {
+                eventually(1.seconds) {
                     val body = styxServer.adminRequest("/admin/providers")
                             .bodyAs(UTF_8)
                     body shouldContain "/admin/providers/myMonitor/status"

@@ -23,9 +23,9 @@ import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.proxyHttpHostHeader
 import com.hotels.styx.support.testClient
 import com.hotels.styx.support.wait
-import io.kotlintest.Spec
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.core.spec.Spec
+import io.kotest.matchers.shouldBe
+import io.kotest.core.spec.style.FeatureSpec
 
 class NoAvailableHostsSpec : FeatureSpec() {
     val client: StyxHttpClient = StyxHttpClient.Builder().build()

@@ -22,11 +22,15 @@ import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.server.HttpConnectorConfig
 import com.hotels.styx.servers.MockOriginServer
 import com.hotels.styx.support.*
-import io.kotlintest.*
-import io.kotlintest.specs.FunSpec
+import io.kotest.assertions.timing.eventually
+import io.kotest.core.spec.Spec
+import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.charset.StandardCharsets.UTF_8
+import kotlin.time.Duration.Companion.seconds
 
 class MetricsSpec : FunSpec() {
     val tempDir = createTempDir(suffix = "-${this.javaClass.simpleName}")
@@ -73,7 +77,7 @@ class MetricsSpec : FunSpec() {
             styxServer.restart()
 
             test("Connection pool metrics path") {
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     testClient.send(get("/")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
@@ -83,7 +87,7 @@ class MetricsSpec : FunSpec() {
                             }
                 }
 
-                eventually(1.seconds, AssertionError::class.java) {
+                eventually(1.seconds) {
                     styxServer.meterRegistry().get("proxy.client.connectionpool.availableConnections")
                             .tag("appId", "origins")
                             .tag("originId", "appA.appA-01")

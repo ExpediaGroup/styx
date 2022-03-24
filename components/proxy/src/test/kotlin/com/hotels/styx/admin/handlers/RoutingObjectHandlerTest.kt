@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -28,10 +28,10 @@ import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.handle
 import com.hotels.styx.mockObject
-import io.kotlintest.matchers.string.shouldContain
-import io.kotlintest.matchers.types.shouldBeTypeOf
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.shouldBe
+import io.kotest.core.spec.style.FeatureSpec
+import io.kotest.matchers.types.shouldBeTypeOf
 import io.mockk.mockk
 import io.mockk.verify
 import reactor.core.publisher.toMono

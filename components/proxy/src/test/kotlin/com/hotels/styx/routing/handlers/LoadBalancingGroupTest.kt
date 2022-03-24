@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -28,14 +28,13 @@ import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.handle
 import com.hotels.styx.requestContext
 import com.hotels.styx.routingObjectDef
-import io.kotlintest.IsolationMode
-import io.kotlintest.eventually
-import io.kotlintest.matchers.numerics.shouldBeGreaterThan
-import io.kotlintest.matchers.types.shouldBeNull
-import io.kotlintest.seconds
-import io.kotlintest.shouldBe
-import io.kotlintest.shouldThrow
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.framework.concurrency.eventually
+import io.kotest.matchers.comparables.shouldBeGreaterThan
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.shouldBe
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.core.spec.IsolationMode
+import io.kotest.core.spec.style.FeatureSpec
 import io.mockk.mockk
 import io.mockk.verify
 import org.reactivestreams.Publisher
@@ -45,6 +44,7 @@ import reactor.core.publisher.toFlux
 import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
 import java.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 class LoadBalancingGroupTest : FeatureSpec() {
 
@@ -77,7 +77,7 @@ class LoadBalancingGroupTest : FeatureSpec() {
             scenario("Discovers origins with appropriate tag") {
                 val frequencies = mutableMapOf<String, Int>()
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     for (i in 1..100) {
                         lbGroup.call(get("/").build())
                                 .bodyAs(UTF_8)

@@ -125,7 +125,7 @@
 
     <!--Kotlin -->
     <kotlin.version>1.6.10</kotlin.version>
-    <kotlintest.version>3.4.2</kotlintest.version>
+    <kotest.version>5.1.0</kotest.version>
     <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
     <kotlinx.html.version>0.6.12</kotlinx.html.version>
 
@@ -141,7 +141,7 @@
     <!-- Testing Versions -->
     <hamcrest.version>2.2</hamcrest.version>
     <mockito.version>3.1.0</mockito.version>
-    <junit.version>5.5.2</junit.version>
+    <junit.version>5.8.2</junit.version>
     <scalatest.version>3.0.5</scalatest.version>
     <scalacheck.version>1.14.0</scalacheck.version>
     <scala.java8.compat.version>0.8.0</scala.java8.compat.version>
@@ -164,11 +164,11 @@
     <maven-resources-plugin.version>2.6</maven-resources-plugin.version>
     <maven-site-plugin.version>3.3</maven-site-plugin.version>
     <maven-source-plugin.version>2.2.1</maven-source-plugin.version>
-    <maven-surefire-plugin.version>3.0.0-M3</maven-surefire-plugin.version>
+    <maven-surefire-plugin.version>3.0.0-M5</maven-surefire-plugin.version>
 
     <!-- non apache plugin versions and configurations, please sort alphabetically -->
     <build-helper-maven-plugin.version>3.0.0</build-helper-maven-plugin.version>
-    <jacoco-maven-plugin.version>0.8.5</jacoco-maven-plugin.version>
+    <jacoco-maven-plugin.version>0.8.7</jacoco-maven-plugin.version>
     <nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
 
     <!-- code quality -->
@@ -544,6 +544,13 @@
         <scope>test</scope>
       </dependency>
 
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-api</artifactId>
+        <version>${junit.version}</version>
+        <scope>test</scope>
+      </dependency>
+
       <!-- Scala -->
       <dependency>
         <groupId>org.scala-lang</groupId>
@@ -613,9 +620,9 @@
       </dependency>
 
       <dependency>
-        <groupId>io.kotlintest</groupId>
-        <artifactId>kotlintest-runner-junit5</artifactId>
-        <version>${kotlintest.version}</version>
+        <groupId>io.kotest</groupId>
+        <artifactId>kotest-runner-junit5-jvm</artifactId>
+        <version>${kotest.version}</version>
         <scope>test</scope>
       </dependency>
 
@@ -660,7 +667,7 @@
             </execution>
           </executions>
           <configuration>
-            <jvmTarget>1.8</jvmTarget>
+            <jvmTarget>${java.target}</jvmTarget>
             <sourceDirs>
               <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
               <sourceDir>${project.basedir}/src/test/java</sourceDir>

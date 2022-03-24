@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.handle
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.matchers.shouldBe
+import io.kotest.core.spec.style.FeatureSpec
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify

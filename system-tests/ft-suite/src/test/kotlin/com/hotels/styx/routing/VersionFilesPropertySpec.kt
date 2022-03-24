@@ -22,9 +22,9 @@ import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.adminHostHeader
-import io.kotlintest.Spec
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.StringSpec
+import io.kotest.core.spec.Spec
+import io.kotest.matchers.shouldBe
+import io.kotest.core.spec.style.StringSpec
 import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
 

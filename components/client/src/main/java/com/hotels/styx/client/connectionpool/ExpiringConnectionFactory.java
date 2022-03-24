@@ -15,14 +15,10 @@
  */
 package com.hotels.styx.client.connectionpool;
 
-import com.google.common.base.Ticker;
-import com.hotels.styx.api.Clocks;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
 import reactor.core.publisher.Mono;
-
-import java.util.function.Supplier;
 
 import static com.hotels.styx.api.Clocks.systemClock;
 import static java.util.Objects.requireNonNull;

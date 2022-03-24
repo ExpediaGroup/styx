@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -102,7 +102,7 @@ internal class YamlFileConfigurationService(
             },
             "/" to OriginsAdminHandler(namespace, name, routeDb, serviceDb))
 
-    fun reloadAction(content: String): Unit {
+    fun reloadAction(content: String) {
         LOGGER.info("New origins configuration: \n$content")
 
         kotlin.runCatching {

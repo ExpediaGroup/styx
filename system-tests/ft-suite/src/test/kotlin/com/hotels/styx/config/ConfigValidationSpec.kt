@@ -19,9 +19,9 @@ import com.hotels.styx.StyxConfig
 import com.hotels.styx.StyxServer
 import com.hotels.styx.config.schema.SchemaValidationException
 import com.hotels.styx.startup.StyxServerComponents
-import io.kotlintest.shouldBe
-import io.kotlintest.shouldThrow
-import io.kotlintest.specs.StringSpec
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.shouldBe
+import io.kotest.core.spec.style.StringSpec
 
 class ConfigValidationSpec : StringSpec({
         "Config is validated on startup" {

@@ -21,9 +21,9 @@ import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.proxyHttpHostHeader
 import com.hotels.styx.support.wait
-import io.kotlintest.Spec
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.StringSpec
+import io.kotest.core.spec.Spec
+import io.kotest.matchers.shouldBe
+import io.kotest.core.spec.style.StringSpec
 import io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Strict
 
 class CookieSpec : StringSpec() {

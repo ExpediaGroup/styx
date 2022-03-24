@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,17 +15,17 @@
  */
 package com.hotels.styx.services
 
-import io.kotlintest.Spec
-import io.kotlintest.TestCase
-import io.kotlintest.eventually
-import io.kotlintest.seconds
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.StringSpec
+import io.kotest.core.spec.Spec
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.core.test.TestCase
+import io.kotest.framework.concurrency.eventually
+import io.kotest.matchers.shouldBe
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.time.Duration.Companion.seconds
 
 class FileMonitoringServiceTest : StringSpec() {
     val LOGGER = LoggerFactory.getLogger(FileMonitoringServiceTest::class.java)
@@ -55,7 +55,7 @@ class FileMonitoringServiceTest : StringSpec() {
 
             try {
                 service.start()
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     result.get() shouldBe "Hello, world!"
                 }
             } finally {
@@ -85,13 +85,13 @@ class FileMonitoringServiceTest : StringSpec() {
 
             try {
                 service.start()
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     result.get() shouldBe "Hello, world!"
                 }
 
                 monitoredFile.writeText("New Content Populated!", UTF_8)
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     result.get() shouldBe "New Content Populated!"
                 }
             } finally {
@@ -111,12 +111,12 @@ class FileMonitoringServiceTest : StringSpec() {
 
             try {
                 service.start()
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     result.get() shouldBe "Hello, world!"
                 }
 
                 monitoredFile.writeText("Hello, world!", UTF_8)
-                Thread.sleep(2.seconds.toMillis())
+                Thread.sleep(2.seconds.inWholeMilliseconds)
 
                 // TODO: Fails due to underlying FileChangeMonitor bug. It emits a change even if md5 sum stays the same.
                 result.get() shouldBe "Hello, world!"

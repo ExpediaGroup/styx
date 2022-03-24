@@ -21,9 +21,9 @@ import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.proxyHttpHostHeader
 import com.hotels.styx.support.wait
-import io.kotlintest.Spec
-import io.kotlintest.matchers.collections.shouldContainInOrder
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.core.spec.Spec
+import io.kotest.matchers.collections.shouldContainInOrder
+import io.kotest.core.spec.style.FeatureSpec
 import org.slf4j.LoggerFactory
 import java.lang.ClassLoader.getSystemClassLoader
 import java.nio.file.Files

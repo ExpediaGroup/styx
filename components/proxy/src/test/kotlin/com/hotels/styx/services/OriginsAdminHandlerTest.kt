@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -43,10 +43,10 @@ import com.hotels.styx.sourceTag
 import com.hotels.styx.stateTag
 import com.hotels.styx.targetTag
 import com.hotels.styx.wait
-import io.kotlintest.matchers.collections.shouldContain
-import io.kotlintest.matchers.string.shouldStartWith
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.shouldBe
+import io.kotest.core.spec.style.FeatureSpec
+import io.kotest.matchers.string.shouldStartWith
 import io.mockk.every
 import io.mockk.mockk
 import java.nio.charset.StandardCharsets.UTF_8
@@ -211,14 +211,14 @@ class OriginsAdminHandlerTest : FeatureSpec({
         scenario("Returns BAD_REQUEST when the target state is not present") {
             expectFailure(HttpRequest.put("http://host:7777/base/path/app/active/state")
                     .build(),
-                    BAD_REQUEST) { it shouldStartWith  "Error handling state change request: " }
+                    BAD_REQUEST) { it shouldStartWith "Error handling state change request: " }
         }
 
         scenario("Returns BAD_REQUEST when the target state is not valid JSON text") {
             expectFailure(HttpRequest.put("http://host:7777/base/path/app/active/state")
                     .body("Not valid JSON", UTF_8)
                     .build(),
-                    BAD_REQUEST) { it shouldStartWith  "Error handling state change request: " }
+                    BAD_REQUEST) { it shouldStartWith "Error handling state change request: " }
         }
 
         scenario("Returns NOT_FOUND when there is no object with the requested name") {

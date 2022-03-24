@@ -22,11 +22,11 @@ import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.adminHostHeader
 import com.hotels.styx.support.proxyHttpHostHeader
-import io.kotlintest.Spec
-import io.kotlintest.TestCase
-import io.kotlintest.matchers.string.shouldContain
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.StringSpec
+import io.kotest.core.spec.Spec
+import io.kotest.core.test.TestCase
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.shouldBe
+import io.kotest.core.spec.style.StringSpec
 import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
 

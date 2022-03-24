@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,19 +16,19 @@
 package com.hotels.styx.routing.db
 
 import com.hotels.styx.api.configuration.ObjectStore
-import io.kotlintest.eventually
-import io.kotlintest.matchers.boolean.shouldBeTrue
-import io.kotlintest.matchers.collections.shouldBeEmpty
-import io.kotlintest.matchers.collections.shouldNotBeEmpty
-import io.kotlintest.matchers.numerics.shouldBeGreaterThanOrEqual
-import io.kotlintest.milliseconds
-import io.kotlintest.seconds
-import io.kotlintest.shouldBe
-import io.kotlintest.shouldNotBe
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.framework.concurrency.eventually
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.shouldBe
+import io.kotest.core.spec.style.FeatureSpec
+import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
+import io.kotest.matchers.longs.shouldBeGreaterThanOrEqual
+import io.kotest.matchers.shouldNotBe
 import reactor.core.publisher.Flux
 import reactor.core.publisher.toFlux
 import reactor.test.StepVerifier
+import java.time.Duration
 import java.util.Optional
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
@@ -36,6 +36,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.Executors.newFixedThreadPool
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.SECONDS
+import kotlin.time.Duration.Companion.seconds
 
 // We can remove AssertionError::class.java argument from the
 // calls to `eventually`, after this bug fix is released:
@@ -90,7 +91,7 @@ class StyxObjectStoreTest : FeatureSpec() {
                         }
                         .thenCancel()
                         .log()
-                        .verify(4.seconds)
+                        .verify(Duration.ofSeconds(4))
 
                 db.watchers() shouldBe 0
             }
@@ -162,7 +163,7 @@ class StyxObjectStoreTest : FeatureSpec() {
                             it.get("x") shouldBe Optional.of("x2")
                         }
                         .thenCancel()
-                        .verify(1.seconds)
+                        .verify(Duration.ofSeconds(1))
 
                 db.get("x") shouldBe Optional.of("x2")
             }
@@ -201,7 +202,7 @@ class StyxObjectStoreTest : FeatureSpec() {
                 StepVerifier.create(db.watch())
                         .expectNextCount(1)
                         .then { db.compute("key") { currentEntry -> "old value" } }
-                        .expectNoEvent(10.milliseconds)
+                        .expectNoEvent(Duration.ofMillis(10))
                         .thenCancel()
                         .verify()
             }
@@ -306,7 +307,7 @@ class StyxObjectStoreTest : FeatureSpec() {
                 StepVerifier.create(db.watch())
                         .expectNextCount(1)
                         .then { db.remove("x") }
-                        .expectNoEvent(500.milliseconds)
+                        .expectNoEvent(Duration.ofMillis(500))
                         .thenCancel()
                         .verify()
 
@@ -315,7 +316,7 @@ class StyxObjectStoreTest : FeatureSpec() {
                 StepVerifier.create(db.watch())
                         .expectNextCount(1)
                         .then { db.remove("x") }
-                        .expectNoEvent(500.milliseconds)
+                        .expectNoEvent(Duration.ofMillis(500))
                         .thenCancel()
                         .verify()
             }
@@ -328,7 +329,7 @@ class StyxObjectStoreTest : FeatureSpec() {
                 db.insert("y", "y")
 
                 Flux.from(db.watch()).subscribe { watchEvents.add(it) }
-                eventually(1.seconds, java.lang.AssertionError::class.java) {
+                eventually(1.seconds) {
                     watchEvents.size shouldBeGreaterThanOrEqual 1
                     watchEvents.last().get("x") shouldBe Optional.of("x")
                 }
@@ -336,7 +337,7 @@ class StyxObjectStoreTest : FeatureSpec() {
                 db.remove("x")
                 db.remove("y")
 
-                eventually(1.seconds, java.lang.AssertionError::class.java) {
+                eventually(1.seconds) {
                     watchEvents.last()["x"] shouldBe Optional.empty()
                     watchEvents.last()["y"] shouldBe Optional.empty()
                 }
@@ -427,7 +428,7 @@ class StyxObjectStoreTest : FeatureSpec() {
 
                 val watcher = db.watch().toFlux().subscribe { watchEvents.add(it) }
 
-                eventually(1.seconds, AssertionError::class.java) {
+                eventually(1.seconds) {
                     watchEvents.isNotEmpty().shouldBeTrue()
                     watchEvents[0].get("x") shouldBe Optional.empty()
                     watchEvents[0].get("y") shouldBe Optional.empty()
@@ -436,7 +437,7 @@ class StyxObjectStoreTest : FeatureSpec() {
                 db.insert("x", "x")
                 db.insert("y", "y")
 
-                eventually(1.seconds, AssertionError::class.java) {
+                eventually(1.seconds) {
                     watchEvents.last()["x"].isPresent.shouldBeTrue()
                     watchEvents.last()["y"].isPresent.shouldBeTrue()
                 }
@@ -455,7 +456,7 @@ class StyxObjectStoreTest : FeatureSpec() {
                     val watcher2 = Flux.from(db.watch()).subscribe { watchEvents2.add(it) }
 
                     // Wait for the initial watch event ...
-                    eventually(1.seconds, java.lang.AssertionError::class.java) {
+                    eventually(1.seconds) {
                         watchEvents1.size shouldBe 1
                         watchEvents1[0].get("x") shouldBe Optional.empty()
 
@@ -470,7 +471,7 @@ class StyxObjectStoreTest : FeatureSpec() {
                     //
                     // The ordering between initial watch event in relation to objectStore.inserts are
                     // non-deterministic.
-                    eventually(1.seconds, AssertionError::class.java) {
+                    eventually(1.seconds) {
                         watchEvents1.last()["x"].isPresent.shouldBeTrue()
                         watchEvents1.last()["y"].isPresent.shouldBeTrue()
 
@@ -496,7 +497,7 @@ class StyxObjectStoreTest : FeatureSpec() {
                     watchEvents.add(it)
                 }
 
-                eventually(1.seconds, AssertionError::class.java) {
+                eventually(1.seconds) {
                     watchEvents.isNotEmpty().shouldBeTrue()
                     watchEvents[0].get("x") shouldBe Optional.of("x")
                 }
@@ -513,7 +514,7 @@ class StyxObjectStoreTest : FeatureSpec() {
                     watchEvents.add(it)
                 }
 
-                eventually(1.seconds, AssertionError::class.java) {
+                eventually(1.seconds) {
                     watchEvents.shouldNotBeEmpty()
                     watchEvents.last()
                             .entrySet()
@@ -526,7 +527,7 @@ class StyxObjectStoreTest : FeatureSpec() {
                 }
 
                 db.remove("y")
-                eventually(1.seconds, AssertionError::class.java) {
+                eventually(1.seconds) {
                     watchEvents.shouldNotBeEmpty()
                     watchEvents.last()
                             .entrySet()
@@ -538,7 +539,7 @@ class StyxObjectStoreTest : FeatureSpec() {
                 }
 
                 db.insert("z", "payload-z")
-                eventually(1.seconds, AssertionError::class.java) {
+                eventually(1.seconds) {
                     watchEvents.shouldNotBeEmpty()
                     watchEvents.last()
                             .entrySet()
