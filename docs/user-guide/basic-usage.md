@@ -2,8 +2,7 @@
 
 ## System Requirements
 
-Running Styx requires Java 1.8. It can be run with 1.8.0_45 or later versions. Earlier maintenance
-releases or Java 1.9 may work, but are not guaranteed to.
+Running Styx requires Java 11.
 
 ## Downloading Styx from release
 
@@ -12,7 +11,7 @@ Alternatively, you can build styx from source code.
 
 ## Building Styx from source code
 
- In order to build styx from source code, Java 8 (1.8.0_45 or later) is required.
+ In order to build styx from source code, Java 11 is required.
  The build system requires Apache Maven. The Styx CI pipeline uses Maven version 3.2.1
  for the automated continuous integration builds. On Mac OSX, a version installed
  by HomeBrew is satisfactory.

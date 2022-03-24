@@ -8,8 +8,7 @@ In this guide we will walk through how to build applications on top of Styx.
 
 ## 1.2 System Requirements
 
-Building Styx requires Java 1.8. It can be built with 1.8.0_45. Earlier maintenance
-releases may, but are not guaranteed to work.
+Building Styx requires Java 11.
 
 The build system requires Apache Maven. The Styx team uses Maven version 3.2.1
 for automated continuous integration builds. On Mac OSX, a version installed
@@ -30,9 +29,13 @@ To build for Linux, you need to override a *PLATFORM* argument, like so:
 
     $ make release-no-tests PLATFORM=linux
 
+If `styx-test/` already exists, remove it first to avoid conflicts on dependencies:
+
+    $ rm -rf styx-test
+
 Let's unzip this file:
 
-    $ unzip distribution/target/styx.zip -d styx-test
+    $ unzip distribution/target/styx-<VERSION>-<OS>-<PLATFORM>.zip -d styx-test
 
 
 ## 1.4 Running Styx
@@ -43,19 +46,19 @@ Now, start the styx server:
     Running Styx startup...
     ...
     /plenty of output/
-    ...    
+    ...
 
 Note `APP_originsFile` specifies a Styx origins file path. It substitutes a placeholder
 in the default server configuration file `styx-test/styx/conf/default.yml`. Normally
-you would just specify the path in a server configuration itself, either as an absolute 
-path, or a path relative to the Styx server working directory. But for now we'll just pass 
-it in to start the server from your project working directory. 
+you would just specify the path in a server configuration itself, either as an absolute
+path, or a path relative to the Styx server working directory. But for now we'll just pass
+it in to start the server from your project working directory.
 
 Finally you will see:
 
     INFO  2017-10-13 14:56:24 [c.h.s.s.n.NettyServer] [Admin-Boss-0-Thread] - server connector class com.hotels.styx.server.netty.WebServerConnectorFactory$WebServerConnector bound successfully on port 9000
     INFO  2017-10-13 14:56:24 [c.h.s.StyxServer] [main] - Started styx server in 68ms
-    
+
 
 Once Styx server has started, the admin dashboard is available at http://localhost:9000/.
 You are presented with the Styx admin root interface which shows various
