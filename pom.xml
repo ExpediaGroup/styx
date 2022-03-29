@@ -107,7 +107,7 @@
 
     <!-- General Versions -->
     <guava.version>31.0.1-jre</guava.version>
-    <jackson.version>2.13.1</jackson.version>
+    <jackson.version>2.13.2.1</jackson.version>
     <jackson.dataformat.version>${jackson.version}</jackson.dataformat.version>
     <jackson.module.scala.version>${jackson.version}</jackson.module.scala.version>
     <jackson-module-kotlin.version>${jackson.version}</jackson-module-kotlin.version>
