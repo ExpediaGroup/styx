@@ -99,20 +99,6 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpRequest> {
     private static final Logger LOGGER = getLogger(HttpPipelineHandler.class);
 
-    private static final ExceptionStatusMapper EXCEPTION_STATUSES = buildExceptionStatusMapper(it -> {
-        it.add(REQUEST_TIMEOUT, RequestTimeoutException.class)
-                .add(BAD_GATEWAY,
-                        OriginUnreachableException.class,
-                        NoAvailableHostsException.class,
-                        NoServiceConfiguredException.class,
-                        BadHttpResponseException.class,
-                        ContentOverflowException.class
-                )
-                .add(SERVICE_UNAVAILABLE, ResourceExhaustedException.class)
-                .add(GATEWAY_TIMEOUT, ResponseTimeoutException.class)
-                .add(INTERNAL_SERVER_ERROR, StyxClientException.class);
-    });
-
     private final HttpHandler httpPipeline;
     private final HttpErrorStatusListener httpErrorStatusListener;
     private final HttpResponseWriterFactory responseWriterFactory;
@@ -515,7 +501,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
     }
 
     private LiveHttpResponse exceptionToResponse(Throwable cause, LiveHttpRequest request, CharSequence originsHeaderName) {
-        HttpResponseStatus status = status(cause instanceof PluginException
+        HttpResponseStatus status = StyxExceptionToHttpStatus.status(cause instanceof PluginException
                 ? cause.getCause()
                 : cause);
 
@@ -549,27 +535,6 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         } else {
             return null;
         }
-    }
-
-    private static HttpResponseStatus status(Throwable exception) {
-        return EXCEPTION_STATUSES.statusFor(exception)
-                .orElseGet(() -> {
-                    if (exception instanceof DecoderException) {
-                        Throwable cause = exception.getCause();
-
-                        if (cause instanceof BadRequestException) {
-                            if (cause.getCause() instanceof TooLongFrameException) {
-                                return REQUEST_ENTITY_TOO_LARGE;
-                            }
-
-                            return BAD_REQUEST;
-                        }
-                    } else if (exception instanceof TransportLostException) {
-                        return BAD_GATEWAY;
-                    }
-
-                    return INTERNAL_SERVER_ERROR;
-                });
     }
 
     private String warningMessage(String msg) {
