@@ -46,27 +46,23 @@ object StyxExceptionToHttpStatus {
                 NoAvailableHostsException::class.java,
                 NoServiceConfiguredException::class.java,
                 BadHttpResponseException::class.java,
-                ContentOverflowException::class.java
+                ContentOverflowException::class.java,
+                TransportLostException::class.java
             )
             .add(SERVICE_UNAVAILABLE, ResourceExhaustedException::class.java)
             .add(GATEWAY_TIMEOUT, ResponseTimeoutException::class.java)
             .add(INTERNAL_SERVER_ERROR, StyxClientException::class.java)
+            .add(REQUEST_ENTITY_TOO_LARGE, TooLongFrameException::class.java)
+            .add(BAD_REQUEST, BadRequestException::class.java)
     }
 
-    fun status(exception: Throwable): HttpResponseStatus = EXCEPTION_STATUSES.statusFor(exception).orElse(null) ?: unmappedStatus(exception)
+    fun status(exception: Throwable): HttpResponseStatus = EXCEPTION_STATUSES.statusFor(exception.mostRelevantCause())
+        .orElse(INTERNAL_SERVER_ERROR)
 
-    private fun unmappedStatus(exception: Throwable) =
-        when (exception) {
-            is DecoderException -> {
-                when (val cause = exception.cause) {
-                    is BadRequestException -> when (cause.cause) {
-                        is TooLongFrameException -> REQUEST_ENTITY_TOO_LARGE
-                        else -> BAD_REQUEST
-                    }
-                    else -> INTERNAL_SERVER_ERROR
-                }
+    private fun Throwable.mostRelevantCause() =
+        (this as? DecoderException)?.let {
+            (cause as? BadRequestException)?.let {
+                (it.cause as? TooLongFrameException) ?: it
             }
-            is TransportLostException -> BAD_GATEWAY
-            else -> INTERNAL_SERVER_ERROR
-        }
+        } ?: this
 }

@@ -865,12 +865,6 @@
               </configuration>
             </execution>
           </executions>
-<!--          <configuration>-->
-<!--            <excludes>-->
-<!--&lt;!&ndash;                <exclude>**/*.kt</exclude>&ndash;&gt;-->
-<!--              <exclude>**/*Kt.*</exclude>-->
-<!--            </excludes>-->
-<!--          </configuration>-->
         </plugin>
 
         <plugin>
