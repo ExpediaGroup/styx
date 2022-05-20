@@ -42,7 +42,7 @@ public class LoggingConfigurationHandler implements WebServiceHandler {
     private static final Logger LOG = getLogger(LoggingConfigurationHandler.class);
 
     private final Resource logConfigLocation;
-    private volatile long lastLoad = 0L;
+    private volatile long lastLoad;
     private volatile Content content;
 
     public LoggingConfigurationHandler(Resource logConfigLocation) {

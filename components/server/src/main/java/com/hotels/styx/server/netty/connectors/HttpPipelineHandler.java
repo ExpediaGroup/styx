@@ -18,7 +18,6 @@ package com.hotels.styx.server.netty.connectors;
 
 import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.ByteStream;
-import com.hotels.styx.api.ContentOverflowException;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpResponseStatus;
@@ -26,33 +25,21 @@ import com.hotels.styx.api.Id;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.MicrometerRegistry;
-import com.hotels.styx.api.exceptions.NoAvailableHostsException;
-import com.hotels.styx.api.exceptions.OriginUnreachableException;
-import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.exceptions.StyxException;
-import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.api.plugins.spi.PluginException;
-import com.hotels.styx.client.BadHttpResponseException;
-import com.hotels.styx.client.StyxClientException;
-import com.hotels.styx.client.connectionpool.ResourceExhaustedException;
 import com.hotels.styx.client.netty.ConsumerDisconnectedException;
 import com.hotels.styx.common.FsmEventProcessor;
 import com.hotels.styx.common.QueueDrainingEventProcessor;
 import com.hotels.styx.common.StateMachine;
 import com.hotels.styx.metrics.CentralisedMetrics;
-import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.HttpErrorStatusListener;
 import com.hotels.styx.server.HttpInterceptorContext;
-import com.hotels.styx.server.NoServiceConfiguredException;
 import com.hotels.styx.server.RequestProgressListener;
-import com.hotels.styx.server.RequestTimeoutException;
 import com.hotels.styx.server.track.RequestTracker;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.embedded.EmbeddedChannel;
-import io.netty.handler.codec.DecoderException;
-import io.netty.handler.codec.TooLongFrameException;
 import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
 import reactor.core.publisher.BaseSubscriber;
@@ -66,18 +53,11 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
-import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
-import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
-import static com.hotels.styx.api.HttpResponseStatus.GATEWAY_TIMEOUT;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
-import static com.hotels.styx.api.HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE;
-import static com.hotels.styx.api.HttpResponseStatus.REQUEST_TIMEOUT;
-import static com.hotels.styx.api.HttpResponseStatus.SERVICE_UNAVAILABLE;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.server.HttpErrorStatusListener.IGNORE_ERROR_STATUS;
 import static com.hotels.styx.server.RequestProgressListener.IGNORE_REQUEST_PROGRESS;
-import static com.hotels.styx.server.netty.connectors.ExceptionStatusMapperKt.buildExceptionStatusMapper;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE_CLIENT_CLOSED;
@@ -501,7 +481,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
     }
 
     private LiveHttpResponse exceptionToResponse(Throwable cause, LiveHttpRequest request, CharSequence originsHeaderName) {
-        HttpResponseStatus status = StyxExceptionToHttpStatus.status(cause instanceof PluginException
+        HttpResponseStatus status = StyxExceptionToHttpStatus.INSTANCE.status(cause instanceof PluginException
                 ? cause.getCause()
                 : cause);
 
