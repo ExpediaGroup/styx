@@ -130,7 +130,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
     activeOrigins,
     new RoundRobinStrategy(activeOrigins, activeOrigins.snapshot()))
 
-  test("retries the next available origin on failure") {
+  ignore("retries the next available origin on failure") {
     val backendService = new BackendService.Builder()
       .origins(unhealthyOriginOne, unhealthyOriginTwo, unhealthyOriginThree, healthyOriginTwo)
       .connectionPoolConfig(
@@ -161,7 +161,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
       .build
   }
 
-  test("It should add sticky session id after a retry succeeded") {
+  ignore("It should add sticky session id after a retry succeeded") {
     val StickySessionEnabled = new StickySessionConfig.Builder()
       .enabled(true)
       .build()
