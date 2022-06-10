@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,13 +13,22 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.server;
+package com.hotels.styx.server.netty.codec
 
 /**
- * Exception thrown when attempting to add a path that already exists to a {@link PathTrie}.
+ * Encode the configured unwise chars.
  */
-public class DuplicatePathException extends RuntimeException {
-    public DuplicatePathException(String message) {
-        super(message);
+fun interface UnwiseCharsEncoder {
+    /**
+     * Encodes the unwise chars.
+     *
+     * @param value the value to be encoded
+     * @return the encoded value
+     */
+    fun encode(value: String): String
+
+    companion object {
+        @JvmField
+        val IGNORE: UnwiseCharsEncoder = UnwiseCharsEncoder { it }
     }
 }

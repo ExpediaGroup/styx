@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,20 +13,17 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.server.netty;
+package com.hotels.styx.server
 
-import com.hotels.styx.server.ConnectorConfig;
+import com.google.common.util.concurrent.Service
+import java.net.InetSocketAddress
 
 /**
- * Connector factory.
+ * HttpServer.
  */
-public interface ServerConnectorFactory {
+interface HttpServer : Service {
     /**
-     * Create an HTTP server connector.
-     *
-     * @param config configuration
-     * @return server connector
+     * Return http endpoint.
      */
-    ServerConnector create(ConnectorConfig config);
-
+    fun inetAddress(): InetSocketAddress?
 }

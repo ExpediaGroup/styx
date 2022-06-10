@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,35 +13,18 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.server;
+package com.hotels.styx.server
 
 /**
  * A listener interface for progression of HTTP requests.
  */
-public interface RequestProgressListener {
-    RequestProgressListener IGNORE_REQUEST_PROGRESS = new RequestProgressListener() {
-        @Override
-        public void onRequest(Object requestId) {
-
-        }
-
-        @Override
-        public void onComplete(Object requestId, int responseStatus) {
-
-        }
-
-        @Override
-        public void onTerminate(Object requestId) {
-
-        }
-    };
-
+interface RequestProgressListener {
     /**
      * To be called when a request begins.
      *
      * @param requestId a unique ID to identify the request
      */
-    void onRequest(Object requestId);
+    fun onRequest(requestId: Any)
 
     /**
      * To be called when a request completes successfully.
@@ -50,7 +33,7 @@ public interface RequestProgressListener {
      * @param requestId a unique ID to identify the request
      * @param responseStatus the status code of the response
      */
-    void onComplete(Object requestId, int responseStatus);
+    fun onComplete(requestId: Any, responseStatus: Int)
 
     /**
      * To be called when a request is terminated after being unable to complete successfully.
@@ -58,5 +41,14 @@ public interface RequestProgressListener {
      *
      * @param requestId a unique ID to identify the request
      */
-    void onTerminate(Object requestId);
+    fun onTerminate(requestId: Any)
+
+    companion object {
+        @JvmField
+        val IGNORE_REQUEST_PROGRESS: RequestProgressListener = object : RequestProgressListener {
+            override fun onRequest(requestId: Any) {}
+            override fun onComplete(requestId: Any, responseStatus: Int) {}
+            override fun onTerminate(requestId: Any) {}
+        }
+    }
 }

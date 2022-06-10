@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,17 +13,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.server;
+package com.hotels.styx.server
 
 /**
- * Exception to be thrown when Styx cannot handle a request because it is syntactically invalid.
+ * An exception thrown when there are no backend services configured for a particular path.
  */
-public class BadRequestException extends RuntimeException {
-    public BadRequestException(String message) {
-        super(message);
-    }
-
-    public BadRequestException(String message, Throwable cause) {
-        super(message, cause);
-    }
-}
+class NoServiceConfiguredException(path: String) : RuntimeException("No backend services configured for path: '$path'")

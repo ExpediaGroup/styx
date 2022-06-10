@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,20 +13,15 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.server.netty.codec;
+package com.hotels.styx.server.netty.connectors
 
-import com.hotels.styx.server.BadRequestException;
+import com.hotels.styx.api.LiveHttpResponse
+import io.netty.handler.codec.http.HttpResponse
 
 /**
- * An exception to be thrown when a cookie header is malformed.
+ * Converts object of a type [LiveHttpResponse]
+ * to [io.netty.handler.codec.http.HttpResponse].
  */
-public class MalformedCookieHeaderException extends BadRequestException {
-    /**
-     * Constructor.
-     *
-     * @param cause cause
-     */
-    public MalformedCookieHeaderException(String message, Throwable cause) {
-        super(message, cause);
-    }
+fun interface ResponseTranslator {
+    fun toNettyResponse(httpResponse: LiveHttpResponse): HttpResponse
 }

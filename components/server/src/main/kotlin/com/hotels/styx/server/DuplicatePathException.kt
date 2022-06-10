@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,17 +13,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.server;
-
-import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.LiveHttpRequest;
-
-import java.util.Optional;
+package com.hotels.styx.server
 
 /**
- * Http Router.
+ * Exception thrown when attempting to add a path that already exists to a [PathTrie].
  */
-public interface HttpRouter {
-    Optional<HttpHandler> route(LiveHttpRequest request, HttpInterceptor.Context context);
-}
+class DuplicatePathException(message: String) : RuntimeException(message)

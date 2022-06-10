@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,22 +13,16 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.server.netty;
+package com.hotels.styx.server.netty
 
-
-import com.hotels.styx.api.HttpHandler;
-import io.netty.channel.Channel;
-
+import com.hotels.styx.api.HttpHandler
+import io.netty.channel.Channel
 
 /**
  * ServerConnector.
  */
-public interface ServerConnector {
-
-    String type();
-
-    int port();
-
-    void configure(Channel channel, HttpHandler httpPipeline);
-
+interface ServerConnector {
+    fun type(): String
+    fun port(): Int
+    fun configure(channel: Channel, httpPipeline: HttpHandler)
 }

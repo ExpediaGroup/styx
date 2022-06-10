@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,54 +13,30 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.server;
+package com.hotels.styx.server
 
-import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.HttpResponseStatus;
-
-import java.net.InetSocketAddress;
-
-import static java.util.Arrays.asList;
+import com.hotels.styx.api.HttpResponseStatus
+import com.hotels.styx.api.LiveHttpRequest
+import com.hotels.styx.api.LiveHttpResponse
+import java.net.InetSocketAddress
 
 /**
  * Listens to errors during requests that result in a 4xx or 5xx status code, so that metrics can be recorded.
  */
-public interface HttpErrorStatusListener {
-    HttpErrorStatusListener IGNORE_ERROR_STATUS = new HttpErrorStatusListener() {
-        @Override
-        public void proxyErrorOccurred(Throwable cause) { }
-
-        @Override
-        public void proxyWriteFailure(LiveHttpRequest request, LiveHttpResponse response, Throwable cause) { }
-
-        @Override
-        public void proxyingFailure(LiveHttpRequest request, LiveHttpResponse response, Throwable cause) { }
-
-        @Override
-        public void proxyErrorOccurred(HttpResponseStatus status, Throwable cause) { }
-
-        @Override
-        public void proxyErrorOccurred(LiveHttpRequest request, InetSocketAddress clientAddress, HttpResponseStatus status, Throwable cause) { }
-    };
-
-    static HttpErrorStatusListener compose(HttpErrorStatusListener... listeners) {
-        return new CompositeHttpErrorStatusListener(asList(listeners));
-    }
-
+interface HttpErrorStatusListener {
     /**
      * To be called when an exception was thrown in styx while proxying.
      *
      * @param cause the throwable class associated with this error
      */
-    void proxyErrorOccurred(Throwable cause);
+    fun proxyErrorOccurred(cause: Throwable)
 
     /**
      * To be called when an exception was thrown in styx while writing response.
      *
      * @param cause the throwable class associated with this error
      */
-    void proxyWriteFailure(LiveHttpRequest request, LiveHttpResponse response, Throwable cause);
+    fun proxyWriteFailure(request: LiveHttpRequest, response: LiveHttpResponse, cause: Throwable)
 
     /**
      * To be called when an exception was thrown in styx while proxying.
@@ -68,7 +44,7 @@ public interface HttpErrorStatusListener {
      *
      * @param cause the throwable class associated with this error
      */
-    void proxyingFailure(LiveHttpRequest request, LiveHttpResponse response, Throwable cause);
+    fun proxyingFailure(request: LiveHttpRequest, response: LiveHttpResponse, cause: Throwable)
 
     /**
      * To be called when an exception was thrown in styx while proxying.
@@ -77,7 +53,7 @@ public interface HttpErrorStatusListener {
      * @param status HTTP response status
      * @param cause  the throwable class associated with this error
      */
-    void proxyErrorOccurred(HttpResponseStatus status, Throwable cause);
+    fun proxyErrorOccurred(status: HttpResponseStatus, cause: Throwable)
 
     /**
      * To be called when an exception was thrown in styx while proxying.
@@ -87,5 +63,25 @@ public interface HttpErrorStatusListener {
      * @param status  HTTP response status
      * @param cause   the throwable class associated with this error
      */
-    void proxyErrorOccurred(LiveHttpRequest request, InetSocketAddress clientAddress, HttpResponseStatus status, Throwable cause);
+    fun proxyErrorOccurred(request: LiveHttpRequest, clientAddress: InetSocketAddress, status: HttpResponseStatus, cause: Throwable)
+
+    companion object {
+        @JvmStatic
+        fun compose(vararg listeners: HttpErrorStatusListener): HttpErrorStatusListener = CompositeHttpErrorStatusListener(listOf(*listeners))
+
+        @JvmField
+        val IGNORE_ERROR_STATUS: HttpErrorStatusListener = object : HttpErrorStatusListener {
+            override fun proxyErrorOccurred(cause: Throwable) {}
+            override fun proxyWriteFailure(request: LiveHttpRequest, response: LiveHttpResponse, cause: Throwable) {}
+            override fun proxyingFailure(request: LiveHttpRequest, response: LiveHttpResponse, cause: Throwable) {}
+            override fun proxyErrorOccurred(status: HttpResponseStatus, cause: Throwable) {}
+            override fun proxyErrorOccurred(
+                request: LiveHttpRequest,
+                clientAddress: InetSocketAddress,
+                status: HttpResponseStatus,
+                cause: Throwable
+            ) {
+            }
+        }
+    }
 }
