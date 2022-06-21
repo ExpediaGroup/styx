@@ -37,6 +37,7 @@ public final class HttpHeaderNames {
 
     public static final CharSequence SET_COOKIE = io.netty.handler.codec.http.HttpHeaderNames.SET_COOKIE;
     public static final CharSequence X_FORWARDED_FOR = new AsciiString("X-Forwarded-For");
+    public static final CharSequence X_FORWARDED_HOST = new AsciiString("X-Forwarded-Host");
     public static final CharSequence X_FORWARDED_PROTO = new AsciiString("X-Forwarded-Proto");
 
     public static final CharSequence KEEP_ALIVE = io.netty.handler.codec.http.HttpHeaderValues.KEEP_ALIVE;
