@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,15 +21,18 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.WebServiceHandler;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
+import org.slf4j.Logger;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpHeaderValues.PLAIN_TEXT;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
+import static org.slf4j.LoggerFactory.getLogger;
 
 public class PrometheusHandler implements WebServiceHandler {
     private final PrometheusMeterRegistry prometheusRegistry;
+    private static final Logger LOGGER = getLogger(PrometheusHandler.class);
 
     public PrometheusHandler(PrometheusMeterRegistry prometheusRegistry) {
         this.prometheusRegistry = requireNonNull(prometheusRegistry);
@@ -37,11 +40,14 @@ public class PrometheusHandler implements WebServiceHandler {
 
     @Override
     public Eventual<HttpResponse> handle(final HttpRequest request, final HttpInterceptor.Context context) {
-        return Eventual.of(HttpResponse
+            return Eventual.of(HttpResponse
                 .response(OK)
                 .disableCaching()
                 .header(CONTENT_TYPE, PLAIN_TEXT)
                 .body(prometheusRegistry.scrape(), UTF_8, true)
-                .build());
+                .build()).onError( er -> {
+                    LOGGER.error("Error in handling metrics", er);
+                    return Eventual.error(er);
+                });
     }
 }
