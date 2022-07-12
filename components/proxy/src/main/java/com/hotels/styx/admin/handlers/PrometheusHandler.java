@@ -40,14 +40,22 @@ public class PrometheusHandler implements WebServiceHandler {
 
     @Override
     public Eventual<HttpResponse> handle(final HttpRequest request, final HttpInterceptor.Context context) {
-            return Eventual.of(HttpResponse
-                .response(OK)
-                .disableCaching()
-                .header(CONTENT_TYPE, PLAIN_TEXT)
-                .body(prometheusRegistry.scrape(), UTF_8, true)
-                .build()).onError( er -> {
-                    LOGGER.error("Error in handling metrics", er);
-                    return Eventual.error(er);
-                });
+            LOGGER.info("Inside PrometheusHandler handle");
+            try {
+                String metricsData = prometheusRegistry.scrape();
+                LOGGER.info("PrometheusMetricsData: "  + metricsData);
+
+                return Eventual.of(HttpResponse
+                    .response(OK)
+                    .disableCaching()
+                    .header(CONTENT_TYPE, PLAIN_TEXT)
+                    .body(metricsData, UTF_8, true)
+                    .build());
+            } catch (Exception ex) {
+                LOGGER.error("Error in handling metrics", ex);
+                return Eventual.error(ex);
+            }
+
+
     }
 }
