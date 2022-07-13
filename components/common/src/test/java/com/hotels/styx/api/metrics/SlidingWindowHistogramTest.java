@@ -60,7 +60,7 @@ public class SlidingWindowHistogramTest {
 
         clock.forward(windowSize * intervalSize);
 
-        assertThat(histogram.getMean(), is(Double.NaN));
+        assertThat(histogram.getMean(), is(0.0));
     }
 
     @ParameterizedTest
@@ -78,7 +78,7 @@ public class SlidingWindowHistogramTest {
         assertThat(histogram.getMean(), is(closeTo(20.0, 1.0)));
 
         clock.forward(intervalSize);
-        assertThat(histogram.getMean(), is(Double.NaN));
+        assertThat(histogram.getMean(), is(0.0));
     }
 
 
