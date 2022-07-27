@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,17 +13,22 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.server;
+package com.hotels.styx.server.netty.codec
 
 /**
- * Exception to be thrown when Styx cannot handle a request because it is syntactically invalid.
+ * Encode the configured unwise chars.
  */
-public class BadRequestException extends RuntimeException {
-    public BadRequestException(String message) {
-        super(message);
-    }
+fun interface UnwiseCharsEncoder {
+    /**
+     * Encodes the unwise chars.
+     *
+     * @param value the value to be encoded
+     * @return the encoded value
+     */
+    fun encode(value: String): String
 
-    public BadRequestException(String message, Throwable cause) {
-        super(message, cause);
+    companion object {
+        @JvmField
+        val IGNORE: UnwiseCharsEncoder = UnwiseCharsEncoder { it }
     }
 }

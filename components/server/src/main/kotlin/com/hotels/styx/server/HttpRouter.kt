@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,20 +13,16 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.server.netty;
+package com.hotels.styx.server
 
-import com.hotels.styx.server.ConnectorConfig;
+import com.hotels.styx.api.HttpHandler
+import com.hotels.styx.api.HttpInterceptor
+import com.hotels.styx.api.LiveHttpRequest
+import java.util.Optional
 
 /**
- * Connector factory.
+ * Http Router.
  */
-public interface ServerConnectorFactory {
-    /**
-     * Create an HTTP server connector.
-     *
-     * @param config configuration
-     * @return server connector
-     */
-    ServerConnector create(ConnectorConfig config);
-
+fun interface HttpRouter {
+    fun route(request: LiveHttpRequest, context: HttpInterceptor.Context): Optional<HttpHandler>
 }

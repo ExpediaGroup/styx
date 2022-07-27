@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,20 +13,17 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.server.netty.codec;
+package com.hotels.styx.server
 
-import com.hotels.styx.server.BadRequestException;
+import com.google.common.util.concurrent.Service
+import java.net.InetSocketAddress
 
 /**
- * An exception to be thrown when a cookie header is malformed.
+ * HttpServer.
  */
-public class MalformedCookieHeaderException extends BadRequestException {
+interface HttpServer : Service {
     /**
-     * Constructor.
-     *
-     * @param cause cause
+     * Return http endpoint.
      */
-    public MalformedCookieHeaderException(String message, Throwable cause) {
-        super(message, cause);
-    }
+    fun inetAddress(): InetSocketAddress?
 }
