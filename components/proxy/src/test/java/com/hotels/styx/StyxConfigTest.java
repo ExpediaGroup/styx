@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,12 +15,14 @@
  */
 package com.hotels.styx;
 
+import com.hotels.styx.api.extension.service.RewriteConfig;
 import com.hotels.styx.proxy.ProxyServerConfig;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.List;
 
+import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.lang.Runtime.getRuntime;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -28,7 +30,9 @@ import static org.hamcrest.core.Is.is;
 
 public class StyxConfigTest {
 
-    public static final int HALF_OF_AVAILABLE_PROCESSORS = getRuntime().availableProcessors() / 2;
+    private static final int HALF_OF_AVAILABLE_PROCESSORS = getRuntime().availableProcessors() / 2;
+
+    private static final String REWRITES_FILE = fixturesHome() + "conf/rewrites.yml";
 
     final String yaml = "" +
             "proxy:\n" +
@@ -150,4 +154,59 @@ public class StyxConfigTest {
         assertThat(styxConfig.proxyServerConfig().requestTimeoutMillis(), is(10000));
     }
 
+    @Test
+    public void readsListOfRewriteGroups() {
+        String yaml = "" +
+            "rewrites:\n" +
+            "  someGroup:\n" +
+            "    - urlPattern: \"/foo/(.*)\"\n" +
+            "      replacement: \"/bar/$1\"\n" +
+            "    - urlPattern: \"/ping/(.*)\"\n" +
+            "      replacement: \"/pong/$1\"\n" +
+            "  anotherGroup:\n" +
+            "    - urlPattern: \"/hey/(.*)\"\n" +
+            "      replacement: \"/hi/$1\"\n";
+
+        StyxConfig styxConfig = StyxConfig.fromYaml(yaml, false);
+
+        assertThat(styxConfig.get("rewrites.someGroup[0].urlPattern", String.class), isValue("/foo/(.*)"));
+        assertThat(styxConfig.get("rewrites.someGroup[0].replacement", String.class), isValue("/bar/$1"));
+        assertThat(styxConfig.get("rewrites.someGroup[1].urlPattern", String.class), isValue("/ping/(.*)"));
+        assertThat(styxConfig.get("rewrites.someGroup[1].replacement", String.class), isValue("/pong/$1"));
+        assertThat(styxConfig.get("rewrites.anotherGroup[0].urlPattern", String.class), isValue("/hey/(.*)"));
+        assertThat(styxConfig.get("rewrites.anotherGroup[0].replacement", String.class), isValue("/hi/$1"));
+        assertThat(styxConfig.rewriteGroupsConfig().get("someGroup"), 
+            is(List.of(
+                new RewriteConfig("/foo/(.*)", "/bar/$1"),
+                new RewriteConfig("/ping/(.*)", "/pong/$1")
+            ))
+        );
+        assertThat(styxConfig.rewriteGroupsConfig().get("anotherGroup"),
+            is(List.of(
+                new RewriteConfig("/hey/(.*)", "/hi/$1")
+            ))
+        );
+    }
+
+    @Test
+    public void readsRewriteFile() {
+        String yaml = "" +
+            "rewrites:\n" +
+            "  configFile: \"" + REWRITES_FILE + "\"\n";
+
+        StyxConfig styxConfig = StyxConfig.fromYaml(yaml, false);
+
+        assertThat(styxConfig.get("rewrites.configFile", String.class), isValue(REWRITES_FILE));
+        assertThat(styxConfig.rewriteGroupsConfig().get("someGroup"),
+            is(List.of(
+                new RewriteConfig("/foo/(.*)", "/bar/$1"),
+                new RewriteConfig("/ping/(.*)", "/pong/$1")
+            ))
+        );
+        assertThat(styxConfig.rewriteGroupsConfig().get("anotherGroup"),
+            is(List.of(
+                new RewriteConfig("/hey/(.*)", "/hi/$1")
+            ))
+        );
+    }
 }

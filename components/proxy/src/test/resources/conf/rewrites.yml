@@ -1,0 +1,10 @@
+---
+
+someGroup:
+  - urlPattern: "/foo/(.*)"
+    replacement: "/bar/$1"
+  - urlPattern: "/ping/(.*)"
+    replacement: "/pong/$1"
+anotherGroup:
+  - urlPattern: "/hey/(.*)"
+    replacement: "/hi/$1"

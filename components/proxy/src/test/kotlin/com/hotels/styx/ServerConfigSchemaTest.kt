@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -381,6 +381,86 @@ class ServerConfigSchemaTest : DescribeSpec({
                     config:
                       port: 8080
             """.trimIndent())) shouldBe Optional.of("Missing a mandatory field 'servers[myServer].config.handler'")
+        }
+    }
+
+    describe("rewrites") {
+        it("Accepts lists of rewrite rules") {
+            validateServerConfiguration(yamlConfig(minimalConfig + """
+                rewrites:
+                    someGroup:
+                        - urlPattern: "/foo/(.*)"
+                          replacement: "/bar/${'$'}1"
+                        - urlPattern: "/ping/(.*)"
+                          replacement: "/pong/${'$'}1"
+                    anotherGroup:
+                        - urlPattern: "/hey/(.*)"
+                          replacement: "/hi/${'$'}1"
+            """.trimIndent())) shouldBe Optional.empty()
+        }
+
+        it("Accepts rewrites configFile path") {
+            validateServerConfiguration(yamlConfig(minimalConfig + """
+                rewrites:
+                    configFile: "/foo/bar/rewrites.yml"
+            """.trimIndent())) shouldBe Optional.empty()
+        }
+
+        it("Validates both configFile and lists of rewrite rules being passed") {
+            validateServerConfiguration(yamlConfig(minimalConfig + """
+                rewrites:
+                    configFile: "/foo/bar/rewrites.yml"
+                    someGroup:
+                        - urlPattern: "/foo/(.*)"
+                          replacement: "/bar/${'$'}1"
+                        - urlPattern: "/ping/(.*)"
+                          replacement: "/pong/${'$'}1"
+                    anotherGroup:
+                        - urlPattern: "/hey/(.*)"
+                          replacement: "/hi/${'$'}1"
+            """.trimIndent())) shouldBe Optional.of("Unexpected field type. Field 'rewrites' should be " +
+                "OR(MAP(LIST(OBJECT(urlPattern, replacement))), OBJECT(configFile)), but it is OBJECT")
+        }
+
+        it("Validates missing properties") {
+            validateServerConfiguration(yamlConfig(minimalConfig + """
+                rewrites:
+            """.trimIndent())) shouldBe Optional.of("Unexpected field type. Field 'rewrites' should be " +
+                "OR(MAP(LIST(OBJECT(urlPattern, replacement))), OBJECT(configFile)), but it is NULL")
+        }
+
+        it("Validates incorrect properties") {
+            validateServerConfiguration(yamlConfig(minimalConfig + """
+                rewrites:
+                    x: "foo"
+            """.trimIndent())) shouldBe Optional.of("Unexpected field type. Field 'rewrites' should be " +
+                "OR(MAP(LIST(OBJECT(urlPattern, replacement))), OBJECT(configFile)), but it is OBJECT")
+        }
+
+        it("Validates missing rewrite rules under groups") {
+            validateServerConfiguration(yamlConfig(minimalConfig + """
+                rewrites:
+                    someGroup:
+            """.trimIndent())) shouldBe Optional.of("Unexpected field type. Field 'rewrites' should be " +
+                "OR(MAP(LIST(OBJECT(urlPattern, replacement))), OBJECT(configFile)), but it is OBJECT")
+        }
+
+        it("Validates missing urlPattern") {
+            validateServerConfiguration(yamlConfig(minimalConfig + """
+                rewrites:
+                    someGroup:
+                        - replacement: "/bar/${'$'}1"
+            """.trimIndent())) shouldBe Optional.of("Unexpected field type. Field 'rewrites' should be " +
+                "OR(MAP(LIST(OBJECT(urlPattern, replacement))), OBJECT(configFile)), but it is OBJECT")
+        }
+
+        it("Validates missing replacement") {
+            validateServerConfiguration(yamlConfig(minimalConfig + """
+                rewrites:
+                    someGroup:
+                        - urlPattern: "/foo/(.*)"
+            """.trimIndent())) shouldBe Optional.of("Unexpected field type. Field 'rewrites' should be " +
+                "OR(MAP(LIST(OBJECT(urlPattern, replacement))), OBJECT(configFile)), but it is OBJECT")
         }
     }
 })

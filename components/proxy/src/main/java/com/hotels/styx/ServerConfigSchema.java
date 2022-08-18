@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import static com.hotels.styx.config.schema.SchemaDsl.map;
 import static com.hotels.styx.config.schema.SchemaDsl.object;
 import static com.hotels.styx.config.schema.SchemaDsl.opaque;
 import static com.hotels.styx.config.schema.SchemaDsl.optional;
+import static com.hotels.styx.config.schema.SchemaDsl.or;
 import static com.hotels.styx.config.schema.SchemaDsl.routingObject;
 import static com.hotels.styx.config.schema.SchemaDsl.string;
 import static com.hotels.styx.config.schema.SchemaDsl.union;
@@ -162,7 +163,14 @@ final class ServerConfigSchema {
                                     optional("name", string()),
                                     field("type", string()),
                                     optional("tags", list(string())),
-                                    optional("config", union("type")))))
+                                    optional("config", union("type"))))),
+                            optional("rewrites", or(
+                                map(list(object(
+                                    field("urlPattern", string()),
+                                    field("replacement", string())
+                                ))),
+                                object(field("configFile", string())))
+                            )
                     ));
 
         BUILTIN_HANDLER_SCHEMAS.forEach(STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER::typeExtension);
