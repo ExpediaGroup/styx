@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hotels.styx.proxy.interceptors.RequestEnrichingInterceptor;
 import com.hotels.styx.proxy.interceptors.TcpTunnelRequestRejector;
 import com.hotels.styx.proxy.interceptors.UnexpectedRequestContentLengthRemover;
 import com.hotels.styx.proxy.interceptors.ViaHeaderAppendingInterceptor;
+import com.hotels.styx.routing.interceptors.RewriteInterceptor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,6 +50,10 @@ final class BuiltInInterceptors {
 
         if (loggingEnabled) {
             builder.add(new HttpMessageLoggingInterceptor(longFormatEnabled, httpMessageFormatter));
+        }
+
+        if (config.rewriteGroupsConfig() != null) {
+            builder.add(new RewriteInterceptor.Factory().build(config.rewriteGroupsConfig()));
         }
 
         builder.addAll(asList(new TcpTunnelRequestRejector(),

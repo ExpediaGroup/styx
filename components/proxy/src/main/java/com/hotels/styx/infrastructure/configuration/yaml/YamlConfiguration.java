@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -133,6 +133,7 @@ public class YamlConfiguration implements ExtensibleConfiguration<YamlConfigurat
 
     private static <T> T parseNodeToClass(JsonNode node, Class<T> tClass) {
         JsonParser parser = node.traverse();
+        parser.setCodec(YAML_MAPPER);
 
         try {
             return YAML_MAPPER.readValue(parser, tClass);

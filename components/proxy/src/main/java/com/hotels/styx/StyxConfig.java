@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hotels.styx.config.schema.SchemaValidationException;
 import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration;
 import com.hotels.styx.proxy.ProxyServerConfig;
+import com.hotels.styx.routing.config.RewriteGroupsConfig;
 import org.slf4j.Logger;
 
 import java.nio.file.Path;
@@ -53,6 +54,7 @@ public final class StyxConfig implements Configuration {
     private final ProxyServerConfig proxyServerConfig;
     private final AdminServerConfig adminServerConfig;
     private final StyxHeaderConfig styxHeaderConfig;
+    private final RewriteGroupsConfig rewriteGroupsConfig;
 
     public StyxConfig() {
         this(EMPTY_CONFIGURATION);
@@ -63,6 +65,7 @@ public final class StyxConfig implements Configuration {
         this.adminServerConfig = get("admin", AdminServerConfig.class).orElseGet(AdminServerConfig::new);
         this.proxyServerConfig = get("proxy", ProxyServerConfig.class).orElseGet(ProxyServerConfig::new);
         this.styxHeaderConfig = get("styxHeaders", StyxHeaderConfig.class).orElseGet(StyxHeaderConfig::new);
+        this.rewriteGroupsConfig = get("rewrites", RewriteGroupsConfig.class).orElse(null);
     }
 
     @Override
@@ -90,6 +93,10 @@ public final class StyxConfig implements Configuration {
 
     public AdminServerConfig adminServerConfig() {
         return adminServerConfig;
+    }
+
+    public RewriteGroupsConfig rewriteGroupsConfig() {
+        return rewriteGroupsConfig;
     }
 
     public int port() {

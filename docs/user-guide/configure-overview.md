@@ -188,4 +188,18 @@ plugins:
       config:
         some: "config"
         et: "cetera"
+
+# Optional configuration for top level rewrite rules
+# requests will be rewritten before hitting origins/httpPipeline
+# either configFile path or groups of rewrite rules will need to be specified
+rewrites:
+  group1:
+    - urlPattern: "/foo/(.*)"
+    - replacement: "/bar/$1"
+  group2:
+    - urlPattern: "/ping/(.*)"
+    - replacement: "/pong/$1"
+# or rules can be specified under a file as follows
+# rewrites:
+#   configFile: "/foo/bar/rewrite.yml"
  ```

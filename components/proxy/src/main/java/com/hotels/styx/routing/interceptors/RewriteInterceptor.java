@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,10 +25,12 @@ import com.hotels.styx.client.RewriteRuleset;
 import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.routing.config.HttpInterceptorFactory;
+import com.hotels.styx.routing.config.RewriteGroupsConfig;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.hotels.styx.config.schema.SchemaDsl.field;
 import static com.hotels.styx.config.schema.SchemaDsl.list;
@@ -73,5 +75,15 @@ public class RewriteInterceptor implements HttpInterceptor {
             return new RewriteInterceptor(new RewriteRuleset(List.copyOf(rules)));
         }
 
+        public HttpInterceptor build(RewriteGroupsConfig rewriteGroupsConfig) {
+            return new RewriteInterceptor(
+                new RewriteRuleset(
+                    rewriteGroupsConfig.values()
+                        .stream()
+                        .flatMap(List::stream)
+                        .collect(Collectors.toList())
+                )
+            );
+        }
     }
 }
