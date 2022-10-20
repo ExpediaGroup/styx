@@ -23,9 +23,7 @@ import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.client.StyxHeaderConfig;
 import org.junit.jupiter.api.Test;
 
-import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderNames.X_FORWARDED_FOR;
-import static com.hotels.styx.api.HttpHeaderNames.X_FORWARDED_HOST;
 import static com.hotels.styx.api.HttpHeaderNames.X_FORWARDED_PROTO;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
@@ -97,13 +95,6 @@ public class RequestEnrichingInterceptorTest {
 
         requestEnrichingInterceptor.intercept(get("/some").addHeader(X_FORWARDED_PROTO, "https").build(), recording);
         assertThat(recording.recordedRequest().header(X_FORWARDED_PROTO), isValue("https"));
-    }
-
-    @Test
-    public void replaceHostWithXForwardedHostIfPresent() {
-        requestEnrichingInterceptor.intercept(get("/some").addHeader(X_FORWARDED_HOST, "somehost.expedia.biz").build(), recording);
-
-        assertThat(recording.recordedRequest().header(HOST), isValue("somehost.expedia.biz"));
     }
 
     private static class TestChain implements Chain {
