@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2022 Expedia Inc.
+  Copyright (C) 2013-2021 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,9 +25,7 @@ import org.slf4j.Logger;
 import java.net.InetSocketAddress;
 import java.util.Optional;
 
-import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderNames.X_FORWARDED_FOR;
-import static com.hotels.styx.api.HttpHeaderNames.X_FORWARDED_HOST;
 import static com.hotels.styx.api.HttpHeaderNames.X_FORWARDED_PROTO;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -55,9 +53,6 @@ public class RequestEnrichingInterceptor implements HttpInterceptor {
         xForwardedFor(request, context)
                 .ifPresent(headerValue -> builder.header(X_FORWARDED_FOR, headerValue));
 
-        xForwardedHost(request)
-                .ifPresent(headerValue -> builder.header(HOST, headerValue));
-
         return builder
                 .header(requestIdHeaderName, request.id())
                 .header(X_FORWARDED_PROTO, xForwardedProto(request, context.isSecure()))
@@ -83,9 +78,5 @@ public class RequestEnrichingInterceptor implements HttpInterceptor {
         return request
                 .header(X_FORWARDED_PROTO)
                 .orElse(secure ? "https" : "http");
-    }
-
-    private static Optional<String> xForwardedHost(LiveHttpRequest request) {
-        return request.header(X_FORWARDED_HOST);
     }
 }
