@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2022 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.net.HostAndPort;
 import com.hotels.styx.NettyExecutor;
 import com.hotels.styx.api.Eventual;
+import com.hotels.styx.api.HttpHeaderNames;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
@@ -107,32 +108,39 @@ public class HostProxy implements RoutingObject {
             optional("responseTimeoutMillis", integer()),
             optional("maxHeaderSize", integer()),
             optional("metricPrefix", string()),
-            optional("executor", string())
+            optional("executor", string()),
+            optional("overrideHostHeader", bool())
     );
 
     private final String errorMessage;
     private final StyxHostHttpClient client;
     private final OriginMetrics originMetrics;
+    private final boolean overrideHostHeader;
     private volatile boolean active = true;
+
 
     // Visible for testing
     final String host;
     // Visible for testing
     final int port;
 
-    public HostProxy(String host, int port, StyxHostHttpClient client, OriginMetrics originMetrics) {
+    public HostProxy(String host, int port, StyxHostHttpClient client, OriginMetrics originMetrics,
+                     boolean overrideHostHeader) {
         this.host = requireNonNull(host);
         this.port = port;
         this.errorMessage = format("HostProxy %s:%d is stopped but received traffic.", host, port);
         this.client = requireNonNull(client);
         this.originMetrics = requireNonNull(originMetrics);
+        this.overrideHostHeader = overrideHostHeader;
     }
 
     @Override
     public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
         if (active) {
+            LiveHttpRequest modifiedRequest = modifyHostHeaderIfNeeded(request);
+
             return new Eventual<>(
-                    ResponseEventListener.from(client.sendRequest(request, context))
+                    ResponseEventListener.from(client.sendRequest(modifiedRequest, context))
                             .whenCancelled(originMetrics::requestCancelled)
                             .apply());
         } else {
@@ -147,6 +155,15 @@ public class HostProxy implements RoutingObject {
         return completedFuture(null);
     }
 
+    private LiveHttpRequest modifyHostHeaderIfNeeded(LiveHttpRequest request) {
+        if (overrideHostHeader && !host.isEmpty()) {
+            String hostAndPort = host + ":" + port;
+            return request.newBuilder().header(HttpHeaderNames.HOST, hostAndPort).build();
+        } else {
+            return request;
+        }
+    }
+
     /**
      * HostProxy configuration.
      */
@@ -158,6 +175,7 @@ public class HostProxy implements RoutingObject {
         private final int maxHeaderSize;
         private final String metricPrefix;
         private final String executor;
+        private final boolean overrideHostHeader;
 
         public HostProxyConfiguration(
                 String host,
@@ -166,7 +184,8 @@ public class HostProxy implements RoutingObject {
                 int responseTimeoutMillis,
                 int maxHeaderSize,
                 String metricPrefix,
-                String executor) {
+                String executor,
+                boolean overrideHostHeader) {
             this.host = host;
             this.connectionPool = connectionPool;
             this.tlsSettings = tlsSettings;
@@ -174,6 +193,7 @@ public class HostProxy implements RoutingObject {
             this.maxHeaderSize = maxHeaderSize;
             this.metricPrefix = metricPrefix;
             this.executor = executor;
+            this.overrideHostHeader = overrideHostHeader;
         }
 
         @JsonProperty("host")
@@ -209,6 +229,11 @@ public class HostProxy implements RoutingObject {
         @JsonProperty("executor")
         public String executor() {
             return executor;
+        }
+
+        @JsonProperty("overrideHostHeader")
+        public boolean isOverrideHostHeader() {
+            return overrideHostHeader;
         }
 
     }
@@ -258,6 +283,8 @@ public class HostProxy implements RoutingObject {
                     .map(it -> addDefaultPort(it, tlsSettings))
                     .orElseThrow(() -> missingAttributeError(configBlock, join(".", fullName), "host"));
 
+            boolean overrideHostHeader = config.get("overrideHostHeader", Boolean.class).orElse(false);
+
             return createHostProxyHandler(
                     executor,
                     context.environment().centralisedMetrics(),
@@ -267,7 +294,8 @@ public class HostProxy implements RoutingObject {
                     responseTimeoutMillis,
                     maxHeaderSize,
                     metricPrefix,
-                    objectName);
+                    objectName,
+                    overrideHostHeader);
         }
 
         private static HostAndPort addDefaultPort(HostAndPort hostAndPort, TlsSettings tlsSettings) {
@@ -292,7 +320,8 @@ public class HostProxy implements RoutingObject {
                 int responseTimeoutMillis,
                 int maxHeaderSize,
                 String appId,
-                String originId) {
+                String originId,
+                boolean overrideHostHeader) {
 
             String host = hostAndPort.getHost();
             int port = hostAndPort.getPort();
@@ -317,7 +346,10 @@ public class HostProxy implements RoutingObject {
                     .metrics(metrics)
                     .build();
 
-            return new HostProxy(host, port, StyxHostHttpClient.create(connectionPoolFactory.create(origin)), originMetrics);
+            return new HostProxy(host, port,
+                StyxHostHttpClient.create(connectionPoolFactory.create(origin)),
+                originMetrics,
+                overrideHostHeader);
         }
 
         private static Connection.Factory connectionFactory(

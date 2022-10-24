@@ -26,6 +26,7 @@ import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.client.StyxHostHttpClient
 import com.hotels.styx.client.applications.metrics.OriginMetrics
 import com.hotels.styx.RoutingObjectFactoryContext
+import com.hotels.styx.api.HttpHeaderNames
 import com.hotels.styx.api.HttpInterceptor.Context
 import com.hotels.styx.handle
 import com.hotels.styx.requestContext
@@ -43,21 +44,35 @@ import reactor.core.publisher.toFlux
 import reactor.core.publisher.toMono
 
 class HostProxyTest : FeatureSpec() {
-    val request = HttpRequest.get("/").build()
+    val request = HttpRequest.get("/").addHeader("host", "localhost:80").build()
     var client: StyxHostHttpClient? = null
+
+    private val liveHttpRequest: LiveHttpRequest = mockk(relaxed = true)
 
     init {
         feature("Routing and proxying") {
             scenario("Proxies traffic") {
-                HostProxy("localhost", 80, client, mockk()).handle(request.stream(), mockk())
+                HostProxy("localhost", 80, client, mockk(), false).handle(liveHttpRequest, mockk())
 
                 verify {
-                    client!!.sendRequest(ofType(LiveHttpRequest::class), ofType(Context::class))
+                    client!!.sendRequest(liveHttpRequest, ofType(Context::class))
+                }
+            }
+
+            scenario("Override host header while proxying traffic if overrideHostHeader is set to true") {
+                HostProxy("someOverrideHost", 443, client, mockk(), true).handle(liveHttpRequest, mockk())
+
+                verify {
+                    client!!.sendRequest(liveHttpRequest
+                        .newBuilder()
+                        .header(HttpHeaderNames.HOST, "someOverrideHost:443")
+                        .build(),
+                        ofType(Context::class))
                 }
             }
 
             scenario("Requests arriving at stopped HostProxy object") {
-                val exception = HostProxy("localhost", 80, client, mockk()).let {
+                val exception = HostProxy("localhost", 80, client, mockk(), false).let {
                     it.stop()
 
                     shouldThrow<IllegalStateException> {
@@ -80,7 +95,7 @@ class HostProxyTest : FeatureSpec() {
 
                 every { client.sendRequest(any(), any()) } returns Eventual(Mono.never())
 
-                val hostProxy = HostProxy("abc", 80, client, originMetrics)
+                val hostProxy = HostProxy("abc", 80, client, originMetrics, false)
 
                 hostProxy.handle(get("/").build())
                         .toMono()
@@ -100,7 +115,7 @@ class HostProxyTest : FeatureSpec() {
                                 .body(ByteStream(Flux.never()))
                                 .build())
 
-                val hostProxy = HostProxy("abc", 80, client, originMetrics)
+                val hostProxy = HostProxy("abc", 80, client, originMetrics, false)
 
                 hostProxy.handle(LiveHttpRequest.get("/").build(), requestContext())
                         .toMono()

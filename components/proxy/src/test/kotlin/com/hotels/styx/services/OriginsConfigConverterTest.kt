@@ -57,17 +57,48 @@ class OriginsConfigConverterTest : StringSpec({
                     it[0].type().shouldBe("HostProxy")
                     it[0].config().shouldNotBeNull()
                     it[0].config()["maxHeaderSize"].intValue() shouldBe 1000
+                    it[0].config()["overrideHostHeader"].booleanValue() shouldBe false
 
                     it[1].name() shouldBe "app.app2"
                     it[1].tags().shouldContainExactlyInAnyOrder(lbGroupTag("app"), stateTag(STATE_ACTIVE))
                     it[1].type().shouldBe("HostProxy")
                     it[1].config().shouldNotBeNull()
+                    it[1].config()["maxHeaderSize"].intValue() shouldBe 1000
+                    it[1].config()["overrideHostHeader"].booleanValue() shouldBe false
 
                     it[2].name() shouldBe "app"
                     it[2].tags().shouldBeEmpty()
                     it[2].type().shouldBe("LoadBalancingGroup")
                     it[2].config().shouldNotBeNull()
                 }
+    }
+
+    "Translates a HostProxy object with overrideHostHeader" {
+        val config = """
+            ---
+            - id: "app"
+              path: "/"
+              origins:
+              - { id: "app1", host: "localhost:9090" }
+              overrideHostHeader: true
+            """.trimIndent()
+
+        OriginsConfigConverter(serviceDb, ctx, "")
+            .routingObjects(deserialiseOrigins(config))
+            .let {
+                it.size shouldBe 2
+
+                it[0].name() shouldBe "app.app1"
+                it[0].tags().shouldContainExactlyInAnyOrder(lbGroupTag("app"), stateTag(STATE_ACTIVE))
+                it[0].type().shouldBe("HostProxy")
+                it[0].config().shouldNotBeNull()
+                it[0].config()["overrideHostHeader"].booleanValue() shouldBe true
+
+                it[1].name() shouldBe "app"
+                it[1].tags().shouldBeEmpty()
+                it[1].type().shouldBe("LoadBalancingGroup")
+                it[1].config().shouldNotBeNull()
+            }
     }
 
     "Translates one rewrite rules" {
