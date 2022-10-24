@@ -144,7 +144,8 @@ internal class OriginsConfigConverter(
                         app.responseTimeoutMillis(),
                         app.maxHeaderSize(),
                         origin,
-                        "origins"))
+                        "origins",
+                        app.isOverrideHostHeader()))
     }
 
     private fun hostProxyConfig(poolSettings: ConnectionPoolSettings,
@@ -152,7 +153,8 @@ internal class OriginsConfigConverter(
                                 responseTimeout: Int,
                                 maxHeaderSize: Int,
                                 origin: Origin,
-                                metricsPrefix: String): JsonNode = MAPPER.valueToTree(
+                                metricsPrefix: String,
+                                overrideHostHeader: Boolean): JsonNode = MAPPER.valueToTree(
             HostProxyConfiguration(
                     "${origin.host()}:${origin.port()}",
                     poolSettings,
@@ -160,7 +162,8 @@ internal class OriginsConfigConverter(
                     responseTimeout,
                     maxHeaderSize,
                     metricsPrefix,
-                    executor))
+                    executor,
+                    overrideHostHeader))
 
     companion object {
         val LOGGER = LoggerFactory.getLogger(this::class.java)
