@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -30,7 +30,11 @@ import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.epoll.Epoll;
+import io.netty.channel.epoll.EpollChannelOption;
+import io.netty.channel.socket.nio.NioChannelOption;
 import io.netty.handler.ssl.SslContext;
+import jdk.net.ExtendedSocketOptions;
 import reactor.core.publisher.Mono;
 
 import java.util.Optional;
@@ -48,6 +52,12 @@ import static java.util.Objects.requireNonNull;
  */
 public class NettyConnectionFactory implements Connection.Factory {
 
+    // Linux has TCP_KEEPALIVE_IDLE_TIME set to 7200 seconds by default.
+    // We need to set this to smaller than the idle timeout of server/upstream
+    // to avoid TransportLostException
+    private static final int TCP_KEEPALIVE_IDLE_TIME = 240;
+    private static final int TCP_KEEPALIVE_INTERVAL = 30;
+    private static final int TCP_KEEPALIVE_RETRY_COUNT = 3;
     private final HttpConfig httpConfig;
     private final SslContext sslContext;
     private final boolean sendSni;
@@ -100,6 +110,17 @@ public class NettyConnectionFactory implements Connection.Factory {
                     .option(SO_KEEPALIVE, true)
                     .option(ALLOCATOR, PooledByteBufAllocator.DEFAULT)
                     .option(CONNECT_TIMEOUT_MILLIS, connectionSettings.connectTimeoutMillis());
+
+            if (Epoll.isAvailable()) {
+                bootstrap.option(EpollChannelOption.TCP_KEEPIDLE, TCP_KEEPALIVE_IDLE_TIME)
+                        .option(EpollChannelOption.TCP_KEEPINTVL, TCP_KEEPALIVE_INTERVAL)
+                        .option(EpollChannelOption.TCP_KEEPCNT, TCP_KEEPALIVE_RETRY_COUNT);
+            } else {
+                bootstrap.option(NioChannelOption.of(ExtendedSocketOptions.TCP_KEEPIDLE), TCP_KEEPALIVE_IDLE_TIME)
+                        .option(NioChannelOption.of(ExtendedSocketOptions.TCP_KEEPINTERVAL), TCP_KEEPALIVE_INTERVAL)
+                        .option(NioChannelOption.of(ExtendedSocketOptions.TCP_KEEPCOUNT), TCP_KEEPALIVE_RETRY_COUNT);
+            }
+
             for (ChannelOptionSetting setting : httpConfig.channelSettings()) {
                 bootstrap.option(setting.option(), setting.value());
             }
