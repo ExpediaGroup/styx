@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2022 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -38,7 +38,8 @@ data class BackendService(
     private val overrideHostHeader: Boolean,
     private val responseTimeoutMillis: Int,
     private val maxHeaderSize: Int,
-    private val tlsSettings: TlsSettings?
+    private val tlsSettings: TlsSettings?,
+    private val tcpKeepAliveSettings: TcpKeepAliveSettings?
 ) : Identifiable {
     /**
      * A protocol used for the backend service. This can be either HTTP or HTTPS.
@@ -54,7 +55,7 @@ data class BackendService(
         }
     }
 
-    private constructor(builder: Builder): this(
+    private constructor(builder: Builder) : this(
         id = builder.id,
         path = builder.path,
         connectionPoolSettings = builder.connectionPoolSettings,
@@ -63,18 +64,20 @@ data class BackendService(
         stickySessionConfig = builder.stickySessionConfig,
         rewrites = builder.rewrites,
         overrideHostHeader = builder.overrideHostHeader,
-        responseTimeoutMillis = if (builder.responseTimeoutMillis == 0)
+        responseTimeoutMillis = if (builder.responseTimeoutMillis == 0) {
             DEFAULT_RESPONSE_TIMEOUT_MILLIS
-        else
-            builder.responseTimeoutMillis,
+        } else {
+            builder.responseTimeoutMillis
+        },
         maxHeaderSize = builder.maxHeaderSize,
-        tlsSettings = builder.tlsSettings
+        tlsSettings = builder.tlsSettings,
+        tcpKeepAliveSettings = builder.tcpKeepAliveSettings
     )
 
     /**
      * A builder for [BackendService].
      */
-     class Builder(
+    class Builder(
         var id: String = Id.GENERIC_APP.toString(),
         var path: String = "/",
         var origins: Set<Origin> = emptySet(),
@@ -85,9 +88,10 @@ data class BackendService(
         var overrideHostHeader: Boolean = false,
         var responseTimeoutMillis: Int = DEFAULT_RESPONSE_TIMEOUT_MILLIS,
         var maxHeaderSize: Int = USE_DEFAULT_MAX_HEADER_SIZE,
-        var tlsSettings: TlsSettings? = null
+        var tlsSettings: TlsSettings? = null,
+        var tcpKeepAliveSettings: TcpKeepAliveSettings? = null
     ) {
-        constructor(backendService: BackendService): this() {
+        constructor(backendService: BackendService) : this() {
             this.id = backendService.id
             this.path = backendService.path
             this.origins = backendService.origins
@@ -99,6 +103,7 @@ data class BackendService(
             this.responseTimeoutMillis = backendService.responseTimeoutMillis
             this.maxHeaderSize = backendService.maxHeaderSize
             this.tlsSettings = backendService.tlsSettings().orElse(null)
+            this.tcpKeepAliveSettings = backendService.tcpKeepAliveSettings
         }
 
         fun id(id: Id) = apply {
@@ -187,6 +192,10 @@ data class BackendService(
             this.tlsSettings = tlsSettings
         }
 
+        fun tcpKeepAliveSettings(tcpKeepAliveSettings: TcpKeepAliveSettings?) = apply {
+            this.tcpKeepAliveSettings = tcpKeepAliveSettings
+        }
+
         fun build() = BackendService(this)
     }
 
@@ -211,6 +220,8 @@ data class BackendService(
     fun maxHeaderSize(): Int = maxHeaderSize
 
     fun tlsSettings(): Optional<TlsSettings> = Optional.ofNullable(tlsSettings)
+
+    fun tcpKeepAliveSettings(): TcpKeepAliveSettings? = tcpKeepAliveSettings
 
     fun isOverrideHostHeader(): Boolean = overrideHostHeader
 
@@ -238,6 +249,8 @@ data class BackendService(
         .append(rewrites)
         .append(", tlsSettings=")
         .append(tlsSettings)
+        .append(", tcpKeepAliveSettings=")
+        .append(tcpKeepAliveSettings)
         .append('}')
         .toString()
 

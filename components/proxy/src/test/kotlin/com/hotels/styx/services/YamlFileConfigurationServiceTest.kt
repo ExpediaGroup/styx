@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handlers.PathPrefixRouter
 import com.hotels.styx.ProviderObjectRecord
+import com.hotels.styx.api.extension.service.TcpKeepAliveSettings
 import io.kotlintest.Matcher
 import io.kotlintest.MatcherResult
 import io.kotlintest.Spec
@@ -427,6 +428,32 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                                 .let {
                                     it.maxConnectionsPerHost() shouldBe 111
                                 }
+                    }
+                }
+            }
+
+            test("TCP keep alive settings changes") {
+                writeOrigins("""
+                    ---
+                    - id: "app"
+                      path: "/"
+                      origins:
+                      - { id: "app2", host: "localhost:9091" }
+                      tcpKeepAliveSettings:
+                        keepAliveIdleTimeSeconds: 120
+                        keepAliveIntervalSeconds: 60
+                        keepAliveRetryCount: 3
+                    """.trimIndent())
+
+                eventually(2.seconds, AssertionError::class.java) {
+                    objectStore.get("app.app2").isPresent shouldBe true
+                    objectStore.get("app.app2").get().let {
+                        it.config.get("tcpKeepAliveSettings", TcpKeepAliveSettings::class.java)
+                            .apply {
+                                keepAliveIdleTimeSeconds shouldBe 120
+                                keepAliveIntervalSeconds shouldBe 60
+                                keepAliveRetryCount shouldBe 3
+                            }
                     }
                 }
             }
