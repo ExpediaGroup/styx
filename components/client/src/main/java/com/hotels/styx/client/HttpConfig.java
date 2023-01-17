@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.client;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 
 /**
@@ -26,12 +25,12 @@ public final class HttpConfig {
     private static final int USE_DEFAULT_MAX_HEADER_SIZE = 0;
     private static final int DEFAULT_MAX_HEADER_SIZE = 32678;
 
-    private boolean compress;
+    private final boolean compress;
     private final int maxInitialLength;
     private final int maxHeadersSize;
     private final int maxChunkSize;
-    private int maxContentLength;
-    private Iterable<ChannelOptionSetting> settings;
+    private final int maxContentLength;
+    private final Iterable<ChannelOptionSetting<?>> settings;
 
 
     private HttpConfig(Builder builder) {
@@ -95,7 +94,7 @@ public final class HttpConfig {
      *
      * @return netty channel options
      */
-    public Iterable<ChannelOptionSetting> channelSettings() {
+    public Iterable<ChannelOptionSetting<?>> channelSettings() {
         return settings;
     }
 
@@ -126,7 +125,7 @@ public final class HttpConfig {
         private int maxHeadersSize = DEFAULT_MAX_HEADER_SIZE;
         private int maxChunkSize = 32768;
         private int maxContentLength = 65536;
-        private Iterable<ChannelOptionSetting> settings = emptyList();
+        private Iterable<ChannelOptionSetting<?>> settings = emptyList();
 
         private Builder() {
         }
@@ -181,8 +180,8 @@ public final class HttpConfig {
          * @param settings netty channel options
          * @return this builder
          */
-        public Builder setSettings(ChannelOptionSetting... settings) {
-            this.settings = asList(settings);
+        public Builder setSettings(Iterable<ChannelOptionSetting<?>> settings) {
+            this.settings = settings;
             return this;
         }
 

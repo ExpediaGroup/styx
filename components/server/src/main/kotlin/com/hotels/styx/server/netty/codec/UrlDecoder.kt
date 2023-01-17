@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2022 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.Url
 import com.hotels.styx.api.Url.Builder.url
 import io.netty.handler.codec.http.HttpRequest
-import okhttp3.HttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import java.net.URI
 
 object UrlDecoder {
@@ -32,7 +32,7 @@ object UrlDecoder {
             val uri = try {
                 URI.create(encodedUrl)
             } catch (e: IllegalArgumentException) {
-                HttpUrl.parse(encodedUrl)!!.uri()
+                encodedUrl.toHttpUrlOrNull()!!.toUri()
             }
             Url.Builder()
                 .path(uri.rawPath)

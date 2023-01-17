@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.api.extension.service.HealthCheckConfig;
 import com.hotels.styx.api.extension.service.RewriteConfig;
 import com.hotels.styx.api.extension.service.StickySessionConfig;
+import com.hotels.styx.api.extension.service.TcpKeepAliveSettings;
 import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.infrastructure.configuration.json.mixins.BackendServiceMixin;
 import com.hotels.styx.infrastructure.configuration.json.mixins.CertificateMixin;
@@ -35,6 +36,7 @@ import com.hotels.styx.infrastructure.configuration.json.mixins.OriginMixin;
 import com.hotels.styx.infrastructure.configuration.json.mixins.OriginsSnapshotMixin;
 import com.hotels.styx.infrastructure.configuration.json.mixins.RewriteConfigMixin;
 import com.hotels.styx.infrastructure.configuration.json.mixins.StickySessionConfigMixin;
+import com.hotels.styx.infrastructure.configuration.json.mixins.TcpKeepAliveSettingsMixin;
 import com.hotels.styx.infrastructure.configuration.json.mixins.TlsSettingsMixin;
 
 
@@ -65,7 +67,9 @@ public final class ObjectMappers {
                 .addMixIn(TlsSettings.Builder.class, TlsSettingsMixin.Builder.class)
                 .addMixIn(Origin.class, OriginMixin.class)
                 .addMixIn(OriginsSnapshot.class, OriginsSnapshotMixin.class)
-                .addMixIn(Id.class, IdMixin.class);
+                .addMixIn(Id.class, IdMixin.class)
+                .addMixIn(TcpKeepAliveSettings.class, TcpKeepAliveSettingsMixin.class)
+                .addMixIn(TcpKeepAliveSettings.Builder.class, TcpKeepAliveSettingsMixin.Builder.class);
         return objectMapper;
     }
 }

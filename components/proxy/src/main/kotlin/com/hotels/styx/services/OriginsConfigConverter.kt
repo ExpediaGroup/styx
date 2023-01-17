@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2022 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings
 import com.hotels.styx.api.extension.service.HealthCheckConfig
 import com.hotels.styx.api.extension.service.StickySessionConfig
+import com.hotels.styx.api.extension.service.TcpKeepAliveSettings
 import com.hotels.styx.api.extension.service.TlsSettings
 import com.hotels.styx.infrastructure.configuration.ConfigurationParser
 import com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSource
@@ -145,7 +146,8 @@ internal class OriginsConfigConverter(
                         app.maxHeaderSize(),
                         origin,
                         "origins",
-                        app.isOverrideHostHeader()))
+                        app.isOverrideHostHeader(),
+                        app.tcpKeepAliveSettings()))
     }
 
     private fun hostProxyConfig(poolSettings: ConnectionPoolSettings,
@@ -154,7 +156,8 @@ internal class OriginsConfigConverter(
                                 maxHeaderSize: Int,
                                 origin: Origin,
                                 metricsPrefix: String,
-                                overrideHostHeader: Boolean): JsonNode = MAPPER.valueToTree(
+                                overrideHostHeader: Boolean,
+                                tcpKeepAliveSettings: TcpKeepAliveSettings?): JsonNode = MAPPER.valueToTree(
             HostProxyConfiguration(
                     "${origin.host()}:${origin.port()}",
                     poolSettings,
@@ -163,7 +166,8 @@ internal class OriginsConfigConverter(
                     maxHeaderSize,
                     metricsPrefix,
                     executor,
-                    overrideHostHeader))
+                    overrideHostHeader,
+                    tcpKeepAliveSettings))
 
     companion object {
         val LOGGER = LoggerFactory.getLogger(this::class.java)

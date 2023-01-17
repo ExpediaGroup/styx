@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hotels.styx.STATE_ACTIVE
 import com.hotels.styx.STATE_UNREACHABLE
 import com.hotels.styx.lbGroupTag
 import com.hotels.styx.RoutingObjectFactoryContext
+import com.hotels.styx.api.extension.service.TcpKeepAliveSettings
 import com.hotels.styx.routing.config.Builtins.INTERCEPTOR_PIPELINE
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.services.OriginsConfigConverter.Companion.deserialiseOrigins
@@ -93,6 +94,42 @@ class OriginsConfigConverterTest : StringSpec({
                 it[0].type().shouldBe("HostProxy")
                 it[0].config().shouldNotBeNull()
                 it[0].config()["overrideHostHeader"].booleanValue() shouldBe true
+
+                it[1].name() shouldBe "app"
+                it[1].tags().shouldBeEmpty()
+                it[1].type().shouldBe("LoadBalancingGroup")
+                it[1].config().shouldNotBeNull()
+            }
+    }
+
+    "Translates a HostProxy object with tcpKeepAliveSettings" {
+        val config = """
+            ---
+            - id: "app"
+              path: "/"
+              origins:
+              - { id: "app1", host: "localhost:9090" }
+              tcpKeepAliveSettings:
+                keepAliveIdleTimeSeconds: 120
+                keepAliveIntervalSeconds: 60
+                keepAliveRetryCount: 3
+            """.trimIndent()
+
+        OriginsConfigConverter(serviceDb, ctx, "")
+            .routingObjects(deserialiseOrigins(config))
+            .let {
+                it.size shouldBe 2
+
+                it[0].name() shouldBe "app.app1"
+                it[0].tags().shouldContainExactlyInAnyOrder(lbGroupTag("app"), stateTag(STATE_ACTIVE))
+                it[0].type().shouldBe("HostProxy")
+                it[0].config().shouldNotBeNull()
+                it[0].config().get("tcpKeepAliveSettings").isObject shouldBe true
+                it[0].config().get("tcpKeepAliveSettings", TcpKeepAliveSettings::class.java).apply {
+                    keepAliveIdleTimeSeconds shouldBe 120
+                    keepAliveIntervalSeconds shouldBe 60
+                    keepAliveRetryCount shouldBe 3
+                }
 
                 it[1].name() shouldBe "app"
                 it[1].tags().shouldBeEmpty()

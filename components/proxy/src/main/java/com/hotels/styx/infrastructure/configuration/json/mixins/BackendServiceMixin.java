@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.api.extension.service.HealthCheckConfig;
 import com.hotels.styx.api.extension.service.RewriteConfig;
 import com.hotels.styx.api.extension.service.StickySessionConfig;
+import com.hotels.styx.api.extension.service.TcpKeepAliveSettings;
 import com.hotels.styx.api.extension.service.TlsSettings;
 
 import java.util.List;
@@ -66,6 +67,12 @@ public interface BackendServiceMixin {
     @JsonProperty("tlsSettings")
     TlsSettings getTlsSettings();
 
+    @JsonProperty("overrideHostHeader")
+    boolean overrideHostHeader();
+
+    @JsonProperty("tcpKeepAliveSettings")
+    TcpKeepAliveSettings tcpKeepAliveSettings();
+
     /**
      * Jackson annotations for {@link BackendService.Builder}.
      */
@@ -103,5 +110,11 @@ public interface BackendServiceMixin {
 
         @JsonProperty("healthCheck")
         BackendService.Builder healthCheckConfig(HealthCheckConfig healthCheckConfig);
+
+        @JsonProperty("overrideHostHeader")
+        BackendService.Builder overrideHostHeader(boolean overrideHostHeader);
+
+        @JsonProperty("tcpKeepAliveSettings")
+        BackendService.Builder tcpKeepAliveSettings(TcpKeepAliveSettings tcpKeepAliveSettings);
     }
 }

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -100,6 +100,7 @@ public class NettyConnectionFactory implements Connection.Factory {
                     .option(SO_KEEPALIVE, true)
                     .option(ALLOCATOR, PooledByteBufAllocator.DEFAULT)
                     .option(CONNECT_TIMEOUT_MILLIS, connectionSettings.connectTimeoutMillis());
+
             for (ChannelOptionSetting setting : httpConfig.channelSettings()) {
                 bootstrap.option(setting.option(), setting.value());
             }

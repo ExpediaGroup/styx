@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2022 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -26,7 +26,9 @@ import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.ResponseEventListener;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
+import com.hotels.styx.api.extension.service.TcpKeepAliveSettings;
 import com.hotels.styx.api.extension.service.TlsSettings;
+import com.hotels.styx.client.ChannelOptionSetting;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.StyxHostHttpClient;
@@ -41,8 +43,14 @@ import com.hotels.styx.metrics.CentralisedMetrics;
 import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.epoll.Epoll;
+import io.netty.channel.epoll.EpollChannelOption;
+import io.netty.channel.socket.nio.NioChannelOption;
+import jdk.net.ExtendedSocketOptions;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -63,6 +71,7 @@ import static com.hotels.styx.routing.config.RoutingSupport.missingAttributeErro
 import static java.lang.String.format;
 import static java.lang.String.join;
 import static java.util.Objects.requireNonNull;
+import static java.util.Optional.ofNullable;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
@@ -109,7 +118,15 @@ public class HostProxy implements RoutingObject {
             optional("maxHeaderSize", integer()),
             optional("metricPrefix", string()),
             optional("executor", string()),
-            optional("overrideHostHeader", bool())
+            optional("overrideHostHeader", bool()),
+            optional("tcpKeepAliveSettings", object(
+                    optional("keepAliveIdleTimeSeconds", integer()),
+                    optional("keepAliveIntervalSeconds", integer()),
+                    optional("keepAliveRetryCount", integer()),
+                    atLeastOne("keepAliveIdleTimeSeconds",
+                            "keepAliveIntervalSeconds",
+                            "keepAliveRetryCount")
+            ))
     );
 
     private final String errorMessage;
@@ -176,6 +193,7 @@ public class HostProxy implements RoutingObject {
         private final String metricPrefix;
         private final String executor;
         private final boolean overrideHostHeader;
+        private final TcpKeepAliveSettings tcpKeepAliveSettings;
 
         public HostProxyConfiguration(
                 String host,
@@ -185,7 +203,8 @@ public class HostProxy implements RoutingObject {
                 int maxHeaderSize,
                 String metricPrefix,
                 String executor,
-                boolean overrideHostHeader) {
+                boolean overrideHostHeader,
+                TcpKeepAliveSettings tcpKeepAliveSettings) {
             this.host = host;
             this.connectionPool = connectionPool;
             this.tlsSettings = tlsSettings;
@@ -194,6 +213,7 @@ public class HostProxy implements RoutingObject {
             this.metricPrefix = metricPrefix;
             this.executor = executor;
             this.overrideHostHeader = overrideHostHeader;
+            this.tcpKeepAliveSettings = tcpKeepAliveSettings;
         }
 
         @JsonProperty("host")
@@ -236,6 +256,10 @@ public class HostProxy implements RoutingObject {
             return overrideHostHeader;
         }
 
+        @JsonProperty("tcpKeepAliveSettings")
+        public TcpKeepAliveSettings tcpKeepAliveSettings() {
+            return tcpKeepAliveSettings;
+        }
     }
 
     /**
@@ -285,6 +309,9 @@ public class HostProxy implements RoutingObject {
 
             boolean overrideHostHeader = config.get("overrideHostHeader", Boolean.class).orElse(false);
 
+            TcpKeepAliveSettings tcpKeepAliveSettings = config.get("tcpKeepAliveSettings", TcpKeepAliveSettings.class)
+                    .orElse(null);
+
             return createHostProxyHandler(
                     executor,
                     context.environment().centralisedMetrics(),
@@ -295,7 +322,8 @@ public class HostProxy implements RoutingObject {
                     maxHeaderSize,
                     metricPrefix,
                     objectName,
-                    overrideHostHeader);
+                    overrideHostHeader,
+                    tcpKeepAliveSettings);
         }
 
         private static HostAndPort addDefaultPort(HostAndPort hostAndPort, TlsSettings tlsSettings) {
@@ -321,7 +349,8 @@ public class HostProxy implements RoutingObject {
                 int maxHeaderSize,
                 String appId,
                 String originId,
-                boolean overrideHostHeader) {
+                boolean overrideHostHeader,
+                TcpKeepAliveSettings tcpKeepAliveSettings) {
 
             String host = hostAndPort.getHost();
             int port = hostAndPort.getPort();
@@ -333,6 +362,9 @@ public class HostProxy implements RoutingObject {
 
             OriginMetrics originMetrics = new OriginMetrics(metrics, origin);
 
+            Iterable<ChannelOptionSetting<?>> channelOptionSettings =
+                extractChannelOptionSettings(tcpKeepAliveSettings);
+
             ConnectionPool.Factory connectionPoolFactory = new SimpleConnectionPoolFactory.Builder()
                     .connectionFactory(
                             connectionFactory(
@@ -341,7 +373,8 @@ public class HostProxy implements RoutingObject {
                                     responseTimeoutMillis,
                                     maxHeaderSize,
                                     theOrigin -> originMetrics,
-                                    poolSettings.connectionExpirationSeconds()))
+                                    poolSettings.connectionExpirationSeconds(),
+                                    channelOptionSettings))
                     .connectionPoolSettings(poolSettings)
                     .metrics(metrics)
                     .build();
@@ -358,7 +391,8 @@ public class HostProxy implements RoutingObject {
                 int responseTimeoutMillis,
                 int maxHeaderSize,
                 OriginStatsFactory originStatsFactory,
-                long connectionExpiration) {
+                long connectionExpiration,
+                Iterable<ChannelOptionSetting<?>> channelOptionSettings) {
 
             // Uses the default executor for now:
             NettyConnectionFactory factory = new NettyConnectionFactory.Builder()
@@ -371,7 +405,10 @@ public class HostProxy implements RoutingObject {
                     )
                     .executor(executor)
                     .tlsSettings(tlsSettings)
-                    .httpConfig(newHttpConfigBuilder().setMaxHeadersSize(maxHeaderSize).build())
+                    .httpConfig(newHttpConfigBuilder()
+                        .setMaxHeadersSize(maxHeaderSize)
+                        .setSettings(channelOptionSettings)
+                        .build())
                     .build();
 
             if (connectionExpiration > 0) {
@@ -379,6 +416,37 @@ public class HostProxy implements RoutingObject {
             } else {
                 return factory;
             }
+        }
+
+        private static Iterable<ChannelOptionSetting<?>> extractChannelOptionSettings(TcpKeepAliveSettings tcpKeepAliveSettings) {
+            List<ChannelOptionSetting<?>> channelOptionSettings = new ArrayList<>();
+
+            if (tcpKeepAliveSettings != null) {
+                ChannelOption<Integer> tcpKeepIdle;
+                ChannelOption<Integer> tcpKeepInterval;
+                ChannelOption<Integer> tcpKeepRetryCount;
+                if (Epoll.isAvailable()) {
+                    tcpKeepIdle = EpollChannelOption.TCP_KEEPIDLE;
+                    tcpKeepInterval = EpollChannelOption.TCP_KEEPINTVL;
+                    tcpKeepRetryCount = EpollChannelOption.TCP_KEEPCNT;
+                } else {
+                    tcpKeepIdle = NioChannelOption.of(ExtendedSocketOptions.TCP_KEEPIDLE);
+                    tcpKeepInterval = NioChannelOption.of(ExtendedSocketOptions.TCP_KEEPINTERVAL);
+                    tcpKeepRetryCount = NioChannelOption.of(ExtendedSocketOptions.TCP_KEEPCOUNT);
+                }
+
+                ofNullable(tcpKeepAliveSettings.keepAliveIdleTimeSeconds())
+                    .ifPresent(keepIdleTime ->
+                        channelOptionSettings.add(new ChannelOptionSetting<>(tcpKeepIdle, keepIdleTime)));
+                ofNullable(tcpKeepAliveSettings.keepAliveIntervalSeconds())
+                    .ifPresent(interval ->
+                        channelOptionSettings.add(new ChannelOptionSetting<>(tcpKeepInterval, interval)));
+                ofNullable(tcpKeepAliveSettings.keepAliveRetryCount())
+                    .ifPresent(count ->
+                        channelOptionSettings.add(new ChannelOptionSetting<>(tcpKeepRetryCount, count)));
+            }
+
+            return channelOptionSettings;
         }
 
     }

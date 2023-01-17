@@ -2,7 +2,7 @@
 
 ## Configuration file
 
-Backend services and origins known to Styx are configured in their own YAML file, which is referenced by the main 
+Backend services and origins known to Styx are configured in their own YAML file, which is referenced by the main
 configuration via the `originsFile` property in the services block.
 
 The value for this `originsFile` property accepts including environment variables (with the ${ENV_VAR} format) and can reference:
@@ -26,7 +26,7 @@ services:
       class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry$Factory"
       config: {originsFile: "classpath:/conf/origins.yaml"}
  ```
-    
+
 ## Backend services
 
 Each service has the following properties:
@@ -50,6 +50,8 @@ Defaults to 60000 milliseconds.
 * **sslSettings**: Enables HTTPS for backend.
 
 * **overrideHostHeader**: send the origin host as the Host header instead of the incoming Host header, defaults to false.
+
+* **tcpKeepAliveSettings**: configuration for TCP connection keepalive, which can be set to programmatically modified the default behaviours of different OS.
 
 ## Health check
 See [Health Checks](configure-health-checks.md) for details.
@@ -121,12 +123,21 @@ The `tlsSettings` is an optional configuration block. If present, it enables an 
 
 *   **trustStorePassword** - Password for keystore referred by **trustStorePath** attribute.
 
-Styx considers incoming traffic and outgoing traffic separately. It will convert between the HTTP and HTTPS protocols 
+Styx considers incoming traffic and outgoing traffic separately. It will convert between the HTTP and HTTPS protocols
 when the incoming server side protocol differs from the outgoing origin side protocol.
 
 Limitations:
 
 *   Styx does not support client side authentication for backend origins. Therefore the backend origins are unable to authenticate styx.
+
+## TCP KeepAlive Settings
+
+By default, Linux has `tcp_keepalive_time` set to 7200 seconds, `tcp_keepalive_probes` set to 9, and `tcp_keepalive_intvl` set to 75 seconds.
+The values can be modified programmatically by the follow properties:
+
+*   **keepAliveIdleTimeSeconds**: Determines the frequency of sending the TCP keepalive packets to keep a connection alive if it is currently unused. This value is used only when keepalive is enabled.
+*   **keepAliveIntervalSeconds**: Determines the frequency of sending TCP keepalive probes before deciding a broken connection.
+*   **keepAliveRetryCount**: Determines the duration for a reply for each keepalive probe. This value is important to calculate the time before your connection has a keepalive death.
 
 ## Origins
 
@@ -148,7 +159,7 @@ Here is the configuration for an example backend service:
         uri: "/version.txt"
         intervalMillis: 10000
         healthyThreshold: 2
-        unhealthyThreshold: 2  
+        unhealthyThreshold: 2
       stickySession:
         enabled: true
         timeoutSeconds: 14321
@@ -156,7 +167,7 @@ Here is the configuration for an example backend service:
         maxConnectionsPerHost: 300
         maxPendingConnectionsPerHost: 50
         connectTimeoutMillis: 12000
-        pendingConnectionTimeoutMillis: 10000    
+        pendingConnectionTimeoutMillis: 10000
       rewrites:
       - urlPattern: "/hwa/(.*)/foobar/(.*)"
         replacement: "/$1/barfoo/$2"
@@ -176,4 +187,8 @@ Here is the configuration for an example backend service:
       - id: "hwa1"
         host: "chhlapputle2e63.karmalab.net:7401"
       overrideHostHeader: true
+      tcpKeepAliveSettings:
+        keepAliveIdleTimeSeconds: 120
+        keepAliveIntervalSeconds: 30
+        keepAliveRetryCount: 3
 ```
