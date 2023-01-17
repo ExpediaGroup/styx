@@ -122,7 +122,10 @@ public class HostProxy implements RoutingObject {
             optional("tcpKeepAliveSettings", object(
                     optional("keepAliveIdleTimeSeconds", integer()),
                     optional("keepAliveIntervalSeconds", integer()),
-                    optional("keepAliveRetryCount", integer())
+                    optional("keepAliveRetryCount", integer()),
+                    atLeastOne("keepAliveIdleTimeSeconds",
+                            "keepAliveIntervalSeconds",
+                            "keepAliveRetryCount")
             ))
     );
 

@@ -448,6 +448,7 @@ class YamlFileConfigurationServiceTest : FunSpec() {
                 eventually(2.seconds, AssertionError::class.java) {
                     objectStore.get("app.app2").isPresent shouldBe true
                     objectStore.get("app.app2").get().let {
+                        it.config.get("tcpKeepAliveSettings").isObject shouldBe true
                         it.config.get("tcpKeepAliveSettings", TcpKeepAliveSettings::class.java)
                             .apply {
                                 keepAliveIdleTimeSeconds shouldBe 120
