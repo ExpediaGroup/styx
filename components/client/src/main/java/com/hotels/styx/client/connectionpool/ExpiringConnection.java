@@ -21,16 +21,19 @@ import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.javaconvenience.Stopwatch;
+import org.slf4j.Logger;
 import reactor.core.publisher.Flux;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Provides wrapper for connection, that tracks a connection expiration time. Also provides a method for verification of
  * a time pasted.
  */
 class ExpiringConnection implements Connection {
+    private static final Logger LOGGER = getLogger(ExpiringConnection.class);
     private final Connection nettyConnection;
     private final long connectionExpirationSeconds;
     private final Stopwatch stopwatch;
@@ -44,6 +47,8 @@ class ExpiringConnection implements Connection {
     @Override
     public boolean isConnected() {
         if (isExpired()) {
+            LOGGER.warn("Connection expired. Closing connection... origin={}, connection={}, connectionExpirationSeconds={}",
+                nettyConnection.getOrigin(), nettyConnection, connectionExpirationSeconds);
             close();
             return false;
         }

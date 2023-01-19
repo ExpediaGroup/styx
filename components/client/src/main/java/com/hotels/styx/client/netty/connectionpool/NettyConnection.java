@@ -28,18 +28,17 @@ import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
-import io.netty.util.AttributeKey;
 import reactor.core.publisher.Flux;
 
 import java.util.Optional;
 
+import static com.hotels.styx.api.exceptions.TransportLostException.CLOSED_BY_STYX;
 import static java.util.Objects.requireNonNull;
 
 /**
  * A connection using a netty channel.
  */
 public class NettyConnection implements Connection {
-    private static final AttributeKey<Object> CLOSED_BY_STYX = AttributeKey.newInstance("CLOSED_BY_STYX");
     private static final int IGNORED_PORT_NUMBER = -1;
 
     private final Origin origin;
