@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2022 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -91,8 +91,8 @@ internal class NettyServer(nettyServerBuilder: NettyServerBuilder) : AbstractSty
         LOGGER.debug("starting services")
         val serviceFuture = CompletableFuture<Void>()
         val b = ServerBootstrap()
-        b.group(bossExecutor.eventLoopGroup(), workerExecutor!!.eventLoopGroup())
-            .channel(bossExecutor.serverEventLoopClass())
+        b.group(bossExecutor.eventLoopGroup, workerExecutor!!.eventLoopGroup)
+            .channel(bossExecutor.serverEventLoopClass)
             .option(SO_BACKLOG, 1024)
             .option(SO_REUSEADDR, true)
             .childOption(SO_REUSEADDR, true)

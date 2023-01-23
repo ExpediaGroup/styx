@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ public class StateMachineTest {
                 .onInappropriateEvent(inappropriateEventHandler)
                 .build();
 
-        stateMachine.handle(new TestEvent(), "");
+        stateMachine.handle(new TestEvent());
 
         assertThat(stateMachine.currentState(), Matchers.is(EXPECTED_RESULT));
         verify(inappropriateEventHandler).apply(eq(STARTED), any(TestEvent.class));
@@ -81,7 +81,7 @@ public class StateMachineTest {
                 .transition(STARTED, TestEvent.class, mapper)
                 .build();
 
-        stateMachine.handle(new TestEvent(), "");
+        stateMachine.handle(new TestEvent());
 
         assertThat(stateMachine.currentState(), Matchers.is(EXPECTED_RESULT));
         verify(mapper).apply(any(TestEvent.class));
