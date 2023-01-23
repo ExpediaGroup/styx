@@ -29,7 +29,6 @@ import org.slf4j.LoggerFactory.getLogger
 import java.lang.Thread.currentThread
 import java.util.concurrent.TimeUnit.SECONDS
 
-
 /**
  * A netty based executor for styx.
  */
@@ -58,11 +57,11 @@ class NettyExecutor private constructor(
          *
          * @param name  thread group name.
          * @param count thread count.
-         * @return
+         * @return executor
          */
         @JvmStatic
-        fun create(name: String, count: Int): NettyExecutor {
-            return if (Epoll.isAvailable()) {
+        fun create(name: String, count: Int): NettyExecutor =
+            if (Epoll.isAvailable()) {
                 LOG.debug("Epoll is available. Using the native socket transport.")
                 NettyExecutor(
                     epollEventLoopGroup(count, "$name-%d-Thread"),
@@ -77,6 +76,5 @@ class NettyExecutor private constructor(
                     NioSocketChannel::class.java
                 )
             }
-        }
     }
 }

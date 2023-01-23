@@ -24,9 +24,9 @@ import java.util.function.Function
  *
  * @param <K> key type
  * @param <V> value type
-</V></K> */
+ */
 class SimpleCache<K, V>(private val generator: Function<K, V>) {
-    private val map: MutableMap<K, V> = ConcurrentHashMap()
+    private val map = ConcurrentHashMap<K, V>()
 
     operator fun get(key: K): V = map.computeIfAbsent(key, generator)
 

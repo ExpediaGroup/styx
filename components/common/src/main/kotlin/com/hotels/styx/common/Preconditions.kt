@@ -96,11 +96,7 @@ object Preconditions {
      * `errorMessageArgs` is null (don't let this happen)
      */
     @JvmStatic
-    fun checkArgument(
-        expression: Boolean,
-        errorMessageTemplate: String,
-        vararg errorMessageArgs: Any?
-    ) {
+    fun checkArgument(expression: Boolean, errorMessageTemplate: String, vararg errorMessageArgs: Any?) {
         require(expression) { String.format(errorMessageTemplate, *errorMessageArgs) }
     }
 }

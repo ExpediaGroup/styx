@@ -30,7 +30,7 @@ import java.util.concurrent.Executor
  */
 class HttpInterceptorContext(private val secure: Boolean, private val clientAddress: InetSocketAddress?, private val executor: Executor?) :
     HttpInterceptor.Context {
-    private val context: MutableMap<String, Any> = ConcurrentHashMap()
+    private val context = ConcurrentHashMap<String, Any>()
 
     override fun add(key: String, value: Any) {
         context[key] = value

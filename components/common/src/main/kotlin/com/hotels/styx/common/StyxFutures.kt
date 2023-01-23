@@ -31,7 +31,7 @@ object StyxFutures {
      * @param future Future object.
      * @param <T>    Return type of the future.
      * @return       Returns the future value once it completes.
-    </T> */
+     */
     @JvmStatic
     fun <T> await(future: CompletableFuture<T>): T {
         return try {

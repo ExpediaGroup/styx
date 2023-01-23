@@ -18,12 +18,11 @@ package com.hotels.styx.common
 import org.slf4j.LoggerFactory.getLogger
 import java.util.function.BiConsumer
 
-
 /**
  * A state machine for driving Finite State Machines.
  *
  * @param <S> State type.
-</S> */
+ */
 class FsmEventProcessor<S>(
     private val stateMachine: StateMachine<S>,
     private val errorHandler: BiConsumer<Throwable, S>,

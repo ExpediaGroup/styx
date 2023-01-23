@@ -66,7 +66,7 @@ class StateMachine<S> private constructor(
      * StateMachine builder.
      *
      * @param <S> state type
-    </S> */
+     */
     class Builder<S> {
         private val stateEventHandlers: MutableMap<Key<S>, Function<Any, S>> = HashMap()
         private var inappropriateEventHandler: BiFunction<S, Any, S>? = null
@@ -92,7 +92,7 @@ class StateMachine<S> private constructor(
          * @param mapper     function that returns the new state
          * @param <E>        event type
          * @return this builder
-        </E> */
+         */
         fun <E> transition(state: S, eventClass: Class<E>, mapper: Function<E, S>): Builder<S> {
             stateEventHandlers[Key(state, eventClass)] = Function { mapper.apply(it as E) }
             return this
@@ -104,7 +104,7 @@ class StateMachine<S> private constructor(
          * @param mapper function that returns the new state
          * @param <E>    event type
          * @return this builder
-        </E> */
+         */
         fun <E> onInappropriateEvent(mapper: BiFunction<S, E, S>): Builder<S> {
             inappropriateEventHandler = BiFunction { state, event -> mapper.apply(state, event as E) }
             return this
