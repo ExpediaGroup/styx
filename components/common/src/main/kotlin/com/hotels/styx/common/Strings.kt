@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,13 +13,18 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.common;
+package com.hotels.styx.common
 
 /**
- * Informed about state changes.
- *
- * @param <S> state type
+ * For use by Java code.
  */
-public interface StateChangeListener<S> {
-    void onStateChange(S oldState, S newState, Object event);
+object Strings {
+    @JvmStatic
+    fun isNullOrEmpty(s: String?): Boolean = s.isNullOrEmpty()
+
+    @JvmStatic
+    fun isNotEmpty(s: String?): Boolean = !isNullOrEmpty(s)
+
+    @JvmStatic
+    fun isBlank(s: String): Boolean = isNullOrEmpty(s) || s.isBlank()
 }

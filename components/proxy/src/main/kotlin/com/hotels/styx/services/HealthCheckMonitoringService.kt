@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -82,13 +82,13 @@ internal class HealthCheckMonitoringService(
     private val probe = urlProbe(
             HttpRequest.get(urlPath).build(),
             Duration.ofMillis(1000),
-            HttpInterceptorContext(false, null, workerExecutor.eventLoopGroup()))
+            HttpInterceptorContext(false, null, workerExecutor.eventLoopGroup))
 
     private val determineObjectState = healthCheckFunction(activeThreshold, inactiveThreshold)
     private val futureRef: AtomicReference<ScheduledFuture<*>> = AtomicReference()
 
     override fun startService() = CompletableFuture.runAsync {
-        LOGGER.info("started service for {} - {} - {}", arrayOf(application, period.toMillis(), period.toMillis()))
+        LOGGER.info("started service for {} - {} - {}", application, period.toMillis(), period.toMillis())
         futureRef.set(executor.scheduleAtFixedRate(
                 { runChecks(application, objectStore) },
                 period.toMillis(),
