@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hotels.styx.client.netty.connectionpool;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.HttpConfig;
+import com.hotels.styx.client.HttpRequestOperationFactory;
 import io.netty.channel.Channel;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,6 +32,7 @@ import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.mockito.Mockito.mock;
 
 public class NettyConnectionTest {
     private Channel channel;
@@ -66,7 +68,9 @@ public class NettyConnectionTest {
     }
 
     private Connection createConnection() {
-        return new NettyConnection(origin, channel, null, httpConfig, null, false, Optional.empty());
+        HttpRequestOperationFactory requestOperationFactory = mock(HttpRequestOperationFactory.class);
+
+        return new NettyConnection(origin, channel, requestOperationFactory, httpConfig, null, false, Optional.empty());
     }
 
     static class EventCapturingListener implements Connection.Listener {
