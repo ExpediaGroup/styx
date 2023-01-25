@@ -17,7 +17,7 @@ package com.hotels.styx.client.netty.connectionpool
 
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse
-import com.hotels.styx.api.exceptions.TransportLostException.CLOSED_BY_STYX
+import com.hotels.styx.api.exceptions.TransportLostException.Companion.CLOSED_BY_STYX
 import com.hotels.styx.api.extension.Announcer
 import com.hotels.styx.api.extension.Origin
 import com.hotels.styx.client.Connection
