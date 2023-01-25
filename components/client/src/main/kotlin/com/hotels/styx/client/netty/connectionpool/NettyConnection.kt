@@ -88,39 +88,45 @@ class NettyConnection(
 
     companion object {
         private const val IGNORED_PORT_NUMBER = -1
-        private fun addChannelHandlers(channel: Channel, httpConfig: HttpConfig, sslContext: SslContext?, sendSni: Boolean, targetHost: String?) {
-            val pipeline = channel.pipeline()
-            if (sslContext != null) {
-                val sslHandler = if (sendSni)
-                    sslContext.newHandler(channel.alloc(), targetHost, IGNORED_PORT_NUMBER)
-                else
-                    sslContext.newHandler(channel.alloc())
 
-                pipeline.addLast("ssl", sslHandler)
-            }
-            pipeline.addLast("http-codec", HttpClientCodec(httpConfig.maxInitialLength(), httpConfig.maxHeadersSize(), httpConfig.maxChunkSize()))
-            if (httpConfig.compress()) {
-                pipeline.addLast("decompressor", HttpContentDecompressor())
+        private fun addChannelHandlers(channel: Channel, httpConfig: HttpConfig, sslContext: SslContext?, sendSni: Boolean, targetHost: String?) {
+            channel.pipeline().run {
+                sslContext?.run {
+                    val sslHandler = if (sendSni) {
+                        newHandler(channel.alloc(), targetHost, IGNORED_PORT_NUMBER)
+                    } else {
+                        newHandler(channel.alloc())
+                    }
+
+                    addLast("ssl", sslHandler)
+                }
+
+                addLast("http-codec", HttpClientCodec(httpConfig.maxInitialLength(), httpConfig.maxHeadersSize(), httpConfig.maxChunkSize()))
+                if (httpConfig.compress()) {
+                    addLast("decompressor", HttpContentDecompressor())
+                }
             }
         }
 
         private fun toString(channel: Channel) = buildString(224) {
-            append(channel.javaClass.simpleName)
-            append("{active=")
-            append(channel.isActive)
-            append(", open=")
-            append(channel.isOpen)
-            append(", registered=")
-            append(channel.isRegistered)
-            append(", writable=")
-            append(channel.isWritable)
-            append(", localAddress=")
-            append(channel.localAddress())
-            append(", clientAddress=")
-            append(channel.remoteAddress())
-            append(", hashCode=")
-            append(channel.hashCode())
-            append('}')
+            with(channel) {
+                append(javaClass.simpleName)
+                append("{active=")
+                append(isActive)
+                append(", open=")
+                append(isOpen)
+                append(", registered=")
+                append(isRegistered)
+                append(", writable=")
+                append(isWritable)
+                append(", localAddress=")
+                append(localAddress())
+                append(", clientAddress=")
+                append(remoteAddress())
+                append(", hashCode=")
+                append(hashCode())
+                append('}')
+            }
         }
     }
 }

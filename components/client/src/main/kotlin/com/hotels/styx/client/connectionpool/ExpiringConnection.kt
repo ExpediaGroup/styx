@@ -30,23 +30,22 @@ import java.util.concurrent.TimeUnit.SECONDS
  * Provides wrapper for connection, that tracks a connection expiration time. Also provides a method for verification of
  * a time pasted.
  */
-internal class ExpiringConnection(
+class ExpiringConnection(
     private val nettyConnection: Connection,
     private val connectionExpirationSeconds: Long,
     clock: Clock
 ) : Connection {
-    private val stopwatch: Stopwatch = Stopwatch(clock)
+    private val stopwatch = Stopwatch(clock)
 
-    override fun isConnected(): Boolean {
-        return if (isExpired) {
-            LOGGER.warn(
-                "Connection expired. Closing connection... origin={}, connection={}, connectionExpirationSeconds={}",
-                nettyConnection.origin, nettyConnection, connectionExpirationSeconds
-            )
-            close()
-            false
-        } else
-            nettyConnection.isConnected
+    override fun isConnected() = if (isExpired) {
+        LOGGER.warn(
+            "Connection expired. Closing connection... origin=${nettyConnection.origin}, connection=$nettyConnection, " +
+                    "connectionExpirationSeconds=$connectionExpirationSeconds"
+        )
+        close()
+        false
+    } else {
+        nettyConnection.isConnected
     }
 
     override fun write(request: LiveHttpRequest): Flux<LiveHttpResponse> = nettyConnection.write(request)
