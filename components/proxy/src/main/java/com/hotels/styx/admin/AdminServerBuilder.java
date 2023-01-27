@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -73,7 +73,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.function.BooleanSupplier;
 
+import static com.hotels.styx.admin.AdminServerBuilderHelperKt.newReadinessHandler;
 import static com.hotels.styx.admin.handlers.IndexHandler.Link.link;
 import static com.hotels.styx.api.HttpHeaderValues.HTML;
 import static com.hotels.styx.api.HttpMethod.POST;
@@ -102,10 +104,11 @@ public class AdminServerBuilder {
     private final StyxObjectStore<StyxObjectRecord<StyxService>> providerDatabase;
     private final StyxObjectStore<StyxObjectRecord<InetServer>> serverDatabase;
     private final StartupConfig startupConfig;
+    private final BooleanSupplier readinessCheck;
 
     private Registry<BackendService> backendServicesRegistry;
 
-    public AdminServerBuilder(StyxServerComponents serverComponents) {
+    public AdminServerBuilder(StyxServerComponents serverComponents, BooleanSupplier readinessCheck) {
         this.environment = requireNonNull(serverComponents.environment());
         this.routeDatabase = requireNonNull(serverComponents.routeDatabase());
         this.routingObjectFactoryContext = requireNonNull(serverComponents.routingObjectFactoryContext());
@@ -113,6 +116,7 @@ public class AdminServerBuilder {
         this.configuration = this.environment.configuration();
         this.startupConfig = serverComponents.startupConfig();
         this.serverDatabase = requireNonNull(serverComponents.serversDatabase());
+        this.readinessCheck = requireNonNull(readinessCheck);
     }
 
     public AdminServerBuilder backendServicesRegistry(Registry<BackendService> backendServicesRegistry) {
@@ -154,6 +158,7 @@ public class AdminServerBuilder {
         httpRouter.aggregate("/admin", new IndexHandler(indexLinkPaths(styxConfig)));
         httpRouter.aggregate("/admin/uptime", new UptimeHandler(environment.meterRegistry()));
         httpRouter.aggregate("/admin/ping", new PingHandler());
+        httpRouter.aggregate("/admin/readiness", newReadinessHandler(readinessCheck));
         httpRouter.aggregate("/admin/threads", new ThreadsHandler());
         httpRouter.aggregate("/admin/current_requests", new CurrentRequestsHandler(CurrentRequestTracker.INSTANCE));
         MetricsHandler metricsHandler = new MetricsHandler(environment.metricRegistry(), metricsCacheExpiration);
@@ -226,6 +231,7 @@ public class AdminServerBuilder {
                 link("version.txt", "/version.txt"),
                 link("uptime", "/admin/uptime"),
                 link("Ping", "/admin/ping"),
+                link("Readiness", "/admin/readiness"),
                 link("Threads", "/admin/threads"),
                 link("Current Requests", "/admin/current_requests?withStackTrace=true"),
                 link("Metrics", "/admin/metrics?pretty"),
