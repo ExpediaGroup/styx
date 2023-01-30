@@ -24,6 +24,7 @@ import com.hotels.styx.api.HttpResponse
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.HttpResponseStatus.SERVICE_UNAVAILABLE
 import com.hotels.styx.api.WebServiceHandler
+import java.util.function.BooleanSupplier
 import kotlin.text.Charsets.UTF_8
 
 /**
@@ -46,3 +47,5 @@ class ReadinessHandler(val readiness: () -> Boolean) : WebServiceHandler {
 
     private fun jsonObject(key: String, value: Any) = "{\"$key\":\"$value\"}\n"
 }
+
+fun newReadinessHandler(booleanSupplier: BooleanSupplier) = ReadinessHandler { booleanSupplier.asBoolean }

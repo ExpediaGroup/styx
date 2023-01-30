@@ -75,8 +75,8 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 
-import static com.hotels.styx.admin.AdminServerBuilderHelperKt.newReadinessHandler;
 import static com.hotels.styx.admin.handlers.IndexHandler.Link.link;
+import static com.hotels.styx.admin.handlers.ReadinessHandlerKt.newReadinessHandler;
 import static com.hotels.styx.api.HttpHeaderValues.HTML;
 import static com.hotels.styx.api.HttpMethod.POST;
 import static com.hotels.styx.metrics.MetricsExtensionsKt.findRegistry;
