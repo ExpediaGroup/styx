@@ -44,5 +44,5 @@ class ReadinessHandler(val readiness: () -> Boolean) : WebServiceHandler {
 
     private fun response(lambda: HttpResponse.Builder.() -> Unit) = Eventual.of(HttpResponse.response().apply(lambda).build())
 
-    private fun jsonObject(key: String, value: Any) = "{\"$key\":\"$value\"}\n"
+    private fun jsonObject(key: String, value: Any) = "{\"$key\":$value}\n"
 }
