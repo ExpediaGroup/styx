@@ -158,7 +158,7 @@ public class AdminServerBuilder {
         httpRouter.aggregate("/admin", new IndexHandler(indexLinkPaths(styxConfig)));
         httpRouter.aggregate("/admin/uptime", new UptimeHandler(environment.meterRegistry()));
         httpRouter.aggregate("/admin/ping", new PingHandler());
-        httpRouter.aggregate("/admin/readiness", newReadinessHandler(readinessCheck));
+        httpRouter.aggregate("/admin/ready", newReadinessHandler(readinessCheck));
         httpRouter.aggregate("/admin/threads", new ThreadsHandler());
         httpRouter.aggregate("/admin/current_requests", new CurrentRequestsHandler(CurrentRequestTracker.INSTANCE));
         MetricsHandler metricsHandler = new MetricsHandler(environment.metricRegistry(), metricsCacheExpiration);
@@ -231,7 +231,7 @@ public class AdminServerBuilder {
                 link("version.txt", "/version.txt"),
                 link("uptime", "/admin/uptime"),
                 link("Ping", "/admin/ping"),
-                link("Readiness", "/admin/readiness"),
+                link("Readiness", "/admin/ready"),
                 link("Threads", "/admin/threads"),
                 link("Current Requests", "/admin/current_requests?withStackTrace=true"),
                 link("Metrics", "/admin/metrics?pretty"),
