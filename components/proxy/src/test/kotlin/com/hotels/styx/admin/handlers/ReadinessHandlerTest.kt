@@ -29,7 +29,25 @@ import kotlin.text.Charsets.UTF_8
 
 class ReadinessHandlerTest : StringSpec() {
     init {
-        "indicates readiness" {
+        "Handler sends correct body when not ready yet" {
+            val readinessHandler = ReadinessHandler { false }
+
+            readinessHandler.handle(HttpRequest.get("/admin/readiness").build(), requestContext()).await().apply {
+                status() shouldBe SERVICE_UNAVAILABLE
+                bodyAs(UTF_8) shouldBe "{\"ready\":\"false\"}\n"
+            }
+        }
+
+        "Handler sends correct body when ready" {
+            val readinessHandler = ReadinessHandler { true }
+
+            readinessHandler.handle(HttpRequest.get("/admin/readiness").build(), requestContext()).await().apply {
+                status() shouldBe OK
+                bodyAs(UTF_8) shouldBe "{\"ready\":\"true\"}\n"
+            }
+        }
+
+        "Handler changes content when readiness changes" {
             val ready = AtomicBoolean(false)
             val readinessHandler = ReadinessHandler { ready.get() }
 
