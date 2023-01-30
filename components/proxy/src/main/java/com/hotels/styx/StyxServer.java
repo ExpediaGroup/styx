@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2022 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -51,6 +51,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BooleanSupplier;
 
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static com.hotels.styx.StyxServers.toGuavaService;
@@ -203,7 +204,7 @@ public final class StyxServer extends AbstractService {
 
         // Startup phase 1: start plugins, control plane providers, and other services:
         ArrayList<Service> services = new ArrayList<>();
-        adminServer = createAdminServer(components);
+        adminServer = createAdminServer(components, this::isRunning);
         services.add(toGuavaService(adminServer));
         services.add(toGuavaService(new PluginsManager("Styx-Plugins-Manager", components)));
         services.add(toGuavaService(new ServiceProviderMonitor<>("Styx-Service-Monitor", components.servicesDatabase())));
@@ -362,10 +363,10 @@ public final class StyxServer extends AbstractService {
         }
     }
 
-    private static InetServer createAdminServer(StyxServerComponents components) {
+    private static InetServer createAdminServer(StyxServerComponents components, BooleanSupplier readinessCheck) {
         Registry<BackendService> registry = (Registry<BackendService>) components.services().get("backendServiceRegistry");
 
-        return new AdminServerBuilder(components)
+        return new AdminServerBuilder(components, readinessCheck)
                 .backendServicesRegistry(registry != null ? registry : new MemoryBackedRegistry<>())
                 .build();
     }
