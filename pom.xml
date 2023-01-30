@@ -619,15 +619,6 @@
         <scope>test</scope>
       </dependency>
 
-      <!-- https://mvnrepository.com/artifact/io.kotest/kotest-runner-junit5-jvm -->
-      <dependency>
-        <groupId>io.kotest</groupId>
-        <artifactId>kotest-runner-junit5-jvm</artifactId>
-        <version>5.5.4</version>
-        <scope>test</scope>
-      </dependency>
-
-
       <dependency>
         <groupId>io.mockk</groupId>
         <artifactId>mockk</artifactId>
