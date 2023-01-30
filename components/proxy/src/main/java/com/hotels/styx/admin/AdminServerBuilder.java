@@ -37,6 +37,7 @@ import com.hotels.styx.admin.handlers.PluginListHandler;
 import com.hotels.styx.admin.handlers.PluginToggleHandler;
 import com.hotels.styx.admin.handlers.PrometheusHandler;
 import com.hotels.styx.admin.handlers.ProviderRoutingHandler;
+import com.hotels.styx.admin.handlers.ReadinessHandler;
 import com.hotels.styx.admin.handlers.RoutingObjectHandler;
 import com.hotels.styx.admin.handlers.ServiceProviderHandler;
 import com.hotels.styx.admin.handlers.StartupConfigHandler;
@@ -76,7 +77,6 @@ import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 
 import static com.hotels.styx.admin.handlers.IndexHandler.Link.link;
-import static com.hotels.styx.admin.handlers.ReadinessHandlerKt.newReadinessHandler;
 import static com.hotels.styx.api.HttpHeaderValues.HTML;
 import static com.hotels.styx.api.HttpMethod.POST;
 import static com.hotels.styx.metrics.MetricsExtensionsKt.findRegistry;
@@ -158,7 +158,7 @@ public class AdminServerBuilder {
         httpRouter.aggregate("/admin", new IndexHandler(indexLinkPaths(styxConfig)));
         httpRouter.aggregate("/admin/uptime", new UptimeHandler(environment.meterRegistry()));
         httpRouter.aggregate("/admin/ping", new PingHandler());
-        httpRouter.aggregate("/admin/ready", newReadinessHandler(readinessCheck));
+        httpRouter.aggregate("/admin/ready", new ReadinessHandler(readinessCheck::getAsBoolean));
         httpRouter.aggregate("/admin/threads", new ThreadsHandler());
         httpRouter.aggregate("/admin/current_requests", new CurrentRequestsHandler(CurrentRequestTracker.INSTANCE));
         MetricsHandler metricsHandler = new MetricsHandler(environment.metricRegistry(), metricsCacheExpiration);
