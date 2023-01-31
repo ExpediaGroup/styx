@@ -34,7 +34,7 @@ class ReadinessHandlerTest : StringSpec() {
 
             readinessHandler.handle(HttpRequest.get("/admin/readiness").build(), requestContext()).await().apply {
                 status() shouldBe SERVICE_UNAVAILABLE
-                bodyAs(UTF_8) shouldBe "{\"ready\":\"false\"}\n"
+                bodyAs(UTF_8) shouldBe "{\"ready\":false}\n"
             }
         }
 
@@ -43,7 +43,7 @@ class ReadinessHandlerTest : StringSpec() {
 
             readinessHandler.handle(HttpRequest.get("/admin/readiness").build(), requestContext()).await().apply {
                 status() shouldBe OK
-                bodyAs(UTF_8) shouldBe "{\"ready\":\"true\"}\n"
+                bodyAs(UTF_8) shouldBe "{\"ready\":true}\n"
             }
         }
 
@@ -53,13 +53,13 @@ class ReadinessHandlerTest : StringSpec() {
 
             readinessHandler.handle(HttpRequest.get("/admin/readiness").build(), requestContext()).await().apply {
                 status() shouldBe SERVICE_UNAVAILABLE
-                bodyAs(UTF_8) shouldBe "{\"ready\":\"false\"}\n"
+                bodyAs(UTF_8) shouldBe "{\"ready\":false}\n"
             }
             ready.set(true)
 
             readinessHandler.handle(HttpRequest.get("/admin/readiness").build(), requestContext()).await().apply {
                 status() shouldBe OK
-                bodyAs(UTF_8) shouldBe "{\"ready\":\"true\"}\n"
+                bodyAs(UTF_8) shouldBe "{\"ready\":true}\n"
             }
         }
     }
