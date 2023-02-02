@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,21 +13,11 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx;
+package com.hotels.styx.server
 
-import com.hotels.styx.api.extension.service.spi.StyxService;
-
-import java.net.InetSocketAddress;
+import java.util.function.Supplier
 
 /**
- * A Styx Server is a StyxService with a server socket.
+ * A Unique id provider.
  */
-public interface InetServer extends StyxService {
-
-    /**
-     * Return an associated server address.
-     *
-     * @return a server Inet address and port.
-     */
-    InetSocketAddress inetAddress();
-}
+fun interface UniqueIdSupplier : Supplier<String?>

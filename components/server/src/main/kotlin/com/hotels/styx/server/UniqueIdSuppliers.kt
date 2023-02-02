@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,32 +13,29 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.server;
+package com.hotels.styx.server
 
-import com.fasterxml.uuid.EthernetAddress;
-import com.fasterxml.uuid.Generators;
-import com.fasterxml.uuid.NoArgGenerator;
+import com.fasterxml.uuid.EthernetAddress
+import com.fasterxml.uuid.Generators
+import com.fasterxml.uuid.NoArgGenerator
 
 /**
  * Useful unique id suppliers.
  */
-public final class UniqueIdSuppliers {
-    private static final NoArgGenerator TIME_BASED_GENERATOR = Generators.timeBasedGenerator(EthernetAddress.fromInterface());
+object UniqueIdSuppliers {
+    private val TIME_BASED_GENERATOR: NoArgGenerator = Generators.timeBasedGenerator(EthernetAddress.fromInterface())
 
     /**
      * A unique ID supplier which uses a UUID Version One implementation.
      */
-    public static final UniqueIdSupplier UUID_VERSION_ONE_SUPPLIER = () -> TIME_BASED_GENERATOR.generate().toString();
+    @JvmField
+    val UUID_VERSION_ONE_SUPPLIER = UniqueIdSupplier { TIME_BASED_GENERATOR.generate().toString() }
 
     /**
-     * Returns a supplier whose {@code get()} method returns the {@code uniqueId} passed in.
+     * Returns a supplier whose `get()` method returns the `uniqueId` passed in.
      *
      * @return a new ID supplier
      */
-    public static UniqueIdSupplier fixedUniqueIdSupplier(String uniqueId) {
-        return () -> uniqueId;
-    }
-
-    private UniqueIdSuppliers() {
-    }
+    @JvmStatic
+    fun fixedUniqueIdSupplier(uniqueId: String): UniqueIdSupplier = UniqueIdSupplier { uniqueId }
 }

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,13 +13,19 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.server;
+package com.hotels.styx.server
 
-
-import java.util.function.Supplier;
+import com.hotels.styx.api.MeterRegistry
+import com.hotels.styx.api.MetricRegistry
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry
 
 /**
- * A Unique id provider.
+ * ServerEnvironment providing a default metric registry of CodaHaleMetricRegistry.
  */
-public interface UniqueIdSupplier extends Supplier<String> {
+class ServerEnvironment(
+    @get:JvmName("registry")
+    val registry: MeterRegistry
+) {
+    @get:JvmName("metricRegistry")
+    val metricRegistry: MetricRegistry = CodaHaleMetricRegistry(registry)
 }
