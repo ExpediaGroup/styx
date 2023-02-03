@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ class StyxHttpServerTest : FeatureSpec({
 
             StyxHttpClient.Builder().build()
                     .send(get("/bar")
-                            .header(HOST, "localhost:${server.inetAddress().port}")
+                            .header(HOST, "localhost:${server.inetAddress()!!.port}")
                             .build())
                     .wait()
                     ?.let {
@@ -100,7 +100,7 @@ class StyxHttpServerTest : FeatureSpec({
             StyxHttpClient.Builder().build()
                     .secure()
                     .send(get("/bar")
-                            .header(HOST, "localhost:${server.inetAddress().port}")
+                            .header(HOST, "localhost:${server.inetAddress()!!.port}")
                             .build())
                     .wait()
                     ?.let {
@@ -126,7 +126,7 @@ class StyxHttpServerTest : FeatureSpec({
 
         scenario("Responses are compressed if accept-encoding is set to gzip") {
             StyxHttpClient.Builder().build().send(get("/blah")
-                    .header(HOST, "localhost:${server.inetAddress().port}")
+                    .header(HOST, "localhost:${server.inetAddress()!!.port}")
                     .header("accept-encoding", "7z, gzip")
                     .build())
                     .wait()!!
@@ -139,7 +139,7 @@ class StyxHttpServerTest : FeatureSpec({
 
         scenario("Does not compress response if accept-encoding not sent") {
             StyxHttpClient.Builder().build().send(get("/blah")
-                    .header(HOST, "localhost:${server.inetAddress().port}")
+                    .header(HOST, "localhost:${server.inetAddress()!!.port}")
                     .build())
                     .wait()!!
                     .let {
@@ -165,7 +165,7 @@ class StyxHttpServerTest : FeatureSpec({
 
         scenario("Accepts requests within max initial length") {
             StyxHttpClient.Builder().build().send(get("/a/" + "b".repeat(80))
-                    .header(HOST, "localhost:${server.inetAddress().port}")
+                    .header(HOST, "localhost:${server.inetAddress()!!.port}")
                     .build())
                     .wait()!!
                     .let {
@@ -176,7 +176,7 @@ class StyxHttpServerTest : FeatureSpec({
 
         scenario("Rejects requests exceeding the initial line length") {
             StyxHttpClient.Builder().build().send(get("/a/" + "b".repeat(95))
-                    .header(HOST, "localhost:${server.inetAddress().port}")
+                    .header(HOST, "localhost:${server.inetAddress()!!.port}")
                     .build())!!
                     .wait()!!
                     .let {
@@ -202,7 +202,7 @@ class StyxHttpServerTest : FeatureSpec({
 
         scenario("Accepts requests within max header size") {
             StyxHttpClient.Builder().build().send(get("/a/" + "b".repeat(80))
-                    .header(HOST, "localhost:${server.inetAddress().port}")
+                    .header(HOST, "localhost:${server.inetAddress()!!.port}")
                     .build())
                     .wait()!!
                     .let {
@@ -213,7 +213,7 @@ class StyxHttpServerTest : FeatureSpec({
 
         scenario("Rejects requests exceeding the max header size") {
             StyxHttpClient.Builder().build().send(get("/a/" + "b".repeat(95))
-                    .header(HOST, "localhost:${server.inetAddress().port}")
+                    .header(HOST, "localhost:${server.inetAddress()!!.port}")
                     .header("test-1", "x".repeat(1024))
                     .header("test-2", "x".repeat(1024))
                     .build())!!
@@ -245,7 +245,7 @@ class StyxHttpServerTest : FeatureSpec({
                 StyxHttpClient.Builder().build()
                         .streaming()
                         .send(LiveHttpRequest.get("/live")
-                                .header(HOST, "localhost:${server.inetAddress().port}")
+                                .header(HOST, "localhost:${server.inetAddress()!!.port}")
                                 .header(CONTENT_LENGTH, 100)
                                 .body(ByteStream(Flux.never()))
                                 .build())
@@ -278,13 +278,13 @@ class StyxHttpServerTest : FeatureSpec({
         val connection = NettyConnectionFactory.Builder()
                 .build()
                 .createConnection(
-                        newOriginBuilder("localhost", server.inetAddress().port).build(),
+                        newOriginBuilder("localhost", server.inetAddress()!!.port).build(),
                         ConnectionSettings(250))
                 .block()!!
 
         scenario("Should keep HTTP1/1 client connection open after serving the response.") {
             connection.write(
-                    get("/").header(HOST, "localhost:${server.inetAddress().port}")
+                    get("/").header(HOST, "localhost:${server.inetAddress()!!.port}")
                             .header(CONTENT_LENGTH, 0)
                             .build()
                             .stream())
@@ -320,9 +320,9 @@ class StyxHttpServerTest : FeatureSpec({
         guavaServer.startAsync().awaitRunning()
 
         scenario("Rejects concurrent connections beyond max connection count") {
-            val connection1 = createConnection(server.inetAddress().port)
-            val connection2 = createConnection(server.inetAddress().port)
-            val connection3 = createConnection(server.inetAddress().port)
+            val connection1 = createConnection(server.inetAddress()!!.port)
+            val connection2 = createConnection(server.inetAddress()!!.port)
+            val connection3 = createConnection(server.inetAddress()!!.port)
 
             eventually(500.milliseconds, AssertionError::class.java) {
                 connection1.isConnected shouldBe (true)
@@ -346,7 +346,7 @@ class StyxHttpServerTest : FeatureSpec({
         guavaServer.startAsync().awaitRunning()
 
         StyxHttpClient.Builder().build().send(get("/a/" + "b".repeat(95))
-                .header(HOST, "localhost:${server.inetAddress().port}")
+                .header(HOST, "localhost:${server.inetAddress()!!.port}")
                 .build())!!
                 .wait()!!
                 .let {

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,25 +13,15 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.server;
+package com.hotels.styx.server
 
-
-import com.hotels.styx.api.exceptions.ExternalFault;
+import com.hotels.styx.api.exceptions.ExternalFault
 
 /**
  * Exception thrown when requests time out.
  */
-public class RequestTimeoutException extends RuntimeException implements ExternalFault {
-
-    public RequestTimeoutException(String message) {
-        super(message);
-    }
-
-    public RequestTimeoutException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public RequestTimeoutException(Throwable cause) {
-        super(cause);
-    }
+class RequestTimeoutException : RuntimeException, ExternalFault {
+    constructor(message: String?) : super(message)
+    constructor(message: String?, cause: Throwable?) : super(message, cause)
+    constructor(cause: Throwable?) : super(cause)
 }
