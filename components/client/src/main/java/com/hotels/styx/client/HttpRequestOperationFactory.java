@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,8 +17,11 @@ package com.hotels.styx.client;
 
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
+import com.hotels.styx.client.netty.connectionpool.TimingHelper;
 import com.hotels.styx.common.format.DefaultHttpMessageFormatter;
 import com.hotels.styx.common.format.HttpMessageFormatter;
+import com.hotels.styx.metrics.CentralisedMetrics;
+import com.hotels.styx.metrics.ContextualTimers;
 
 import static java.util.Objects.requireNonNull;
 
@@ -44,6 +47,8 @@ public interface HttpRequestOperationFactory {
         boolean requestLoggingEnabled;
         boolean longFormat;
         HttpMessageFormatter httpMessageFormatter = new DefaultHttpMessageFormatter();
+        private CentralisedMetrics metrics;
+        private ContextualTimers timers;
 
         public static Builder httpRequestOperationFactoryBuilder() {
             return new Builder();
@@ -79,6 +84,16 @@ public interface HttpRequestOperationFactory {
             return this;
         }
 
+        public Builder metrics(CentralisedMetrics metrics) {
+            this.metrics = metrics;
+            return this;
+        }
+
+        public Builder timers(ContextualTimers timers) {
+            this.timers = timers;
+            return this;
+        }
+
         public HttpRequestOperationFactory build() {
             return request -> new HttpRequestOperation(
                     request,
@@ -86,7 +101,8 @@ public interface HttpRequestOperationFactory {
                     responseTimeoutMillis,
                     requestLoggingEnabled,
                     longFormat,
-                    httpMessageFormatter);
+                    httpMessageFormatter,
+                    new TimingHelper(metrics, timers));
         }
     }
 

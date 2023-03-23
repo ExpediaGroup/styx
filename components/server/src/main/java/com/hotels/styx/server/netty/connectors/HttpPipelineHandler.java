@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2022 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import com.hotels.styx.common.FsmEventProcessor;
 import com.hotels.styx.common.QueueDrainingEventProcessor;
 import com.hotels.styx.common.StateMachine;
 import com.hotels.styx.metrics.CentralisedMetrics;
+import com.hotels.styx.metrics.ContextualTimers;
 import com.hotels.styx.server.HttpErrorStatusListener;
 import com.hotels.styx.server.HttpInterceptorContext;
 import com.hotels.styx.server.RequestProgressListener;
@@ -56,6 +57,8 @@ import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.LiveHttpResponse.response;
+import static com.hotels.styx.metrics.TimerPurpose.REQUEST_PROCESSING;
+import static com.hotels.styx.metrics.TimerPurpose.RESPONSE_PROCESSING;
 import static com.hotels.styx.server.HttpErrorStatusListener.IGNORE_ERROR_STATUS;
 import static com.hotels.styx.server.RequestProgressListener.IGNORE_REQUEST_PROGRESS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
@@ -239,10 +242,12 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         // the same call stack as "onLegitimateRequest" handler. This happens when a plugin
         // generates a response.
         try {
-            Eventual<LiveHttpResponse> responseEventual = httpPipeline.handle(
-                    v11Request,
-                    new HttpInterceptorContext(this.secure, remoteAddress(ctx), ctx.executor()));
-            responseEventual.subscribe(new BaseSubscriber<LiveHttpResponse>() {
+            ContextualTimers timers = new ContextualTimers();
+            timers.startTiming(metrics, REQUEST_PROCESSING);
+
+            HttpInterceptorContext context = new HttpInterceptorContext(secure, remoteAddress(ctx), ctx.executor(), timers);
+            Eventual<LiveHttpResponse> responseEventual = httpPipeline.handle(v11Request, context);
+            responseEventual.subscribe(new BaseSubscriber<>() {
                 @Override
                 public void hookOnSubscribe(Subscription s) {
                     subscription = s;
@@ -251,11 +256,15 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
 
                 @Override
                 public void hookOnComplete() {
+                    timers.stopTiming(RESPONSE_PROCESSING);
                     eventProcessor.submit(new ResponseObservableCompletedEvent(ctx, request.id()));
                 }
 
                 @Override
                 public void hookOnError(Throwable cause) {
+                    timers.stopTiming(RESPONSE_PROCESSING);
+                    // in case we never managed to reach the end of request processing.
+                    timers.stopTiming(REQUEST_PROCESSING);
                     eventProcessor.submit(new ResponseObservableErrorEvent(ctx, cause, request.id()));
                 }
 

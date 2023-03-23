@@ -141,3 +141,9 @@ start-demo: release-styx
 	-e $(CONFIG_ROOT)/styx-env.sh \
 	-l $(CONFIG_ROOT)/logback.xml \
 	$(CONFIG_ROOT)/styx-config.yml
+
+start-demo-no-build:
+	$(STYX_HOME)/bin/startup \
+	-e $(CONFIG_ROOT)/styx-env.sh \
+	-l $(CONFIG_ROOT)/logback.xml \
+	$(CONFIG_ROOT)/styx-config.yml

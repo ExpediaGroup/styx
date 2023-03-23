@@ -23,6 +23,7 @@ import com.hotels.styx.api.extension.Origin
 import com.hotels.styx.client.Connection
 import com.hotels.styx.client.HttpConfig
 import com.hotels.styx.client.HttpRequestOperationFactory
+import com.hotels.styx.metrics.ContextualTimers
 import io.netty.channel.Channel
 import io.netty.handler.codec.http.HttpClientCodec
 import io.netty.handler.codec.http.HttpContentDecompressor
@@ -51,7 +52,7 @@ class NettyConnection(
     sslContext: SslContext?,
     sendSni: Boolean,
     sniHost: Optional<String?>
-) : Connection {
+) : Connection, ConnectionWithTiming {
     private val listeners = Announcer.to(Connection.Listener::class.java)
 
     init {
@@ -59,6 +60,10 @@ class NettyConnection(
             listeners.announce().connectionClosed(this)
         }
         addChannelHandlers(channel, httpConfig, sslContext, sendSni, sniHost.orElse(origin.host()))
+    }
+
+    override fun write(request: LiveHttpRequest, timers: ContextualTimers): Flux<LiveHttpResponse> {
+        TODO("Not yet implemented")
     }
 
     override fun write(request: LiveHttpRequest): Flux<LiveHttpResponse> =

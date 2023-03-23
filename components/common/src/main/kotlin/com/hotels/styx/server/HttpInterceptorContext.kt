@@ -16,6 +16,8 @@
 package com.hotels.styx.server
 
 import com.hotels.styx.api.HttpInterceptor
+import com.hotels.styx.metrics.ContextualTimers
+import com.hotels.styx.metrics.TimeMeasurable
 import java.net.InetSocketAddress
 import java.util.Optional
 import java.util.concurrent.ConcurrentHashMap
@@ -28,8 +30,15 @@ import java.util.concurrent.Executor
  * @param secure true if the request was received via SSL
  * @param clientAddress address that request came from, or null if not-applicable
  */
-class HttpInterceptorContext(private val secure: Boolean, private val clientAddress: InetSocketAddress?, private val executor: Executor?) :
-    HttpInterceptor.Context {
+class HttpInterceptorContext(
+    private val secure: Boolean,
+    private val clientAddress: InetSocketAddress?,
+    private val executor: Executor?,
+    override val timers: ContextualTimers? = null
+) : HttpInterceptor.Context, TimeMeasurable {
+    // This may seem redundant but it allows Executor to be a lambda without needing to set `timers`.
+    constructor(secure: Boolean, clientAddress: InetSocketAddress?, executor: Executor?) : this(secure, clientAddress, executor, null)
+
     private val context = ConcurrentHashMap<String, Any>()
 
     override fun add(key: String, value: Any) {

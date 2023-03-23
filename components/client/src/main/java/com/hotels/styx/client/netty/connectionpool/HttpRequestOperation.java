@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2022 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -66,24 +66,41 @@ public class HttpRequestOperation {
     private final AtomicInteger terminationCount = new AtomicInteger(0);
     private final AtomicInteger executeCount = new AtomicInteger(0);
     private final boolean requestLoggingEnabled;
+    private final TimingHelper timingHelper;
     private volatile long requestTime;
     private final HttpRequestMessageLogger httpRequestMessageLogger;
 
     /**
      * Constructs an instance.
-     *  @param request               HTTP request
+     *
+     * @param request               HTTP request
      * @param originStatsFactory    OriginStats factory
      * @param responseTimeoutMillis response timeout in milliseconds
      * @param requestLoggingEnabled
      */
-    public HttpRequestOperation(LiveHttpRequest request, OriginStatsFactory originStatsFactory,
-                                int responseTimeoutMillis, boolean requestLoggingEnabled, boolean longFormat, HttpMessageFormatter httpMessageFormatter) {
+    public HttpRequestOperation(LiveHttpRequest request,
+                                OriginStatsFactory originStatsFactory,
+                                int responseTimeoutMillis,
+                                boolean requestLoggingEnabled,
+                                boolean longFormat,
+                                HttpMessageFormatter httpMessageFormatter,
+                                TimingHelper timingHelper) {
         this.request = requireNonNull(request);
         this.originStatsFactory = Optional.ofNullable(originStatsFactory);
         this.responseTimeoutMillis = responseTimeoutMillis;
         this.requestLoggingEnabled = requestLoggingEnabled;
+        this.timingHelper = timingHelper == null ? new TimingHelper(null, null) : timingHelper;
         this.httpRequestMessageLogger = new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", longFormat, httpMessageFormatter);
     }
+
+//    public HttpRequestOperation(LiveHttpRequest request,
+//                                OriginStatsFactory originStatsFactory,
+//                                int responseTimeoutMillis,
+//                                boolean requestLoggingEnabled,
+//                                boolean longFormat,
+//                                HttpMessageFormatter httpMessageFormatter) {
+//        this(request, originStatsFactory, responseTimeoutMillis, requestLoggingEnabled, longFormat, httpMessageFormatter, null, null);
+//    }
 
     // Visible for testing
     static DefaultHttpRequest toNettyRequest(LiveHttpRequest request) {
@@ -122,6 +139,7 @@ public class HttpRequestOperation {
                 RequestBodyChunkSubscriber bodyChunkSubscriber = new RequestBodyChunkSubscriber(request, nettyConnection);
                 requestRequestBodyChunkSubscriber.set(bodyChunkSubscriber);
                 addProxyBridgeHandlers(nettyConnection, sink);
+                timingHelper.finishRequestTiming();
                 new WriteRequestToOrigin(sink, nettyConnection, request, bodyChunkSubscriber)
                         .write();
                 if (requestLoggingEnabled) {
@@ -132,6 +150,11 @@ public class HttpRequestOperation {
             }
         });
 
+        responseFlux = responseFlux.map(response -> {
+            timingHelper.startResponseTiming();
+            return response;
+        });
+
         if (requestLoggingEnabled) {
             responseFlux = responseFlux
                     .doOnNext(response -> {
@@ -139,17 +162,16 @@ public class HttpRequestOperation {
                     });
         }
         return responseFlux.map(response ->
-                        Requests.doFinally(response, cause -> {
-                            if (nettyConnection.isConnected()) {
-                                removeProxyBridgeHandlers(nettyConnection);
+                Requests.doFinally(response, cause -> {
+                    if (nettyConnection.isConnected()) {
+                        removeProxyBridgeHandlers(nettyConnection);
 
-                                if (requestIsOngoing(requestRequestBodyChunkSubscriber.get())) {
-                                    LOGGER.warn("Origin responded too quickly to an ongoing request, or it was cancelled. Connection={}, Request={}.",
-                                            new Object[]{nettyConnection.channel(), this.request});
-                                    nettyConnection.close();
-                                }
-                            }
-                        }));
+                        if (requestIsOngoing(requestRequestBodyChunkSubscriber.get())) {
+                            LOGGER.warn("Origin responded too quickly to an ongoing request, or it was cancelled. Connection={}, Request={}.", nettyConnection.channel(), request);
+                            nettyConnection.close();
+                        }
+                    }
+                }));
     }
 
     private void addProxyBridgeHandlers(NettyConnection nettyConnection, FluxSink<LiveHttpResponse> sink) {
