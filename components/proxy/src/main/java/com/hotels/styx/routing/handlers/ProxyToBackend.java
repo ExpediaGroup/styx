@@ -108,6 +108,7 @@ public class ProxyToBackend implements RoutingObject {
                                     .requestLoggingEnabled(requestLoggingEnabled)
                                     .responseTimeoutMillis(backendService.responseTimeoutMillis())
                                     .longFormat(longFormat)
+                                    .metrics(context.environment().centralisedMetrics())
                                     .build())
                     .tlsSettings(backendService.tlsSettings().orElse(null))
                     .httpConfig(newHttpConfigBuilder().setMaxHeadersSize(backendService.maxHeaderSize()).build())

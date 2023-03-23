@@ -189,6 +189,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                                 .requestLoggingEnabled(requestLoggingEnabled)
                                 .longFormat(longFormat)
                                 .httpMessageFormatter(environment.httpMessageFormatter())
+                                .metrics(environment.centralisedMetrics())
                                 .build()
                 )
                 .tlsSettings(backendService.tlsSettings().orElse(null))

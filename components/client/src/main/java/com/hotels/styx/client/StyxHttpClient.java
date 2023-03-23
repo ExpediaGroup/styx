@@ -26,6 +26,7 @@ import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.client.ssl.SslContextFactory;
+import com.hotels.styx.metrics.CentralisedMetrics;
 import io.netty.handler.ssl.SslContext;
 import reactor.core.publisher.Mono;
 
@@ -188,6 +189,7 @@ public final class StyxHttpClient implements HttpClient {
         private boolean isHttps;
         private String userAgent;
         private NettyExecutor executor = DEFAULT_EXECUTOR;
+        private CentralisedMetrics metrics;
 
         public Builder() {
         }
@@ -322,6 +324,11 @@ public final class StyxHttpClient implements HttpClient {
             return this;
         }
 
+        public Builder metrics(CentralisedMetrics metrics) {
+            this.metrics = metrics;
+            return this;
+        }
+
         /**
          * Construct a client instance.
          *
@@ -333,7 +340,8 @@ public final class StyxHttpClient implements HttpClient {
                     .tlsSettings(tlsSettings)
                     .httpRequestOperationFactory(httpRequestOperationFactoryBuilder()
                             .responseTimeoutMillis(responseTimeout)
-                            .build())
+                            .metrics(metrics)
+                            .buildX())
                     .executor(executor)
                     .build();
 

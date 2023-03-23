@@ -89,20 +89,16 @@ public interface HttpRequestOperationFactory {
             return this;
         }
 
-        public Builder timers(ContextualTimers timers) {
-            this.timers = timers;
-            return this;
-        }
-
+        // todo reset method name: i made it wrong on purpose to find all the places its used
         public HttpRequestOperationFactory build() {
             return request -> new HttpRequestOperation(
+                    metrics,
                     request,
                     originStatsFactory,
                     responseTimeoutMillis,
                     requestLoggingEnabled,
                     longFormat,
-                    httpMessageFormatter,
-                    new TimingHelper(metrics, timers));
+                    httpMessageFormatter);
         }
     }
 

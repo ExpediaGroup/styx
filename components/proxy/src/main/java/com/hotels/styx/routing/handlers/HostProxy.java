@@ -141,8 +141,7 @@ public class HostProxy implements RoutingObject {
     // Visible for testing
     final int port;
 
-    public HostProxy(String host, int port, StyxHostHttpClient client, OriginMetrics originMetrics,
-                     boolean overrideHostHeader) {
+    public HostProxy(String host, int port, StyxHostHttpClient client, OriginMetrics originMetrics, boolean overrideHostHeader) {
         this.host = requireNonNull(host);
         this.port = port;
         this.errorMessage = format("HostProxy %s:%d is stopped but received traffic.", host, port);
@@ -374,15 +373,18 @@ public class HostProxy implements RoutingObject {
                                     maxHeaderSize,
                                     theOrigin -> originMetrics,
                                     poolSettings.connectionExpirationSeconds(),
-                                    channelOptionSettings))
+                                    channelOptionSettings,
+                                    metrics))
                     .connectionPoolSettings(poolSettings)
                     .metrics(metrics)
                     .build();
 
-            return new HostProxy(host, port,
-                StyxHostHttpClient.create(connectionPoolFactory.create(origin)),
-                originMetrics,
-                overrideHostHeader);
+            return new HostProxy(host,
+                    port,
+                    StyxHostHttpClient.create(connectionPoolFactory.create(origin)),
+                    originMetrics,
+                    overrideHostHeader
+            );
         }
 
         private static Connection.Factory connectionFactory(
@@ -392,7 +394,8 @@ public class HostProxy implements RoutingObject {
                 int maxHeaderSize,
                 OriginStatsFactory originStatsFactory,
                 long connectionExpiration,
-                Iterable<ChannelOptionSetting<?>> channelOptionSettings) {
+                Iterable<ChannelOptionSetting<?>> channelOptionSettings,
+                CentralisedMetrics metrics) {
 
             // Uses the default executor for now:
             NettyConnectionFactory factory = new NettyConnectionFactory.Builder()
@@ -401,7 +404,8 @@ public class HostProxy implements RoutingObject {
                                     .flowControlEnabled(true)
                                     .originStatsFactory(originStatsFactory)
                                     .responseTimeoutMillis(responseTimeoutMillis)
-                                    .build()
+                                    .metrics(metrics)
+                                    .buildX()
                     )
                     .executor(executor)
                     .tlsSettings(tlsSettings)

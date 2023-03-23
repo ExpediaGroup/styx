@@ -16,6 +16,7 @@
 package com.hotels.styx.client.netty.connectionpool;
 
 import com.hotels.styx.api.Buffers;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpMethod;
 import com.hotels.styx.api.HttpVersion;
 import com.hotels.styx.api.LiveHttpRequest;
@@ -26,6 +27,7 @@ import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.common.logging.HttpRequestMessageLogger;
+import com.hotels.styx.metrics.CentralisedMetrics;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -66,7 +68,7 @@ public class HttpRequestOperation {
     private final AtomicInteger terminationCount = new AtomicInteger(0);
     private final AtomicInteger executeCount = new AtomicInteger(0);
     private final boolean requestLoggingEnabled;
-    private final TimingHelper timingHelper;
+    private final CentralisedMetrics metrics;
     private volatile long requestTime;
     private final HttpRequestMessageLogger httpRequestMessageLogger;
 
@@ -78,29 +80,20 @@ public class HttpRequestOperation {
      * @param responseTimeoutMillis response timeout in milliseconds
      * @param requestLoggingEnabled
      */
-    public HttpRequestOperation(LiveHttpRequest request,
+    public HttpRequestOperation(CentralisedMetrics metrics,
+                                LiveHttpRequest request,
                                 OriginStatsFactory originStatsFactory,
                                 int responseTimeoutMillis,
                                 boolean requestLoggingEnabled,
                                 boolean longFormat,
-                                HttpMessageFormatter httpMessageFormatter,
-                                TimingHelper timingHelper) {
+                                HttpMessageFormatter httpMessageFormatter) {
+        this.metrics = metrics;
         this.request = requireNonNull(request);
         this.originStatsFactory = Optional.ofNullable(originStatsFactory);
         this.responseTimeoutMillis = responseTimeoutMillis;
         this.requestLoggingEnabled = requestLoggingEnabled;
-        this.timingHelper = timingHelper == null ? new TimingHelper(null, null) : timingHelper;
         this.httpRequestMessageLogger = new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", longFormat, httpMessageFormatter);
     }
-
-//    public HttpRequestOperation(LiveHttpRequest request,
-//                                OriginStatsFactory originStatsFactory,
-//                                int responseTimeoutMillis,
-//                                boolean requestLoggingEnabled,
-//                                boolean longFormat,
-//                                HttpMessageFormatter httpMessageFormatter) {
-//        this(request, originStatsFactory, responseTimeoutMillis, requestLoggingEnabled, longFormat, httpMessageFormatter, null, null);
-//    }
 
     // Visible for testing
     static DefaultHttpRequest toNettyRequest(LiveHttpRequest request) {
@@ -129,7 +122,7 @@ public class HttpRequestOperation {
         return bodyChunkSubscriber != null && bodyChunkSubscriber.requestIsOngoing();
     }
 
-    public Flux<LiveHttpResponse> execute(NettyConnection nettyConnection) {
+    public Flux<LiveHttpResponse> execute(NettyConnection nettyConnection, HttpInterceptor.Context context) {
         AtomicReference<RequestBodyChunkSubscriber> requestRequestBodyChunkSubscriber = new AtomicReference<>();
         requestTime = System.currentTimeMillis();
         executeCount.incrementAndGet();
@@ -139,7 +132,7 @@ public class HttpRequestOperation {
                 RequestBodyChunkSubscriber bodyChunkSubscriber = new RequestBodyChunkSubscriber(request, nettyConnection);
                 requestRequestBodyChunkSubscriber.set(bodyChunkSubscriber);
                 addProxyBridgeHandlers(nettyConnection, sink);
-                timingHelper.finishRequestTiming();
+                // todo finish request timing if context!=null
                 new WriteRequestToOrigin(sink, nettyConnection, request, bodyChunkSubscriber)
                         .write();
                 if (requestLoggingEnabled) {
@@ -151,7 +144,7 @@ public class HttpRequestOperation {
         });
 
         responseFlux = responseFlux.map(response -> {
-            timingHelper.startResponseTiming();
+        // todo start response timing if context!=null
             return response;
         });
 
@@ -237,7 +230,9 @@ public class HttpRequestOperation {
         private final LiveHttpRequest request;
         private final RequestBodyChunkSubscriber requestBodyChunkSubscriber;
 
-        private WriteRequestToOrigin(FluxSink<LiveHttpResponse> responseFromOriginFlux, NettyConnection nettyConnection, LiveHttpRequest request,
+        private WriteRequestToOrigin(FluxSink<LiveHttpResponse> responseFromOriginFlux,
+                                     NettyConnection nettyConnection,
+                                     LiveHttpRequest request,
                                      RequestBodyChunkSubscriber requestBodyChunkSubscriber) {
             this.responseFromOriginFlux = responseFromOriginFlux;
             this.nettyConnection = nettyConnection;

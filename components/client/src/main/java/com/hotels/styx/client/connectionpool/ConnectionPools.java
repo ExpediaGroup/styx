@@ -65,6 +65,7 @@ public final class ConnectionPools {
                 .httpRequestOperationFactory(
                         httpRequestOperationFactoryBuilder()
                                 .responseTimeoutMillis(backendService.responseTimeoutMillis())
+                                .metrics(metrics)
                                 .build())
                 .build();
 
