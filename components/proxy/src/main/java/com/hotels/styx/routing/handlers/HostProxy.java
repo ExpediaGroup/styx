@@ -405,7 +405,7 @@ public class HostProxy implements RoutingObject {
                                     .originStatsFactory(originStatsFactory)
                                     .responseTimeoutMillis(responseTimeoutMillis)
                                     .metrics(metrics)
-                                    .buildX()
+                                    .build()
                     )
                     .executor(executor)
                     .tlsSettings(tlsSettings)

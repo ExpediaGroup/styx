@@ -80,7 +80,7 @@ public class StyxHostHttpClientTest {
                 .verify();
 
         verify(pool).borrowConnection();
-        verify(connection).write(any(LiveHttpRequest.class));
+        verify(connection).write(any(LiveHttpRequest.class), null);
         verify(pool).returnConnection(any(Connection.class));
         verify(context).add(ORIGINID_CONTEXT_KEY, Id.id("mockorigin"));
     }
@@ -235,7 +235,7 @@ public class StyxHostHttpClientTest {
 
     Connection mockConnection(Flux<LiveHttpResponse> responseObservable) {
         Connection connection = mock(Connection.class);
-        when(connection.write(any(LiveHttpRequest.class))).thenReturn(responseObservable);
+        when(connection.write(any(LiveHttpRequest.class), null)).thenReturn(responseObservable);
         return connection;
     }
 

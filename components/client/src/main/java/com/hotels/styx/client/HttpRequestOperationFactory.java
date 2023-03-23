@@ -17,11 +17,9 @@ package com.hotels.styx.client;
 
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
-import com.hotels.styx.client.netty.connectionpool.TimingHelper;
 import com.hotels.styx.common.format.DefaultHttpMessageFormatter;
 import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.metrics.CentralisedMetrics;
-import com.hotels.styx.metrics.ContextualTimers;
 
 import static java.util.Objects.requireNonNull;
 
@@ -48,7 +46,6 @@ public interface HttpRequestOperationFactory {
         boolean longFormat;
         HttpMessageFormatter httpMessageFormatter = new DefaultHttpMessageFormatter();
         private CentralisedMetrics metrics;
-        private ContextualTimers timers;
 
         public static Builder httpRequestOperationFactoryBuilder() {
             return new Builder();

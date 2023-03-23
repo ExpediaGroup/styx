@@ -16,6 +16,7 @@
 package com.hotels.styx.client.connectionpool
 
 import com.hotels.styx.api.Clock
+import com.hotels.styx.api.HttpInterceptor
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.api.extension.Origin
@@ -48,7 +49,7 @@ class ExpiringConnection(
         nettyConnection.isConnected
     }
 
-    override fun write(request: LiveHttpRequest): Flux<LiveHttpResponse> = nettyConnection.write(request)
+    override fun write(request: LiveHttpRequest, context : HttpInterceptor.Context): Flux<LiveHttpResponse> = nettyConnection.write(request, context)
 
     override fun getOrigin(): Origin = nettyConnection.origin
 

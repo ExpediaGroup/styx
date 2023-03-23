@@ -287,7 +287,7 @@ class StyxHttpServerTest : FeatureSpec({
                     get("/").header(HOST, "localhost:${server.inetAddress()!!.port}")
                             .header(CONTENT_LENGTH, 0)
                             .build()
-                            .stream())
+                            .stream(), null)
                     .toMono()
                     .block()!!
                     .aggregate(1024)

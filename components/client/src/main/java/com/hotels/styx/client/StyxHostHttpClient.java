@@ -50,7 +50,7 @@ public class StyxHostHttpClient implements LoadBalancingMetricSupplier {
         return Flux.from(pool.borrowConnection())
                 .flatMap(connection -> {
 
-                    return ResponseEventListener.from(connection.write(request))
+                    return ResponseEventListener.from(connection.write(request, context))
                             .whenCancelled(() -> pool.closeConnection(connection))
                             .whenResponseError(cause -> pool.closeConnection(connection))
                             .whenContentError(cause -> pool.closeConnection(connection))

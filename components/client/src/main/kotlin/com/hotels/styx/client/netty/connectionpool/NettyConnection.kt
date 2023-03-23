@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.client.netty.connectionpool
 
+import com.hotels.styx.api.HttpInterceptor.Context
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.api.exceptions.TransportLostException.Companion.CLOSED_BY_STYX
@@ -52,7 +53,7 @@ class NettyConnection(
     sslContext: SslContext?,
     sendSni: Boolean,
     sniHost: Optional<String?>
-) : Connection, ConnectionWithTiming {
+) : Connection {
     private val listeners = Announcer.to(Connection.Listener::class.java)
 
     init {
@@ -62,12 +63,8 @@ class NettyConnection(
         addChannelHandlers(channel, httpConfig, sslContext, sendSni, sniHost.orElse(origin.host()))
     }
 
-    override fun write(request: LiveHttpRequest, timers: ContextualTimers): Flux<LiveHttpResponse> {
-        TODO("Not yet implemented")
-    }
-
-    override fun write(request: LiveHttpRequest): Flux<LiveHttpResponse> =
-        requestOperationFactory.newHttpRequestOperation(request).execute(this)
+    override fun write(request: LiveHttpRequest, context: Context): Flux<LiveHttpResponse> =
+        requestOperationFactory.newHttpRequestOperation(request).execute(this, context)
 
     override fun isConnected() = channel.isActive
 

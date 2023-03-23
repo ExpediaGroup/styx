@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.client;
 
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.extension.Origin;
@@ -49,7 +50,7 @@ public interface Connection extends Closeable {
      * @param request
      * @return a Publisher that provides the response
      */
-    Flux<LiveHttpResponse> write(LiveHttpRequest request);
+    Flux<LiveHttpResponse> write(LiveHttpRequest request, HttpInterceptor.Context context);
 
     /**
      * Returns if the underlying connection is still active.
