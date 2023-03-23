@@ -25,6 +25,7 @@ import com.hotels.styx.api.Requests;
 import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.OriginStatsFactory;
+import com.hotels.styx.client.connectionpool.LatencyTiming;
 import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.common.logging.HttpRequestMessageLogger;
 import com.hotels.styx.metrics.CentralisedMetrics;
@@ -132,7 +133,7 @@ public class HttpRequestOperation {
                 RequestBodyChunkSubscriber bodyChunkSubscriber = new RequestBodyChunkSubscriber(request, nettyConnection);
                 requestRequestBodyChunkSubscriber.set(bodyChunkSubscriber);
                 addProxyBridgeHandlers(nettyConnection, sink);
-                // todo finish request timing if context!=null
+                LatencyTiming.finishRequestTiming(context);
                 new WriteRequestToOrigin(sink, nettyConnection, request, bodyChunkSubscriber)
                         .write();
                 if (requestLoggingEnabled) {
@@ -144,7 +145,7 @@ public class HttpRequestOperation {
         });
 
         responseFlux = responseFlux.map(response -> {
-        // todo start response timing if context!=null
+            LatencyTiming.startResponseTiming(metrics, context);
             return response;
         });
 
