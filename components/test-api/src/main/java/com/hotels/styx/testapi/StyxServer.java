@@ -17,12 +17,14 @@ package com.hotels.styx.testapi;
 
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.admin.AdminServerConfig;
+import com.hotels.styx.api.MeterRegistry;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
+import com.hotels.styx.common.Preconditions;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.infrastructure.RegistryServiceAdapter;
 import com.hotels.styx.proxy.ProxyServerConfig;
@@ -30,7 +32,7 @@ import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpsConnectorConfig;
 import com.hotels.styx.startup.StyxServerComponents;
 import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
-import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,20 +57,25 @@ import static java.util.stream.Collectors.toSet;
 public final class StyxServer {
     private final com.hotels.styx.StyxServer server;
     private final MetricRegistry metricRegistry;
+    private final MeterRegistry meterRegistry;
 
     private StyxServer(Builder builder) {
         acceptAllSslRequests();
 
         MemoryBackedRegistry<com.hotels.styx.api.extension.service.BackendService> backendServicesRegistry = new MemoryBackedRegistry<>();
 
+        MicrometerRegistry registry = new MicrometerRegistry(new SimpleMeterRegistry());
         StyxServerComponents config = new StyxServerComponents.Builder()
-                .registry(new MicrometerRegistry(new CompositeMeterRegistry()))
+                .registry(registry)
                 .styxConfig(styxConfig(builder))
                 .pluginFactories(builder.pluginFactories)
                 .additionalServices(Map.of("backendServiceRegistry", new RegistryServiceAdapter(backendServicesRegistry)))
                 .build();
 
         metricRegistry = config.environment().metricRegistry();
+        meterRegistry = config.environment().meterRegistry();
+
+        Preconditions.checkArgument(registry.micrometerRegistry() == meterRegistry.micrometerRegistry());
 
         this.server = new com.hotels.styx.StyxServer(config);
 
@@ -138,9 +145,20 @@ public final class StyxServer {
      * Provides the metric registry.
      *
      * @return metric registry
+     * @deprecated use {@link #meterRegistry}
      */
+    @Deprecated
     public MetricRegistry metrics() {
         return metricRegistry;
+    }
+
+    /**
+     * Provides the metric registry.
+     *
+     * @return metric registry
+     */
+    public MeterRegistry meterRegistry() {
+        return meterRegistry;
     }
 
     /**

@@ -15,18 +15,26 @@
  */
 package com.hotels.styx.metrics
 
+import io.micrometer.core.instrument.Timer
+import org.slf4j.LoggerFactory.getLogger
 import java.util.EnumMap
 
 class ContextualTimers {
     private val stoppers = EnumMap<TimerPurpose, TimerMetric.Stopper>(TimerPurpose::class.java)
 
     fun startTiming(centralisedMetrics: CentralisedMetrics, timerPurpose: TimerPurpose) {
+        println("startTiming($timerPurpose)")
         check(!stoppers.containsKey(timerPurpose))
         stoppers[timerPurpose] = timerPurpose.timerMetric(centralisedMetrics).startTiming()
     }
 
     fun stopTiming(timerPurpose: TimerPurpose) {
+        println("stopTiming($timerPurpose)")
         stoppers[timerPurpose]?.stop()
+    }
+
+    companion object {
+        private val logger = getLogger(ContextualTimers::class.java)
     }
 }
 

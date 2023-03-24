@@ -185,9 +185,9 @@ public final class StyxServer extends AbstractService {
         this.stopwatch = stopwatch;
         this.components = components;
 
-        if (!(components.environment().meterRegistry().micrometerRegistry() instanceof CompositeMeterRegistry)) {
-            throw new IllegalStateException("The base meter registry should be a micrometer composite registry!");
-        }
+//        if (!(components.environment().meterRegistry().micrometerRegistry() instanceof CompositeMeterRegistry)) {
+//            throw new IllegalStateException("The base meter registry should be a micrometer composite registry!");
+//        }
 
         registerCoreMetrics(components.environment().centralisedMetrics());
 
