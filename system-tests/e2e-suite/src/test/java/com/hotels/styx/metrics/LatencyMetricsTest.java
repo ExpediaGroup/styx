@@ -25,17 +25,13 @@ import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.plugins.DelayPlugin;
 import com.hotels.styx.testapi.StyxServer;
-import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
@@ -49,7 +45,6 @@ import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 
@@ -111,9 +106,6 @@ public class LatencyMetricsTest {
         assertThat(response.status(), is(OK));
         assertThat(response.bodyAs(UTF_8), is("foo"));
 
-//        List<Meter> meters = styxServer.meterRegistry().getMeters();
-//        TempKt.dumpTimers(meters, "Timers in Styx");
-
         assertThat(styxServer.meterRegistry().timer("proxy.request.latency").count(), is(1L));
         assertThat(styxServer.meterRegistry().timer("proxy.response.latency").count(), is(1L));
 
@@ -123,11 +115,6 @@ public class LatencyMetricsTest {
 
     private HttpResponse doGet(String path) {
         return doRequest(client, "http", styxServer.proxyHttpPort(), startWithSlash(path));
-    }
-
-    private HttpResponse doHttpsGet(String path) {
-        HttpClient client1 = new StyxHttpClient.Builder().build();
-        return doRequest(client1, "https", styxServer.proxyHttpsPort(), path);
     }
 
     private static HttpResponse doRequest(HttpClient client, String protocol, int port, String path) {

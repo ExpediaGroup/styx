@@ -16,10 +16,12 @@
 package com.hotels.styx.client;
 
 import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
 import com.hotels.styx.common.format.DefaultHttpMessageFormatter;
 import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.metrics.CentralisedMetrics;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 import static java.util.Objects.requireNonNull;
 
@@ -86,8 +88,11 @@ public interface HttpRequestOperationFactory {
             return this;
         }
 
-        // todo reset method name: i made it wrong on purpose to find all the places its used
         public HttpRequestOperationFactory build() {
+            if(metrics == null) {
+                metrics = new CentralisedMetrics(new MicrometerRegistry(new SimpleMeterRegistry()));
+            }
+
             return request -> new HttpRequestOperation(
                     metrics,
                     request,

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2022 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.client.StyxHostHttpClient.ORIGINID_CONTEXT_KEY;
 import static com.hotels.styx.support.Support.requestContext;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -80,7 +81,7 @@ public class StyxHostHttpClientTest {
                 .verify();
 
         verify(pool).borrowConnection();
-        verify(connection).write(any(LiveHttpRequest.class), null);
+        verify(connection).write(any(LiveHttpRequest.class), any(Context.class));
         verify(pool).returnConnection(any(Connection.class));
         verify(context).add(ORIGINID_CONTEXT_KEY, Id.id("mockorigin"));
     }
@@ -235,7 +236,7 @@ public class StyxHostHttpClientTest {
 
     Connection mockConnection(Flux<LiveHttpResponse> responseObservable) {
         Connection connection = mock(Connection.class);
-        when(connection.write(any(LiveHttpRequest.class), null)).thenReturn(responseObservable);
+        when(connection.write(any(LiveHttpRequest.class), any(Context.class))).thenReturn(responseObservable);
         return connection;
     }
 

@@ -16,7 +16,6 @@
 package com.hotels.styx.client.netty.connectionpool;
 
 import com.hotels.styx.NettyExecutor;
-import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.api.exceptions.OriginUnreachableException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.TlsSettings;
@@ -26,8 +25,6 @@ import com.hotels.styx.client.ConnectionSettings;
 import com.hotels.styx.client.HttpConfig;
 import com.hotels.styx.client.HttpRequestOperationFactory;
 import com.hotels.styx.client.ssl.SslContextFactory;
-import com.hotels.styx.metrics.CentralisedMetrics;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
@@ -122,7 +119,7 @@ public class NettyConnectionFactory implements Connection.Factory {
     public static final class Builder {
         private static final NettyExecutor DEFAULT_EXECUTOR = NettyExecutor.create("Netty-Executor", 0);
 
-        private HttpRequestOperationFactory httpRequestOperationFactory = httpRequestOperationFactoryBuilder().metrics(new CentralisedMetrics(new MicrometerRegistry(new SimpleMeterRegistry()))).build();
+        private HttpRequestOperationFactory httpRequestOperationFactory = httpRequestOperationFactoryBuilder().build();
         private HttpConfig httpConfig = defaultHttpConfig();
         private TlsSettings tlsSettings;
         private NettyExecutor executor = DEFAULT_EXECUTOR;

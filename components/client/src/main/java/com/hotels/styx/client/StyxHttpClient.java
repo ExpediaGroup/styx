@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2022 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package com.hotels.styx.client;
 
 import com.google.common.net.HostAndPort;
 import com.hotels.styx.NettyExecutor;
-import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
@@ -28,14 +27,11 @@ import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.client.ssl.SslContextFactory;
 import com.hotels.styx.metrics.CentralisedMetrics;
-import com.hotels.styx.server.HttpInterceptorContext;
 import io.netty.handler.ssl.SslContext;
 import reactor.core.publisher.Mono;
 
-import java.net.InetSocketAddress;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
@@ -126,7 +122,7 @@ public final class StyxHttpClient implements HttpClient {
                 new ConnectionSettings(params.connectTimeoutMillis()),
                 sslContext
         ).flatMap(connection ->
-                Mono.from(connection.write(networkRequest, dummyContext())
+                Mono.from(connection.write(networkRequest, DummyContext.INSTANCE)
                         .doOnComplete(connection::close)
                         .doOnError(e -> connection.close())
                         .map(response -> response.newBuilder()
@@ -138,35 +134,6 @@ public final class StyxHttpClient implements HttpClient {
                         )
                 )
         );
-    }
-
-    private static HttpInterceptor.Context dummyContext() {
-        return new HttpInterceptor.Context() {
-            @Override
-            public void add(String key, Object value) {
-
-            }
-
-            @Override
-            public <T> T get(String key, Class<T> clazz) {
-                return null;
-            }
-
-            @Override
-            public boolean isSecure() {
-                return false;
-            }
-
-            @Override
-            public Optional<InetSocketAddress> clientAddress() {
-                return Optional.empty();
-            }
-
-            @Override
-            public Executor executor() {
-                return null;
-            }
-        };
     }
 
     private static LiveHttpRequest addUserAgent(String userAgent, LiveHttpRequest request) {
