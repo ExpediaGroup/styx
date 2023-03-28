@@ -15,34 +15,51 @@
  */
 package com.hotels.styx.metrics
 
-import io.micrometer.core.instrument.Timer
-import org.slf4j.LoggerFactory.getLogger
 import java.util.EnumMap
 
+/**
+ * Contains timers for the purposes contained within the [TimerPurpose] enum.
+ * These are intended to be passed around in context objects that implement the [TimeMeasurable] interface.
+ *
+ * This facilitates measurements where the start and end of timing occurs in different parts of the code.
+ */
 class ContextualTimers {
     private val stoppers = EnumMap<TimerPurpose, TimerMetric.Stopper>(TimerPurpose::class.java)
 
+    /**
+     * Start timing the metric encapsulated by the [TimerPurpose].
+     *
+     * @param centralisedMetrics core Styx metrics
+     * @param timerPurpose encapsulates the relevant metric
+     */
     fun startTiming(centralisedMetrics: CentralisedMetrics, timerPurpose: TimerPurpose) {
-        println("startTiming($timerPurpose)")
         check(!stoppers.containsKey(timerPurpose))
         stoppers[timerPurpose] = timerPurpose.timerMetric(centralisedMetrics).startTiming()
     }
 
+    /**
+     * Stop timing the metric encapsulated by the [TimerPurpose].
+     *
+     * @param timerPurpose encapsulates the relevant metric
+     */
     fun stopTiming(timerPurpose: TimerPurpose) {
-        println("stopTiming($timerPurpose)")
         stoppers[timerPurpose]?.stop()
-    }
-
-    companion object {
-        private val logger = getLogger(ContextualTimers::class.java)
     }
 }
 
+/**
+ * Encapsulates the metrics that [ContextualTimers] can be used for.
+ *
+ * As it is not appropriate for every metric, this only contains the subset of metrics for which it makes sense.
+ */
 enum class TimerPurpose(val timerMetric: CentralisedMetrics.() -> TimerMetric) {
     REQUEST_PROCESSING({ proxy.requestProcessingLatency }),
     RESPONSE_PROCESSING({ proxy.responseProcessingLatency })
 }
 
+/**
+ * An interface implemented by a context object that contains timers. Used to pass timers through the flow of Styx proxying.
+ */
 interface TimeMeasurable {
     val timers: ContextualTimers?
 }

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,16 +17,12 @@ package com.hotels.styx.metrics;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
-import com.hotels.styx.TempKt;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.plugins.DelayPlugin;
 import com.hotels.styx.testapi.StyxServer;
-import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -75,23 +71,6 @@ public class LatencyMetricsTest {
     @AfterEach
     public void stopOrigins() {
         origin.stop();
-    }
-
-    @Test
-    public void foo() {
-        styxServer = new StyxServer.Builder()
-                .addRoute("/", origin.port())
-                .start();
-
-        // TODO notice that with CompositeMeterRegistry, it doesn't increment the timer count?
-
-        TempKt.timerExperiment("Raw simple registry", new SimpleMeterRegistry());
-        TempKt.timerExperiment("Raw composite registry", new CompositeMeterRegistry());
-        TempKt.timerExperiment("Styx wrapper with simple rr", new MicrometerRegistry(new SimpleMeterRegistry()));
-        TempKt.timerExperiment("Styx wrapper with composite rr", new MicrometerRegistry(new CompositeMeterRegistry()));
-        TempKt.timerExperiment("Registry from server", styxServer.meterRegistry());
-        TempKt.timerExperiment("Registry from server", styxServer.meterRegistry(), true);
-        TempKt.timerExperiment(new CentralisedMetrics(styxServer.meterRegistry()));
     }
 
     @Test

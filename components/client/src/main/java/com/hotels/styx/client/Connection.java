@@ -54,7 +54,6 @@ public interface Connection extends Closeable {
      */
     Flux<LiveHttpResponse> write(LiveHttpRequest request, HttpInterceptor.Context context);
 
-
     /**
      * Returns if the underlying connection is still active.
      *

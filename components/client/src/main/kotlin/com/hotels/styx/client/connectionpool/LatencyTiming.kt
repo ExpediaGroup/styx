@@ -33,7 +33,7 @@ object LatencyTiming  {
      */
     @JvmStatic
     fun finishRequestTiming(context: HttpInterceptor.Context?) {
-        if (context is TimeMeasurable && context.timers != null) {
+        if (context is TimeMeasurable) {
             context.timers?.stopTiming(REQUEST_PROCESSING)
         }
     }
@@ -47,7 +47,7 @@ object LatencyTiming  {
      */
     @JvmStatic
     fun startResponseTiming(metrics: CentralisedMetrics?, context: HttpInterceptor.Context?) {
-        if (metrics != null && context is TimeMeasurable && context.timers != null) {
+        if (metrics != null && context is TimeMeasurable) {
             context.timers?.startTiming(metrics, RESPONSE_PROCESSING)
         }
     }

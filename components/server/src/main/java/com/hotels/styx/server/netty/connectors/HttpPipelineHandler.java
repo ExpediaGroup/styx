@@ -245,8 +245,6 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
             ContextualTimers timers = new ContextualTimers();
             timers.startTiming(metrics, REQUEST_PROCESSING);
 
-//            if(Math.random()!=Double.NaN) throw new IllegalStateException("Are you even executing this?"); // Yes, it is
-
             HttpInterceptorContext context = new HttpInterceptorContext(secure, remoteAddress(ctx), ctx.executor(), timers);
             Eventual<LiveHttpResponse> responseEventual = httpPipeline.handle(v11Request, context);
             responseEventual.subscribe(new BaseSubscriber<>() {

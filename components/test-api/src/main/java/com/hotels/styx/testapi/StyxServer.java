@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
-import com.hotels.styx.common.Preconditions;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.infrastructure.RegistryServiceAdapter;
 import com.hotels.styx.proxy.ProxyServerConfig;
@@ -74,8 +73,6 @@ public final class StyxServer {
 
         metricRegistry = config.environment().metricRegistry();
         meterRegistry = config.environment().meterRegistry();
-
-        Preconditions.checkArgument(registry.micrometerRegistry() == meterRegistry.micrometerRegistry());
 
         this.server = new com.hotels.styx.StyxServer(config);
 

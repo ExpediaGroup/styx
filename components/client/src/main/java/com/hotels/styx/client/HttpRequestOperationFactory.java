@@ -89,7 +89,7 @@ public interface HttpRequestOperationFactory {
         }
 
         public HttpRequestOperationFactory build() {
-            if(metrics == null) {
+            if (metrics == null) {
                 metrics = new CentralisedMetrics(new MicrometerRegistry(new SimpleMeterRegistry()));
             }
 
