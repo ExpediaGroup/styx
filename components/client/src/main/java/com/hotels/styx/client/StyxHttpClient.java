@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2022 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.client.ssl.SslContextFactory;
+import com.hotels.styx.metrics.CentralisedMetrics;
 import io.netty.handler.ssl.SslContext;
 import reactor.core.publisher.Mono;
 
@@ -121,7 +122,7 @@ public final class StyxHttpClient implements HttpClient {
                 new ConnectionSettings(params.connectTimeoutMillis()),
                 sslContext
         ).flatMap(connection ->
-                Mono.from(connection.write(networkRequest)
+                Mono.from(connection.write(networkRequest, DummyContext.INSTANCE)
                         .doOnComplete(connection::close)
                         .doOnError(e -> connection.close())
                         .map(response -> response.newBuilder()
@@ -188,6 +189,7 @@ public final class StyxHttpClient implements HttpClient {
         private boolean isHttps;
         private String userAgent;
         private NettyExecutor executor = DEFAULT_EXECUTOR;
+        private CentralisedMetrics metrics;
 
         public Builder() {
         }
@@ -322,6 +324,11 @@ public final class StyxHttpClient implements HttpClient {
             return this;
         }
 
+        public Builder metrics(CentralisedMetrics metrics) {
+            this.metrics = metrics;
+            return this;
+        }
+
         /**
          * Construct a client instance.
          *
@@ -333,6 +340,7 @@ public final class StyxHttpClient implements HttpClient {
                     .tlsSettings(tlsSettings)
                     .httpRequestOperationFactory(httpRequestOperationFactoryBuilder()
                             .responseTimeoutMillis(responseTimeout)
+                            .metrics(metrics)
                             .build())
                     .executor(executor)
                     .build();

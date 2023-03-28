@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ public class StyxHostHttpClient implements LoadBalancingMetricSupplier {
         return Flux.from(pool.borrowConnection())
                 .flatMap(connection -> {
 
-                    return ResponseEventListener.from(connection.write(request))
+                    return ResponseEventListener.from(connection.write(request, context))
                             .whenCancelled(() -> pool.closeConnection(connection))
                             .whenResponseError(cause -> pool.closeConnection(connection))
                             .whenContentError(cause -> pool.closeConnection(connection))

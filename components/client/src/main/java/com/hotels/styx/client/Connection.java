@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.client;
 
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.extension.Origin;
@@ -45,11 +46,13 @@ public interface Connection extends Closeable {
 
     /**
      * Writes HTTP request to a remote peer in the context of this connection.
+     * This method is used from with an interceptor chain.
      *
-     * @param request
+     * @param request streaming HTTP request
+     * @param context HTTP interceptor context
      * @return a Publisher that provides the response
      */
-    Flux<LiveHttpResponse> write(LiveHttpRequest request);
+    Flux<LiveHttpResponse> write(LiveHttpRequest request, HttpInterceptor.Context context);
 
     /**
      * Returns if the underlying connection is still active.

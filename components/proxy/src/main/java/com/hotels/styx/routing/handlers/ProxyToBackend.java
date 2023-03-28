@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -108,6 +108,7 @@ public class ProxyToBackend implements RoutingObject {
                                     .requestLoggingEnabled(requestLoggingEnabled)
                                     .responseTimeoutMillis(backendService.responseTimeoutMillis())
                                     .longFormat(longFormat)
+                                    .metrics(context.environment().centralisedMetrics())
                                     .build())
                     .tlsSettings(backendService.tlsSettings().orElse(null))
                     .httpConfig(newHttpConfigBuilder().setMaxHeadersSize(backendService.maxHeaderSize()).build())

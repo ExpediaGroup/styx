@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -189,6 +189,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                                 .requestLoggingEnabled(requestLoggingEnabled)
                                 .longFormat(longFormat)
                                 .httpMessageFormatter(environment.httpMessageFormatter())
+                                .metrics(environment.centralisedMetrics())
                                 .build()
                 )
                 .tlsSettings(backendService.tlsSettings().orElse(null))

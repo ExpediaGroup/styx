@@ -35,6 +35,7 @@ import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.RoutingObjectFactoryContext
+import com.hotels.styx.client.DummyContext
 import com.hotels.styx.configBlock
 import com.hotels.styx.executorObjects
 import com.hotels.styx.routing.db.StyxObjectStore
@@ -287,7 +288,7 @@ class StyxHttpServerTest : FeatureSpec({
                     get("/").header(HOST, "localhost:${server.inetAddress()!!.port}")
                             .header(CONTENT_LENGTH, 0)
                             .build()
-                            .stream())
+                            .stream(), DummyContext)
                     .toMono()
                     .block()!!
                     .aggregate(1024)

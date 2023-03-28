@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -168,6 +168,12 @@ class CentralisedMetrics(val registry: MeterRegistry) {
          */
         @get:JvmName("requestLatency")
         val endToEndRequestLatency: TimerMetric = InnerTimer("proxy.latency")
+
+        @get:JvmName("requestProcessingLatency")
+        val requestProcessingLatency : TimerMetric = InnerTimer("proxy.request.latency")
+
+        @get:JvmName("responseProcessingLatency")
+        val responseProcessingLatency : TimerMetric = InnerTimer("proxy.response.latency")
 
         /**
          * Current amount of memory in use, divided by pooled/unpooled and direct/heap.
