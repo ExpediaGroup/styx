@@ -10,7 +10,7 @@ change to (a) use tags rather than some hierarchical name elements, and (b) acco
 different naming standards recommended for Micrometer. This page describes those name changes.
 
 [Old metrics reference](metrics-reference-old.md)
-[New metrics reference](metrics-reference-new.md)
+[New metrics reference](metrics-reference.md)
 
 ## Server-side metrics
 

@@ -34,20 +34,20 @@ The server side metrics scopes are illustrated in a diagram below:
 
 ### HTTP level metrics (`proxy.request.*`)
 
-####proxy.request.cancelled.`<cause>`
+#### proxy.request.cancelled.`<cause>`
 
 * Requests cancelled due to an error.
 
 
-####proxy.request.outstanding
+#### proxy.request.outstanding
 
 * Number of requests currently being served (in flight).
 
-####proxy.response.sent
+#### proxy.response.sent
 
 * Total number of responses sent downstream
 
-####proxy.response.status
+#### proxy.response.status
 `statusClass=(unrecognized/1xx/2xx/3xx/4xx/5xx)`<br>
 `statusCode=<statuscode>`
 
@@ -56,11 +56,11 @@ The server side metrics scopes are illustrated in a diagram below:
 * Total number of unrecognised status codes (`<code>` is `unrecognised`)
 * This metric combines statuses from origins with statuses from Styx-generated responses.
 
-####proxy.request.received
+#### proxy.request.received
 
 * Total number of requests received
 
-####proxy.request.latency
+#### proxy.request.latency
 
 * Request latency, measured on Styx server interface.
 * Measured as a time to last byte written back to downstream.
@@ -69,57 +69,57 @@ The server side metrics scopes are illustrated in a diagram below:
 
 ### TCP connection level metrics (`proxy.connection.*` )
 
-####proxy.connection.registeredChannelCount
+#### proxy.connection.registeredChannelCount
 `eventloop=<thread>`
 
 * Number of TCP connections registered against the Styx server IO thread, where
 `<thread>` is the IO thread name.
 
-####proxy.connection.totalConnections
+#### proxy.connection.totalConnections
 
 * Total number of TCP connections active on Styx server side.
 * Does not count client side TCP connections.
 
 
-####proxy.connection.channels
+#### proxy.connection.channels
 `eventloop=<thread>`
 
 * Measures the distribution of number of channels for a named IO thread.
   There is a counter for each thread.
 
 
-####proxy.connection.bytesReceived
+#### proxy.connection.bytesReceived
 
 * Total number of bytes received.
 
-####proxy.connection.bytesSent
+#### proxy.connection.bytesSent
 
 * Total number of bytes sent.
 
-####proxy.connection.idleClosed
+#### proxy.connection.idleClosed
 
 * Number of server side connections closed due to idleness. 
 
 
 ### Styx Server metrics (`styx.*`)
 
-####styx.exception
+#### styx.exception
 `type=<cause>`
 
 * Number of exceptions, for each `<cause>` exception name.
 
-####styx.server.request
+#### styx.server.request
 `protocol=(http/https)`
 
 * Number of requests received from http or https connector (port).
 
-####styx.server.response
+#### styx.server.response
 `protocol=(http/https)`<br>
 `statusCode=<statuscode>`
 
 * Number of responses sent out via http or https connector.
 
-####styx.version.buildnumber
+#### styx.version.buildnumber
 
 * Styx version number.
 
@@ -147,13 +147,13 @@ The origin side metrics scopes are illustrated in a diagram below:
 
 ### Per Back-End Request Metrics
 
-####request.cancellation
+#### request.cancellation
 `appId=<appid>`<br>
 `originId=<originid>`
 
 * Number of requests cancelled due to an error.
 
-####request.success
+#### request.success
 `appId=<appid>`<br>
 `originId=<originid>`
 
@@ -161,14 +161,14 @@ The origin side metrics scopes are illustrated in a diagram below:
 * A request is considered a success when it returns a non-5xx class status code.
 
 
-####request.error
+#### request.error
 `appId=<appid>`<br>
 `originId=<originid>`
 
 * Number of failed requests to the origin.
 * A request is considered a failure when origin responds with a 5xx class status code.
 
-####request.status
+#### request.status
 `appId=<appid>`<br>
 `originId=<originid>`<br>
 `statusCode=<statuscode>`<br>
@@ -179,7 +179,7 @@ The origin side metrics scopes are illustrated in a diagram below:
   code is unrecognised when `code < 100` or `code >= 600`.
 
 
-####request.latency
+#### request.latency
 `appId=<appid>`<br>
 `originId=<originid>`
 
@@ -188,7 +188,7 @@ The origin side metrics scopes are illustrated in a diagram below:
 * Timer started when request is sent, and stopped when the last content
   byte is received.
 
-####request.timeToFirstByte  
+#### request.timeToFirstByte  
 `appId=<appid>`<br>
 `originId=<originid>`
 
@@ -197,7 +197,7 @@ The origin side metrics scopes are illustrated in a diagram below:
 * Timer started when request is sent, and stopped when the first content
   byte is received.
 
-####origin.status
+#### origin.status
 `appId=<appid>`<br>
 `originId=<originid>`
 
@@ -206,7 +206,7 @@ The origin side metrics scopes are illustrated in a diagram below:
    * 0 - INACTIVE
    * -1 - DISABLED
 
-####origin.healthcheck.failure
+#### origin.healthcheck.failure
 `appId=<appid>`<br>
 `originId=<originid>`
 
@@ -215,51 +215,51 @@ The origin side metrics scopes are illustrated in a diagram below:
 
 ### Connection pool metrics
 
-####connectionpool.availableConnections
+#### connectionpool.availableConnections
 `appId=<appid>`<br>
 `originId=<originid>`
 
 * Number of primed TCP connections readily available in the pool.
 
-####connectionpool.busyConnections
+#### connectionpool.busyConnections
 `appId=<appid>`<br>
 `originId=<originid>`
 
 * Number of connections borrowed at the moment.
 
-####connectionpool.connectionAttempts
+#### connectionpool.connectionAttempts
 `appId=<appid>`<br>
 `originId=<originid>`
 
 * Number of TCP connection establishment attempts.
 
-####connectionpool.connectionFailures
+#### connectionpool.connectionFailures
 `appId=<appid>`<br>
 `originId=<originid>`
 
 * Number of failed TCP connection attempts.
 
-####connectionpool.connectionsClosed
+#### connectionpool.connectionsClosed
 `appId=<appid>`<br>
 `originId=<originid>`
 
 * Number of TCP connection closures.
 * Counts the connections closed by *Styx*, not an origin.
 
-####connectionpool.connectionsTerminated
+#### connectionpool.connectionsTerminated
 `appId=<appid>`<br>
 `originId=<originid>`
 
 * Number of times TCP connection has terminated, either because it was
   closed by styx, or by an origin, or otherwise disconnected.
 
-####connectionpool.pendingConnections
+#### connectionpool.pendingConnections
 `appId=<appid>`<br>
 `originId=<originid>`
 
 * Size of the [pending connections queue](configure-connection-pooling.md) at the moment.
 
-####connectionpool.connectionsInEstablishment
+#### connectionpool.connectionsInEstablishment
 `appId=<appid>`<br>
 `originId=<originid>`
 
