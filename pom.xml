@@ -106,7 +106,7 @@
     <netty-tcnative.classifier>linux-x86_64</netty-tcnative.classifier>
 
     <!-- General Versions -->
-    <guava.version>24.1.1-jre</guava.version>
+    <guava.version>31.1-jre</guava.version>
     <jackson.version>2.13.2</jackson.version>
     <jackson-databind.version>2.13.4.1</jackson-databind.version>
     <jackson.dataformat.version>${jackson.version}</jackson.dataformat.version>
@@ -116,6 +116,7 @@
     <micrometer.version>1.8.0</micrometer.version>
     <antlr.version>4.5.1-1</antlr.version>
     <netty.version>4.1.77.Final</netty.version>
+
     <netty-tcnative.version>2.0.48.Final</netty-tcnative.version>
     <rxjava.version>1.1.6</rxjava.version>
     <reactive-streams.version>1.0.3</reactive-streams.version>
