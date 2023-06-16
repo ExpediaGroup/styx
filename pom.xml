@@ -106,7 +106,7 @@
     <netty-tcnative.classifier>linux-x86_64</netty-tcnative.classifier>
 
     <!-- General Versions -->
-    <guava.version>31.1-jre</guava.version>
+    <guava.version>32.0.0-jre</guava.version>
     <jackson.version>2.13.2</jackson.version>
     <jackson-databind.version>2.13.4.2</jackson-databind.version>
     <jackson.dataformat.version>${jackson.version}</jackson.dataformat.version>
