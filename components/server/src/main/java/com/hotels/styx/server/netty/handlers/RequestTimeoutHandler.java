@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ public class RequestTimeoutHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        if (msg instanceof HttpRequest && ((HttpRequest) msg).getDecoderResult().isSuccess()) {
+        if (msg instanceof HttpRequest && ((HttpRequest) msg).decoderResult().isSuccess()) {
             requestOngoing = true;
             this.msg = msg;
         } else if (msg instanceof LastHttpContent) {
@@ -47,7 +47,7 @@ public class RequestTimeoutHandler extends ChannelInboundHandlerAdapter {
         if (evt instanceof IdleStateEvent) {
             IdleStateEvent e = (IdleStateEvent) evt;
             if (e.state() == IdleState.READER_IDLE && requestOngoing) {
-                throw new RequestTimeoutException("message=" + String.valueOf(msg));
+                throw new RequestTimeoutException("message=" + msg);
             }
         }
 

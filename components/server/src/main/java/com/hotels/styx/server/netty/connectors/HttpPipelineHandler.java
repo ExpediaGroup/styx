@@ -49,6 +49,7 @@ import reactor.core.publisher.Flux;
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -114,11 +115,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         this.secure = builder.secure;
         this.tracker = tracker;
         this.originsHeaderName = builder.originsHeaderName;
-        if (builder.metrics == null) {
-            this.metrics = new CentralisedMetrics(new MicrometerRegistry(new CompositeMeterRegistry()));
-        } else {
-            this.metrics = builder.metrics;
-        }
+        this.metrics = Objects.requireNonNullElseGet(builder.metrics, () -> new CentralisedMetrics(new MicrometerRegistry(new CompositeMeterRegistry())));
     }
 
     private StateMachine<State> createStateMachine() {
@@ -131,7 +128,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
                 .transition(ACCEPTING_REQUESTS, ResponseObservableCompletedEvent.class, event -> ACCEPTING_REQUESTS)
 
                 .transition(WAITING_FOR_RESPONSE, ResponseReceivedEvent.class, event -> onResponseReceived(event.response, event.ctx))
-                .transition(WAITING_FOR_RESPONSE, RequestReceivedEvent.class, event -> onSpuriousRequest(event.request, WAITING_FOR_RESPONSE))
+                .transition(WAITING_FOR_RESPONSE, RequestReceivedEvent.class, event -> onSpuriousRequest(event.request))
                 .transition(WAITING_FOR_RESPONSE, ChannelInactiveEvent.class, event -> onChannelInactive())
                 .transition(WAITING_FOR_RESPONSE, ChannelExceptionEvent.class, event -> onChannelExceptionWhenWaitingForResponse(event.ctx, event.cause))
                 .transition(WAITING_FOR_RESPONSE, ResponseObservableErrorEvent.class, event -> onResponseObservableError(event.ctx, event.cause, event.requestId))
@@ -205,7 +202,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         eventProcessor.submit(new ChannelExceptionEvent(ctx, cause));
     }
 
-    private State onSpuriousRequest(LiveHttpRequest request, State state) {
+    private State onSpuriousRequest(LiveHttpRequest request) {
         LOGGER.warn(warningMessage("message='Spurious request received while handling another request', spuriousRequest=" + request));
 
         metrics.proxy().server().requestsCancelled("spuriousRequest").increment();
@@ -376,7 +373,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
     }
 
     private State onChannelExceptionWhenAcceptingRequests(ChannelHandlerContext ctx, Throwable cause) {
-        // An exception might be caused by a bad request. Therefore handle
+        // An exception might be caused by a bad request. Therefore, handle
         // the exception as if a request had been received:
         return handleChannelException(ctx, cause);
     }
@@ -651,7 +648,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         }
 
         /**
-         * Sets the HTTP error status listener. By default, the errors will ignored.
+         * Sets the HTTP error status listener. By default, the errors will be ignored.
          *
          * @param httpErrorStatusListener the HTTP error status listener
          * @return this builder
@@ -662,7 +659,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         }
 
         /**
-         * Sets the progress listener. By default, the progress will ignored.
+         * Sets the progress listener. By default, the progress will be ignored.
          *
          * @param progressListener the progress listener
          * @return this builder
