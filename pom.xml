@@ -944,8 +944,8 @@
                   <version>[3.2.1,)</version>
                 </requireMavenVersion>
                 <requireJavaVersion>
-                  <version>[1.8,)</version>
-                  <message>java 1.8 needed</message>
+                  <version>11</version>
+                  <message>java 11 needed</message>
                 </requireJavaVersion>
               </rules>
             </configuration>
