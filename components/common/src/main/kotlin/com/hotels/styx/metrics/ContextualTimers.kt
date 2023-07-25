@@ -33,8 +33,9 @@ class ContextualTimers {
      * @param timerPurpose encapsulates the relevant metric
      */
     fun startTiming(centralisedMetrics: CentralisedMetrics, timerPurpose: TimerPurpose) {
-        check(!stoppers.containsKey(timerPurpose))
-        stoppers[timerPurpose] = timerPurpose.timerMetric(centralisedMetrics).startTiming()
+        if (!stoppers.containsKey(timerPurpose)) {
+            stoppers[timerPurpose] = timerPurpose.timerMetric(centralisedMetrics).startTiming()
+        }
     }
 
     /**
