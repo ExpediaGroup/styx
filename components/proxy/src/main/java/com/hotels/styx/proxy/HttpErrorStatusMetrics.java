@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import java.net.InetSocketAddress;
 
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.api.HttpResponseStatus.REQUEST_TIMEOUT;
 import static com.hotels.styx.proxy.ExceptionMetricsKt.countBackendFault;
 import static java.util.Objects.requireNonNull;
 
@@ -79,6 +80,8 @@ public class HttpErrorStatusMetrics implements HttpErrorStatusListener {
         if (!(cause instanceof PluginException)) {
             if (INTERNAL_SERVER_ERROR.equals(status)) {
                 metrics.proxy().styxErrors().increment();
+            } else if (REQUEST_TIMEOUT.equals(status)) {
+                metrics.proxy().server().responsesByStatus(status.code()).increment();
             } else if (status != null && status.code() > 500) {
                 countBackendFault(metrics, cause);
             }
