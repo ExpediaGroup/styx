@@ -15,6 +15,8 @@
  */
 package com.hotels.styx.metrics
 
+import org.slf4j.LoggerFactory
+import org.slf4j.LoggerFactory.getLogger
 import java.util.EnumMap
 
 /**
@@ -33,8 +35,12 @@ class ContextualTimers {
      * @param timerPurpose encapsulates the relevant metric
      */
     fun startTiming(centralisedMetrics: CentralisedMetrics, timerPurpose: TimerPurpose) {
+        // There is a bug wherein this function is sometimes called more than once for the same TimerPurpose in the same Context.
+        // As we do not yet know what causes this, we are just going to log when it happens.
         if (!stoppers.containsKey(timerPurpose)) {
             stoppers[timerPurpose] = timerPurpose.timerMetric(centralisedMetrics).startTiming()
+        } else {
+            logger.warn("Attempted to start timing '$timerPurpose', but timing has already begun for '$timerPurpose' in this Context.")
         }
     }
 
@@ -45,6 +51,10 @@ class ContextualTimers {
      */
     fun stopTiming(timerPurpose: TimerPurpose) {
         stoppers[timerPurpose]?.stop()
+    }
+
+    companion object {
+        private val logger = getLogger(ContextualTimers::class.java)
     }
 }
 
