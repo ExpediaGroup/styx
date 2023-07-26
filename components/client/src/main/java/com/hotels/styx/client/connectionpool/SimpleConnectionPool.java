@@ -92,7 +92,7 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
                 }
             }).timeout(
                     Duration.ofMillis(poolSettings.pendingConnectionTimeoutMillis()),
-                    Mono.error(() -> new MaxPendingConnectionTimeoutException(origin, connectionSettings.connectTimeoutMillis())));
+                    Mono.error(() -> new MaxPendingConnectionTimeoutException(origin, poolSettings.pendingConnectionTimeoutMillis())));
         } else {
            return Mono.error(() -> new IllegalStateException("Pool is closed"));
         }
