@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -55,17 +55,28 @@ public final class SslContextFactory {
         return SSL_CONTEXT_CACHE.computeIfAbsent(tlsSettings, SslContextFactory::create);
     }
 
+    public static SslContext get(TlsSettings tlsSettings, SslContextBuilder sslContextBuilder) {
+        return SSL_CONTEXT_CACHE.computeIfAbsent(tlsSettings, settings -> create(settings, sslContextBuilder));
+    }
+
     private static SslContext create(TlsSettings tlsSettings) {
         try {
-            return createSslContext(tlsSettings);
+            return createSslContext(tlsSettings, SslContextBuilder.forClient());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    private static SslContext createSslContext(TlsSettings tlsSettings) throws IOException, NoSuchAlgorithmException, KeyStoreException, CertificateException {
-        return SslContextBuilder
-                .forClient()
+    private static SslContext create(TlsSettings tlsSettings, SslContextBuilder sslContextBuilder) {
+        try {
+            return createSslContext(tlsSettings, sslContextBuilder);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static SslContext createSslContext(TlsSettings tlsSettings, SslContextBuilder sslContextBuilder) throws IOException, NoSuchAlgorithmException, KeyStoreException, CertificateException {
+        return sslContextBuilder
                 .sslProvider(SslProvider.valueOf(tlsSettings.sslProvider()))
                 .trustManager(trustManagerFactory(tlsSettings))
                 .protocols(toNettyProtocols(tlsSettings.protocols()))

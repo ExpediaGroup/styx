@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
+import com.hotels.styx.client.StyxOriginsInventory;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginStatsFactory.CachingOriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
@@ -48,7 +49,7 @@ import static com.hotels.styx.api.RequestCookie.requestCookie;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.service.BackendService.newBackendServiceBuilder;
 import static com.hotels.styx.api.extension.service.StickySessionConfig.newStickySessionConfigBuilder;
-import static com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder;
+import static com.hotels.styx.client.StyxOriginsInventory.newOriginsInventoryBuilder;
 import static com.hotels.styx.client.connectionpool.ConnectionPools.simplePoolFactory;
 import static com.hotels.styx.support.Support.requestContext;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -81,7 +82,7 @@ public class StyxBackendServiceClientFactoryTest {
     public void createsClients() {
         StyxBackendServiceClientFactory factory = new StyxBackendServiceClientFactory(environment);
 
-        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
+        OriginsInventory originsInventory = StyxOriginsInventory.newOriginsInventoryBuilder(backendService.id())
                 .metrics(environment.centralisedMetrics())
                 .connectionPoolFactory(simplePoolFactory())
                 .initialOrigins(backendService.origins())

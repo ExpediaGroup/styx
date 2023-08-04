@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2022 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy
 import com.hotels.styx.serviceproviders.ServiceProvision
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.extension.service.BackendService
-import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy
+import com.hotels.styx.client.loadbalancing.strategies.BusyActivitiesStrategy
 import com.hotels.styx.client.StyxBackendServiceClient
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
 import com.hotels.styx.client.OriginRestrictionLoadBalancingStrategy
@@ -51,7 +51,11 @@ class StyxBackendServiceClientFactory(    // Todo: This can be package private i
         ).orElseGet { defaultRetryPolicy() }
         val configuredLbStrategy = ServiceProvision.loadLoadBalancer(
             styxConfig, environment, "loadBalancing.strategy.factory", LoadBalancer::class.java, originsInventory
-        ).orElseGet { BusyConnectionsStrategy(originsInventory) }
+        ).orElseGet {
+            BusyActivitiesStrategy(
+                originsInventory
+            )
+        }
 
         // TODO: Ensure that listeners are also unregistered:
         // We are going to revamp how we handle origins, https://github.com/HotelsDotCom/styx/issues/197

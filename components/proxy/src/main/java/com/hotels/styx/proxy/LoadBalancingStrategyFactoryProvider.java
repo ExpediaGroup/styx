@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hotels.styx.proxy;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancerFactory;
 import com.hotels.styx.api.configuration.MissingConfigurationException;
 import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy;
+import com.hotels.styx.client.loadbalancing.strategies.BusyActivitiesStrategy;
 import org.slf4j.Logger;
 
 import java.util.function.Supplier;
@@ -32,7 +32,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public class LoadBalancingStrategyFactoryProvider implements Supplier<LoadBalancerFactory> {
     private static final String LOAD_BALANCING_STRATEGY_KEY = "loadBalancing.strategy";
-    private static final LoadBalancerFactory BUSY_CONNECTION_BALANCER = new BusyConnectionsStrategy.Factory();
+    private static final LoadBalancerFactory BUSY_CONNECTION_BALANCER = new BusyActivitiesStrategy.Factory();
 
     private static final Logger LOGGER = getLogger(LoadBalancingStrategyFactoryProvider.class);
 

@@ -52,7 +52,7 @@ class NettyConnection(
     httpConfig: HttpConfig,
     sslContext: SslContext?,
     sendSni: Boolean,
-    sniHost: Optional<String?>
+    sniHost: Optional<String>
 ) : Connection {
     private val listeners = Announcer.to(Connection.Listener::class.java)
 

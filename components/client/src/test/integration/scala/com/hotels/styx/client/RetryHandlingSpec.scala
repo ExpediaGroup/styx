@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2022 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import com.hotels.styx.api.`extension`.service.ConnectionPoolSettings
 import com.hotels.styx.api.extension.Origin._
 import com.hotels.styx.api.extension.service.{BackendService, StickySessionConfig}
 import com.hotels.styx.api.extension.{ActiveOrigins, Origin}
-import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
+import com.hotels.styx.client.StyxOriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
 import com.hotels.styx.client.retry.RetryNTimes

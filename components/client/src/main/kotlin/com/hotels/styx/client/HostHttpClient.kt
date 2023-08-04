@@ -13,20 +13,16 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.extension.loadbalancing.spi;
+package com.hotels.styx.client
 
-/**
- * Metric for the load balancers to determine most suitable remote host.
- */
-public final class LoadBalancingMetric {
-    private final int ongoingActivities;
+import com.hotels.styx.api.HttpInterceptor.Context
+import com.hotels.styx.api.LiveHttpRequest
+import com.hotels.styx.api.LiveHttpResponse
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetricSupplier
+import org.reactivestreams.Publisher
 
-    public LoadBalancingMetric(int ongoingActivities) {
-        this.ongoingActivities = ongoingActivities;
-    }
+interface HostHttpClient : LoadBalancingMetricSupplier {
+    fun sendRequest(request: LiveHttpRequest, context: Context?): Publisher<LiveHttpResponse>
 
-    public int ongoingActivities() {
-        return ongoingActivities;
-    }
-
+    fun close()
 }

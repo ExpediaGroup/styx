@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class OriginsInventoryTest {
+public class StyxOriginsInventoryTest {
     private static final Origin ORIGIN_1 = newOriginBuilder("localhost", 8001).applicationId(GENERIC_APP).id("app-01").build();
     private static final Origin ORIGIN_2 = newOriginBuilder("localhost", 8002).applicationId(GENERIC_APP).id("app-02").build();
 
@@ -81,7 +81,7 @@ public class OriginsInventoryTest {
         logger = new LoggingTestSupport(OriginsInventory.class);
         monitor = mock(OriginHealthStatusMonitor.class);
         eventBus = mock(EventBus.class);
-        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, hostClientFactory, new CentralisedMetrics(meterRegistry));
+        inventory = new StyxOriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, hostClientFactory, new CentralisedMetrics(meterRegistry));
     }
 
     @AfterEach
@@ -174,7 +174,7 @@ public class OriginsInventoryTest {
         when(connectionFactory.create(eq(originV1))).thenReturn(pool1);
         when(connectionFactory.create(eq(originV2))).thenReturn(pool2);
 
-        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, hostClientFactory, new CentralisedMetrics(meterRegistry));
+        inventory = new StyxOriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, hostClientFactory, new CentralisedMetrics(meterRegistry));
 
         inventory.setOrigins(originV1);
         verify(connectionFactory).create(eq(originV1));
@@ -255,7 +255,7 @@ public class OriginsInventoryTest {
         when(connectionFactory.create(eq(originV1))).thenReturn(pool1);
         when(connectionFactory.create(eq(originV2))).thenReturn(pool2);
 
-        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, hostClientFactory, new CentralisedMetrics(meterRegistry));
+        inventory = new StyxOriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, hostClientFactory, new CentralisedMetrics(meterRegistry));
 
         inventory.setOrigins(originV1, originV2);
 
@@ -462,7 +462,7 @@ public class OriginsInventoryTest {
         when(connectionFactory.create(eq(ORIGIN_1))).thenReturn(pool1);
         when(connectionFactory.create(eq(ORIGIN_2))).thenReturn(pool2);
 
-        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, hostClientFactory, new CentralisedMetrics(meterRegistry));
+        inventory = new StyxOriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, hostClientFactory, new CentralisedMetrics(meterRegistry));
         inventory.setOrigins(ORIGIN_1, ORIGIN_2);
         inventory.close();
 

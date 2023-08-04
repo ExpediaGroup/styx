@@ -470,6 +470,10 @@ class CentralisedMetrics(val registry: MeterRegistry) {
              */
             fun timeToFirstByte(origin: Origin): TimerMetric = InnerTimer("proxy.client.timeToFirstByte", origin.tags)
 
+            /**
+             * Number of ongoing requests for a particular origin.
+             */
+            fun ongoingRequests(origin: Origin): GaugeId = InnerGaugeId("proxy.client.ongoingRequests", origin.tags)
         }
 
         inner class Plugins {

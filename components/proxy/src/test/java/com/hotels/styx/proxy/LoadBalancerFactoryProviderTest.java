@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import com.hotels.styx.api.extension.ActiveOrigins;
 import com.hotels.styx.api.extension.RemoteHost;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancerFactory;
-import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy;
+import com.hotels.styx.client.loadbalancing.strategies.BusyActivitiesStrategy;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import org.junit.jupiter.api.Test;
 
@@ -82,7 +82,7 @@ public class LoadBalancerFactoryProviderTest {
     @Test
     public void loadsRoundRobinAsDefaultStrategy() throws Exception {
         LoadBalancingStrategyFactoryProvider factoryProvider = newProvider(EMPTY_CONFIGURATION);
-        assertThat(factoryProvider.get(), is(instanceOf(BusyConnectionsStrategy.Factory.class)));
+        assertThat(factoryProvider.get(), is(instanceOf(BusyActivitiesStrategy.Factory.class)));
     }
 
     public static class NewAwesomeStrategy implements LoadBalancerFactory, LoadBalancer {

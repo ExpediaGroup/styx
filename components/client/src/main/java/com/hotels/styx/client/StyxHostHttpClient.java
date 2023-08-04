@@ -20,7 +20,6 @@ import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.ResponseEventListener;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetric;
-import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetricSupplier;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
@@ -30,7 +29,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * A Styx HTTP Client for proxying to an individual origin host.
  */
-public class StyxHostHttpClient implements LoadBalancingMetricSupplier {
+public class StyxHostHttpClient implements HostHttpClient {
     public static final String ORIGINID_CONTEXT_KEY = "styx.originid";
 
     private final ConnectionPool pool;
