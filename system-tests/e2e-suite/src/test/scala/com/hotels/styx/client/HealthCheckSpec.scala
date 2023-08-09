@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ class HealthCheckSpec extends FunSpec
   val httpsApp = FakeHttpServer.HttpsStartupConfig(
     appId = "httpsApp",
     originId = "httpsApp-01",
-    protocols = Seq("TLSv1.1", "TLSv1.2")
+    protocols = Seq("TLSv1.2", "TLSv1.3")
   )
     .start()
     .stub(WireMock.get(urlMatching("/.*")), originResponse("httpsApp-01"))
