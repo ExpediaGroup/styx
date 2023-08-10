@@ -17,6 +17,7 @@ package com.hotels.styx.client.ssl;
 
 import com.hotels.styx.api.extension.service.Certificate;
 import com.hotels.styx.api.extension.service.TlsSettings;
+import com.hotels.styx.client.SslContextException;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
@@ -52,26 +53,18 @@ public final class SslContextFactory {
     }
 
     public static SslContext get(TlsSettings tlsSettings) {
-        return SSL_CONTEXT_CACHE.computeIfAbsent(tlsSettings, SslContextFactory::create);
+        return SSL_CONTEXT_CACHE.computeIfAbsent(tlsSettings, settings -> create(settings, SslContextBuilder.forClient()));
     }
 
     public static SslContext get(TlsSettings tlsSettings, SslContextBuilder sslContextBuilder) {
         return SSL_CONTEXT_CACHE.computeIfAbsent(tlsSettings, settings -> create(settings, sslContextBuilder));
     }
 
-    private static SslContext create(TlsSettings tlsSettings) {
-        try {
-            return createSslContext(tlsSettings, SslContextBuilder.forClient());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private static SslContext create(TlsSettings tlsSettings, SslContextBuilder sslContextBuilder) {
         try {
             return createSslContext(tlsSettings, sslContextBuilder);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new SslContextException("Failed to create SSL context", e);
         }
     }
 
@@ -137,7 +130,7 @@ public final class SslContextFactory {
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new SslContextException("Failed to add certificates to key store", e);
         }
     }
 
