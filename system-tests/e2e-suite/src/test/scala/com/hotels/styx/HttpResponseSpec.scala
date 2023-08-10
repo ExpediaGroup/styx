@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,10 +21,10 @@ import com.hotels.styx.api.LiveHttpRequest.get
 import com.hotels.styx.api.MicrometerRegistry
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.extension.{ActiveOrigins, service}
-import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
+import com.hotels.styx.client.StyxOriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient
 import com.hotels.styx.client.StyxBackendServiceClient._
-import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy
+import com.hotels.styx.client.loadbalancing.strategies.BusyActivitiesStrategy
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
 import com.hotels.styx.metrics.CentralisedMetrics
 import com.hotels.styx.support.NettyOrigins
@@ -73,7 +73,7 @@ class HttpResponseSpec extends FunSuite
 
   def activeOrigins(backendService: service.BackendService): ActiveOrigins = newOriginsInventoryBuilder(new CentralisedMetrics(new MicrometerRegistry(new CompositeMeterRegistry())), backendService).build()
 
-  def busyConnectionStrategy(activeOrigins: ActiveOrigins): LoadBalancer = new BusyConnectionsStrategy(activeOrigins)
+  def busyConnectionStrategy(activeOrigins: ActiveOrigins): LoadBalancer = new BusyActivitiesStrategy(activeOrigins)
 
   def stickySessionStrategy(activeOrigins: ActiveOrigins) = new StickySessionLoadBalancingStrategy(activeOrigins, busyConnectionStrategy(activeOrigins))
 

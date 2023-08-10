@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -34,17 +34,17 @@ class TlsVersionSpec extends FunSpec
 
   val logback = fixturesHome(this.getClass, "/conf/logback/logback-debug-stdout.xml")
 
-  val appOriginTlsv11 = FakeHttpServer.HttpsStartupConfig(
-    appId = "appTls11",
-    originId = "appTls11-01",
-    protocols = Seq("TLSv1.1")
+  val appOriginTlsv13 = FakeHttpServer.HttpsStartupConfig(
+    appId = "appTls13",
+    originId = "appTls13-01",
+    protocols = Seq("TLSv1.3")
   )
     .start()
-    .stub(WireMock.get(urlMatching("/.*")), originResponse("App TLS v1.1"))
+    .stub(WireMock.get(urlMatching("/.*")), originResponse("App TLS v1.3"))
 
   val appOriginTlsv12B = FakeHttpServer.HttpsStartupConfig(
-    appId = "appTls11B",
-    originId = "appTls11B-01",
+    appId = "appTls12B",
+    originId = "appTls12B-01",
     protocols = Seq("TLSv1.2")
   )
     .start()
@@ -53,10 +53,10 @@ class TlsVersionSpec extends FunSpec
   val appOriginTlsDefault = FakeHttpServer.HttpsStartupConfig(
     appId = "appTlsDefault",
     originId = "appTlsDefault-01",
-    protocols = Seq("TLSv1.1", "TLSv1.2")
+    protocols = Seq("TLSv1.2", "TLSv1.3")
   )
     .start()
-    .stub(WireMock.get(urlMatching("/.*")), originResponse("App TLS v1.1"))
+    .stub(WireMock.get(urlMatching("/.*")), originResponse("App TLS v1.3"))
 
   val appOriginTlsv12 = FakeHttpServer.HttpsStartupConfig(
     appId = "appTls12",
@@ -85,30 +85,30 @@ class TlsVersionSpec extends FunSpec
     super.beforeAll()
 
     styxServer.setBackends(
-      "/tls11/" -> HttpsBackend(
-        "appTls11",
-        Origins(appOriginTlsv11),
-        TlsSettings(authenticate = false, sslProvider = "JDK", protocols = List("TLSv1.1"))),
+      "/tls13/" -> HttpsBackend(
+        "appTls13",
+        Origins(appOriginTlsv13),
+        TlsSettings(authenticate = false, sslProvider = "JDK", protocols = List("TLSv1.3"))),
 
       "/tlsDefault/" -> HttpsBackend(
         "appTlsDefault",
         Origins(appOriginTlsDefault),
-        TlsSettings(authenticate = false, sslProvider = "JDK", protocols = List("TLSv1.1", "TLSv1.2"))),
+        TlsSettings(authenticate = false, sslProvider = "JDK", protocols = List("TLSv1.2", "TLSv1.3"))),
 
       "/tls12" -> HttpsBackend(
         "appTls12",
         Origins(appOriginTlsv12),
         TlsSettings(authenticate = false, sslProvider = "JDK", protocols = List("TLSv1.2"))),
 
-      "/tls11-to-tls12" -> HttpsBackend(
-        "appTls11B",
+      "/tls12-to-tls13" -> HttpsBackend(
+        "appTls13B",
         Origins(appOriginTlsv12B),
-        TlsSettings(authenticate = false, sslProvider = "JDK", protocols = List("TLSv1.1")))
+        TlsSettings(authenticate = false, sslProvider = "JDK", protocols = List("TLSv1.3")))
     )
   }
 
   override protected def afterAll(): Unit = {
-    appOriginTlsv11.stop()
+    appOriginTlsv13.stop()
     appOriginTlsv12.stop()
     super.afterAll()
   }
@@ -123,14 +123,14 @@ class TlsVersionSpec extends FunSpec
 
   describe("Backend Service TLS Protocol Setting") {
 
-    it("Proxies to TLSv1.1 origin when TLSv1.1 support enabled.") {
-      val response1 = decodedRequest(httpRequest("/tls11/a"))
+    it("Proxies to TLSv1.3 origin when TLSv1.3 support enabled.") {
+      val response1 = decodedRequest(httpRequest("/tls13/a"))
       assert(response1.status() == OK)
       assert(response1.bodyAs(UTF_8) == "Hello, World!")
 
-      appOriginTlsv11.verify(
+      appOriginTlsv13.verify(
         getRequestedFor(
-          urlEqualTo("/tls11/a"))
+          urlEqualTo("/tls13/a"))
           .withHeader("X-Forwarded-Proto", valueMatchingStrategy("http")))
 
       val response2 = decodedRequest(httpRequest("/tlsDefault/a2"))
@@ -161,13 +161,13 @@ class TlsVersionSpec extends FunSpec
           .withHeader("X-Forwarded-Proto", valueMatchingStrategy("http")))
     }
 
-    it("Refuses to connect to TLSv1.1 origin when TLSv1.1 is disabled") {
-      val response = decodedRequest(httpRequest("/tls11-to-tls12/c"))
+    it("Refuses to connect to TLSv1.3 origin when TLSv1.3 is disabled") {
+      val response = decodedRequest(httpRequest("/tls12-to-tls13/c"))
 
       assert(response.status() == BAD_GATEWAY)
       assert(response.bodyAs(UTF_8) == "Site temporarily unavailable.")
 
-      appOriginTlsv12B.verify(0, getRequestedFor(urlEqualTo("/tls11-to-tls12/c")))
+      appOriginTlsv12B.verify(0, getRequestedFor(urlEqualTo("/tls12-to-tls13/c")))
     }
   }
 

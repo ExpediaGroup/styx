@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -36,13 +36,13 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class BusyConnectionsStrategyTest {
+public class BusyActivitiesStrategyTest {
     private static final Origin ORIGIN_ONE = newOriginBuilder("localhost", 8001).id("one").build();
     private static final Origin ORIGIN_TWO = newOriginBuilder("localhost", 8002).id("two").build();
     private static final Origin ORIGIN_THREE = newOriginBuilder("localhost", 8003).id("three").build();
 
     private final ActiveOrigins activeOrigins = mock(ActiveOrigins.class);
-    private final BusyConnectionsStrategy strategy = new BusyConnectionsStrategy(activeOrigins);
+    private final BusyActivitiesStrategy strategy = new BusyActivitiesStrategy(activeOrigins);
 
 
     @Test

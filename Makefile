@@ -47,7 +47,7 @@ e2e-test-single:
 
 ## Compile, test and create styx.zip
 release: clean
-	mvn install -Prelease
+	mvn install -Prelease,$(PLATFORM)
 
 ## Compile and create styx.zip without running tests
 release-no-tests: clean

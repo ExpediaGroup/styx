@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ class EmptyTlsProtocolsListSpec extends FunSpec
   val crtFile = fixturesHome(this.getClass, "/ssl/testCredentials.crt").toString
   val keyFile = fixturesHome(this.getClass, "/ssl/testCredentials.key").toString
   val clientV12 : HttpClient = newClient(Seq("TLSv1.2"))
-  val clientV11 : HttpClient = newClient(Seq("TLSv1.1"))
+  val clientV13 : HttpClient = newClient(Seq("TLSv1.3"))
 
   override val styxConfig = StyxConfig(
     ProxyConfig(
@@ -78,10 +78,10 @@ class EmptyTlsProtocolsListSpec extends FunSpec
         .header(HOST, styxServer.httpsProxyHost)
         .build()
 
-      val resp1 = Await.result(clientV11.sendRequest(req).toScala, 3.seconds)
+      val resp1 = Await.result(clientV12.send(req).toScala, 3.seconds)
       resp1.status() should be(OK)
 
-      val resp2 = Await.result(clientV12.sendRequest(req).toScala, 3.seconds)
+      val resp2 = Await.result(clientV13.send(req).toScala, 3.seconds)
       resp2.status() should be(OK)
     }
   }

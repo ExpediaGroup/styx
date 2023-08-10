@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -80,7 +80,7 @@ public class PowerOfTwoStrategy implements LoadBalancer {
     }
 
     private RemoteHost betterOf(RemoteHost host1, RemoteHost host2) {
-        return host1.metric().ongoingConnections() < host2.metric().ongoingConnections() ? host1 : host2;
+        return host1.metric().ongoingActivities() < host2.metric().ongoingActivities() ? host1 : host2;
     }
 
 }

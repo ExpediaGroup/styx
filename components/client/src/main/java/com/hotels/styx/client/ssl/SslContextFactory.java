@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package com.hotels.styx.client.ssl;
 
 import com.hotels.styx.api.extension.service.Certificate;
 import com.hotels.styx.api.extension.service.TlsSettings;
+import com.hotels.styx.client.SslContextException;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
@@ -52,20 +53,23 @@ public final class SslContextFactory {
     }
 
     public static SslContext get(TlsSettings tlsSettings) {
-        return SSL_CONTEXT_CACHE.computeIfAbsent(tlsSettings, SslContextFactory::create);
+        return SSL_CONTEXT_CACHE.computeIfAbsent(tlsSettings, settings -> create(settings, SslContextBuilder.forClient()));
     }
 
-    private static SslContext create(TlsSettings tlsSettings) {
+    public static SslContext get(TlsSettings tlsSettings, SslContextBuilder sslContextBuilder) {
+        return SSL_CONTEXT_CACHE.computeIfAbsent(tlsSettings, settings -> create(settings, sslContextBuilder));
+    }
+
+    private static SslContext create(TlsSettings tlsSettings, SslContextBuilder sslContextBuilder) {
         try {
-            return createSslContext(tlsSettings);
+            return createSslContext(tlsSettings, sslContextBuilder);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new SslContextException("Failed to create SSL context", e);
         }
     }
 
-    private static SslContext createSslContext(TlsSettings tlsSettings) throws IOException, NoSuchAlgorithmException, KeyStoreException, CertificateException {
-        return SslContextBuilder
-                .forClient()
+    private static SslContext createSslContext(TlsSettings tlsSettings, SslContextBuilder sslContextBuilder) throws IOException, NoSuchAlgorithmException, KeyStoreException, CertificateException {
+        return sslContextBuilder
                 .sslProvider(SslProvider.valueOf(tlsSettings.sslProvider()))
                 .trustManager(trustManagerFactory(tlsSettings))
                 .protocols(toNettyProtocols(tlsSettings.protocols()))
@@ -126,7 +130,7 @@ public final class SslContextFactory {
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new SslContextException("Failed to add certificates to key store", e);
         }
     }
 

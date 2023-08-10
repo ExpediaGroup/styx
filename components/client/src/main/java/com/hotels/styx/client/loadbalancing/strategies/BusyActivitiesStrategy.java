@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -34,12 +34,13 @@ import static java.util.stream.StreamSupport.stream;
 
 
 /**
- * A load balancing strategy that returns the origin with least ongoing connections.
+ * A load balancing strategy that returns the origin with the least ongoing activities,
+ * i.e. the least ongoing connections for HTTP/1.1, the least ongoing requests for HTTP/2
  */
-public class BusyConnectionsStrategy implements LoadBalancer {
+public class BusyActivitiesStrategy implements LoadBalancer {
     private final ActiveOrigins activeOrigins;
 
-    public BusyConnectionsStrategy(ActiveOrigins activeOrigins) {
+    public BusyActivitiesStrategy(ActiveOrigins activeOrigins) {
         this.activeOrigins = requireNonNull(activeOrigins);
     }
 
@@ -49,7 +50,7 @@ public class BusyConnectionsStrategy implements LoadBalancer {
     public static class Factory implements LoadBalancerFactory {
         @Override
         public LoadBalancer create(Environment environment, Configuration strategyConfiguration, ActiveOrigins activeOrigins) {
-            return new BusyConnectionsStrategy(activeOrigins);
+            return new BusyActivitiesStrategy(activeOrigins);
         }
     }
 
@@ -61,6 +62,6 @@ public class BusyConnectionsStrategy implements LoadBalancer {
         shuffle(snapshot);
 
         return snapshot.stream()
-                .min(comparingInt(host -> host.metric().ongoingConnections()));
+                .min(comparingInt(host -> host.metric().ongoingActivities()));
     }
 }

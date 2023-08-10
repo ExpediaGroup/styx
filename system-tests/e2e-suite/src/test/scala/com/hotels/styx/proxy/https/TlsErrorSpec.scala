@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ class TlsErrorSpec extends FunSpec
 
   val crtFile = fixturesHome(classOf[ProtocolsSpec], "/ssl/testCredentials.crt").toString
   val keyFile = fixturesHome(classOf[ProtocolsSpec], "/ssl/testCredentials.key").toString
-  val clientV11 = newClient(Seq("TLSv1.1"))
+  val clientV12 = newClient(Seq("TLSv1.2"))
   var log: LoggingTestSupport = _
 
   override val styxConfig = StyxYamlConfig(
@@ -60,7 +60,7 @@ class TlsErrorSpec extends FunSpec
          |      certificateFile: $crtFile
          |      certificateKeyFile: $keyFile
          |      protocols:
-         |       - TLSv1.2
+         |       - TLSv1.3
          |admin:
          |  connectors:
          |    http:
@@ -97,11 +97,11 @@ class TlsErrorSpec extends FunSpec
         .build()
 
       an[RuntimeException] should be thrownBy {
-        Await.result(clientV11.sendRequest(req).toScala, 3.seconds)
+        Await.result(clientV12.send(req).toScala, 3.seconds)
       }
 
       val message =
-        """SSL handshake failure from incoming connection cause=".*TLSv1.1.*"""
+        """SSL handshake failure from incoming connection cause=".*TLSv1.2.*"""
 
       eventually(timeout(3 seconds)) {
         assertThat(log.log(), hasItem(loggingEvent(INFO, message)))

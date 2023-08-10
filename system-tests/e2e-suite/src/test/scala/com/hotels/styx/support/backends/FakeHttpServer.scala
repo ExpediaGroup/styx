@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ object FakeHttpServer {
                                 originId: String = "generic-app",
                                 certificateFile: String = null,
                                 certificateKeyFile: String = null,
-                                protocols: Seq[String] = Seq("TLSv1.1", "TLSv1.2"),
+                                protocols: Seq[String] = Seq("TLSv1.2", "TLSv1.3"),
                                 cipherSuites: Seq[String] = Seq(),
                                 sslProvider: String = "JDK"
                                ) {

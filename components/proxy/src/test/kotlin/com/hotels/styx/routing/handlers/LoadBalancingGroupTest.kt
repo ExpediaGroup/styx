@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -175,8 +175,8 @@ class LoadBalancingGroupTest : FeatureSpec() {
                             lbGroup.handle(get("/").build()).toMono()
                         }
 
-                routeDb.get("appx-A").get().routingObject.metric().ongoingConnections() shouldBe 20
-                routeDb.get("appx-B").get().routingObject.metric().ongoingConnections() shouldBe 20
+                routeDb.get("appx-A").get().routingObject.metric().ongoingActivities() shouldBe 20
+                routeDb.get("appx-B").get().routingObject.metric().ongoingActivities() shouldBe 20
 
                 invocations.forEach {
                     val response = it.block()

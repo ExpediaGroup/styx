@@ -29,6 +29,7 @@ import com.hotels.styx.api.extension.service.HealthCheckConfig;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.client.Connection;
+import com.hotels.styx.client.StyxOriginsInventory;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginStatsFactory.CachingOriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
@@ -132,7 +133,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
 
             OriginHealthStatusMonitor healthStatusMonitor = healthStatusMonitor(backendService);
 
-            OriginsInventory inventory = new OriginsInventory.Builder(backendService.id())
+            OriginsInventory inventory = new StyxOriginsInventory.Builder(backendService.id())
                     .eventBus(environment.eventBus())
                     .metrics(environment.centralisedMetrics())
                     .connectionPoolFactory(connectionPoolFactory)

@@ -64,7 +64,7 @@ To enable *Busy* load balancing strategy:
 
     loadBalancing:
       strategy:
-        factory: {class: "com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy$Factory"}
+        factory: {class: "com.hotels.styx.client.loadbalancing.strategies.BusyActivitiesStrategy$Factory"}
 
 To enable *Round Robin* load balancing strategy:
 

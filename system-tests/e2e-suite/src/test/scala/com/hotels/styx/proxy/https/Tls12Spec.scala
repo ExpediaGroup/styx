@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ class Tls12Spec extends FunSpec
   val crtFile = fixturesHome(classOf[ProtocolsSpec], "/ssl/testCredentials.crt").toString
   val keyFile = fixturesHome(classOf[ProtocolsSpec], "/ssl/testCredentials.key").toString
   val clientV12 = newClient(Seq("TLSv1.2"))
-  val clientV11 = newClient(Seq("TLSv1.1"))
+  val clientV13 = newClient(Seq("TLSv1.3"))
 
   override val styxConfig = StyxYamlConfig(
     yamlConfig =
@@ -87,18 +87,18 @@ class Tls12Spec extends FunSpec
         .header(HOST, styxServer.httpsProxyHost)
         .build()
 
-      val resp = Await.result(clientV12.sendRequest(req).toScala, 3.seconds)
+      val resp = Await.result(clientV12.send(req).toScala, 3.seconds)
 
       resp.status() should be(OK)
     }
 
-    it("Refuses TLS 1.1 when TLS 1.2 is required") {
+    it("Refuses TLS 1.3 when TLS 1.2 is required") {
       val req = new HttpRequest.Builder(GET, styxServer.secureRouterURL("/secure"))
         .header(HOST, styxServer.httpsProxyHost)
         .build()
 
       an[RuntimeException] should be thrownBy {
-        Await.result(clientV11.sendRequest(req).toScala, 3.seconds)
+        Await.result(clientV13.send(req).toScala, 3.seconds)
       }
     }
   }

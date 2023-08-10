@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -48,26 +48,26 @@ class RoutingMetadataDecoratorTest : FeatureSpec({
                             .toMono()
                             .subscribe()
 
-                    it.metric().ongoingConnections().shouldBe(1)
+                    it.metric().ongoingActivities().shouldBe(1)
 
                     it.handle(request)
                             .toMono()
                             .subscribe()
 
-                    it.metric().ongoingConnections().shouldBe(2)
+                    it.metric().ongoingActivities().shouldBe(2)
 
                     publisher1.complete()
 
-                    it.metric().ongoingConnections().shouldBe(1)
+                    it.metric().ongoingActivities().shouldBe(1)
 
                     it.handle(request)
                             .toMono()
                             .subscribe()
-                    it.metric().ongoingConnections().shouldBe(2)
+                    it.metric().ongoingActivities().shouldBe(2)
 
                     publisher2.complete()
                     publisher3.complete()
-                    it.metric().ongoingConnections().shouldBe(0)
+                    it.metric().ongoingActivities().shouldBe(0)
                 }
     }
 

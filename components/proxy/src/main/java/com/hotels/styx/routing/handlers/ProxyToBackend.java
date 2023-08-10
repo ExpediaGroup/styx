@@ -27,6 +27,7 @@ import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginStatsFactory.CachingOriginStatsFactory;
+import com.hotels.styx.client.StyxOriginsInventory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.client.connectionpool.ExpiringConnectionFactory;
@@ -126,7 +127,7 @@ public class ProxyToBackend implements RoutingObject {
                     .metrics(context.environment().centralisedMetrics())
                     .build();
 
-            OriginsInventory inventory = new OriginsInventory.Builder(backendService.id())
+            OriginsInventory inventory = new StyxOriginsInventory.Builder(backendService.id())
                     .eventBus(context.environment().eventBus())
                     .metrics(context.environment().centralisedMetrics())
                     .connectionPoolFactory(connectionPoolFactory)

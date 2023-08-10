@@ -64,7 +64,7 @@ TLS-protected HTTPS ports simultaneously (on different ports).
     In this case Styx will only accept connections secured with `TLSv1.2`,
     and will reject any connection attempts with older versions.
     When absent, enables all default protocols depending on the `sslProvider`.
-    Possible protocol names are: `TLS`, `TLSv1`, `TLSv1.1`, and `TLSv1.2`.
+    Possible protocol names are: `TLS`, `TLSv1.2` and `TLSv1.3`.
 
 The accepted protocol names and cipher suite names for `JDK` provider
 are listed in [Oracle Java Cryptography Architecture documentation](https://docs.oracle.com/javase/8/docs/technotes/guides/security/SunProviders.html).
@@ -138,7 +138,7 @@ be specified as separate backends.
   - *protocols* - A list of TLS protocol versions to use.
     Use this attribute to enforce a more secure version like `TLSv1.2`.
     When absent, enables all default protocols for the `sslProvider`.
-    Possible protocol names are: `TLS`, `TLSv1`, `TLSv1.1`, and `TLSv1.2`.
+    Possible protocol names are: `TLS`, `TLSv1.2` and `TLSv1.3`.
 
   - *sendSni* - Send the Origin server hostname in the TLS handshake as per the SNI extension (https://tools.ietf.org/html/rfc6066). This feature is enabled by default.
   
