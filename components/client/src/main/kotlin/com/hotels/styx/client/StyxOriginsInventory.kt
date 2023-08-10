@@ -105,7 +105,8 @@ class StyxOriginsInventory(
                 hostClientFactory,
                 metrics!!
             )
-            originsInventory.setOrigins(initialOrigins)
+            initialOrigins.takeIf { it.isNotEmpty() }
+                ?.apply { originsInventory.setOrigins(initialOrigins) }
             return originsInventory
         }
     }
