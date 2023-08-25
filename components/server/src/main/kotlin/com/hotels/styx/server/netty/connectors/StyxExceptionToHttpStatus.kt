@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2022 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import com.hotels.styx.api.exceptions.OriginUnreachableException
 import com.hotels.styx.api.exceptions.ResponseTimeoutException
 import com.hotels.styx.api.exceptions.TransportLostException
 import com.hotels.styx.client.BadHttpResponseException
+import com.hotels.styx.client.ResponseCancelledException
 import com.hotels.styx.client.StyxClientException
 import com.hotels.styx.client.connectionpool.ResourceExhaustedException
 import com.hotels.styx.server.BadRequestException
@@ -47,7 +48,8 @@ object StyxExceptionToHttpStatus {
                 NoServiceConfiguredException::class.java,
                 BadHttpResponseException::class.java,
                 ContentOverflowException::class.java,
-                TransportLostException::class.java
+                TransportLostException::class.java,
+                ResponseCancelledException::class.java,
             )
             .add(SERVICE_UNAVAILABLE, ResourceExhaustedException::class.java)
             .add(GATEWAY_TIMEOUT, ResponseTimeoutException::class.java)
