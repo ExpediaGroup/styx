@@ -27,6 +27,7 @@ import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.MicrometerRegistry;
 import com.hotels.styx.api.exceptions.StyxException;
 import com.hotels.styx.api.plugins.spi.PluginException;
+import com.hotels.styx.client.ResponseCancelledException;
 import com.hotels.styx.client.netty.ConsumerDisconnectedException;
 import com.hotels.styx.common.FsmEventProcessor;
 import com.hotels.styx.common.QueueDrainingEventProcessor;
@@ -45,6 +46,7 @@ import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
 import reactor.core.publisher.BaseSubscriber;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.SignalType;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
@@ -131,7 +133,8 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
                 .transition(WAITING_FOR_RESPONSE, RequestReceivedEvent.class, event -> onSpuriousRequest(event.request))
                 .transition(WAITING_FOR_RESPONSE, ChannelInactiveEvent.class, event -> onChannelInactive())
                 .transition(WAITING_FOR_RESPONSE, ChannelExceptionEvent.class, event -> onChannelExceptionWhenWaitingForResponse(event.ctx, event.cause))
-                .transition(WAITING_FOR_RESPONSE, ResponseObservableErrorEvent.class, event -> onResponseObservableError(event.ctx, event.cause, event.requestId))
+                .transition(WAITING_FOR_RESPONSE, ResponseObservableErrorEvent.class, event -> onResponseObservableErrorOrCancelled(event.ctx, event.cause, event.requestId))
+                .transition(WAITING_FOR_RESPONSE, ResponseObservableCancelledEvent.class, event -> onResponseObservableErrorOrCancelled(event.ctx, event.cause, event.requestId))
                 .transition(WAITING_FOR_RESPONSE, ResponseObservableCompletedEvent.class, event -> onResponseObservableCompletedTooSoon(event.ctx, event.requestId))
 
                 .transition(SENDING_RESPONSE, ResponseSentEvent.class, event -> onResponseSent(event.ctx))
@@ -253,21 +256,28 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
 
                 @Override
                 public void hookOnComplete() {
-                    timers.stopTiming(RESPONSE_PROCESSING);
                     eventProcessor.submit(new ResponseObservableCompletedEvent(ctx, request.id()));
                 }
 
                 @Override
                 public void hookOnError(Throwable cause) {
-                    timers.stopTiming(RESPONSE_PROCESSING);
-                    // in case we never managed to reach the end of request processing.
-                    timers.stopTiming(REQUEST_PROCESSING);
                     eventProcessor.submit(new ResponseObservableErrorEvent(ctx, cause, request.id()));
                 }
 
                 @Override
                 public void hookOnNext(LiveHttpResponse response) {
                     eventProcessor.submit(new ResponseReceivedEvent(response, ctx));
+                }
+
+                @Override
+                protected void hookOnCancel() {
+                    eventProcessor.submit(new ResponseObservableCancelledEvent(ctx, new ResponseCancelledException(), request.id()));
+                }
+
+                @Override
+                protected void hookFinally(SignalType type) {
+                    timers.stopTiming(RESPONSE_PROCESSING);
+                    timers.stopTiming(REQUEST_PROCESSING);
                 }
             });
 
@@ -426,7 +436,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         });
     }
 
-    private State onResponseObservableError(ChannelHandlerContext ctx, Throwable cause, Object requestId) {
+    private State onResponseObservableErrorOrCancelled(ChannelHandlerContext ctx, Throwable cause, Object requestId) {
         if (!ongoingRequest.id().equals(requestId)) {
             return this.state();
         }
@@ -581,6 +591,18 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         ChannelExceptionEvent(ChannelHandlerContext ctx, Throwable cause) {
             this.ctx = ctx;
             this.cause = cause;
+        }
+    }
+
+    private static class ResponseObservableCancelledEvent {
+        private final ChannelHandlerContext ctx;
+        private final Throwable cause;
+        private final Object requestId;
+
+        ResponseObservableCancelledEvent(ChannelHandlerContext ctx, Throwable cause, Object requestId) {
+            this.ctx = ctx;
+            this.cause = cause;
+            this.requestId = requestId;
         }
     }
 
