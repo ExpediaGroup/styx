@@ -15,16 +15,16 @@
  */
 package com.hotels.styx.api.extension
 
-import com.hotels.styx.api.extension.service.TcpKeepAliveSettings
+import com.hotels.styx.api.extension.service.Http2ConnectionPoolSettings
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 
-class TcpKeepAliveSettingsTest : StringSpec({
+class Http2ConnectionPoolSettingsTest : StringSpec({
     "setsConfigurationValues" {
-        val config = TcpKeepAliveSettings(100, 30, 3)
+        val config = Http2ConnectionPoolSettings(5, 10, 20)
 
-        config.keepAliveIdleTimeSeconds shouldBe 100
-        config.keepAliveIntervalSeconds shouldBe 30
-        config.keepAliveRetryCount shouldBe 3
+        config.minConnections shouldBe 5
+        config.maxStreamsPerConnection shouldBe 10
+        config.maxPendingStreamsPerHost shouldBe 20
     }
 })

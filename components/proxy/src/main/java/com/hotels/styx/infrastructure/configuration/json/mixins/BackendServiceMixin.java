@@ -19,6 +19,7 @@ package com.hotels.styx.infrastructure.configuration.json.mixins;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import com.hotels.styx.api.HttpVersion;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
@@ -42,6 +43,9 @@ public interface BackendServiceMixin {
 
     @JsonProperty("path")
     String path();
+
+    @JsonProperty("httpVersion")
+    String httpVersion();
 
     @JsonProperty("origins")
     Set<Origin> origins();
@@ -83,6 +87,9 @@ public interface BackendServiceMixin {
 
         @JsonProperty("path")
         BackendService.Builder path(String path);
+
+        @JsonProperty("httpVersion")
+        BackendService.Builder httpVersion(HttpVersion httpVersion);
 
         @JsonProperty("responseTimeoutMillis")
         BackendService.Builder responseTimeoutMillis(int timeout);

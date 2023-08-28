@@ -26,6 +26,8 @@ An example configuration block looks like this:
 It is important to notice that, initially,  the pool has no established TCP connections. 
 They are created lazily when needed.
 
+* *maxPendingConnectionsPerHost*: the maximum number of connections that may be waiting to be established at the same time.
+
 * *connectTimeoutMillis*: maximum allowed time for TCP connection establishment.
 
 * *socketTimeoutMillis*: maximum length of time a TCP connection can remain idle before being closed. 
@@ -37,6 +39,14 @@ host is specified as a DNS domain name, and you want to ensure that domain names
 periodically. If the value of the setting is non-positive, connections will not expire. 
 Connection age is checked on each incoming request, so connections may live longer than their 
 expiration time if they do not serve any requests.
+
+* *http2ConnectionPoolSettings*: connection pool settings for http2.
+
+    *   *minConnections* - the minimum number of connections that may be established to a single origin.
+
+    *   *maxStreamsPerConnection* - the minimum number of streams that may be established to a single connection.
+
+    *   *maxPendingStreamsPerHost* - the maximum number of streams that may be waiting to be acquired at the same time.
 
 ## Connection pending settings.
 
