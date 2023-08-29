@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ public class ConnectionPoolSettings {
     public static final int DEFAULT_CONNECT_TIMEOUT_MILLIS = 2000;
     public static final int DEFAULT_SOCKET_TIMEOUT_MILLIS = 11000;
     public static final long DEFAULT_CONNECTION_EXPIRATION_SECONDS = -1L;
+    public static final Http2ConnectionPoolSettings DEFAULT_HTTP2_CONNECTION_POOL_SETTINGS = new Http2ConnectionPoolSettings();
 
     private final int maxConnectionsPerHost;
     private final int maxPendingConnectionsPerHost;
@@ -36,32 +37,37 @@ public class ConnectionPoolSettings {
     private final int socketTimeoutMillis;
     private final int pendingConnectionTimeoutMillis;
     private final long connectionExpirationSeconds;
+    private final Http2ConnectionPoolSettings http2ConnectionPoolSettings;
 
     ConnectionPoolSettings(Integer maxConnectionsPerHost,
                            Integer maxPendingConnectionsPerHost,
                            Integer connectTimeoutMillis,
                            @Deprecated Integer socketTimeoutMillis,
                            Integer pendingConnectionTimeoutMillis,
-                           Long connectionExpirationSeconds) {
+                           Long connectionExpirationSeconds,
+                           Http2ConnectionPoolSettings http2ConnectionPoolSettings) {
         this.maxConnectionsPerHost = ofNullable(maxConnectionsPerHost).orElse(DEFAULT_MAX_CONNECTIONS_PER_HOST);
         this.maxPendingConnectionsPerHost = ofNullable(maxPendingConnectionsPerHost).orElse(DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST);
         this.connectTimeoutMillis = ofNullable(connectTimeoutMillis).orElse(DEFAULT_CONNECT_TIMEOUT_MILLIS);
         this.socketTimeoutMillis = ofNullable(socketTimeoutMillis).orElse(DEFAULT_SOCKET_TIMEOUT_MILLIS);
         this.pendingConnectionTimeoutMillis = ofNullable(pendingConnectionTimeoutMillis).orElse(DEFAULT_CONNECT_TIMEOUT_MILLIS);
         this.connectionExpirationSeconds = ofNullable(connectionExpirationSeconds).orElse(DEFAULT_CONNECTION_EXPIRATION_SECONDS);
+        this.http2ConnectionPoolSettings = ofNullable(http2ConnectionPoolSettings).orElse(DEFAULT_HTTP2_CONNECTION_POOL_SETTINGS);
     }
 
     public ConnectionPoolSettings(int maxConnectionsPerHost,
                            int maxPendingConnectionsPerHost,
                            int connectTimeoutMillis,
                            int pendingConnectionTimeoutMillis,
-                           long connectionExpirationSeconds) {
+                           long connectionExpirationSeconds,
+                           Http2ConnectionPoolSettings http2ConnectionPoolSettings) {
         this(maxConnectionsPerHost,
                 maxPendingConnectionsPerHost,
                 connectTimeoutMillis,
                 DEFAULT_SOCKET_TIMEOUT_MILLIS,
                 pendingConnectionTimeoutMillis,
-                connectionExpirationSeconds);
+                connectionExpirationSeconds,
+                http2ConnectionPoolSettings);
     }
 
     private ConnectionPoolSettings(Builder builder) {
@@ -71,7 +77,8 @@ public class ConnectionPoolSettings {
                 builder.connectTimeoutMillis,
                 builder.socketTimeoutMillis,
                 builder.pendingConnectionTimeoutMillis,
-                builder.connectionExpirationSeconds
+                builder.connectionExpirationSeconds,
+                builder.http2ConnectionPoolSettings
         );
     }
 
@@ -118,11 +125,14 @@ public class ConnectionPoolSettings {
     public long connectionExpirationSeconds() {
         return connectionExpirationSeconds;
     }
+    public Http2ConnectionPoolSettings http2ConnectionPoolSettings() {
+        return http2ConnectionPoolSettings;
+    }
 
     @Override
     public int hashCode() {
         return Objects.hash(maxConnectionsPerHost, maxPendingConnectionsPerHost, connectTimeoutMillis,
-                socketTimeoutMillis, pendingConnectionTimeoutMillis);
+                socketTimeoutMillis, pendingConnectionTimeoutMillis, http2ConnectionPoolSettings);
     }
 
     @Override
@@ -138,7 +148,8 @@ public class ConnectionPoolSettings {
                 && Objects.equals(this.maxPendingConnectionsPerHost, other.maxPendingConnectionsPerHost)
                 && Objects.equals(this.connectTimeoutMillis, other.connectTimeoutMillis)
                 && Objects.equals(this.socketTimeoutMillis, other.socketTimeoutMillis)
-                && Objects.equals(this.pendingConnectionTimeoutMillis, other.pendingConnectionTimeoutMillis);
+                && Objects.equals(this.pendingConnectionTimeoutMillis, other.pendingConnectionTimeoutMillis)
+                && Objects.equals(this.http2ConnectionPoolSettings, other.http2ConnectionPoolSettings);
     }
 
     @Override
@@ -155,6 +166,8 @@ public class ConnectionPoolSettings {
                 .append(socketTimeoutMillis)
                 .append(", pendingConnectionTimeoutMillis=")
                 .append(pendingConnectionTimeoutMillis)
+                .append(", http2ConnectionPoolSettings=")
+                .append(http2ConnectionPoolSettings)
                 .append('}')
                 .toString();
     }
@@ -169,6 +182,7 @@ public class ConnectionPoolSettings {
         private int socketTimeoutMillis = DEFAULT_SOCKET_TIMEOUT_MILLIS;
         private int pendingConnectionTimeoutMillis = DEFAULT_CONNECT_TIMEOUT_MILLIS;
         private long connectionExpirationSeconds = DEFAULT_CONNECTION_EXPIRATION_SECONDS;
+        private Http2ConnectionPoolSettings http2ConnectionPoolSettings = DEFAULT_HTTP2_CONNECTION_POOL_SETTINGS;
 
         /**
          * Constructs an instance with default settings.
@@ -188,6 +202,7 @@ public class ConnectionPoolSettings {
             this.socketTimeoutMillis = settings.socketTimeoutMillis();
             this.pendingConnectionTimeoutMillis = settings.pendingConnectionTimeoutMillis();
             this.connectionExpirationSeconds = settings.connectionExpirationSeconds();
+            this.http2ConnectionPoolSettings = settings.http2ConnectionPoolSettings();
         }
 
         /**
@@ -259,6 +274,17 @@ public class ConnectionPoolSettings {
          */
         public Builder connectionExpirationSeconds(long connectionExpirationSeconds) {
             this.connectionExpirationSeconds = connectionExpirationSeconds;
+            return this;
+        }
+
+        /**
+         * Sets the connection pool settings for HTTP/2.
+         *
+         * @param http2ConnectionPoolSettings connection pool settings for HTTP/2
+         * @return this builder
+         */
+        public Builder http2ConnectionPoolSettings(Http2ConnectionPoolSettings http2ConnectionPoolSettings) {
+            this.http2ConnectionPoolSettings = http2ConnectionPoolSettings;
             return this;
         }
 

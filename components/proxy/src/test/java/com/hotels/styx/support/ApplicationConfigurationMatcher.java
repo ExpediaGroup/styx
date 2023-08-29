@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.api.extension.service.HealthCheckConfig;
+import com.hotels.styx.api.extension.service.Http2ConnectionPoolSettings;
 import com.hotels.styx.api.extension.service.RewriteConfig;
 import com.hotels.styx.api.extension.service.StickySessionConfig;
 import org.hamcrest.Description;
@@ -30,6 +31,7 @@ import java.util.Set;
 
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.DEFAULT_CONNECT_TIMEOUT_MILLIS;
+import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.DEFAULT_HTTP2_CONNECTION_POOL_SETTINGS;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.DEFAULT_MAX_CONNECTIONS_PER_HOST;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST;
 import static com.hotels.styx.api.extension.service.StickySessionConfig.stickySessionDisabled;
@@ -42,6 +44,7 @@ public class ApplicationConfigurationMatcher extends TypeSafeMatcher<BackendServ
     private int connectTimeout = DEFAULT_CONNECT_TIMEOUT_MILLIS;
     private int maxConnectionsPerHost = DEFAULT_MAX_CONNECTIONS_PER_HOST;
     private int maxPendingConnectionsPerHost = DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST;
+    private Http2ConnectionPoolSettings http2ConnectionPoolSettings = DEFAULT_HTTP2_CONNECTION_POOL_SETTINGS;
     private HealthCheckConfig healthCheckConfig = null;
     private StickySessionConfig stickySessionConfig = stickySessionDisabled();
     private List<RewriteConfig> rewrites = emptyList();
@@ -85,6 +88,11 @@ public class ApplicationConfigurationMatcher extends TypeSafeMatcher<BackendServ
         return this;
     }
 
+    public ApplicationConfigurationMatcher withHttp2ConnectionPoolSettings(Http2ConnectionPoolSettings http2ConnectionPoolSettings) {
+        this.http2ConnectionPoolSettings = http2ConnectionPoolSettings;
+        return this;
+    }
+
     public ApplicationConfigurationMatcher withHealthCheckConfig(HealthCheckConfig healthCheckConfig) {
         this.healthCheckConfig = healthCheckConfig;
         return this;
@@ -104,6 +112,7 @@ public class ApplicationConfigurationMatcher extends TypeSafeMatcher<BackendServ
         description.appendText(", connectTimeout=" + connectTimeout);
         description.appendText(", maxConnectionsPerHost=" + maxConnectionsPerHost);
         description.appendText(", maxPendingConnectionsPerHost=" + maxPendingConnectionsPerHost);
+        description.appendText(", http2ConnectionPoolSettings=" + http2ConnectionPoolSettings);
         description.appendText(", healthCheckConfig=" + healthCheckConfig);
         description.appendText(", stickySessionConfig=" + stickySessionConfig);
         description.appendText(", rewrites=" + rewrites);
@@ -119,6 +128,7 @@ public class ApplicationConfigurationMatcher extends TypeSafeMatcher<BackendServ
                 && Objects.equals(connectTimeout, settings.connectTimeoutMillis())
                 && Objects.equals(maxConnectionsPerHost, settings.maxConnectionsPerHost())
                 && Objects.equals(maxPendingConnectionsPerHost, settings.maxPendingConnectionsPerHost())
+                && Objects.equals(http2ConnectionPoolSettings, settings.http2ConnectionPoolSettings())
                 && Objects.equals(healthCheckConfig, backendService.healthCheckConfig())
                 && Objects.equals(stickySessionConfig, backendService.stickySessionConfig())
                 && Objects.equals(rewrites, backendService.rewrites());

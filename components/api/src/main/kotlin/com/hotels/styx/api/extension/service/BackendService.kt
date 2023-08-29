@@ -15,12 +15,11 @@
  */
 package com.hotels.styx.api.extension.service
 
+import com.hotels.styx.api.HttpVersion.HTTP_1_1
 import com.hotels.styx.api.Id
 import com.hotels.styx.api.Identifiable
 import com.hotels.styx.api.extension.Origin
 import com.hotels.styx.api.extension.Origin.checkThatOriginsAreDistinct
-import java.lang.IllegalArgumentException
-import java.lang.StringBuilder
 import java.net.URI
 import java.util.Optional
 
@@ -30,6 +29,7 @@ import java.util.Optional
 data class BackendService(
     private val id: String,
     private val path: String,
+    private val httpVersion: String? = HTTP_1_1.toString(),
     private val connectionPoolSettings: ConnectionPoolSettings,
     private val origins: Set<Origin>,
     private val healthCheckConfig: HealthCheckConfig?,
@@ -58,6 +58,7 @@ data class BackendService(
     private constructor(builder: Builder) : this(
         id = builder.id,
         path = builder.path,
+        httpVersion = builder.httpVersion,
         connectionPoolSettings = builder.connectionPoolSettings,
         origins = builder.origins,
         healthCheckConfig = nullIfDisabled(builder.healthCheckConfig),
@@ -80,6 +81,7 @@ data class BackendService(
     class Builder(
         var id: String = Id.GENERIC_APP.toString(),
         var path: String = "/",
+        var httpVersion: String? = HTTP_1_1.toString(),
         var origins: Set<Origin> = emptySet(),
         var connectionPoolSettings: ConnectionPoolSettings = ConnectionPoolSettings.defaultConnectionPoolSettings(),
         var stickySessionConfig: StickySessionConfig = StickySessionConfig.stickySessionDisabled(),
@@ -94,6 +96,7 @@ data class BackendService(
         constructor(backendService: BackendService) : this() {
             this.id = backendService.id
             this.path = backendService.path
+            this.httpVersion = backendService.httpVersion
             this.origins = backendService.origins
             this.connectionPoolSettings = backendService.connectionPoolSettings
             this.stickySessionConfig = backendService.stickySessionConfig
@@ -116,6 +119,10 @@ data class BackendService(
 
         fun path(path: String) = apply {
             this.path = checkValidPath(path)
+        }
+
+        fun httpVersion(httpVersion: String) = apply {
+            this.httpVersion = httpVersion
         }
 
         private fun checkValidPath(path: String): String {
@@ -207,6 +214,8 @@ data class BackendService(
 
     fun origins(): Set<Origin> = origins
 
+    fun httpVersion(): String? = httpVersion
+
     fun connectionPoolConfig(): ConnectionPoolSettings = connectionPoolSettings
 
     fun healthCheckConfig(): HealthCheckConfig? = healthCheckConfig
@@ -231,28 +240,20 @@ data class BackendService(
 
     fun newCopy(): Builder = Builder(this)
 
-    override fun toString(): String = StringBuilder(128)
-        .append(this.javaClass.simpleName)
-        .append("{id=")
-        .append(id)
-        .append(", path=")
-        .append(path)
-        .append(", origins=")
-        .append(origins)
-        .append(", connectionPoolSettings=")
-        .append(connectionPoolSettings)
-        .append(", healthCheckConfig=")
-        .append(healthCheckConfig)
-        .append(", stickySessionConfig=")
-        .append(stickySessionConfig)
-        .append(", rewrites=")
-        .append(rewrites)
-        .append(", tlsSettings=")
-        .append(tlsSettings)
-        .append(", tcpKeepAliveSettings=")
-        .append(tcpKeepAliveSettings)
-        .append('}')
-        .toString()
+    override fun toString(): String = buildString {
+        append(this.javaClass.simpleName)
+        append("{id=", id)
+        append(", path=", path)
+        append(", httpVersion=", httpVersion)
+        append(", origins=", origins)
+        append(", connectionPoolSettings=", connectionPoolSettings)
+        append(", healthCheckConfig=", healthCheckConfig)
+        append(", stickySessionConfig=", stickySessionConfig)
+        append(", rewrites=", rewrites)
+        append(", tlsSettings=", tlsSettings)
+        append(", tcpKeepAliveSettings=", tcpKeepAliveSettings)
+        append('}')
+    }
 
     companion object {
         const val DEFAULT_RESPONSE_TIMEOUT_MILLIS = 1000

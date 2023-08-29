@@ -439,13 +439,13 @@ public class HostProxy implements RoutingObject {
                     tcpKeepRetryCount = NioChannelOption.of(ExtendedSocketOptions.TCP_KEEPCOUNT);
                 }
 
-                ofNullable(tcpKeepAliveSettings.keepAliveIdleTimeSeconds())
+                ofNullable(tcpKeepAliveSettings.getKeepAliveIdleTimeSeconds())
                     .ifPresent(keepIdleTime ->
                         channelOptionSettings.add(new ChannelOptionSetting<>(tcpKeepIdle, keepIdleTime)));
-                ofNullable(tcpKeepAliveSettings.keepAliveIntervalSeconds())
+                ofNullable(tcpKeepAliveSettings.getKeepAliveIntervalSeconds())
                     .ifPresent(interval ->
                         channelOptionSettings.add(new ChannelOptionSetting<>(tcpKeepInterval, interval)));
-                ofNullable(tcpKeepAliveSettings.keepAliveRetryCount())
+                ofNullable(tcpKeepAliveSettings.getKeepAliveRetryCount())
                     .ifPresent(count ->
                         channelOptionSettings.add(new ChannelOptionSetting<>(tcpKeepRetryCount, count)));
             }

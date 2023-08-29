@@ -13,18 +13,13 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.extension
+package com.hotels.styx.api.extension.service
 
-import com.hotels.styx.api.extension.service.TcpKeepAliveSettings
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.StringSpec
-
-class TcpKeepAliveSettingsTest : StringSpec({
-    "setsConfigurationValues" {
-        val config = TcpKeepAliveSettings(100, 30, 3)
-
-        config.keepAliveIdleTimeSeconds shouldBe 100
-        config.keepAliveIntervalSeconds shouldBe 30
-        config.keepAliveRetryCount shouldBe 3
-    }
-})
+/**
+ * Programmatically configurable HTTP/2 connection pool settings.
+ */
+data class Http2ConnectionPoolSettings(
+    val minConnections: Int? = 1,
+    val maxStreamsPerConnection: Int? = 20,
+    val maxPendingStreamsPerHost: Int? = 200,
+)

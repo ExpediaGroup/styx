@@ -57,4 +57,12 @@ public class BackendServiceTest {
                 .build());
         assertEquals("Invalid path. Path='/    # not set default used'", e.getMessage());
     }
+
+    @Test
+    public void usesHttp11IfHttpVersionIsNotProvided() {
+        BackendService backendService = BackendService.newBackendServiceBuilder()
+                .build();
+
+        assertThat(backendService.httpVersion(), is("HTTP/1.1"));
+    }
 }

@@ -43,6 +43,9 @@ public interface BackendServiceMixin {
     @JsonProperty("path")
     String path();
 
+    @JsonProperty("httpVersion")
+    String httpVersion();
+
     @JsonProperty("origins")
     Set<Origin> origins();
 
@@ -83,6 +86,9 @@ public interface BackendServiceMixin {
 
         @JsonProperty("path")
         BackendService.Builder path(String path);
+
+        @JsonProperty("httpVersion")
+        BackendService.Builder httpVersion(String httpVersion);
 
         @JsonProperty("responseTimeoutMillis")
         BackendService.Builder responseTimeoutMillis(int timeout);

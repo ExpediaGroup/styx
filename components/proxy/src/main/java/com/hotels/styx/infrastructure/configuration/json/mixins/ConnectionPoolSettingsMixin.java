@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package com.hotels.styx.infrastructure.configuration.json.mixins;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.hotels.styx.api.extension.service.Http2ConnectionPoolSettings;
 
 /**
  * Jackson annotations for {@link com.hotels.styx.api.extension.service.ConnectionPoolSettings}.
@@ -29,7 +30,8 @@ public abstract class ConnectionPoolSettingsMixin {
                                 @JsonProperty("connectTimeoutMillis") Integer connectTimeoutMillis,
                                 @JsonProperty("socketTimeoutMillis") Integer socketTimeoutMillis,
                                 @JsonProperty("pendingConnectionTimeoutMillis") Integer pendingConnectionTimeoutMillis,
-                                @JsonProperty("connectionExpirationSeconds") Long connectionExpirationSeconds) {
+                                @JsonProperty("connectionExpirationSeconds") Long connectionExpirationSeconds,
+                                @JsonProperty("http2ConnectionPoolSettings") Http2ConnectionPoolSettings http2ConnectionPoolSettings) {
     }
 
     @JsonProperty("socketTimeoutMillis")
@@ -49,4 +51,7 @@ public abstract class ConnectionPoolSettingsMixin {
 
     @JsonProperty("connectionExpirationSeconds")
     public abstract long connectionExpirationSeconds();
+
+    @JsonProperty("http2ConnectionPoolSettings")
+    public abstract Http2ConnectionPoolSettings http2ConnectionPoolSettings();
 }

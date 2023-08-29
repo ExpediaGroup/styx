@@ -53,6 +53,8 @@ Defaults to 60000 milliseconds.
 
 * **tcpKeepAliveSettings**: configuration for TCP connection keepalive, which can be set to programmatically modified the default behaviours of different OS.
 
+* **httpVersion**: HTTP version to be used for the backend service. Available options are HTTP/1.1 and HTTP/2. By default HTTP/1.1 is used.
+
 ## Health check
 See [Health Checks](configure-health-checks.md) for details.
 
@@ -89,6 +91,14 @@ The connection pool block has the following properties:
 *   **connectTimeoutMillis**: the maximum time Styx should wait for a connection to be established
 
 *   **pendingConnectionTimeoutMillis**: the maximum time to wait for a connection from the connection pool
+
+*   **http2ConnectionPoolSettings**: connection pool settings for http2.
+
+    *   **minConnections** - the minimum number of connections that may be established to a single origin.
+
+    *   **maxStreamsPerConnection** - the minimum number of streams that may be established to a single connection.
+
+    *   **maxPendingStreamsPerHost** - the maximum number of streams that may be waiting to be acquired at the same time.
 
 ## Rewrites
 

@@ -15,67 +15,11 @@
  */
 package com.hotels.styx.api.extension.service
 
-import java.lang.StringBuilder
-
 /**
  * Programmatically configurable TCP keepalive settings.
  */
 data class TcpKeepAliveSettings(
-    val keepAliveIdleTimeSeconds: Int?,
-    val keepAliveIntervalSeconds: Int?,
-    val keepAliveRetryCount: Int?
-) {
-    private constructor(builder: Builder) : this(
-        keepAliveIdleTimeSeconds = builder.keepAliveIdleTimeSeconds,
-        keepAliveIntervalSeconds = builder.keepAliveIntervalSeconds,
-        keepAliveRetryCount = builder.keepAliveRetryCount
-    )
-
-    /**
-     * A builder for [TcpKeepAliveSettings].
-     */
-    class Builder(
-        var keepAliveIdleTimeSeconds: Int? = null,
-        var keepAliveIntervalSeconds: Int? = null,
-        var keepAliveRetryCount: Int? = null
-    ) {
-        constructor(tcpKeepAliveSettings: TcpKeepAliveSettings) : this() {
-            this.keepAliveIdleTimeSeconds = tcpKeepAliveSettings.keepAliveIdleTimeSeconds
-            this.keepAliveIntervalSeconds = tcpKeepAliveSettings.keepAliveIntervalSeconds
-            this.keepAliveRetryCount = tcpKeepAliveSettings.keepAliveRetryCount
-        }
-
-        fun keepAliveIdleTimeSeconds(keepAliveIdleTimeSeconds: Int?) = apply {
-            this.keepAliveIdleTimeSeconds = keepAliveIdleTimeSeconds
-        }
-
-        fun keepAliveIntervalSeconds(keepAliveIntervalSeconds: Int?) = apply {
-            this.keepAliveIntervalSeconds = keepAliveIntervalSeconds
-        }
-
-        fun keepAliveRetryCount(keepAliveRetryCount: Int?) = apply {
-            this.keepAliveRetryCount = keepAliveRetryCount
-        }
-
-        fun build() = TcpKeepAliveSettings(this)
-    }
-
-    fun keepAliveIdleTimeSeconds(): Int? = keepAliveIdleTimeSeconds
-
-    fun keepAliveIntervalSeconds(): Int? = keepAliveIntervalSeconds
-
-    fun keepAliveRetryCount(): Int? = keepAliveRetryCount
-
-    fun newCopy(): Builder = Builder(this)
-
-    override fun toString(): String = StringBuilder(128)
-        .append(this.javaClass.simpleName)
-        .append("{keepAliveIdleTimeSeconds=")
-        .append(keepAliveIdleTimeSeconds)
-        .append(", keepAliveIntervalSeconds=")
-        .append(keepAliveIntervalSeconds)
-        .append(", keepAliveRetryCount=")
-        .append(keepAliveRetryCount)
-        .append("}")
-        .toString()
-}
+    val keepAliveIdleTimeSeconds: Int? = 240,
+    val keepAliveIntervalSeconds: Int? = 30,
+    val keepAliveRetryCount: Int? = 3,
+)

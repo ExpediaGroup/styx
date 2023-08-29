@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -28,8 +28,9 @@ import static java.util.stream.Collectors.toMap;
 public class HttpVersion {
     public static final HttpVersion HTTP_1_0 = new HttpVersion("HTTP/1.0");
     public static final HttpVersion HTTP_1_1 = new HttpVersion("HTTP/1.1");
+    public static final HttpVersion HTTP_2 = new HttpVersion("HTTP/2");
 
-    private static final Map<String, HttpVersion> VERSIONS = Stream.of(HTTP_1_0, HTTP_1_1)
+    private static final Map<String, HttpVersion> VERSIONS = Stream.of(HTTP_1_0, HTTP_1_1, HTTP_2)
             .collect(toMap(HttpVersion::toString, identity()));
 
     private final String version;
@@ -41,7 +42,7 @@ public class HttpVersion {
     /**
      * Creates a HttpVersion from String.
      * <p>
-     * Accepted strings are "HTTP/1.0" and "HTTP/1.1".
+     * Accepted strings are "HTTP/1.0", "HTTP/1.1" and "HTTP/2".
      * Otherwise throws an {@link IllegalArgumentException}.
      *
      * @param version
