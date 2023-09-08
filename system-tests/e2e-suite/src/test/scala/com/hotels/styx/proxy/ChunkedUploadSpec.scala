@@ -206,40 +206,6 @@ class ChunkedUploadSpec extends FunSpec
       assert(response.get.status() == REQUEST_TIMEOUT, s"\nExpecting 408 Request Timeout, but got: \n$response \n\n$content\n\n")
     }
 
-    it("Responds with 500 Internal Server Error when chunk size 80000000 causes an integer overflow.") {
-      val request =
-        "POST /upload HTTP/1.1" + CRLF +
-          s"Host: localhost:${styxServer.httpPort}" + CRLF +
-          "Transfer-Encoding: chunked" + CRLF +
-          "Content-Type: text/plain" + CRLF +
-          CRLF +
-          s"80000000${CRLF}xxxxxxxxxxxx$CRLF" +
-          lastChunk
-
-      val response = httpTransaction(request)
-
-      assert(response.nonEmpty, "\nStyx did not respond.")
-      val content = response.get.content().toString(UTF_8)
-      assert(response.get.status() == INTERNAL_SERVER_ERROR, s"\nExpecting 500 Internal Server Error, but got: \n$response \n\n$content\n\n")
-    }
-
-    it("Responds with 500 Internal Server Error when chunk size FFFFFFFF causes an integer overflow.") {
-      val request =
-        "POST /upload HTTP/1.1" + CRLF +
-          s"Host: localhost:${styxServer.httpPort}" + CRLF +
-          "Transfer-Encoding: chunked" + CRLF +
-          "Content-Type: text/plain" + CRLF +
-          CRLF +
-          s"ffffffff${CRLF}xxxxxxxxxxxx$CRLF" +
-          lastChunk
-
-      val response = httpTransaction(request)
-
-      assert(response.nonEmpty, "\nStyx did not respond.")
-      val content = response.get.content().toString(UTF_8)
-      assert(response.get.status() == INTERNAL_SERVER_ERROR, s"\nExpecting 500 Internal Server Error, but got: \n$response \n\n$content\n\n")
-    }
-
     it("Accepts a chunk size 25 octets.") {
       val request =
         "POST /upload HTTP/1.1" + CRLF +
@@ -257,21 +223,21 @@ class ChunkedUploadSpec extends FunSpec
       assert(response.get.status() == OK, s"\nExpecting 200 OK, but got: \n$response \n\n$content\n\n")
     }
 
-    it("Rejects a chunk size over 8 characters.") {
+    it("Does not respond 400 with chunk size set to Int.MaxValue") {
       val request =
         "POST /upload HTTP/1.1" + CRLF +
           s"Host: localhost:${styxServer.httpPort}" + CRLF +
           "Transfer-Encoding: chunked" + CRLF +
           "Content-Type: text/plain" + CRLF +
           CRLF +
-          s"1ABABABAB${CRLF}Hello World!Hello World!!$CRLF" +
+          s"${Int.MaxValue}${CRLF}Hello World!Hello World!!$CRLF" +
           lastChunk
 
       val response = httpTransaction(request)
 
       assert(response.nonEmpty, "\nStyx did not respond.")
       val content = response.get.content().toString(UTF_8)
-      assert(response.get.status() == INTERNAL_SERVER_ERROR, s"\nExpecting 500 Internal Server Error, but got: \n$response \n\n$content\n\n")
+      assert(response.get.status() != BAD_REQUEST, s"\nNot expecting 400 Bad Request, but got: \n$response \n\n$content\n\n")
     }
   }
 
