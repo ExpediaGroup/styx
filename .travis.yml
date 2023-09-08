@@ -2,7 +2,7 @@ dist: trusty
 language: java
 jdk:
   - openjdk11
-script: mvn verify -Pquality,linux
+script: mvn verify -Pquality
 cache:
   directories:
   - "~/.m2/repository"
