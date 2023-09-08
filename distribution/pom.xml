@@ -14,7 +14,7 @@
 
 
   <properties>
-    <artifact.finalName>styx-${project.version}-${netty-tcnative.classifier}</artifact.finalName>
+    <artifact.finalName>styx-${project.version}</artifact.finalName>
     <distribution.dir>${project.basedir}/target</distribution.dir>
     <main.basedir>${project.parent.basedir}</main.basedir>
     <skipCheckstyle>true</skipCheckstyle>
@@ -100,7 +100,6 @@
               <groupId>com.hotels.styx</groupId>
               <artifactId>styx</artifactId>
               <version>${project.version}</version>
-              <classifier>${netty-tcnative.classifier}</classifier>
               <packaging>zip</packaging>
               <generatePom>false</generatePom>
             </configuration>
@@ -131,7 +130,6 @@
               <groupId>com.hotels.styx</groupId>
               <artifactId>styx</artifactId>
               <version>${project.version}</version>
-              <classifier>${netty-tcnative.classifier}</classifier>
               <packaging>zip</packaging>
               <generatePom>false</generatePom>
             </configuration>

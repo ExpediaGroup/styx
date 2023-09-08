@@ -21,13 +21,9 @@ To clone and build styx afresh:
 
     $ git clone https://github.com/HotelsDotCom/styx.git
     $ cd styx
-    $ make release-no-tests PLATFORM=macosx
+    $ make release-no-tests
 
-This produces a file `distribution/target/styx.zip`. This build is for MacOSX.
-The *PLATFORM* argument defaults to *macosx*.
-To build for Linux, you need to override a *PLATFORM* argument, like so:
-
-    $ make release-no-tests PLATFORM=linux
+This produces a file `distribution/target/styx.zip`.
 
 If `styx-test/` already exists, remove it first to avoid conflicts on dependencies:
 
@@ -35,7 +31,7 @@ If `styx-test/` already exists, remove it first to avoid conflicts on dependenci
 
 Let's unzip this file:
 
-    $ unzip distribution/target/styx-<VERSION>-<OS>-<PLATFORM>.zip -d styx-test
+    $ unzip distribution/target/styx-<VERSION>.zip -d styx-test
 
 
 ## 1.4 Running Styx

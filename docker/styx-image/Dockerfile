@@ -2,7 +2,7 @@ ARG TAG=11-jdk
 FROM openjdk:${TAG}
 
 ARG STYX_VERSION=""
-ARG STYX_IMAGE=https://github.com/HotelsDotCom/styx/releases/download/${STYX_VERSION}/${STYX_VERSION}-linux-x86_64.zip
+ARG STYX_IMAGE=https://github.com/HotelsDotCom/styx/releases/download/${STYX_VERSION}/${STYX_VERSION}.zip
 
 ENV APP_HOME=/styx
 

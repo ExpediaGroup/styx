@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (C) 2013-2021 Expedia Inc.
+# Copyright (C) 2013-2023 Expedia Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -36,19 +36,19 @@ echo "Deploying Release to sonatype and docker hub"
 #Ensure a correct version was configured in the pom files.
 mvn versions:set -DnewVersion=$TRAVIS_TAG
 #Deploy to sonatype
-mvn deploy --settings travis/mvn-settings.xml -B -U -P sonatype-oss-release,linux -DskipTests=true -Dmaven.test.skip=true
+mvn deploy --settings travis/mvn-settings.xml -B -U -P sonatype-oss-release -DskipTests=true -Dmaven.test.skip=true
 #Deploy to dockerhub
 echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 mvn install -f distribution/pom.xml -B -U -P docker -Dstyxcore.docker.image=hotelsdotcom/styx
 docker push hotelsdotcom/styx
 
-#Prepare macosx bundle for github releases
-mvn install -B -U -P macosx,release -DskipTests=true -Dmaven.test.skip=true -Dgpg.skip=true
+#Prepare bundle for github releases
+mvn install -B -U -P release -DskipTests=true -Dmaven.test.skip=true -Dgpg.skip=true
 }
 
 function deploySnapshot() {
   echo "Deploying snapshot to sonatype"
-  mvn deploy --settings travis/mvn-settings.xml -B -U -P sonatype-oss-release,linux -DskipTests=true -Dmaven.test.skip=true -Dgpg.skip=true -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+  mvn deploy --settings travis/mvn-settings.xml -B -U -P sonatype-oss-release -DskipTests=true -Dmaven.test.skip=true -Dgpg.skip=true -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
 }
 
 if [[ -n "$TRAVIS_TAG" ]]; then

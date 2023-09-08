@@ -21,20 +21,19 @@ clean:
 unit-test:
 	mvn clean test -Pquality
 
-PLATFORM=macosx
 ## Compile, run unit tests, checkstyle and integration tests
 e2e:
-	mvn clean verify -Pquality,release,$(PLATFORM)
+	mvn clean verify -Pquality,release
 
 ## Compile code and tests but do not run
 # Note: Pre-integration test phase is necessary to produce styx.properties file
 # needed by AdminSpec.scala tests.
 e2e-compile:
-	mvn clean pre-integration-test -P$(PLATFORM)
+	mvn clean pre-integration-test
 
 ## Run system tests
 e2e-test:
-	mvn -f system-tests/e2e-suite/pom.xml -P$(PLATFORM) scalatest:test
+	mvn -f system-tests/e2e-suite/pom.xml scalatest:test
 
 ## Execute a single end-to-end (scala) test
 # Alternatively, it should be possible to run an individual e2e test
@@ -47,11 +46,11 @@ e2e-test-single:
 
 ## Compile, test and create styx.zip
 release: clean
-	mvn install -Prelease,$(PLATFORM)
+	mvn install -Prelease
 
 ## Compile and create styx.zip without running tests
 release-no-tests: clean
-	mvn install -Prelease,$(PLATFORM) -Dmaven.test.skip=true
+	mvn install -Prelease -Dmaven.test.skip=true
 
 GIT_BRANCH=$(shell basename $(shell git symbolic-ref --short HEAD))
 LOAD_TEST_DIR=$(CURRENT_DIR)/logs/load-test-$(GIT_BRANCH)-$(shell date "+%Y_%m_%d_%H:%M:%S")
@@ -133,7 +132,7 @@ changelog:
 # Default configuration file: /styx/default-config/default.yml
 #
 docker-image: clean
-	mvn install -Prelease,linux,docker -DskipTests=true -Dmaven.test.skip=true
+	mvn install -Prelease,docker -DskipTests=true -Dmaven.test.skip=true
 
 ## Starts a "demo" mode of Styx that can be used to explore the features, or for manual testing.
 start-demo: release-styx
