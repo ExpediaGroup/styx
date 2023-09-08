@@ -21,8 +21,9 @@ import io.kotlintest.specs.StringSpec
 
 class Http2ConnectionPoolSettingsTest : StringSpec({
     "setsConfigurationValues" {
-        val config = Http2ConnectionPoolSettings(5, 10, 20)
+        val config = Http2ConnectionPoolSettings(10, 5, 10, 20)
 
+        config.maxConnections shouldBe 10
         config.minConnections shouldBe 5
         config.maxStreamsPerConnection shouldBe 10
         config.maxPendingStreamsPerHost shouldBe 20

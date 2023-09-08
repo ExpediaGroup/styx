@@ -19,7 +19,8 @@ package com.hotels.styx.api.extension.service
  * Programmatically configurable HTTP/2 connection pool settings.
  */
 data class Http2ConnectionPoolSettings(
+    val maxConnections: Int? = 10,
     val minConnections: Int? = 1,
-    val maxStreamsPerConnection: Int? = 20,
+    val maxStreamsPerConnection: Int? = 1024,
     val maxPendingStreamsPerHost: Int? = 200,
 )

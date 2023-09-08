@@ -42,9 +42,11 @@ expiration time if they do not serve any requests.
 
 * *http2ConnectionPoolSettings*: connection pool settings for http2.
 
+    *   **maxConnections** - the maximum number of connections that may be established to a single origin.
+
     *   *minConnections* - the minimum number of connections that may be established to a single origin.
 
-    *   *maxStreamsPerConnection* - the minimum number of streams that may be established to a single connection.
+  *   **maxStreamsPerConnection** - the minimum number of streams that may be established to a single connection. The minimum of this configuration and the remote peer configuration is taken.
 
     *   *maxPendingStreamsPerHost* - the maximum number of streams that may be waiting to be acquired at the same time.
 
