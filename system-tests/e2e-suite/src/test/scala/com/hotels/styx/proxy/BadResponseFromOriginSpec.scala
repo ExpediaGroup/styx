@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -120,11 +120,11 @@ class BadResponseFromOriginSpec extends FunSpec
       val twoResponses = (ctx: ChannelHandlerContext, msg: scala.Any) => {
         val response = new DefaultFullHttpResponse(HTTP_1_1, OK)
         response.headers().add(CONTENT_LENGTH, 0)
-        response.headers().add(ACCEPT_ENCODING, "ENCODING")
+        response.headers().add(ACCEPT_ENCODING, "*")
         ctx.write(response)
 
         val response2 = new DefaultFullHttpResponse(HTTP_1_1, HttpResponseStatus.NOT_FOUND)
-        response2.headers().add(ACCEPT_CHARSET, "CHARSET")
+        response2.headers().add(ACCEPT, "*/*")
         ctx.writeAndFlush(response2)
       }
 
@@ -135,8 +135,8 @@ class BadResponseFromOriginSpec extends FunSpec
 
       val resp = decodedRequest(req)
       assert(resp.status().code() == 200)
-      assert(resp.header(ACCEPT_ENCODING).get() == "ENCODING")
-      assert(!resp.header(ACCEPT_CHARSET).isPresent)
+      assert(resp.header(ACCEPT_ENCODING).get() == "*")
+      assert(!resp.header(ACCEPT).isPresent)
     }
   }
 

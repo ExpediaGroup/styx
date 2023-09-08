@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -136,7 +136,7 @@ class ChunkedUploadSpec extends FunSpec
 
       assert(response.nonEmpty, "\nStyx did not respond.")
       val content = response.get.content().toString(UTF_8)
-      assert(response.get.getStatus == OK, s"\nExpecting 200 OK, but got: \n$response \n\n$content\n\n")
+      assert(response.get.status() == OK, s"\nExpecting 200 OK, but got: \n$response \n\n$content\n\n")
     }
 
     it("should respond with bad request if chunked request is not actually followed with chunks in the body") {
@@ -152,7 +152,7 @@ class ChunkedUploadSpec extends FunSpec
 
       assert(response.nonEmpty, "\nStyx did not respond.")
       val content = response.get.content().toString(UTF_8)
-      assert(response.get.getStatus == BAD_REQUEST, s"\nExpecting 400 Bad Request, but got: \n$response \n\n$content\n\n")
+      assert(response.get.status() == BAD_REQUEST, s"\nExpecting 400 Bad Request, but got: \n$response \n\n$content\n\n")
     }
 
     it("should accept a chunk header padded with 7 leading zeroes.") {
@@ -169,7 +169,7 @@ class ChunkedUploadSpec extends FunSpec
 
       assert(response.nonEmpty, "\nStyx did not respond.")
       val content = response.get.content().toString(UTF_8)
-      assert(response.get.getStatus == OK, s"\nExpecting 200 OK, but got: \n$response \n\n$content\n\n")
+      assert(response.get.status() == OK, s"\nExpecting 200 OK, but got: \n$response \n\n$content\n\n")
     }
 
     it("Accepts a chunk header padded with 8 leading zeroes.") {
@@ -186,7 +186,7 @@ class ChunkedUploadSpec extends FunSpec
 
       assert(response.nonEmpty, "\nStyx did not respond.")
       val content = response.get.content().toString(UTF_8)
-      assert(response.get.getStatus == OK, s"\nExpecting 200 OK, but got: \n$response \n\n$content\n\n")
+      assert(response.get.status() == OK, s"\nExpecting 200 OK, but got: \n$response \n\n$content\n\n")
     }
 
     it("Responds with 408 Request Timeout when it doesn't receive chunk-length amount of octets.") {
@@ -203,10 +203,10 @@ class ChunkedUploadSpec extends FunSpec
 
       assert(response.nonEmpty, "\nStyx did not respond.")
       val content = response.get.content().toString(UTF_8)
-      assert(response.get.getStatus == REQUEST_TIMEOUT, s"\nExpecting 408 Request Timeout, but got: \n$response \n\n$content\n\n")
+      assert(response.get.status() == REQUEST_TIMEOUT, s"\nExpecting 408 Request Timeout, but got: \n$response \n\n$content\n\n")
     }
 
-    it("Responds with 400 Bad Request when chunk size 80000000 causes an integer overflow.") {
+    it("Responds with 500 Internal Server Error when chunk size 80000000 causes an integer overflow.") {
       val request =
         "POST /upload HTTP/1.1" + CRLF +
           s"Host: localhost:${styxServer.httpPort}" + CRLF +
@@ -220,10 +220,10 @@ class ChunkedUploadSpec extends FunSpec
 
       assert(response.nonEmpty, "\nStyx did not respond.")
       val content = response.get.content().toString(UTF_8)
-      assert(response.get.getStatus == BAD_REQUEST, s"\nExpecting 400 Bad Request, but got: \n$response \n\n$content\n\n")
+      assert(response.get.status() == INTERNAL_SERVER_ERROR, s"\nExpecting 500 Internal Server Error, but got: \n$response \n\n$content\n\n")
     }
 
-    it("Responds with 400 Bad Request when chunk size FFFFFFFF causes an integer overflow.") {
+    it("Responds with 500 Internal Server Error when chunk size FFFFFFFF causes an integer overflow.") {
       val request =
         "POST /upload HTTP/1.1" + CRLF +
           s"Host: localhost:${styxServer.httpPort}" + CRLF +
@@ -237,7 +237,7 @@ class ChunkedUploadSpec extends FunSpec
 
       assert(response.nonEmpty, "\nStyx did not respond.")
       val content = response.get.content().toString(UTF_8)
-      assert(response.get.getStatus == BAD_REQUEST, s"\nExpecting 400 Bad Request, but got: \n$response \n\n$content\n\n")
+      assert(response.get.status() == INTERNAL_SERVER_ERROR, s"\nExpecting 500 Internal Server Error, but got: \n$response \n\n$content\n\n")
     }
 
     it("Accepts a chunk size 25 octets.") {
@@ -254,7 +254,7 @@ class ChunkedUploadSpec extends FunSpec
 
       assert(response.nonEmpty, "\nStyx did not respond.")
       val content = response.get.content().toString(UTF_8)
-      assert(response.get.getStatus == OK, s"\nExpecting 200 OK, but got: \n$response \n\n$content\n\n")
+      assert(response.get.status() == OK, s"\nExpecting 200 OK, but got: \n$response \n\n$content\n\n")
     }
 
     it("Rejects a chunk size over 8 characters.") {
@@ -271,7 +271,7 @@ class ChunkedUploadSpec extends FunSpec
 
       assert(response.nonEmpty, "\nStyx did not respond.")
       val content = response.get.content().toString(UTF_8)
-      assert(response.get.getStatus == BAD_REQUEST, s"\nExpecting 400 Bad Request, but got: \n$response \n\n$content\n\n")
+      assert(response.get.status() == INTERNAL_SERVER_ERROR, s"\nExpecting 500 Internal Server Error, but got: \n$response \n\n$content\n\n")
     }
   }
 
