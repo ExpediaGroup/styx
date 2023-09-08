@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,7 +20,13 @@ import com.hotels.styx.InetServer
 import com.hotels.styx.ProxyConnectorFactory
 import com.hotels.styx.ResponseInfoFormat
 import com.hotels.styx.StyxObjectRecord
-import com.hotels.styx.config.schema.SchemaDsl.*
+import com.hotels.styx.config.schema.SchemaDsl.bool
+import com.hotels.styx.config.schema.SchemaDsl.field
+import com.hotels.styx.config.schema.SchemaDsl.integer
+import com.hotels.styx.config.schema.SchemaDsl.list
+import com.hotels.styx.config.schema.SchemaDsl.`object`
+import com.hotels.styx.config.schema.SchemaDsl.optional
+import com.hotels.styx.config.schema.SchemaDsl.string
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig
 import com.hotels.styx.proxy.ProxyServerConfig
 import com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder.ENCODE_UNWISECHARS
@@ -83,7 +89,7 @@ private data class StyxHttpServerConfiguration(
 
         val maxInitialLength: Int = 4096,
         val maxHeaderSize: Int = 8192,
-        val maxChunkSize: Int = 8192,
+        val maxChunkSize: Int = Int.MAX_VALUE,
 
         val requestTimeoutMillis: Int = 60000,
         val keepAliveTimeoutMillis: Int = 120000,
@@ -116,7 +122,6 @@ internal class StyxHttpServerFactory : StyxServerFactory {
                                         .setCompressResponses(config.compressResponses)
                                         .setMaxInitialLength(config.maxInitialLength)
                                         .setMaxHeaderSize(config.maxHeaderSize)
-                                        .setMaxChunkSize(config.maxChunkSize)
                                         .setRequestTimeoutMillis(config.requestTimeoutMillis)
                                         .setKeepAliveTimeoutMillis(config.keepAliveTimeoutMillis)
                                         .setMaxConnectionsCount(config.maxConnectionsCount)
