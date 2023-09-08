@@ -12,7 +12,6 @@ proxyf:
   workerThreadsCount: 0
   maxInitialLength: 4096
   maxHeaderSize: 8192
-  maxChunkSize: 8192
   requestTimeoutMillis: 12000
   keepAliveTimeoutMillis: 12000
   maxConnectionsCount: 4096
@@ -25,7 +24,6 @@ admin:
   workerThreadsCount: 1
   maxInitialLength: 4096
   maxHeaderSize: 8192
-  maxChunkSize: 8192
   metricsCache:
     enabled: true
     expirationMillis: 10000

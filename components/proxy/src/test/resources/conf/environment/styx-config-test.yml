@@ -11,7 +11,6 @@ proxy:
   workerThreadsCount: 0
   maxInitialLength: 4096
   maxHeaderSize: 8192
-  maxChunkSize: 8192
   responseTimeoutMillis: 12000
 
 admin:
@@ -22,7 +21,6 @@ admin:
   workerThreadsCount: 1
   maxInitialLength: 4096
   maxHeaderSize: 8192
-  maxChunkSize: 8192
 
 loadBalancing:
   strategy:

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2022 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -40,7 +40,6 @@ public class StyxConfigTest {
             "    http:\n" +
             "      port: 80\n" +
             "  maxHeaderSize: 8193\n" +
-            "  maxChunkSize: 8193\n" +
             "metrics:\n" +
             "  reporting:\n" +
             "   prefix: \"STYXHPT\"\n";
@@ -52,7 +51,6 @@ public class StyxConfigTest {
     public void initializesFromConfigurationSource() {
         assertThat(serverConfig.httpConnectorConfig().get().port(), is(80));
         assertThat(serverConfig.maxHeaderSize(), is(8193));
-        assertThat(serverConfig.maxChunkSize(), is(8193));
         assertThat(styxConfig.get("metrics.reporting.prefix", String.class).get(), is("STYXHPT"));
     }
 

@@ -26,7 +26,7 @@ trait TestClientSupport {
     val client = new HttpTestClient(fromParts(hostname, port),
       new ChannelInitializer[Channel] {
         override def initChannel(ch: Channel): Unit = {
-          ch.pipeline().addLast(new HttpClientCodec(4096, 2 * 8192, 8192))
+          ch.pipeline().addLast(new HttpClientCodec(4096, 2 * 8192, Int.MaxValue))
         }
       })
     client.connect()
@@ -40,7 +40,7 @@ trait TestClientSupport {
           if (log) {
             ch.pipeline().addLast(new LoggingHandler(LogLevel.WARN))
           }
-          ch.pipeline().addLast(new HttpClientCodec(4096, 2 * 8192, 8192))
+          ch.pipeline().addLast(new HttpClientCodec(4096, 2 * 8192, Int.MaxValue))
           ch.pipeline().addLast(new HttpObjectAggregator(2 * 8192))
         }
       })

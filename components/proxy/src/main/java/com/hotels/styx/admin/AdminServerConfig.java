@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -106,11 +106,6 @@ public class AdminServerConfig extends NettyServerConfig {
         @Override
         public Builder setMaxHeaderSize(Integer maxHeaderSize) {
             return super.setMaxHeaderSize(maxHeaderSize);
-        }
-
-        @Override
-        public Builder setMaxChunkSize(Integer maxChunkSize) {
-            return super.setMaxChunkSize(maxChunkSize);
         }
 
         @Override

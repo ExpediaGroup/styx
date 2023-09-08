@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -44,7 +44,9 @@ public class NettyServerConfig {
     private int nioAcceptorBacklog = 1024;
     private int maxInitialLength = 4096;
     private int maxHeaderSize = 8192;
-    private int maxChunkSize = 8192;
+
+    @Deprecated
+    private int maxChunkSize = Integer.MAX_VALUE;
     private int requestTimeoutMs = 12000;
     private int keepAliveTimeoutMillis = 12000;
     private int maxConnectionsCount = 512;
@@ -142,6 +144,7 @@ public class NettyServerConfig {
      *
      * @return maximum chunk size
      */
+    @Deprecated
     public int maxChunkSize() {
         return this.maxChunkSize;
     }
@@ -196,7 +199,7 @@ public class NettyServerConfig {
         protected int nioAcceptorBacklog = 1024;
         protected int maxInitialLength = 4096;
         protected int maxHeaderSize = 8192;
-        protected int maxChunkSize = 8192;
+        protected int maxChunkSize = Integer.MAX_VALUE;
         protected int requestTimeoutMs = 12000;
         protected int keepAliveTimeoutMillis = 12000;
         protected int maxConnectionsCount = 512;
@@ -248,6 +251,7 @@ public class NettyServerConfig {
             return (T) this;
         }
 
+        @Deprecated
         @JsonProperty("maxChunkSize")
         public T setMaxChunkSize(Integer maxChunkSize) {
             if (maxChunkSize != null) {

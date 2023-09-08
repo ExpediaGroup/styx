@@ -28,6 +28,7 @@ public final class HttpConfig {
     private final boolean compress;
     private final int maxInitialLength;
     private final int maxHeadersSize;
+    @Deprecated
     private final int maxChunkSize;
     private final int maxContentLength;
     private final Iterable<ChannelOptionSetting<?>> settings;
@@ -76,6 +77,7 @@ public final class HttpConfig {
      *
      * @return maximum chunk size
      */
+    @Deprecated
     public int maxChunkSize() {
         return maxChunkSize;
     }
@@ -123,7 +125,7 @@ public final class HttpConfig {
         private boolean compress;
         private int maxInitialLength = 16384;
         private int maxHeadersSize = DEFAULT_MAX_HEADER_SIZE;
-        private int maxChunkSize = 32768;
+        private int maxChunkSize = Integer.MAX_VALUE;
         private int maxContentLength = 65536;
         private Iterable<ChannelOptionSetting<?>> settings = emptyList();
 
@@ -147,6 +149,7 @@ public final class HttpConfig {
          * @param maxChunkSize maximum size of an HTTP chunk
          * @return this builder
          */
+        @Deprecated
         public Builder setMaxChunkSize(int maxChunkSize) {
             this.maxChunkSize = maxChunkSize;
             return this;
