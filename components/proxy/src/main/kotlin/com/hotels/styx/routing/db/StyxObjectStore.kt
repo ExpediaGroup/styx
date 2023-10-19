@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicReference
  * Styx Route Database.
  */
 
-class StyxObjectStore<T> internal constructor(executor: ExecutorService): ObjectStore<T> {
+class StyxObjectStore<T : Any> internal constructor(executor: ExecutorService): ObjectStore<T> {
     private val objects: AtomicReference<IndexedSnapshot<T>> = AtomicReference(
             IndexedSnapshot(0, HashTreePMap.empty()))
 

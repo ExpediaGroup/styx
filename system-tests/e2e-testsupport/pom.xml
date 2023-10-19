@@ -87,9 +87,6 @@
               <overWriteSnapshots>false</overWriteSnapshots>
               <overWriteIfNewer>true</overWriteIfNewer>
               <includeScope>compile</includeScope>
-              <includeScope>runtime</includeScope>
-              <excludeScope>provided</excludeScope>
-              <excludeScope>test</excludeScope>
             </configuration>
           </execution>
         </executions>

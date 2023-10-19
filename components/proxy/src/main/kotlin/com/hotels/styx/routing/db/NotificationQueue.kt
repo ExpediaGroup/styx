@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 
-internal class NotificationQueue<T>(val watchers: CopyOnWriteArrayList<ChangeWatcher<T>>, val executor: ExecutorService) {
+internal class NotificationQueue<T : Any>(val watchers: CopyOnWriteArrayList<ChangeWatcher<T>>, val executor: ExecutorService) {
     @Volatile
     private var pendingSnapshot = IndexedSnapshot<T>(0, HashTreePMap.empty())
     @Volatile
