@@ -40,8 +40,8 @@ import io.mockk.verify
 import org.reactivestreams.Publisher
 import org.slf4j.LoggerFactory
 import reactor.core.Disposable
-import reactor.core.publisher.toFlux
-import reactor.core.publisher.toMono
+import reactor.kotlin.core.publisher.toFlux
+import reactor.kotlin.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
 import java.time.Duration
 import kotlin.time.Duration.Companion.seconds

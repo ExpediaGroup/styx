@@ -32,8 +32,8 @@ import com.hotels.styx.support.JustATestException
 import com.hotels.styx.support.matchers.LoggingTestSupport
 import io.kotest.core.spec.style.FeatureSpec
 import io.kotest.matchers.shouldBe
-import reactor.core.publisher.toMono
-import java.util.*
+import reactor.kotlin.core.publisher.toMono
+import java.util.Optional
 import java.util.concurrent.atomic.AtomicReference
 
 class UrlPatternRouterTest : FeatureSpec({

@@ -15,21 +15,21 @@
  */
 package com.hotels.styx.routing.handlers
 
+import com.hotels.styx.RoutingObjectFactoryContext
 import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse.response
-import com.hotels.styx.RoutingObjectFactoryContext
-import com.hotels.styx.routing.RoutingObject
-import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.handle
 import com.hotels.styx.mockObject
 import com.hotels.styx.mockObjectFactory
 import com.hotels.styx.ref
 import com.hotels.styx.requestContext
 import com.hotels.styx.routeLookup
+import com.hotels.styx.routing.RoutingObject
+import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routingObjectDef
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FeatureSpec
@@ -37,7 +37,7 @@ import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import reactor.core.publisher.toMono
+import reactor.kotlin.core.publisher.toMono
 
 
 class ConditionRouterConfigTest : FeatureSpec({

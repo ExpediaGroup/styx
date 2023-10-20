@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2022 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ public final class ResourcePaths {
 
     public static String fixturesHome() {
         try {
-            return Paths.get(ResourcePaths.class.getResource("/").toURI()).toString() + File.separator;
+            return Paths.get(ResourcePaths.class.getResource("/").toURI()) + File.separator;
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }

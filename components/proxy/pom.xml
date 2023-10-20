@@ -36,6 +36,16 @@
     </dependency>
 
     <dependency>
+      <groupId>io.projectreactor</groupId>
+      <artifactId>reactor-core</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>io.projectreactor.kotlin</groupId>
+      <artifactId>reactor-kotlin-extensions</artifactId>
+    </dependency>
+
+    <dependency>
       <groupId>io.reactivex</groupId>
       <artifactId>rxjava-reactive-streams</artifactId>
     </dependency>
@@ -66,11 +76,6 @@
     <dependency>
       <groupId>org.codehaus.janino</groupId>
       <artifactId>janino</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.codehaus.janino</groupId>
-      <artifactId>commons-compiler</artifactId>
     </dependency>
 
     <dependency>
@@ -171,14 +176,6 @@
       <artifactId>kotest-runner-junit5-jvm</artifactId>
     </dependency>
 
-    <!-- https://mvnrepository.com/artifact/com.natpryce/hamkrest -->
-    <dependency>
-      <groupId>com.natpryce</groupId>
-      <artifactId>hamkrest</artifactId>
-      <version>1.7.0.0</version>
-      <scope>test</scope>
-    </dependency>
-
     <dependency>
       <groupId>org.pcollections</groupId>
       <artifactId>pcollections</artifactId>
@@ -187,6 +184,7 @@
     <dependency>
       <groupId>io.projectreactor</groupId>
       <artifactId>reactor-test</artifactId>
+      <scope>test</scope>
     </dependency>
 
     <dependency>
@@ -212,7 +210,6 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <version>${maven-javadoc-plugin.version}</version>
           <configuration>
             <skip>true</skip>
           </configuration>

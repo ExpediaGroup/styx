@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -92,17 +92,16 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.only;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 public class HttpPipelineHandlerTest {
@@ -184,12 +183,12 @@ public class HttpPipelineHandlerTest {
         when(responseWriter2.write(any(LiveHttpResponse.class))).thenReturn(writerFuture2);
 
         responseWriterFactory = mock(HttpResponseWriterFactory.class);
-        when(responseWriterFactory.create(anyObject()))
+        when(responseWriterFactory.create(any()))
                 .thenReturn(responseWriter)
                 .thenReturn(responseWriter2);
 
         pipeline = mock(HttpHandler.class);
-        when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class)))
+        when(pipeline.handle(any(), any(HttpInterceptor.Context.class)))
                 .thenReturn(new Eventual<>(responseObservable.doOnCancel(() -> responseUnsubscribed.set(true))))
                 .thenReturn(new Eventual<>(responseObservable2.doOnCancel(() -> responseUnsubscribed2.set(true))));
 
@@ -225,7 +224,7 @@ public class HttpPipelineHandlerTest {
 
         channel.writeInbound(httpRequestAsBuf(GET, "http://foo.com/"));
         assertThat(channel.outboundMessages(), is(empty()));
-        verifyZeroInteractions(errorListener);
+        verifyNoInteractions(errorListener);
     }
 
     @Test
@@ -503,7 +502,7 @@ public class HttpPipelineHandlerTest {
 
     private void setupIdleHandlerWithPluginResponse() throws Exception {
         pipeline = mock(HttpHandler.class);
-        when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class))).thenReturn(Eventual.of(response));
+        when(pipeline.handle(any(), any(HttpInterceptor.Context.class))).thenReturn(Eventual.of(response));
         handler = createHandler(pipeline);
     }
 
@@ -553,7 +552,7 @@ public class HttpPipelineHandlerTest {
         activateChannel(ctx);
 
         handler.exceptionCaught(ctx, new RuntimeException("Error occurred"));
-        verify(errorListener).proxyErrorOccurred(eq(INTERNAL_SERVER_ERROR), anyObject());
+        verify(errorListener).proxyErrorOccurred(eq(INTERNAL_SERVER_ERROR), any());
 
         writerFuture.complete(null);
         verify(ctx).close();
@@ -565,7 +564,7 @@ public class HttpPipelineHandlerTest {
         Throwable cause = new RuntimeException("Simulated Styx plugin exception");
 
         pipeline = mock(HttpHandler.class);
-        when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class))).thenThrow(cause);
+        when(pipeline.handle(any(), any(HttpInterceptor.Context.class))).thenThrow(cause);
         handler = createHandler(pipeline);
         assertThat(handler.state(), is(ACCEPTING_REQUESTS));
 

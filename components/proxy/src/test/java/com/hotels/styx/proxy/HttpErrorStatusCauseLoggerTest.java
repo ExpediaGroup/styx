@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2022 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,8 +24,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import java.net.InetSocketAddress;
 
@@ -36,7 +34,8 @@ import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @TestInstance(PER_CLASS)
@@ -47,12 +46,11 @@ public class HttpErrorStatusCauseLoggerTest {
     private HttpErrorStatusCauseLogger httpErrorStatusCauseLogger;
     private LoggingTestSupport loggingTestSupport;
 
-    @Mock
     private HttpMessageFormatter httpMessageFormatter;
 
     @BeforeAll
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        httpMessageFormatter = mock(HttpMessageFormatter.class);
         when(httpMessageFormatter.formatRequest(any(LiveHttpRequest.class))).thenReturn(FORMATTED_REQUEST);
     }
 

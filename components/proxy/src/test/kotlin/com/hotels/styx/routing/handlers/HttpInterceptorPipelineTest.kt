@@ -32,7 +32,7 @@ import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import reactor.core.publisher.toMono
+import reactor.kotlin.core.publisher.toMono
 
 class HttpInterceptorPipelineTest : FeatureSpec({
     val hwaRequest = LiveHttpRequest.get("/x").build()

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,16 +20,14 @@ import com.hotels.styx.api.HttpResponse;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.matchesPattern;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @TestInstance(PER_CLASS)
@@ -49,14 +47,13 @@ public class SanitisedHttpMessageFormatterTest {
     private static final String HTTP_REQUEST_PATTERN = "\\{version=HTTP/1.1, method=GET, uri=/, headers=\\[" + FORMATTED_HEADERS + "\\], id=[a-zA-Z0-9-]*}";
     private static final String HTTP_RESPONSE_PATTERN = "\\{version=HTTP/1.1, status=200 OK, headers=\\[" + FORMATTED_HEADERS + "\\]}";
 
-    @Mock
     private SanitisedHttpHeaderFormatter sanitisedHttpHeaderFormatter;
 
     private SanitisedHttpMessageFormatter sanitisedHttpMessageFormatter;
 
     @BeforeAll
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        sanitisedHttpHeaderFormatter = mock(SanitisedHttpHeaderFormatter.class);
         sanitisedHttpMessageFormatter = new SanitisedHttpMessageFormatter(sanitisedHttpHeaderFormatter);
         when(sanitisedHttpHeaderFormatter.format(any())).thenReturn(FORMATTED_HEADERS);
     }

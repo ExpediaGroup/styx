@@ -15,6 +15,7 @@
   </root>
 
   <logger name="Styx-Tests" level="INFO"/>
+  <logger name="com.hotels.styx.StyxServer" level="INFO"/>
   <logger name="com.hotels.styx.api.extension.service.spi.AbstractStyxService" level="ERROR" />
   <logger name="com.hotels.styx.startup.extensions.FailureHandling" level="INFO"/>
   <logger name="com.hotels.styx.proxy.HttpErrorStatusCauseLogger" level="INFO"/>

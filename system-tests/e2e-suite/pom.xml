@@ -26,7 +26,6 @@
     <dependency>
       <groupId>com.fasterxml.jackson.module</groupId>
       <artifactId>jackson-module-scala_${scala.version}</artifactId>
-      <version>${jackson.module.scala.version}</version>
     </dependency>
 
     <dependency>
@@ -119,6 +118,7 @@
     <dependency>
       <groupId>io.projectreactor</groupId>
       <artifactId>reactor-test</artifactId>
+      <scope>test</scope>
     </dependency>
 
   </dependencies>
