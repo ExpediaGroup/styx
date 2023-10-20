@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2022 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -37,22 +37,22 @@ import com.hotels.styx.support.proxyHttpsHostHeader
 import com.hotels.styx.support.removeRoutingObject
 import com.hotels.styx.support.threadCount
 import com.hotels.styx.support.wait
-import io.kotlintest.IsolationMode
-import io.kotlintest.Spec
-import io.kotlintest.TestCase
-import io.kotlintest.TestResult
-import io.kotlintest.TestStatus
-import io.kotlintest.eventually
-import io.kotlintest.matchers.beGreaterThan
-import io.kotlintest.matchers.beLessThan
-import io.kotlintest.matchers.types.shouldBeNull
-import io.kotlintest.matchers.withClue
-import io.kotlintest.seconds
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.assertions.timing.eventually
+import io.kotest.assertions.withClue
+import io.kotest.core.spec.IsolationMode
+import io.kotest.core.spec.Spec
+import io.kotest.core.spec.style.FeatureSpec
+import io.kotest.core.test.TestCase
+import io.kotest.core.test.TestResult
+import io.kotest.matchers.and
+import io.kotest.matchers.ints.beGreaterThan
+import io.kotest.matchers.ints.beLessThan
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.shouldBe
 import org.slf4j.LoggerFactory
 import java.nio.charset.StandardCharsets.UTF_8
 import kotlin.system.measureTimeMillis
+import kotlin.time.Duration.Companion.seconds
 
 class HostProxySpec : FeatureSpec() {
     val LOGGER = LoggerFactory.getLogger("Styx-Tests")
@@ -61,26 +61,26 @@ class HostProxySpec : FeatureSpec() {
     // Run the tests sequentially:
     override fun isolationMode(): IsolationMode = IsolationMode.SingleInstance
 
-    override fun beforeSpec(spec: Spec) {
+    override suspend fun beforeSpec(spec: Spec) {
         testServer.restart()
         styxServer.restart()
     }
 
-    override fun afterSpec(spec: Spec) {
+    override suspend fun afterSpec(spec: Spec) {
         styxServer.stop()
         mockServer.stop()
         testServer.stop()
     }
 
-    override fun afterTest(testCase: TestCase, result: TestResult) {
+    override suspend fun afterTest(testCase: TestCase, result: TestResult) {
         super.afterTest(testCase, result)
 
-        when (result.status) {
-            TestStatus.Error -> {
+        when (result) {
+            is TestResult.Error -> {
                 LOGGER.info("HostProxySpec: Error: Styx server : {}", styxServer().metrics())
                 LOGGER.info("HostProxySpec: Error: Test server : {}", testServer().metrics())
             }
-            TestStatus.Failure -> {
+            is TestResult.Failure -> {
                 LOGGER.info("HostProxySpec: Failure: Styx server : {}", styxServer().metrics())
                 LOGGER.info("HostProxySpec: Failure: Test server : {}", testServer().metrics())
             }
@@ -231,7 +231,7 @@ class HostProxySpec : FeatureSpec() {
                         .wait()!!
                         .status() shouldBe OK
 
-                eventually(1.seconds, AssertionError::class.java) {
+                eventually(1.seconds) {
                     styxServer.meterRegistry().get("proxy.client.connectionpool.availableConnections")
                             .tags("appId", "routing.objects", "originId", "hostProxy")
                             .gauge().value().toInt() shouldBe 1
@@ -249,7 +249,7 @@ class HostProxySpec : FeatureSpec() {
                         .wait()!!
                         .status() shouldBe OK
 
-                eventually(1.seconds, AssertionError::class.java) {
+                eventually(1.seconds) {
                     styxServer.meterRegistry().get("proxy.client.connectionpool.availableConnections")
                             .tags("appId", "routing.objects", "originId", "hostProxy")
                             .gauge().value().toInt() shouldBe 1
@@ -312,7 +312,7 @@ class HostProxySpec : FeatureSpec() {
             scenario("!Unregisters origin/application metrics") {
                 // TODO: Not supported yet. An existing issue within styx.
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     styxServer().metrics().let {
                         it["routing.objects.hostProxy.requests.response.status.200"].shouldBeNull()
                         it["routing.objects.hostProxy.localhost:${mockServer.port()}.requests.response.status.200"].shouldBeNull()
@@ -366,7 +366,7 @@ class HostProxySpec : FeatureSpec() {
             // Continues from previous test
             scenario("!Unregisters prefixed origin/application metrics") {
                 // TODO: Not supported yet. An existing issue within styx.
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     styxServer().metrics().let {
                         it["origins.myApp.localhost:${mockServer.port()}.requests.response.status.200"].shouldBeNull()
                         it["origins.myApp.requests.response.status.200"].shouldBeNull()
@@ -387,7 +387,7 @@ class HostProxySpec : FeatureSpec() {
                                   connectors:
                                     http:
                                       port: 0
-                                      
+
                                 httpPipeline: hostProxy
                               """.trimIndent())
 
@@ -403,7 +403,7 @@ class HostProxySpec : FeatureSpec() {
                                   connectors:
                                     http:
                                       port: 0
-                                      
+
                                 httpPipeline:
                                   type: ConditionRouter
                                   config:

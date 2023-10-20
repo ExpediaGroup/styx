@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,15 +15,15 @@
  */
 package com.hotels.styx.services
 
+import com.hotels.styx.ProviderObjectRecord
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
-import com.hotels.styx.ProviderObjectRecord
 import com.hotels.styx.services.YamlFileConfigurationServiceTest.OriginsServiceConfiguration
 import com.hotels.styx.support.matchers.LoggingTestSupport
-import io.kotlintest.Spec
-import io.kotlintest.matchers.string.shouldMatch
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FunSpec
+import io.kotest.core.spec.Spec
+import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldMatch
 import io.mockk.mockk
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -49,15 +49,15 @@ class YamlFileConfigurationServiceDuplicateIdentifiersTest : FunSpec() {
                     """.trimIndent())
             .createService(name = "zone1")
             .start()
-            .waitForObjects(count = 3)
 
-    override fun beforeSpec(spec: Spec) {
+    override suspend fun beforeSpec(spec: Spec) {
         LOGGER.info("Temp directory: " + tempDir.absolutePath)
         LOGGER.info("Origins file: " + originsFile.absolutePath)
         LOGGER.info("Duration: '{}'", Duration.ofMillis(100).toString())
+        service.waitForObjects(count = 3)
     }
 
-    override fun afterSpec(spec: Spec) {
+    override suspend fun afterSpec(spec: Spec) {
         tempDir.deleteRecursively()
         service.stop()
     }
@@ -73,9 +73,9 @@ class YamlFileConfigurationServiceDuplicateIdentifiersTest : FunSpec() {
                         - id: "app"
                           path: "/"
                           origins:
-                          - { id: "app-01", host: "localhost:9091" } 
-                          - { id: "app-02", host: "localhost:9092" } 
-                          - { id: "app-03", host: "localhost:9093" } 
+                          - { id: "app-01", host: "localhost:9091" }
+                          - { id: "app-02", host: "localhost:9092" }
+                          - { id: "app-03", host: "localhost:9093" }
                 """.trimIndent())
 
                 Thread.sleep(500)
@@ -107,8 +107,8 @@ class YamlFileConfigurationServiceDuplicateIdentifiersTest : FunSpec() {
                           healthCheck:
                              uri: /endpoint.txt
                           origins:
-                          - { id: "app-01", host: "localhost:9091" } 
-                          - { id: "app-03", host: "localhost:9093" } 
+                          - { id: "app-01", host: "localhost:9091" }
+                          - { id: "app-03", host: "localhost:9093" }
                 """.trimIndent())
 
                 Thread.sleep(500)

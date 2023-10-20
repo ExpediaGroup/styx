@@ -39,19 +39,19 @@ import com.hotels.styx.support.adminHostHeader
 import com.hotels.styx.support.proxyHttpHostHeader
 import com.hotels.styx.support.routingObject
 import com.hotels.styx.support.wait
-import io.kotlintest.Spec
-import io.kotlintest.eventually
-import io.kotlintest.matchers.collections.shouldContainAll
-import io.kotlintest.matchers.collections.shouldHaveSize
-import io.kotlintest.matchers.string.shouldContain
-import io.kotlintest.matchers.string.shouldNotContain
-import io.kotlintest.seconds
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FunSpec
+import io.kotest.assertions.timing.eventually
+import io.kotest.core.spec.Spec
+import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldContainAll
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import kotlinx.coroutines.delay
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.charset.StandardCharsets.UTF_8
+import kotlin.time.Duration.Companion.seconds
 
 class OriginsFileCompatibilitySpec : FunSpec() {
     val tempDir = createTempDir(suffix = "-${this.javaClass.simpleName}")
@@ -68,7 +68,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                       originsFile: ${originsFile.absolutePath}
                       ingressObject: pathPrefixRouter
                       monitor: True
-                      pollInterval: PT0.1S 
+                      pollInterval: PT0.1S
 
                 httpPipeline: pathPrefixRouter
 
@@ -76,7 +76,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                   connectors:
                     http:
                       port: 0
-        
+
                 admin:
                   connectors:
                     http:
@@ -86,7 +86,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                   inbound:
                     enabled: true
                   outbound:
-                    enabled: true 
+                    enabled: true
                 """.trimIndent(),
             defaultLoggingConfig = ResourcePaths.fixturesHome(
                     OriginsFileCompatibilitySpec::class.java,
@@ -99,7 +99,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 - id: appA
                   path: "/"
                   origins:
-                  - { id: "appA-01", host: "localhost:${mockServerA01.port()}" } 
+                  - { id: "appA-01", host: "localhost:${mockServerA01.port()}" }
             """.trimIndent()
             writeOrigins(originsFile)
             styxServer.restart()
@@ -107,7 +107,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
             test("It populates forwarding path from the origins yaml file") {
                 LOGGER.info("Object database: " + dumpObjectDatabase())
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     client.send(get("/1")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
@@ -133,12 +133,12 @@ class OriginsFileCompatibilitySpec : FunSpec() {
             writeOrigins("""
                     - id: appA
                     - this file has somehow corrupted
-                      .. bl;ah blah" 
+                      .. bl;ah blah"
                     """.trimIndent())
 
             styxServer.restartAsync()
 
-            delay(1.seconds.toMillis())
+            delay(1.seconds)
 
             styxServer().proxyHttpAddress() shouldBe null
             styxServer.stop()
@@ -149,7 +149,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 - id: appA
                   path: "/"
                   origins:
-                  - { id: "appA-01", host: "localhost:${mockServerA01.port()}" } 
+                  - { id: "appA-01", host: "localhost:${mockServerA01.port()}" }
             """.trimIndent())
             styxServer.restart()
 
@@ -158,11 +158,11 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     - id: appA
                       path: "/"
                       origins:
-                      - { id: "appA-01", host: "localhost:${mockServerA01.port()}" } 
-                      - { id: "appA-02", host: "localhost:${mockServerA02.port()}" } 
+                      - { id: "appA-01", host: "localhost:${mockServerA01.port()}" }
+                      - { id: "appA-02", host: "localhost:${mockServerA02.port()}" }
                     """.trimIndent())
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     client.send(get("/2")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
@@ -172,7 +172,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                             }
                 }
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     client.send(get("/3")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
@@ -188,10 +188,10 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     - id: appA
                       path: "/"
                       origins:
-                      - { id: "appA-01", host: "localhost:${mockServerA01.port()}" } 
+                      - { id: "appA-01", host: "localhost:${mockServerA01.port()}" }
                     """.trimIndent())
 
-                delay(1.seconds.toMillis())
+                delay(1.seconds)
 
                 (1..20).forEach {
                     client.send(get("/4")
@@ -209,14 +209,14 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     - id: appA
                       path: "/"
                       origins:
-                      - { id: "appA-01", host: "localhost:${mockServerA01.port()}" } 
+                      - { id: "appA-01", host: "localhost:${mockServerA01.port()}" }
                     - id: appB
                       path: "/b/"
                       origins:
-                      - { id: "appB-01", host: "localhost:${mockServerB01.port()}" } 
+                      - { id: "appB-01", host: "localhost:${mockServerB01.port()}" }
                     """.trimIndent())
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     client.send(get("/b/5")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
@@ -240,14 +240,14 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     - id: appA
                       path: "/a/"
                       origins:
-                      - { id: "appA-01", host: "localhost:${mockServerA01.port()}" } 
+                      - { id: "appA-01", host: "localhost:${mockServerA01.port()}" }
                     - id: appB
                       path: "/"
                       origins:
-                      - { id: "appB-01", host: "localhost:${mockServerB01.port()}" } 
+                      - { id: "appB-01", host: "localhost:${mockServerB01.port()}" }
                     """.trimIndent())
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     client.send(get("/7")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
@@ -271,10 +271,10 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     - id: appA
                       path: "/"
                       origins:
-                      - { id: "appA-01", host: "localhost:${mockServerA01.port()}" } 
+                      - { id: "appA-01", host: "localhost:${mockServerA01.port()}" }
                     """.trimIndent())
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     client.send(get("/9")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
@@ -288,10 +288,10 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     - id: appA
                       path: "/"
                       origins:
-                      - { id: "appA-01", host: "localhost:${mockServerA02.port()}" } 
+                      - { id: "appA-01", host: "localhost:${mockServerA02.port()}" }
                     """.trimIndent())
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     client.send(get("/10")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
@@ -310,7 +310,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                         - urlPattern: "/b/(.*)"
                           replacement: "/rewritten/$1"
                       origins:
-                      - { id: "appB-01", host: "localhost:${mockServerB01.port()}" } 
+                      - { id: "appB-01", host: "localhost:${mockServerB01.port()}" }
                     - id: appC
                       path: "/c/"
                       rewrites:
@@ -322,7 +322,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                       - { id: "appC-01", host: "localhost:${mockServerC01.port()}" }
                     """.trimIndent())
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     client.send(get("/b/hello")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
@@ -358,8 +358,8 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 - id: appA
                   path: "/"
                   origins:
-                  - { id: "appA-01", host: "localhost:${mockServerA01.port()}" } 
-                  - { id: "appA-02", host: "localhost:${mockServerA02.port()}" } 
+                  - { id: "appA-01", host: "localhost:${mockServerA01.port()}" }
+                  - { id: "appA-02", host: "localhost:${mockServerA02.port()}" }
                 """.trimIndent())
 
             styxServer.restart(
@@ -369,12 +369,12 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                           connectors:
                             http:
                               port: 0
-                
+
                         admin:
                           connectors:
                             http:
                               port: 0
-                
+
                         providers:
                           originsFileLoader:
                             type: YamlFileConfigurationService
@@ -390,7 +390,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
 
             test("Routes to origin indicated by origins restriction cookie") {
                 // Poll for server to become available
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     client.send(get("/13")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
@@ -419,7 +419,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 - id: appA
                   path: "/"
                   origins:
-                  - { id: "appA-01", host: "localhost:${mockServerA01.port()}" } 
+                  - { id: "appA-01", host: "localhost:${mockServerA01.port()}" }
             """.trimIndent()
 
             test("Styx dashboard is disabled") {
@@ -455,7 +455,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
 
                 writeOrigins(validOriginsFile)
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     client.send(get("/admin/providers/originsFileLoader/configuration")
                             .header(HOST, styxServer().adminHostHeader())
                             .build())
@@ -472,10 +472,10 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 writeOrigins("""
                     - id: appA
                     - this file has somehow corrupted
-                      .. bl;ah blah" 
+                      .. bl;ah blah"
                     """.trimIndent())
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     client.send(get("/admin/providers/originsFileLoader/configuration")
                             .header(HOST, styxServer().adminHostHeader())
                             .build())
@@ -524,10 +524,10 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     - id: appB
                       path: "/"
                       origins:
-                      - { id: "appB-01", host: "localhost:${mockServerB01.port()}" } 
+                      - { id: "appB-01", host: "localhost:${mockServerB01.port()}" }
                     """.trimIndent())
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     client.send(get("/15")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
@@ -548,10 +548,10 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                           uri: "/healthcheck.txt"
                           intervalMillis: 200
                       origins:
-                      - { id: "appB-01", host: "localhost:${mockServerB01.port()}" } 
+                      - { id: "appB-01", host: "localhost:${mockServerB01.port()}" }
                     """.trimIndent())
 
-                delay(1.seconds.toMillis())
+                delay(1.seconds)
 
                 client.send(get("/16")
                         .header(HOST, styxServer().proxyHttpHostHeader())
@@ -606,12 +606,12 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     - id: appB
                       path: "/"
                       origins:
-                      - { id: "appB-01", host: "localhost:${mockServerB01.port()}" } 
+                      - { id: "appB-01", host: "localhost:${mockServerB01.port()}" }
                     """.trimIndent())
 
-                delay(1.seconds.toMillis())
+                delay(1.seconds)
 
-                eventually(3.seconds, AssertionError::class.java) {
+                eventually(3.seconds) {
                     client.send(get("/17")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
@@ -649,7 +649,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 - id: appA
                   path: "/"
                   origins:
-                  - { id: "appA-01", host: "localhost:${mockServerA01.port()}" } 
+                  - { id: "appA-01", host: "localhost:${mockServerA01.port()}" }
             """.trimIndent())
 
             test("Uses named executor") {
@@ -662,7 +662,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                             config:
                               threads: 1
                               namePattern: MyTestExecutor
-                        
+
                         providers:
                           originsFileLoader:
                             type: YamlFileConfigurationService
@@ -671,15 +671,15 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                               ingressObject: pathPrefixRouter
                               monitor: True
                               pollInterval: PT0.1S
-                              executor: test-executor 
-        
+                              executor: test-executor
+
                         httpPipeline: pathPrefixRouter
-        
+
                         proxy:
                           connectors:
                             http:
                               port: 0
-                
+
                         admin:
                           connectors:
                             http:
@@ -687,7 +687,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     """.trimIndent())
 
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     client.send(get("/foo")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
@@ -704,7 +704,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
             test("Uses default executor, when named executor is not provided") {
                 styxServer.restart(
                         configuration = """
-                        --- 
+                        ---
                         providers:
                           originsFileLoader:
                             type: YamlFileConfigurationService
@@ -713,21 +713,21 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                               ingressObject: pathPrefixRouter
                               monitor: True
                               pollInterval: PT0.1S
-        
+
                         httpPipeline: pathPrefixRouter
-        
+
                         proxy:
                           connectors:
                             http:
                               port: 0
-                
+
                         admin:
                           connectors:
                             http:
                               port: 0
                     """.trimIndent())
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     client.send(get("/foo/2")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
@@ -749,13 +749,13 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 - id: appA
                   path: "/"
                   origins:
-                  - { id: "appA-01", host: "localhost:${mockServerA01.port()}" } 
+                  - { id: "appA-01", host: "localhost:${mockServerA01.port()}" }
                 """.trimIndent()
             writeOrigins(originsFile)
             styxServer.restart()
 
             test("Keeps the original configuration when a one has problems") {
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     client.send(get("/18")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
@@ -768,10 +768,10 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 writeOrigins("""
                     - id: appA
                     - this file has somehow corrupted
-                      .. bl;ah blah" 
+                      .. bl;ah blah"
                     """.trimIndent())
 
-                delay(1.seconds.toMillis())
+                delay(1.seconds)
 
                 client.send(get("/19")
                         .header(HOST, styxServer().proxyHttpHostHeader())
@@ -786,11 +786,11 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 - id: appA
                   path: "/"
                   origins:
-                  - { id: "appA-02", host: "localhost:${mockServerA02.port()}" } 
+                  - { id: "appA-02", host: "localhost:${mockServerA02.port()}" }
                 """.trimIndent()
                 writeOrigins(newOriginsFile)
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     client.send(get("/20")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
@@ -856,7 +856,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     .withHeader("X-Origin", "TlsV2-server")
                     .withBody("appTls-01"))
 
-    override fun afterSpec(spec: Spec) {
+    override suspend fun afterSpec(spec: Spec) {
         styxServer.stop()
         tempDir.deleteRecursively()
 

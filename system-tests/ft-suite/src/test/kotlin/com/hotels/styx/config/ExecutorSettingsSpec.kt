@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -27,13 +27,13 @@ import com.hotels.styx.support.proxyHttpHostHeader
 import com.hotels.styx.support.serverPort
 import com.hotels.styx.support.threadCount
 import com.hotels.styx.support.wait
-import io.kotlintest.Spec
-import io.kotlintest.eventually
-import io.kotlintest.matchers.numerics.shouldBeGreaterThan
-import io.kotlintest.seconds
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.assertions.timing.eventually
+import io.kotest.core.spec.Spec
+import io.kotest.core.spec.style.FeatureSpec
+import io.kotest.matchers.comparables.shouldBeGreaterThan
+import io.kotest.matchers.shouldBe
 import java.nio.charset.StandardCharsets.UTF_8
+import kotlin.time.Duration.Companion.seconds
 
 class ExecutorSettingsSpec : FeatureSpec() {
 
@@ -55,18 +55,18 @@ class ExecutorSettingsSpec : FeatureSpec() {
                         config:
                           threads: 1
                           namePattern: host-proxy
-            
+
                     httpPipeline:
                       type: HostProxy
                       config:
                         host: "localhost:${mockServer.port()}"
                         executor: forHostProxy
-            
+
                     proxy:
                       connectors:
                         http:
                           port: 0
-            
+
                     admin:
                       connectors:
                         http:
@@ -93,12 +93,12 @@ class ExecutorSettingsSpec : FeatureSpec() {
                       type: HostProxy
                       config:
                         host: "localhost:${mockServer.port()}"
-            
+
                     proxy:
                       connectors:
                         http:
                           port: 0
-            
+
                     admin:
                       connectors:
                         http:
@@ -128,15 +128,15 @@ class ExecutorSettingsSpec : FeatureSpec() {
                         config:
                           threads: 1
                           namePattern: http-worker-executor
-            
+
                     routingObjects:
                       static-response:
                           type: StaticResponseHandler
                           config:
                             status: 200
                             content: "Hello, from styx server!"
-            
-                    servers: 
+
+                    servers:
                       http:
                         type: HttpServer
                         config:
@@ -144,7 +144,7 @@ class ExecutorSettingsSpec : FeatureSpec() {
                           handler: static-response
                           bossExecutor: boss-executor
                           workerExecutor: worker-executor
-            
+
                     admin:
                       connectors:
                         http:
@@ -180,33 +180,33 @@ class ExecutorSettingsSpec : FeatureSpec() {
                         config:
                           threads: 2
                           namePattern: new-styx-client-global
-                          
+
                       StyxHttpServer-Global-Worker:
                         type: NettyExecutor
                         config:
                           threads: 2
                           namePattern: new-styx-server-worker
-            
+
                     routingObjects:
                       proxyToOrigin:
                         type: HostProxy
                         config:
                           host: "localhost:${mockServer.port()}"
 
-                    servers: 
+                    servers:
                       http:
                         type: HttpServer
                         config:
                           port: 0
                           handler: proxyToOrigin
-            
+
                     admin:
                       connectors:
                         http:
                           port: 0
                   """.trimIndent())
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     styxServer().serverPort("http") shouldBeGreaterThan 0
                 }
                 val httpPort = styxServer().serverPort("http")
@@ -230,7 +230,7 @@ class ExecutorSettingsSpec : FeatureSpec() {
 
     val styxServer = StyxServerProvider()
 
-    override fun afterSpec(spec: Spec) {
+    override suspend fun afterSpec(spec: Spec) {
         styxServer.stop()
         mockServer.stop()
     }

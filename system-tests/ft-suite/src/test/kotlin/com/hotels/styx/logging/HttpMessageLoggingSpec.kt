@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2022 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,22 +15,25 @@
  */
 package com.hotels.styx.logging
 
-import ch.qos.logback.classic.Level.INFO
-import ch.qos.logback.classic.Level.ERROR
 import ch.qos.logback.classic.Level.DEBUG
+import ch.qos.logback.classic.Level.ERROR
+import ch.qos.logback.classic.Level.INFO
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST
 import com.hotels.styx.client.BadHttpResponseException
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.proxy.HttpErrorStatusCauseLogger
-import com.hotels.styx.support.*
+import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.matchers.LoggingTestSupport
-import io.kotlintest.Spec
-import io.kotlintest.matchers.string.shouldContain
-import io.kotlintest.matchers.string.shouldNotContain
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FeatureSpec
+import com.hotels.styx.support.proxyHttpHostHeader
+import com.hotels.styx.support.shouldContain
+import com.hotels.styx.support.wait
+import io.kotest.core.spec.Spec
+import io.kotest.core.spec.style.FeatureSpec
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import kotlin.test.assertFailsWith
 
 class HttpMessageLoggingSpec : FeatureSpec() {
@@ -175,7 +178,7 @@ class HttpMessageLoggingSpec : FeatureSpec() {
               sslProvider: JDK
               sessionTimeoutMillis: 300000
               sessionCacheSize: 20000
-              
+
         request-logging:
           inbound:
             enabled: true
@@ -197,7 +200,7 @@ class HttpMessageLoggingSpec : FeatureSpec() {
               routes:
                 - prefix: /
                   destination: default
-                  
+
           default:
             type: StaticResponseHandler
             config:
@@ -207,7 +210,7 @@ class HttpMessageLoggingSpec : FeatureSpec() {
                 - name: "header1"
                   value: "h1"
                 - name: "header2"
-                  value: "h2" 
+                  value: "h2"
                 - name: "cookie"
                   value: "cookie1=c1;cookie2=c2"
 
@@ -215,7 +218,7 @@ class HttpMessageLoggingSpec : FeatureSpec() {
         httpPipeline: root
       """.trimIndent())
 
-    override fun afterSpec(spec: Spec) {
+    override suspend fun afterSpec(spec: Spec) {
         styxServer.stop()
     }
 

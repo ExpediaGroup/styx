@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.proxyHttpHostHeader
 import com.hotels.styx.support.wait
-import io.kotlintest.Spec
-import io.kotlintest.matchers.collections.shouldContainInOrder
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.core.spec.Spec
+import io.kotest.core.spec.style.FeatureSpec
+import io.kotest.matchers.collections.shouldContainInOrder
 import org.slf4j.LoggerFactory
 import java.lang.ClassLoader.getSystemClassLoader
 import java.nio.file.Files
@@ -52,13 +52,13 @@ class PluginsPipelineSpec : FeatureSpec() {
                       connectors:
                         http:
                           port: 0
-            
+
                         https:
                           port: 0
                           sslProvider: JDK
                           sessionTimeoutMillis: 300000
                           sessionCacheSize: 20000
-            
+
                     admin:
                       connectors:
                         http:
@@ -70,21 +70,21 @@ class PluginsPipelineSpec : FeatureSpec() {
                           factory:
                             class: testgrp.TestPluginModule
                             classPath: "$tempPluginsDir"
-                          config: 
+                          config:
                             id: a
                         plugin-b:
                           factory:
                             class: testgrp.TestPluginModule
                             classPath: "$tempPluginsDir"
-                          config: 
+                          config:
                             id: b
                         plugin-c:
                           factory:
                             class: testgrp.TestPluginModule
                             classPath: "$tempPluginsDir"
-                          config: 
+                          config:
                             id: c
-                             
+
                     httpPipeline:
                       type: InterceptorPipeline
                       config:
@@ -135,7 +135,7 @@ class PluginsPipelineSpec : FeatureSpec() {
         return Paths.get(getSystemClassLoader().getResource("")!!.getFile());
     }
 
-    override fun afterSpec(spec: Spec) {
+    override suspend fun afterSpec(spec: Spec) {
         styxServer.stop()
         super.afterSpec(spec)
     }

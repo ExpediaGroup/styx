@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,10 +24,10 @@ import com.hotels.styx.common.http.handler.HttpAggregator
 import com.hotels.styx.common.http.handler.StaticBodyHttpHandler
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.adminRequest
-import io.kotlintest.Spec
-import io.kotlintest.matchers.string.shouldInclude
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.core.spec.Spec
+import io.kotest.core.spec.style.FeatureSpec
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldInclude
 import java.nio.charset.StandardCharsets.UTF_8
 
 class PluginAdminInterfaceSpec : FeatureSpec() {
@@ -39,12 +39,12 @@ class PluginAdminInterfaceSpec : FeatureSpec() {
                   connectors:
                     http:
                       port: 0
-        
+
                 admin:
                   connectors:
                     http:
                       port: 0
-        
+
                 """.trimIndent(),
             defaultAdditionalPlugins = mapOf(
                     "plugx" to PluginX(),
@@ -112,7 +112,7 @@ class PluginAdminInterfaceSpec : FeatureSpec() {
         }
     }
 
-    override fun afterSpec(spec: Spec) {
+    override suspend fun afterSpec(spec: Spec) {
         styxServer.stop()
     }
 }

@@ -16,8 +16,8 @@
 package com.hotels.styx.api.extension
 
 import com.hotels.styx.api.extension.service.Http2ConnectionPoolSettings
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.StringSpec
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
 
 class Http2ConnectionPoolSettingsTest : StringSpec({
     "setsConfigurationValues" {

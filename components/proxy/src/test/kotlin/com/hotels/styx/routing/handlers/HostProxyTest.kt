@@ -15,8 +15,11 @@
  */
 package com.hotels.styx.routing.handlers
 
+import com.hotels.styx.RoutingObjectFactoryContext
 import com.hotels.styx.api.ByteStream
 import com.hotels.styx.api.Eventual
+import com.hotels.styx.api.HttpHeaderNames
+import com.hotels.styx.api.HttpInterceptor.Context
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponse
@@ -25,16 +28,13 @@ import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.client.StyxHostHttpClient
 import com.hotels.styx.client.applications.metrics.OriginMetrics
-import com.hotels.styx.RoutingObjectFactoryContext
-import com.hotels.styx.api.HttpHeaderNames
-import com.hotels.styx.api.HttpInterceptor.Context
 import com.hotels.styx.handle
 import com.hotels.styx.requestContext
 import com.hotels.styx.routingObjectDef
-import io.kotlintest.TestCase
-import io.kotlintest.shouldBe
-import io.kotlintest.shouldThrow
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.core.spec.style.FeatureSpec
+import io.kotest.core.test.TestCase
+import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -178,7 +178,7 @@ class HostProxyTest : FeatureSpec() {
         }
     }
 
-    override fun beforeTest(testCase: TestCase) {
+    override suspend fun beforeTest(testCase: TestCase) {
         client = mockk(relaxed = true) {
             every { sendRequest(any(), any()) } returns Eventual.of(HttpResponse.response(OK).build().stream())
         }

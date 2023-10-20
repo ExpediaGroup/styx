@@ -15,27 +15,26 @@
  */
 package com.hotels.styx.routing.handlers
 
+import com.hotels.styx.RoutingObjectFactoryContext
 import com.hotels.styx.api.HttpHandler
 import com.hotels.styx.api.HttpHeaders
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.configuration.ObjectStore
 import com.hotels.styx.api.exceptions.NoAvailableHostsException
+import com.hotels.styx.handle
 import com.hotels.styx.lbGroupTag
-import com.hotels.styx.RoutingObjectFactoryContext
+import com.hotels.styx.requestContext
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
-import com.hotels.styx.handle
-import com.hotels.styx.requestContext
 import com.hotels.styx.routingObjectDef
-import io.kotlintest.IsolationMode
-import io.kotlintest.eventually
-import io.kotlintest.matchers.numerics.shouldBeGreaterThan
-import io.kotlintest.matchers.types.shouldBeNull
-import io.kotlintest.seconds
-import io.kotlintest.shouldBe
-import io.kotlintest.shouldThrow
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.timing.eventually
+import io.kotest.core.spec.IsolationMode
+import io.kotest.core.spec.style.FeatureSpec
+import io.kotest.matchers.ints.shouldBeGreaterThan
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.shouldBe
 import io.mockk.mockk
 import io.mockk.verify
 import org.reactivestreams.Publisher
@@ -45,6 +44,7 @@ import reactor.core.publisher.toFlux
 import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
 import java.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 class LoadBalancingGroupTest : FeatureSpec() {
 
@@ -77,7 +77,7 @@ class LoadBalancingGroupTest : FeatureSpec() {
             scenario("Discovers origins with appropriate tag") {
                 val frequencies = mutableMapOf<String, Int>()
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     for (i in 1..100) {
                         lbGroup.call(get("/").build())
                                 .bodyAs(UTF_8)

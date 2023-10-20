@@ -121,12 +121,7 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.junit.platform</groupId>
-      <artifactId>junit-platform-launcher</artifactId>
-      <version>1.6.0</version>
+      <scope>test</scope>
     </dependency>
 
     <dependency>
@@ -168,12 +163,12 @@
 
     <dependency>
       <groupId>io.mockk</groupId>
-      <artifactId>mockk</artifactId>
+      <artifactId>mockk-jvm</artifactId>
     </dependency>
 
     <dependency>
-      <groupId>io.kotlintest</groupId>
-      <artifactId>kotlintest-runner-junit5</artifactId>
+      <groupId>io.kotest</groupId>
+      <artifactId>kotest-runner-junit5-jvm</artifactId>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/com.natpryce/hamkrest -->

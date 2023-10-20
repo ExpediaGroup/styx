@@ -16,6 +16,7 @@
 package com.hotels.styx.servers
 
 import com.hotels.styx.InetServer
+import com.hotels.styx.RoutingObjectFactoryContext
 import com.hotels.styx.StyxObjectRecord
 import com.hotels.styx.StyxServers.toGuavaService
 import com.hotels.styx.api.ByteStream
@@ -31,29 +32,28 @@ import com.hotels.styx.api.HttpResponseStatus.REQUEST_TIMEOUT
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.extension.Origin.newOriginBuilder
 import com.hotels.styx.client.ConnectionSettings
+import com.hotels.styx.client.DummyContext
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory
-import com.hotels.styx.routing.RoutingObject
-import com.hotels.styx.RoutingObjectFactoryContext
-import com.hotels.styx.client.DummyContext
 import com.hotels.styx.configBlock
 import com.hotels.styx.executorObjects
-import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.ref
 import com.hotels.styx.routeLookup
-import com.hotels.styx.wait
+import com.hotels.styx.routing.RoutingObject
+import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.support.ResourcePaths.fixturesHome
-import io.kotlintest.eventually
-import io.kotlintest.matchers.boolean.shouldBeTrue
-import io.kotlintest.milliseconds
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FeatureSpec
+import com.hotels.styx.wait
+import io.kotest.assertions.timing.eventually
+import io.kotest.core.spec.style.FeatureSpec
+import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.shouldBe
 import reactor.core.publisher.Flux
 import reactor.core.publisher.toFlux
 import reactor.core.publisher.toMono
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.zip.GZIPInputStream
+import kotlin.time.Duration.Companion.milliseconds
 
 class StyxHttpServerTest : FeatureSpec({
     feature("HTTP request handling") {
@@ -313,7 +313,7 @@ class StyxHttpServerTest : FeatureSpec({
         val serverConfig = configBlock("""
                 port: 0
                 handler: aggregator
-                maxConnectionsCount: 2 
+                maxConnectionsCount: 2
               """.trimIndent())
 
         val server = StyxHttpServerFactory().create("test-01", routingContext.get(), serverConfig, db)
@@ -325,7 +325,7 @@ class StyxHttpServerTest : FeatureSpec({
             val connection2 = createConnection(server.inetAddress()!!.port)
             val connection3 = createConnection(server.inetAddress()!!.port)
 
-            eventually(500.milliseconds, AssertionError::class.java) {
+            eventually(500.milliseconds) {
                 connection1.isConnected shouldBe (true)
                 connection2.isConnected shouldBe (true)
                 connection3.isConnected shouldBe (false)

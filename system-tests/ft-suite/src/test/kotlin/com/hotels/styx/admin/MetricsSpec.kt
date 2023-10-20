@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,12 +21,20 @@ import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.server.HttpConnectorConfig
 import com.hotels.styx.servers.MockOriginServer
-import com.hotels.styx.support.*
-import io.kotlintest.*
-import io.kotlintest.specs.FunSpec
+import com.hotels.styx.support.ResourcePaths
+import com.hotels.styx.support.StyxServerProvider
+import com.hotels.styx.support.proxyHttpHostHeader
+import com.hotels.styx.support.testClient
+import com.hotels.styx.support.wait
+import io.kotest.assertions.timing.eventually
+import io.kotest.core.spec.Spec
+import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.charset.StandardCharsets.UTF_8
+import kotlin.time.Duration.Companion.seconds
 
 class MetricsSpec : FunSpec() {
     val tempDir = createTempDir(suffix = "-${this.javaClass.simpleName}")
@@ -40,12 +48,12 @@ class MetricsSpec : FunSpec() {
                   connectors:
                     http:
                       port: 0
-        
+
                 admin:
                   connectors:
                     http:
                       port: 0
-        
+
                 providers:
                   originsFileLoader:
                     type: YamlFileConfigurationService
@@ -53,7 +61,7 @@ class MetricsSpec : FunSpec() {
                       originsFile: ${originsFile.absolutePath}
                       ingressObject: pathPrefixRouter
                       monitor: True
-                      pollInterval: PT0.1S 
+                      pollInterval: PT0.1S
 
                 httpPipeline: pathPrefixRouter
                 """.trimIndent(),
@@ -68,12 +76,12 @@ class MetricsSpec : FunSpec() {
                 - id: appA
                   path: "/"
                   origins:
-                  - { id: "appA-01", host: "localhost:${mockServerA01.port()}" } 
+                  - { id: "appA-01", host: "localhost:${mockServerA01.port()}" }
             """.trimIndent())
             styxServer.restart()
 
             test("Connection pool metrics path") {
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     testClient.send(get("/")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
@@ -83,7 +91,7 @@ class MetricsSpec : FunSpec() {
                             }
                 }
 
-                eventually(1.seconds, AssertionError::class.java) {
+                eventually(1.seconds) {
                     styxServer.meterRegistry().get("proxy.client.connectionpool.availableConnections")
                             .tag("appId", "origins")
                             .tag("originId", "appA.appA-01")
@@ -106,7 +114,7 @@ class MetricsSpec : FunSpec() {
                     .withStatus(200)
                     .withBody("appA-01"))
 
-    override fun afterSpec(spec: Spec) {
+    override suspend fun afterSpec(spec: Spec) {
         styxServer.stop()
         tempDir.deleteRecursively()
         mockServerA01.stop()

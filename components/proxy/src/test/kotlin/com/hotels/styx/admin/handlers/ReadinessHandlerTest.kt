@@ -21,8 +21,8 @@ import com.hotels.styx.api.HttpResponse
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.HttpResponseStatus.SERVICE_UNAVAILABLE
 import com.hotels.styx.requestContext
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.StringSpec
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
 import reactor.core.publisher.toMono
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.text.Charsets.UTF_8

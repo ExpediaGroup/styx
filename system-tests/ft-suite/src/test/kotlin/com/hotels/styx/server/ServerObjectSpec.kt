@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,12 +23,12 @@ import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.adminHostHeader
 import com.hotels.styx.support.testClient
 import com.hotels.styx.support.wait
-import io.kotlintest.Spec
-import io.kotlintest.eventually
-import io.kotlintest.seconds
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.assertions.timing.eventually
+import io.kotest.core.spec.Spec
+import io.kotest.core.spec.style.FeatureSpec
+import io.kotest.matchers.shouldBe
 import java.nio.charset.StandardCharsets.UTF_8
+import kotlin.time.Duration.Companion.seconds
 
 
 class ServerObjectSpec : FeatureSpec() {
@@ -46,20 +46,20 @@ class ServerObjectSpec : FeatureSpec() {
                     config:
                       status: 200
                       content: "secure"
-                      
+
                   nonSecure:
                     type: StaticResponseHandler
                     config:
                       status: 200
                       content: "non-secure"
-                      
+
                 servers:
                   myHttp:
                     type: HttpServer
                     config:
                       port: 0
                       handler: nonSecure
-                        
+
                   myHttps:
                     type: HttpServer
                     config:
@@ -71,7 +71,7 @@ class ServerObjectSpec : FeatureSpec() {
                         sslProvider: JDK
                 """.trimIndent())
 
-    override fun afterSpec(spec: Spec) {
+    override suspend fun afterSpec(spec: Spec) {
         styxServer.stop()
     }
 
