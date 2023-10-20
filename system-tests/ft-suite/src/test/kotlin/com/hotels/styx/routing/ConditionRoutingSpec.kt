@@ -25,7 +25,7 @@ import com.hotels.styx.support.proxyHttpsHostHeader
 import io.kotest.core.spec.Spec
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import reactor.core.publisher.toMono
+import reactor.kotlin.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
 
 class ConditionRoutingSpec : StringSpec() {

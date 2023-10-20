@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,12 +16,14 @@
 package com.hotels.styx.infrastructure.logging;
 
 import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.classic.selector.ContextSelector;
-import ch.qos.logback.classic.util.ContextInitializer;
 import ch.qos.logback.classic.util.ContextSelectorStaticBinder;
+import ch.qos.logback.core.Context;
+import ch.qos.logback.core.LogbackException;
 import ch.qos.logback.core.joran.spi.JoranException;
+import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
-import org.slf4j.impl.StaticLoggerBinder;
 
 import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
@@ -98,13 +100,10 @@ public final class LOGBackConfigurer {
      * @throws IllegalArgumentException if the url points to a non existing location or an error occurs during the parsing operation.
      */
     public static void initLogging(URL url, boolean installJULBridge) {
-        StaticLoggerBinder.getSingleton();
-        ContextSelector selector = ContextSelectorStaticBinder.getSingleton().getContextSelector();
-        LoggerContext loggerContext = selector.getLoggerContext();
+        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
         loggerContext.stop();
-        ContextInitializer ctxi = new ContextInitializer(loggerContext);
         try {
-            ctxi.configureByResource(url);
+            configureByResource(url, loggerContext);
             loggerContext.start();
             if (installJULBridge) {
                 //uninstall already present handlers we want to
@@ -120,26 +119,6 @@ public final class LOGBackConfigurer {
             throw new IllegalArgumentException("exception while initializing LOGBack", e);
         }
     }
-
-    /**
-     * Shut down LOGBack.
-     * This isn't strictly necessary, but recommended for shutting down
-     * logback in a scenario where the host VM stays alive (for example, when
-     * shutting down an application in a J2EE environment).
-     *
-     * @param uninstallJULBridge should an attempt be made to uninstall the JUL bridge
-     */
-    public static void shutdownLogging(boolean uninstallJULBridge) {
-        ContextSelector selector = ContextSelectorStaticBinder.getSingleton().getContextSelector();
-        LoggerContext loggerContext = selector.getLoggerContext();
-        String loggerContextName = loggerContext.getName();
-        LoggerContext context = selector.detachLoggerContext(loggerContextName);
-        if (uninstallJULBridge) {
-            SLF4JBridgeHandler.uninstall();
-        }
-        context.stop();
-    }
-
 
     private static String resolvePlaceholders(String text) {
         StringBuilder buf = new StringBuilder(text);
@@ -189,6 +168,21 @@ public final class LOGBackConfigurer {
             }
         }
         return url;
+    }
+
+    // Logback interface has changed by removing this method. Copying from https://github.com/qos-ch/logback/commit/4b06e062488e4cb87f22be6ae96e4d7d6350ed6b
+    private static void configureByResource(URL url, Context loggerContext) throws JoranException {
+        if (url == null) {
+            throw new IllegalArgumentException("URL argument cannot be null");
+        }
+        final String urlString = url.toString();
+        if (urlString.endsWith("xml")) {
+            JoranConfigurator configurator = new JoranConfigurator();
+            configurator.setContext(loggerContext);
+            configurator.doConfigure(url);
+        } else {
+            throw new LogbackException("Unexpected filename extension of file [" + url + "]. Should be .xml");
+        }
     }
 
     private static ClassLoader getDefaultClassLoader() {

@@ -32,10 +32,10 @@ import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
 import reactor.core.publisher.Flux
-import reactor.core.publisher.toMono
+import reactor.kotlin.core.publisher.toMono
 import reactor.test.publisher.PublisherProbe
 import java.nio.charset.StandardCharsets.UTF_8
-import java.util.*
+import java.util.Optional
 
 class RouteRefLookupTest : StringSpec({
     "Retrieves handler from route database" {

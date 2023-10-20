@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -30,8 +30,6 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import java.util.stream.Stream;
 
@@ -47,7 +45,8 @@ import static java.lang.String.format;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @TestInstance(PER_CLASS)
@@ -58,16 +57,15 @@ public class HttpRequestMessageLoggerTest {
     private Origin origin;
     private LoggingTestSupport log;
 
-    @Mock
     private HttpMessageFormatter httpMessageFormatter;
 
     @BeforeAll
     public void setup() {
-        MockitoAnnotations.initMocks(this);
         this.origin = newOriginBuilder("hostA", 80)
                 .applicationId(id("MyApp"))
                 .id("h1")
                 .build();
+        httpMessageFormatter = mock(HttpMessageFormatter.class);
         when(httpMessageFormatter.formatRequest(any(LiveHttpRequest.class))).thenReturn(FORMATTED_REQUEST);
         when(httpMessageFormatter.formatResponse(any(LiveHttpResponse.class))).thenReturn(FORMATTED_RESPONSE);
     }

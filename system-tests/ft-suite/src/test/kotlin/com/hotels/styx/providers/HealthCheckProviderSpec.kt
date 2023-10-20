@@ -51,7 +51,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldMatch
 import io.kotest.matchers.string.shouldNotContain
-import reactor.core.publisher.toMono
+import reactor.kotlin.core.publisher.toMono
 import java.lang.Thread.sleep
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.concurrent.atomic.AtomicBoolean

@@ -38,7 +38,7 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import reactor.core.publisher.toMono
+import reactor.kotlin.core.publisher.toMono
 import java.util.Optional
 
 class BuiltinsTest : StringSpec({

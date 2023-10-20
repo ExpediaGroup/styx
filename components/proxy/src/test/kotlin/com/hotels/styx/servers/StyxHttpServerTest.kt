@@ -48,8 +48,8 @@ import io.kotest.core.spec.style.FeatureSpec
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
 import reactor.core.publisher.Flux
-import reactor.core.publisher.toFlux
-import reactor.core.publisher.toMono
+import reactor.kotlin.core.publisher.toFlux
+import reactor.kotlin.core.publisher.toMono
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.zip.GZIPInputStream

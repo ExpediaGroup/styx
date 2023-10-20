@@ -44,7 +44,7 @@ import com.hotels.styx.services.HealthCheckMonitoringService.Companion.EXECUTOR
 import com.hotels.styx.stateTag
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Flux
-import reactor.core.publisher.toMono
+import reactor.kotlin.core.publisher.toMono
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ScheduledExecutorService

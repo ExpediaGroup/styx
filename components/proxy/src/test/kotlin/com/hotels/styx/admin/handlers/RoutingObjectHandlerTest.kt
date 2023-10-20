@@ -34,7 +34,7 @@ import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeTypeOf
 import io.mockk.mockk
 import io.mockk.verify
-import reactor.core.publisher.toMono
+import reactor.kotlin.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
 
 class RoutingObjectHandlerTest : FeatureSpec({

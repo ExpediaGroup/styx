@@ -31,7 +31,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FeatureSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.verify
-import reactor.core.publisher.toMono
+import reactor.kotlin.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
 
 class PathPrefixRouterFactoryTest : FeatureSpec({

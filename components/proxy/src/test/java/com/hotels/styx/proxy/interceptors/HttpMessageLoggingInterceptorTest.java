@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -30,8 +30,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
@@ -46,7 +44,8 @@ import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @TestInstance(PER_CLASS)
@@ -58,7 +57,6 @@ public class HttpMessageLoggingInterceptorTest {
     private LoggingTestSupport responseLogSupport;
     private HttpMessageLoggingInterceptor interceptor;
 
-    @Mock
     private HttpMessageFormatter httpMessageFormatter;
 
     private Runnable resetLevel;
@@ -70,7 +68,7 @@ public class HttpMessageLoggingInterceptorTest {
         logger.setLevel(INFO);
         resetLevel = () -> logger.setLevel(previousLevel);
 
-        MockitoAnnotations.initMocks(this);
+        httpMessageFormatter = mock(HttpMessageFormatter.class);
         when(httpMessageFormatter.formatRequest(any(LiveHttpRequest.class))).thenReturn(FORMATTED_REQUEST);
         when(httpMessageFormatter.formatResponse(any(LiveHttpResponse.class))).thenReturn(FORMATTED_RESPONSE);
     }

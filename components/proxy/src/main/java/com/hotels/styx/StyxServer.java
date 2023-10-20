@@ -56,7 +56,6 @@ import java.util.function.BooleanSupplier;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static com.hotels.styx.StyxServers.toGuavaService;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
-import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.shutdownLogging;
 import static com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder.ENCODE_UNWISECHARS;
 import static com.hotels.styx.startup.CoreMetricsKt.registerCoreMetrics;
 import static io.netty.util.ResourceLeakDetector.Level.DISABLED;
@@ -341,7 +340,6 @@ public final class StyxServer extends AbstractService {
                 .forEach(entry -> entry.getValue().component4().shut());
 
         this.phase1Services.stopAsync().awaitStopped();
-        shutdownLogging(true);
     }
 
     private void printBanner() {

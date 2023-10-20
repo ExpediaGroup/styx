@@ -41,10 +41,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.client.StyxHostHttpClient.ORIGINID_CONTEXT_KEY;
-import static com.hotels.styx.support.Support.requestContext;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;

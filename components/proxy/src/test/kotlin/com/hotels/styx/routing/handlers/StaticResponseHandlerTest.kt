@@ -24,7 +24,7 @@ import com.hotels.styx.routingObjectDef
 import com.hotels.styx.wait
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import reactor.core.publisher.toMono
+import reactor.kotlin.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
 
 
