@@ -19,8 +19,8 @@ import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.handle
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.core.spec.style.FeatureSpec
+import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify

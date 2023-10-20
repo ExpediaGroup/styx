@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,7 +15,9 @@
  */
 package com.hotels.styx.providers
 
-import com.hotels.styx.*
+import com.hotels.styx.STATE_ACTIVE
+import com.hotels.styx.STATE_INACTIVE
+import com.hotels.styx.STATE_UNREACHABLE
 import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpInterceptor
@@ -28,29 +30,32 @@ import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.client.StyxHttpClient
+import com.hotels.styx.healthCheckTag
+import com.hotels.styx.lbGroupTag
 import com.hotels.styx.routing.ConditionRoutingSpec
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.routing.config.RoutingObjectFactory
+import com.hotels.styx.stateTag
 import com.hotels.styx.support.ResourcePaths
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.newRoutingObject
 import com.hotels.styx.support.proxyHttpHostHeader
 import com.hotels.styx.support.routingObject
 import com.hotels.styx.support.wait
-import io.kotlintest.Description
-import io.kotlintest.Spec
-import io.kotlintest.eventually
-import io.kotlintest.matchers.numerics.shouldBeGreaterThan
-import io.kotlintest.matchers.string.shouldContain
-import io.kotlintest.matchers.string.shouldMatch
-import io.kotlintest.matchers.string.shouldNotContain
-import io.kotlintest.matchers.withClue
-import io.kotlintest.seconds
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.assertions.timing.eventually
+import io.kotest.assertions.withClue
+import io.kotest.core.spec.Spec
+import io.kotest.core.spec.style.FeatureSpec
+import io.kotest.matchers.ints.shouldBeGreaterThan
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldMatch
+import io.kotest.matchers.string.shouldNotContain
 import reactor.core.publisher.toMono
+import java.lang.Thread.sleep
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.time.Duration.Companion.seconds
 
 class HealthCheckProviderSpec : FeatureSpec() {
     val originsOk = ResourcePaths.fixturesHome(ConditionRoutingSpec::class.java, "/conf/origins/origins-correct.yml")
@@ -123,11 +128,11 @@ class HealthCheckProviderSpec : FeatureSpec() {
 
                 origin02Active.set(false)
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     styxServer().routingObject("aaa-02").get().shouldContain(stateTag(STATE_UNREACHABLE))
                 }
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     pollOrigins(styxServer, times = 50).let {
                         withClue("Only the active origin (origin-01) should be taking traffic. Origins distribution: $it") {
                             (it["origin-01"] ?: 0).shouldBe(50)
@@ -139,11 +144,11 @@ class HealthCheckProviderSpec : FeatureSpec() {
             scenario("Tags responsive origins with state:active TAG") {
                 origin02Active.set(true)
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     styxServer().routingObject("aaa-02").get().shouldContain(stateTag(STATE_ACTIVE))
                 }
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     pollOrigins(styxServer, "origin-0[12]").let {
                         withClue("Both origins should be taking traffic. Origins distribution: $it") {
                             (it["origin-01"] ?: 0).shouldBeGreaterThan(20)
@@ -155,7 +160,7 @@ class HealthCheckProviderSpec : FeatureSpec() {
 
             scenario("Ignores closed origins") {
                 styxServer().newRoutingObject("aaa-04", hostProxy(lbGroupTag("aaa"), stateTag(STATE_INACTIVE), testServer03)).shouldBe(CREATED)
-                Thread.sleep(5.seconds.toMillis())
+                sleep(5.seconds.inWholeMilliseconds)
                 styxServer().routingObject("aaa-04").get().shouldContain(stateTag(STATE_INACTIVE))
                 styxServer().routingObject("aaa-04").get().shouldNotContain(healthCheckTag("on" to 0)!!)
             }
@@ -163,12 +168,12 @@ class HealthCheckProviderSpec : FeatureSpec() {
             scenario("Detects up new origins") {
                 styxServer().newRoutingObject("aaa-03", hostProxy(lbGroupTag("aaa"), testServer03)).shouldBe(CREATED)
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     styxServer().routingObject("aaa-03").get().shouldContain(stateTag(STATE_ACTIVE))
                     styxServer().routingObject("aaa-03").get().shouldContain(healthCheckTag("on" to 0)!!)
                 }
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     pollOrigins(styxServer, "origin-0[1234]").let {
                         withClue("Both origins should be taking traffic. Origins distribution: $it") {
                             (it["origin-01"] ?: 0).shouldBeGreaterThan(15)
@@ -236,7 +241,7 @@ class HealthCheckProviderSpec : FeatureSpec() {
                   class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry${'$'}Factory"
                   config: {originsFile: "$originsOk"}
 
-            httpPipeline: 
+            httpPipeline:
               type: PathPrefixRouter
               config:
                 routes:
@@ -250,7 +255,7 @@ class HealthCheckProviderSpec : FeatureSpec() {
                       destination:
                         type: TestEndpoint
                         config:
-                          pass  
+                          pass
             """.trimIndent()
 
     val origin01Active = AtomicBoolean(true)
@@ -271,14 +276,14 @@ class HealthCheckProviderSpec : FeatureSpec() {
                     "TestEndpoint" to RoutingObjectFactory { _, _, _ -> TestEndpoint(content = "origin-03") }),
             validateConfig = false)
 
-    override fun beforeSpec(spec: Spec) {
+    override suspend fun beforeSpec(spec: Spec) {
         testServer01.restart()
         testServer02.restart()
         testServer03.restart()
         styxServer.restart()
     }
 
-    override fun afterDiscovery(descriptions: List<Description>) {
+    override fun afterSpec(f: suspend (Spec) -> Unit) {
         styxServer.stop()
         testServer01.stop()
         testServer02.stop()

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -29,14 +29,14 @@ import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.adminHostHeader
 import com.hotels.styx.support.testClient
 import com.hotels.styx.support.wait
-import io.kotlintest.Spec
-import io.kotlintest.eventually
-import io.kotlintest.matchers.types.shouldBeNull
-import io.kotlintest.seconds
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.assertions.timing.eventually
+import io.kotest.core.spec.Spec
+import io.kotest.core.spec.style.FeatureSpec
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.shouldBe
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.CyclicBarrier
+import kotlin.time.Duration.Companion.seconds
 
 
 class ServerStartupSpec : FeatureSpec() {
@@ -47,7 +47,7 @@ class ServerStartupSpec : FeatureSpec() {
                   connectors:
                     http:
                       port: 0
-        
+
                 admin:
                   connectors:
                     http:
@@ -59,7 +59,7 @@ class ServerStartupSpec : FeatureSpec() {
                     status: 200
                 """.trimIndent())
 
-    override fun afterSpec(spec: Spec) {
+    override suspend fun afterSpec(spec: Spec) {
         styxServer.stop()
     }
 
@@ -80,7 +80,7 @@ class ServerStartupSpec : FeatureSpec() {
 
                 latch2.countDown()
 
-                eventually(2.seconds, AssertionError::class.java) {
+                eventually(2.seconds) {
                     testClient.send(get("/")
                             .addHeader(HOST, styxServer().adminHostHeader())
                             .build())

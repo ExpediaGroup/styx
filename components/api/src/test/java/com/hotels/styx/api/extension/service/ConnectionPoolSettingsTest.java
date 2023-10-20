@@ -27,10 +27,11 @@ public class ConnectionPoolSettingsTest {
     public void setsConfigurationValues() {
         ConnectionPoolSettings config = new ConnectionPoolSettings(10, 5, 8, 2345, 123, 1L, new Http2ConnectionPoolSettings(10, 8, 7, 10));
 
-        assertThat(config.connectTimeoutMillis(), is(equalTo(2345)));
+        assertThat(config.connectTimeoutMillis(), is(equalTo(8)));
+        assertThat(config.socketTimeoutMillis(), is(equalTo(2345)));
         assertThat(config.pendingConnectionTimeoutMillis(), is(equalTo(123)));
-        assertThat(config.maxConnectionsPerHost(), is(equalTo(5)));
-        assertThat(config.maxPendingConnectionsPerHost(), is(equalTo(8)));
+        assertThat(config.maxConnectionsPerHost(), is(equalTo(10)));
+        assertThat(config.maxPendingConnectionsPerHost(), is(equalTo(5)));
         assertThat(config.connectionExpirationSeconds(), is(equalTo(1L)));
         assertThat(config.http2ConnectionPoolSettings().getMaxConnections(), is(equalTo(10)));
         assertThat(config.http2ConnectionPoolSettings().getMinConnections(), is(equalTo(8)));
@@ -40,7 +41,7 @@ public class ConnectionPoolSettingsTest {
 
     @Test
     public void shouldBuildFromOtherPoolSettings() {
-        ConnectionPoolSettings config = new ConnectionPoolSettings(5, 8, 2345, 123, 1L, new Http2ConnectionPoolSettings(10, 8, 7, 10));
+        ConnectionPoolSettings config = new ConnectionPoolSettings(5, 8, 2345, 123, 1L, new Http2ConnectionPoolSettings(7, 8, 7, 10));
         ConnectionPoolSettings newConfig = new ConnectionPoolSettings.Builder(config)
                 .connectTimeout(444, MILLISECONDS)
                 .http2ConnectionPoolSettings(new Http2ConnectionPoolSettings(10, 4, 3, 8))
@@ -50,10 +51,10 @@ public class ConnectionPoolSettingsTest {
         assertThat(newConfig.pendingConnectionTimeoutMillis(), is(equalTo(123)));
         assertThat(newConfig.maxConnectionsPerHost(), is(equalTo(5)));
         assertThat(newConfig.maxPendingConnectionsPerHost(), is(equalTo(8)));
-        assertThat(config.connectionExpirationSeconds(), is(equalTo(1L)));
-        assertThat(config.http2ConnectionPoolSettings().getMaxConnections(), is(equalTo(10)));
-        assertThat(config.http2ConnectionPoolSettings().getMinConnections(), is(equalTo(4)));
-        assertThat(config.http2ConnectionPoolSettings().getMaxStreamsPerConnection(), is(equalTo(3)));
-        assertThat(config.http2ConnectionPoolSettings().getMaxPendingStreamsPerHost(), is(equalTo(8)));
+        assertThat(newConfig.connectionExpirationSeconds(), is(equalTo(1L)));
+        assertThat(newConfig.http2ConnectionPoolSettings().getMaxConnections(), is(equalTo(10)));
+        assertThat(newConfig.http2ConnectionPoolSettings().getMinConnections(), is(equalTo(4)));
+        assertThat(newConfig.http2ConnectionPoolSettings().getMaxStreamsPerConnection(), is(equalTo(3)));
+        assertThat(newConfig.http2ConnectionPoolSettings().getMaxPendingStreamsPerHost(), is(equalTo(8)));
     }
 }

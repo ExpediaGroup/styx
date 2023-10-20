@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -26,11 +26,10 @@ import com.hotels.styx.servers.MockOriginServer
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.proxyHttpHostHeader
 import com.hotels.styx.support.wait
-import io.kotlintest.Spec
-import io.kotlintest.eventually
-import io.kotlintest.seconds
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.StringSpec
+import io.kotest.assertions.timing.eventually
+import io.kotest.core.spec.Spec
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
 import org.slf4j.LoggerFactory
 import java.io.ByteArrayInputStream
 import java.io.File
@@ -38,6 +37,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Files.copy
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption.REPLACE_EXISTING
+import kotlin.time.Duration.Companion.seconds
 
 private val LOGGER = LoggerFactory.getLogger(FileBasedOriginsFileChangeMonitorSpec::class.java)
 
@@ -53,14 +53,14 @@ class FileBasedOriginsFileChangeMonitorSpec: StringSpec() {
                     .header(HOST, styxServer().proxyHttpHostHeader())
                     .build()
 
-            eventually(3.seconds, AssertionError::class.java) {
+            eventually(3.seconds) {
                 client.send(reqToApp01).wait().status() shouldBe OK
                 client.send(reqToApp02).wait().status() shouldBe BAD_GATEWAY
             }
 
             writeConfig(styxOriginsFile, configTemplate.format("appv2", "/app02/", mockServer.port()))
 
-            eventually(3.seconds, AssertionError::class.java) {
+            eventually(3.seconds) {
                 client.send(reqToApp01).wait().status() shouldBe BAD_GATEWAY
                 client.send(reqToApp02).wait().status() shouldBe OK
             }
@@ -116,12 +116,12 @@ class FileBasedOriginsFileChangeMonitorSpec: StringSpec() {
                     .withStatus(200)
                     .withBody("mock-server-01"))
 
-    override fun beforeSpec(spec: Spec) {
+    override suspend fun beforeSpec(spec: Spec) {
         writeConfig(styxOriginsFile, configTemplate.format("appv1", "/app01/", mockServer.port()))
         styxServer.restart()
     }
 
-    override fun afterSpec(spec: Spec) {
+    override suspend fun afterSpec(spec: Spec) {
         styxServer.stop()
         mockServer.stop()
     }

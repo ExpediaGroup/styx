@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,14 +15,19 @@
  */
 package com.hotels.styx.demo
 
-import com.hotels.styx.api.*
+import com.hotels.styx.api.Eventual
+import com.hotels.styx.api.HttpInterceptor
+import com.hotels.styx.api.HttpRequest
+import com.hotels.styx.api.HttpResponse
 import com.hotels.styx.api.HttpResponseStatus.OK
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FeatureSpec
+import com.hotels.styx.api.LiveHttpRequest
+import com.hotels.styx.api.LiveHttpResponse
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.core.spec.style.FeatureSpec
+import io.kotest.matchers.shouldBe
 import io.mockk.mockk
 import reactor.core.publisher.Mono
 import java.nio.charset.StandardCharsets.UTF_8
-import kotlin.test.assertFailsWith
 
 class DemoPluginTest : FeatureSpec({
     feature("Pass-through") {
@@ -37,7 +42,7 @@ class DemoPluginTest : FeatureSpec({
     feature("Exception on request") {
         val plugin = DemoPluginFactory().create(mockk())
 
-        assertFailsWith<DemoPluginException> {
+        shouldThrow<DemoPluginException> {
             plugin.intercept(requestGet("/?exception=onRequest"), DummyChain).await()
         }
     }
@@ -45,7 +50,7 @@ class DemoPluginTest : FeatureSpec({
     feature("Exception on response") {
         val plugin = DemoPluginFactory().create(mockk())
 
-        assertFailsWith<DemoPluginException> {
+        shouldThrow<DemoPluginException> {
             plugin.intercept(requestGet("/?exception=onResponse"), DummyChain).await()
         }
     }

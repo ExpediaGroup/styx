@@ -16,8 +16,8 @@
 package com.hotels.styx.api.extension
 
 import com.hotels.styx.api.extension.service.TcpKeepAliveSettings
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.StringSpec
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
 
 class TcpKeepAliveSettingsTest : StringSpec({
     "setsConfigurationValues" {

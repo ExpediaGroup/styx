@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2022 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import com.hotels.styx.infrastructure.configuration.ConfigurationParser
 import com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSource
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.DescribeSpec
+import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.matchers.shouldBe
 import java.util.Optional
 
 class ServerConfigSchemaTest : DescribeSpec({
@@ -33,12 +33,12 @@ class ServerConfigSchemaTest : DescribeSpec({
                     connectors:
                       http:
                         port: 8080
-                  
+
                   admin:
                     connectors:
                       http:
                         port: 9000
-                  
+
                   services:
                     factories:
                       backendServiceRegistry:
@@ -104,7 +104,7 @@ class ServerConfigSchemaTest : DescribeSpec({
                         - header2
                       hideCookies:
                         - cookie1
-                        - cookie2                        
+                        - cookie2
             """.trimIndent()
             )) shouldBe (Optional.empty())
         }
@@ -472,18 +472,18 @@ private val minimalConfig = """
             port: 8080
           https:
             port: 8443
-      
+
       admin:
         connectors:
           http:
             port: 9000
-      
+
       services:
         factories:
           backendServiceRegistry:
             class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry${'$'}Factory"
             config: {originsFile: "${'$'}{originsFile:classpath:conf/origins.yml}"}
-      
+
     """.trimIndent()
 
 private fun yamlConfig(text: String) =

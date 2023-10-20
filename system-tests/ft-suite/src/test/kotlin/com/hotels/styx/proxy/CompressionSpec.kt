@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,10 +22,9 @@ import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.proxyHttpHostHeader
 import com.hotels.styx.support.wait
-import io.kotlintest.Spec
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FeatureSpec
-import reactor.core.publisher.toMono
+import io.kotest.core.spec.Spec
+import io.kotest.core.spec.style.FeatureSpec
+import io.kotest.matchers.shouldBe
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.zip.GZIPInputStream
 
@@ -37,7 +36,7 @@ class CompressionSpec : FeatureSpec() {
                 val request = get("/11")
                         .header(HOST, styxServer().proxyHttpHostHeader())
                         .header("accept-encoding", "7z, gzip")
-                        .build();
+                        .build()
 
                 client.send(request)
                         .wait()!!
@@ -50,7 +49,7 @@ class CompressionSpec : FeatureSpec() {
             scenario("Does not compress HTTP response if client did not send accept-encoding") {
                 val request = get("/11")
                         .header(HOST, styxServer().proxyHttpHostHeader())
-                        .build();
+                        .build()
 
                 client.send(request)
                         .wait()!!
@@ -65,7 +64,7 @@ class CompressionSpec : FeatureSpec() {
                 val request = get("/11")
                         .header(HOST, styxServer().proxyHttpHostHeader())
                         .header("accept-encoding", "7z")
-                        .build();
+                        .build()
 
                 client.send(request)
                         .wait()!!
@@ -80,7 +79,7 @@ class CompressionSpec : FeatureSpec() {
                 val request = get("/compressed")
                         .header(HOST, styxServer().proxyHttpHostHeader())
                         .header("accept-encoding", "gzip")
-                        .build();
+                        .build()
 
                 client.send(request)
                         .wait()!!
@@ -97,7 +96,7 @@ class CompressionSpec : FeatureSpec() {
                 val request = get("/image")
                         .header(HOST, styxServer().proxyHttpHostHeader())
                         .header("accept-encoding", "gzip")
-                        .build();
+                        .build()
 
                 client.send(request)
                         .wait()!!
@@ -146,7 +145,7 @@ class CompressionSpec : FeatureSpec() {
                         headers:
                             - name: content-type
                               value: image/jpeg
-                              
+
                   - condition: path() == "/compressed"
                     destination:
                       name: compressed-plain-text
@@ -159,7 +158,7 @@ class CompressionSpec : FeatureSpec() {
                               value: text/plain
                             - name: content-encoding
                               value: gzip
-                  
+
                 fallback:
                   type: StaticResponseHandler
                   config:
@@ -171,11 +170,11 @@ class CompressionSpec : FeatureSpec() {
       """.trimIndent())
 
 
-    override fun beforeSpec(spec: Spec) {
+    override suspend fun beforeSpec(spec: Spec) {
         styxServer.restart()
     }
 
-    override fun afterSpec(spec: Spec) {
+    override suspend fun afterSpec(spec: Spec) {
         styxServer.stop()
     }
 }

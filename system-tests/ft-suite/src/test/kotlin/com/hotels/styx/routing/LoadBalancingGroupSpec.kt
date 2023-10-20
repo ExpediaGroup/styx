@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -33,17 +33,17 @@ import com.hotels.styx.support.newRoutingObject
 import com.hotels.styx.support.proxyHttpHostHeader
 import com.hotels.styx.support.removeRoutingObject
 import com.hotels.styx.support.wait
-import io.kotlintest.Spec
-import io.kotlintest.eventually
-import io.kotlintest.matchers.boolean.shouldBeTrue
-import io.kotlintest.matchers.string.shouldContain
-import io.kotlintest.matchers.string.shouldMatch
-import io.kotlintest.matchers.withClue
-import io.kotlintest.seconds
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.assertions.timing.eventually
+import io.kotest.assertions.withClue
+import io.kotest.core.spec.Spec
+import io.kotest.core.spec.style.FeatureSpec
+import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldMatch
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.Optional
+import kotlin.time.Duration.Companion.seconds
 
 class LoadBalancingGroupSpec : FeatureSpec() {
 
@@ -60,7 +60,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                   connectors:
                                     http:
                                       port: 0
-                                      
+
                                 services:
                                   factories: {}
 
@@ -81,7 +81,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                   connectors:
                                     http:
                                       port: 0
-                                      
+
                                 services:
                                   factories: {}
 
@@ -206,7 +206,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                   connectors:
                                     http:
                                       port: 0
-                                      
+
                                 services:
                                   factories: {}
 
@@ -237,7 +237,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                 }
 
                 withClue("Couldn't get a response from mock-server-01") {
-                    eventually(1.seconds, AssertionError::class.java) {
+                    eventually(1.seconds) {
                         client.send(get("/").header(HOST, styxServer().proxyHttpHostHeader()).build())
                                 .wait()!!
                                 .let {
@@ -281,7 +281,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                   connectors:
                                     http:
                                       port: 0
-                                      
+
                                 services:
                                   factories: {}
 
@@ -405,7 +405,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                   connectors:
                                     http:
                                       port: 0
-                                      
+
                                 services:
                                   factories: {}
 
@@ -504,7 +504,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
         }
     }
 
-    override fun afterSpec(spec: Spec) {
+    override suspend fun afterSpec(spec: Spec) {
         appA01.stop()
         appA02.stop()
         appA03.stop()

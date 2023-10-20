@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,9 +22,9 @@ import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.adminHostHeader
-import io.kotlintest.Spec
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.StringSpec
+import io.kotest.core.spec.Spec
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
 import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
 
@@ -34,7 +34,7 @@ class VersionFilesPropertySpec : StringSpec() {
         "Gets the version text property" {
             val request = get("/version.txt")
                     .header(HOST, styxServer().adminHostHeader())
-                    .build();
+                    .build()
 
             client.send(request)
                     .toMono()
@@ -42,7 +42,6 @@ class VersionFilesPropertySpec : StringSpec() {
                     .let {
                         it!!.status() shouldBe (OK)
                         it.bodyAs(UTF_8) shouldBe ("MyFakeVersionText\n")
-
                     }
         }
     }
@@ -66,11 +65,11 @@ class VersionFilesPropertySpec : StringSpec() {
           versionFiles: $fileLocation
       """.trimIndent())
 
-    override fun beforeSpec(spec: Spec) {
+    override suspend fun beforeSpec(spec: Spec) {
         styxServer.restart()
     }
 
-    override fun afterSpec(spec: Spec) {
+    override suspend fun afterSpec(spec: Spec) {
         styxServer.stop()
     }
 }

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,17 +16,21 @@
 package com.hotels.styx.routing
 
 import com.hotels.styx.api.HttpHeaderNames.HOST
-import com.hotels.styx.api.HttpRequest.*
-import com.hotels.styx.api.HttpResponseStatus.*
+import com.hotels.styx.api.HttpRequest.delete
+import com.hotels.styx.api.HttpRequest.get
+import com.hotels.styx.api.HttpRequest.put
+import com.hotels.styx.api.HttpResponseStatus.CREATED
+import com.hotels.styx.api.HttpResponseStatus.NOT_FOUND
+import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.adminHostHeader
 import com.hotels.styx.support.proxyHttpHostHeader
-import io.kotlintest.Spec
-import io.kotlintest.TestCase
-import io.kotlintest.matchers.string.shouldContain
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.StringSpec
+import io.kotest.core.spec.Spec
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.core.test.TestCase
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
 
@@ -157,7 +161,7 @@ class RoutingRestApiSpec : StringSpec() {
         httpPipeline: root
       """.trimIndent())
 
-    override fun beforeTest(testCase: TestCase) {
+    override suspend fun beforeTest(testCase: TestCase) {
         super.beforeTest(testCase)
         client.send(
                 put("/admin/routing/objects/root")
@@ -174,11 +178,11 @@ class RoutingRestApiSpec : StringSpec() {
                 .status() shouldBe CREATED
     }
 
-    override fun beforeSpec(spec: Spec) {
+    override suspend fun beforeSpec(spec: Spec) {
         styxServer.restart()
     }
 
-    override fun afterSpec(spec: Spec) {
+    override suspend fun afterSpec(spec: Spec) {
         styxServer.stop()
     }
 }

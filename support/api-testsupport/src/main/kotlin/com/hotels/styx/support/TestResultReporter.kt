@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,11 +15,10 @@
  */
 package com.hotels.styx.support
 
-import io.kotlintest.Spec
-import io.kotlintest.TestCase
-import io.kotlintest.TestResult
-import io.kotlintest.TestStatus
-import io.kotlintest.extensions.TestListener
+import io.kotest.core.listeners.TestListener
+import io.kotest.core.spec.Spec
+import io.kotest.core.test.TestCase
+import io.kotest.core.test.TestResult
 import org.slf4j.LoggerFactory
 import java.io.PrintWriter
 import java.io.StringWriter
@@ -27,35 +26,35 @@ import java.io.StringWriter
 object TestResultReporter : TestListener {
     val LOGGER = LoggerFactory.getLogger("Styx-Tests")
 
-    override fun beforeSpec(spec: Spec) {
+    override suspend fun beforeSpec(spec: Spec) {
         super.beforeSpec(spec)
-        LOGGER.info("Starting: ${spec.description().fullName()}")
+        LOGGER.info("Starting: ${spec}")
     }
 
-    override fun afterSpec(spec: Spec) {
-        LOGGER.info("Finished: ${spec.description().fullName()}")
+    override suspend fun afterSpec(spec: Spec) {
+        LOGGER.info("Finished: ${spec}")
         super.afterSpec(spec)
     }
 
-    override fun beforeTest(testCase: TestCase) {
+    override suspend fun beforeTest(testCase: TestCase) {
         super.beforeTest(testCase)
 
-        LOGGER.info("Running: '${testCase.name}' - ${testCase.source.fileName}:${testCase.source.lineNumber}")
+        LOGGER.info("Running: '${testCase.name}' - ${testCase.source}")
     }
 
-    override fun afterTest(testCase: TestCase, result: TestResult) {
+    override suspend fun afterTest(testCase: TestCase, result: TestResult) {
         super.afterTest(testCase, result)
 
-        LOGGER.info("Result: ${testCase.name} - ${result.status}")
-        when (result.status) {
-            TestStatus.Error -> {
-                result.error?.let {
+        LOGGER.info("Result: ${testCase.name} - ${result.name}")
+        when (result) {
+            is TestResult.Error -> {
+                result.cause.let {
                     LOGGER.info(it.message)
                     LOGGER.info(it.stackTrace())
                 }
             }
-            TestStatus.Failure -> {
-                result.error?.let {
+            is TestResult.Failure -> {
+                result.cause.let {
                     LOGGER.info(it.message)
                     LOGGER.info(it.stackTrace())
                 }

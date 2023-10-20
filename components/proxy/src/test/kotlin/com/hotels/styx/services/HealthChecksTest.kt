@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package com.hotels.styx.services
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.hotels.styx.ProviderObjectRecord
 import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpHeaders
 import com.hotels.styx.api.HttpInterceptor
@@ -23,23 +24,22 @@ import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.api.extension.service.spi.StyxService
+import com.hotels.styx.requestContext
 import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
-import com.hotels.styx.ProviderObjectRecord
-import com.hotels.styx.requestContext
 import com.hotels.styx.routing.handlers.StaticResponseHandler
-import io.kotlintest.matchers.boolean.shouldBeFalse
-import io.kotlintest.matchers.boolean.shouldBeTrue
-import io.kotlintest.matchers.numerics.shouldBeGreaterThan
-import io.kotlintest.milliseconds
-import io.kotlintest.seconds
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.core.spec.style.FeatureSpec
+import io.kotest.matchers.booleans.shouldBeFalse
+import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.comparables.shouldBeGreaterThan
+import io.kotest.matchers.shouldBe
 import reactor.core.publisher.Mono
 import reactor.core.publisher.toMono
 import kotlin.system.measureTimeMillis
-
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
 
 class HealthChecksTest : FeatureSpec({
 
@@ -49,7 +49,7 @@ class HealthChecksTest : FeatureSpec({
         scenario("Returns true when object is responsive") {
             val staticResponse = StaticResponseHandler(200, "Hello", headers)
 
-            urlProbe(get("/healthcheck.txt").build(), 1.seconds, requestContext())
+            urlProbe(get("/healthcheck.txt").build(), 1.seconds.toJavaDuration(), requestContext())
                     .invoke(staticResponse)
                     .toMono()
                     .block()!!.shouldBeTrue()
@@ -59,7 +59,7 @@ class HealthChecksTest : FeatureSpec({
             val neverRespond = NeverHandler()
 
             val duration = measureTimeMillis {
-                urlProbe(get("/healthcheck.txt").build(), 100.milliseconds, requestContext())
+                urlProbe(get("/healthcheck.txt").build(), 100.milliseconds.toJavaDuration(), requestContext())
                         .invoke(neverRespond)
                         .toMono()
                         .block()!!.shouldBeFalse()
@@ -71,7 +71,7 @@ class HealthChecksTest : FeatureSpec({
         scenario("Returns false when responds with 4xx error code") {
             val errorHandler = StaticResponseHandler(400, "Hello", headers)
 
-            urlProbe(get("/healthcheck.txt").build(), 100.milliseconds, requestContext())
+            urlProbe(get("/healthcheck.txt").build(), 100.milliseconds.toJavaDuration(), requestContext())
                     .invoke(errorHandler)
                     .toMono()
                     .block()!!.shouldBeFalse()
@@ -80,7 +80,7 @@ class HealthChecksTest : FeatureSpec({
         scenario("Returns false when responds with 5xx error code") {
             val errorHandler = StaticResponseHandler(500, "Hello", headers)
 
-            urlProbe(get("/healthcheck.txt").build(), 100.milliseconds, requestContext())
+            urlProbe(get("/healthcheck.txt").build(), 100.milliseconds.toJavaDuration(), requestContext())
                     .invoke(errorHandler)
                     .toMono()
                     .block()!!.shouldBeFalse()

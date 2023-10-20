@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -27,9 +27,9 @@ import com.hotels.styx.routeLookup
 import com.hotels.styx.routing.config.Builtins.BUILTIN_HANDLER_SCHEMAS
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routingObjectDef
-import io.kotlintest.shouldBe
-import io.kotlintest.shouldThrow
-import io.kotlintest.specs.FeatureSpec
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.core.spec.style.FeatureSpec
+import io.kotest.matchers.shouldBe
 import io.mockk.verify
 import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8

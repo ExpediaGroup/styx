@@ -16,21 +16,21 @@
 package com.hotels.styx.services
 
 import com.hotels.styx.ProviderObjectRecord
+import com.hotels.styx.RoutingObjectFactoryContext
 import com.hotels.styx.STATE_ACTIVE
 import com.hotels.styx.STATE_UNREACHABLE
-import com.hotels.styx.lbGroupTag
-import com.hotels.styx.RoutingObjectFactoryContext
 import com.hotels.styx.api.extension.service.TcpKeepAliveSettings
+import com.hotels.styx.lbGroupTag
 import com.hotels.styx.routing.config.Builtins.INTERCEPTOR_PIPELINE
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.services.OriginsConfigConverter.Companion.deserialiseOrigins
 import com.hotels.styx.services.OriginsConfigConverter.Companion.loadBalancingGroup
 import com.hotels.styx.stateTag
-import io.kotlintest.matchers.collections.shouldBeEmpty
-import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder
-import io.kotlintest.matchers.types.shouldNotBeNull
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.StringSpec
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 
 class OriginsConfigConverterTest : StringSpec({
     val serviceDb = StyxObjectStore<ProviderObjectRecord>()
