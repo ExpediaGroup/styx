@@ -1,0 +1,27 @@
+name: PR Check
+on:
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+    inputs:
+      REF:
+        required: false
+        default: master
+
+jobs:
+  build:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    if: ${{ (github.server_url == 'https://github.com') && (github.repository == 'ExpediaGroup/styx') }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 11
+          settings-path: ${{ github.workspace }}
+      - name: Build Project
+        run: mvn -B --no-transfer-progress package
