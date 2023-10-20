@@ -46,7 +46,7 @@ expiration time if they do not serve any requests.
 
     *   *minConnections* - the minimum number of connections that may be established to a single origin.
 
-    *   *maxStreamsPerConnection* - the minimum number of streams that may be established to a single connection. -1 means no limit. The minimum of this configuration and the remote peer configuration is taken.
+    *   *maxStreamsPerConnection* - the minimum number of streams that may be established to a single connection. -1 means always use the remote peer setting. The minimum of this configuration and the remote peer configuration is taken.
 
     *   *maxPendingStreamsPerHost* - the maximum number of streams that may be waiting to be acquired at the same time.
 
