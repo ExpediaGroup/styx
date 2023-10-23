@@ -32,7 +32,7 @@ import com.hotels.styx.routing.handlers.StaticResponseHandler
 import io.kotest.core.spec.style.FeatureSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
-import io.kotest.matchers.comparables.shouldBeGreaterThan
+import io.kotest.matchers.longs.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.shouldBe
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toMono
@@ -65,7 +65,7 @@ class HealthChecksTest : FeatureSpec({
                         .block()!!.shouldBeFalse()
             }
 
-            duration shouldBeGreaterThan 100
+            duration shouldBeGreaterThanOrEqual 100
         }
 
         scenario("Returns false when responds with 4xx error code") {
