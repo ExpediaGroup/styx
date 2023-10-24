@@ -24,4 +24,4 @@ jobs:
           java-version: 11
           settings-path: ${{ github.workspace }}
       - name: Build Project
-        run: mvn -B --no-transfer-progress package
+        run: ./mvnw -B --no-transfer-progress package

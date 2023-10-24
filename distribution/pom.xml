@@ -55,9 +55,6 @@
               <overWriteSnapshots>false</overWriteSnapshots>
               <overWriteIfNewer>true</overWriteIfNewer>
               <includeScope>compile</includeScope>
-              <includeScope>runtime</includeScope>
-              <excludeScope>provided</excludeScope>
-              <excludeScope>test</excludeScope>
             </configuration>
           </execution>
         </executions>
@@ -85,6 +82,7 @@
       </plugin>
 
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-deploy-plugin</artifactId>
         <executions>
           <execution>

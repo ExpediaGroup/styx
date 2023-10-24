@@ -36,19 +36,7 @@
 
   <properties>
     <main.basedir>${project.parent.basedir}</main.basedir>
+    <maven.deploy.skip>true</maven.deploy.skip>
   </properties>
-
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-deploy-plugin</artifactId>
-        <configuration>
-          <skip>true</skip>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
-
 
 </project>
