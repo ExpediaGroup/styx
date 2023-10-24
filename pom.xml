@@ -989,6 +989,8 @@
             <exclude>**/EqualsTester.java</exclude>
             <exclude>**/URLEncoder.java</exclude>
             <exclude>**/DeltaQueue.java</exclude>
+            <exclude>mvnw.cmd</exclude>
+            <exclude>.mvn/**</exclude>
           </excludes>
         </configuration>
         <dependencies>
