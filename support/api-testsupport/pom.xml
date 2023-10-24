@@ -42,11 +42,6 @@
 
     <dependency>
       <groupId>io.reactivex</groupId>
-      <artifactId>rxjava</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>io.reactivex</groupId>
       <artifactId>rxjava-reactive-streams</artifactId>
     </dependency>
 

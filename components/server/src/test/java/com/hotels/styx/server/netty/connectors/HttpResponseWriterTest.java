@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -313,7 +313,7 @@ public class HttpResponseWriterTest {
     }
 
     @Test
-    public void releasesContentChunksWhenFailsToConvertToNettyHeaders() throws Exception {
+    public void releasesContentChunksWhenFailsToConvertToNettyHeaders() {
         CaptureHttpResponseWriteEventsHandler writeEventsCollector = new CaptureHttpResponseWriteEventsHandler();
 
         Buffer chunk1 = new Buffer("aaa", UTF_8);
