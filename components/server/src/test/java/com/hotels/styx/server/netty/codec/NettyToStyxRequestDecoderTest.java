@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2022 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -267,7 +267,7 @@ public class NettyToStyxRequestDecoderTest {
                 .flowControlEnabled(true)
                 .build();
 
-        LiveHttpRequest styxRequest = decoder.makeAStyxRequestFrom(request, Observable.<ByteBuf>empty())
+        LiveHttpRequest styxRequest = decoder.makeAStyxRequestFrom(request)
                 .build();
 
         LiveHttpRequest expected = new LiveHttpRequest.Builder(
@@ -292,7 +292,7 @@ public class NettyToStyxRequestDecoderTest {
                 .flowControlEnabled(true)
                 .build();
 
-        LiveHttpRequest styxRequest = decoder.makeAStyxRequestFrom(request, Observable.<ByteBuf>empty())
+        LiveHttpRequest styxRequest = decoder.makeAStyxRequestFrom(request)
                 .build();
 
         LiveHttpRequest expected = new LiveHttpRequest.Builder(

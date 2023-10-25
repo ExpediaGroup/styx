@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2022 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,11 +16,7 @@
 package com.hotels.styx.server.netty.codec;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.hotels.styx.api.Buffers;
-import com.hotels.styx.api.ByteStream;
-import com.hotels.styx.api.HttpVersion;
-import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.Url;
+import com.hotels.styx.api.*;
 import com.hotels.styx.common.format.DefaultHttpMessageFormatter;
 import com.hotels.styx.common.format.HttpMessageFormatter;
 import com.hotels.styx.server.BadRequestException;
@@ -36,9 +32,9 @@ import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.ReferenceCountUtil;
-import rx.Observable;
-import rx.Producer;
-import rx.Subscriber;
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -54,7 +50,6 @@ import static com.hotels.styx.server.UniqueIdSuppliers.UUID_VERSION_ONE_SUPPLIER
 import static com.hotels.styx.server.netty.codec.UnwiseCharsEncoder.IGNORE;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.StreamSupport.stream;
-import static rx.RxReactiveStreams.toPublisher;
 
 /**
  * This {@link MessageToMessageDecoder} is responsible for decode {@link io.netty.handler.codec.http.HttpRequest}
@@ -68,7 +63,7 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
     private final UnwiseCharsEncoder unwiseCharEncoder;
     private HttpMessageFormatter httpMessageFormatter;
 
-    private FlowControllingHttpContentProducer producer;
+    private FlowControllingHttpContentPublisher contentPublisher;
 
     private NettyToStyxRequestDecoder(Builder builder) {
         this.uniqueIdSupplier = builder.uniqueIdSupplier;
@@ -82,25 +77,20 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
         if (httpObject.getDecoderResult().isFailure()) {
             String formattedHttpObject = httpMessageFormatter.formatNettyMessage(httpObject);
             throw new BadRequestException("Error while decoding request: " + formattedHttpObject,
-                    httpMessageFormatter.wrap(httpObject.getDecoderResult().cause()));
+                httpMessageFormatter.wrap(httpObject.getDecoderResult().cause()));
         }
 
         try {
             if (httpObject instanceof HttpRequest) {
-                this.producer = new FlowControllingHttpContentProducer(ctx, this.flowControlEnabled);
-                Observable<ByteBuf> contentObservable = Observable.create(contentSubscriber -> {
-                    contentSubscriber.setProducer(this.producer);
-                    this.producer.subscriptionStart(contentSubscriber);
-                });
-
+                this.contentPublisher = new FlowControllingHttpContentPublisher(ctx, this.flowControlEnabled);
                 HttpRequest request = (HttpRequest) httpObject;
-                LiveHttpRequest styxRequest = toStyxRequest(request, contentObservable);
+                LiveHttpRequest styxRequest = toStyxRequest(request);
                 out.add(styxRequest);
-            } else if (httpObject instanceof HttpContent && this.producer != null) {
-                this.producer.onNext(content(httpObject));
+            } else if (httpObject instanceof HttpContent && this.contentPublisher != null) {
+                this.contentPublisher.onNext(content(httpObject));
 
                 if (httpObject instanceof LastHttpContent) {
-                    this.producer.onCompleted();
+                    this.contentPublisher.onCompleted();
                 }
             }
         } catch (BadRequestException ex) {
@@ -112,8 +102,8 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-        if (this.producer != null) {
-            this.producer.notifySubscriber();
+        if (this.contentPublisher != null) {
+            this.contentPublisher.notifySubscriber();
         }
         super.channelReadComplete(ctx);
     }
@@ -134,16 +124,16 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
     }
 
     private void cleanUp() {
-        if (producer != null) {
-            producer.cleanUp();
+        if (contentPublisher != null) {
+            contentPublisher.cleanUp();
         }
     }
 
-    private LiveHttpRequest toStyxRequest(HttpRequest request, Observable<ByteBuf> contentObservable) {
+    private LiveHttpRequest toStyxRequest(HttpRequest request) {
         validateHostHeader(request);
-        return makeAStyxRequestFrom(request, contentObservable)
-                .removeHeader(EXPECT)
-                .build();
+        return makeAStyxRequestFrom(request)
+            .removeHeader(EXPECT)
+            .build();
     }
 
     private static void validateHostHeader(HttpRequest request) {
@@ -166,19 +156,18 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
         return ((ByteBufHolder) httpObject).content().retain();
     }
 
-
     @VisibleForTesting
-    LiveHttpRequest.Builder makeAStyxRequestFrom(HttpRequest request, Observable<ByteBuf> content) {
+    LiveHttpRequest.Builder makeAStyxRequestFrom(HttpRequest request) {
         Url url = UrlDecoder.decodeUrl(unwiseCharEncoder, request);
         LiveHttpRequest.Builder requestBuilder = new LiveHttpRequest.Builder()
-                .method(toStyxMethod(request.method()))
-                .url(url)
-                .version(toStyxVersion(request.protocolVersion()))
-                .id(uniqueIdSupplier.get())
-                .body(new ByteStream(toPublisher(content.map(Buffers::fromByteBuf))));
+            .method(toStyxMethod(request.method()))
+            .url(url)
+            .version(toStyxVersion(request.protocolVersion()))
+            .id(uniqueIdSupplier.get())
+            .body(new ByteStream(this.contentPublisher));
 
         stream(request.headers().spliterator(), false)
-                .forEach(entry -> requestBuilder.addHeader(entry.getKey(), entry.getValue()));
+            .forEach(entry -> requestBuilder.addHeader(entry.getKey(), entry.getValue()));
 
         return requestBuilder;
     }
@@ -191,54 +180,47 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
         return com.hotels.styx.api.HttpMethod.httpMethod(method.name());
     }
 
-    private static class FlowControllingHttpContentProducer implements Producer {
+    class FlowControllingHttpContentPublisher implements Publisher<Buffer> {
         private final ChannelHandlerContext ctx;
-
         private final Queue<ByteBuf> readQueue = new ArrayDeque<>();
         private boolean completed;
-        private Subscriber<? super ByteBuf> contentSubscriber;
 
-        FlowControllingHttpContentProducer(ChannelHandlerContext ctx, boolean flowControlEnabled) {
+        private Subscriber<? super Buffer> subscriber;
+
+        FlowControllingHttpContentPublisher(ChannelHandlerContext ctx, boolean flowControlEnabled) {
             this.ctx = ctx;
-
             if (flowControlEnabled) {
                 this.ctx.channel().config().setAutoRead(false);
             }
         }
 
         @Override
-        public void request(long n) {
-            this.ctx.channel().read();
-        }
+        public void subscribe(Subscriber<? super Buffer> subscriber) {
+            subscriber.onSubscribe(new Subscription() {
+                @Override
+                public void request(long l) {
+                    ctx.channel().read();
+                }
+                @Override
+                public void cancel() {
+                }
+            });
 
-        void onNext(ByteBuf content) {
-            synchronized (this.readQueue) {
-                this.readQueue.add(content);
-            }
-        }
-
-        void onCompleted() {
-            this.completed = true;
-            this.ctx.channel().config().setAutoRead(true);
+            this.subscriber = subscriber;
         }
 
         void notifySubscriber() {
-            if (this.contentSubscriber != null) {
+            if (this.subscriber != null) {
                 synchronized (this.readQueue) {
                     ByteBuf value;
                     while ((value = this.readQueue.poll()) != null) {
-                        this.contentSubscriber.onNext(value);
+                        this.subscriber.onNext(Buffers.fromByteBuf(value));
                     }
                 }
                 if (this.completed) {
-                    this.contentSubscriber.onCompleted();
+                    this.subscriber.onComplete();
                 }
             }
-        }
-
-        void subscriptionStart(Subscriber<? super ByteBuf> subscriber) {
-            this.contentSubscriber = subscriber;
-            notifySubscriber();
         }
 
         void cleanUp() {
@@ -249,12 +231,21 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
                 }
             }
         }
+
+        public void onNext(ByteBuf content) {
+            synchronized (this.readQueue) {
+                this.readQueue.add(content);
+            }
+        }
+
+        public void onCompleted() {
+            this.completed = true;
+            this.ctx.channel().config().setAutoRead(true);
+        }
     }
 
-    /**
-     * Builder.
-     */
     public static final class Builder {
+
         private boolean flowControlEnabled;
         private UniqueIdSupplier uniqueIdSupplier = UUID_VERSION_ONE_SUPPLIER;
         private UnwiseCharsEncoder unwiseCharEncoder = IGNORE;
