@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2022 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -44,13 +44,14 @@ import io.netty.handler.codec.http.HttpResponse;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import rx.Observable;
-import rx.Subscriber;
-import rx.observers.TestSubscriber;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+import reactor.core.publisher.Flux;
+import reactor.test.subscriber.TestSubscriber;
 
 import java.net.URI;
-import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 import static com.hotels.styx.api.RequestCookie.requestCookie;
@@ -59,11 +60,11 @@ import static com.hotels.styx.server.UniqueIdSuppliers.fixedUniqueIdSupplier;
 import static com.hotels.styx.support.netty.HttpMessageSupport.httpMessageToBytes;
 import static com.hotels.styx.support.netty.HttpMessageSupport.httpRequestAsBuf;
 import static io.netty.buffer.Unpooled.copiedBuffer;
-import static io.netty.handler.codec.http.HttpHeaders.Names.EXPECT;
-import static io.netty.handler.codec.http.HttpHeaders.Names.HOST;
-import static io.netty.handler.codec.http.HttpHeaders.Names.TRANSFER_ENCODING;
-import static io.netty.handler.codec.http.HttpHeaders.Values.CHUNKED;
-import static io.netty.handler.codec.http.HttpHeaders.Values.CONTINUE;
+import static io.netty.handler.codec.http.HttpHeaderNames.EXPECT;
+import static io.netty.handler.codec.http.HttpHeaderNames.HOST;
+import static io.netty.handler.codec.http.HttpHeaderNames.TRANSFER_ENCODING;
+import static io.netty.handler.codec.http.HttpHeaderValues.CHUNKED;
+import static io.netty.handler.codec.http.HttpHeaderValues.CONTINUE;
 import static io.netty.handler.codec.http.HttpMethod.GET;
 import static io.netty.handler.codec.http.HttpMethod.POST;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
@@ -80,13 +81,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static rx.RxReactiveStreams.toObservable;
 
 public class NettyToStyxRequestDecoderTest {
     private final UniqueIdSupplier uniqueIdSupplier = fixedUniqueIdSupplier("1");
     private final DefaultHttpContent contentChunkOne = new DefaultHttpContent(copiedBuffer("content chunk 1 ", UTF_8));
     private final DefaultHttpContent contentChunkTwo = new DefaultHttpContent(copiedBuffer("content chunk 2 ", UTF_8));
-    private final DefaultLastHttpContent contentChunkThree = new DefaultLastHttpContent(copiedBuffer("content chunk 3", UTF_8));
+    private final DefaultLastHttpContent lastContentChunk = new DefaultLastHttpContent(copiedBuffer("content chunk 3", UTF_8));
 
     private EmbeddedChannel channel;
     private DefaultHttpRequest chunkedRequestHeaders;
@@ -140,7 +140,7 @@ public class NettyToStyxRequestDecoderTest {
         LiveHttpRequest styxRequest = decode(originalRequest);
 
         assertThat(styxRequest.id().toString(), is("1"));
-        assertThat(styxRequest.url().encodedUrl(), is(originalRequest.getUri()));
+        assertThat(styxRequest.url().encodedUrl(), is(originalRequest.uri()));
         assertThat(styxRequest.method(), is(HttpMethod.GET));
         assertThatHttpHeadersAreSame(styxRequest.headers(), originalRequestHeaders);
     }
@@ -159,13 +159,13 @@ public class NettyToStyxRequestDecoderTest {
     @Test
     public void streamsIncomingHttpContentToTheContentSubscriber() throws Exception {
         channel.writeInbound(chunkedRequestHeaders);
-        LiveHttpRequest request = (LiveHttpRequest) channel.readInbound();
+        LiveHttpRequest request = channel.readInbound();
 
         StringBuilder content = subscribeToContent(request.body(), bodyCompletedLatch);
 
         channel.writeInbound(contentChunkOne);
         channel.writeInbound(contentChunkTwo);
-        channel.writeInbound(contentChunkThree);
+        channel.writeInbound(lastContentChunk);
 
         bodyCompletedLatch.await();
         assertThat(content.toString(), is("content chunk 1 content chunk 2 content chunk 3"));
@@ -174,26 +174,39 @@ public class NettyToStyxRequestDecoderTest {
     @Test
     public void buffersIncomingDataUntilSubscriberHasSubscribed() throws Exception {
         channel.writeInbound(chunkedRequestHeaders);
-        LiveHttpRequest request = (LiveHttpRequest) channel.readInbound();
+        LiveHttpRequest request = channel.readInbound();
 
         channel.writeInbound(contentChunkOne);
         channel.writeInbound(contentChunkTwo);
-        channel.writeInbound(contentChunkThree);
+        channel.writeInbound(lastContentChunk);
 
         String content = subscribeAndRead(request.body());
         assertThat(content, is("content chunk 1 content chunk 2 content chunk 3"));
     }
 
     @Test
+    public void buffersIncomingDataUntilSubscriberHasSubscribedBeforeLastChunk() throws Exception {
+        channel.writeInbound(chunkedRequestHeaders);
+        LiveHttpRequest request = channel.readInbound();
+
+        channel.writeInbound(contentChunkOne);
+        channel.writeInbound(contentChunkTwo);
+        StringBuilder content = subscribeToContent(request.body(), bodyCompletedLatch);
+        channel.writeInbound(lastContentChunk);
+
+        assertThat(content.toString(), is("content chunk 1 content chunk 2 content chunk 3"));
+    }
+
+    @Test
     public void completesContentObservableWhenLastHttpContentIsSeen() {
         channel.writeInbound(chunkedRequestHeaders);
-        LiveHttpRequest request = (LiveHttpRequest) channel.readInbound();
+        LiveHttpRequest request = channel.readInbound();
 
         TestSubscriber<?> contentSubscriber = subscribeTo(request.body());
-        assertThat(contentSubscriber.getOnCompletedEvents().size(), is(0));
+        assertThat(contentSubscriber.getReceivedOnNext().size(), is(0));
 
         channel.writeInbound(EMPTY_LAST_CONTENT);
-        assertThat(contentSubscriber.getOnCompletedEvents().size(), is(1));
+        assertThat(contentSubscriber.getReceivedOnNext().size(), is(1));
     }
 
     @Test
@@ -267,7 +280,7 @@ public class NettyToStyxRequestDecoderTest {
                 .flowControlEnabled(true)
                 .build();
 
-        LiveHttpRequest styxRequest = decoder.makeAStyxRequestFrom(request, Observable.<ByteBuf>empty())
+        LiveHttpRequest styxRequest = decoder.makeAStyxRequestFrom(request, Flux.empty())
                 .build();
 
         LiveHttpRequest expected = new LiveHttpRequest.Builder(
@@ -292,7 +305,7 @@ public class NettyToStyxRequestDecoderTest {
                 .flowControlEnabled(true)
                 .build();
 
-        LiveHttpRequest styxRequest = decoder.makeAStyxRequestFrom(request, Observable.<ByteBuf>empty())
+        LiveHttpRequest styxRequest = decoder.makeAStyxRequestFrom(request, Flux.empty())
                 .build();
 
         LiveHttpRequest expected = new LiveHttpRequest.Builder(
@@ -333,7 +346,7 @@ public class NettyToStyxRequestDecoderTest {
 
     private FullHttpResponse send(HttpRequest request) {
         channel.writeInbound(httpMessageToBytes(request));
-        return (FullHttpResponse) channel.readOutbound();
+        return channel.readOutbound();
     }
 
     private void assertThatHttpHeadersAreSame(Iterable<HttpHeader> headers, HttpHeaders headers1) {
@@ -356,8 +369,8 @@ public class NettyToStyxRequestDecoderTest {
 
 
     private TestSubscriber<Buffer> subscribeTo(ByteStream contentStream) {
-        TestSubscriber<Buffer> subscriber = new TestSubscriber<>();
-        toObservable(contentStream).subscribe(subscriber);
+        TestSubscriber<Buffer> subscriber = TestSubscriber.create();
+        contentStream.subscribe(subscriber);
         return subscriber;
     }
 
@@ -372,16 +385,21 @@ public class NettyToStyxRequestDecoderTest {
 
     private static StringBuilder subscribeToContent(ByteStream contentStream, CountDownLatch onCompleteLatch) {
         StringBuilder builder = new StringBuilder();
-        toObservable(contentStream).subscribe(new Subscriber<Buffer>() {
+        contentStream.subscribe(new Subscriber<>() {
             @Override
-            public void onCompleted() {
+            public void onComplete() {
                 // no-op
-                onCompleteLatch.countDown();
             }
 
             @Override
             public void onError(Throwable e) {
                 // no-op
+            }
+
+            @Override
+            public void onSubscribe(Subscription s) {
+                s.request(Long.MAX_VALUE);
+                onCompleteLatch.countDown();
             }
 
             @Override
@@ -411,7 +429,7 @@ public class NettyToStyxRequestDecoderTest {
     private LiveHttpRequest decode(HttpRequest request) {
         HttpRequestRecorder requestRecorder = new HttpRequestRecorder();
         HttpMessageFormatter formatter = new SanitisedHttpMessageFormatter(new SanitisedHttpHeaderFormatter(
-                Arrays.asList("secret-header"), Arrays.asList("secret-cookie")
+                List.of("secret-header"), List.of("secret-cookie")
         ));
         EmbeddedChannel channel = new EmbeddedChannel(new NettyToStyxRequestDecoder.Builder()
                 .uniqueIdSupplier(uniqueIdSupplier)
@@ -439,6 +457,6 @@ public class NettyToStyxRequestDecoderTest {
     private HttpResponse handle(HttpRequest request, NettyToStyxRequestDecoder nettyToStyxRequestDecoder) {
         EmbeddedChannel channel = createEmbeddedChannel(nettyToStyxRequestDecoder);
         channel.writeInbound(request);
-        return (HttpResponse) channel.readOutbound();
+        return channel.readOutbound();
     }
 }
