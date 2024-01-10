@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@ package com.hotels.styx.infrastructure.logging;
 
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
-import ch.qos.logback.classic.selector.ContextSelector;
-import ch.qos.logback.classic.util.ContextSelectorStaticBinder;
 import ch.qos.logback.core.Context;
 import ch.qos.logback.core.LogbackException;
 import ch.qos.logback.core.joran.spi.JoranException;
