@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -68,7 +68,8 @@ public final class SslContextFactory {
         }
     }
 
-    private static SslContext createSslContext(TlsSettings tlsSettings, SslContextBuilder sslContextBuilder) throws IOException, NoSuchAlgorithmException, KeyStoreException, CertificateException {
+    private static SslContext createSslContext(TlsSettings tlsSettings, SslContextBuilder sslContextBuilder)
+        throws IOException, NoSuchAlgorithmException, KeyStoreException, CertificateException {
         return sslContextBuilder
                 .sslProvider(SslProvider.valueOf(tlsSettings.sslProvider()))
                 .trustManager(trustManagerFactory(tlsSettings))

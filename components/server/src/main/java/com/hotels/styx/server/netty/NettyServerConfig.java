@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -143,6 +143,7 @@ public class NettyServerConfig {
      * The maximum size of an HTTP chunk in bytes.
      *
      * @return maximum chunk size
+     * @deprecated From Netty 5, maxChunkSize will be removed.
      */
     @Deprecated
     public int maxChunkSize() {
