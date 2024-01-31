@@ -10,7 +10,7 @@
 
   <property name="EXCEPTION_MDC_VALUES_SUB_TEMPLATE" value=''/>
   <property name="LAYOUT_PATTERN_BODY" value="%m%n%styx_exception_data"/>
-  <property name="LAYOUT_PATTERN_PREFIX" value="%-5p %d{yyyy-MM-dd HH:mm:ss,SSSZZ} [%c{5}] [build=${release.label}] [%t]"/>
+  <property name="LAYOUT_PATTERN_PREFIX" value="%-5p %d{yyyy-MM-dd HH:mm:ss.SSSZZ} [%c{5}] [build=${release.label}] [%t]"/>
   <property name="LAYOUT_PATTERN" value="${LAYOUT_PATTERN_PREFIX} - ${LAYOUT_PATTERN_BODY}"/>
 
   <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">

@@ -26,7 +26,9 @@ import org.slf4j.bridge.SLF4JBridgeHandler;
 import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.zone.ZoneRulesException;
 import java.util.logging.Handler;
+import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
@@ -113,7 +115,8 @@ public final class LOGBackConfigurer {
                 SLF4JBridgeHandler.install();
 
             }
-        } catch (JoranException e) {
+        } catch (JoranException | ZoneRulesException e) {
+            Logger.getLogger(LOGBackConfigurer.class.getName()).log(Level.SEVERE, "exception while initializing LOGBack", e);
             throw new IllegalArgumentException("exception while initializing LOGBack", e);
         }
     }
