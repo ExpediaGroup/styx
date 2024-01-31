@@ -100,39 +100,39 @@
     <java.version>11</java.version>
 
     <!-- General Versions -->
-    <guava.version>32.0.0-jre</guava.version>
+    <guava.version>33.0.0-jre</guava.version>
     <jackson.version>2.15.3</jackson.version>
-    <dropwizard.version>4.2.17</dropwizard.version>
-    <micrometer.version>1.10.5</micrometer.version>
-    <antlr.version>4.5.1-1</antlr.version>
-    <netty.version>4.1.100.Final</netty.version>
+    <dropwizard.version>4.2.25</dropwizard.version>
+    <micrometer.version>1.10.13</micrometer.version>
+    <antlr.version>4.5.3</antlr.version>
+    <netty.version>4.1.106.Final</netty.version>
 
     <reactive-streams.version>1.0.4</reactive-streams.version>
-    <reactor.version>2022.0.12</reactor.version>
-    <pcollections.version>3.0.3</pcollections.version>
-    <bytebuddy.version>1.14.7</bytebuddy.version>
+    <reactor.version>2023.0.2</reactor.version>
+    <pcollections.version>3.0.5</pcollections.version>
+    <bytebuddy.version>1.14.11</bytebuddy.version>
 
     <!--Kotlin -->
-    <kotlin.version>1.9.10</kotlin.version>
-    <kotest.version>5.6.2</kotest.version>
+    <kotlin.version>1.9.22</kotlin.version>
+    <kotest.version>5.8.0</kotest.version>
     <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
-    <kotlinx.html.version>0.9.1</kotlinx.html.version>
+    <kotlinx.html.version>0.11.0</kotlinx.html.version>
 
-    <java-uuid-generator.version>4.2.0</java-uuid-generator.version>
+    <java-uuid-generator.version>4.3.0</java-uuid-generator.version>
 
     <!-- Logging Versions -->
-    <logback.version>1.4.12</logback.version>
-    <slf4j.version>2.0.9</slf4j.version>
+    <logback.version>1.4.14</logback.version>
+    <slf4j.version>2.0.11</slf4j.version>
 
     <scala.version>2.12</scala.version>
     <scala-compiler.version>2.12.18</scala-compiler.version>
 
     <!-- Testing Versions -->
     <hamcrest.version>2.2</hamcrest.version>
-    <mockito.version>5.6.0</mockito.version>
-    <mockk.version>1.13.7</mockk.version>
-    <junit.version>5.10.0</junit.version>
-    <scalatest.version>3.0.8</scalatest.version>
+    <mockito.version>5.10.0</mockito.version>
+    <mockk.version>1.13.9</mockk.version>
+    <junit.version>5.10.1</junit.version>
+    <scalatest.version>3.0.9</scalatest.version>
     <scalacheck.version>1.17.0</scalacheck.version>
     <scala.java8.compat.version>1.0.2</scala.java8.compat.version>
 
@@ -384,15 +384,15 @@
 
       <!-- Logging -->
       <dependency>
-        <artifactId>slf4j-api</artifactId>
         <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
         <version>${slf4j.version}</version>
         <scope>compile</scope>
       </dependency>
 
       <dependency>
-        <artifactId>jul-to-slf4j</artifactId>
         <groupId>org.slf4j</groupId>
+        <artifactId>jul-to-slf4j</artifactId>
         <version>${slf4j.version}</version>
         <scope>compile</scope>
       </dependency>
@@ -412,7 +412,7 @@
       <dependency>
         <groupId>org.codehaus.janino</groupId>
         <artifactId>janino</artifactId>
-        <version>3.1.8</version>
+        <version>3.1.11</version>
       </dependency>
 
       <dependency>
@@ -433,7 +433,7 @@
       <dependency>
         <groupId>com.google.code.findbugs</groupId>
         <artifactId>annotations</artifactId>
-        <version>3.0.1u2</version>
+        <version>3.0.1</version>
         <scope>provided</scope>
       </dependency>
 
@@ -496,14 +496,14 @@
       <dependency>
         <groupId>com.typesafe.akka</groupId>
         <artifactId>akka-actor_${scala.version}</artifactId>
-        <version>2.5.17</version>
+        <version>2.5.32</version>
         <scope>test</scope>
       </dependency>
 
       <dependency>
         <groupId>com.typesafe.akka</groupId>
         <artifactId>akka-testkit_${scala.version}</artifactId>
-        <version>2.5.17</version>
+        <version>2.5.32</version>
         <scope>test</scope>
       </dependency>
 
