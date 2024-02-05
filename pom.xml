@@ -108,7 +108,7 @@
     <netty.version>4.1.106.Final</netty.version>
 
     <reactive-streams.version>1.0.4</reactive-streams.version>
-    <reactor.version>2023.0.2</reactor.version>
+    <reactor.version>2020.0.40</reactor.version>
     <pcollections.version>3.0.5</pcollections.version>
     <bytebuddy.version>1.14.11</bytebuddy.version>
 
