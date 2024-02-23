@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ public final class ServiceProvision {
     private static final Logger LOGGER = LoggerFactory.getLogger(ServiceProvision.class);
 
     /**
-     * Create a {@link com.hotels.styx.client.StyxBackendServiceClient} related factory configured with a particular key,
+     * Create a {@link com.hotels.styx.client.ReactorBackendServiceClient} related factory configured with a particular key,
      * then uses the factory's create method to create its product.
      *
      * @param <E>           service type

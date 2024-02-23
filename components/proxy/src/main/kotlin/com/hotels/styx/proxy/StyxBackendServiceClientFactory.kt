@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,55 +17,66 @@ package com.hotels.styx.proxy
 
 import com.hotels.styx.Environment
 import com.hotels.styx.api.configuration.Configuration
-import com.hotels.styx.client.OriginsInventory
-import com.hotels.styx.client.OriginStatsFactory
-import com.hotels.styx.client.BackendServiceClient
-import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy
-import com.hotels.styx.serviceproviders.ServiceProvision
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
+import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy
 import com.hotels.styx.api.extension.service.BackendService
-import com.hotels.styx.client.loadbalancing.strategies.BusyActivitiesStrategy
-import com.hotels.styx.client.StyxBackendServiceClient
-import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
+import com.hotels.styx.client.BackendServiceClient
 import com.hotels.styx.client.OriginRestrictionLoadBalancingStrategy
+import com.hotels.styx.client.OriginStatsFactory
+import com.hotels.styx.client.OriginsInventory
+import com.hotels.styx.client.StyxBackendServiceClient
+import com.hotels.styx.client.loadbalancing.strategies.BusyActivitiesStrategy
 import com.hotels.styx.client.retry.RetryNTimes
+import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
+import com.hotels.styx.serviceproviders.ServiceProvision
 import org.slf4j.LoggerFactory
 
 /**
  * Creates HTTP clients for connecting to backend services.
+ * @deprecated Use {@link ReactorBackendServiceClientFactory} instead.
  */
-class StyxBackendServiceClientFactory(    // Todo: This can be package private if/when backend service router is created in a separate builder in styx.proxy package.
-    private val environment: Environment
+@Deprecated("Use ReactorBackendServiceClientFactory instead", ReplaceWith("ReactorBackendServiceClientFactory"))
+class StyxBackendServiceClientFactory(
+    private val environment: Environment,
 ) : BackendServiceClientFactory {
-
     override fun createClient(
         backendService: BackendService,
         originsInventory: OriginsInventory,
-        originStatsFactory: OriginStatsFactory
+        originStatsFactory: OriginStatsFactory,
     ): BackendServiceClient {
         val styxConfig: Configuration = environment.configuration()
         val originRestrictionCookie = styxConfig["originRestrictionCookie"].orElse(null)
         val stickySessionEnabled = backendService.stickySessionConfig().stickySessionEnabled()
-        val retryPolicy = ServiceProvision.loadRetryPolicy(
-            styxConfig, environment, "retrypolicy.policy.factory", RetryPolicy::class.java
-        ).orElseGet { defaultRetryPolicy() }
-        val configuredLbStrategy = ServiceProvision.loadLoadBalancer(
-            styxConfig, environment, "loadBalancing.strategy.factory", LoadBalancer::class.java, originsInventory
-        ).orElseGet {
-            BusyActivitiesStrategy(
-                originsInventory
-            )
-        }
+        val retryPolicy =
+            ServiceProvision.loadRetryPolicy(
+                styxConfig,
+                environment,
+                "retrypolicy.policy.factory",
+                RetryPolicy::class.java,
+            ).orElseGet { defaultRetryPolicy() }
+        val configuredLbStrategy =
+            ServiceProvision.loadLoadBalancer(
+                styxConfig,
+                environment,
+                "loadBalancing.strategy.factory",
+                LoadBalancer::class.java,
+                originsInventory,
+            ).orElseGet {
+                BusyActivitiesStrategy(
+                    originsInventory,
+                )
+            }
 
         // TODO: Ensure that listeners are also unregistered:
         // We are going to revamp how we handle origins, https://github.com/HotelsDotCom/styx/issues/197
         originsInventory.addOriginsChangeListener(configuredLbStrategy)
-        val loadBalancingStrategy = decorateLoadBalancer(
-            configuredLbStrategy,
-            stickySessionEnabled,
-            originsInventory,
-            originRestrictionCookie
-        )
+        val loadBalancingStrategy =
+            decorateLoadBalancer(
+                configuredLbStrategy,
+                stickySessionEnabled,
+                originsInventory,
+                originRestrictionCookie,
+            )
         return StyxBackendServiceClient(
             id = backendService.id(),
             rewriteRules = backendService.rewrites(),
@@ -76,7 +87,7 @@ class StyxBackendServiceClientFactory(    // Todo: This can be package private i
             loadBalancer = loadBalancingStrategy,
             retryPolicy = retryPolicy,
             metrics = environment.centralisedMetrics(),
-            overrideHostHeader = backendService.isOverrideHostHeader()
+            overrideHostHeader = backendService.isOverrideHostHeader(),
         )
     }
 
@@ -84,7 +95,7 @@ class StyxBackendServiceClientFactory(    // Todo: This can be package private i
         configuredLbStrategy: LoadBalancer,
         stickySessionEnabled: Boolean,
         originsInventory: OriginsInventory,
-        originRestrictionCookie: String?
+        originRestrictionCookie: String?,
     ): LoadBalancer =
         if (stickySessionEnabled) {
             StickySessionLoadBalancingStrategy(originsInventory, configuredLbStrategy)
@@ -94,14 +105,14 @@ class StyxBackendServiceClientFactory(    // Todo: This can be package private i
         } else {
             LOGGER.info(
                 "originRestrictionCookie specified as {} - origin restriction will apply when this cookie is sent",
-                originRestrictionCookie
+                originRestrictionCookie,
             )
             OriginRestrictionLoadBalancingStrategy(originsInventory, configuredLbStrategy)
         }
 
-
     companion object {
         private val LOGGER = LoggerFactory.getLogger(BackendServiceClientFactory::class.java)
+
         private fun defaultRetryPolicy(): RetryPolicy {
             val retryOnce = RetryNTimes(1)
             LOGGER.warn("No configured retry policy found, using {}", retryOnce)

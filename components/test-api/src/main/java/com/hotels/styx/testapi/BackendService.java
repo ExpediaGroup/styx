@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import static java.util.stream.Collectors.toSet;
  */
 public class BackendService {
     private final Set<Origin> origins = new HashSet<>();
-    private int responseTimeoutMillis;
+    private int responseTimeoutMillis = 1_000;
     private boolean ssl;
 
     /**
@@ -45,7 +45,7 @@ public class BackendService {
      * @return this builder
      */
     public BackendService responseTimeout(int responseTimeout, TimeUnit timeUnit) {
-        this.responseTimeoutMillis = (int) timeUnit.toMillis(responseTimeoutMillis);
+        this.responseTimeoutMillis = (int) timeUnit.toMillis(responseTimeout);
         return this;
     }
 

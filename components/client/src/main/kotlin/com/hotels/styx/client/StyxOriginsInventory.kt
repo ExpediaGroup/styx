@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -30,7 +30,9 @@ import javax.annotation.concurrent.ThreadSafe
 
 /**
  * An inventory of the origins configured for a single application.
+ * @deprecated Use {@link ReactorOriginsInventory} instead.
  */
+@Deprecated("Use ReactorOriginsInventory instead", ReplaceWith("ReactorOriginsInventory"))
 @ThreadSafe
 class StyxOriginsInventory(
     eventBus: EventBus,
@@ -97,14 +99,15 @@ class StyxOriginsInventory(
         fun build(): OriginsInventory {
             await(originHealthMonitor.start())
             checkNotNull(metrics) { "metrics is required" }
-            val originsInventory = StyxOriginsInventory(
-                eventBus,
-                appId,
-                originHealthMonitor,
-                connectionPoolFactory,
-                hostClientFactory,
-                metrics!!
-            )
+            val originsInventory =
+                StyxOriginsInventory(
+                    eventBus,
+                    appId,
+                    originHealthMonitor,
+                    connectionPoolFactory,
+                    hostClientFactory,
+                    metrics!!,
+                )
             initialOrigins.takeIf { it.isNotEmpty() }
                 ?.apply { originsInventory.setOrigins(initialOrigins) }
             return originsInventory
@@ -126,7 +129,10 @@ class StyxOriginsInventory(
         fun newOriginsInventoryBuilder(appId: Id): Builder = Builder(appId)
 
         @JvmStatic
-        fun newOriginsInventoryBuilder(metrics: CentralisedMetrics, backendService: BackendService): Builder =
+        fun newOriginsInventoryBuilder(
+            metrics: CentralisedMetrics,
+            backendService: BackendService,
+        ): Builder =
             Builder(backendService.id())
                 .metrics(metrics)
                 .connectionPoolFactory(ConnectionPools.simplePoolFactory(backendService, metrics))

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -28,7 +28,9 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * A Styx HTTP Client for proxying to an individual origin host.
+ * @deprecated Use {@link ReactorHostHttpClient} instead.
  */
+@Deprecated
 public class StyxHostHttpClient implements HostHttpClient {
     public static final String ORIGINID_CONTEXT_KEY = "styx.originid";
 
