@@ -108,7 +108,7 @@
     <netty.version>4.1.106.Final</netty.version>
 
     <reactive-streams.version>1.0.4</reactive-streams.version>
-    <reactor.version>2023.0.2</reactor.version>
+    <reactor.version>2023.0.3</reactor.version>
     <pcollections.version>3.0.5</pcollections.version>
     <bytebuddy.version>1.14.11</bytebuddy.version>
 
@@ -131,6 +131,7 @@
     <hamcrest.version>2.2</hamcrest.version>
     <mockito.version>5.10.0</mockito.version>
     <mockk.version>1.13.9</mockk.version>
+    <okhttp.version>4.12.0</okhttp.version>
     <junit.version>5.10.1</junit.version>
     <scalatest.version>3.0.9</scalatest.version>
     <scalacheck.version>1.17.0</scalacheck.version>
@@ -537,6 +538,20 @@
         <groupId>io.mockk</groupId>
         <artifactId>mockk-jvm</artifactId>
         <version>${mockk.version}</version>
+        <scope>test</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>com.squareup.okhttp3</groupId>
+        <artifactId>mockwebserver</artifactId>
+        <version>${okhttp.version}</version>
+        <scope>test</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>com.squareup.okhttp3</groupId>
+        <artifactId>okhttp-tls</artifactId>
+        <version>${okhttp.version}</version>
         <scope>test</scope>
       </dependency>
 
