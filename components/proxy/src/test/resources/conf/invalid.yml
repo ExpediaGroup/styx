@@ -12,6 +12,7 @@ proxyf:
   workerThreadsCount: 0
   maxInitialLength: 4096
   maxHeaderSize: 8192
+  maxHeaderListSize: 16384
   requestTimeoutMillis: 12000
   keepAliveTimeoutMillis: 12000
   maxConnectionsCount: 4096
@@ -48,4 +49,3 @@ retrypolicy:
 loadBalancing:
   strategy:
     factory: {class: "com.hotels.styx.client.loadbalancing.strategies.BusyActivitiesStrategy$Factory"}
-
