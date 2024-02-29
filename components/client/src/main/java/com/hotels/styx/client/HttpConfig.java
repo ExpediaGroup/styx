@@ -25,9 +25,13 @@ public final class HttpConfig {
     private static final int USE_DEFAULT_MAX_HEADER_SIZE = 0;
     private static final int DEFAULT_MAX_HEADER_SIZE = 32678;
 
+    private static final int USE_DEFAULT_MAX_HEADER_LIST_SIZE = 0;
+    private static final long DEFAULT_MAX_HEADER_LIST_SIZE = 16384;
+
     private final boolean compress;
     private final int maxInitialLength;
     private final int maxHeadersSize;
+    private final long maxHeaderListSize;
     @Deprecated
     private final int maxChunkSize;
     private final int maxContentLength;
@@ -41,6 +45,9 @@ public final class HttpConfig {
                 ? DEFAULT_MAX_HEADER_SIZE
                 : builder.maxHeadersSize;
         this.maxChunkSize = builder.maxChunkSize;
+        this.maxHeaderListSize = builder.maxHeaderListSize == USE_DEFAULT_MAX_HEADER_LIST_SIZE
+                ? DEFAULT_MAX_HEADER_LIST_SIZE
+                : builder.maxHeaderListSize;
         this.maxContentLength = builder.maxContentLength;
         this.settings = builder.settings;
     }
@@ -70,6 +77,15 @@ public final class HttpConfig {
      */
     public int maxHeadersSize() {
         return maxHeadersSize;
+    }
+
+    /**
+     * The maximum header list size of HTTP headers.
+     *
+     * @return maximum header list size
+     */
+    public long maxHeaderListSize() {
+        return maxHeaderListSize;
     }
 
     /**
@@ -127,6 +143,7 @@ public final class HttpConfig {
         private int maxInitialLength = 16384;
         private int maxHeadersSize = DEFAULT_MAX_HEADER_SIZE;
         private int maxChunkSize = Integer.MAX_VALUE;
+        private long maxHeaderListSize = DEFAULT_MAX_HEADER_LIST_SIZE;
         private int maxContentLength = 65536;
         private Iterable<ChannelOptionSetting<?>> settings = emptyList();
 
@@ -176,6 +193,16 @@ public final class HttpConfig {
          */
         public Builder setMaxHeadersSize(int maxHeaderSize) {
             this.maxHeadersSize = maxHeaderSize;
+            return this;
+        }
+
+        /**
+         * Set the maximum list size for HTTP headers. 0 means use the default value.
+         * @param maxHeaderListSize maximum header list size
+         * @return this builder
+         */
+        public Builder setMaxHeaderListSize(long maxHeaderListSize) {
+            this.maxHeaderListSize = maxHeaderListSize;
             return this;
         }
 
