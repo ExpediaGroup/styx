@@ -1,4 +1,4 @@
-ARG TAG=11-jdk
+ARG TAG=21-jdk
 FROM openjdk:${TAG}
 
 ARG STYX_VERSION=""

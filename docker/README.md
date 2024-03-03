@@ -1,28 +1,28 @@
 
 ### styx-build
 
-This directory contains a centos:7 based Styx build environment. It
+This directory contains a maven:3.9.6-eclipse-temurin-21 based Styx build environment. It
 has all necessary build tools (git, maven, make, docker) for building
-images and running tests in a Linux environment. 
+images and running tests in a Linux environment.
 
 To build the docker image:
 
     docker build -t styxbuild:latest docker/styx-build/.
- 
+
 To run the image:
 
     docker run -it -v /var/run/docker.sock:/var/run/docker.sock styxbuild
     docker run -it -v /var/run/docker.sock:/var/run/docker.sock  -v /Users/$USER/.m2:/root/.m2 -v `pwd`:/build styxbuild:latest
-    
+
 Note, mounting a `docker.sock` is only necessary for building a Styx Docker
 image inside the build container.
 
 
 This image is handy for:
- 
+
  * Confirming the build system works equally in Linux as well as in Mac OSX.
  * Hardening the system tests. Some intermittent errors only tend to occur in
-   build containers.   
+   build containers.
 
 ### styx-image
 
