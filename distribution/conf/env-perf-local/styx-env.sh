@@ -26,7 +26,7 @@ JVM_DIRECT_MEMORY="${JVM_DIRECT_MEMORY:=-XX:MaxDirectMemorySize=512m}"
 JVM_OTHER_MEM="${JVM_OTHER_MEM:=-XX:CompressedClassSpaceSize=20m -XX:InitialCodeCacheSize=50m -XX:ReservedCodeCacheSize=50m}"
 
 # Other options
-JVM_GC_LOG="${JVM_GC_LOG:=-XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Xloggc:${APP_HOME}/logs/gc.log.$(/bin/date +%Y-%m-%d-%H%M%S)}"
+JVM_GC_LOG="${JVM_GC_LOG:=-Xlog:gc* -XX:+PrintGCTimeStamps -Xlog:gc:${APP_HOME}/logs/gc.log.$(/bin/date +%Y-%m-%d-%H%M%S)}"
 JVM_HEAP_DUMP="${JVM_HEAP_DUMP:=-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/tmp}"
 
 # Set java flight recorder - Oracle JDK feature
@@ -35,7 +35,7 @@ JVM_FLIGHT_RECORDER="${JVM_FLIGHT_RECORDER:=-XX:+UnlockCommercialFeatures -XX:+F
 # Set java VM type
 JVM_FLAVOUR="-server"
 
-JVM_OTHER_OPTS="${JVM_OTHER_OPTS:=-XX:+DisableExplicitGC -Djava.awt.headless=true -XX:+OptimizeStringConcat -XX:+UseBiasedLocking}"
+JVM_OTHER_OPTS="${JVM_OTHER_OPTS:=-XX:+DisableExplicitGC -Djava.awt.headless=true -XX:+OptimizeStringConcat}"
 
 # Increase Netty String builder maximum size to 70KB.
 # See: https://github.com/netty/netty/issues/7092

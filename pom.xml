@@ -97,7 +97,7 @@
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <java.version>11</java.version>
+    <java.version>21</java.version>
 
     <!-- General Versions -->
     <guava.version>33.0.0-jre</guava.version>
@@ -551,7 +551,7 @@
           <artifactId>kotlin-maven-plugin</artifactId>
           <version>${kotlin.version}</version>
           <configuration>
-            <jvmTarget>11</jvmTarget>
+            <jvmTarget>21</jvmTarget>
           </configuration>
           <executions>
             <execution>
@@ -872,8 +872,8 @@
                   <version>[3.2.1,)</version>
                 </requireMavenVersion>
                 <requireJavaVersion>
-                  <version>[1.8,)</version>
-                  <message>java 1.8 needed</message>
+                  <version>[21,)</version>
+                  <message>java 21 needed</message>
                 </requireJavaVersion>
               </rules>
             </configuration>
