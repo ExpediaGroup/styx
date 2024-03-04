@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -185,6 +185,7 @@ public final class StyxHttpClient implements HttpClient {
         private int maxResponseSize = 1024 * 100;
         private int responseTimeout = 60000;
         private int maxHeaderSize = 8192;
+        private long maxHeaderListSize = 8192;
         private TlsSettings tlsSettings;
         private boolean isHttps;
         private String userAgent;
@@ -202,6 +203,7 @@ public final class StyxHttpClient implements HttpClient {
             this.tlsSettings = another.tlsSettings;
             this.isHttps = another.isHttps;
             this.userAgent = another.userAgent;
+            this.maxHeaderListSize = another.maxHeaderListSize;
         }
 
         /**
@@ -265,6 +267,17 @@ public final class StyxHttpClient implements HttpClient {
          */
         public Builder maxHeaderSize(int maxHeaderSize) {
             this.maxHeaderSize = maxHeaderSize;
+            return this;
+        }
+
+        /**
+         * Maximum HTTP header list size
+         * @param maxHeaderListSize maximum header list size. 0 means use the default value.
+         *
+         * @return this {@link Builder}
+         */
+        public Builder maxHeaderListSize(long maxHeaderListSize) {
+            this.maxHeaderListSize = maxHeaderListSize;
             return this;
         }
 
@@ -336,7 +349,10 @@ public final class StyxHttpClient implements HttpClient {
          */
         public StyxHttpClient build() {
             NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder()
-                    .httpConfig(newHttpConfigBuilder().setMaxHeadersSize(maxHeaderSize).build())
+                    .httpConfig(newHttpConfigBuilder()
+                        .setMaxHeadersSize(maxHeaderSize)
+                        .setMaxHeaderListSize(maxHeaderListSize)
+                        .build())
                     .tlsSettings(tlsSettings)
                     .httpRequestOperationFactory(httpRequestOperationFactoryBuilder()
                             .responseTimeoutMillis(responseTimeout)

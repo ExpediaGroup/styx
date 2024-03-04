@@ -40,6 +40,7 @@ public class StyxConfigTest {
             "    http:\n" +
             "      port: 80\n" +
             "  maxHeaderSize: 8193\n" +
+            "  maxHeaderListSize: 8193\n" +
             "metrics:\n" +
             "  reporting:\n" +
             "   prefix: \"STYXHPT\"\n";

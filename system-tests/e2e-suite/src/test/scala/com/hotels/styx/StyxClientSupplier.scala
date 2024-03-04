@@ -38,6 +38,7 @@ trait StyxClientSupplier extends BeforeAndAfterAll {
   val client: StyxHttpClient = new StyxHttpClient.Builder()
     .connectTimeout(1000, MILLISECONDS)
     .maxHeaderSize(2 * 8192)
+    .maxHeaderListSize(2 * 8192)
     .build()
 
   override protected def afterAll() = {

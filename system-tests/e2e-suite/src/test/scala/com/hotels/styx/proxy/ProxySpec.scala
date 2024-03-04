@@ -129,6 +129,7 @@ class ProxySpec extends FunSpec
       val client: HttpClient = new StyxHttpClient.Builder()
         .connectTimeout(1000, MILLISECONDS)
         .maxHeaderSize(2 * 8192)
+        .maxHeaderListSize(2 * 8192)
         .build()
 
       val req = head("/bodiless")

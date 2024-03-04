@@ -53,6 +53,8 @@ proxy:
   maxInitialLength: 4096
   # The maximum combined size of the HTTP headers in bytes.
   maxHeaderSize: 65536
+  # The maximum HTTP header list size
+  maxHeaderListSize: 16384
   # Time in milliseconds Styx Proxy Service waits for an incoming request from client
   # before replying with 408 Request Timeout.
   requestTimeoutMillis: 12000
