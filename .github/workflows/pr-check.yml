@@ -24,4 +24,4 @@ jobs:
           java-version: 21
           settings-path: ${{ github.workspace }}
       - name: Build Project
-        run: ./mvnw -B --no-transfer-progress package -Dlicense.skip=true
+        run: ./mvnw -B --no-transfer-progress install -Prelease -Dlicense.skip=true

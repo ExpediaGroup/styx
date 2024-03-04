@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -64,7 +64,7 @@ class AsyncRequestSpec extends FunSpec
         .addHeader("Content-Length", "0")
         .build()
 
-      val response = Await.result(client.sendRequest(request).toScala, 5.seconds)
+      val response = Await.result(client.send(request).toScala, 5.seconds)
 
       mockServer.verify(1, getRequestedFor(urlStartingWith("/foobar")))
       response.bodyAs(UTF_8) should be("I should be here!")

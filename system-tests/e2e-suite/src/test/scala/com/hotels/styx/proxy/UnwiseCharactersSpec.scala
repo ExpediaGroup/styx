@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 package com.hotels.styx.proxy
 
 import ch.qos.logback.classic.Level._
-import com.github.tomakehurst.wiremock.client.RequestPatternBuilder
 import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
 import com.hotels.styx._
-import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpHeaderNames.HOST
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
@@ -31,6 +31,7 @@ import org.hamcrest.MatcherAssert._
 import org.hamcrest.Matchers.hasItem
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
+
 import scala.concurrent.duration._
 
 class UnwiseCharactersSpec extends FunSpec with StyxProxySpec with Eventually {

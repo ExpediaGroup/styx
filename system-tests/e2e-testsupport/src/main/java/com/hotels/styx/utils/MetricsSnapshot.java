@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2022 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ public class MetricsSnapshot {
 
     public static MetricsSnapshot downloadFrom(String host, int port) throws IOException {
         HttpClient client = new StyxHttpClient.Builder().build();
-        HttpResponse response = await(client.sendRequest(get(format("http://%s:%d/admin/metrics", host, port)).build()));
+        HttpResponse response = await(client.send(get(format("http://%s:%d/admin/metrics", host, port)).build()));
         return new MetricsSnapshot(decodeToMap(response.bodyAs(UTF_8)));
     }
 

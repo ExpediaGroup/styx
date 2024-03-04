@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,10 +15,8 @@
  */
 package com.hotels.styx.servers;
 
-import com.github.tomakehurst.wiremock.http.BasicResponseRenderer;
 import com.github.tomakehurst.wiremock.http.HttpHeaders;
 import com.github.tomakehurst.wiremock.http.Response;
-import com.github.tomakehurst.wiremock.http.ResponseDefinition;
 import com.hotels.styx.api.HttpHeader;
 import com.hotels.styx.api.HttpResponse;
 import org.junit.jupiter.api.Test;
@@ -42,10 +40,9 @@ public class WiremockResponseConverterTest {
 
     @Test
     public void convertsCreatedResponse() {
-        ResponseDefinition created = ResponseDefinition.created();
-        Response render = new BasicResponseRenderer().render(created);
+        Response response = Response.response().status(CREATED.code()).build();
 
-        HttpResponse styxResponse = toStyxResponse(render);
+        HttpResponse styxResponse = toStyxResponse(response);
 
         assertThat(styxResponse.status(), is(CREATED));
         assertThat(styxResponse.bodyAs(UTF_8), is(""));
@@ -54,12 +51,17 @@ public class WiremockResponseConverterTest {
 
     @Test
     public void convertsResponseWithBody() {
-        ResponseDefinition response = new ResponseDefinition(HTTP_OK, "{ \"count\" : 0, \"requestJournalDisabled\" : false}");
-        response.setHeaders(new HttpHeaders(
-                httpHeader("Transfer-Encoding", "chunked"),
-                httpHeader("Content-Type", "application/json")));
+        Response response = Response.response()
+            .headers(
+                new HttpHeaders(
+                    httpHeader("Transfer-Encoding", "chunked"),
+                    httpHeader("Content-Type", "application/json"))
+            )
+            .status(HTTP_OK)
+            .body("{ \"count\" : 0, \"requestJournalDisabled\" : false}")
+            .build();
 
-        HttpResponse styxResponse = toStyxResponse(new BasicResponseRenderer().render(response));
+        HttpResponse styxResponse = toStyxResponse(response);
 
         assertThat(styxResponse.status(), is(OK));
         Map<String, String> actual = headersAsMap(styxResponse);

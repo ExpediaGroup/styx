@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@ package com.hotels.styx.support.api;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
-import com.github.tomakehurst.wiremock.client.RequestPatternBuilder;
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
-import com.github.tomakehurst.wiremock.client.UrlMatchingStrategy;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.common.HttpsSettings;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
+import com.github.tomakehurst.wiremock.matching.UrlPattern;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
@@ -89,9 +89,9 @@ public final class FakeHttpServer {
         return this;
     }
 
-    public FakeHttpServer stub(UrlMatchingStrategy urlMatchingStrategy, ResponseDefinitionBuilder response) {
+    public FakeHttpServer stub(UrlPattern urlPattern, ResponseDefinitionBuilder response) {
         configureFor("localhost", adminPort());
-        stubFor(WireMock.get(urlMatchingStrategy).willReturn(response));
+        stubFor(WireMock.get(urlPattern).willReturn(response));
         return this;
     }
 

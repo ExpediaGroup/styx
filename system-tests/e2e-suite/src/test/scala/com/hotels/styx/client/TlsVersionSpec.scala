@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.client
 
+import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.github.tomakehurst.wiremock.client.{ValueMatchingStrategy, WireMock}
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus._
 import com.hotels.styx.support.ResourcePaths.fixturesHome
@@ -25,6 +25,7 @@ import com.hotels.styx.support.configuration._
 import com.hotels.styx.utils.StubOriginHeader.STUB_ORIGIN_INFO
 import com.hotels.styx.{StyxClientSupplier, StyxProxySpec}
 import org.scalatest.{FunSpec, SequentialNestedSuiteExecution}
+
 import java.nio.charset.StandardCharsets.UTF_8
 
 class TlsVersionSpec extends FunSpec
@@ -115,12 +116,6 @@ class TlsVersionSpec extends FunSpec
 
   def httpRequest(path: String) = get(styxServer.routerURL(path)).build()
 
-  def valueMatchingStrategy(matches: String) = {
-    val matchingStrategy = new ValueMatchingStrategy()
-    matchingStrategy.setMatches(matches)
-    matchingStrategy
-  }
-
   describe("Backend Service TLS Protocol Setting") {
 
     it("Proxies to TLSv1.3 origin when TLSv1.3 support enabled.") {
@@ -131,7 +126,7 @@ class TlsVersionSpec extends FunSpec
       appOriginTlsv13.verify(
         getRequestedFor(
           urlEqualTo("/tls13/a"))
-          .withHeader("X-Forwarded-Proto", valueMatchingStrategy("http")))
+          .withHeader("X-Forwarded-Proto", matching("http")))
 
       val response2 = decodedRequest(httpRequest("/tlsDefault/a2"))
       assert(response2.status() == OK)
@@ -140,7 +135,7 @@ class TlsVersionSpec extends FunSpec
       appOriginTlsDefault.verify(
         getRequestedFor(
           urlEqualTo("/tlsDefault/a2"))
-          .withHeader("X-Forwarded-Proto", valueMatchingStrategy("http")))
+          .withHeader("X-Forwarded-Proto", matching("http")))
     }
 
     it("Proxies to TLSv1.2 origin when TLSv1.2 support is enabled.") {
@@ -150,7 +145,7 @@ class TlsVersionSpec extends FunSpec
 
       appOriginTlsDefault.verify(
         getRequestedFor(urlEqualTo("/tlsDefault/b1"))
-          .withHeader("X-Forwarded-Proto", valueMatchingStrategy("http")))
+          .withHeader("X-Forwarded-Proto", matching("http")))
 
       val response2 = decodedRequest(httpRequest("/tls12/b2"))
       assert(response2.status() == OK)
@@ -158,7 +153,7 @@ class TlsVersionSpec extends FunSpec
 
       appOriginTlsv12.verify(
         getRequestedFor(urlEqualTo("/tls12/b2"))
-          .withHeader("X-Forwarded-Proto", valueMatchingStrategy("http")))
+          .withHeader("X-Forwarded-Proto", matching("http")))
     }
 
     it("Refuses to connect to TLSv1.3 origin when TLSv1.3 is disabled") {

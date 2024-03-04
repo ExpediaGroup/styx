@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,20 +16,13 @@
 package com.hotels.styx.servers;
 
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
-import com.github.tomakehurst.wiremock.client.RequestPatternBuilder;
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
-import com.github.tomakehurst.wiremock.client.UrlMatchingStrategy;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockApp;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.global.NotImplementedRequestDelayControl;
-import com.github.tomakehurst.wiremock.http.AdminRequestHandler;
-import com.github.tomakehurst.wiremock.http.BasicResponseRenderer;
-import com.github.tomakehurst.wiremock.http.ProxyResponseRenderer;
 import com.github.tomakehurst.wiremock.http.Request;
 import com.github.tomakehurst.wiremock.http.RequestHandler;
-import com.github.tomakehurst.wiremock.http.StubRequestHandler;
-import com.github.tomakehurst.wiremock.http.StubResponseRenderer;
+import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
+import com.github.tomakehurst.wiremock.matching.UrlPattern;
 import com.google.common.util.concurrent.ServiceManager;
 import com.hotels.styx.InetServer;
 import com.hotels.styx.StyxServers;
@@ -43,15 +36,15 @@ import io.netty.buffer.Unpooled;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetSocketAddress;
 import java.util.List;
 
-import static com.github.tomakehurst.wiremock.WireMockServer.FILES_ROOT;
 import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
-import static com.google.common.base.Optional.absent;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static com.hotels.styx.servers.WiremockResponseConverter.toStyxResponse;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Collections.emptyMap;
+import static java.util.Optional.ofNullable;
 
 public final class MockOriginServer {
     private static final Logger LOGGER = LoggerFactory.getLogger(MockOriginServer.class);
@@ -60,10 +53,10 @@ public final class MockOriginServer {
     private final String appId;
     private final String originId;
     private final int adminPort;
-
-    private int serverPort;
+    private final int serverPort;
     private final InetServer adminServer;
     private final InetServer mockServer;
+    private static WireMockApp wireMockApp;
 
     static {
         System.setProperty("org.mortbay.log.class", "com.github.tomakehurst.wiremock.jetty.LoggerAdapter");
@@ -81,57 +74,47 @@ public final class MockOriginServer {
     }
 
     public static MockOriginServer create(String appId, String originId, int adminPort, HttpConnectorConfig httpConfig) {
-        WireMockApp wireMockApp = wireMockApp();
+        wireMockApp = wireMockApp();
         InetServer adminServer = createAdminServer(originId, adminPort, wireMockApp);
         InetServer mockServer = HttpServers.createHttpServer(
-                "mock-stub-" + originId,
-                httpConfig,
-                mockHandler(originId, wireMockApp, new WireMockConfiguration()));
+            "mock-stub-" + originId,
+            httpConfig,
+            mockHandler(originId, wireMockApp)
+        );
         int serverPort = httpConfig.port();
 
         return new MockOriginServer(appId, originId, adminPort, serverPort, adminServer, mockServer);
     }
 
     public static MockOriginServer create(String appId, String originId, int adminPort, HttpsConnectorConfig httpsConfig) {
-        WireMockApp wireMockApp = wireMockApp();
+        wireMockApp = wireMockApp();
         InetServer adminServer = createAdminServer(originId, adminPort, wireMockApp);
         InetServer mockServer = HttpServers.createHttpsServer(
-                "mock-stub-" + originId,
-                httpsConfig,
-                mockHandler(originId, wireMockApp, new WireMockConfiguration()));
+            "mock-stub-" + originId,
+            httpsConfig,
+            mockHandler(originId, wireMockApp));
         int serverPort = httpsConfig.port();
 
         return new MockOriginServer(appId, originId, adminPort, serverPort, adminServer, mockServer);
     }
 
 
-    private static HttpHandler mockHandler(String originId, WireMockApp wireMockApp, WireMockConfiguration defaultConfig) {
-        return newHandler(originId, new StubRequestHandler(
-                wireMockApp,
-                new StubResponseRenderer(
-                        defaultConfig.filesRoot().child(FILES_ROOT),
-                        wireMockApp.getGlobalSettingsHolder(),
-                        new ProxyResponseRenderer(
-                                defaultConfig.proxyVia(),
-                                defaultConfig.httpsSettings().trustStore(),
-                                defaultConfig.shouldPreserveHostHeader(),
-                                defaultConfig.proxyHostHeader()
-                        )
-                )
-        ));
+    private static HttpHandler mockHandler(String originId, WireMockApp wireMockApp) {
+        return newHandler(originId, wireMockApp.buildStubRequestHandler());
     }
 
-    private static HttpHandler newHandler(String originId, RequestHandler wireMockHandler) {
+    private static HttpHandler newHandler(String originId, RequestHandler requestHandler) {
         return (httpRequest, ctx) ->
                 httpRequest.aggregate(MAX_CONTENT_LENGTH)
                         .map(fullRequest -> {
-                            LOGGER.info("{} received: {}\n{}", new Object[]{originId, fullRequest.url(), fullRequest.body()});
+                            LOGGER.info("{} received: {}\n{}", originId, fullRequest.url(), fullRequest.body());
                             return fullRequest;
                         })
                         .flatMap(fullRequest -> {
                             Request wmRequest = new WiremockStyxRequestAdapter(fullRequest);
-                            com.github.tomakehurst.wiremock.http.Response wmResponse = wireMockHandler.handle(wmRequest);
-                            return Eventual.of(toStyxResponse(wmResponse).stream());
+                            WiremockHttpResponder responder = new WiremockHttpResponder();
+                            requestHandler.handle(wmRequest, responder, null);
+                            return Eventual.of(toStyxResponse(responder.getResponse()).stream());
                         });
     }
 
@@ -150,9 +133,9 @@ public final class MockOriginServer {
         return this;
     }
 
-    public MockOriginServer stub(UrlMatchingStrategy urlMatchingStrategy, ResponseDefinitionBuilder response) {
-        WireMock wm = new WireMock("localhost", adminPort());
-        wm.register(WireMock.get(urlMatchingStrategy).willReturn(response));
+    public MockOriginServer stub(UrlPattern urlPattern, ResponseDefinitionBuilder response) {
+        configureFor("localhost", adminPort());
+        stubFor(WireMock.get(urlPattern).willReturn(response));
         return this;
     }
 
@@ -163,18 +146,18 @@ public final class MockOriginServer {
     }
 
     public void verify(int count, RequestPatternBuilder builder) {
-        WireMock wm = new WireMock("localhost", adminPort());
-        wm.verifyThat(count, builder);
+        configureFor("localhost", adminPort());
+        WireMock.verify(count, builder);
     }
 
     public void verify(RequestPatternBuilder builder) {
-        WireMock wm = new WireMock("localhost", adminPort());
-        wm.verifyThat(builder);
+        configureFor("localhost", adminPort());
+        WireMock.verify(builder);
     }
 
     public MockOriginServer reset() {
-        WireMock wm = new WireMock("localhost", adminPort());
-        wm.resetMappings();
+        configureFor("localhost", adminPort());
+        WireMock.reset();
         return this;
     }
 
@@ -187,11 +170,11 @@ public final class MockOriginServer {
     }
 
     public int port() {
-        return mockServer.inetAddress().getPort();
+        return serverPort == 0 ? ofNullable(mockServer.inetAddress()).map(InetSocketAddress::getPort).orElse(-1) : serverPort;
     }
 
     public int adminPort() {
-        return adminServer.inetAddress().getPort();
+        return adminPort == 0 ? ofNullable(adminServer.inetAddress()).map(InetSocketAddress::getPort).orElse(-1) : adminPort;
     }
 
     public boolean isRunning() {
@@ -199,21 +182,7 @@ public final class MockOriginServer {
     }
 
     private static WireMockApp wireMockApp() {
-        return new WireMockApp(
-                new NotImplementedRequestDelayControl(),
-                false,
-                stubMappings -> {
-
-                },
-                mappings -> {
-
-                },
-                false,
-                absent(),
-                emptyMap(),
-                null,
-                null
-        );
+        return new WireMockApp(wireMockConfig(), null);
     }
 
     private static InetServer createAdminServer(String originId, int adminPort, WireMockApp wireMockApp) {
@@ -224,20 +193,21 @@ public final class MockOriginServer {
     }
 
     private static HttpHandler adminHandler(WireMockApp wireMockApp) {
-        return newHandler(new AdminRequestHandler(wireMockApp, new BasicResponseRenderer()));
+        return newHandler(wireMockApp.buildAdminRequestHandler());
     }
 
-    private static HttpHandler newHandler(RequestHandler wireMockHandler) {
+    private static HttpHandler newHandler(RequestHandler requestHandler) {
         return (httpRequest, ctx) ->
                 httpRequest.aggregate(MAX_CONTENT_LENGTH)
                         .map(fullRequest -> {
-                            LOGGER.info("Received: {}\n{}", new Object[]{fullRequest.url(), fullRequest.body()});
+                            LOGGER.info("Received: {}\n{}", fullRequest.url(), fullRequest.body());
                             return fullRequest;
                         })
                         .flatMap(fullRequest -> {
                             Request wmRequest = new WiremockStyxRequestAdapter(fullRequest);
-                            com.github.tomakehurst.wiremock.http.Response wmResponse = wireMockHandler.handle(wmRequest);
-                            return Eventual.of(toStyxResponse(wmResponse).stream());
+                            WiremockHttpResponder responder = new WiremockHttpResponder();
+                            requestHandler.handle(wmRequest, responder, null);
+                            return Eventual.of(toStyxResponse(responder.getResponse()).stream());
                         });
     }
 }

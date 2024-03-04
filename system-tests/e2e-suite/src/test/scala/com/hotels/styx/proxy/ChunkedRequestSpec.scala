@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,8 +15,9 @@
  */
 package com.hotels.styx.proxy
 
-import com.github.tomakehurst.wiremock.client.{RequestPatternBuilder, UrlMatchingStrategy, ValueMatchingStrategy}
+import com.github.tomakehurst.wiremock.client.WireMock.{matching, urlMatching}
 import com.github.tomakehurst.wiremock.http.RequestMethod
+import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
 import com.hotels.styx.api.{HttpResponse, HttpResponseStatus, LiveHttpResponse}
 import com.hotels.styx.javaconvenience.UtilKt
 import com.hotels.styx.support.TestClientSupport
@@ -64,24 +65,12 @@ class ChunkedRequestSpec extends FunSpec
       UtilKt.copy(new ByteArrayInputStream(chunks), connection.getOutputStream)
       readResponse(connection)
 
-      normalBackend.verify(new RequestPatternBuilder(RequestMethod.POST, urlMatchingStrategy("/chunked/1"))
-        .withRequestBody(valueMatchingStrategy("abc"))
+      normalBackend.verify(new RequestPatternBuilder(RequestMethod.POST, urlMatching("/chunked/1"))
+        .withRequestBody(matching("abc"))
       )
 
       connection.disconnect()
     }
-  }
-
-  def urlMatchingStrategy(path: String) = {
-    val pathMatch = new UrlMatchingStrategy()
-    pathMatch.setUrlPath("/chunked/1")
-    pathMatch
-  }
-
-  def valueMatchingStrategy(matches: String) = {
-    val matchingStrategy = new ValueMatchingStrategy()
-    matchingStrategy.setMatches("abc")
-    matchingStrategy
   }
 
   @throws(classOf[IOException])
