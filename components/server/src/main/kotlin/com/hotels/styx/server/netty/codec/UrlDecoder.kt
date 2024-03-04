@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,16 +24,20 @@ import java.net.URI
 
 object UrlDecoder {
     @JvmStatic
-    fun decodeUrl(unwiseCharEncoder: UnwiseCharsEncoder, request: HttpRequest): Url {
+    fun decodeUrl(
+        unwiseCharEncoder: UnwiseCharsEncoder,
+        request: HttpRequest,
+    ): Url {
         val host = request.headers()[HOST]
 
         return if (request.uri().startsWith("/") && host != null) {
             val encodedUrl = "http://$host${unwiseCharEncoder.encode(request.uri())}"
-            val uri = try {
-                URI.create(encodedUrl)
-            } catch (e: IllegalArgumentException) {
-                encodedUrl.toHttpUrlOrNull()!!.toUri()
-            }
+            val uri =
+                try {
+                    URI.create(encodedUrl)
+                } catch (e: IllegalArgumentException) {
+                    encodedUrl.toHttpUrlOrNull()!!.toUri()
+                }
             Url.Builder()
                 .path(uri.rawPath)
                 .rawQuery(uri.rawQuery)
@@ -44,4 +48,3 @@ object UrlDecoder {
         }
     }
 }
-

@@ -97,69 +97,75 @@
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <java.version>11</java.version>
+    <java.version>21</java.version>
 
     <!-- General Versions -->
-    <guava.version>33.0.0-jre</guava.version>
-    <jackson.version>2.15.3</jackson.version>
+    <antlr.version>4.13.1</antlr.version>
+    <bcpkix-jdk18on.version>1.77</bcpkix-jdk18on.version>
+    <bytebuddy.version>1.14.12</bytebuddy.version>
     <dropwizard.version>4.2.25</dropwizard.version>
-    <micrometer.version>1.10.13</micrometer.version>
-    <antlr.version>4.5.3</antlr.version>
-    <netty.version>4.1.106.Final</netty.version>
-
-    <reactive-streams.version>1.0.4</reactive-streams.version>
-    <reactor.version>2023.0.2</reactor.version>
+    <guava.version>33.0.0-jre</guava.version>
+    <hdrhistogram.version>2.1.12</hdrhistogram.version>
+    <jackson.version>2.15.4</jackson.version>
+    <janino.version>3.1.12</janino.version>
+    <micrometer.version>1.12.3</micrometer.version>
+    <netty.version>4.1.107.Final</netty.version>
+    <okhttp.version>4.12.0</okhttp.version>
     <pcollections.version>3.0.5</pcollections.version>
-    <bytebuddy.version>1.14.11</bytebuddy.version>
+    <reactive-streams.version>1.0.4</reactive-streams.version>
+    <reactor.version>2023.0.3</reactor.version>
 
     <!--Kotlin -->
     <kotlin.version>1.9.22</kotlin.version>
     <kotest.version>5.8.0</kotest.version>
     <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
-    <kotlinx.html.version>0.11.0</kotlinx.html.version>
+    <kotlinx-html.version>0.11.0</kotlinx-html.version>
 
-    <java-uuid-generator.version>4.3.0</java-uuid-generator.version>
+    <java-uuid-generator.version>5.0.0</java-uuid-generator.version>
 
     <!-- Logging Versions -->
-    <logback.version>1.4.14</logback.version>
-    <slf4j.version>2.0.11</slf4j.version>
+    <logback.version>1.5.1</logback.version>
+    <slf4j.version>2.0.12</slf4j.version>
 
     <scala.version>2.12</scala.version>
     <scala-compiler.version>2.12.18</scala-compiler.version>
 
     <!-- Testing Versions -->
+    <akka.version>2.8.5</akka.version>
     <hamcrest.version>2.2</hamcrest.version>
+    <junit.version>5.10.2</junit.version>
     <mockito.version>5.10.0</mockito.version>
-    <mockk.version>1.13.9</mockk.version>
-    <junit.version>5.10.1</junit.version>
+    <mockk.version>1.13.10</mockk.version>
     <scalatest.version>3.0.9</scalatest.version>
     <scalacheck.version>1.17.0</scalacheck.version>
     <scala.java8.compat.version>1.0.2</scala.java8.compat.version>
+    <wiremock.version>3.4.2</wiremock.version>
 
     <!-- apache plugin versions and configurations, please sort alphabetically -->
     <maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
     <maven-assembly-plugin.version>3.6.0</maven-assembly-plugin.version>
-    <maven-checkstyle-plugin.version>3.3.0</maven-checkstyle-plugin.version>
-    <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
-    <maven-dependency-plugin.version>3.6.0</maven-dependency-plugin.version>
+    <maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
+    <maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
+    <maven-dependency-plugin.version>3.6.1</maven-dependency-plugin.version>
     <maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>
     <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
-    <maven-failsafe-plugin.version>3.1.2</maven-failsafe-plugin.version>
+    <maven-failsafe-plugin.version>3.2.5</maven-failsafe-plugin.version>
     <maven-install-plugin.version>3.1.1</maven-install-plugin.version>
     <maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
-    <maven-pmd-plugin.version>3.21.0</maven-pmd-plugin.version>
-    <maven-javadoc-plugin.version>3.6.0</maven-javadoc-plugin.version>
-    <maven-project-info-reports-plugin.version>3.4.5</maven-project-info-reports-plugin.version>
+    <maven-pmd-plugin.version>3.21.2</maven-pmd-plugin.version>
+    <maven-javadoc-plugin.version>3.6.3</maven-javadoc-plugin.version>
+    <maven-project-info-reports-plugin.version>3.5.0</maven-project-info-reports-plugin.version>
     <maven-release-plugin.version>3.0.1</maven-release-plugin.version>
     <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
     <maven-site-plugin.version>3.12.1</maven-site-plugin.version>
     <maven-source-plugin.version>3.3.0</maven-source-plugin.version>
-    <maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
+    <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
 
     <!-- non apache plugin versions and configurations, please sort alphabetically -->
-    <build-helper-maven-plugin.version>3.4.0</build-helper-maven-plugin.version>
+    <build-helper-maven-plugin.version>3.5.0</build-helper-maven-plugin.version>
     <jacoco-maven-plugin.version>0.8.11</jacoco-maven-plugin.version>
-    <nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
+    <nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
+    <scala-maven-plugin.version>4.8.1</scala-maven-plugin.version>
 
     <!-- code quality -->
     <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
@@ -291,6 +297,12 @@
         <version>${bytebuddy.version}</version>
       </dependency>
 
+      <dependency>
+        <groupId>com.squareup.okhttp3</groupId>
+        <artifactId>okhttp</artifactId>
+        <version>${okhttp.version}</version>
+      </dependency>
+
       <!-- Metrics -->
       <dependency>
         <groupId>io.micrometer</groupId>
@@ -355,7 +367,7 @@
       <dependency>
         <groupId>org.hdrhistogram</groupId>
         <artifactId>HdrHistogram</artifactId>
-        <version>2.1.12</version>
+        <version>${hdrhistogram.version}</version>
       </dependency>
 
       <dependency>
@@ -412,7 +424,7 @@
       <dependency>
         <groupId>org.codehaus.janino</groupId>
         <artifactId>janino</artifactId>
-        <version>3.1.11</version>
+        <version>${janino.version}</version>
       </dependency>
 
       <dependency>
@@ -421,20 +433,11 @@
         <version>${scala.java8.compat.version}</version>
       </dependency>
 
-      <!-- findbugs -->
+      <!-- Self-signed certificate - issue: https://github.com/netty/netty/issues/10317 -->
       <dependency>
-        <groupId>com.google.code.findbugs</groupId>
-        <artifactId>jsr305</artifactId>
-        <version>3.0.2</version>
-        <scope>provided</scope>
-        <optional>true</optional>
-      </dependency>
-
-      <dependency>
-        <groupId>com.google.code.findbugs</groupId>
-        <artifactId>annotations</artifactId>
-        <version>3.0.1</version>
-        <scope>provided</scope>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcpkix-jdk18on</artifactId>
+        <version>${bcpkix-jdk18on.version}</version>
       </dependency>
 
       <dependency>
@@ -496,21 +499,21 @@
       <dependency>
         <groupId>com.typesafe.akka</groupId>
         <artifactId>akka-actor_${scala.version}</artifactId>
-        <version>2.5.32</version>
+        <version>${akka.version}</version>
         <scope>test</scope>
       </dependency>
 
       <dependency>
         <groupId>com.typesafe.akka</groupId>
         <artifactId>akka-testkit_${scala.version}</artifactId>
-        <version>2.5.32</version>
+        <version>${akka.version}</version>
         <scope>test</scope>
       </dependency>
 
       <dependency>
-        <groupId>com.github.tomakehurst</groupId>
+        <groupId>org.wiremock</groupId>
         <artifactId>wiremock</artifactId>
-        <version>1.54</version>
+        <version>${wiremock.version}</version>
         <scope>test</scope>
         <exclusions>
           <exclusion>
@@ -523,7 +526,7 @@
       <dependency>
         <groupId>org.jetbrains.kotlinx</groupId>
         <artifactId>kotlinx-html-jvm</artifactId>
-        <version>${kotlinx.html.version}</version>
+        <version>${kotlinx-html.version}</version>
       </dependency>
 
       <dependency>
@@ -551,7 +554,7 @@
           <artifactId>kotlin-maven-plugin</artifactId>
           <version>${kotlin.version}</version>
           <configuration>
-            <jvmTarget>11</jvmTarget>
+            <jvmTarget>21</jvmTarget>
           </configuration>
           <executions>
             <execution>
@@ -613,7 +616,7 @@
         <plugin>
           <groupId>net.alchim31.maven</groupId>
           <artifactId>scala-maven-plugin</artifactId>
-          <version>4.8.0</version>
+          <version>${scala-maven-plugin.version}</version>
           <executions>
             <execution>
               <id>scala-test-compile</id>
@@ -682,7 +685,7 @@
             <dependency>
               <groupId>org.apache.ant</groupId>
               <artifactId>ant-launcher</artifactId>
-              <version>1.10.7</version>
+              <version>1.10.14</version>
             </dependency>
           </dependencies>
         </plugin>
@@ -869,11 +872,11 @@
               <fail>true</fail>
               <rules>
                 <requireMavenVersion>
-                  <version>[3.2.1,)</version>
+                  <version>[3.9.6,)</version>
                 </requireMavenVersion>
                 <requireJavaVersion>
-                  <version>[1.8,)</version>
-                  <message>java 1.8 needed</message>
+                  <version>[21,)</version>
+                  <message>java 21 needed</message>
                 </requireJavaVersion>
               </rules>
             </configuration>

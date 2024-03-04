@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,21 +15,19 @@
  */
 package com.hotels.styx.support.server;
 
-import com.github.tomakehurst.wiremock.client.UrlMatchingStrategy;
+import com.github.tomakehurst.wiremock.matching.UrlPattern;
+
+import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 
 public final class UrlMatchingStrategies {
     private UrlMatchingStrategies() {
     }
 
-    public static UrlMatchingStrategy urlStartingWith(String url) {
-        UrlMatchingStrategy urlStrategy = new UrlMatchingStrategy();
-        urlStrategy.setUrlPattern(url + ".*");
-        return urlStrategy;
+    public static UrlPattern urlStartingWith(String url) {
+        return urlMatching(url + ".*");
     }
 
-    public static UrlMatchingStrategy urlEndingWith(String url) {
-        UrlMatchingStrategy urlStrategy = new UrlMatchingStrategy();
-        urlStrategy.setUrlPattern(".*" + url);
-        return urlStrategy;
+    public static UrlPattern urlEndingWith(String url) {
+        return urlMatching(".*" + url);
     }
 }

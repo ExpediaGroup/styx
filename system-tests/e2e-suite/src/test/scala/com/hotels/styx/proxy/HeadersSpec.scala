@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -315,18 +315,17 @@ class HeadersSpec extends FunSpec
     describe("bad headers content") {
 
       it("should return HTTP BAD_GATEWAY Bad Gateway if origin returns multiple differing content-length headers.") {
-        recordingBackend.stub(urlPathEqualTo("/headers"), aResponse.withStatus(200)
-          .withHeader(CONTENT_LENGTH, "50")
-          .withHeader(CONTENT_LENGTH, "60")
-        )
+        originRespondingWith(
+          responseWithHeaders(
+            HttpHeader(CONTENT_LENGTH, "50"),
+            HttpHeader(CONTENT_LENGTH, "60")
+          ))
 
-        val req = get("/headers")
+        val req = get("/badheaders")
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 
         val resp = decodedRequest(req)
-
-        recordingBackend.verify(getRequestedFor(urlPathEqualTo("/headers")))
 
         assert(resp.status() == BAD_GATEWAY)
       }

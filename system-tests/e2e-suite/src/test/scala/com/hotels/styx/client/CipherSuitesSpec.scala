@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,10 +15,8 @@
  */
 package com.hotels.styx.client
 
-import java.nio.charset.StandardCharsets.UTF_8
-
+import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.github.tomakehurst.wiremock.client.{ValueMatchingStrategy, WireMock}
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.support.ResourcePaths.fixturesHome
@@ -27,6 +25,8 @@ import com.hotels.styx.support.configuration._
 import com.hotels.styx.utils.StubOriginHeader.STUB_ORIGIN_INFO
 import com.hotels.styx.{StyxClientSupplier, StyxProxySpec}
 import org.scalatest.{FunSpec, SequentialNestedSuiteExecution}
+
+import java.nio.charset.StandardCharsets.UTF_8
 
 
 class CipherSuitesSpec extends FunSpec
@@ -108,7 +108,7 @@ class CipherSuitesSpec extends FunSpec
       originA.verify(
         getRequestedFor(
           urlEqualTo("/compatible/a"))
-          .withHeader("X-Forwarded-Proto", valueMatchingStrategy("http")))
+          .withHeader("X-Forwarded-Proto", matching("http")))
     }
 
     it("Fails to handshake with an origin with incompatible cipher suite.") {
@@ -121,12 +121,6 @@ class CipherSuitesSpec extends FunSpec
   }
 
   def httpRequest(path: String) = get(styxServer.routerURL(path)).build()
-
-  def valueMatchingStrategy(matches: String) = {
-    val matchingStrategy = new ValueMatchingStrategy()
-    matchingStrategy.setMatches(matches)
-    matchingStrategy
-  }
 
   def originResponse(appId: String) = aResponse
     .withStatus(200)

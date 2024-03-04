@@ -1,5 +1,5 @@
-ARG TAG=11-jdk
-FROM openjdk:${TAG}
+ARG TAG=21-jdk
+FROM eclipse-temurin:${TAG}
 
 ARG STYX_VERSION=""
 ARG STYX_IMAGE=https://github.com/HotelsDotCom/styx/releases/download/${STYX_VERSION}/${STYX_VERSION}.zip

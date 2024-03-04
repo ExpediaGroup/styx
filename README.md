@@ -79,7 +79,7 @@ Contact us via [styx-user](https://groups.google.com/forum/#!forum/styx-user) gr
 
 ## Dependencies
 
-* [Oracle JDK 11](https://www.oracle.com/java/technologies/downloads/#java11)
+* [Oracle JDK 21](https://www.oracle.com/java/technologies/downloads/#java21)
 * [Apache Maven v3](http://maven.apache.org)
 * Makefile (Optional)- There are fairly many ways of running Styx tests with different Maven profiles. Therefore, the
   shortcuts for most common usages are compiled into a separate (GNU) Makefile for developer's convenience. To

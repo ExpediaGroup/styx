@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2022 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package com.hotels.styx.servers;
 
 import com.github.tomakehurst.wiremock.http.ContentTypeHeader;
 import com.github.tomakehurst.wiremock.http.QueryParameter;
-import com.google.common.base.Optional;
 import com.hotels.styx.api.HttpRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -142,7 +141,7 @@ public class WiremockStyxRequestAdapterTest {
     public void adaptsContentTypeHeaderWhenPresent() {
         ContentTypeHeader contentType = adapter.contentTypeHeader();
 
-        assertThat(contentType.encodingPart(), is(Optional.of("UTF-8")));
+        assertThat(contentType.encodingPart().orElse(null), is("UTF-8"));
         assertThat(contentType.mimeTypePart(), is("application/json"));
     }
 

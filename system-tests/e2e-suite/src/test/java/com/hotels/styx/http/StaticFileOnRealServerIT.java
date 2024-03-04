@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -81,7 +81,7 @@ public class StaticFileOnRealServerIT {
                 .header("Host", serverEndpoint)
                 .build();
 
-        HttpResponse response = await(client.sendRequest(request));
+        HttpResponse response = await(client.send(request));
         assertThat(response.bodyAs(UTF_8), is("Hello World"));
     }
 

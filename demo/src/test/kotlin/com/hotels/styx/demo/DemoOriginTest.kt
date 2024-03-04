@@ -15,15 +15,16 @@
  */
 package com.hotels.styx.demo
 
-import io.kotest.matchers.shouldBe
 import io.kotest.core.spec.style.FeatureSpec
+import io.kotest.matchers.shouldBe
 import java.net.HttpURLConnection
 import java.net.URL
 
 class DemoOriginTest : FeatureSpec({
 
     feature("Normal response") {
-        val port = launchDemoOrigin(0).port()
+        val server = launchDemoOrigin(0)
+        val port = server.port()
 
         val (status, body) = call(port, "/")
 
@@ -59,14 +60,20 @@ class DemoOriginTest : FeatureSpec({
     }
 })
 
-private fun call(port: Int, path: String = "/"): Pair<Int, String> {
+private fun call(
+    port: Int,
+    path: String = "/",
+): Pair<Int, String> {
     val path0 = if (path.startsWith("/")) path else "/$path"
 
     val url = URL("http://localhost:$port$path0")
 
     val connection = url.openConnection().apply { connect() } as HttpURLConnection
 
-    return Pair(connection.responseCode, connection.inputStream.use {
-        it.bufferedReader().readText()
-    })
+    return Pair(
+        connection.responseCode,
+        connection.inputStream.use {
+            it.bufferedReader().readText()
+        },
+    )
 }

@@ -19,7 +19,7 @@
     <main.basedir>${project.parent.basedir}</main.basedir>
     <skipCheckstyle>true</skipCheckstyle>
     <main.basedir>${project.parent.basedir}</main.basedir>
-    <TAG>11-jdk</TAG>
+    <TAG>21-jdk</TAG>
     <styxcore.docker.tag>${project.version}</styxcore.docker.tag>
     <styxcore.docker.image>styxcore</styxcore.docker.image>
   </properties>
@@ -180,7 +180,7 @@
                     </tags>
                     <args>
                       <STYX_IMAGE>maven/${artifact.finalName}.zip</STYX_IMAGE>
-                      <TAG>11-jdk</TAG>
+                      <TAG>21-jdk</TAG>
                     </args>
                   </build>
                 </image>

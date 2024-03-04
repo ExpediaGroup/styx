@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,11 +15,9 @@
  */
 package com.hotels.styx.proxy
 
-import java.nio.charset.StandardCharsets.UTF_8
-import java.util.Optional
-
+import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.github.tomakehurst.wiremock.client.{RequestPatternBuilder, WireMock}
+import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
 import com.hotels.styx.MockServer.responseSupplier
 import com.hotels.styx.api.HttpHeaderNames._
 import com.hotels.styx.api.HttpMethod.CONNECT
@@ -41,6 +39,8 @@ import org.hamcrest.MatcherAssert.assertThat
 import org.scalatest.{BeforeAndAfter, FunSpec}
 import org.slf4j.LoggerFactory
 
+import java.nio.charset.StandardCharsets.UTF_8
+import java.util.Optional
 import scala.compat.java8.FutureConverters.CompletionStageOps
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -135,7 +135,7 @@ class ProxySpec extends FunSpec
         .addHeader(HOST, styxServer.proxyHost)
         .build()
 
-      val resp = Await.result(client.sendRequest(req).toScala, 5.seconds)
+      val resp = Await.result(client.send(req).toScala, 5.seconds)
 
       recordingBackend.verify(headRequestedFor(urlPathEqualTo("/bodiless")))
 
