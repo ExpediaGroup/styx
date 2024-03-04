@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,14 +15,12 @@
  */
 package com.hotels.styx.client
 
-import java.nio.charset.StandardCharsets.UTF_8
-
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
+import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.github.tomakehurst.wiremock.client.{ValueMatchingStrategy, WireMock}
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpResponseStatus._
@@ -32,6 +30,7 @@ import com.hotels.styx.utils.StubOriginHeader.STUB_ORIGIN_INFO
 import com.hotels.styx.{StyxClientSupplier, StyxProxySpec}
 import org.scalatest.{FunSpec, SequentialNestedSuiteExecution}
 
+import java.nio.charset.StandardCharsets.UTF_8
 import scala.concurrent.duration._
 
 class HealthCheckSpec extends FunSpec

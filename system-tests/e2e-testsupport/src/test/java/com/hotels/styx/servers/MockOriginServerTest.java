@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.servers;
 
-import com.github.tomakehurst.wiremock.client.ValueMatchingStrategy;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.extension.service.TlsSettings;
@@ -32,6 +31,7 @@ import java.util.Optional;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.hotels.styx.api.HttpRequest.get;
@@ -66,14 +66,14 @@ public class MockOriginServerTest {
 
     @Test
     public void configuresEndpoints() {
-        server = MockOriginServer.create("", "", 0, new HttpConnectorConfig(0))
+        server = MockOriginServer.create("TEST_APP", "TEST_ORIGIN", 0, new HttpConnectorConfig(0))
                 .start()
                 .stub(WireMock.get(urlMatching("/.*")), aResponse()
                         .withStatus(200)
                         .withHeader("a", "b")
                         .withBody("Hello, World!"));
 
-        HttpResponse response = await(client.sendRequest(
+        HttpResponse response = await(client.send(
                 get(format("http://localhost:%d/mock", server.port()))
                         .header("X-Forwarded-Proto", "http")
                         .build()));
@@ -83,12 +83,12 @@ public class MockOriginServerTest {
         assertThat(response.bodyAs(UTF_8), is("Hello, World!"));
 
         server.verify(getRequestedFor(urlEqualTo("/mock"))
-                .withHeader("X-Forwarded-Proto", valueMatchingStrategy("http")));
+                .withHeader("X-Forwarded-Proto", matching("http")));
     }
 
     @Test
-    public void configuresTlsEndpoints() throws Exception {
-        server = MockOriginServer.create("", "", 0,
+    public void configuresTlsEndpoints() {
+        server = MockOriginServer.create("TEST_APP", "TEST_ORIGIN", 0,
                 new HttpsConnectorConfig.Builder()
                         .port(0)
                         .build())
@@ -99,7 +99,7 @@ public class MockOriginServerTest {
                         .withBody("Hello, World!"));
 
         HttpResponse response = await(
-                tlsClient.sendRequest(
+                tlsClient.send(
                         get(format("https://localhost:%d/mock", server.port()))
                                 .header("X-Forwarded-Proto", "http")
                                 .build()));
@@ -108,13 +108,7 @@ public class MockOriginServerTest {
         assertThat(response.header("a"), is(Optional.of("b")));
 
         server.verify(getRequestedFor(urlEqualTo("/mock"))
-                .withHeader("X-Forwarded-Proto", valueMatchingStrategy("http")));
-    }
-
-    private ValueMatchingStrategy valueMatchingStrategy(String matches) {
-        ValueMatchingStrategy strategy = new ValueMatchingStrategy();
-        strategy.setMatches(matches);
-        return strategy;
+                .withHeader("X-Forwarded-Proto", matching("http")));
     }
 
     private HostnameVerifier disableHostNameVerification() {

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
 import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
@@ -83,18 +84,18 @@ public class StyxServerTest {
         secureOriginServer.start();
 
         configureFor(originServer1.port());
-        stubFor(WireMock.get(urlPathEqualTo("/")).willReturn(aResponse()
+        stubFor(WireMock.get(anyUrl()).willReturn(aResponse()
                 .withHeader("origin", "first")
                 .withStatus(OK.code())));
 
         configureFor(originServer2.port());
-        stubFor(WireMock.get(urlPathEqualTo("/")).willReturn(aResponse()
+        stubFor(WireMock.get(anyUrl()).willReturn(aResponse()
                 .withHeader("origin", "second")
                 .withStatus(OK.code())));
 
         // HTTP port is still used to identify the WireMockServer, even when we are using it for HTTPS
         configureFor(secureOriginServer.port());
-        stubFor(WireMock.get(urlPathEqualTo("/")).willReturn(aResponse()
+        stubFor(WireMock.get(anyUrl()).willReturn(aResponse()
                 .withHeader("origin", "secure")
                 .withStatus(OK.code())));
     }
@@ -119,7 +120,7 @@ public class StyxServerTest {
                 .addRoute("/", originServer1.port())
                 .start();
 
-        HttpResponse response = await(client.sendRequest(get(format("https://localhost:%d/", styxServer.proxyHttpPort())).build()));
+        HttpResponse response = await(client.send(get(format("https://localhost:%d/", styxServer.proxyHttpPort())).build()));
 
         assertThat(response.status(), is(OK));
         configureFor(originServer1.port());
@@ -133,7 +134,7 @@ public class StyxServerTest {
                 .addRoute("/", originServer1.port())
                 .start();
 
-        HttpResponse response = await(client.sendRequest(get(format("https://localhost:%d/", styxServer.proxyHttpPort())).build()));
+        HttpResponse response = await(client.send(get(format("https://localhost:%d/", styxServer.proxyHttpPort())).build()));
 
         assertThat(response.status(), is(OK));
     }
@@ -145,7 +146,7 @@ public class StyxServerTest {
                 .addRoute("/", originServer1.port())
                 .start();
 
-        HttpResponse response = await(client.sendRequest(get(format("https://localhost:%d/admin", styxServer.adminPort())).build()));
+        HttpResponse response = await(client.send(get(format("https://localhost:%d/admin", styxServer.adminPort())).build()));
 
         assertThat(response.status(), is(OK));
     }
@@ -161,7 +162,7 @@ public class StyxServerTest {
                 .tlsSettings(new TlsSettings.Builder().build())
                 .build();
 
-        HttpResponse response = await(tlsClient.sendRequest(get(format("https://localhost:%d/", styxServer.proxyHttpsPort())).build()));
+        HttpResponse response = await(tlsClient.send(get(format("https://localhost:%d/", styxServer.proxyHttpsPort())).build()));
 
         assertThat(response.status(), is(OK));
     }
@@ -195,7 +196,7 @@ public class StyxServerTest {
                 .tlsSettings(new TlsSettings.Builder().build())
                 .build();
 
-        HttpResponse response = await(tlsClient.sendRequest(get(format("https://localhost:%d/", styxServer.proxyHttpsPort())).build()));
+        HttpResponse response = await(tlsClient.send(get(format("https://localhost:%d/", styxServer.proxyHttpsPort())).build()));
 
         assertThat(response.status(), is(OK));
         configureFor(secureOriginServer.port());
@@ -212,7 +213,7 @@ public class StyxServerTest {
                 .addRoute("/", backendService)
                 .start();
 
-        HttpResponse response = await(client.sendRequest(get(format("http://localhost:%d/", styxServer.proxyHttpPort())).build()));
+        HttpResponse response = await(client.send(get(format("http://localhost:%d/", styxServer.proxyHttpPort())).build()));
 
         assertThat(response.status(), is(OK));
         configureFor(secureOriginServer.port());
@@ -226,12 +227,12 @@ public class StyxServerTest {
                 .addRoute("/o2/", originServer2.port())
                 .start();
 
-        HttpResponse response1 = await(client.sendRequest(get(format("http://localhost:%d/foo", styxServer.proxyHttpPort())).build()));
+        HttpResponse response1 = await(client.send(get(format("http://localhost:%d/foo", styxServer.proxyHttpPort())).build()));
 
         assertThat(response1.status(), is(OK));
         assertThat(response1.header("origin"), isValue("first"));
 
-        HttpResponse response2 = await(client.sendRequest(get(format("http://localhost:%d/o2/foo", styxServer.proxyHttpPort())).build()));
+        HttpResponse response2 = await(client.send(get(format("http://localhost:%d/o2/foo", styxServer.proxyHttpPort())).build()));
         assertThat(response2.status(), is(OK));
         assertThat(response2.header("origin"), isValue("second"));
 
@@ -255,7 +256,7 @@ public class StyxServerTest {
                 .addPluginFactory("response-decorator", pluginFactory, null)
                 .start();
 
-        HttpResponse response = await(client.sendRequest(get(format("http://localhost:%d/foo", styxServer.proxyHttpPort())).build()));
+        HttpResponse response = await(client.send(get(format("http://localhost:%d/foo", styxServer.proxyHttpPort())).build()));
         assertThat(response.status(), is(OK));
         assertThat(response.header("origin"), isValue("first"));
         assertThat(response.header("plugin-executed"), isValue("yes"));
@@ -344,7 +345,7 @@ public class StyxServerTest {
 
     private HttpResponse doAdminRequest(String path) {
         String url = format("%s://localhost:%s%s", "http", styxServer.adminPort(), startWithSlash(path));
-        return await(client.sendRequest(get(url).build()));
+        return await(client.send(get(url).build()));
     }
 
     @Test
@@ -368,11 +369,11 @@ public class StyxServerTest {
                 .addRoute("/o2/", origin(originServer2.port()))
                 .start();
 
-        HttpResponse response1 = await(client.sendRequest(get(format("http://localhost:%d/foo", styxServer.proxyHttpPort())).build()));
+        HttpResponse response1 = await(client.send(get(format("http://localhost:%d/foo", styxServer.proxyHttpPort())).build()));
         assertThat(response1.status(), is(OK));
         assertThat(response1.header("origin"), isValue("first"));
 
-        HttpResponse response2 = await(client.sendRequest(get(format("http://localhost:%d/o2/foo", styxServer.proxyHttpPort())).build()));
+        HttpResponse response2 = await(client.send(get(format("http://localhost:%d/o2/foo", styxServer.proxyHttpPort())).build()));
         assertThat(response2.status(), is(OK));
         assertThat(response2.header("origin"), isValue("second"));
 
@@ -389,11 +390,11 @@ public class StyxServerTest {
                 .addRoute("/o2/", new BackendService().addOrigin(originServer2.port()))
                 .start();
 
-        HttpResponse response1 = await(client.sendRequest(get(format("http://localhost:%d/foo", styxServer.proxyHttpPort())).build()));
+        HttpResponse response1 = await(client.send(get(format("http://localhost:%d/foo", styxServer.proxyHttpPort())).build()));
         assertThat(response1.status(), is(OK));
         assertThat(response1.header("origin"), isValue("first"));
 
-        HttpResponse response2 = await(client.sendRequest(get(format("http://localhost:%d/o2/foo", styxServer.proxyHttpPort())).build()));
+        HttpResponse response2 = await(client.send(get(format("http://localhost:%d/o2/foo", styxServer.proxyHttpPort())).build()));
         assertThat(response2.status(), is(OK));
         assertThat(response2.header("origin"), isValue("second"));
 

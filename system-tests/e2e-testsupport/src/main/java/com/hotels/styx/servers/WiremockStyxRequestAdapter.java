@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,22 +16,31 @@
 package com.hotels.styx.servers;
 
 import com.github.tomakehurst.wiremock.http.ContentTypeHeader;
+import com.github.tomakehurst.wiremock.http.Cookie;
+import com.github.tomakehurst.wiremock.http.FormParameter;
 import com.github.tomakehurst.wiremock.http.HttpHeader;
 import com.github.tomakehurst.wiremock.http.HttpHeaders;
 import com.github.tomakehurst.wiremock.http.QueryParameter;
 import com.github.tomakehurst.wiremock.http.Request;
 import com.github.tomakehurst.wiremock.http.RequestMethod;
 import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.RequestCookie;
 
+import java.net.URI;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.github.tomakehurst.wiremock.http.HttpHeader.httpHeader;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpHeaderNames.HOST;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
 
@@ -49,10 +58,11 @@ public class WiremockStyxRequestAdapter implements Request {
 
     @Override
     public String getAbsoluteUrl() {
-        String host = styxRequest.header(HOST).orElse("");
+        URI uri = styxRequest.url().toURI();
+        String host = ofNullable(uri.getHost()).isEmpty() ? styxRequest.header(HOST).orElse("") : "";
         String protocol = "http";
 
-        return protocol + "://" + host + styxRequest.url().toURI().toString();
+        return protocol + "://" + host + uri;
     }
 
     @Override
@@ -110,12 +120,90 @@ public class WiremockStyxRequestAdapter implements Request {
     }
 
     @Override
+    public boolean isBrowserProxyRequest() {
+        return false;
+    }
+
+    @Override
     public String getBodyAsString() {
         return styxRequest.bodyAs(UTF_8);
     }
 
     @Override
-    public boolean isBrowserProxyRequest() {
+    public boolean isMultipart() {
         return false;
+    }
+
+    @Override
+    public String getScheme() {
+        // no-op
+        return styxRequest.url().scheme();
+    }
+
+    @Override
+    public String getHost() {
+        return styxRequest.url().host().orElse("");
+    }
+
+    @Override
+    public int getPort() {
+        return styxRequest.url().toURI().getPort();
+    }
+
+    @Override
+    public String getClientIp() {
+        // no-op
+        return null;
+    }
+
+    @Override
+    public FormParameter formParameter(String s) {
+        // no-op
+        return null;
+    }
+
+    @Override
+    public Map<String, FormParameter> formParameters() {
+        // no-op
+        return null;
+    }
+
+    @Override
+    public Map<String, Cookie> getCookies() {
+        return styxRequest.cookies()
+            .stream()
+            .collect(Collectors.toMap(
+                RequestCookie::name,
+                cookie -> new Cookie(cookie.name(), cookie.value())
+            ));
+    }
+
+    @Override
+    public String getBodyAsBase64() {
+        // no-op
+        return null;
+    }
+
+    @Override
+    public Collection<Part> getParts() {
+        // no-op
+        return null;
+    }
+
+    @Override
+    public Part getPart(String s) {
+        // no-op
+        return null;
+    }
+
+    @Override
+    public Optional<Request> getOriginalRequest() {
+        // no-op
+        return Optional.empty();
+    }
+
+    @Override
+    public String getProtocol() {
+        return styxRequest.version().toString();
     }
 }

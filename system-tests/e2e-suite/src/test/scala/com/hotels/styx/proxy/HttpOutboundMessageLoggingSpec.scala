@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -115,7 +115,7 @@ class HttpOutboundMessageLoggingSpec extends FunSpec
           "requestId=[-a-z0-9]+, origin=appOne:generic-app-01:localhost:[0-9]+, request=\\{version=HTTP/1.1, method=GET, uri=http://localhost:[0-9]+/foobar, headers=\\[.*\\], id=[-a-z0-9]+\\}")))
 
         assertThat(logger.log(), hasItem(loggingEvent(INFO,
-          "requestId=[-a-z0-9]+, response=\\{version=HTTP/1.1, status=200 OK, headers=\\[Transfer-Encoding=chunked, Server=Jetty\\(6.1.26\\)\\]\\}")))
+          "requestId=[-a-z0-9]+, response=\\{version=HTTP/1.1, status=200 OK, headers=\\[.*Transfer-Encoding=chunked.*\\]\\}")))
       }
     }
   }

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,10 +15,8 @@
  */
 package com.hotels.styx.proxy.https
 
-import java.nio.charset.StandardCharsets.UTF_8
-
+import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.github.tomakehurst.wiremock.client.{ValueMatchingStrategy, WireMock}
 import com.hotels.styx.api.HttpHeaderNames.X_FORWARDED_PROTO
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus._
@@ -31,6 +29,7 @@ import io.netty.buffer.{ByteBuf, Unpooled}
 import org.scalatest.{FunSpec, SequentialNestedSuiteExecution}
 import org.slf4j.LoggerFactory
 
+import java.nio.charset.StandardCharsets.UTF_8
 import scala.concurrent.duration._
 
 class ProtocolsSpec extends FunSpec
@@ -130,12 +129,6 @@ class ProtocolsSpec extends FunSpec
 
   def httpsRequest(path: String) = get(styxServer.secureRouterURL(path)).build()
 
-  def valueMatchingStrategy(matches: String) = {
-    val matchingStrategy = new ValueMatchingStrategy()
-    matchingStrategy.setMatches(matches)
-    matchingStrategy
-  }
-
   describe("Styx routing of HTTP requests") {
     it("Proxies HTTP protocol to HTTP origins") {
       val response = decodedRequest(httpRequest("/http/app.x.1"))
@@ -145,7 +138,7 @@ class ProtocolsSpec extends FunSpec
 
       httpServer.verify(
         getRequestedFor(urlEqualTo("/http/app.x.1"))
-          .withHeader("X-Forwarded-Proto", valueMatchingStrategy("http")))
+          .withHeader("X-Forwarded-Proto", matching("http")))
     }
 
     it("Proxies HTTP protocol to HTTPS origins") {
@@ -156,7 +149,7 @@ class ProtocolsSpec extends FunSpec
 
       httpsOriginWithoutCert.verify(
         getRequestedFor(urlEqualTo("/https/trustAllCerts/foo.2"))
-          .withHeader("X-Forwarded-Proto", valueMatchingStrategy("http")))
+          .withHeader("X-Forwarded-Proto", matching("http")))
     }
 
     it("Retains existing X-Forwarded-Proto header unmodified") {
@@ -171,7 +164,7 @@ class ProtocolsSpec extends FunSpec
 
       httpServer.verify(
         getRequestedFor(urlEqualTo("/http/app.x.3"))
-          .withHeader("X-Forwarded-Proto", valueMatchingStrategy("https")))
+          .withHeader("X-Forwarded-Proto", matching("https")))
     }
   }
 
@@ -184,7 +177,7 @@ class ProtocolsSpec extends FunSpec
       assert(response.bodyAs(UTF_8) == "Hello, World!")
       httpServer.verify(
         getRequestedFor(urlEqualTo("/http/app.x.4"))
-          .withHeader("X-Forwarded-Proto", valueMatchingStrategy("https"))
+          .withHeader("X-Forwarded-Proto", matching("https"))
       )
     }
 
@@ -195,7 +188,7 @@ class ProtocolsSpec extends FunSpec
       assert(response.bodyAs(UTF_8) == "Hello, World!")
       httpsOriginWithoutCert.verify(
         getRequestedFor(urlEqualTo("/https/trustAllCerts/foo.5"))
-          .withHeader("X-Forwarded-Proto", valueMatchingStrategy("https"))
+          .withHeader("X-Forwarded-Proto", matching("https"))
       )
     }
 
@@ -211,7 +204,7 @@ class ProtocolsSpec extends FunSpec
       assert(response.bodyAs(UTF_8) == "Hello, World!")
       httpsOriginWithoutCert.verify(
         getRequestedFor(urlEqualTo("/https/trustAllCerts/foo.6"))
-          .withHeader("X-Forwarded-Proto", valueMatchingStrategy("http"))
+          .withHeader("X-Forwarded-Proto", matching("http"))
       )
     }
   }

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -118,7 +118,7 @@ public class ProtocolMetricsTest {
                 .body("foobarbaz", UTF_8)
                 .build();
 
-        return await(client.sendRequest(request));
+        return await(client.send(request));
     }
 
     private static String startWithSlash(String path) {

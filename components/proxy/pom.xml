@@ -62,11 +62,6 @@
       <artifactId>guava</artifactId>
     </dependency>
 
-    <dependency>
-      <groupId>com.google.code.findbugs</groupId>
-      <artifactId>annotations</artifactId>
-    </dependency>
-
     <!--For logback.xml-->
     <dependency>
       <groupId>org.codehaus.janino</groupId>

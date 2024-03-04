@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,11 +17,14 @@ package com.hotels.styx.server.netty
 
 import com.hotels.styx.metrics.CentralisedMetrics
 import com.hotels.styx.server.HttpsConnectorConfig
-import io.netty.handler.ssl.*
+import io.netty.handler.ssl.OpenSslSessionContext
+import io.netty.handler.ssl.OpenSslSessionStats
+import io.netty.handler.ssl.SslContext
+import io.netty.handler.ssl.SslContextBuilder
+import io.netty.handler.ssl.SslProvider
 import io.netty.handler.ssl.util.SelfSignedCertificate
 import java.io.File
 import java.util.concurrent.TimeUnit.MILLISECONDS
-
 
 /**
  * Produce an SslContext based on the provided configuration.
@@ -42,12 +45,17 @@ fun HttpsConnectorConfig.newSSLContext(): SslContext =
  * @param metrics              metrics
  * @return SslContext
  */
-fun newSSLContext(httpsConnectorConfig: HttpsConnectorConfig, metrics: CentralisedMetrics) =
-    httpsConnectorConfig.newSSLContext().apply {
-        registerOpenSslStats(this, metrics)
-    }
+fun newSSLContext(
+    httpsConnectorConfig: HttpsConnectorConfig,
+    metrics: CentralisedMetrics,
+) = httpsConnectorConfig.newSSLContext().apply {
+    registerOpenSslStats(this, metrics)
+}
 
-private fun registerOpenSslStats(sslContext: SslContext, metrics: CentralisedMetrics) {
+private fun registerOpenSslStats(
+    sslContext: SslContext,
+    metrics: CentralisedMetrics,
+) {
     sslContext.sessionContext().ifInstanceOf<OpenSslSessionContext> {
         it.stats().let { stats ->
             metrics.proxy.server.openssl.run {

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * A Styx HTTP client interface.
- *
+ * <p>
  * This interface offers a fluent interface to build and configure HTTP
  * request transactions from a client instance. The requests can be consumed
  * either aggregated {@link HttpResponse} or streaming {@link LiveHttpRequest}
@@ -33,20 +33,7 @@ import java.util.concurrent.CompletableFuture;
 public interface HttpClient {
 
     /**
-     * Sends a HTTP request message using this client.
-     *
-     * @deprecated use {@link #send} instead.
-     *
-     * @param request a full HTTP request object
-     * @return a future of full HTTP request object
-     */
-    @Deprecated
-    default CompletableFuture<HttpResponse> sendRequest(HttpRequest request) {
-        return send(request);
-    }
-
-    /**
-     * Sends a HTTP request message using this client.
+     * Sends an HTTP request message using this client.
      *
      * @param request a full HTTP request object
      * @return a future of full HTTP request object
@@ -54,8 +41,8 @@ public interface HttpClient {
     CompletableFuture<HttpResponse> send(HttpRequest request);
 
     /**
-     * A HTTP request transaction.
-     *
+     * An HTTP request transaction.
+     * <p>
      * This interface allows client attributes and context to be customised
      * for each request without having to rely on configured default values
      * in the client.
@@ -80,7 +67,7 @@ public interface HttpClient {
 
         /**
          * Converts the transaction object to streaming transaction.
-         *
+         * <p>
          * A call to {@code streaming()} converts this {@link Transaction} object to
          * a {@link StreamingTransaction}. This allows responses to be consumed
          * in streaming responses.
@@ -90,7 +77,7 @@ public interface HttpClient {
         StreamingTransaction streaming();
 
         /**
-         * Sends a HTTP request message using this client.
+         * Sends an HTTP request message using this client.
          *
          * @param request a full HTTP request object
          * @return a future of full HTTP request object
@@ -100,7 +87,7 @@ public interface HttpClient {
 
     /**
      * A streaming HTTP request transaction.
-     *
+     * <p>
      * This interface allows the response object to be consumed in a streaming
      * fashion instead of being aggregated into a HttpResponse.
      */
