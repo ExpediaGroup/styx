@@ -110,6 +110,7 @@
     <janino.version>3.1.12</janino.version>
     <micrometer.version>1.12.3</micrometer.version>
     <netty.version>4.1.107.Final</netty.version>
+    <brotli4j.version>1.16.0</brotli4j.version>
     <okhttp.version>4.12.0</okhttp.version>
     <pcollections.version>3.0.5</pcollections.version>
     <reactive-streams.version>1.0.4</reactive-streams.version>
@@ -289,6 +290,36 @@
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
         <version>${guava.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.aayushatharva.brotli4j</groupId>
+        <artifactId>brotli4j</artifactId>
+        <version>${brotli4j.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.aayushatharva.brotli4j</groupId>
+        <artifactId>native-linux-x86_64</artifactId>
+        <version>${brotli4j.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.aayushatharva.brotli4j</groupId>
+        <artifactId>native-linux-aarch64</artifactId>
+        <version>${brotli4j.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.aayushatharva.brotli4j</groupId>
+        <artifactId>native-osx-x86_64</artifactId>
+        <version>${brotli4j.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.aayushatharva.brotli4j</groupId>
+        <artifactId>native-osx-aarch64</artifactId>
+        <version>${brotli4j.version}</version>
       </dependency>
 
       <dependency>

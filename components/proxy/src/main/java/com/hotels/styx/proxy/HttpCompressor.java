@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.proxy;
 
+import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponse;
@@ -52,6 +53,14 @@ public class HttpCompressor extends HttpContentCompressor {
             "application/x-javascript",
             "application/json");
 
+
+    public HttpCompressor() {
+        this(0);
+    }
+
+    public HttpCompressor(int contentSizeThreshold) {
+        super(contentSizeThreshold, (CompressionOptions[]) null);
+    }
 
     private boolean shouldCompress(String contentType) {
         return ENCODING_TYPES.contains(contentType != null ? contentType.toLowerCase() : "");
