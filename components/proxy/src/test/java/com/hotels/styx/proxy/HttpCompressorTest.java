@@ -16,6 +16,7 @@
 package com.hotels.styx.proxy;
 
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.compression.Brotli;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.HttpContentEncoder;
 import io.netty.handler.codec.http.HttpResponse;
@@ -30,6 +31,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Answers.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 
@@ -43,6 +45,7 @@ public class HttpCompressorTest {
 
     @BeforeEach
     public void setUp() throws Exception {
+        assertTrue(Brotli.isAvailable());
         compressor = new HttpCompressor();
         ctx = mock(ChannelHandlerContext.class, RETURNS_DEEP_STUBS);
         compressor.handlerAdded(ctx);
