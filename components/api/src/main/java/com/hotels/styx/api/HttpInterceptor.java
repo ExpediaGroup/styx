@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -74,6 +74,11 @@ public interface HttpInterceptor {
          * @return returns the netty executor which started handling the current request
          */
         Executor executor();
+
+        /**
+         * Removes all the stored items from this context.
+         */
+        void clear();
     }
 
     /**
