@@ -48,4 +48,9 @@ class MockContext implements HttpInterceptor.Context {
     public Executor executor() {
         return Runnable::run;
     }
+
+    @Override
+    public void clear() {
+        // no-op
+    }
 }
