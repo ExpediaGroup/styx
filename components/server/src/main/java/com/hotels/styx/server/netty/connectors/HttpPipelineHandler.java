@@ -278,8 +278,6 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
                 protected void hookFinally(SignalType type) {
                     timers.stopTiming(RESPONSE_PROCESSING);
                     timers.stopTiming(REQUEST_PROCESSING);
-
-                    context.clear();
                 }
             });
 
