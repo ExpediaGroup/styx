@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2024 Expedia Inc.
+  Copyright (C) 2013-2023 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.Optional
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executor
 
+
 /**
  * ConcurrentHashMap backed implementation of HttpInterceptor.Context.
  *
@@ -33,33 +34,25 @@ class HttpInterceptorContext(
     private val secure: Boolean,
     private val clientAddress: InetSocketAddress?,
     private val executor: Executor?,
-    override val timers: ContextualTimers? = null,
+    override val timers: ContextualTimers? = null
 ) : HttpInterceptor.Context, TimeMeasurable {
     // This may seem redundant but it allows Executor to be a lambda without needing to set `timers`.
     constructor(secure: Boolean, clientAddress: InetSocketAddress?, executor: Executor?) : this(secure, clientAddress, executor, null)
 
     private val context = ConcurrentHashMap<String, Any>()
 
-    override fun add(
-        key: String,
-        value: Any,
-    ) {
+    override fun add(key: String, value: Any) {
         context[key] = value
     }
 
     @Deprecated("Deprecated in Java")
-    override fun <T> get(
-        key: String,
-        clazz: Class<T>,
-    ): T = context[key] as T
+    override fun <T> get(key: String, clazz: Class<T>): T = context[key] as T
 
     override fun isSecure() = secure
 
     override fun clientAddress() = Optional.ofNullable(clientAddress)
 
     override fun executor(): Executor? = executor
-
-    override fun clear() = context.clear()
 
     companion object {
         // Visible for testing
