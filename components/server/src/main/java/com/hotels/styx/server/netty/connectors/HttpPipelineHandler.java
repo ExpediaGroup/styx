@@ -247,41 +247,47 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
 
             HttpInterceptorContext context = new HttpInterceptorContext(secure, remoteAddress(ctx), ctx.executor(), timers);
             Eventual<LiveHttpResponse> responseEventual = httpPipeline.handle(v11Request, context);
-            responseEventual.subscribe(new BaseSubscriber<>() {
-                @Override
-                public void hookOnSubscribe(Subscription s) {
-                    subscription = s;
-                    s.request(1);
-                }
+            responseEventual.map(response ->
+                    response.newBuilder().body(body ->
+                        body.doOnCancel(() -> {
+                                timers.stopTiming(RESPONSE_PROCESSING);
+                                timers.stopTiming(REQUEST_PROCESSING);
+                                context.clear();
+                            })
+                            .doOnEnd(throwable -> {
+                                timers.stopTiming(RESPONSE_PROCESSING);
+                                timers.stopTiming(REQUEST_PROCESSING);
+                                context.clear();
+                            })
+                    ).build()
+                )
+                .subscribe(new BaseSubscriber<>() {
+                    @Override
+                    public void hookOnSubscribe(Subscription s) {
+                        subscription = s;
+                        s.request(1);
+                    }
 
-                @Override
-                public void hookOnComplete() {
-                    eventProcessor.submit(new ResponseObservableCompletedEvent(ctx, request.id()));
-                }
+                    @Override
+                    public void hookOnComplete() {
+                        eventProcessor.submit(new ResponseObservableCompletedEvent(ctx, request.id()));
+                    }
 
-                @Override
-                public void hookOnError(Throwable cause) {
-                    eventProcessor.submit(new ResponseObservableErrorEvent(ctx, cause, request.id()));
-                }
+                    @Override
+                    public void hookOnError(Throwable cause) {
+                        eventProcessor.submit(new ResponseObservableErrorEvent(ctx, cause, request.id()));
+                    }
 
-                @Override
-                public void hookOnNext(LiveHttpResponse response) {
-                    eventProcessor.submit(new ResponseReceivedEvent(response, ctx));
-                }
+                    @Override
+                    public void hookOnNext(LiveHttpResponse response) {
+                        eventProcessor.submit(new ResponseReceivedEvent(response, ctx));
+                    }
 
-                @Override
-                protected void hookOnCancel() {
-                    eventProcessor.submit(new ResponseObservableCancelledEvent(ctx, new ResponseCancelledException(), request.id()));
-                }
-
-                @Override
-                protected void hookFinally(SignalType type) {
-                    timers.stopTiming(RESPONSE_PROCESSING);
-                    timers.stopTiming(REQUEST_PROCESSING);
-
-                    context.clear();
-                }
-            });
+                    @Override
+                    protected void hookOnCancel() {
+                        eventProcessor.submit(new ResponseObservableCancelledEvent(ctx, new ResponseCancelledException(), request.id()));
+                    }
+                });
 
             return WAITING_FOR_RESPONSE;
         } catch (Throwable cause) {
