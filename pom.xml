@@ -101,7 +101,7 @@
 
     <!-- General Versions -->
     <antlr.version>4.13.1</antlr.version>
-    <bcpkix-jdk18on.version>1.77</bcpkix-jdk18on.version>
+    <bcpkix-jdk18on.version>1.78</bcpkix-jdk18on.version>
     <bytebuddy.version>1.14.12</bytebuddy.version>
     <dropwizard.version>4.2.25</dropwizard.version>
     <guava.version>33.0.0-jre</guava.version>
