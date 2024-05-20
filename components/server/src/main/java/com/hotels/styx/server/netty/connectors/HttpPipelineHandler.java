@@ -46,7 +46,6 @@ import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
 import reactor.core.publisher.BaseSubscriber;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.SignalType;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
@@ -60,8 +59,9 @@ import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.LiveHttpResponse.response;
+import static com.hotels.styx.client.connectionpool.LatencyTiming.startResponseTiming;
+import static com.hotels.styx.client.connectionpool.LatencyTiming.finishResponseTiming;
 import static com.hotels.styx.metrics.TimerPurpose.REQUEST_PROCESSING;
-import static com.hotels.styx.metrics.TimerPurpose.RESPONSE_PROCESSING;
 import static com.hotels.styx.server.HttpErrorStatusListener.IGNORE_ERROR_STATUS;
 import static com.hotels.styx.server.RequestProgressListener.IGNORE_REQUEST_PROGRESS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
@@ -129,7 +129,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
                 .transition(ACCEPTING_REQUESTS, ChannelExceptionEvent.class, event -> onChannelExceptionWhenAcceptingRequests(event.ctx, event.cause))
                 .transition(ACCEPTING_REQUESTS, ResponseObservableCompletedEvent.class, event -> ACCEPTING_REQUESTS)
 
-                .transition(WAITING_FOR_RESPONSE, ResponseReceivedEvent.class, event -> onResponseReceived(event.response, event.ctx))
+                .transition(WAITING_FOR_RESPONSE, ResponseReceivedEvent.class, event -> onResponseReceived(event.response, event.ctx, event.interceptorContext))
                 .transition(WAITING_FOR_RESPONSE, RequestReceivedEvent.class, event -> onSpuriousRequest(event.request))
                 .transition(WAITING_FOR_RESPONSE, ChannelInactiveEvent.class, event -> onChannelInactive())
                 .transition(WAITING_FOR_RESPONSE, ChannelExceptionEvent.class, event -> onChannelExceptionWhenWaitingForResponse(event.ctx, event.cause))
@@ -243,13 +243,14 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         // generates a response.
         try {
             ContextualTimers timers = new ContextualTimers();
-            timers.startTiming(metrics, REQUEST_PROCESSING);
 
             HttpInterceptorContext context = new HttpInterceptorContext(secure, remoteAddress(ctx), ctx.executor(), timers);
             Eventual<LiveHttpResponse> responseEventual = httpPipeline.handle(v11Request, context);
             responseEventual.subscribe(new BaseSubscriber<>() {
                 @Override
                 public void hookOnSubscribe(Subscription s) {
+                    timers.startTiming(metrics, REQUEST_PROCESSING);
+
                     subscription = s;
                     s.request(1);
                 }
@@ -266,20 +267,12 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
 
                 @Override
                 public void hookOnNext(LiveHttpResponse response) {
-                    eventProcessor.submit(new ResponseReceivedEvent(response, ctx));
+                    eventProcessor.submit(new ResponseReceivedEvent(response, ctx, context));
                 }
 
                 @Override
                 protected void hookOnCancel() {
                     eventProcessor.submit(new ResponseObservableCancelledEvent(ctx, new ResponseCancelledException(), request.id()));
-                }
-
-                @Override
-                protected void hookFinally(SignalType type) {
-                    timers.stopTiming(RESPONSE_PROCESSING);
-                    timers.stopTiming(REQUEST_PROCESSING);
-
-                    context.clear();
                 }
             });
 
@@ -296,7 +289,9 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         }
     }
 
-    private State onResponseReceived(LiveHttpResponse response, ChannelHandlerContext ctx) {
+    private State onResponseReceived(LiveHttpResponse response, ChannelHandlerContext ctx, HttpInterceptorContext interceptorContext) {
+        startResponseTiming(metrics, interceptorContext);
+
         ongoingResponse = response;
         HttpResponseWriter httpResponseWriter = responseWriterFactory.create(ctx);
 
@@ -307,6 +302,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
             } else {
                 eventProcessor.submit(new ResponseSentEvent(ctx));
             }
+            finishResponseTiming(interceptorContext);
             return null;
         });
 
@@ -558,10 +554,12 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
     private static class ResponseReceivedEvent {
         private final LiveHttpResponse response;
         private final ChannelHandlerContext ctx;
+        private final HttpInterceptorContext interceptorContext;
 
-        ResponseReceivedEvent(LiveHttpResponse response, ChannelHandlerContext ctx) {
+        ResponseReceivedEvent(LiveHttpResponse response, ChannelHandlerContext ctx, HttpInterceptorContext interceptorContext) {
             this.response = response;
             this.ctx = ctx;
+            this.interceptorContext = interceptorContext;
         }
     }
 

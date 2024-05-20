@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import com.hotels.styx.metrics.TimerPurpose.RESPONSE_PROCESSING
 /**
  * Convenience methods for request and response processing latency measurement.
  */
-object LatencyTiming  {
+object LatencyTiming {
     /**
      * Stops the request processing timer, if one is present in the context.
      * Note that this only has an effect if the context is [TimeMeasurable].
@@ -46,9 +46,25 @@ object LatencyTiming  {
      * @param context context that can have timers set in it
      */
     @JvmStatic
-    fun startResponseTiming(metrics: CentralisedMetrics?, context: HttpInterceptor.Context?) {
+    fun startResponseTiming(
+        metrics: CentralisedMetrics?,
+        context: HttpInterceptor.Context?,
+    ) {
         if (metrics != null && context is TimeMeasurable) {
             context.timers?.startTiming(metrics, RESPONSE_PROCESSING)
+        }
+    }
+
+    /**
+     * Stops the response processing timer, if one is present in the context.
+     * Note that this only has an effect if the context is [TimeMeasurable].
+     *
+     * @param context context that may contain timers
+     */
+    @JvmStatic
+    fun finishResponseTiming(context: HttpInterceptor.Context?) {
+        if (context is TimeMeasurable) {
+            context.timers?.stopTiming(RESPONSE_PROCESSING)
         }
     }
 }
