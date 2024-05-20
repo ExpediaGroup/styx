@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -50,7 +50,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.client.connectionpool.LatencyTiming.finishRequestTiming;
-import static com.hotels.styx.client.connectionpool.LatencyTiming.startResponseTiming;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
@@ -130,11 +129,11 @@ public class HttpRequestOperation {
         executeCount.incrementAndGet();
 
         Flux<LiveHttpResponse> responseFlux = Flux.create(sink -> {
+            finishRequestTiming(context);
             if (nettyConnection.isConnected()) {
                 RequestBodyChunkSubscriber bodyChunkSubscriber = new RequestBodyChunkSubscriber(request, nettyConnection);
                 requestRequestBodyChunkSubscriber.set(bodyChunkSubscriber);
                 addProxyBridgeHandlers(nettyConnection, sink);
-                finishRequestTiming(context);
                 new WriteRequestToOrigin(sink, nettyConnection, request, bodyChunkSubscriber)
                         .write();
                 if (requestLoggingEnabled) {
@@ -143,11 +142,6 @@ public class HttpRequestOperation {
             } else {
                 sink.error(new TransportLostException(nettyConnection.channel(), nettyConnection.getOrigin()));
             }
-        });
-
-        responseFlux = responseFlux.map(response -> {
-            startResponseTiming(metrics, context);
-            return response;
         });
 
         if (requestLoggingEnabled) {
