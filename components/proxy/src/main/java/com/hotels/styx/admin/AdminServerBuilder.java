@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ import com.hotels.styx.server.netty.NettyServerBuilder;
 import com.hotels.styx.server.netty.WebServerConnectorFactory;
 import com.hotels.styx.server.track.CurrentRequestTracker;
 import com.hotels.styx.startup.StyxServerComponents;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import org.slf4j.Logger;
 
 import java.time.Duration;

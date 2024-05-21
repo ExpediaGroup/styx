@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.WebServiceHandler;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import org.slf4j.Logger;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
