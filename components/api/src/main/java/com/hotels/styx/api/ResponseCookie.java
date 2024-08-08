@@ -97,7 +97,7 @@ public final class ResponseCookie {
      *
      * @return "Set-Cookie" header value
      */
-    String asSetCookieString() {
+    public String asSetCookieString() {
         return ServerCookieEncoder.LAX.encode(asDefaultCookie());
     }
 
