@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class HealthCheckConfigTest {
 
     @Test
-    public void shouldBeEnabledIfHasUriSet() throws Exception {
+    public void shouldBeEnabledIfHasUriSet() {
         HealthCheckConfig healthCheckConfig = newHealthCheckConfigBuilder()
                 .uri("/someuri")
                 .build();
@@ -35,7 +35,7 @@ public class HealthCheckConfigTest {
     }
 
     @Test
-    public void rejectsInvalidURIs() throws Exception {
+    public void rejectsInvalidURIs() {
         Exception e = assertThrows(IllegalArgumentException.class, () -> newHealthCheckConfigBuilder()
                 .uri("/version.txt   # default used")
                 .build());
@@ -43,9 +43,24 @@ public class HealthCheckConfigTest {
     }
 
     @Test
-    public void shouldBeDisabledIfHasNotUriSet() throws Exception {
+    public void shouldBeDisabledIfHasNotUriSet() {
         HealthCheckConfig healthCheckConfig = newHealthCheckConfigBuilder()
                 .build();
         assertThat(healthCheckConfig.isEnabled(), is(false));
+    }
+
+    @Test
+    public void shouldSetShadowModeToFalseByDefault() {
+        HealthCheckConfig healthCheckConfig = newHealthCheckConfigBuilder()
+            .build();
+        assertThat(healthCheckConfig.isShadowMode(), is(false));
+    }
+
+    @Test
+    public void shouldSetShadowModeToTrue() {
+        HealthCheckConfig healthCheckConfig = newHealthCheckConfigBuilder()
+                .shadowMode(true)
+                .build();
+        assertThat(healthCheckConfig.isShadowMode(), is(true));
     }
 }
