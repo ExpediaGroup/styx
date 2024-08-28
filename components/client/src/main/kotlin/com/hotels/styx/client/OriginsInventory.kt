@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -50,8 +50,12 @@ abstract class OriginsInventory(
     protected val originHealthStatusMonitor: OriginHealthStatusMonitor,
     private val appId: Id,
     private val metrics: CentralisedMetrics,
-) : OriginHealthStatusMonitor.Listener, OriginsCommandsListener, ActiveOrigins,
-    OriginsChangeListener.Announcer, Closeable, EventProcessor {
+) : OriginHealthStatusMonitor.Listener,
+    OriginsCommandsListener,
+    ActiveOrigins,
+    OriginsChangeListener.Announcer,
+    Closeable,
+    EventProcessor {
     protected abstract val eventQueue: QueueDrainingEventProcessor
     private val inventoryListeners = Announcer.to(OriginsChangeListener::class.java)
     private val closed = AtomicBoolean(false)
@@ -150,12 +154,28 @@ abstract class OriginsInventory(
 
     fun notifyStateChange() {
         val event =
-            OriginsSnapshot(appId, pools(OriginState.ACTIVE), pools(OriginState.INACTIVE), pools(
-                OriginState.DISABLED
-            ))
+            OriginsSnapshot(
+                appId,
+                pools(OriginState.ACTIVE),
+                pools(OriginState.INACTIVE),
+                pools(
+                    OriginState.DISABLED,
+                ),
+            )
         inventoryListeners.announce().originsChanged(event)
         eventBus.post(event)
     }
+
+    open fun pools(state: OriginState): Collection<RemoteHost> =
+        monitoredOrigins.values
+            .filter { monitoredOrigin -> monitoredOrigin.state() == state }
+            .map { monitoredOrigin ->
+                val hostClient =
+                    HttpHandler { request: LiveHttpRequest, context: HttpInterceptor.Context ->
+                        Eventual(monitoredOrigin.hostClient.sendRequest(request, context))
+                    }
+                RemoteHost.remoteHost(monitoredOrigin.origin, hostClient, monitoredOrigin.hostClient)
+            }.toList()
 
     private fun handleSetOriginsEvent(event: SetOriginsEvent) {
         val newOriginsMap = event.newOrigins.associateBy { origin: Origin -> origin.id() }
@@ -186,7 +206,7 @@ abstract class OriginsInventory(
         if (closed.compareAndSet(false, true)) {
             monitoredOrigins.values.forEach { monitoredOrigin ->
                 removeMonitoredEndpoint(
-                    monitoredOrigin.origin.id()
+                    monitoredOrigin.origin.id(),
                 )
             }
             monitoredOrigins = hashMapOf()
@@ -241,70 +261,83 @@ abstract class OriginsInventory(
         LOG.info("Existing origin has been removed. Origin={}:{}", appId, host?.origin?.id())
     }
 
-    private fun isNewOrigin(originId: Id, newOrigin: Origin?): Boolean =
-        newOrigin != null && !monitoredOrigins.containsKey(originId)
+    private fun isNewOrigin(
+        originId: Id,
+        newOrigin: Origin?,
+    ): Boolean = newOrigin != null && !monitoredOrigins.containsKey(originId)
 
-    private fun isUnchangedOrigin(originId: Id, newOrigin: Origin?): Boolean {
+    private fun isUnchangedOrigin(
+        originId: Id,
+        newOrigin: Origin?,
+    ): Boolean {
         val oldOrigin = monitoredOrigins[originId]
         return oldOrigin != null && newOrigin != null && oldOrigin.origin == newOrigin
     }
 
-    private fun isUpdatedOrigin(originId: Id, newOrigin: Origin?): Boolean {
+    private fun isUpdatedOrigin(
+        originId: Id,
+        newOrigin: Origin?,
+    ): Boolean {
         val oldOrigin = monitoredOrigins[originId]
         return oldOrigin != null && newOrigin != null && oldOrigin.origin != newOrigin
     }
 
-    private fun isRemovedOrigin(originId: Id, newOrigin: Origin?): Boolean {
+    private fun isRemovedOrigin(
+        originId: Id,
+        newOrigin: Origin?,
+    ): Boolean {
         val oldOrigin = monitoredOrigins[originId]
         return oldOrigin != null && newOrigin == null
     }
 
-    private fun onEvent(origin: Origin, event: Any) {
+    private fun onEvent(
+        origin: Origin,
+        event: Any,
+    ) {
         onEvent(origin.id(), event)
     }
 
-    private fun onEvent(originId: Id, event: Any) {
+    private fun onEvent(
+        originId: Id,
+        event: Any,
+    ) {
         val monitoredOrigin = monitoredOrigins[originId]
         monitoredOrigin?.onEvent(event)
     }
 
-    private fun pools(state: OriginState): Collection<RemoteHost> =
-        monitoredOrigins.values
-            .filter { monitoredOrigin -> monitoredOrigin.state() == state }
-            .map { monitoredOrigin ->
-                val hostClient = HttpHandler { request: LiveHttpRequest, context: HttpInterceptor.Context ->
-                    Eventual(monitoredOrigin.hostClient.sendRequest(request, context))
-                }
-                RemoteHost.remoteHost(monitoredOrigin.origin, hostClient, monitoredOrigin.hostClient)
-            }
-            .toList()
-
-    enum class OriginState(val gaugeValue: Int) {
+    enum class OriginState(
+        val gaugeValue: Int,
+    ) {
         ACTIVE(1),
         INACTIVE(0),
-        DISABLED(-1)
+        DISABLED(-1),
     }
 
-    abstract inner class MonitoredOrigin(val origin: Origin) {
+    abstract inner class MonitoredOrigin(
+        val origin: Origin,
+    ) {
         abstract val hostClient: HostHttpClient
         private val machine: StateMachine<OriginState>
         private val statusGaugeDeleter: Deleter
 
         init {
-            machine = StateMachine.Builder<OriginState>()
-                .initialState(OriginState.ACTIVE)
-                .onInappropriateEvent<Any> { state, _ -> state }
-                .onStateChange { oldState: OriginState, newState: OriginState, _ ->
-                    onStateChange(oldState, newState)
-                }
-                .transition(OriginState.ACTIVE, UnhealthyEvent::class.java) { OriginState.INACTIVE }
-                .transition(OriginState.INACTIVE, HealthyEvent::class.java) { OriginState.ACTIVE }
-                .transition(OriginState.ACTIVE, DisableOrigin::class.java) { OriginState.DISABLED }
-                .transition(OriginState.INACTIVE, DisableOrigin::class.java) { OriginState.DISABLED }
-                .transition(OriginState.DISABLED, EnableOrigin::class.java) { OriginState.INACTIVE }
-                .build()
-            statusGaugeDeleter = metrics.proxy.client.originHealthStatus(origin)
-                .register { state().gaugeValue }
+            machine =
+                StateMachine
+                    .Builder<OriginState>()
+                    .initialState(OriginState.ACTIVE)
+                    .onInappropriateEvent<Any> { state, _ -> state }
+                    .onStateChange { oldState: OriginState, newState: OriginState, _ ->
+                        onStateChange(oldState, newState)
+                    }.transition(OriginState.ACTIVE, UnhealthyEvent::class.java) { OriginState.INACTIVE }
+                    .transition(OriginState.INACTIVE, HealthyEvent::class.java) { OriginState.ACTIVE }
+                    .transition(OriginState.ACTIVE, DisableOrigin::class.java) { OriginState.DISABLED }
+                    .transition(OriginState.INACTIVE, DisableOrigin::class.java) { OriginState.DISABLED }
+                    .transition(OriginState.DISABLED, EnableOrigin::class.java) { OriginState.INACTIVE }
+                    .build()
+            statusGaugeDeleter =
+                metrics.proxy.client
+                    .originHealthStatus(origin)
+                    .register { state().gaugeValue }
         }
 
         open fun close() {
@@ -328,14 +361,17 @@ abstract class OriginsInventory(
             originHealthStatusMonitor.stopMonitoring(setOf(origin))
         }
 
-        private fun onStateChange(oldState: OriginState, newState: OriginState) {
+        private fun onStateChange(
+            oldState: OriginState,
+            newState: OriginState,
+        ) {
             if (oldState != newState) {
                 LOG.info(
                     "Origin state change: origin=\"{}={}\", change=\"{}->{}\"",
                     appId,
                     origin.id(),
                     oldState,
-                    newState
+                    newState,
                 )
                 if (newState == OriginState.DISABLED) {
                     stopMonitoring()
@@ -351,23 +387,45 @@ abstract class OriginsInventory(
         }
     }
 
-    private class SetOriginsEvent(val newOrigins: Set<Origin>)
-    private class OriginHealthEvent(val origin: Origin, val healthEvent: Any)
-    private class EnableOriginCommand(val enableOrigin: EnableOrigin)
-    private class DisableOriginCommand(val disableOrigin: DisableOrigin)
+    private class SetOriginsEvent(
+        val newOrigins: Set<Origin>,
+    )
+
+    private class OriginHealthEvent(
+        val origin: Origin,
+        val healthEvent: Any,
+    )
+
+    private class EnableOriginCommand(
+        val enableOrigin: EnableOrigin,
+    )
+
+    private class DisableOriginCommand(
+        val disableOrigin: DisableOrigin,
+    )
+
     private class CloseEvent
+
     private class UnhealthyEvent
+
     private class HealthyEvent
 
     private inner class OriginChanges {
         var monitoredOrigins: MutableMap<Id, MonitoredOrigin> = hashMapOf()
         var changed = AtomicBoolean(false)
-        fun addOrReplaceOrigin(originId: Id, origin: MonitoredOrigin) {
+
+        fun addOrReplaceOrigin(
+            originId: Id,
+            origin: MonitoredOrigin,
+        ) {
             monitoredOrigins[originId] = origin
             changed.set(true)
         }
 
-        fun keepExistingOrigin(originId: Id, origin: MonitoredOrigin) {
+        fun keepExistingOrigin(
+            originId: Id,
+            origin: MonitoredOrigin,
+        ) {
             monitoredOrigins[originId] = origin
         }
 
