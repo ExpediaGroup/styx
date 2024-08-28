@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -31,12 +31,14 @@ public final class HealthCheckConfig {
     public static final int DEFAULT_UNHEALTHY_THRESHOLD_VALUE = 2;
     public static final Long DEFAULT_HEALTH_CHECK_INTERVAL = 5000L;
     public static final Long DEFAULT_TIMEOUT_VALUE = 2000L;
+    public static final boolean DEFAULT_SHADOW_MODE = false;
 
     private final Optional<String> uri;
     private final long intervalMillis;
     private final long timeoutMillis;
     private final int healthyThreshold;
     private final int unhealthyThreshold;
+    private final boolean shadowMode;
 
     private HealthCheckConfig() {
         this(newHealthCheckConfigBuilder());
@@ -47,19 +49,22 @@ public final class HealthCheckConfig {
                 builder.intervalMillis,
                 builder.timeoutMillis,
                 builder.healthyThreshold,
-                builder.unhealthyThreshold);
+                builder.unhealthyThreshold,
+                builder.shadowMode);
     }
 
     private HealthCheckConfig(Optional<String> uri,
                               Optional<Long> intervalMillis,
                               Optional<Long> timeoutMillis,
                               Optional<Integer> healthyThreshold,
-                              Optional<Integer> unhealthyThreshold) {
+                              Optional<Integer> unhealthyThreshold,
+                              Optional<Boolean> shadowMode) {
         this.uri = uri.map(this::checkValidUri);
         this.intervalMillis = zeroToAbsent(intervalMillis).orElse(DEFAULT_HEALTH_CHECK_INTERVAL);
         this.timeoutMillis = zeroToAbsent(timeoutMillis).orElse(DEFAULT_TIMEOUT_VALUE);
         this.healthyThreshold = healthyThreshold.orElse(DEFAULT_HEALTHY_THRESHOLD_VALUE);
         this.unhealthyThreshold = unhealthyThreshold.orElse(DEFAULT_UNHEALTHY_THRESHOLD_VALUE);
+        this.shadowMode = shadowMode.orElse(DEFAULT_SHADOW_MODE);
 
         if (this.intervalMillis < 1) {
             throw new IllegalArgumentException(format("intervalMillis [%s] cannot be < 1 ms", intervalMillis));
@@ -136,13 +141,17 @@ public final class HealthCheckConfig {
         return unhealthyThreshold;
     }
 
+    public boolean isShadowMode() {
+        return shadowMode;
+    }
+
     public boolean isEnabled() {
         return uri.isPresent();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.uri, this.intervalMillis, this.timeoutMillis, this.healthyThreshold, this.unhealthyThreshold);
+        return Objects.hash(this.uri, this.intervalMillis, this.timeoutMillis, this.healthyThreshold, this.unhealthyThreshold, this.shadowMode);
     }
 
     @Override
@@ -158,7 +167,8 @@ public final class HealthCheckConfig {
                 && Objects.equals(this.intervalMillis, other.intervalMillis)
                 && Objects.equals(this.timeoutMillis, other.timeoutMillis)
                 && Objects.equals(this.healthyThreshold, other.healthyThreshold)
-                && Objects.equals(this.unhealthyThreshold, other.unhealthyThreshold);
+                && Objects.equals(this.unhealthyThreshold, other.unhealthyThreshold)
+                && Objects.equals(this.shadowMode, other.shadowMode);
     }
 
     @Override
@@ -175,6 +185,8 @@ public final class HealthCheckConfig {
                 .append(healthyThreshold)
                 .append(", unhealthyThreshold=")
                 .append(unhealthyThreshold)
+                .append(", shadowMode=")
+                .append(shadowMode)
                 .append('}')
                 .toString();
     }
@@ -207,6 +219,7 @@ public final class HealthCheckConfig {
         private Optional<Long> timeoutMillis = Optional.empty();
         private Optional<Integer> healthyThreshold = Optional.empty();
         private Optional<Integer> unhealthyThreshold = Optional.empty();
+        private Optional<Boolean> shadowMode = Optional.empty();
 
         private Builder() {
         }
@@ -216,6 +229,7 @@ public final class HealthCheckConfig {
             this.intervalMillis = Optional.of(healthCheckConfig.intervalMillis);
             this.healthyThreshold = Optional.of(healthCheckConfig.healthyThreshold);
             this.unhealthyThreshold = Optional.of(healthCheckConfig.unhealthyThreshold);
+            this.shadowMode = Optional.of(healthCheckConfig.shadowMode);
         }
 
         /**
@@ -302,6 +316,18 @@ public final class HealthCheckConfig {
          */
         public Builder unhealthyThreshold(int unhealthyThreshold) {
             this.unhealthyThreshold = Optional.of(unhealthyThreshold);
+            return this;
+        }
+
+        /**
+         * Sets the boolean to determine if shadow mode is enabled.
+         * When shadow mode is enabled, the health check will not affect the health of the origin.
+         *
+         * @param shadowMode the boolean to determine if shadow mode is enabled
+         * @return this builder
+         */
+        public Builder shadowMode(boolean shadowMode) {
+            this.shadowMode = Optional.of(shadowMode);
             return this;
         }
 
