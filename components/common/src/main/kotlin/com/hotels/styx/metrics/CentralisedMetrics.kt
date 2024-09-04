@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -56,7 +56,9 @@ import io.micrometer.core.instrument.*
  *   |- Plugin handling (not to be confused with metrics created by plugins themselves)
  *
  */
-class CentralisedMetrics(val registry: MeterRegistry) {
+class CentralisedMetrics(
+    val registry: MeterRegistry,
+) {
     @get:JvmName("os")
     val os = OS()
 
@@ -126,7 +128,6 @@ class CentralisedMetrics(val registry: MeterRegistry) {
          */
         @get:JvmName("totalSwapSpaceSize")
         val totalSwapSpaceSize: GaugeId = InnerGaugeId("os.swapSpace.total")
-
     }
 
     inner class JVM {
@@ -170,37 +171,41 @@ class CentralisedMetrics(val registry: MeterRegistry) {
         val endToEndRequestLatency: TimerMetric = InnerTimer("proxy.latency")
 
         @get:JvmName("requestProcessingLatency")
-        val requestProcessingLatency : TimerMetric = InnerTimer("proxy.request.latency")
+        val requestProcessingLatency: TimerMetric = InnerTimer("proxy.request.latency")
 
         @get:JvmName("responseProcessingLatency")
-        val responseProcessingLatency : TimerMetric = InnerTimer("proxy.response.latency")
+        val responseProcessingLatency: TimerMetric = InnerTimer("proxy.response.latency")
 
         /**
          * Current amount of memory in use, divided by pooled/unpooled and direct/heap.
          */
         @get:JvmName("nettyMemory")
-        val nettyMemory: NettyMemory = object : NettyMemory {
-            /**
-             * Bytes of direct memory used by pooled netty buffers.
-             */
-            override val pooledDirect: GaugeId = InnerGaugeId("proxy.netty.buffers.memory", Tags.of("allocator", "pooled", "memoryType", "direct"))
+        val nettyMemory: NettyMemory =
+            object : NettyMemory {
+                /**
+                 * Bytes of direct memory used by pooled netty buffers.
+                 */
+                override val pooledDirect: GaugeId =
+                    InnerGaugeId("proxy.netty.buffers.memory", Tags.of("allocator", "pooled", "memoryType", "direct"))
 
-            /**
-             * Bytes of heap memory used by pooled netty buffers.
-             */
-            override val pooledHeap: GaugeId = InnerGaugeId("proxy.netty.buffers.memory", Tags.of("allocator", "pooled", "memoryType", "heap"))
+                /**
+                 * Bytes of heap memory used by pooled netty buffers.
+                 */
+                override val pooledHeap: GaugeId =
+                    InnerGaugeId("proxy.netty.buffers.memory", Tags.of("allocator", "pooled", "memoryType", "heap"))
 
-            /**
-             * Bytes of direct memory used by unpooled netty buffers.
-             */
-            override val unpooledDirect: GaugeId =
-                InnerGaugeId("proxy.netty.buffers.memory", Tags.of("allocator", "unpooled", "memoryType", "direct"))
+                /**
+                 * Bytes of direct memory used by unpooled netty buffers.
+                 */
+                override val unpooledDirect: GaugeId =
+                    InnerGaugeId("proxy.netty.buffers.memory", Tags.of("allocator", "unpooled", "memoryType", "direct"))
 
-            /**
-             * Bytes of heap memory used by unpooled netty buffers.
-             */
-            override val unpooledHeap: GaugeId = InnerGaugeId("proxy.netty.buffers.memory", Tags.of("allocator", "unpooled", "memoryType", "heap"))
-        }
+                /**
+                 * Bytes of heap memory used by unpooled netty buffers.
+                 */
+                override val unpooledHeap: GaugeId =
+                    InnerGaugeId("proxy.netty.buffers.memory", Tags.of("allocator", "unpooled", "memoryType", "heap"))
+            }
 
         inner class Server {
             @get:JvmName("openssl")
@@ -240,21 +245,24 @@ class CentralisedMetrics(val registry: MeterRegistry) {
              * Number of responses using the HTTP (not HTTPS) protocol.
              */
             @get:JvmName("httpResponses")
-            val httpResponses: SimpleCache<Int, Counter> = SimpleCache {
-                registry.counter("proxy.server.responseProtocol", "protocol", "http", "statusCode", it.toString())
-            }
+            val httpResponses: SimpleCache<Int, Counter> =
+                SimpleCache {
+                    registry.counter("proxy.server.responseProtocol", "protocol", "http", "statusCode", it.toString())
+                }
 
             /**
              * Number of responses using the HTTPS (not HTTP) protocol.
              */
             @get:JvmName("httpsResponses")
-            val httpsResponses: SimpleCache<Int, Counter> = SimpleCache {
-                registry.counter("proxy.server.responseProtocol", "protocol", "https", "statusCode", it.toString())
-            }
+            val httpsResponses: SimpleCache<Int, Counter> =
+                SimpleCache {
+                    registry.counter("proxy.server.responseProtocol", "protocol", "https", "statusCode", it.toString())
+                }
 
-            private val requestsCancelledOnServer: SimpleCache<String, Counter> = SimpleCache {
-                registry.counter("proxy.server.requests.cancelled", "cause", it)
-            }
+            private val requestsCancelledOnServer: SimpleCache<String, Counter> =
+                SimpleCache {
+                    registry.counter("proxy.server.requests.cancelled", "cause", it)
+                }
 
             /**
              * Counts request cancellations that happen at the server, i.e. coming in to Styx.
@@ -263,9 +271,10 @@ class CentralisedMetrics(val registry: MeterRegistry) {
              */
             fun requestsCancelled(cause: String): Counter = requestsCancelledOnServer[cause]
 
-            private val responsesByStatus: SimpleCache<Int, Counter> = SimpleCache {
-                registry.counter("proxy.server.responses", statusCodeTags(it))
-            }
+            private val responsesByStatus: SimpleCache<Int, Counter> =
+                SimpleCache {
+                    registry.counter("proxy.server.responses", statusCodeTags(it))
+                }
 
             /**
              * Counts all responses sent by Styx, tagged by status code.
@@ -340,7 +349,6 @@ class CentralisedMetrics(val registry: MeterRegistry) {
                  */
                 @get:JvmName("openSslSessionTimeouts")
                 val openSslSessionTimeouts: GaugeId = InnerGaugeId("proxy.server.openssl.session.timeouts")
-
             }
         }
 
@@ -359,7 +367,8 @@ class CentralisedMetrics(val registry: MeterRegistry) {
             /**
              * Number of client connections that have been established to an origin, but are not in use. They are kept in a connection pool ready for use.
              */
-            fun availableConnections(origin: Origin): GaugeId = InnerGaugeId("proxy.client.connectionpool.availableConnections", origin.tags)
+            fun availableConnections(origin: Origin): GaugeId =
+                InnerGaugeId("proxy.client.connectionpool.availableConnections", origin.tags)
 
             /**
              * Number of attempts to establish client connection to a particular origin.
@@ -379,7 +388,8 @@ class CentralisedMetrics(val registry: MeterRegistry) {
             /**
              * Number of times that client connections have terminated, either because they were closed by styx, or by an origin, or otherwise disconnected.
              */
-            fun connectionsTerminated(origin: Origin): GaugeId = InnerGaugeId("proxy.client.connectionpool.connectionsTerminated", origin.tags)
+            fun connectionsTerminated(origin: Origin): GaugeId =
+                InnerGaugeId("proxy.client.connectionpool.connectionsTerminated", origin.tags)
 
             /**
              * Number of connections being established at this moment. This means performing a TCP handshake or an SSL/TLS handshake procedure.
@@ -403,9 +413,19 @@ class CentralisedMetrics(val registry: MeterRegistry) {
              * Number of health check failures per origin.
              */
             @get:JvmName("originHealthCheckFailures")
-            val originHealthCheckFailures: SimpleCache<Origin, Counter> = SimpleCache {
-                registry.counter("proxy.client.originHealthCheckFailures", it.tags)
-            }
+            val originHealthCheckFailures: SimpleCache<Origin, Counter> =
+                SimpleCache {
+                    registry.counter("proxy.client.originHealthCheckFailures", it.tags)
+                }
+
+            /**
+             * Number of health checks sent per origin.
+             */
+            @get:JvmName("originHealthChecks")
+            val originHealthChecks: SimpleCache<Origin, Counter> =
+                SimpleCache {
+                    registry.counter("proxy.client.originHealthChecks", it.tags)
+                }
 
             /**
              * Counts request cancellations that happen at the client, i.e. sent out from Styx.
@@ -414,33 +434,41 @@ class CentralisedMetrics(val registry: MeterRegistry) {
              */
             fun requestsCancelled(origin: Origin): Counter = registry.counter("proxy.client.requests.cancelled", origin.tags)
 
-            private val clientOriginErrorResponseByStatus: SimpleCache<Int, Counter> = SimpleCache {
-                registry.counter("proxy.client.responseCode.errorStatus", "statusCode", it.toString())
-            }
+            private val clientOriginErrorResponseByStatus: SimpleCache<Int, Counter> =
+                SimpleCache {
+                    registry.counter("proxy.client.responseCode.errorStatus", "statusCode", it.toString())
+                }
 
             /**
              * Responses that have an error code of 4xx or 5xx.
              */
             fun errorResponseFromOriginByStatus(statusCode: Int): Counter = clientOriginErrorResponseByStatus[statusCode]
 
-            private val backendFaults: SimpleCache<BackendFaultKey, Counter> = SimpleCache {
-                registry.counter("proxy.client.backends.fault", it.tags())
-            }
+            private val backendFaults: SimpleCache<BackendFaultKey, Counter> =
+                SimpleCache {
+                    registry.counter("proxy.client.backends.fault", it.tags())
+                }
 
             /**
              * Counts proxying failures caused by an external problem when trying to communicating with an application.
              *
              * Tagged only by application, because this function is for events that prevent a suitable origin from being chosen for this application.
              */
-            fun backendFaults(applicationId: String, faultType: String): Counter = backendFaults(applicationId, null, faultType)
+            fun backendFaults(
+                applicationId: String,
+                faultType: String,
+            ): Counter = backendFaults(applicationId, null, faultType)
 
             /**
              * Counts proxying failures caused by an external problem when communicating with an origin.
              *
              * Tagged by origin.
              */
-            fun backendFaults(applicationId: String, originId: String?, faultType: String): Counter =
-                backendFaults[BackendFaultKey(applicationId, originId, faultType)]
+            fun backendFaults(
+                applicationId: String,
+                originId: String?,
+                faultType: String,
+            ): Counter = backendFaults[BackendFaultKey(applicationId, originId, faultType)]
 
             /**
              * Counts the number of requests to an origin that were responded to with non-server-error status (not code 5xx).
@@ -455,9 +483,10 @@ class CentralisedMetrics(val registry: MeterRegistry) {
             /**
              * Counts responses from an origin by status code.
              */
-            fun responsesByStatus(origin: Origin): SimpleCache<Int, Counter> = SimpleCache {
-                registry.counter("proxy.client.response.statuscode", statusCodeTags(it).and(origin.tags))
-            }
+            fun responsesByStatus(origin: Origin): SimpleCache<Int, Counter> =
+                SimpleCache {
+                    registry.counter("proxy.client.response.statuscode", statusCodeTags(it).and(origin.tags))
+                }
 
             /**
              * Measures the latency of communicating with origins, excluding anything before or after that (like plugins).
@@ -486,49 +515,65 @@ class CentralisedMetrics(val registry: MeterRegistry) {
             /**
              * Counts exceptions thrown by a plugin. The dots in the name of the exception class will be replaced by underscores.
              */
-            fun exceptions(plugin: String): SimpleCache<Class<out Throwable>, Counter> = SimpleCache { type ->
-                registry.counter("proxy.plugins.exceptions", "plugin", plugin, "type", type.formattedName)
-            }
+            fun exceptions(plugin: String): SimpleCache<Class<out Throwable>, Counter> =
+                SimpleCache { type ->
+                    registry.counter("proxy.plugins.exceptions", "plugin", plugin, "type", type.formattedName)
+                }
 
             /**
              * Counts status codes emitted by a plugin if they are 400+ (a client or server error).
              *
              * Also counts a 'HTTP 500 Internal Server Error' when the plugin throws an exception.
              */
-            fun errorStatus(plugin: String): SimpleCache<HttpResponseStatus, Counter> = SimpleCache { status ->
-                registry.counter("proxy.plugins.errorResponses", "plugin", plugin, "statusCode", status.code().toString())
-            }
+            fun errorStatus(plugin: String): SimpleCache<HttpResponseStatus, Counter> =
+                SimpleCache { status ->
+                    registry.counter("proxy.plugins.errorResponses", "plugin", plugin, "statusCode", status.code().toString())
+                }
         }
     }
 
-    private inner class InnerGaugeId(val name: String, val tags: Tags = Tags.empty()) : GaugeId {
-        override fun <T> register(stateObject: T, function: (T) -> Number) {
+    private inner class InnerGaugeId(
+        val name: String,
+        val tags: Tags = Tags.empty(),
+    ) : GaugeId {
+        override fun <T> register(
+            stateObject: T,
+            function: (T) -> Number,
+        ) {
             registry.gauge(name, tags, stateObject) {
                 function(it!!).toDouble()
             }
         }
 
-        override fun register(supplier: () -> Int): Deleter = InnerDeleter(
-            Gauge.builder(name, supplier).tags(tags).register(registry.micrometerRegistry())
-        )
+        override fun register(supplier: () -> Int): Deleter =
+            InnerDeleter(
+                Gauge.builder(name, supplier).tags(tags).register(registry.micrometerRegistry()),
+            )
 
         override fun register(number: Number) {
             registry.gauge(name, number)
         }
     }
 
-    private inner class InnerDeleter(val gauge: Gauge) : Deleter {
+    private inner class InnerDeleter(
+        val gauge: Gauge,
+    ) : Deleter {
         override fun delete() {
             registry.remove(gauge)
         }
     }
 
-    private inner class InnerTimer(name: String, tags: Tags = Tags.empty()) : TimerMetric {
+    private inner class InnerTimer(
+        name: String,
+        tags: Tags = Tags.empty(),
+    ) : TimerMetric {
         private val timer = registry.timerWithStyxDefaults(name, tags)
 
         override fun startTiming() = InnerStopper(registry.startTimer())
 
-        inner class InnerStopper(private val startTime: Timer.Sample) : TimerMetric.Stopper {
+        inner class InnerStopper(
+            private val startTime: Timer.Sample,
+        ) : TimerMetric.Stopper {
             override fun stop() {
                 startTime.stop(timer)
             }
@@ -536,7 +581,11 @@ class CentralisedMetrics(val registry: MeterRegistry) {
     }
 }
 
-private data class BackendFaultKey(val applicationId: String, val originId: String?, val faultType: String) {
+private data class BackendFaultKey(
+    val applicationId: String,
+    val originId: String?,
+    val faultType: String,
+) {
     fun tags(): Tags {
         val originTag = originId?.let { Tags.of("origin", originId) } ?: Tags.empty()
 
@@ -545,19 +594,25 @@ private data class BackendFaultKey(val applicationId: String, val originId: Stri
 }
 
 private val Origin.tags get() = Tags.of("appId", appId(), "originId", originId())
+
 private fun Origin.appId() = applicationId().toString()
+
 private fun Origin.originId() = id().toString()
 
 private fun statusCodeTags(code: Int): Tags =
     if (code in 100..599) {
         Tags.of(
-            "statusClass", (code / 100).toString() + "xx",
-            "statusCode", code.toString()
+            "statusClass",
+            (code / 100).toString() + "xx",
+            "statusCode",
+            code.toString(),
         )
     } else {
         Tags.of(
-            "statusClass", "unrecognised",
-            "statusCode", "unrecognised"
+            "statusClass",
+            "unrecognised",
+            "statusCode",
+            "unrecognised",
         )
     }
 
@@ -565,7 +620,10 @@ private val Class<out Throwable>.formattedName get() = name.replace('.', '_')
 private val Thread.tags get() = Tags.of("eventloop", name)
 
 interface GaugeId {
-    fun <T> register(stateObject: T, function: (T) -> Number)
+    fun <T> register(
+        stateObject: T,
+        function: (T) -> Number,
+    )
 
     fun register(supplier: () -> Int): Deleter
 
