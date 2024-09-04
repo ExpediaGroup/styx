@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -32,7 +32,8 @@ import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.Origi
  */
 public class UrlRequestHealthCheck implements OriginHealthCheckFunction {
     private final String healthCheckUri;
-    private final SimpleCache<Origin, Counter> meterCache;
+    private final SimpleCache<Origin, Counter> failuresMeter;
+    private final SimpleCache<Origin, Counter> healthChecksMeter;
 
     /**
      * Construct an instance.
@@ -41,7 +42,8 @@ public class UrlRequestHealthCheck implements OriginHealthCheckFunction {
      */
     public UrlRequestHealthCheck(String healthCheckUri, CentralisedMetrics metrics) {
         this.healthCheckUri = uriWithInitialSlash(healthCheckUri);
-        this.meterCache = metrics.proxy().client().originHealthCheckFailures();
+        this.failuresMeter = metrics.proxy().client().originHealthCheckFailures();
+        this.healthChecksMeter = metrics.proxy().client().originHealthChecks();
     }
 
     private static String uriWithInitialSlash(String uri) {
@@ -54,15 +56,16 @@ public class UrlRequestHealthCheck implements OriginHealthCheckFunction {
 
         client.send(request)
                 .handle((response, cause) -> {
+                    healthChecksMeter.get(origin).increment();
                     if (response != null) {
                         if (response.status().equals(OK)) {
                             responseCallback.originStateResponse(HEALTHY);
                         } else {
-                            meterCache.get(origin).increment();
+                            failuresMeter.get(origin).increment();
                             responseCallback.originStateResponse(UNHEALTHY);
                         }
                     } else if (cause != null) {
-                        meterCache.get(origin).increment();
+                        failuresMeter.get(origin).increment();
                         responseCallback.originStateResponse(UNHEALTHY);
                     }
                     return null;

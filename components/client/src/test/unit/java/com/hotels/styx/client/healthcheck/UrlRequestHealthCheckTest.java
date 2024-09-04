@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -79,6 +79,7 @@ public class UrlRequestHealthCheckTest {
 
         assertThat(originState, is(HEALTHY));
         assertThat(meters(id -> id.getName().equals("proxy.client.originHealthCheckFailures")).size(), is(0));
+        assertThat(meters(id -> id.getName().equals("proxy.client.originHealthChecks")).size(), is(1));
     }
 
     @Test
@@ -92,6 +93,7 @@ public class UrlRequestHealthCheckTest {
         assertThat(metrics.getRegistry().find("proxy.client.originHealthCheckFailures")
                 .tags("originId", someOrigin.id().toString(), "appId", someOrigin.applicationId().toString()).counter().count(), is(1.0));
         assertThat(meters(id -> id.getName().equals("proxy.client.originHealthCheckFailures")).size(), is(1));
+        assertThat(meters(id -> id.getName().equals("proxy.client.originHealthChecks")).size(), is(1));
     }
 
     @Test
@@ -106,6 +108,7 @@ public class UrlRequestHealthCheckTest {
                 .tags("originId", someOrigin.id().toString(), "appId", someOrigin.applicationId().toString()).counter().count(), is(1.0));
 
         assertThat(meters(id -> id.getName().equals("proxy.client.originHealthCheckFailures")).size(), is(1));
+        assertThat(meters(id -> id.getName().equals("proxy.client.originHealthChecks")).size(), is(1));
     }
 
     private List<Meter> meters(Predicate<Meter.Id> predicate) {
