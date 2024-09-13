@@ -27,13 +27,13 @@ import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.server.UrlMatchingStrategies._
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values._
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 import scala.compat.java8.FutureConverters.CompletionStageOps
 
-class AsyncRequestSpec extends FunSpec
+class AsyncRequestSpec extends AnyFunSpec
   with StyxProxySpec
   with StyxClientSupplier {
   val mockServer = FakeHttpServer.HttpStartupConfig().start()

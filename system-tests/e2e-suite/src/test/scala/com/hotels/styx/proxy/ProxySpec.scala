@@ -36,7 +36,8 @@ import com.hotels.styx.support.matchers.RegExMatcher.matchesRegex
 import com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith
 import com.hotels.styx.{DefaultStyxConfiguration, MockServer, StyxProxySpec}
 import org.hamcrest.MatcherAssert.assertThat
-import org.scalatest.{BeforeAndAfter, FunSpec}
+import org.scalatest.BeforeAndAfter
+import org.scalatest.funspec.AnyFunSpec
 import org.slf4j.LoggerFactory
 
 import java.nio.charset.StandardCharsets.UTF_8
@@ -45,7 +46,7 @@ import scala.compat.java8.FutureConverters.CompletionStageOps
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class ProxySpec extends FunSpec
+class ProxySpec extends AnyFunSpec
   with StyxProxySpec
   with DefaultStyxConfiguration
   with BeforeAndAfter {

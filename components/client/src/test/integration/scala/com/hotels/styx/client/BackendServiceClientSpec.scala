@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -42,14 +42,16 @@ import io.netty.handler.codec.http.HttpVersion._
 import io.netty.handler.codec.http._
 import org.reactivestreams.Subscription
 import org.scalatest._
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.mockito.MockitoSugar
 import reactor.core.publisher.Mono
 
 import java.nio.charset.StandardCharsets._
 import java.util.concurrent.atomic.AtomicLong
 import scala.util.Try
 
-class BackendServiceClientSpec extends FunSuite with BeforeAndAfterAll with Matchers with BeforeAndAfter with MockitoSugar {
+class BackendServiceClientSpec extends AnyFunSuite with BeforeAndAfterAll with Matchers with BeforeAndAfter with MockitoSugar {
   var webappOrigin: Origin = _
 
   val originOneServer = new FakeHttpServer(0)

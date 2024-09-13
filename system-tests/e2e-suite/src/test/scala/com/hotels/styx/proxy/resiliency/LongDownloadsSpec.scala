@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -30,7 +30,9 @@ import com.hotels.styx.support.DownloadClient._
 import com.hotels.styx.support.configuration.{HttpBackend, ImplicitOriginConversions, Origins, StyxConfig}
 import com.hotels.styx.support.{DownloadClient, NettyOrigins, TestClientSupport}
 import org.scalatest.concurrent.Eventually
-import org.scalatest.{BeforeAndAfterAll, Matchers, SequentialNestedSuiteExecution}
+import org.scalatest.{BeforeAndAfterAll, SequentialNestedSuiteExecution}
+import org.scalatest.wordspec.FixtureAnyWordSpec
+import org.scalatest.matchers.should.Matchers
 import org.slf4j.LoggerFactory
 
 import java.io.{File, IOException, RandomAccessFile}
@@ -42,7 +44,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
-class LongDownloadsSpec extends org.scalatest.fixture.WordSpec
+class LongDownloadsSpec extends FixtureAnyWordSpec
   with SequentialNestedSuiteExecution
   with BeforeAndAfterAll
   with TestClientSupport

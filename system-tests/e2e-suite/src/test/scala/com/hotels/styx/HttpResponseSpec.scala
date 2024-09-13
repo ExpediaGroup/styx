@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -38,12 +38,14 @@ import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.HttpVersion._
 import io.netty.handler.codec.http._
 import org.scalatest._
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import reactor.core.publisher.Mono
 
 import java.nio.charset.StandardCharsets.UTF_8
 import scala.concurrent.duration._
 
-class HttpResponseSpec extends FunSuite
+class HttpResponseSpec extends AnyFunSuite
   with ImplicitOriginConversions
   with BeforeAndAfterAll
   with BeforeAndAfter

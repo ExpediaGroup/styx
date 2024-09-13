@@ -26,13 +26,14 @@ import com.hotels.styx.support.configuration._
 import com.hotels.styx.utils.StubOriginHeader.STUB_ORIGIN_INFO
 import com.hotels.styx.{StyxClientSupplier, StyxProxySpec}
 import io.netty.buffer.{ByteBuf, Unpooled}
-import org.scalatest.{FunSpec, SequentialNestedSuiteExecution}
+import org.scalatest.SequentialNestedSuiteExecution
+import org.scalatest.funspec.AnyFunSpec
 import org.slf4j.LoggerFactory
 
 import java.nio.charset.StandardCharsets.UTF_8
 import scala.concurrent.duration._
 
-class ProtocolsSpec extends FunSpec
+class ProtocolsSpec extends AnyFunSpec
   with StyxProxySpec
   with StyxClientSupplier
   with SequentialNestedSuiteExecution {

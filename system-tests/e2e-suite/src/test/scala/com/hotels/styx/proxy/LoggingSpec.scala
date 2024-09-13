@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -35,12 +35,12 @@ import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values._
 import org.hamcrest.MatcherAssert._
 import org.hamcrest.Matchers._
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.concurrent.Eventually
 
 import scala.concurrent.duration._
 
-class LoggingSpec extends FunSpec
+class LoggingSpec extends AnyFunSpec
   with StyxProxySpec
   with StyxClientSupplier
   with Eventually {

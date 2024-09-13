@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -28,12 +28,12 @@ import io.netty.handler.codec.http.HttpHeaderNames.{CONTENT_LENGTH, CONTENT_TYPE
 import io.netty.handler.codec.http.HttpResponseStatus.{GATEWAY_TIMEOUT, REQUEST_TIMEOUT}
 import io.netty.handler.codec.http.HttpVersion.HTTP_1_1
 import io.netty.handler.codec.http._
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.concurrent.Eventually
 
 import scala.concurrent.duration._
 
-class TimeoutsSpec extends FunSpec
+class TimeoutsSpec extends AnyFunSpec
   with StyxProxySpec
   with TestClientSupport
   with Eventually {

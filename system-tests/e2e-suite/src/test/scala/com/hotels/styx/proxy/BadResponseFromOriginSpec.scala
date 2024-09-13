@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import io.netty.handler.codec.http.HttpVersion._
 import io.netty.handler.codec.http.LastHttpContent._
 import io.netty.handler.codec.http._
 import org.hamcrest.MatcherAssert.assertThat
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.concurrent.Eventually
 import org.slf4j.LoggerFactory
 
@@ -43,7 +43,7 @@ import java.util.Optional
 import scala.concurrent.duration._
 import scala.util.Random
 
-class BadResponseFromOriginSpec extends FunSpec
+class BadResponseFromOriginSpec extends AnyFunSpec
   with StyxProxySpec
   with DefaultStyxConfiguration
   with NettyOrigins

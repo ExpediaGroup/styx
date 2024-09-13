@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,9 +24,10 @@ import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration._
 import com.hotels.styx.{SSLSetup, StyxClientSupplier, StyxProxySpec}
-import org.scalatest.{FunSpec, Matchers}
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class HttpsSpec extends FunSpec
+class HttpsSpec extends AnyFunSpec
   with StyxProxySpec
   with HttpResponseImplicits
   with StyxClientSupplier

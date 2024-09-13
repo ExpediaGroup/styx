@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,10 +21,9 @@ import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.{NOT_FOUND, OK}
 import com.hotels.styx.infrastructure.HttpResponseImplicits
 import com.hotels.styx.{DefaultStyxConfiguration, StyxClientSupplier, StyxProxySpec}
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 
-
-class MetricsSpec extends FunSpec
+class MetricsSpec extends AnyFunSpec
   with StyxProxySpec
   with DefaultStyxConfiguration
   with StyxClientSupplier

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2022 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -27,6 +27,8 @@ import com.hotels.styx.utils.StubOriginHeader.STUB_ORIGIN_INFO
 import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
+import org.scalatest.featurespec.AnyFeatureSpec
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.slf4j.LoggerFactory
 
@@ -34,7 +36,7 @@ import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets.UTF_8
 import scala.concurrent.duration._
 
-class OriginsCommandsSpec extends FeatureSpec
+class OriginsCommandsSpec extends AnyFeatureSpec
   with StyxProxySpec
   with DefaultStyxConfiguration
   with GivenWhenThen

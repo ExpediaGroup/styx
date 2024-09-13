@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -29,13 +29,15 @@ import io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT
 import io.netty.handler.codec.http._
 import org.scalacheck.Prop._
 import org.scalacheck.Test
-import org.scalatest.prop.{Checkers, Configuration}
-import org.scalatest.{BeforeAndAfter, FunSpec}
+import org.scalatest.BeforeAndAfter
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.prop.Configuration
+import org.scalatestplus.scalacheck.Checkers
 
 import java.util.concurrent.TimeUnit._
 import scala.util.Try
 
-class BadCookiesSpec extends FunSpec
+class BadCookiesSpec extends AnyFunSpec
   with StyxProxySpec
   with DefaultStyxConfiguration
   with HttpRequestGenerator

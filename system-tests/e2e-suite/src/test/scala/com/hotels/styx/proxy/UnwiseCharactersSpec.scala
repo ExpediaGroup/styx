@@ -30,11 +30,12 @@ import com.hotels.styx.support.server.UrlMatchingStrategies._
 import org.hamcrest.MatcherAssert._
 import org.hamcrest.Matchers.hasItem
 import org.scalatest._
+import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.concurrent.Eventually
 
 import scala.concurrent.duration._
 
-class UnwiseCharactersSpec extends FunSpec with StyxProxySpec with Eventually {
+class UnwiseCharactersSpec extends AnyFunSpec with StyxProxySpec with Eventually {
 
   val recordingBackend = FakeHttpServer.HttpStartupConfig().start()
 

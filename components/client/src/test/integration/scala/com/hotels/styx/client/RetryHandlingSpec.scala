@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -44,11 +44,13 @@ import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values._
 import io.netty.handler.codec.http.LastHttpContent
-import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
 
-class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers with OriginSupport {
+class RetryHandlingSpec extends AnyFunSuite with BeforeAndAfterAll with Matchers with OriginSupport {
 
   val LOGGER = LoggerFactory.getLogger(classOf[RetryHandlingSpec])
 

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import com.hotels.styx.api.HttpResponseStatus._
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
 import com.hotels.styx.{DefaultStyxConfiguration, MockServer, StyxProxySpec}
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
 
@@ -33,7 +33,7 @@ import java.nio.file.Files.{createTempDirectory, readString}
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import scala.concurrent.duration._
 
-class BigFileDownloadSpec extends FunSpec
+class BigFileDownloadSpec extends AnyFunSpec
   with StyxProxySpec
   with DefaultStyxConfiguration {
   val fileServer = new MockServer(0)

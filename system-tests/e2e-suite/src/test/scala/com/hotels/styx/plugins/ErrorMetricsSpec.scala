@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -32,13 +32,15 @@ import com.hotels.styx.{BackendServicesRegistrySupplier, StyxClientSupplier, Sty
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.scalatest.concurrent.Eventually
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSpec, Matchers}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 import java.lang.Thread.sleep
 import scala.compat.java8.OptionConverters.RichOptionalGeneric
 import scala.concurrent.duration._
 
-class ErrorMetricsSpec extends FunSpec
+class ErrorMetricsSpec extends AnyFunSpec
   with StyxServerSupport
   with BeforeAndAfterAll
   with BackendServicesRegistrySupplier

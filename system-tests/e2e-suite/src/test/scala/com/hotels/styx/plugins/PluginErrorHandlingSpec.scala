@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,11 +25,11 @@ import com.hotels.styx.api._
 import com.hotels.styx.support.JustATestException
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins, StyxConfig}
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 
 import scala.concurrent.duration._
 
-class PluginErrorHandlingSpec extends FunSpec
+class PluginErrorHandlingSpec extends AnyFunSpec
   with StyxProxySpec
   with StyxClientSupplier {
 

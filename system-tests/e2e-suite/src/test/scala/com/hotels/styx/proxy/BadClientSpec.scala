@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,13 +25,13 @@ import io.netty.handler.codec.http.HttpMethod.GET
 import io.netty.handler.codec.http.HttpResponseStatus._
 import io.netty.handler.codec.http.HttpVersion.HTTP_1_1
 import io.netty.handler.codec.http._
-import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
+import org.scalatest.funspec.AnyFunSpec
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration._
 
-class BadClientSpec extends FunSpec
+class BadClientSpec extends AnyFunSpec
   with StyxProxySpec
   with DefaultStyxConfiguration
   with TestClientSupport

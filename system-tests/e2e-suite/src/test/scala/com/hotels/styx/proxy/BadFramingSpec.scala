@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -32,13 +32,13 @@ import io.netty.handler.codec.http.HttpHeaders.Values.CHUNKED
 import io.netty.handler.codec.http.HttpMethod._
 import io.netty.handler.codec.http.HttpVersion.HTTP_1_1
 import io.netty.handler.codec.http._
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.Optional
 import java.util.concurrent.TimeUnit.SECONDS
 
-class BadFramingSpec extends FunSpec
+class BadFramingSpec extends AnyFunSpec
   with StyxProxySpec
   with DefaultStyxConfiguration
   with NettyOrigins

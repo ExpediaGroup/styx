@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,11 +25,12 @@ import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration._
 import com.hotels.styx.{SSLSetup, StyxProxySpec}
 import io.netty.handler.codec.http.HttpHeaders.Names._
-import org.scalatest.{FunSpec, Matchers}
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 import scala.concurrent.Await
 
-class EmptyTlsProtocolsListSpec extends FunSpec
+class EmptyTlsProtocolsListSpec extends AnyFunSpec
   with StyxProxySpec
   with HttpResponseImplicits
   with Matchers
