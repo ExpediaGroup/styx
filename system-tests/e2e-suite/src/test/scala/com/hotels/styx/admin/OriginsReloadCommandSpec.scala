@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,7 +22,9 @@ import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.configuration._
 import com.hotels.styx.{StyxClientSupplier, StyxServer, StyxServerSupport}
 import org.scalatest.concurrent.Eventually
-import org.scalatest.{BeforeAndAfterAll, FunSpec, Matchers}
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 import java.nio.file.Files.createTempDirectory
 import java.nio.file.StandardCopyOption.REPLACE_EXISTING
@@ -30,7 +32,7 @@ import java.nio.file.{Files, Paths}
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 
-class OriginsReloadCommandSpec extends FunSpec
+class OriginsReloadCommandSpec extends AnyFunSpec
   with StyxServerSupport
   with StyxClientSupplier
   with Matchers

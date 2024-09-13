@@ -28,14 +28,14 @@ import com.hotels.styx.support.NettyOrigins
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
 import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 
 import scala.collection.JavaConversions._
 
 /* NOTE: this test seems to fail a lot when run from maven, even though it passes when run directly in IDEA.
       If you get a build failure, but it runs locally, temporarily replace "describe" with ignore
  */
-class HeadersSpec extends FunSpec
+class HeadersSpec extends AnyFunSpec
   with StyxProxySpec
   with DefaultStyxConfiguration
   with NettyOrigins {

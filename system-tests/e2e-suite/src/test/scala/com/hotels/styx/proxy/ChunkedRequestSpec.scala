@@ -24,14 +24,14 @@ import com.hotels.styx.support.TestClientSupport
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
 import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 
 import java.io.{ByteArrayInputStream, IOException, InputStream}
 import java.net.{HttpURLConnection, URL}
 import java.nio.charset.StandardCharsets._
 import java.util.Optional
 
-class ChunkedRequestSpec extends FunSpec
+class ChunkedRequestSpec extends AnyFunSpec
   with StyxProxySpec
   with DefaultStyxConfiguration
   with TestClientSupport {

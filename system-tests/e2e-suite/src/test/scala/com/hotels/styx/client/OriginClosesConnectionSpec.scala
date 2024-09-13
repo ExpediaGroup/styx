@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpVersion._
 import io.netty.handler.codec.http._
 import org.scalatest._
+import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.concurrent.Eventually
 import reactor.core.publisher.Mono
 import reactor.test.StepVerifier
@@ -50,7 +51,7 @@ import java.nio.charset.StandardCharsets._
 import scala.compat.java8.StreamConverters._
 import scala.concurrent.duration._
 
-class OriginClosesConnectionSpec extends FunSuite
+class OriginClosesConnectionSpec extends AnyFunSuite
   with StyxProxySpec
   with DefaultStyxConfiguration
   with NettyOrigins

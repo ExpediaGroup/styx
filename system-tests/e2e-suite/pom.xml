@@ -105,6 +105,11 @@
     </dependency>
 
     <dependency>
+      <groupId>org.scalatestplus</groupId>
+      <artifactId>scalacheck-1-18_${scala.version}</artifactId>
+    </dependency>
+
+    <dependency>
       <groupId>io.projectreactor</groupId>
       <artifactId>reactor-test</artifactId>
       <scope>test</scope>

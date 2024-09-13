@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -36,13 +36,13 @@ import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.hamcrest.MatcherAssert._
 import org.hamcrest.Matchers._
-import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
+import org.scalatest.funspec.AnyFunSpec
 import reactor.core.publisher.Mono
 
 import scala.concurrent.duration._
 
-class ExpiringConnectionSpec extends FunSpec
+class ExpiringConnectionSpec extends AnyFunSpec
   with DefaultStyxConfiguration
   with StyxProxySpec
   with Eventually {

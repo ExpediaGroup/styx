@@ -23,7 +23,6 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.routing.config.StyxObjectDefinition;
 import com.hotels.styx.routing.db.StyxObjectStore;
-import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
@@ -33,6 +32,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
@@ -148,7 +148,7 @@ public class ServiceProviderHandlerTest {
 
     private List<StyxObjectDefinition> extractProviders(String responseBody) throws IOException {
         return Arrays.stream(responseBody.split("---\n"))
-                .filter(StringUtils::isNotBlank)
+                .filter(Predicate.not(String::isBlank))
                 .map(this::deserialiseProvider)
                 .collect(Collectors.toList());
     }

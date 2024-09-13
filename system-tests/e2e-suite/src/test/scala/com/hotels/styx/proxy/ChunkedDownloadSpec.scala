@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -32,14 +32,14 @@ import io.netty.handler.codec.http.HttpMethod.GET
 import io.netty.handler.codec.http.HttpVersion._
 import io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT
 import io.netty.handler.codec.http._
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.concurrent.Eventually
 
 import java.nio.charset.StandardCharsets._
 import scala.concurrent.duration.{Duration, _}
 
 
-class ChunkedDownloadSpec extends FunSpec
+class ChunkedDownloadSpec extends AnyFunSpec
   with StyxProxySpec
   with DefaultStyxConfiguration
   with NettyOrigins

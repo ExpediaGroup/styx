@@ -24,11 +24,12 @@ import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration._
 import com.hotels.styx.utils.StubOriginHeader.STUB_ORIGIN_INFO
 import com.hotels.styx.{StyxClientSupplier, StyxProxySpec}
-import org.scalatest.{FunSpec, SequentialNestedSuiteExecution}
+import org.scalatest.SequentialNestedSuiteExecution
+import org.scalatest.funspec.AnyFunSpec
 
 import java.nio.charset.StandardCharsets.UTF_8
 
-class TlsVersionSpec extends FunSpec
+class TlsVersionSpec extends AnyFunSpec
   with StyxProxySpec
   with StyxClientSupplier
   with SequentialNestedSuiteExecution {

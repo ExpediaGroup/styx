@@ -32,12 +32,12 @@ import io.netty.handler.codec.http.HttpHeaders.Values._
 import com.hotels.styx.api.HttpResponseStatus.OK
 import org.hamcrest.MatcherAssert._
 import org.hamcrest.Matchers._
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.concurrent.Eventually
 
 import scala.concurrent.duration._
 
-class HttpOutboundMessageLoggingSpec extends FunSpec
+class HttpOutboundMessageLoggingSpec extends AnyFunSpec
   with StyxProxySpec
   with StyxClientSupplier
   with Eventually {

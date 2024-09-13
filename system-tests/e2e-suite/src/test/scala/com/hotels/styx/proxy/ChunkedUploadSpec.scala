@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import io.netty.handler.codec.http.HttpVersion.HTTP_1_1
 import io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT
 import io.netty.handler.codec.http._
 import io.netty.handler.stream.ChunkedWriteHandler
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.concurrent.Eventually
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory._
@@ -43,7 +43,7 @@ import java.nio.charset.StandardCharsets._
 import java.util.concurrent.TimeUnit.SECONDS
 import scala.concurrent.duration._
 
-class ChunkedUploadSpec extends FunSpec
+class ChunkedUploadSpec extends AnyFunSpec
   with StyxProxySpec
   with StyxClientSupplier
   with Eventually

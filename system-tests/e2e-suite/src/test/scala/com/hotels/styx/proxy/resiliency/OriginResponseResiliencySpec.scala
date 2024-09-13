@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -31,12 +31,14 @@ import io.netty.handler.codec.http.HttpVersion.HTTP_1_1
 import io.netty.handler.codec.http.{FullHttpResponse, HttpObject, HttpResponseStatus, LastHttpContent, _}
 import org.scalacheck.Prop._
 import org.scalacheck.Test
-import org.scalatest.prop.{Checkers, Configuration}
-import org.scalatest.{BeforeAndAfter, FunSpec}
+import org.scalatest.BeforeAndAfter
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.prop.Configuration
+import org.scalatestplus.scalacheck.Checkers
 
 import scala.util.Try
 
-class OriginResponseResiliencySpec extends FunSpec
+class OriginResponseResiliencySpec extends AnyFunSpec
   with StyxProxySpec
   with DefaultStyxConfiguration
   with HttpRequestGenerator

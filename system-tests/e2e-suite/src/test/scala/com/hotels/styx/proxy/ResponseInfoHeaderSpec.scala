@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -26,9 +26,10 @@ import com.hotels.styx.support.matchers.IsOptional.matches
 import com.hotels.styx.support.matchers.RegExMatcher.matchesRegex
 import com.hotels.styx.{MockServer, StyxConfiguration, StyxProxySpec}
 import org.hamcrest.MatcherAssert.assertThat
-import org.scalatest.{BeforeAndAfter, FunSpec}
+import org.scalatest.BeforeAndAfter
+import org.scalatest.funspec.AnyFunSpec
 
-class VersionPresentInResponseHeaderSpec extends FunSpec
+class VersionPresentInResponseHeaderSpec extends AnyFunSpec
   with StyxProxySpec
   with StyxConfiguration
   with BeforeAndAfter {
@@ -63,7 +64,7 @@ class VersionPresentInResponseHeaderSpec extends FunSpec
   }
 }
 
-class VersionAbsentFromResponseHeaderSpec extends FunSpec
+class VersionAbsentFromResponseHeaderSpec extends AnyFunSpec
   with StyxProxySpec
   with StyxConfiguration
   with BeforeAndAfter {

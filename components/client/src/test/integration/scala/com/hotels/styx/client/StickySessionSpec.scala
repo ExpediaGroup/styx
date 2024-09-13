@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -36,13 +36,15 @@ import com.hotels.styx.support.Support.requestContext
 import com.hotels.styx.support.server.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry
-import org.scalatest.mock.MockitoSugar
-import org.scalatest.{BeforeAndAfter, FunSuite, Matchers}
+import org.scalatest.BeforeAndAfter
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.mockito.MockitoSugar
 import reactor.core.publisher.Mono
 
 import scala.collection.JavaConverters._
 
-class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with OriginSupport with MockitoSugar {
+class StickySessionSpec extends AnyFunSuite with BeforeAndAfter with Matchers with OriginSupport with MockitoSugar {
 
   val meterRegistry = new CompositeMeterRegistry()
   val metrics = new CentralisedMetrics(new MicrometerRegistry(meterRegistry))

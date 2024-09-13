@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,13 +24,13 @@ import com.hotels.styx.api.LiveHttpResponse.response
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.{MockServer, StyxProxySpec}
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.concurrent.Eventually
 import reactor.core.publisher.Flux
 
 import scala.concurrent.duration._
 
-class AggregatingPluginSpec extends FunSpec
+class AggregatingPluginSpec extends AnyFunSpec
   with StyxProxySpec
   with Eventually {
   val mockServer = new MockServer("origin-1", 0)

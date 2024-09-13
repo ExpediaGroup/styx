@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,9 +23,9 @@ import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.StyxConfig
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 
-class BackendServiceProviderSpec extends FunSpec with StyxProxySpec {
+class BackendServiceProviderSpec extends AnyFunSpec with StyxProxySpec {
   val normalBackend = FakeHttpServer.HttpStartupConfig().start()
   val pluginsFolder = resourcesPluginsPath
 

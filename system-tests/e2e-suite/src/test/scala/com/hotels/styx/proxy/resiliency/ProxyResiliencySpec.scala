@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2024 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,16 +25,18 @@ import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.HttpResponseStatus._
 import io.netty.handler.codec.http._
 import org.scalacheck.Test
-import org.scalatest.prop.{Checkers, Configuration, PropertyChecks}
-import org.scalatest.{BeforeAndAfter, FunSpec}
+import org.scalatest.BeforeAndAfter
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.prop.Configuration
+import org.scalatestplus.scalacheck.{Checkers, ScalaCheckPropertyChecks}
 import org.slf4j.LoggerFactory
 
 import java.nio.charset.StandardCharsets._
 import java.util.concurrent.TimeUnit._
 import scala.util.{Failure, Success, Try}
 
-class ProxyResiliencySpec extends FunSpec
-  with PropertyChecks
+class ProxyResiliencySpec extends AnyFunSpec
+  with ScalaCheckPropertyChecks
   with StyxProxySpec
   with HttpRequestGenerator
   with Checkers
