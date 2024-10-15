@@ -65,7 +65,7 @@ import com.hotels.styx.server.netty.NettyServerBuilder;
 import com.hotels.styx.server.netty.WebServerConnectorFactory;
 import com.hotels.styx.server.track.CurrentRequestTracker;
 import com.hotels.styx.startup.StyxServerComponents;
-import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.slf4j.Logger;
 
 import java.time.Duration;

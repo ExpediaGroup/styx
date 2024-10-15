@@ -20,7 +20,7 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.WebServiceHandler;
-import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.slf4j.Logger;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
