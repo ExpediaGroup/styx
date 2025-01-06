@@ -8,7 +8,7 @@ In this guide we will walk through how to build applications on top of Styx.
 
 ## 1.2 System Requirements
 
-Building Styx requires Java 21.
+Building Styx requires Java 23.
 
 The build system requires Apache Maven. The Styx team uses Maven version 3
 for automated continuous integration builds. On Mac OSX, a version installed

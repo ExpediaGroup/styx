@@ -1,7 +1,7 @@
 
 ### styx-build
 
-This directory contains a maven:3.9.6-eclipse-temurin-21 based Styx build environment. It
+This directory contains a maven:3.9.9-eclipse-temurin-23 based Styx build environment. It
 has all necessary build tools (git, maven, make, docker) for building
 images and running tests in a Linux environment.
 

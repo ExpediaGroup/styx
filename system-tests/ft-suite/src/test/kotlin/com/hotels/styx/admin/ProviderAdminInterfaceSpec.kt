@@ -203,7 +203,7 @@ class ProviderAdminInterfaceSpec : FeatureSpec() {
                     styxServer.adminRequest("/admin/providers/appB-monitor/status")
                             .let {
                                 it.status() shouldBe OK
-                                it.header(CONTENT_TYPE).get().toLowerCase() shouldBe APPLICATION_JSON.toString().toLowerCase()
+                                it.header(CONTENT_TYPE).get().lowercase() shouldBe APPLICATION_JSON.toString().lowercase()
                                 it.bodyAs(UTF_8) shouldBe "{ name: \"HealthCheckMonitoringService-appB\" status: \"RUNNING\" }"
                             }
                 }

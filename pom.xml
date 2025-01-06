@@ -97,7 +97,7 @@
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <java.version>21</java.version>
+    <java.version>23</java.version>
 
     <!-- General Versions -->
     <antlr.version>4.13.2</antlr.version>
@@ -116,7 +116,7 @@
     <reactor.version>2023.0.10</reactor.version>
 
     <!--Kotlin -->
-    <kotlin.version>2.0.20</kotlin.version>
+    <kotlin.version>2.1.0</kotlin.version>
     <kotest.version>5.9.1</kotest.version>
     <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
     <kotlinx-html.version>0.11.0</kotlinx-html.version>
@@ -569,7 +569,7 @@
           <artifactId>kotlin-maven-plugin</artifactId>
           <version>${kotlin.version}</version>
           <configuration>
-            <jvmTarget>21</jvmTarget>
+            <jvmTarget>23</jvmTarget>
           </configuration>
           <executions>
             <execution>
@@ -887,11 +887,11 @@
               <fail>true</fail>
               <rules>
                 <requireMavenVersion>
-                  <version>[3.9.6,)</version>
+                  <version>[3.9.9,)</version>
                 </requireMavenVersion>
                 <requireJavaVersion>
-                  <version>[21,)</version>
-                  <message>java 21 needed</message>
+                  <version>[23,)</version>
+                  <message>java 23 needed</message>
                 </requireJavaVersion>
               </rules>
             </configuration>
