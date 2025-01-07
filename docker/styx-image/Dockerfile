@@ -1,4 +1,4 @@
-ARG TAG=21-jdk
+ARG TAG=23-jdk
 FROM eclipse-temurin:${TAG}
 
 ARG STYX_VERSION=""
