@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2025 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -103,7 +103,7 @@ internal class HealthCheckMonitoringService(
                 .filter(::containsRelevantStateTag)
                 .forEach { (name, record) ->
                     objectStore.compute(name) { previous ->
-                        if (previous === null) return@compute null
+                        if (previous == null) return@compute null
 
                         val newTags = previous.tags
                                 .let { healthCheckTag.remove(it) }
@@ -206,7 +206,7 @@ internal fun objectHealthFrom(state: String?, health: Pair<String, Int>?) =
 
 private fun markObject(db: StyxObjectStore<RoutingObjectRecord>, name: String, newStatus: ObjectHealth) {
     db.compute(name) { previous ->
-        if (previous === null) {
+        if (previous == null) {
             return@compute null
         }
         val prevTags = previous.tags;

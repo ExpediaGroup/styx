@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2025 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -238,7 +238,7 @@ class StyxObjectStoreTest : FeatureSpec() {
                 StepVerifier.create(db.watch())
                         .expectNextCount(1)
                         .then { db.compute("key") { currentEntry -> null } }
-                        .assertNext { it.entrySet().filter { it.key === "key" }.size shouldBe 0 }
+                        .assertNext { it.entrySet().filter { it.key == "key" }.size shouldBe 0 }
                         .thenCancel()
                         .verify()
             }

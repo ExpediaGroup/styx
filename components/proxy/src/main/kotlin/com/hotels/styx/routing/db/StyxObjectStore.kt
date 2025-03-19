@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2025 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -133,7 +133,7 @@ class StyxObjectStore<T : Any> internal constructor(executor: ExecutorService): 
             val existingValue = current.snapshot.get(key)
             result = computation(existingValue)
 
-            new = if (existingValue !== null && result === null) {
+            new = if (existingValue != null && result == null) {
                 //New value is null, removing key
                 current.map { it.minus(key) }
             } else if (result != existingValue) {
