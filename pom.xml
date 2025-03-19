@@ -100,6 +100,7 @@
     <java.version>21</java.version>
 
     <!-- General Versions -->
+    <annotations.version>26.0.2</annotations.version>
     <antlr.version>4.13.2</antlr.version>
     <bcpkix-jdk18on.version>1.80</bcpkix-jdk18on.version>
     <bytebuddy.version>1.17.2</bytebuddy.version>
@@ -117,6 +118,7 @@
 
     <!--Kotlin -->
     <kotlin.version>2.1.10</kotlin.version>
+    <kotlinx.coroutines.version>1.10.1</kotlinx.coroutines.version>
     <kotest.version>5.9.1</kotest.version>
     <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
     <kotlinx-html.version>0.12.0</kotlinx-html.version>
@@ -128,7 +130,7 @@
     <slf4j.version>2.0.17</slf4j.version>
 
     <scala.version>2.12</scala.version>
-    <scala-compiler.version>2.13.16</scala-compiler.version>
+    <scala-compiler.version>2.12.20</scala-compiler.version>
 
     <!-- Testing Versions -->
     <akka.version>2.8.8</akka.version>
@@ -203,6 +205,13 @@
         <version>${kotlin.version}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.jetbrains.kotlinx</groupId>
+        <artifactId>kotlinx-coroutines-bom</artifactId>
+        <version>${kotlinx.coroutines.version}</version>
+        <scope>import</scope>
+        <type>pom</type>
       </dependency>
 
       <!-- Netty -->
@@ -294,8 +303,10 @@
 
       <dependency>
         <groupId>net.bytebuddy</groupId>
-        <artifactId>byte-buddy</artifactId>
+        <artifactId>byte-buddy-parent</artifactId>
         <version>${bytebuddy.version}</version>
+        <scope>import</scope>
+        <type>pom</type>
       </dependency>
 
       <dependency>
@@ -473,6 +484,12 @@
         <artifactId>mockito-core</artifactId>
         <version>${mockito.version}</version>
         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.jetbrains</groupId>
+        <artifactId>annotations</artifactId>
+        <version>${annotations.version}</version>
       </dependency>
 
       <!-- Scala -->
