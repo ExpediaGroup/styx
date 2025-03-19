@@ -3,5 +3,17 @@
   "extends": [
     "local>ExpediaGroup/renovate-config",
     "group:allNonMajor"
+  ],
+  "packageRules": [
+    {
+      "description": "Only allow patch updates for Scala compiler",
+      "matchDatasources": [
+        "maven"
+      ],
+      "matchPackageNames": [
+        "org.scala-lang:scala-compiler"
+      ],
+      "matchUpdateTypes": ["patch"]
+    }
   ]
 }
