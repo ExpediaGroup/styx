@@ -126,7 +126,7 @@
     <java-uuid-generator.version>5.1.0</java-uuid-generator.version>
 
     <!-- Logging Versions -->
-    <logback.version>1.5.18</logback.version>
+    <logback.version>1.5.19</logback.version>
     <slf4j.version>2.0.17</slf4j.version>
 
     <scala.version>2.12</scala.version>
