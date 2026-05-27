@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2026 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 import com.hotels.styx.client.healthcheck.Schedule;
 
-import javax.annotation.concurrent.ThreadSafe;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -40,7 +39,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * An {@link com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor} that monitors the origins state
  * periodically.
  */
-@ThreadSafe
 public class ScheduledOriginHealthStatusMonitor extends AbstractStyxService implements OriginHealthStatusMonitor {
     private final Announcer<OriginHealthStatusMonitor.Listener> listeners = Announcer.to(OriginHealthStatusMonitor.Listener.class);
 

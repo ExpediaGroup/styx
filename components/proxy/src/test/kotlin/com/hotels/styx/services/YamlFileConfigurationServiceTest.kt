@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2026 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -44,12 +44,13 @@ import java.io.File
 import java.time.Duration
 import java.util.Optional
 import java.util.concurrent.TimeUnit.SECONDS
+import kotlin.io.path.createTempDirectory
 import kotlin.time.Duration.Companion.seconds
 
 private val LOGGER = LoggerFactory.getLogger(YamlFileConfigurationServiceTest::class.java)
 
 class YamlFileConfigurationServiceTest : FunSpec() {
-    val tempDir = createTempDir(suffix = "-${this.javaClass.simpleName}")
+    val tempDir = createTempDirectory(prefix = "${this.javaClass.simpleName}-").toFile()
     val originsConfig = File("${tempDir.absolutePath}/config.yml")
     val pollInterval = Duration.ofMillis(100).toString()
 

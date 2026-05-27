@@ -6,14 +6,14 @@
   ],
   "packageRules": [
     {
-      "description": "Only allow patch updates for Scala compiler",
+      "description": "Pin Scala to 2.12.x - binary incompatible across minor versions",
       "matchDatasources": [
         "maven"
       ],
-      "matchPackageNames": [
-        "org.scala-lang:scala-compiler"
+      "matchPackagePatterns": [
+        "^org\\.scala-lang:"
       ],
-      "matchUpdateTypes": ["patch"]
+      "allowedVersions": "/^2\\.12\\./"
     }
   ]
 }

@@ -130,7 +130,7 @@
     <slf4j.version>2.0.18</slf4j.version>
 
     <scala.version>2.12</scala.version>
-    <scala-compiler.version>2.13.18</scala-compiler.version>
+    <scala-compiler.version>2.12.21</scala-compiler.version>
 
     <!-- Testing Versions -->
     <akka.version>2.8.8</akka.version>

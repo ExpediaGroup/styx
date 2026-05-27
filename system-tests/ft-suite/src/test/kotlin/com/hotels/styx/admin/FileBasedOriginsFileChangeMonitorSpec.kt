@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2026 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Files.copy
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption.REPLACE_EXISTING
+import kotlin.io.path.createTempDirectory
 import kotlin.time.Duration.Companion.seconds
 
 private val LOGGER = LoggerFactory.getLogger(FileBasedOriginsFileChangeMonitorSpec::class.java)
@@ -67,7 +68,7 @@ class FileBasedOriginsFileChangeMonitorSpec: StringSpec() {
         }
     }
 
-    val tempDir = createTempDir()
+    val tempDir = createTempDirectory().toFile()
     val styxOriginsFile = File(tempDir, "origins.yml").toPath()
 
     private val configTemplate = """

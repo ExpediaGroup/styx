@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2024 Expedia Inc.
+  Copyright (C) 2013-2026 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -536,12 +536,12 @@ class CentralisedMetrics(
         val name: String,
         val tags: Tags = Tags.empty(),
     ) : GaugeId {
-        override fun <T> register(
+        override fun <T : Any> register(
             stateObject: T,
             function: (T) -> Number,
         ) {
             registry.gauge(name, tags, stateObject) {
-                function(it!!).toDouble()
+                function(it).toDouble()
             }
         }
 
@@ -620,7 +620,7 @@ private val Class<out Throwable>.formattedName get() = name.replace('.', '_')
 private val Thread.tags get() = Tags.of("eventloop", name)
 
 interface GaugeId {
-    fun <T> register(
+    fun <T : Any> register(
         stateObject: T,
         function: (T) -> Number,
     )

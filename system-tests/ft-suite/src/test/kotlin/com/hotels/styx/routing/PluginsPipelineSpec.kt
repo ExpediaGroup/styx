@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2026 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -29,13 +29,14 @@ import java.lang.ClassLoader.getSystemClassLoader
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import kotlin.io.path.createTempDirectory
 
 
 class PluginsPipelineSpec : FeatureSpec() {
     private val LOGGER = LoggerFactory.getLogger(PluginsPipelineSpec::class.java)
 
     init {
-        val tempPluginsDir = createTempDir(suffix = "-${this.javaClass.simpleName}")
+        val tempPluginsDir = createTempDirectory(prefix = "${this.javaClass.simpleName}-").toFile()
         tempPluginsDir.deleteOnExit()
 
         val plugin = jarLocation("styx-test-plugin")
