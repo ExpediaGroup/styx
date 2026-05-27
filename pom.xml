@@ -102,7 +102,7 @@
     <!-- General Versions -->
     <annotations.version>26.0.2</annotations.version>
     <antlr.version>4.13.2</antlr.version>
-    <bcpkix-jdk18on.version>1.80</bcpkix-jdk18on.version>
+    <bcpkix-jdk18on.version>1.84</bcpkix-jdk18on.version>
     <bytebuddy.version>1.17.2</bytebuddy.version>
     <dropwizard.version>4.2.30</dropwizard.version>
     <guava.version>33.4.0-jre</guava.version>
