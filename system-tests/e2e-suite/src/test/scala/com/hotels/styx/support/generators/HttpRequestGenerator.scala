@@ -17,7 +17,7 @@ package com.hotels.styx.generators
 
 import java.net.URL
 
-import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder
+import java.util.Base64
 import io.netty.handler.codec.http.HttpVersion._
 import io.netty.handler.codec.http.{DefaultHttpRequest, HttpMethod, HttpRequest, HttpVersion}
 import org.scalacheck.Gen.oneOf
@@ -38,7 +38,7 @@ object HttpRequestGenerator {
         "\r\n\r\n"
     }
 
-    def toBase64 = Base64Coder.encodeString(this.toString)
+    def toBase64 = Base64.getEncoder.encodeToString(this.toString.getBytes("UTF-8"))
   }
 
   val resource: URL = getClass.getResource("/bad-uris.txt").toURI.toURL
