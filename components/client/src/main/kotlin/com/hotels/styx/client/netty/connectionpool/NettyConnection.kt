@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2026 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import com.hotels.styx.client.HttpRequestOperationFactory
 import com.hotels.styx.metrics.ContextualTimers
 import io.netty.channel.Channel
 import io.netty.handler.codec.http.HttpClientCodec
+import io.netty.handler.codec.http.HttpDecoderConfig
 import io.netty.handler.codec.http.HttpContentDecompressor
 import io.netty.handler.ssl.SslContext
 import reactor.core.publisher.Flux
@@ -103,7 +104,15 @@ class NettyConnection(
                     addLast("ssl", sslHandler)
                 }
 
-                addLast("http-codec", HttpClientCodec(httpConfig.maxInitialLength(), httpConfig.maxHeadersSize(), httpConfig.maxChunkSize()))
+                addLast("http-codec", HttpClientCodec(
+                    HttpDecoderConfig()
+                        .setMaxInitialLineLength(httpConfig.maxInitialLength())
+                        .setMaxHeaderSize(httpConfig.maxHeadersSize())
+                        .setMaxChunkSize(httpConfig.maxChunkSize())
+                        .setUseRfc9112TransferEncoding(false),
+                    false,
+                    false
+                ))
                 if (httpConfig.compress()) {
                     addLast("decompressor", HttpContentDecompressor())
                 }

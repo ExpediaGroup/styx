@@ -71,7 +71,7 @@ class ProtocolsSpec extends AnyFunSpec
       Connectors(
         HttpConnectorConfig(),
         HttpsConnectorConfig(
-          cipherSuites = Seq("TLS_RSA_WITH_AES_128_GCM_SHA256"),
+          cipherSuites = Seq("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"),
           certificateFile = crtFile,
           certificateKeyFile = keyFile))
     ),
