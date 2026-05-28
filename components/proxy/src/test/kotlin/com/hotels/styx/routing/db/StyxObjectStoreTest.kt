@@ -355,7 +355,7 @@ class StyxObjectStoreTest : FeatureSpec() {
                 }
 
                 executor.shutdown()
-                executor.awaitTermination(2, SECONDS)
+                executor.awaitTermination(30, SECONDS).shouldBeTrue()
 
                 db.entrySet().shouldBeEmpty()
             }
