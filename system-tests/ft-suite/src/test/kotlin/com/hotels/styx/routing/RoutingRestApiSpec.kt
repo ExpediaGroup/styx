@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2026 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.adminHostHeader
+import com.hotels.styx.support.blockRequired
 import com.hotels.styx.support.proxyHttpHostHeader
 import io.kotest.core.spec.Spec
 import io.kotest.core.spec.style.StringSpec
@@ -49,7 +50,7 @@ class RoutingRestApiSpec : StringSpec() {
                             """.trimIndent(), UTF_8)
                             .build())
                     .toMono()
-                    .block()!!
+                    .blockRequired()
                     .status() shouldBe CREATED
 
             client.send(
@@ -62,7 +63,7 @@ class RoutingRestApiSpec : StringSpec() {
                             """.trimIndent(), UTF_8)
                             .build())
                     .toMono()
-                    .block()!!
+                    .blockRequired()
                     .status() shouldBe CREATED
 
             client.send(
@@ -70,9 +71,9 @@ class RoutingRestApiSpec : StringSpec() {
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                     .toMono()
-                    .block()
+                    .blockRequired()
                     .let {
-                        it!!.status() shouldBe (OK)
+                        it.status() shouldBe (OK)
                         it.bodyAs(UTF_8) shouldBe ("Responder")
                     }
 
@@ -84,7 +85,7 @@ class RoutingRestApiSpec : StringSpec() {
                             .header(HOST, styxServer().adminHostHeader())
                             .build())
                     .toMono()
-                    .block()!!
+                    .blockRequired()
                     .status() shouldBe OK
 
             client.send(
@@ -92,7 +93,7 @@ class RoutingRestApiSpec : StringSpec() {
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                     .toMono()
-                    .block()!!
+                    .blockRequired()
                     .status() shouldBe NOT_FOUND
         }
 
@@ -108,7 +109,7 @@ class RoutingRestApiSpec : StringSpec() {
                             """.trimIndent(), UTF_8)
                             .build())
                     .toMono()
-                    .block()!!
+                    .blockRequired()
                     .status() shouldBe CREATED
 
             client.send(
@@ -116,9 +117,9 @@ class RoutingRestApiSpec : StringSpec() {
                             .header(HOST, styxServer().adminHostHeader())
                             .build())
                     .toMono()
-                    .block()
+                    .blockRequired()
                     .let {
-                        it!!.status() shouldBe OK
+                        it.status() shouldBe OK
                         it.bodyAs(UTF_8) shouldContain  """
                                 responder:
                                   type: "StaticResponseHandler"
@@ -174,7 +175,7 @@ class RoutingRestApiSpec : StringSpec() {
                             """.trimIndent(), UTF_8)
                         .build())
                 .toMono()
-                .block()!!
+                .blockRequired()
                 .status() shouldBe CREATED
     }
 

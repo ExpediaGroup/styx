@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2026 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.StyxServerProvider
 import com.hotels.styx.support.adminHostHeader
+import com.hotels.styx.support.blockRequired
 import io.kotest.core.spec.Spec
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -38,9 +39,9 @@ class VersionFilesPropertySpec : StringSpec() {
 
             client.send(request)
                     .toMono()
-                    .block()
+                    .blockRequired()
                     .let {
-                        it!!.status() shouldBe (OK)
+                        it.status() shouldBe (OK)
                         it.bodyAs(UTF_8) shouldBe ("MyFakeVersionText\n")
                     }
         }

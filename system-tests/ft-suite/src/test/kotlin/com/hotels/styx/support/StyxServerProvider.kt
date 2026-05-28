@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2026 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import io.micrometer.core.instrument.Clock
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.slf4j.LoggerFactory
+import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Path
@@ -44,6 +45,8 @@ import java.util.HashMap
 import java.util.Optional
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicReference
+
+fun <T : Any> Mono<T>.blockRequired(): T = block() ?: error("Expected a value but Mono was empty")
 
 val defaultServerConfig = """
     proxy:
@@ -145,13 +148,13 @@ fun StyxServerProvider.adminRequest(endpoint: String, debug: Boolean = false): H
                 .build())
         .wait(debug = debug)
 
-fun CompletableFuture<HttpResponse>.wait(debug: Boolean = false) = this.toMono()
+fun CompletableFuture<HttpResponse>.wait(debug: Boolean = false): HttpResponse = this.toMono()
         .doOnNext {
             if (debug) {
                 LOGGER.info("${it.status()} - ${it.headers()} - ${it.bodyAs(UTF_8)}")
             }
         }
-        .block()
+        .block() ?: error("Expected a response but Mono was empty")
 
 fun StyxServer.adminHostHeader() = "${this.adminHttpAddress().hostName}:${this.adminHttpAddress().port}"
 fun StyxServer.proxyHttpHostHeader() = "localhost:${this.proxyHttpAddress().port}"
@@ -179,7 +182,7 @@ fun StyxServer.metrics(): Map<String, Map<String, Any>> {
             .send(HttpRequest.get("/admin/metrics")
                     .header(HOST, this.adminHostHeader())
                     .build())
-            .wait()!!
+            .wait()
             .bodyAs(UTF_8)
 
     return flattenMetricsMap(metricsText) as Map<String, Map<String, Any>>
@@ -193,11 +196,11 @@ fun StyxServer.newRoutingObject(name: String, routingObject: String): HttpRespon
                     .build())
             .wait()
 
-    if (response?.status() != CREATED) {
-        LOGGER.debug("Object $name was not created. Response from server: ${response?.status()} - '${response?.bodyAs(UTF_8)}'")
+    if (response.status() != CREATED) {
+        LOGGER.debug("Object $name was not created. Response from server: ${response.status()} - '${response.bodyAs(UTF_8)}'")
     }
 
-    return response?.status() ?: HttpResponseStatus.statusWithCode(666)
+    return response.status()
 }
 
 fun StyxServer.removeRoutingObject(name: String): HttpResponseStatus {
@@ -207,18 +210,18 @@ fun StyxServer.removeRoutingObject(name: String): HttpResponseStatus {
                     .build())
             .wait()
 
-    if (response?.status() != OK) {
-        LOGGER.debug("Object $name was not removed. Response from server: ${response?.status()} - '${response?.bodyAs(UTF_8)}'")
+    if (response.status() != OK) {
+        LOGGER.debug("Object $name was not removed. Response from server: ${response.status()} - '${response.bodyAs(UTF_8)}'")
     }
 
-    return response?.status() ?: HttpResponseStatus.statusWithCode(666)
+    return response.status()
 }
 
 fun StyxServer.routingObject(name: String, debug: Boolean = false): Optional<String> = StyxHttpClient.Builder().build()
         .send(HttpRequest.get("/admin/routing/objects/$name")
                 .header(HOST, this.adminHostHeader())
                 .build())
-        .wait(debug)!!
+        .wait(debug)
         .let {
             if (it.status() == OK) {
                 Optional.of(it.bodyAs(UTF_8))
@@ -231,7 +234,7 @@ fun StyxServer.routingObjects(debug: Boolean = false): Optional<String> = StyxHt
         .send(HttpRequest.get("/admin/routing/objects")
                 .header(HOST, this.adminHostHeader())
                 .build())
-        .wait(debug)!!
+        .wait(debug)
         .let {
             if (it.status() == OK) {
                 Optional.of(it.bodyAs(UTF_8))
@@ -243,7 +246,7 @@ fun StyxServer.routingObjects(debug: Boolean = false): Optional<String> = StyxHt
 fun StyxServer.serverPort(name: String, debug: Boolean = false) = testClient
         .send(HttpRequest.get("/admin/servers/$name/port")
                 .header(HOST, this.adminHostHeader()).build())
-        .wait()
+        .wait(debug)
         .bodyAs(UTF_8)
         .toInt()
 

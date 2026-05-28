@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2026 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.servers
 
+import com.hotels.styx.blockRequired
 import com.hotels.styx.InetServer
 import com.hotels.styx.RoutingObjectFactoryContext
 import com.hotels.styx.StyxObjectRecord
@@ -73,7 +74,7 @@ class StyxHttpServerTest : FeatureSpec({
                             .header(HOST, "localhost:${server.inetAddress()!!.port}")
                             .build())
                     .wait()
-                    ?.let {
+                    .let {
                         it.status() shouldBe OK
                         it.bodyAs(UTF_8) shouldBe "Hello, test!"
                     }
@@ -104,7 +105,7 @@ class StyxHttpServerTest : FeatureSpec({
                             .header(HOST, "localhost:${server.inetAddress()!!.port}")
                             .build())
                     .wait()
-                    ?.let {
+                    .let {
                         it.status() shouldBe OK
                         it.bodyAs(UTF_8) shouldBe "Hello, test!"
                     }
@@ -130,7 +131,7 @@ class StyxHttpServerTest : FeatureSpec({
                     .header(HOST, "localhost:${server.inetAddress()!!.port}")
                     .header("accept-encoding", "7z, gzip")
                     .build())
-                    .wait()!!
+                    .wait()
                     .let {
                         it.status() shouldBe OK
                         it.header("content-encoding").get() shouldBe "gzip"
@@ -142,7 +143,7 @@ class StyxHttpServerTest : FeatureSpec({
             StyxHttpClient.Builder().build().send(get("/blah")
                     .header(HOST, "localhost:${server.inetAddress()!!.port}")
                     .build())
-                    .wait()!!
+                    .wait()
                     .let {
                         it.status() shouldBe OK
                         it.header("content-encoding").isPresent shouldBe false
@@ -168,7 +169,7 @@ class StyxHttpServerTest : FeatureSpec({
             StyxHttpClient.Builder().build().send(get("/a/" + "b".repeat(80))
                     .header(HOST, "localhost:${server.inetAddress()!!.port}")
                     .build())
-                    .wait()!!
+                    .wait()
                     .let {
                         it.status() shouldBe OK
                         it.bodyAs(UTF_8) shouldBe "Hello, test!"
@@ -178,8 +179,8 @@ class StyxHttpServerTest : FeatureSpec({
         scenario("Rejects requests exceeding the initial line length") {
             StyxHttpClient.Builder().build().send(get("/a/" + "b".repeat(95))
                     .header(HOST, "localhost:${server.inetAddress()!!.port}")
-                    .build())!!
-                    .wait()!!
+                    .build())
+                    .wait()
                     .let {
                         it.status() shouldBe REQUEST_ENTITY_TOO_LARGE
                         it.bodyAs(UTF_8) shouldBe "Request Entity Too Large"
@@ -205,7 +206,7 @@ class StyxHttpServerTest : FeatureSpec({
             StyxHttpClient.Builder().build().send(get("/a/" + "b".repeat(80))
                     .header(HOST, "localhost:${server.inetAddress()!!.port}")
                     .build())
-                    .wait()!!
+                    .wait()
                     .let {
                         it.status() shouldBe OK
                         it.bodyAs(UTF_8) shouldBe "Hello, test!"
@@ -217,8 +218,8 @@ class StyxHttpServerTest : FeatureSpec({
                     .header(HOST, "localhost:${server.inetAddress()!!.port}")
                     .header("test-1", "x".repeat(1024))
                     .header("test-2", "x".repeat(1024))
-                    .build())!!
-                    .wait()!!
+                    .build())
+                    .wait()
                     .let {
                         it.status() shouldBe REQUEST_ENTITY_TOO_LARGE
                         it.bodyAs(UTF_8) shouldBe "Request Entity Too Large"
@@ -252,8 +253,8 @@ class StyxHttpServerTest : FeatureSpec({
                                 .build())
                         .wait()
                         .aggregate(1024)
-                        .toFlux()
-                        .blockFirst()!!
+                        .toMono()
+                        .blockRequired()
                         .let {
                             it.status() shouldBe REQUEST_TIMEOUT
                             it.header(CONNECTION).get() shouldBe "close"
@@ -281,7 +282,7 @@ class StyxHttpServerTest : FeatureSpec({
                 .createConnection(
                         newOriginBuilder("localhost", server.inetAddress()!!.port).build(),
                         ConnectionSettings(250))
-                .block()!!
+                .blockRequired()
 
         scenario("Should keep HTTP1/1 client connection open after serving the response.") {
             connection.write(
@@ -290,10 +291,10 @@ class StyxHttpServerTest : FeatureSpec({
                             .build()
                             .stream(), DummyContext)
                     .toMono()
-                    .block()!!
+                    .blockRequired()
                     .aggregate(1024)
                     .toMono()
-                    .block()!!
+                    .blockRequired()
 
             Thread.sleep(100)
 
@@ -348,8 +349,8 @@ class StyxHttpServerTest : FeatureSpec({
 
         StyxHttpClient.Builder().build().send(get("/a/" + "b".repeat(95))
                 .header(HOST, "localhost:${server.inetAddress()!!.port}")
-                .build())!!
-                .wait()!!
+                .build())
+                .wait()
                 .let {
                     it.status() shouldBe OK
                 }
@@ -374,7 +375,7 @@ fun threadNames() = Thread.getAllStackTraces().keys
 private fun createConnection(port: Int) = NettyConnectionFactory.Builder()
         .build()
         .createConnection(newOriginBuilder("localhost", port).build(), ConnectionSettings(250))
-        .block()!!
+        .blockRequired()
 
 private val response = response(OK)
         .header("source", "secure")

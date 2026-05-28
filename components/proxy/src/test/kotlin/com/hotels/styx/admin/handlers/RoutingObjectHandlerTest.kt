@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2026 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hotels.styx.api.HttpRequest.put
 import com.hotels.styx.api.HttpResponseStatus.CREATED
 import com.hotels.styx.api.HttpResponseStatus.NOT_FOUND
 import com.hotels.styx.api.HttpResponseStatus.OK
+import com.hotels.styx.blockRequired
 import com.hotels.styx.handle
 import com.hotels.styx.mockObject
 import com.hotels.styx.routing.RoutingMetadataDecorator
@@ -59,7 +60,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
                             .body(staticResponseObject, UTF_8)
                             .build())
                     .toMono()
-                    .block()!!
+                    .blockRequired()
                     .status() shouldBe CREATED
 
             routeDatabase.get("staticResponse").isPresent shouldBe true
@@ -76,14 +77,14 @@ class RoutingObjectHandlerTest : FeatureSpec({
                             .body(staticResponseObject, UTF_8)
                             .build())
                     .toMono()
-                    .block()!!
+                    .blockRequired()
                     .status() shouldBe CREATED
 
             handler.handle(get("/admin/routing/objects/staticResponse").build())
                     .toMono()
-                    .block()
+                    .blockRequired()
                     .let {
-                        it!!.status() shouldBe OK
+                        it.status() shouldBe OK
                         it.bodyAs(UTF_8).trim() shouldBe """
                             ---
                             type: "StaticResponseHandler"
@@ -106,7 +107,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
                             .body(staticResponseObject, UTF_8)
                             .build())
                     .toMono()
-                    .block()!!
+                    .blockRequired()
                     .status() shouldBe CREATED
 
             handler.handle(
@@ -121,7 +122,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
                                 """.trimIndent(), UTF_8)
                             .build())
                     .toMono()
-                    .block()
+                    .blockRequired()
                     .let {
                         it.status() shouldBe CREATED
                     }
@@ -130,9 +131,9 @@ class RoutingObjectHandlerTest : FeatureSpec({
 
             handler.handle(get("/admin/routing/objects").build())
                     .toMono()
-                    .block()
+                    .blockRequired()
                     .let {
-                        it!!.status() shouldBe OK
+                        it.status() shouldBe OK
                         it.bodyAs(UTF_8) shouldContain """
                                 conditionRouter:
                                   type: "ConditionRouter"
@@ -175,7 +176,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
                                 """.trimIndent(), UTF_8)
                             .build())
                     .toMono()
-                    .block()!!
+                    .blockRequired()
                     .status() shouldBe CREATED
 
             db.get("staticResponse").isPresent shouldBe true
@@ -195,7 +196,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
             handler.handle(
                     delete("/admin/routing/objects/staticResponse").build())
                     .toMono()
-                    .block()!!
+                    .blockRequired()
                     .status() shouldBe OK
 
             db.get("staticResponse").isPresent shouldBe false
@@ -211,7 +212,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
             handler.handle(
                     delete("/admin/routing/objects/staticResponse").build())
                     .toMono()
-                    .block()!!
+                    .blockRequired()
                     .status() shouldBe NOT_FOUND
         }
 
