@@ -112,7 +112,7 @@
     <micrometer.version>1.16.5</micrometer.version>
     <netty.version>4.2.14.Final</netty.version>
     <okhttp.version>4.12.0</okhttp.version>
-    <pcollections.version>4.0.2</pcollections.version>
+    <pcollections.version>5.0.0</pcollections.version>
     <reactive-streams.version>1.0.4</reactive-streams.version>
     <reactor.version>2024.0.17</reactor.version>
 
