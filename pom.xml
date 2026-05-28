@@ -114,7 +114,7 @@
     <okhttp.version>4.12.0</okhttp.version>
     <pcollections.version>5.0.0</pcollections.version>
     <reactive-streams.version>1.0.4</reactive-streams.version>
-    <reactor.version>2024.0.17</reactor.version>
+    <reactor.version>2025.0.5</reactor.version>
 
     <!--Kotlin -->
     <kotlin.version>2.3.21</kotlin.version>
