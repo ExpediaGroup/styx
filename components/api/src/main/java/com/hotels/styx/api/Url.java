@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2021 Expedia Inc.
+  Copyright (C) 2013-2026 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 package com.hotels.styx.api;
 
 
-import javax.annotation.concurrent.ThreadSafe;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -39,7 +38,6 @@ import static java.util.Collections.emptySet;
 /**
  * Alternate implementation for java.net.URL for easing its usage.
  */
-@ThreadSafe
 public final class Url implements Comparable<Url> {
     private final String scheme;
     private final Optional<Authority> authority;

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2026 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -26,12 +26,13 @@ import java.lang.Thread.sleep
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.io.path.createTempDirectory
 import kotlin.time.Duration.Companion.seconds
 
 class FileMonitoringServiceTest : StringSpec() {
     val LOGGER = LoggerFactory.getLogger(FileMonitoringServiceTest::class.java)
 
-    val tempDir = createTempDir(suffix = "-${this.javaClass.simpleName}")
+    val tempDir = createTempDirectory(prefix = "${this.javaClass.simpleName}-").toFile()
     val monitoredFile = File("${tempDir.absolutePath}/config.yml")
 
     override suspend fun beforeSpec(spec: Spec) {

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2026 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -26,12 +26,9 @@ import com.hotels.styx.client.healthcheck.monitors.NoOriginHealthStatusMonitor
 import com.hotels.styx.common.QueueDrainingEventProcessor
 import com.hotels.styx.common.StyxFutures.await
 import com.hotels.styx.metrics.CentralisedMetrics
-import javax.annotation.concurrent.ThreadSafe
-
 /**
  * An inventory of the origins configured for a single application.
  */
-@ThreadSafe
 class StyxOriginsInventory(
     eventBus: EventBus,
     appId: Id,

@@ -56,7 +56,7 @@ class CipherSuitesSpec extends AnyFunSpec
       appId = "appA",
       originId = "appA-01",
       sslProvider = "JDK",
-      cipherSuites = Seq("TLS_RSA_WITH_AES_128_CBC_SHA")
+      cipherSuites = Seq("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256")
     )
       .start()
       .stub(WireMock.get(urlMatching("/.*")), originResponse("appA-01"))
@@ -65,7 +65,7 @@ class CipherSuitesSpec extends AnyFunSpec
     appId = "appB",
     originId = "appB-01",
     sslProvider = "JDK",
-    cipherSuites = Seq("TLS_RSA_WITH_AES_128_CBC_SHA")
+    cipherSuites = Seq("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256")
   )
     .start()
     .stub(WireMock.get(urlMatching("/.*")), originResponse("appB-01"))
@@ -80,7 +80,7 @@ class CipherSuitesSpec extends AnyFunSpec
               TlsSettings(
                 authenticate = false,
                 sslProvider = "JDK",
-                cipherSuites = Seq("TLS_RSA_WITH_AES_128_CBC_SHA")
+                cipherSuites = Seq("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256")
               )),
       "/nonCompatible/" -> HttpsBackend(
         "appB",
@@ -88,7 +88,7 @@ class CipherSuitesSpec extends AnyFunSpec
         TlsSettings(
           authenticate = false,
           sslProvider = "JDK",
-          cipherSuites = Seq("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256")
+          cipherSuites = Seq("TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384")
         ))
     )
   }

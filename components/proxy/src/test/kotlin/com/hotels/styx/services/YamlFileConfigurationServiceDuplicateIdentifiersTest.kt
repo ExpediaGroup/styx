@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2026 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -28,13 +28,14 @@ import io.mockk.mockk
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.time.Duration
+import kotlin.io.path.createTempDirectory
 
 private val LOGGER = LoggerFactory.getLogger(YamlFileConfigurationServiceDuplicateIdentifiersTest::class.java)
 
 class YamlFileConfigurationServiceDuplicateIdentifiersTest : FunSpec() {
     val logger = LoggingTestSupport(YamlFileConfigurationService::class.java);
 
-    private val tempDir = createTempDir(suffix = "-${this.javaClass.simpleName}")
+    private val tempDir = createTempDirectory(prefix = "${this.javaClass.simpleName}-").toFile()
     private val originsFile = File("${tempDir.absolutePath}/config.yml")
 
     private val objectStore = StyxObjectStore<RoutingObjectRecord>()

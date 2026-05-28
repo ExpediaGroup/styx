@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2026 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -37,10 +37,11 @@ import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 import java.io.File
 import java.nio.charset.StandardCharsets.UTF_8
+import kotlin.io.path.createTempDirectory
 import kotlin.time.Duration.Companion.seconds
 
 class ProviderAdminInterfaceSpec : FeatureSpec() {
-    private val tempDir = createTempDir(suffix = "-${this.javaClass.simpleName}")
+    private val tempDir = createTempDirectory(prefix = "${this.javaClass.simpleName}-").toFile()
     private val originsFile = File(tempDir, "origins.yml")
 
     val styxServer = StyxServerProvider(

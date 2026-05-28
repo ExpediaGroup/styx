@@ -223,7 +223,7 @@ class ChunkedUploadSpec extends AnyFunSpec
       assert(response.get.status() == OK, s"\nExpecting 200 OK, but got: \n$response \n\n$content\n\n")
     }
 
-    it("Does not respond 400 with chunk size set to Int.MaxValue") {
+    it("Responds 400 with chunk size set to Int.MaxValue") {
       val request =
         "POST /upload HTTP/1.1" + CRLF +
           s"Host: localhost:${styxServer.httpPort}" + CRLF +
@@ -236,8 +236,7 @@ class ChunkedUploadSpec extends AnyFunSpec
       val response = httpTransaction(request)
 
       assert(response.nonEmpty, "\nStyx did not respond.")
-      val content = response.get.content().toString(UTF_8)
-      assert(response.get.status() != BAD_REQUEST, s"\nNot expecting 400 Bad Request, but got: \n$response \n\n$content\n\n")
+      assert(response.get.status() == BAD_REQUEST, s"\nExpecting 400 Bad Request, but got: ${response.get.status()}\n")
     }
   }
 

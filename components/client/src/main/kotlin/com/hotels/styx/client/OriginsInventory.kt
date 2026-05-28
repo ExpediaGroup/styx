@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2024 Expedia Inc.
+  Copyright (C) 2013-2026 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -42,9 +42,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.Closeable
 import java.util.concurrent.atomic.AtomicBoolean
-import javax.annotation.concurrent.ThreadSafe
-
-@ThreadSafe
 abstract class OriginsInventory(
     protected val eventBus: EventBus,
     protected val originHealthStatusMonitor: OriginHealthStatusMonitor,

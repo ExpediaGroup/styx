@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2022 Expedia Inc.
+  Copyright (C) 2013-2026 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.handler.codec.http.HttpDecoderConfig;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.ssl.SslContext;
@@ -157,7 +158,12 @@ public class ProxyConnectorFactory implements ServerConnectorFactory {
                     .addLast("channel-stats", channelStatsHandler)
 
                     // Http Server Codec
-                    .addLast("http-server-codec", new HttpServerCodec(serverConfig.maxInitialLength(), serverConfig.maxHeaderSize(), serverConfig.maxChunkSize(), true))
+                    .addLast("http-server-codec", new HttpServerCodec(new HttpDecoderConfig()
+                            .setMaxInitialLineLength(serverConfig.maxInitialLength())
+                            .setMaxHeaderSize(serverConfig.maxHeaderSize())
+                            .setMaxChunkSize(serverConfig.maxChunkSize())
+                            .setValidateHeaders(true)
+                            .setUseRfc9112TransferEncoding(false)))
 
                     // idle-handler and timeout-handler must be before aggregator. Otherwise
                     // timeout handler cannot see the incoming HTTP chunks.

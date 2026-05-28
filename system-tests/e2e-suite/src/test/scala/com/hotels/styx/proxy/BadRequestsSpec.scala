@@ -134,11 +134,11 @@ class BadRequestsSpec extends AnyFunSpec
           assertThat(response.headers().get(STYX_INFO_DEFAULT), matchesRegex("noJvmRouteSet;"))
           assertThat(response.headers().get(CONNECTION), is("close"))
 
-          assertThat(loggingSupport.log(), hasItem(loggingEvent(ERROR, "Failure status=\"400 Bad Request\"", "io.netty.handler.codec.DecoderException", "com.hotels.styx.server.BadRequestException: Bad Host header. .*")))
+          assertThat(loggingSupport.log(), hasItem(loggingEvent(ERROR, "Failure status=\"400 Bad Request\"", "io.netty.handler.codec.DecoderException", "com.hotels.styx.server.BadRequestException: .*")))
         }
       }
 
-      it("Passes through invalid cookies and therefore responds with 200 OK") {
+      it("Rejects invalid cookies with 400 Bad Request") {
         val requestMessage =
           """
             |GET /badrequest/4 HTTP/1.1
@@ -154,8 +154,7 @@ class BadRequestsSpec extends AnyFunSpec
           val response = client.waitForResponse(3, TimeUnit.SECONDS).asInstanceOf[FullHttpResponse]
 
           val content = response.content().toString(UTF_8)
-          assert(response.status == OK, s"\nExpecting 200 OK in message: \n$response \n\n$content\n\n")
-          assertThat(response.headers().get(STYX_INFO_DEFAULT), matchesRegex("noJvmRouteSet;.*"))
+          assert(response.status == BAD_REQUEST, s"\nExpecting 400 Bad Request in message: \n$response \n\n$content\n\n")
         }
       }
 

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2022 Expedia Inc.
+  Copyright (C) 2013-2026 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -62,10 +62,10 @@ interface MeterRegistry {
     fun more(): More
     fun gaugeWithStrongReference(name: String, number: Number): Gauge
     fun gaugeWithStrongReference(name: String, tags: Iterable<Tag>, number: Number): Gauge
-    fun <T> gauge(name: String, tags: Iterable<Tag>, stateObject: T, valueFunction: ToDoubleFunction<T>): T
+    fun <T : Any> gauge(name: String, tags: Iterable<Tag>, stateObject: T, valueFunction: ToDoubleFunction<T>): T
     fun <T : Number> gauge(name: String, tags: Iterable<Tag>, number: T): T
     fun <T : Number> gauge(name: String, number: T): T
-    fun <T> gauge(name: String, stateObject: T, valueFunction: ToDoubleFunction<T>): T
+    fun <T : Any> gauge(name: String, stateObject: T, valueFunction: ToDoubleFunction<T>): T
     fun <T : Collection<*>> gaugeCollectionSize(name: String, tags: Iterable<Tag>, collection: T): T
     fun <T : Map<*, *>> gaugeMapSize(name: String, tags: Iterable<Tag>, map: T): T
     fun remove(meter: Meter): Meter?
@@ -77,9 +77,9 @@ interface MeterRegistry {
     interface More {
         fun longTaskTimer(name: String, vararg tags: String): LongTaskTimer
         fun longTaskTimer(name: String, tags: Iterable<Tag>): LongTaskTimer
-        fun <T> counter(name: String, tags: Iterable<Tag>, obj: T, countFunction: ToDoubleFunction<T>): FunctionCounter
+        fun <T : Any> counter(name: String, tags: Iterable<Tag>, obj: T, countFunction: ToDoubleFunction<T>): FunctionCounter
         fun <T : Number> counter(name: String, tags: Iterable<Tag>, number: T): FunctionCounter
-        fun <T> timer(
+        fun <T : Any> timer(
             name: String,
             tags: Iterable<Tag>,
             obj: T,
@@ -88,7 +88,7 @@ interface MeterRegistry {
             totalTimeFunctionUnit: TimeUnit
         ): FunctionTimer
 
-        fun <T> timeGauge(name: String, tags: Iterable<Tag>, obj: T, timeFunctionUnit: TimeUnit, timeFunction: ToDoubleFunction<T>): TimeGauge
+        fun <T : Any> timeGauge(name: String, tags: Iterable<Tag>, obj: T, timeFunctionUnit: TimeUnit, timeFunction: ToDoubleFunction<T>): TimeGauge
     }
 
     // Functions below here are not for general metric handling, but needed by Styx internally.
@@ -133,13 +133,13 @@ class ScopedMeterRegistry(private val parent: MeterRegistry, private val scope: 
         override fun longTaskTimer(name: String, vararg tags: String): LongTaskTimer = more.longTaskTimer(name.scoped, *tags)
         override fun longTaskTimer(name: String, tags: Iterable<Tag>): LongTaskTimer = more.longTaskTimer(name.scoped, tags)
 
-        override fun <T> counter(name: String, tags: Iterable<Tag>, obj: T, countFunction: ToDoubleFunction<T>): FunctionCounter =
+        override fun <T : Any> counter(name: String, tags: Iterable<Tag>, obj: T, countFunction: ToDoubleFunction<T>): FunctionCounter =
             more.counter(name.scoped, tags, obj, countFunction)
 
         override fun <T : Number> counter(name: String, tags: Iterable<Tag>, number: T): FunctionCounter =
             more.counter(name.scoped, tags, number)
 
-        override fun <T> timer(
+        override fun <T : Any> timer(
             name: String,
             tags: Iterable<Tag>,
             obj: T,
@@ -148,7 +148,7 @@ class ScopedMeterRegistry(private val parent: MeterRegistry, private val scope: 
             totalTimeFunctionUnit: TimeUnit
         ): FunctionTimer = more.timer(name.scoped, tags, obj, countFunction, totalTimeFunction, totalTimeFunctionUnit)
 
-        override fun <T> timeGauge(
+        override fun <T : Any> timeGauge(
             name: String,
             tags: Iterable<Tag>,
             obj: T,
@@ -164,10 +164,10 @@ class ScopedMeterRegistry(private val parent: MeterRegistry, private val scope: 
         parent.gaugeWithStrongReference(name.scoped, tags, number)
 
     override fun <T : Number> gauge(name: String, number: T): T = parent.gauge(name.scoped, number)
-    override fun <T> gauge(name: String, stateObject: T, valueFunction: ToDoubleFunction<T>): T =
+    override fun <T : Any> gauge(name: String, stateObject: T, valueFunction: ToDoubleFunction<T>): T =
         parent.gauge(name.scoped, stateObject, valueFunction)
 
-    override fun <T> gauge(name: String, tags: Iterable<Tag>, stateObject: T, valueFunction: ToDoubleFunction<T>): T =
+    override fun <T : Any> gauge(name: String, tags: Iterable<Tag>, stateObject: T, valueFunction: ToDoubleFunction<T>): T =
         parent.gauge(name.scoped, tags, stateObject, valueFunction)
 
     override fun <T : Number> gauge(name: String, tags: Iterable<Tag>, number: T): T = parent.gauge(name.scoped, tags, number)
@@ -217,13 +217,13 @@ class MicrometerRegistry(private val registry: io.micrometer.core.instrument.Met
         override fun longTaskTimer(name: String, vararg tags: String): LongTaskTimer = more.longTaskTimer(name, *tags)
         override fun longTaskTimer(name: String, tags: Iterable<Tag>): LongTaskTimer = more.longTaskTimer(name, tags)
 
-        override fun <T> counter(name: String, tags: Iterable<Tag>, obj: T, countFunction: ToDoubleFunction<T>): FunctionCounter =
+        override fun <T : Any> counter(name: String, tags: Iterable<Tag>, obj: T, countFunction: ToDoubleFunction<T>): FunctionCounter =
             more.counter(name, tags, obj, countFunction)
 
         override fun <T : Number> counter(name: String, tags: Iterable<Tag>, number: T): FunctionCounter =
             more.counter(name, tags, number)
 
-        override fun <T> timer(
+        override fun <T : Any> timer(
             name: String,
             tags: Iterable<Tag>,
             obj: T,
@@ -232,7 +232,7 @@ class MicrometerRegistry(private val registry: io.micrometer.core.instrument.Met
             totalTimeFunctionUnit: TimeUnit
         ): FunctionTimer = more.timer(name, tags, obj, countFunction, totalTimeFunction, totalTimeFunctionUnit)
 
-        override fun <T> timeGauge(
+        override fun <T : Any> timeGauge(
             name: String,
             tags: Iterable<Tag>,
             obj: T,
@@ -254,18 +254,23 @@ class MicrometerRegistry(private val registry: io.micrometer.core.instrument.Met
             .register(registry)
     }
 
-    override fun <T> gauge(name: String, tags: Iterable<Tag>, stateObject: T, valueFunction: ToDoubleFunction<T>): T =
-        registry.gauge(name, tags, stateObject, valueFunction)
+    override fun <T : Any> gauge(name: String, tags: Iterable<Tag>, stateObject: T, valueFunction: ToDoubleFunction<T>): T =
+        registry.gauge(name, tags, stateObject, valueFunction) ?: stateObject
 
-    override fun <T : Number> gauge(name: String, tags: Iterable<Tag>, number: T): T = registry.gauge(name, tags, number)
+    override fun <T : Number> gauge(name: String, tags: Iterable<Tag>, number: T): T =
+        registry.gauge(name, tags, number) ?: number
 
-    override fun <T : Number> gauge(name: String, number: T): T = registry.gauge(name, number)
-    override fun <T> gauge(name: String, stateObject: T, valueFunction: ToDoubleFunction<T>): T = registry.gauge(name, stateObject, valueFunction)
+    override fun <T : Number> gauge(name: String, number: T): T =
+        registry.gauge(name, number) ?: number
+
+    override fun <T : Any> gauge(name: String, stateObject: T, valueFunction: ToDoubleFunction<T>): T =
+        registry.gauge(name, stateObject, valueFunction) ?: stateObject
 
     override fun <T : Collection<*>> gaugeCollectionSize(name: String, tags: Iterable<Tag>, collection: T): T =
-        registry.gaugeCollectionSize(name, tags, collection)
+        registry.gaugeCollectionSize(name, tags, collection) ?: collection
 
-    override fun <T : Map<*, *>> gaugeMapSize(name: String, tags: Iterable<Tag>, map: T): T = registry.gaugeMapSize(name, tags, map)
+    override fun <T : Map<*, *>> gaugeMapSize(name: String, tags: Iterable<Tag>, map: T): T =
+        registry.gaugeMapSize(name, tags, map) ?: map
 
     override fun remove(meter: Meter): Meter? = registry.remove(meter)
     override fun remove(mappedId: Meter.Id): Meter? = registry.remove(mappedId)
