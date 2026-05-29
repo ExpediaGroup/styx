@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2026 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,8 +20,10 @@ import com.hotels.styx.api.HttpHandler
 import com.hotels.styx.api.HttpHeaders
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpRequest.get
+import com.hotels.styx.api.HttpResponse
 import com.hotels.styx.api.configuration.ObjectStore
 import com.hotels.styx.api.exceptions.NoAvailableHostsException
+import com.hotels.styx.blockRequired
 import com.hotels.styx.handle
 import com.hotels.styx.lbGroupTag
 import com.hotels.styx.requestContext
@@ -179,7 +181,7 @@ class LoadBalancingGroupTest : FeatureSpec() {
                 routeDb.get("appx-B").get().routingObject.metric().ongoingActivities() shouldBe 20
 
                 invocations.forEach {
-                    val response = it.block()
+                    val response = it.blockRequired()
                     LOGGER.debug("response: ${response.bodyAs(UTF_8)}")
                 }
             }
@@ -215,7 +217,7 @@ internal fun Publisher<ObjectStore<RoutingObjectRecord>>.waitUntil(duration: Dur
         .blockFirst(duration)
 
 
-internal fun HttpHandler.call(request: HttpRequest, maxContentBytes: Int = 100000) = this.handle(request.stream(), requestContext())
+internal fun HttpHandler.call(request: HttpRequest, maxContentBytes: Int = 100000): HttpResponse = this.handle(request.stream(), requestContext())
         .flatMap { it.aggregate(maxContentBytes) }
         .toMono()
-        .block()
+        .blockRequired()

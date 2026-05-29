@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2026 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -99,14 +99,14 @@ class ServerObjectSpec : FeatureSpec() {
 
                 // 2. Send a probe to both of them
                 testClient.send(get("/").header(HOST, "localhost:$httpPort").build())
-                        .wait()!!
+                        .wait()
                         .let {
                             it.status() shouldBe OK
                             it.bodyAs(UTF_8) shouldBe "non-secure"
                         }
 
                 testClient.secure().send(get("/").header(HOST, "localhost:$httpsPort").build())
-                        .wait()!!
+                        .wait()
                         .let {
                             it.status() shouldBe OK
                             it.bodyAs(UTF_8) shouldBe "secure"

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2026 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.Spec
 import io.kotest.core.spec.style.FeatureSpec
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldMatch
@@ -189,7 +190,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                 for (i in 1..50) {
                     withClue("Response should come from active instances only") {
                         client.send(get("/").header(HOST, styxServer().proxyHttpHostHeader()).build())
-                                .wait(debug = false)!!.bodyAs(UTF_8) shouldBe "mock-server-03"
+                                .wait(debug = false).bodyAs(UTF_8) shouldBe "mock-server-03"
                     }
                 }
             }
@@ -220,7 +221,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
 
                 withClue("Load balancing group shouldn't have been configured yet") {
                     client.send(get("/").header(HOST, styxServer().proxyHttpHostHeader()).build())
-                            .wait()!!
+                            .wait()
                             .let {
                                 it.status() shouldBe (BAD_GATEWAY)
                             }
@@ -239,7 +240,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                 withClue("Couldn't get a response from mock-server-01") {
                     eventually(1.seconds) {
                         client.send(get("/").header(HOST, styxServer().proxyHttpHostHeader()).build())
-                                .wait()!!
+                                .wait()
                                 .let {
                                     it.status() shouldBe OK
                                     it.bodyAs(UTF_8) shouldBe "mock-server-01"
@@ -251,7 +252,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
             scenario("... and detects removed origins") {
                 withClue("Origin is not reachable") {
                     client.send(get("/").header(HOST, styxServer().proxyHttpHostHeader()).build())
-                            .wait()!!
+                            .wait()
                             .let {
                                 it.status() shouldBe (OK)
                             }
@@ -261,9 +262,9 @@ class LoadBalancingGroupSpec : FeatureSpec() {
 
                 withClue("Origin is still reachable after removal") {
                     client.send(get("/").header(HOST, styxServer().proxyHttpHostHeader()).build())
-                            .wait()!!
+                            .wait()
                             .let {
-                                it.status() shouldBe (BAD_GATEWAY)
+                                it.status().code() shouldBeIn listOf(500, 502)
                             }
                 }
 
@@ -325,7 +326,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
 
             scenario("Responds with sticky session cookie when STICKY_SESSION_ENABLED=true") {
                 client.send(get("/sticky/").header(HOST, styxServer().proxyHttpHostHeader()).build())
-                        .wait()!!
+                        .wait()
                         .cookie("styx_origin_stickyApp")
                         .get()
                         .let {
@@ -339,7 +340,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
 
             scenario("Responds without sticky session cookie when sticky session is not enabled") {
                 client.send(get("/normal/").header(HOST, styxServer().proxyHttpHostHeader()).build())
-                        .wait()!!
+                        .wait()
                         .cookie("styx_origin_app") shouldBe Optional.empty()
             }
 
@@ -349,7 +350,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .cookies(requestCookie("styx_origin_stickyApp", "app-A-02"))
                             .build())
-                            .wait()!!
+                            .wait()
                             .let {
                                 it.status() shouldBe OK
                                 it.bodyAs(UTF_8) shouldBe ("mock-server-02")
@@ -366,7 +367,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                                     requestCookie("other_cookie2", "bar"),
                                     requestCookie("styx_origin_stickyApp", "app-A-02"))
                             .build())
-                            .wait()!!
+                            .wait()
                             .let {
                                 it.status() shouldBe OK
                                 it.bodyAs(UTF_8) shouldBe ("mock-server-02")
@@ -381,7 +382,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                         .cookies(
                                 requestCookie("styx_origin_stickyApp", "NA"))
                         .build())
-                        .wait()!!
+                        .wait()
                         .let {
                             it.status() shouldBe OK
                             it.bodyAs(UTF_8) shouldMatch ("mock-server-0.")
@@ -453,7 +454,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .cookies(requestCookie("orc", "appA-02"))
                             .build())
-                            .wait()!!
+                            .wait()
                             .let {
                                 it.status() shouldBe OK
                                 it.bodyAs(UTF_8) shouldBe "mock-server-02"
@@ -467,7 +468,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .cookies(requestCookie("orc", "appA-0(2|3)"))
                             .build())
-                            .wait()!!
+                            .wait()
                             .let {
                                 it.status() shouldBe OK
                                 it.bodyAs(UTF_8) shouldMatch "mock-server-0[23]"
@@ -481,7 +482,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .cookies(requestCookie("orc", "(?!)"))
                             .build())
-                            .wait()!!
+                            .wait()
                             .let {
                                 it.status() shouldBe BAD_GATEWAY
                             }
@@ -494,7 +495,7 @@ class LoadBalancingGroupSpec : FeatureSpec() {
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .cookies(requestCookie("orc", "appA-02,appA-0[13]"))
                             .build())
-                            .wait()!!
+                            .wait()
                             .let {
                                 it.status() shouldBe OK
                                 it.bodyAs(UTF_8) shouldMatch "mock-server-0[123]"

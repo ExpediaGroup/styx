@@ -113,7 +113,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                             .wait().let {
-                                it!!.status() shouldBe OK
+                                it.status() shouldBe OK
                             }
                 }
             }
@@ -122,7 +122,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 client.send(get("/admin/providers/originsFileLoader/configuration")
                         .header(HOST, styxServer().adminHostHeader())
                         .build())
-                        .wait()!!
+                        .wait()
                         .let {
                             it.status() shouldBe OK
                             it.bodyAs(UTF_8) shouldBe originsFile
@@ -168,7 +168,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                             .wait().let {
-                                it!!.status() shouldBe OK
+                                it.status() shouldBe OK
                                 it.bodyAs(UTF_8) shouldBe "appA-01"
                             }
                 }
@@ -178,7 +178,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                             .wait().let {
-                                it!!.status() shouldBe OK
+                                it.status() shouldBe OK
                                 it.bodyAs(UTF_8) shouldBe "appA-02"
                             }
                 }
@@ -199,7 +199,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                             .wait().let {
-                                it!!.status() shouldBe OK
+                                it.status() shouldBe OK
                                 it.bodyAs(UTF_8) shouldBe "appA-01"
                             }
                 }
@@ -222,7 +222,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                             .wait().let {
-                                it!!.status() shouldBe OK
+                                it.status() shouldBe OK
                                 it.bodyAs(UTF_8) shouldBe "appB-01"
                             }
                 }
@@ -231,7 +231,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                         .header(HOST, styxServer().proxyHttpHostHeader())
                         .build())
                         .wait().let {
-                            it!!.status() shouldBe OK
+                            it.status() shouldBe OK
                             it.bodyAs(UTF_8) shouldBe "appA-01"
                         }
             }
@@ -253,7 +253,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                             .wait().let {
-                                it!!.status() shouldBe OK
+                                it.status() shouldBe OK
                                 it.bodyAs(UTF_8) shouldBe "appB-01"
                             }
                 }
@@ -262,7 +262,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                         .header(HOST, styxServer().proxyHttpHostHeader())
                         .build())
                         .wait().let {
-                            it!!.status() shouldBe OK
+                            it.status() shouldBe OK
                             it.bodyAs(UTF_8) shouldBe "appA-01"
                         }
             }
@@ -280,7 +280,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                             .wait().let {
-                                it!!.status() shouldBe OK
+                                it.status() shouldBe OK
                                 it.bodyAs(UTF_8) shouldBe "appA-01"
                             }
                 }
@@ -297,7 +297,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                             .wait().let {
-                                it!!.status() shouldBe OK
+                                it.status() shouldBe OK
                                 it.bodyAs(UTF_8) shouldBe "appA-02"
                             }
                 }
@@ -328,7 +328,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                             .wait().let {
-                                it!!.status() shouldBe OK
+                                it.status() shouldBe OK
                                 it.bodyAs(UTF_8) shouldBe "appB-01"
                             }
                 }
@@ -337,14 +337,14 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                         .header(HOST, styxServer().proxyHttpHostHeader())
                         .build())
                         .wait().let {
-                            it!!.status() shouldBe OK
+                            it.status() shouldBe OK
                             it.bodyAs(UTF_8) shouldBe "appC-01"
                         }
                 client.send(get("/c/def/hello2")
                         .header(HOST, styxServer().proxyHttpHostHeader())
                         .build())
                         .wait().let {
-                            it!!.status() shouldBe OK
+                            it.status() shouldBe OK
                             it.bodyAs(UTF_8) shouldBe "appC-01"
                         }
 
@@ -396,7 +396,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                             .wait().let {
-                                it!!.status() shouldBe OK
+                                it.status() shouldBe OK
                             }
                 }
 
@@ -405,7 +405,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .cookies(requestCookie("ABC", "appA.appA-02"))
                             .build())
-                            .wait()!!
+                            .wait()
                             .let {
                                 it.status() shouldBe OK
                                 it.bodyAs(UTF_8) shouldBe "appA-02"
@@ -427,7 +427,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 client.send(get("/")
                         .header(HOST, styxServer().adminHostHeader())
                         .build())
-                        .wait()!!
+                        .wait()
                         .let {
                             it.status() shouldBe OK
                             it.bodyAs(UTF_8) shouldNotContain ("/admin/dashboard/")
@@ -436,7 +436,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 client.send(get("/admin/dashboard/index.html")
                         .header(HOST, styxServer().adminHostHeader())
                         .build())
-                        .wait()!!
+                        .wait()
                         .let {
                             // Admin index page (with links)
                             it.bodyAs(UTF_8) shouldContain """<li><a href='/admin/configuration?pretty'>Configuration</a></li>"""
@@ -445,7 +445,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 client.send(get("/admin/dashboard/data.json")
                         .header(HOST, styxServer().adminHostHeader())
                         .build())
-                        .wait()!!
+                        .wait()
                         .let {
                             // Admin index page (with links)
                             it.bodyAs(UTF_8) shouldContain """<li><a href='/admin/configuration?pretty'>Configuration</a></li>"""
@@ -460,7 +460,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     client.send(get("/admin/providers/originsFileLoader/configuration")
                             .header(HOST, styxServer().adminHostHeader())
                             .build())
-                            .wait()!!
+                            .wait()
                             .let {
                                 it.status() shouldBe OK
                                 it.bodyAs(UTF_8) shouldBe validOriginsFile
@@ -480,7 +480,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     client.send(get("/admin/providers/originsFileLoader/configuration")
                             .header(HOST, styxServer().adminHostHeader())
                             .build())
-                            .wait()!!
+                            .wait()
                             .let {
                                 it.status() shouldBe OK
                                 it.bodyAs(UTF_8) shouldBe validOriginsFile
@@ -533,7 +533,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                             .wait().let {
-                                it!!.status() shouldBe OK
+                                it.status() shouldBe OK
                                 it.bodyAs(UTF_8) shouldBe "appB-01"
                                 Thread.sleep(200)
                             }
@@ -557,7 +557,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                 client.send(get("/16")
                         .header(HOST, styxServer().proxyHttpHostHeader())
                         .build())
-                        .wait()!!
+                        .wait()
                         .let {
                             it.status() shouldBe BAD_GATEWAY
                             it.header("X-Styx-Origin-Id").get() shouldBe "appB"
@@ -570,7 +570,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                         .header(HOST, styxServer().adminHostHeader())
                         .build())
                         .wait().let {
-                            it!!.status() shouldBe OK
+                            it.status() shouldBe OK
                             val monitors = extractHealthCheckMonitors(it.bodyAs(UTF_8))
                             monitors shouldHaveSize 1
                             validateHealthCheckMonitor(monitors[0])
@@ -582,7 +582,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                         .header(HOST, styxServer().adminHostHeader())
                         .build())
                         .wait().let {
-                            it!!.status() shouldBe OK
+                            it.status() shouldBe OK
                             val monitor = deserialiseHealthCheckMonitor(it.bodyAs(UTF_8))
                             validateHealthCheckMonitor(monitor)
                         }
@@ -593,7 +593,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                         .header(HOST, styxServer().adminHostHeader())
                         .build())
                         .wait().let {
-                            it!!.status() shouldBe OK
+                            it.status() shouldBe OK
                             it.header(CONTENT_TYPE).get().lowercase() shouldBe APPLICATION_JSON.toString().lowercase()
                             // TODO: This name should probably change.
                             it.bodyAs(UTF_8) shouldBe "{ name: \"HealthCheckMonitoringService-appB\" status: \"RUNNING\" }"
@@ -617,7 +617,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                             .wait().let {
-                                it!!.status() shouldBe OK
+                                it.status() shouldBe OK
                                 it.bodyAs(UTF_8) shouldBe "appB-01"
                                 Thread.sleep(200)
                             }
@@ -629,7 +629,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                         .header(HOST, styxServer().adminHostHeader())
                         .build())
                         .wait().let {
-                            it!!.status() shouldBe OK
+                            it.status() shouldBe OK
                             val monitors = extractHealthCheckMonitors(it.bodyAs(UTF_8))
                             monitors shouldHaveSize 0
                         }
@@ -640,7 +640,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                         .header(HOST, styxServer().adminHostHeader())
                         .build())
                         .wait().let {
-                            it!!.status() shouldBe NOT_FOUND
+                            it.status() shouldBe NOT_FOUND
                         }
             }
         }
@@ -692,7 +692,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     client.send(get("/foo")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
-                            .wait()!!
+                            .wait()
                             .let {
                                 it.status() shouldBe OK
                             }
@@ -732,7 +732,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                     client.send(get("/foo/2")
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
-                            .wait()!!
+                            .wait()
                             .let {
                                 it.status() shouldBe OK
                             }
@@ -761,7 +761,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                             .wait().let {
-                                it!!.status() shouldBe OK
+                                it.status() shouldBe OK
                             }
                 }
 
@@ -778,7 +778,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                         .header(HOST, styxServer().proxyHttpHostHeader())
                         .build())
                         .wait().let {
-                            it!!.status() shouldBe OK
+                            it.status() shouldBe OK
                         }
             }
 
@@ -796,7 +796,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
                             .header(HOST, styxServer().proxyHttpHostHeader())
                             .build())
                             .wait().let {
-                                it!!.status() shouldBe OK
+                                it.status() shouldBe OK
                                 it.bodyAs(UTF_8) shouldBe "appA-02"
                             }
                 }
@@ -815,7 +815,7 @@ class OriginsFileCompatibilitySpec : FunSpec() {
             .header(HOST, styxServer().adminHostHeader())
             .build())
             .wait()
-            .bodyAs(UTF_8)!!
+            .bodyAs(UTF_8)
 
     val mockServerA01 = MockOriginServer.create("appA", "appA-01", 0, HttpConnectorConfig(0))
             .start()

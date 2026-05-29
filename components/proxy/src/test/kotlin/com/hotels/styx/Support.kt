@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2026 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -46,10 +46,13 @@ import io.mockk.CapturingSlot
 import io.mockk.every
 import io.mockk.mockk
 import org.slf4j.LoggerFactory
+import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executor
+
+fun <T : Any> Mono<T>.blockRequired(): T = block() ?: error("Expected a value but Mono was empty")
 
 fun routingObjectDef(text: String) = YamlConfig(text).`as`(StyxObjectDefinition::class.java)
 
@@ -177,29 +180,29 @@ fun mockObjectFactory(objects: List<RoutingObject>) = mockk<RoutingObjectFactory
 
 private val LOGGER = LoggerFactory.getLogger("ProxySupport")
 
-fun CompletableFuture<HttpResponse>.wait(debug: Boolean = false) = this.toMono()
+fun CompletableFuture<HttpResponse>.wait(debug: Boolean = false): HttpResponse = this.toMono()
         .doOnNext {
             if (debug) {
                 LOGGER.debug("${it.status()} - ${it.headers()} - ${it.bodyAs(UTF_8)}")
             }
         }
-        .block()
+        .blockRequired()
 
-fun CompletableFuture<LiveHttpResponse>.wait(debug: Boolean = false) = this.toMono()
+fun CompletableFuture<LiveHttpResponse>.wait(debug: Boolean = false): LiveHttpResponse = this.toMono()
         .doOnNext {
             if (debug) {
                 LOGGER.debug("${it.status()} - ${it.headers()}")
             }
         }
-        .block()
+        .blockRequired()
 
-fun Eventual<LiveHttpResponse>.wait(maxBytes: Int = 100 * 1024, debug: Boolean = false) = this.toMono()
+fun Eventual<LiveHttpResponse>.wait(maxBytes: Int = 100 * 1024, debug: Boolean = false): HttpResponse = this.toMono()
         .flatMap { it.aggregate(maxBytes).toMono() }
         .doOnNext {
             if (debug) {
                 LOGGER.info("${it.status()} - ${it.headers()} - ${it.bodyAs(UTF_8)}")
             }
         }
-        .block()
+        .blockRequired()
 
 fun requestContext(secure: Boolean = false, executor: Executor = Executor { it.run() }) = HttpInterceptorContext(secure, null, executor)

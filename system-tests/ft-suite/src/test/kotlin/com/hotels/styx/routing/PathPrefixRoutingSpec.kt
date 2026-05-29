@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2023 Expedia Inc.
+  Copyright (C) 2013-2026 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.support.StyxServerProvider
+import com.hotels.styx.support.blockRequired
 import com.hotels.styx.support.proxyHttpHostHeader
 import io.kotest.core.spec.Spec
 import io.kotest.core.spec.style.StringSpec
@@ -36,14 +37,14 @@ class PathPrefixRoutingSpec : StringSpec() {
                     .header(HOST, proxyHost)
                     .build())
                     .toMono()
-                    .block()!!
+                    .blockRequired()
                     .bodyAs(UTF_8) shouldBe "I'm default"
 
             client.send(get("/database/a/path")
                     .header(HOST, proxyHost)
                     .build())
                     .toMono()
-                    .block()!!
+                    .blockRequired()
                     .bodyAs(UTF_8) shouldBe "I'm database"
         }
     }
