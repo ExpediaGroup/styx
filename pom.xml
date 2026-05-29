@@ -119,7 +119,7 @@
     <!--Kotlin -->
     <kotlin.version>2.3.21</kotlin.version>
     <kotlinx.coroutines.version>1.11.0</kotlinx.coroutines.version>
-    <kotest.version>5.9.1</kotest.version>
+    <kotest.version>6.1.11</kotest.version>
     <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
     <kotlinx-html.version>0.12.0</kotlinx-html.version>
 
