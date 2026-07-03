@@ -54,7 +54,11 @@
               <overWriteReleases>false</overWriteReleases>
               <overWriteSnapshots>false</overWriteSnapshots>
               <overWriteIfNewer>true</overWriteIfNewer>
-              <includeScope>compile</includeScope>
+              <!-- runtime (not compile) so runtime-scoped artifacts ship in the image, notably the
+                   netty-tcnative-boringssl-static native libs and netty-transport-native-epoll,
+                   which netty-bom scopes as 'runtime'. Without these the OpenSSL SslProvider fails
+                   at startup with UnsatisfiedLinkError / NoClassDefFoundError. -->
+              <includeScope>runtime</includeScope>
             </configuration>
           </execution>
         </executions>
