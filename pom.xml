@@ -111,7 +111,7 @@
     <janino.version>3.1.12</janino.version>
     <micrometer.version>1.17.0</micrometer.version>
     <netty.version>4.2.15.Final</netty.version>
-    <okhttp.version>4.12.0</okhttp.version>
+    <okhttp.version>5.4.0</okhttp.version>
     <pcollections.version>5.0.0</pcollections.version>
     <reactive-streams.version>1.0.4</reactive-streams.version>
     <reactor.version>2025.0.6</reactor.version>
