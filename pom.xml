@@ -102,22 +102,22 @@
     <!-- General Versions -->
     <annotations.version>26.1.0</annotations.version>
     <antlr.version>4.13.2</antlr.version>
-    <bcpkix-jdk18on.version>1.84</bcpkix-jdk18on.version>
-    <bytebuddy.version>1.18.10-jdk5</bytebuddy.version>
+    <bcpkix-jdk18on.version>1.85</bcpkix-jdk18on.version>
+    <bytebuddy.version>1.18.11-jdk5</bytebuddy.version>
     <dropwizard.version>4.2.39</dropwizard.version>
     <guava.version>33.6.0-jre</guava.version>
     <hdrhistogram.version>2.2.2</hdrhistogram.version>
-    <jackson.version>2.22.0</jackson.version>
+    <jackson.version>2.22.1</jackson.version>
     <janino.version>3.1.12</janino.version>
     <micrometer.version>1.17.0</micrometer.version>
-    <netty.version>4.2.15.Final</netty.version>
+    <netty.version>4.2.16.Final</netty.version>
     <okhttp.version>4.12.0</okhttp.version>
     <pcollections.version>5.0.0</pcollections.version>
     <reactive-streams.version>1.0.4</reactive-streams.version>
     <reactor.version>2025.0.6</reactor.version>
 
     <!--Kotlin -->
-    <kotlin.version>2.4.0</kotlin.version>
+    <kotlin.version>2.4.10</kotlin.version>
     <kotlinx.coroutines.version>1.11.0</kotlinx.coroutines.version>
     <kotest.version>5.9.1</kotest.version>
     <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
@@ -126,7 +126,7 @@
     <java-uuid-generator.version>5.2.0</java-uuid-generator.version>
 
     <!-- Logging Versions -->
-    <logback.version>1.5.37</logback.version>
+    <logback.version>1.6.0</logback.version>
     <slf4j.version>2.0.18</slf4j.version>
 
     <scala.version>2.12</scala.version>
@@ -135,7 +135,7 @@
     <!-- Testing Versions -->
     <akka.version>2.8.8</akka.version>
     <hamcrest.version>3.0</hamcrest.version>
-    <junit.version>6.1.1</junit.version>
+    <junit.version>6.1.2</junit.version>
     <mockito.version>5.23.0</mockito.version>
     <mockk.version>1.14.11</mockk.version>
     <scalatest.version>3.2.20</scalatest.version>
@@ -154,7 +154,7 @@
     <maven-enforcer-plugin.version>3.6.3</maven-enforcer-plugin.version>
     <maven-failsafe-plugin.version>3.5.6</maven-failsafe-plugin.version>
     <maven-install-plugin.version>3.1.4</maven-install-plugin.version>
-    <maven-jar-plugin.version>3.5.0</maven-jar-plugin.version>
+    <maven-jar-plugin.version>3.5.1</maven-jar-plugin.version>
     <maven-pmd-plugin.version>3.28.0</maven-pmd-plugin.version>
     <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
     <maven-project-info-reports-plugin.version>3.5.0</maven-project-info-reports-plugin.version>
@@ -977,7 +977,7 @@
       <plugin>
         <groupId>com.mycila</groupId>
         <artifactId>license-maven-plugin</artifactId>
-        <version>5.0.0</version>
+        <version>5.1.1</version>
         <configuration>
           <properties>
             <owner>Expedia Inc.</owner>
@@ -1026,7 +1026,7 @@
           <dependency>
             <groupId>com.mycila</groupId>
             <artifactId>license-maven-plugin-git</artifactId>
-            <version>5.0.0</version>
+            <version>5.1.1</version>
           </dependency>
         </dependencies>
         <executions>
