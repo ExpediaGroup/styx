@@ -102,22 +102,22 @@
     <!-- General Versions -->
     <annotations.version>26.1.0</annotations.version>
     <antlr.version>4.13.2</antlr.version>
-    <bcpkix-jdk18on.version>1.84</bcpkix-jdk18on.version>
-    <bytebuddy.version>1.18.10-jdk5</bytebuddy.version>
-    <dropwizard.version>4.2.39</dropwizard.version>
-    <guava.version>33.6.0-jre</guava.version>
+    <bcpkix-jdk18on.version>1.86</bcpkix-jdk18on.version>
+    <bytebuddy.version>1.18.13-jdk5</bytebuddy.version>
+    <dropwizard.version>4.2.40</dropwizard.version>
+    <guava.version>33.7.1-jre</guava.version>
     <hdrhistogram.version>2.2.2</hdrhistogram.version>
-    <jackson.version>2.22.0</jackson.version>
+    <jackson.version>2.22.2</jackson.version>
     <janino.version>3.1.12</janino.version>
-    <micrometer.version>1.17.0</micrometer.version>
-    <netty.version>4.2.15.Final</netty.version>
+    <micrometer.version>1.17.1</micrometer.version>
+    <netty.version>4.2.18.Final</netty.version>
     <okhttp.version>4.12.0</okhttp.version>
     <pcollections.version>5.0.0</pcollections.version>
     <reactive-streams.version>1.0.4</reactive-streams.version>
-    <reactor.version>2025.0.6</reactor.version>
+    <reactor.version>2025.0.7</reactor.version>
 
     <!--Kotlin -->
-    <kotlin.version>2.4.0</kotlin.version>
+    <kotlin.version>2.4.20</kotlin.version>
     <kotlinx.coroutines.version>1.11.0</kotlinx.coroutines.version>
     <kotest.version>5.9.1</kotest.version>
     <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
@@ -126,8 +126,8 @@
     <java-uuid-generator.version>5.2.0</java-uuid-generator.version>
 
     <!-- Logging Versions -->
-    <logback.version>1.5.37</logback.version>
-    <slf4j.version>2.0.18</slf4j.version>
+    <logback.version>1.6.3</logback.version>
+    <slf4j.version>2.0.19</slf4j.version>
 
     <scala.version>2.12</scala.version>
     <scala-compiler.version>2.12.21</scala-compiler.version>
@@ -135,12 +135,12 @@
     <!-- Testing Versions -->
     <akka.version>2.8.8</akka.version>
     <hamcrest.version>3.0</hamcrest.version>
-    <junit.version>6.1.1</junit.version>
+    <junit.version>6.1.3</junit.version>
     <mockito.version>5.23.0</mockito.version>
     <mockk.version>1.14.11</mockk.version>
     <scalatest.version>3.2.20</scalatest.version>
     <scalatestplus.version>3.2.19.0</scalatestplus.version>
-    <scalacheck.version>1.19.0</scalacheck.version>
+    <scalacheck.version>1.20.0</scalacheck.version>
     <scala.java8.compat.version>1.0.2</scala.java8.compat.version>
     <wiremock.version>3.13.2</wiremock.version>
 
@@ -148,13 +148,13 @@
     <maven-antrun-plugin.version>3.2.0</maven-antrun-plugin.version>
     <maven-assembly-plugin.version>3.8.0</maven-assembly-plugin.version>
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
-    <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
+    <maven-compiler-plugin.version>3.16.0</maven-compiler-plugin.version>
     <maven-dependency-plugin.version>3.6.1</maven-dependency-plugin.version>
     <maven-deploy-plugin.version>3.1.4</maven-deploy-plugin.version>
     <maven-enforcer-plugin.version>3.6.3</maven-enforcer-plugin.version>
-    <maven-failsafe-plugin.version>3.5.6</maven-failsafe-plugin.version>
+    <maven-failsafe-plugin.version>3.6.0</maven-failsafe-plugin.version>
     <maven-install-plugin.version>3.1.4</maven-install-plugin.version>
-    <maven-jar-plugin.version>3.5.0</maven-jar-plugin.version>
+    <maven-jar-plugin.version>3.5.1</maven-jar-plugin.version>
     <maven-pmd-plugin.version>3.28.0</maven-pmd-plugin.version>
     <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
     <maven-project-info-reports-plugin.version>3.5.0</maven-project-info-reports-plugin.version>
@@ -162,10 +162,10 @@
     <maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
     <maven-site-plugin.version>3.22.0</maven-site-plugin.version>
     <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
-    <maven-surefire-plugin.version>3.5.6</maven-surefire-plugin.version>
+    <maven-surefire-plugin.version>3.6.0</maven-surefire-plugin.version>
 
     <!-- non apache plugin versions and configurations, please sort alphabetically -->
-    <build-helper-maven-plugin.version>3.6.1</build-helper-maven-plugin.version>
+    <build-helper-maven-plugin.version>3.6.2</build-helper-maven-plugin.version>
     <jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
     <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
     <scala-maven-plugin.version>4.9.10</scala-maven-plugin.version>
@@ -717,7 +717,7 @@
             <dependency>
               <groupId>org.apache.ant</groupId>
               <artifactId>ant-launcher</artifactId>
-              <version>1.10.17</version>
+              <version>1.10.18</version>
             </dependency>
           </dependencies>
         </plugin>
@@ -977,7 +977,7 @@
       <plugin>
         <groupId>com.mycila</groupId>
         <artifactId>license-maven-plugin</artifactId>
-        <version>5.0.0</version>
+        <version>5.1.2</version>
         <configuration>
           <properties>
             <owner>Expedia Inc.</owner>
@@ -1026,7 +1026,7 @@
           <dependency>
             <groupId>com.mycila</groupId>
             <artifactId>license-maven-plugin-git</artifactId>
-            <version>5.0.0</version>
+            <version>5.1.2</version>
           </dependency>
         </dependencies>
         <executions>
