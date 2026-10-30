@@ -1,4 +1,4 @@
-FROM maven:3.9.16-eclipse-temurin-21
+FROM maven:3.10.0-eclipse-temurin-21
 
 ENV APP_HOME=/build
 
