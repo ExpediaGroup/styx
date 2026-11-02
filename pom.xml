@@ -105,7 +105,7 @@
     <bcpkix-jdk18on.version>1.84</bcpkix-jdk18on.version>
     <bytebuddy.version>1.18.10-jdk5</bytebuddy.version>
     <dropwizard.version>4.2.39</dropwizard.version>
-    <guava.version>33.6.0-jre</guava.version>
+    <guava.version>33.7.1-jre</guava.version>
     <hdrhistogram.version>2.2.2</hdrhistogram.version>
     <jackson.version>2.22.0</jackson.version>
     <janino.version>3.1.12</janino.version>
