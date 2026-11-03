@@ -8,6 +8,8 @@
 ![Version](https://img.shields.io/maven-central/v/com.hotels.styx/styx-server.svg)
 [![Dependabot Status](https://api.dependabot.com/badges/status?host=github&repo=HotelsDotCom/styx)](https://dependabot.com)
 
+> **Archived:** Styx is no longer maintained. For new JVM proxy projects, consider a networking library such as [Reactor Netty](https://projectreactor.io/docs/netty/release/reference/index.html) and build a plugin system inspired by Styx's [`Plugin` interface](./components/api/src/main/java/com/hotels/styx/api/plugins/spi/Plugin.java) and [plugin guide](./docs/developer-guide/plugins.md).
+
 Styx is a programmable reverse proxy for JVM (Java Virtual Machine). It can be used
 as a stand-alone application, or as a platform to build custom networking applications.
 It is non-blocking, fully asynchronous and event driven therefore very scalable.
@@ -98,3 +100,5 @@ This project is licensed under the Apache License v2.0 - see the [LICENSE.txt](L
 Copyright 2013-2021 Expedia Inc.
 
 Licencing terms for any derived work and dependant libraries are documented in `NOTICE` files.
+
+Thank you to everyone who used Styx and contributed to the project.
